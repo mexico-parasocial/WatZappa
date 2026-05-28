@@ -1,6 +1,6 @@
 # WatZappa
 
-WatZappa is Mexico Parasocial's AT Protocol workspace. This repository includes the PDS, AppView, sync, moderation, and Matrix bridge components needed to run the service stack.
+WatZappa is the backend for PARA social app, it's an AT Protocol fork. This repository includes the PDS, AppView, sync, moderation, and Matrix bridge components needed to run the service stack.
 
 ## Repository Structure
 
