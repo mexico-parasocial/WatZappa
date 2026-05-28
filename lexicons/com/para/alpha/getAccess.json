@@ -1,0 +1,26 @@
+{
+  "lexicon": 1,
+  "id": "com.para.alpha.getAccess",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Check if the authenticated user has alpha access.",
+      "parameters": {
+        "type": "params",
+        "properties": {}
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["hasAccess"],
+          "properties": {
+            "hasAccess": { "type": "boolean" },
+            "state": { "type": "string" },
+            "waitlistPosition": { "type": "integer" }
+          }
+        }
+      }
+    }
+  }
+}

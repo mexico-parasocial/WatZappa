@@ -1,0 +1,43 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.deliberation",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["proposal", "community", "author", "body"],
+        "properties": {
+          "proposal": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "URI of the proposal being deliberated on"
+          },
+          "community": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "author": {
+            "type": "string",
+            "format": "did"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Short statement for deliberation, like a Polis comment"
+          },
+          "stance": {
+            "type": "string",
+            "enum": ["for", "against", "neutral", "bridging"],
+            "description": "Author's self-reported stance. Bridging = attempts to find common ground."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

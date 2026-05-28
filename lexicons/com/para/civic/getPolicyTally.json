@@ -1,0 +1,31 @@
+{
+  "lexicon": 1,
+  "id": "com.para.civic.getPolicyTally",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get the weighted consensus tally for a policy post using civic vote signals from -3 to +3.",
+      "parameters": {
+        "type": "params",
+        "required": ["post"],
+        "properties": {
+          "post": { "type": "string", "format": "at-uri" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["tally"],
+          "properties": {
+            "tally": {
+              "type": "ref",
+              "ref": "com.para.civic.defs#policyTally"
+            }
+          }
+        }
+      },
+      "errors": [{ "name": "NotFound" }]
+    }
+  }
+}

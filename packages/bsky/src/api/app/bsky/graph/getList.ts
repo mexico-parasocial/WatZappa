@@ -1,0 +1,152 @@
+import { mapDefined } from '@atproto/common'
+import { AtUriString, DidString } from '@atproto/lex'
+import { InvalidRequestError, Server } from '@atproto/xrpc-server'
+import { AppContext } from '../../../../context.js'
+import {
+  HydrateCtx,
+  HydrationState,
+  Hydrator,
+  mergeManyStates,
+} from '../../../../hydration/hydrator.js'
+import { app } from '../../../../lexicons/index.js'
+import {
+  HydrationFnInput,
+  PresentationFnInput,
+  RulesFnInput,
+  SkeletonFnInput,
+  createPipeline,
+} from '../../../../pipeline.js'
+import { ListItemInfo } from '../../../../proto/bsky_pb.js'
+import { uriToDid as didFromUri } from '../../../../util/uris.js'
+import { Views } from '../../../../views/index.js'
+import { clearlyBadCursor, resHeaders } from '../../../util.js'
+
+export default function (server: Server, ctx: AppContext) {
+  const getList = createPipeline(skeleton, hydration, noBlocks, presentation)
+  server.add(app.bsky.graph.getList, {
+    auth: ctx.authVerifier.standardOptional,
+    handler: async ({ params, auth, req }) => {
+      const { viewer, includeTakedowns, skipViewerBlocks } =
+        ctx.authVerifier.parseCreds(auth)
+
+      const labelers = ctx.reqLabelers(req)
+      const hydrateCtx = await ctx.hydrator.createContext({
+        labelers,
+        viewer,
+        includeTakedowns,
+        skipViewerBlocks,
+      })
+      const result = await getList({ ...params, hydrateCtx }, ctx)
+      return {
+        encoding: 'application/json',
+        body: result,
+        headers: resHeaders({ labelers: hydrateCtx.labelers }),
+      }
+    },
+  })
+}
+
+const skeleton = async (
+  input: SkeletonFnInput<Context, Params>,
+): Promise<SkeletonState> => {
+  const { ctx, params } = input
+  if (clearlyBadCursor(params.cursor)) {
+    return { listUri: params.list, listitems: [] }
+  }
+  const { listitems, cursor } = await ctx.hydrator.dataplane.getListMembers({
+    listUri: params.list,
+    limit: params.limit,
+    cursor: params.cursor,
+  })
+  return {
+    listUri: params.list,
+    listitems,
+    cursor: cursor || undefined,
+  }
+}
+
+const hydration = async (
+  input: HydrationFnInput<Context, Params, SkeletonState>,
+) => {
+  const { ctx, params, skeleton } = input
+  const { listUri, listitems } = skeleton
+  const [listState, profileState] = await Promise.all([
+    ctx.hydrator.hydrateLists([listUri], params.hydrateCtx),
+    ctx.hydrator.hydrateProfiles(
+      listitems.map(({ did }) => did as DidString),
+      params.hydrateCtx,
+    ),
+  ])
+  const bidirectionalBlocks = await maybeGetBlocksForReferenceAndCurateList({
+    ctx,
+    params,
+    skeleton,
+    listState,
+  })
+  return mergeManyStates(listState, profileState, { bidirectionalBlocks })
+}
+
+const noBlocks = (input: RulesFnInput<Context, Params, SkeletonState>) => {
+  const { skeleton, hydration } = input
+  const creator = didFromUri(skeleton.listUri)
+  const blocks = hydration.bidirectionalBlocks?.get(creator)
+  skeleton.listitems = skeleton.listitems.filter(({ did }) => {
+    return !blocks?.get(did as DidString)
+  })
+  return skeleton
+}
+
+const presentation = (
+  input: PresentationFnInput<Context, Params, SkeletonState>,
+) => {
+  const { ctx, skeleton, hydration } = input
+  const { listUri, listitems, cursor } = skeleton
+  const list = ctx.views.list(listUri, hydration)
+  const items = mapDefined(listitems, ({ uri, did }) =>
+    ctx.views.listItemView(uri as AtUriString, did as DidString, hydration),
+  )
+  if (!list) {
+    throw new InvalidRequestError('List not found')
+  }
+  return { list, items, cursor }
+}
+
+const maybeGetBlocksForReferenceAndCurateList = async (input: {
+  ctx: Context
+  listState: HydrationState
+  skeleton: SkeletonState
+  params: Params
+}) => {
+  const { ctx, params, listState, skeleton } = input
+  const { listitems } = skeleton
+  const { list } = params
+  const listRecord = listState.lists?.get(list)
+  const creator = didFromUri(list)
+  if (
+    params.hydrateCtx.viewer === creator ||
+    listRecord?.record.purpose === 'app.bsky.graph.defs#modlist'
+  ) {
+    return
+  }
+  const pairs: Map<DidString, DidString[]> = new Map()
+  pairs.set(
+    creator,
+    listitems.map(({ did }) => did as DidString),
+  )
+  return await ctx.hydrator.hydrateBidirectionalBlocks(pairs, params.hydrateCtx)
+}
+
+type Context = {
+  hydrator: Hydrator
+  views: Views
+}
+
+type Params = app.bsky.graph.getList.$Params & {
+  hydrateCtx: HydrateCtx
+}
+
+type SkeletonState = {
+  listUri: AtUriString
+  listitems: ListItemInfo[]
+  cursor?: string
+}

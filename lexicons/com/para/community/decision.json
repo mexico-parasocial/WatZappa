@@ -1,0 +1,65 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.decision",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "proposal",
+          "community",
+          "result",
+          "votesFor",
+          "votesAgainst",
+          "votesAbstain"
+        ],
+        "properties": {
+          "proposal": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "community": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "result": {
+            "type": "string",
+            "enum": ["approved", "rejected", "tied", "quorum_not_met"]
+          },
+          "votesFor": {
+            "type": "integer"
+          },
+          "votesAgainst": {
+            "type": "integer"
+          },
+          "votesAbstain": {
+            "type": "integer"
+          },
+          "totalMembers": {
+            "type": "integer",
+            "description": "Total eligible voters at time of decision"
+          },
+          "quorumRequired": {
+            "type": "string"
+          },
+          "thresholdRequired": {
+            "type": "string"
+          },
+          "constitutionVersion": {
+            "type": "integer"
+          },
+          "budgetAllocated": {
+            "type": "string",
+            "description": "If budget proposal, amount approved"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

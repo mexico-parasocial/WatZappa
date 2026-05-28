@@ -1,0 +1,48 @@
+{
+  "lexicon": 1,
+  "id": "com.para.civic.castVote",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Cast or replace the viewer's direct vote for a cabildeo.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["cabildeo", "selectedOption"],
+          "properties": {
+            "cabildeo": { "type": "string", "format": "at-uri" },
+            "selectedOption": { "type": "integer", "minimum": 0 }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["uri", "cid", "commit"],
+          "properties": {
+            "uri": { "type": "string", "format": "at-uri" },
+            "cid": { "type": "string", "format": "cid" },
+            "commit": { "type": "ref", "ref": "#commit" }
+          }
+        }
+      },
+      "errors": [
+        { "name": "NotFound" },
+        { "name": "InvalidPhase" },
+        { "name": "DeadlineExpired" },
+        { "name": "InvalidOption" },
+        { "name": "CommunityMembershipRequired" }
+      ]
+    },
+    "commit": {
+      "type": "object",
+      "required": ["cid", "rev"],
+      "properties": {
+        "cid": { "type": "string", "format": "cid" },
+        "rev": { "type": "string" }
+      }
+    }
+  }
+}

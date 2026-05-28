@@ -1,0 +1,33 @@
+{
+  "lexicon": 1,
+  "id": "com.para.raq.proposal",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A proposed RAQ question submitted by a community member for promotion to official or community axes.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["text", "createdAt"],
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "The proposed question text"
+          },
+          "targetAxis": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Optional target axis id this question relates to"
+          },
+          "targetCommunity": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Optional target community name"
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

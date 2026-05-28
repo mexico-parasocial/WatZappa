@@ -1,0 +1,44 @@
+{
+  "lexicon": 1,
+  "id": "com.para.alpha.createInvite",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Generate invite codes for a specific state. Admin-only.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["state"],
+          "properties": {
+            "state": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 1
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["codes", "state"],
+          "properties": {
+            "codes": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "state": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

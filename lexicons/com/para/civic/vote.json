@@ -1,0 +1,57 @@
+{
+  "lexicon": 1,
+  "id": "com.para.civic.vote",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A signed civic vote. Cabildeo option votes use selectedOption; policy consensus votes use signal from -3 to +3.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["isDirect", "createdAt"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The proposal, policy, matter, or cabildeo record being voted on."
+          },
+          "subjectType": {
+            "type": "string",
+            "knownValues": ["cabildeo", "policy", "matter", "governance"],
+            "description": "Optional semantic type for clients and indexers."
+          },
+          "cabildeo": { "type": "string", "format": "at-uri" },
+          "selectedOption": { "type": "integer", "minimum": 0 },
+          "signal": {
+            "type": "integer",
+            "minimum": -3,
+            "maximum": 3,
+            "description": "Weighted consensus signal for policy-style votes: -3 strong opposition, 0 neutral/abstain, +3 strong support."
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Optional voter rationale for the signal."
+          },
+          "isDirect": { "type": "boolean" },
+          "delegatedFrom": {
+            "type": "array",
+            "items": { "type": "string", "format": "did" },
+            "maxLength": 10000
+          },
+          "voteNullifier": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Privacy-preserving one-person-one-vote nullifier for this subject, issued by m8."
+          },
+          "eligibilityProofRef": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Opaque reference to the m8 eligibility/nullifier proof used to cast this vote."
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

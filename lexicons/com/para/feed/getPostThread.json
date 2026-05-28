@@ -1,0 +1,63 @@
+{
+  "lexicon": 1,
+  "id": "com.para.feed.getPostThread",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get a Para post thread around a post URI.",
+      "parameters": {
+        "type": "params",
+        "required": ["uri"],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Reference (AT-URI) to the post record."
+          },
+          "depth": {
+            "type": "integer",
+            "description": "How many levels of reply depth to include.",
+            "default": 6,
+            "minimum": 0,
+            "maximum": 1000
+          },
+          "parentHeight": {
+            "type": "integer",
+            "description": "How many levels of parent posts to include.",
+            "default": 80,
+            "minimum": 0,
+            "maximum": 1000
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["post", "parents", "replies"],
+          "properties": {
+            "post": {
+              "type": "ref",
+              "ref": "com.para.feed.getAuthorFeed#postView"
+            },
+            "parents": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "com.para.feed.getAuthorFeed#postView"
+              }
+            },
+            "replies": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "com.para.feed.getAuthorFeed#postView"
+              }
+            }
+          }
+        }
+      },
+      "errors": [{ "name": "NotFound" }]
+    }
+  }
+}

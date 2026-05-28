@@ -1,0 +1,200 @@
+npm warn Unknown project config "enable-pre-post-scripts". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+ RUN  v4.0.16 /Users/mlv/Desktop/MASTER/watx
+
+ ❯ |@atproto/lex-server| src/lex-server.test.ts (56 tests | 7 failed) 223ms
+     ✓ returns MethodNotImplemented when the route is not found 2ms
+     ✓ streams payloads 151ms
+     ✓ maps params to body 1ms
+     ✓ echoes text 1ms
+     ✓ streams text 0ms
+     ✓ performs simple query 0ms
+     ✓ can send and receive ipld vals 1ms
+     × fails on bad auth before invalid request payload 5ms
+     ✓ fails on invalid request payload after good auth 2ms
+     ✓ succeeds on good auth and payload 1ms
+     × handles missing auth header 1ms
+       × throws custom error using LexError 0ms
+       ✓ returns custom error via Response object 0ms
+       × handles falsy values thrown as InternalError 1ms
+       ✓ rejects POST for query endpoints 0ms
+       ✓ rejects GET for procedure endpoints 0ms
+       ✓ returns MethodNotImplemented for non-existent methods 2ms
+       ✓ allows custom onHandlerError handler 1ms
+     ✓ validates query params - valid input 0ms
+     ✓ applies default values 0ms
+     ✓ coerces types from query strings 0ms
+     ✓ rejects string too short 0ms
+     ✓ rejects string too long 0ms
+     ✓ rejects missing required parameter str 0ms
+     ✓ rejects missing required parameter int 0ms
+     ✓ rejects missing required parameter bool 0ms
+     ✓ rejects integer too small 0ms
+     ✓ rejects integer too large 0ms
+     ✓ rejects missing required array parameter 0ms
+     ✓ rejects array too large 0ms
+     ✓ serves procedure with params returning text 0ms
+     ✓ serves procedure with text input/output 0ms
+     ✓ serves procedure with binary input/output 0ms
+     ✓ serves procedure with JSON input/output 0ms
+     ✓ serves query with text response 0ms
+     ✓ serves query with binary response 0ms
+     ✓ serves query with JSON response and custom headers 0ms
+     × rejects query with content-type header 0ms
+       ✓ returns readable streams of bytes 0ms
+       ✓ handles errors on readable streams of bytes 1ms
+       ✓ handles responses with no body 0ms
+       ✓ handles responses with headers but no body 0ms
+       ✓ allows returning custom Response objects 0ms
+       ✓ validates input and output bodies 0ms
+       ✓ rejects missing required fields 0ms
+       ✓ rejects wrong types 0ms
+       × rejects wrong content-type 0ms
+       ✓ supports ArrayBuffers 0ms
+       ✓ supports empty payload 0ms
+       ✓ supports ReadableStream 0ms
+       ✓ requires any parsable Content-Type for blob uploads 0ms
+       × errors on missing Content-Type for JSON payload 1ms
+       ✓ defaults to application/octet-stream for empty Content-Type 0ms
+     ✓ handles subscriptions with cleanup 32ms
+     ✓ returns 405 for non-GET request 9ms
+     ✓ returns 426 for non-WebSocket request 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |@atproto/lex-server| src/lex-server.test.ts > Authentication > fails on bad auth before invalid request payload
+AssertionError: expected 500 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 500
+
+ ❯ src/lex-server.test.ts:340:29
+    338|     const response = await router.fetch(request)
+    339| 
+    340|     expect(response.status).toBe(400)
+       |                             ^
+    341|     const data = await response.json()
+    342|     expect(data.error).toBe('AuthenticationRequired')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  |@atproto/lex-server| src/lex-server.test.ts > Authentication > handles missing auth header
+AssertionError: expected 500 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 500
+
+ ❯ src/lex-server.test.ts:410:29
+    408|     const response = await router.fetch(request)
+    409| 
+    410|     expect(response.status).toBe(400)
+       |                             ^
+    411|     const data = await response.json()
+    412|     expect(data.error).toBe('AuthenticationRequired')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  |@atproto/lex-server| src/lex-server.test.ts > Error Handling > Custom Errors > throws custom error using LexError
+AssertionError: expected 500 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 500
+
+ ❯ src/lex-server.test.ts:466:31
+    464|       const response = await router.fetch(request)
+    465| 
+    466|       expect(response.status).toBe(400)
+       |                               ^
+    467|       const data = await response.json()
+    468|       expect(data.error).toBe('Foo')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  |@atproto/lex-server| src/lex-server.test.ts > Error Handling > Custom Errors > handles falsy values thrown as InternalError
+AssertionError: expected 'InternalServerError' to be 'InternalError' // Object.is equality
+
+Expected: "InternalError"
+Received: "InternalServerError"
+
+ ❯ src/lex-server.test.ts:514:26
+    512|       expect(response.status).toBe(500)
+    513|       const data = await response.json()
+    514|       expect(data.error).toBe('InternalError')
+       |                          ^
+    515|     })
+    516|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  |@atproto/lex-server| src/lex-server.test.ts > Queries > rejects query with content-type header
+AssertionError: expected 500 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 500
+
+ ❯ src/lex-server.test.ts:1020:29
+    1018|     const response = await router.fetch(request)
+    1019| 
+    1020|     expect(response.status).toBe(400)
+       |                             ^
+    1021|     const data = await response.json()
+    1022|     expect(data.error).toBe('InvalidRequest')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  |@atproto/lex-server| src/lex-server.test.ts > Body Handling > Input Validation > rejects wrong content-type
+AssertionError: expected 500 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 500
+
+ ❯ src/lex-server.test.ts:1310:31
+    1308|       const response = await router.fetch(request)
+    1309| 
+    1310|       expect(response.status).toBe(400)
+       |                               ^
+    1311|       const data = await response.json()
+    1312|       expect(data.error).toBe('InvalidRequest')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  |@atproto/lex-server| src/lex-server.test.ts > Body Handling > Edge Cases > errors on missing Content-Type for JSON payload
+AssertionError: expected 500 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 500
+
+ ❯ src/lex-server.test.ts:1449:31
+    1447|       const response = await router.fetch(request)
+    1448| 
+    1449|       expect(response.status).toBe(400)
+       |                               ^
+    1450|       const data = await response.json()
+    1451|       expect(data.error).toBe('InvalidRequest')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 49 passed (56)
+   Start at  23:56:37
+   Duration  578ms (transform 97ms, setup 0ms, import 219ms, tests 223ms, environment 0ms)
+

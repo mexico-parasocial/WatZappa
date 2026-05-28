@@ -1,0 +1,42 @@
+{
+  "lexicon": 1,
+  "id": "com.atproto.temp.fetchLabels",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Fetch labels emitted after a timestamp. Temporary endpoint used by Ozone label sync.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "since": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Return labels with cts greater than this timestamp."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 100
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["labels"],
+          "properties": {
+            "labels": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "com.atproto.label.defs#label"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "lexicon": 1,
+  "id": "com.para.collection.createCollection",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Create a new policy collection.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["name"],
+          "properties": {
+            "name": { "type": "string", "maxLength": 200 },
+            "description": { "type": "string", "maxLength": 2000 },
+            "color": { "type": "string", "maxLength": 7 }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["id"],
+          "properties": {
+            "id": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

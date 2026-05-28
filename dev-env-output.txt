@@ -1,0 +1,65 @@
+mkdir -p ${DEV_ENV_PDS_DATA_DIRECTORY:-${HOME}/.paramx-demo/pds} ${DEV_ENV_PDS_BLOBSTORE_DIRECTORY:-${HOME}/.paramx-demo/blobstore} ${DEV_ENV_PLC_DIRECTORY:-${HOME}/.paramx-demo/plc}
+cd packages/dev-env; \
+	ENV=shared-demo \
+	NODE_ENV=development \
+	DEV_ENV_PDS_DATA_DIRECTORY=${DEV_ENV_PDS_DATA_DIRECTORY:-${HOME}/.paramx-demo/pds} \
+	DEV_ENV_PDS_BLOBSTORE_DIRECTORY=${DEV_ENV_PDS_BLOBSTORE_DIRECTORY:-${HOME}/.paramx-demo/blobstore} \
+	DEV_ENV_PLC_DIRECTORY=${DEV_ENV_PLC_DIRECTORY:-${HOME}/.paramx-demo/plc} \
+	../dev-infra/with-redis-and-db.sh node --enable-source-maps dist/bin.js
+ Container dev-infra-redis-1 Creating 
+ Container dev-infra-db-1 Creating 
+ Container dev-infra-db-1 Created 
+ Container dev-infra-redis-1 Created 
+ Container dev-infra-db-1 Starting 
+ Container dev-infra-redis-1 Starting 
+ Container dev-infra-redis-1 Started 
+ Container dev-infra-db-1 Started 
+ Container dev-infra-db-1 Waiting 
+ Container dev-infra-redis-1 Waiting 
+ Container dev-infra-redis-1 Healthy 
+ Container dev-infra-db-1 Healthy 
+◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+◇ injected env (0) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injected env (0) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+
+██████╗
+██╔═══██╗
+██║██╗██║
+██║██║██║
+╚█║████╔╝
+ ╚╝╚═══╝  protocol
+
+[ created by Bluesky ]
+(node:11053) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+/Users/mlv/Desktop/MASTER/mvp/WhatZatppa/node_modules/.pnpm/@did-plc+lib@0.0.1/node_modules/@did-plc/lib/src/client.ts:160
+    return new PlcClientError(
+           ^
+
+PlcClientError: Request failed with status code 400
+    at Function.fromAxiosError (/Users/mlv/Desktop/MASTER/mvp/WhatZatppa/node_modules/.pnpm/@did-plc+lib@0.0.1/node_modules/@did-plc/lib/src/client.ts:160:12)
+    at Client.sendOperation (/Users/mlv/Desktop/MASTER/mvp/WhatZatppa/node_modules/.pnpm/@did-plc+lib@0.0.1/node_modules/@did-plc/lib/src/client.ts:66:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Client.createDid (/Users/mlv/Desktop/MASTER/mvp/WhatZatppa/node_modules/.pnpm/@did-plc+lib@0.0.1/node_modules/@did-plc/lib/src/client.ts:92:5)
+    at async createDidAndKey (/Users/mlv/Desktop/MASTER/mvp/WhatZatppa/packages/dev-env/src/util.ts:112:15)
+    at async Function.create (/Users/mlv/Desktop/MASTER/mvp/WhatZatppa/packages/dev-env/src/ozone.ts:41:19)
+    at async Function.create (/Users/mlv/Desktop/MASTER/mvp/WhatZatppa/packages/dev-env/src/network.ts:109:19)
+    at async run (/Users/mlv/Desktop/MASTER/mvp/WhatZatppa/packages/dev-env/src/bin.ts:20:19) {
+  status: 400,
+  data: { message: 'Operations not correctly ordered' }
+}
+
+Node.js v22.22.1
+
+ Container dev-infra-db-1 Stopping 
+ Container dev-infra-redis-1 Stopping 
+ Container dev-infra-db-1 Stopped 
+ Container dev-infra-redis-1 Stopped 
+Going to remove dev-infra-redis-1, dev-infra-db-1
+ Container dev-infra-db-1 Removing 
+ Container dev-infra-redis-1 Removing 
+ Container dev-infra-redis-1 Removed 
+ Container dev-infra-db-1 Removed 
+make: *** [run-dev-env-persistent] Error 1

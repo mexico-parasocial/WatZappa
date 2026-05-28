@@ -1,0 +1,45 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.proposal",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["community", "title", "body", "author"],
+        "properties": {
+          "community": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "author": {
+            "type": "string",
+            "format": "did"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["general", "budget", "amendment", "moderation"],
+            "default": "general"
+          },
+          "budgetRequest": {
+            "type": "string",
+            "description": "If type=budget, amount requested"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

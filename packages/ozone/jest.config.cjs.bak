@@ -1,0 +1,22 @@
+const path = require('path')
+
+/** @type {import('jest').Config} */
+module.exports = {
+  displayName: 'Ozone',
+  transform: { '^.+\\.(t|j)s$': '@swc/jest' },
+  transformIgnorePatterns: [
+    `/node_modules/.pnpm/(?!(get-port|lande|toygrad|multiformats|uint8arrays)@)`,
+  ],
+  testTimeout: 60000,
+  setupFiles: ['<rootDir>/../../jest.setup.ts'],
+  moduleNameMapper: {
+    '^(\\.\\.?\\/.+)\\.js$': ['$1.ts', '$1.js'],
+    '^multiformats/cid$': path.resolve(__dirname, '../../node_modules/.pnpm/multiformats@13.4.2/node_modules/multiformats/dist/src/cid.js'),
+    '^multiformats/(.*)$': path.resolve(__dirname, '../../node_modules/.pnpm/multiformats@13.4.2/node_modules/multiformats/dist/src/$1.js'),
+    '^synckit$': path.resolve(__dirname, '../../node_modules/.pnpm/synckit@0.11.12/node_modules/synckit/lib/index.cjs'),
+  },
+  moduleDirectories: ['node_modules', '<rootDir>/../../node_modules'],
+  testEnvironmentOptions: {
+    customExportConditions: ['node', 'require', 'default'],
+  },
+}

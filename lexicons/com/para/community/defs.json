@@ -1,0 +1,278 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.defs",
+  "defs": {
+    "summary": {
+      "type": "object",
+      "required": [
+        "members",
+        "visiblePosters",
+        "policyPosts",
+        "matterPosts",
+        "badgeHolders"
+      ],
+      "properties": {
+        "members": { "type": "integer" },
+        "visiblePosters": { "type": "integer" },
+        "policyPosts": { "type": "integer" },
+        "matterPosts": { "type": "integer" },
+        "badgeHolders": { "type": "integer" }
+      }
+    },
+    "person": {
+      "type": "object",
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string", "format": "handle" },
+        "displayName": {
+          "type": "string",
+          "maxGraphemes": 64,
+          "maxLength": 640
+        },
+        "avatar": { "type": "string", "format": "uri" }
+      }
+    },
+    "moderatorView": {
+      "type": "object",
+      "required": ["role", "badge", "capabilities"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string", "format": "handle" },
+        "displayName": {
+          "type": "string",
+          "maxGraphemes": 64,
+          "maxLength": 640
+        },
+        "avatar": { "type": "string", "format": "uri" },
+        "role": { "type": "string", "maxGraphemes": 64, "maxLength": 64 },
+        "badge": { "type": "string", "maxGraphemes": 64, "maxLength": 64 },
+        "capabilities": {
+          "type": "array",
+          "items": { "type": "string", "maxGraphemes": 64, "maxLength": 128 }
+        },
+        "validFrom": { "type": "string", "format": "datetime" },
+        "validUntil": { "type": "string", "format": "datetime" },
+        "ratifiedBy": { "type": "string", "format": "at-uri" }
+      }
+    },
+    "officialView": {
+      "type": "object",
+      "required": ["office", "mandate"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string", "format": "handle" },
+        "displayName": {
+          "type": "string",
+          "maxGraphemes": 64,
+          "maxLength": 640
+        },
+        "avatar": { "type": "string", "format": "uri" },
+        "office": { "type": "string", "maxGraphemes": 64, "maxLength": 64 },
+        "mandate": { "type": "string", "maxGraphemes": 200, "maxLength": 1000 },
+        "validFrom": { "type": "string", "format": "datetime" },
+        "validUntil": { "type": "string", "format": "datetime" },
+        "ratifiedBy": { "type": "string", "format": "at-uri" }
+      }
+    },
+    "applicant": {
+      "type": "object",
+      "required": ["appliedAt", "status"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string", "format": "handle" },
+        "displayName": {
+          "type": "string",
+          "maxGraphemes": 64,
+          "maxLength": 640
+        },
+        "avatar": { "type": "string", "format": "uri" },
+        "appliedAt": { "type": "string", "format": "datetime" },
+        "status": {
+          "type": "string",
+          "knownValues": ["applied", "approved", "rejected"]
+        },
+        "note": { "type": "string", "maxGraphemes": 200, "maxLength": 1000 }
+      }
+    },
+    "deputyRoleView": {
+      "type": "object",
+      "required": [
+        "key",
+        "tier",
+        "role",
+        "description",
+        "capabilities",
+        "votes",
+        "applicants"
+      ],
+      "properties": {
+        "key": { "type": "string", "maxGraphemes": 128, "maxLength": 128 },
+        "tier": { "type": "string", "maxGraphemes": 32, "maxLength": 32 },
+        "role": { "type": "string", "maxGraphemes": 64, "maxLength": 64 },
+        "description": {
+          "type": "string",
+          "maxGraphemes": 300,
+          "maxLength": 2000
+        },
+        "capabilities": {
+          "type": "array",
+          "items": { "type": "string", "maxGraphemes": 64, "maxLength": 128 }
+        },
+        "activeHolder": { "type": "ref", "ref": "#person" },
+        "activeSince": { "type": "string", "format": "datetime" },
+        "validFrom": { "type": "string", "format": "datetime" },
+        "validUntil": { "type": "string", "format": "datetime" },
+        "ratifiedBy": { "type": "string", "format": "at-uri" },
+        "votes": { "type": "integer" },
+        "applicants": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#applicant" }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "termLengthDays": { "type": "integer" },
+        "reviewCadence": {
+          "type": "string",
+          "maxGraphemes": 128,
+          "maxLength": 256
+        },
+        "escalationPath": {
+          "type": "string",
+          "maxGraphemes": 128,
+          "maxLength": 256
+        },
+        "publicContact": {
+          "type": "string",
+          "maxGraphemes": 128,
+          "maxLength": 256
+        },
+        "lastPublishedAt": { "type": "string", "format": "datetime" },
+        "state": { "type": "string", "maxGraphemes": 64, "maxLength": 128 },
+        "matterFlairIds": {
+          "type": "array",
+          "items": { "type": "string", "maxGraphemes": 128, "maxLength": 128 }
+        },
+        "policyFlairIds": {
+          "type": "array",
+          "items": { "type": "string", "maxGraphemes": 128, "maxLength": 128 }
+        }
+      }
+    },
+    "historyEntry": {
+      "type": "object",
+      "required": ["id", "action", "createdAt", "summary"],
+      "properties": {
+        "id": { "type": "string", "maxGraphemes": 128, "maxLength": 128 },
+        "action": { "type": "string", "maxGraphemes": 128, "maxLength": 128 },
+        "actorDid": { "type": "string", "format": "did" },
+        "actorHandle": { "type": "string", "format": "handle" },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "summary": { "type": "string", "maxGraphemes": 300, "maxLength": 2000 },
+        "ratifiedBy": { "type": "string", "format": "at-uri", "description": "Reference to an approved assembly decision that authorized this change." }
+      }
+    },
+    "sharedContentView": {
+      "type": "object",
+      "required": [
+        "uri",
+        "cid",
+        "subject",
+        "communityUri",
+        "contentType",
+        "sharedBy",
+        "createdAt",
+        "removed"
+      ],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "subject": { "type": "ref", "ref": "com.atproto.repo.strongRef" },
+        "communityUri": { "type": "string", "format": "at-uri" },
+        "sourceCommunityUri": { "type": "string", "format": "at-uri" },
+        "contentType": {
+          "type": "string",
+          "knownValues": [
+            "post",
+            "cabildeo",
+            "collection",
+            "mapInitiative",
+            "external"
+          ]
+        },
+        "sharedBy": { "type": "string", "format": "did" },
+        "sharedByHandle": { "type": "string", "format": "handle" },
+        "note": { "type": "string", "maxGraphemes": 300, "maxLength": 3000 },
+        "visibility": {
+          "type": "string",
+          "knownValues": ["community", "public", "stewards"]
+        },
+        "sourceApp": {
+          "type": "string",
+          "maxGraphemes": 128,
+          "maxLength": 512
+        },
+        "embedContext": { "type": "unknown" },
+        "pinned": { "type": "boolean" },
+        "sortRank": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "removed": { "type": "boolean" },
+        "removedAt": { "type": "string", "format": "datetime" },
+        "removedBy": { "type": "string", "format": "did" },
+        "latestAction": { "type": "ref", "ref": "#sharedContentActionView" },
+        "hydrationState": {
+          "type": "string",
+          "knownValues": ["ready", "unresolved", "deleted"]
+        }
+      }
+    },
+    "sharedContentActionView": {
+      "type": "object",
+      "required": [
+        "uri",
+        "cid",
+        "sharedContent",
+        "communityUri",
+        "action",
+        "createdAt",
+        "createdBy"
+      ],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "sharedContent": { "type": "ref", "ref": "com.atproto.repo.strongRef" },
+        "communityUri": { "type": "string", "format": "at-uri" },
+        "action": {
+          "type": "string",
+          "knownValues": ["remove", "restore", "pin", "unpin"]
+        },
+        "note": { "type": "string", "maxGraphemes": 300, "maxLength": 3000 },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "createdBy": { "type": "string", "format": "did" }
+      }
+    },
+    "communityRelationView": {
+      "type": "object",
+      "required": [
+        "uri",
+        "cid",
+        "parentCommunityUri",
+        "childCommunityUri",
+        "relation",
+        "createdAt",
+        "createdBy"
+      ],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "parentCommunityUri": { "type": "string", "format": "at-uri" },
+        "childCommunityUri": { "type": "string", "format": "at-uri" },
+        "relation": { "type": "string", "knownValues": ["parentChild"] },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "createdBy": { "type": "string", "format": "did" }
+      }
+    }
+  }
+}

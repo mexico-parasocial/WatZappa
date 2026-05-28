@@ -1,0 +1,51 @@
+{
+  "lexicon": 1,
+  "id": "com.para.feed.getTimeline",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get a paginated timeline of Para posts authored by accounts the viewer follows, plus the viewer's own posts.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          },
+          "cursor": { "type": "string" },
+          "party": { "type": "string", "maxLength": 128 },
+          "community": { "type": "string", "maxLength": 128 },
+          "flairTag": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Filter by an exact Para flair tag, e.g. |#Sanidad or ||#TransportePublico."
+          },
+          "postType": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Filter by post type, e.g. meme, proposal, debate."
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["feed"],
+          "properties": {
+            "cursor": { "type": "string" },
+            "feed": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "com.para.feed.getAuthorFeed#postView"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "bsync-service",
+  "private": true,
+  "packageManager": "pnpm@8.15.9",
+  "dependencies": {
+    "@atproto/bsync": "workspace:^",
+    "dd-trace": "^5.103.0"
+  },
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json"
+  }
+}

@@ -1,0 +1,232 @@
+# PARA Bare-Metal Stack
+# Optimized for AMD Ryzen 9 5950X (16c/32t) + 128GB RAM
+# Zero cloud. Zero third parties. Full privacy.
+#
+# Start: docker compose -f docker-compose.local.yaml up -d
+# Scale: docker compose -f docker-compose.local.yaml up -d --scale pds=4 --scale bsky=4
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: para-postgres
+    restart: unless-stopped
+    shm_size: 8gb
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pg}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-para}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/postgres-tuning.conf:/etc/postgresql/postgresql.conf:ro
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-pg}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '8.0'
+          memory: 64G
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+
+  redis:
+    image: redis:7-alpine
+    container_name: para-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --maxmemory 16gb
+      --maxmemory-policy allkeys-lru
+      --save 300 1
+      --appendonly yes
+      --appendfsync everysec
+    volumes:
+      - redis_data:/data
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD-SHELL', '[ "$$(redis-cli ping)" = "PONG" ]']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 16G
+
+  pds:
+    build:
+      context: .
+      dockerfile: ./services/pds/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      PDS_PORT: 2583
+      PDS_DB_POSTGRES_URL: postgres://${POSTGRES_USER:-pg}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-para}
+      PDS_BLOBSTORE_DISK_LOCATION: /data/blobs
+      PDS_RATE_LIMITS_ENABLED: 'true'
+      PDS_DISABLE_SSRF_PROTECTION: '0'
+    volumes:
+      - pds_data:/data/blobs
+    deploy:
+      replicas: ${PDS_REPLICAS:-4}
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+    healthcheck:
+      test:
+        ['CMD', 'wget', '-q', '--spider', 'http://localhost:2583/xrpc/_health']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  bsky:
+    build:
+      context: .
+      dockerfile: ./services/bsky/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      pds:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      PORT: 2584
+      DB_POSTGRES_URL: postgres://${POSTGRES_USER:-pg}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-para}
+      REDIS_URL: redis://redis:6379
+      DATAPLANE_URLS: http://dataplane:2585
+      BSYNC_URL: http://bsync:2586
+    deploy:
+      replicas: ${BSKY_REPLICAS:-4}
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+    healthcheck:
+      test:
+        ['CMD', 'wget', '-q', '--spider', 'http://localhost:2584/xrpc/_health']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  dataplane:
+    build:
+      context: .
+      dockerfile: ./services/bsky/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      PORT: 2585
+      DB_POSTGRES_URL: postgres://${POSTGRES_USER:-pg}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-para}
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+
+  bsync:
+    build:
+      context: .
+      dockerfile: ./services/bsync/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      PORT: 2586
+      BSYNC_DB_POSTGRES_URL: postgres://${POSTGRES_USER:-pg}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-para}
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+
+  ozone:
+    build:
+      context: .
+      dockerfile: ./services/ozone/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      OZONE_DB_POSTGRES_URL: postgres://${POSTGRES_USER:-pg}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-para}
+      OZONE_MODERATION_PUSH_URL: http://bsky:2584
+    ports:
+      - '3000:3000'
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+
+  nginx:
+    image: nginx:alpine
+    container_name: para-nginx
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./services/nginx/nginx.local.conf:/etc/nginx/nginx.conf:ro
+      - ./services/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - pds
+      - bsky
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+
+  # Self-hosted analytics — zero third parties
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    container_name: para-analytics
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-pg}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-para}
+      DATABASE_TYPE: postgresql
+      HASH_SALT: ${UMAMI_HASH_SALT:-$(openssl rand -hex 32)}
+    ports:
+      - '3001:3000'
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+
+volumes:
+  postgres_data:
+  redis_data:
+  pds_data:

@@ -1,0 +1,27 @@
+const path = require('path')
+const uint8arraysDir = path.dirname(require.resolve('uint8arrays'))
+
+/** @type {import('jest').Config} */
+module.exports = {
+  displayName: 'Bsync',
+  transform: { '^.+\\.[cm]?[tj]sx?$': '@swc/jest' },
+  setupFiles: ['<rootDir>/../../jest.setup.ts'],
+  moduleNameMapper: {
+    '^(\\.\\.?\\/.+)\\.js$': ['$1.ts', '$1.js'],
+    '^#alloc$': path.join(uint8arraysDir, 'alloc.node.js'),
+    '^#compare$': path.join(uint8arraysDir, 'compare.node.js'),
+    '^#concat$': path.join(uint8arraysDir, 'concat.node.js'),
+    '^#from-string$': path.join(uint8arraysDir, 'from-string.node.js'),
+    '^#to-string$': path.join(uint8arraysDir, 'to-string.node.js'),
+    '^#util/as-uint8array$': path.join(uint8arraysDir, 'util', 'as-uint8array.node.js'),
+    '^multiformats/cid$': path.resolve(__dirname, '../../node_modules/.pnpm/multiformats@13.4.2/node_modules/multiformats/dist/src/cid.js'),
+    '^multiformats/(.*)$': path.resolve(__dirname, '../../node_modules/.pnpm/multiformats@13.4.2/node_modules/multiformats/dist/src/$1.js'),
+    '^synckit$': path.resolve(__dirname, '../../node_modules/.pnpm/synckit@0.11.12/node_modules/synckit/lib/index.cjs'),
+  },
+  transformIgnorePatterns: [
+    `/node_modules/.pnpm/(?!(get-port|lande|toygrad|multiformats|uint8arrays|unicode-segmenter|cborg|ws|@noble\\+curves|@noble\\+hashes|@connectrpc\\+[^@]+|@bufbuild\\+[^@]+|kysely)@)`,
+  ],
+  testEnvironmentOptions: {
+    customExportConditions: ['node', 'require', 'default'],
+  },
+}

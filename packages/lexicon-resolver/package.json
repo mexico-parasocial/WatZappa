@@ -1,0 +1,43 @@
+{
+  "name": "@atproto/lexicon-resolver",
+  "version": "0.4.1",
+  "type": "module",
+  "license": "MIT",
+  "description": "ATProto Lexicon resolution",
+  "keywords": [
+    "atproto",
+    "lexicon"
+  ],
+  "scripts": {
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "build": "tsc --build tsconfig.build.json",
+    "prebuild": "pnpm run codegen",
+    "codegen": "lex build --clear --indexFile --lexicons ../../lexicons --include com.atproto.sync.getRecord --include com.atproto.lexicon.schema"
+  },
+  "homepage": "https://atproto.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bluesky-social/atproto",
+    "directory": "packages/lexicon-resolver"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@atproto-labs/fetch-node": "workspace:^",
+    "@atproto/identity": "workspace:^",
+    "@atproto/lex": "workspace:^",
+    "@atproto/lex-document": "workspace:^",
+    "@atproto/repo": "workspace:^",
+    "@atproto/syntax": "workspace:^"
+  },
+  "devDependencies": {
+    "@atproto/lex-cbor": "workspace:^",
+    "jest": "^30.0.0",
+    "typescript": "^6.0.3",
+    "@jest/globals": "^30.0.0"
+  }
+}

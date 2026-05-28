@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig/node.json",
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "rootDir": "./src",
+    "outDir": "./dist"
+  },
+  "include": ["./src",
+    "../../tsconfig/cjs-default-exports.d.ts"
+  ]
+}

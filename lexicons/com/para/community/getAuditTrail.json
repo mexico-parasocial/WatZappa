@@ -1,0 +1,161 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.getAuditTrail",
+  "defs": {
+    "main": {
+      "type": "query",
+      "parameters": {
+        "type": "params",
+        "required": ["proposal"],
+        "properties": {
+          "proposal": { "type": "string", "format": "at-uri" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "proposal",
+            "votes",
+            "intensities",
+            "delegations",
+            "tallies",
+            "metrics"
+          ],
+          "properties": {
+            "proposal": { "type": "string", "format": "at-uri" },
+            "votes": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "#voteEntry" }
+            },
+            "intensities": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "#intensityEntry" }
+            },
+            "delegations": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "#delegationEntry" }
+            },
+            "tallies": {
+              "type": "ref",
+              "ref": "#tallyBreakdown"
+            },
+            "metrics": {
+              "type": "ref",
+              "ref": "#concentrationMetrics"
+            }
+          }
+        }
+      }
+    },
+    "voteEntry": {
+      "type": "object",
+      "required": ["voter", "signal", "createdAt"],
+      "properties": {
+        "voter": { "type": "string", "format": "did" },
+        "signal": { "type": "integer", "minimum": -3, "maximum": 3 },
+        "createdAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "intensityEntry": {
+      "type": "object",
+      "required": ["voter", "signal", "units", "creditsSpent", "createdAt"],
+      "properties": {
+        "voter": { "type": "string", "format": "did" },
+        "signal": { "type": "integer", "minimum": -3, "maximum": 3 },
+        "units": { "type": "integer", "minimum": 1, "maximum": 16 },
+        "creditsSpent": { "type": "integer" },
+        "delegatedFrom": {
+          "type": "array",
+          "items": { "type": "string", "format": "did" }
+        },
+        "delegationDepth": { "type": "integer" },
+        "effectiveWeight": { "type": "string" },
+        "createdAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "delegationEntry": {
+      "type": "object",
+      "required": ["delegate", "delegator", "scopeMode", "createdAt"],
+      "properties": {
+        "delegate": { "type": "string", "format": "did" },
+        "delegator": { "type": "string", "format": "did" },
+        "delegateRole": { "type": "string" },
+        "scopeMode": { "type": "string" },
+        "scopeCommunity": { "type": "string", "format": "at-uri" },
+        "scopeProposal": { "type": "string", "format": "at-uri" },
+        "createdAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "tallyBreakdown": {
+      "type": "object",
+      "required": ["flat", "sqrtN", "correlation"],
+      "properties": {
+        "flat": { "type": "ref", "ref": "#tallySteps" },
+        "sqrtN": { "type": "ref", "ref": "#tallySteps" },
+        "correlation": { "type": "ref", "ref": "#tallySteps" }
+      }
+    },
+    "tallySteps": {
+      "type": "object",
+      "required": ["steps", "result"],
+      "properties": {
+        "steps": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#step" }
+        },
+        "result": { "type": "ref", "ref": "#tallyResult" }
+      }
+    },
+    "step": {
+      "type": "object",
+      "required": ["description", "value"],
+      "properties": {
+        "description": { "type": "string" },
+        "value": { "type": "string" }
+      }
+    },
+    "tallyResult": {
+      "type": "object",
+      "required": ["voteCount", "signalSum", "signalAverage", "quorumMet"],
+      "properties": {
+        "voteCount": { "type": "integer" },
+        "signalSum": { "type": "string" },
+        "signalAverage": { "type": "string" },
+        "quorumMet": { "type": "boolean" },
+        "quorumTarget": { "type": "integer" },
+        "effectiveWeightSum": { "type": "string" }
+      }
+    },
+    "concentrationMetrics": {
+      "type": "object",
+      "required": [
+        "maxWeightRatio",
+        "effectiveParticipants",
+        "revocationRate",
+        "directVotePct",
+        "shadowMode"
+      ],
+      "properties": {
+        "maxWeightRatio": {
+          "type": "string",
+          "description": "Max effective weight / total effective weight (post-√n)"
+        },
+        "effectiveParticipants": {
+          "type": "string",
+          "description": "1 / HHI over effective weights"
+        },
+        "revocationRate": {
+          "type": "string",
+          "description": "Percentage of delegations revoked"
+        },
+        "directVotePct": {
+          "type": "string",
+          "description": "Percentage of votes cast directly"
+        },
+        "shadowMode": { "type": "boolean" }
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "extends": ["../../../tsconfig/isomorphic.json"],
+  "include": ["./src",
+    "../../../tsconfig/cjs-default-exports.d.ts"
+  ],
+  "exclude": ["**/*.test.ts"],
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "importHelpers": true,
+    "rootDir": "./src",
+    "outDir": "./dist"
+  }
+}

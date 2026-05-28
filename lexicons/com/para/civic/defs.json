@@ -1,0 +1,313 @@
+{
+  "lexicon": 1,
+  "id": "com.para.civic.defs",
+  "defs": {
+    "cabildeoOption": {
+      "type": "object",
+      "required": ["label"],
+      "properties": {
+        "label": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 500 },
+        "isConsensus": { "type": "boolean" }
+      }
+    },
+    "optionSummary": {
+      "type": "object",
+      "required": ["optionIndex", "label", "votes", "positions"],
+      "properties": {
+        "optionIndex": { "type": "integer", "minimum": 0 },
+        "label": { "type": "string", "maxLength": 100 },
+        "votes": { "type": "integer", "minimum": 0 },
+        "positions": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "positionCounts": {
+      "type": "object",
+      "required": ["total", "for", "against", "amendment", "byOption"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "for": { "type": "integer", "minimum": 0 },
+        "against": { "type": "integer", "minimum": 0 },
+        "amendment": { "type": "integer", "minimum": 0 },
+        "byOption": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#optionSummary" }
+        }
+      }
+    },
+    "voteTotals": {
+      "type": "object",
+      "required": ["total", "direct", "delegated"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "direct": { "type": "integer", "minimum": 0 },
+        "delegated": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "partyVoteSummary": {
+      "type": "object",
+      "required": ["party", "total", "byOption"],
+      "properties": {
+        "party": { "type": "string", "maxLength": 100 },
+        "total": { "type": "integer", "minimum": 0 },
+        "byOption": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "outcomeSummary": {
+      "type": "object",
+      "required": [
+        "totalParticipants",
+        "effectiveTotalPower",
+        "tie",
+        "breakdown"
+      ],
+      "properties": {
+        "winningOption": { "type": "integer", "minimum": 0 },
+        "totalParticipants": { "type": "integer", "minimum": 0 },
+        "effectiveTotalPower": { "type": "integer", "minimum": 0 },
+        "tie": { "type": "boolean" },
+        "breakdown": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#optionSummary" }
+        }
+      }
+    },
+    "viewerContext": {
+      "type": "object",
+      "properties": {
+        "currentVoteOption": { "type": "integer", "minimum": 0 },
+        "currentVoteIsDirect": { "type": "boolean" },
+        "currentVoteCreatedAt": { "type": "string", "format": "datetime" },
+        "activeDelegation": { "type": "string", "format": "did" },
+        "delegateHasVoted": { "type": "boolean" },
+        "delegatedVoteOption": { "type": "integer", "minimum": 0 },
+        "delegatedVotedAt": { "type": "string", "format": "datetime" },
+        "gracePeriodEndsAt": { "type": "string", "format": "datetime" },
+        "delegateVoteDismissed": { "type": "boolean" }
+      }
+    },
+    "liveSessionView": {
+      "type": "object",
+      "required": [
+        "isLive",
+        "hostDid",
+        "activeParticipantCount",
+        "startedAt",
+        "participantPreviewDids"
+      ],
+      "properties": {
+        "isLive": { "type": "boolean" },
+        "hostDid": { "type": "string", "format": "did" },
+        "activeParticipantCount": { "type": "integer", "minimum": 0 },
+        "startedAt": { "type": "string", "format": "datetime" },
+        "participantPreviewDids": {
+          "type": "array",
+          "maxLength": 5,
+          "items": { "type": "string", "format": "did" }
+        }
+      }
+    },
+    "cabildeoLive": {
+      "type": "object",
+      "required": ["cabildeoUri", "community", "phase", "expiresAt"],
+      "properties": {
+        "cabildeoUri": { "type": "string", "format": "at-uri" },
+        "community": { "type": "string", "maxLength": 100 },
+        "phase": {
+          "type": "string",
+          "knownValues": ["draft", "open", "deliberating", "voting", "resolved"]
+        },
+        "expiresAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "cabildeoView": {
+      "type": "object",
+      "required": [
+        "uri",
+        "cid",
+        "creator",
+        "indexedAt",
+        "title",
+        "description",
+        "community",
+        "options",
+        "phase",
+        "createdAt",
+        "optionSummary",
+        "positionCounts",
+        "voteTotals"
+      ],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "cid-link" },
+        "creator": { "type": "string", "format": "did" },
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "title": { "type": "string", "maxLength": 300 },
+        "description": { "type": "string", "maxLength": 30000 },
+        "community": { "type": "string", "maxLength": 100 },
+        "communities": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 100 },
+          "maxLength": 10
+        },
+        "flairs": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 100 },
+          "maxLength": 10
+        },
+        "region": { "type": "string", "maxLength": 100 },
+        "geoRestricted": { "type": "boolean" },
+        "geo": { "type": "ref", "ref": "#geoPoint" },
+        "options": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#cabildeoOption" },
+          "maxLength": 10
+        },
+        "minQuorum": { "type": "integer", "minimum": 1 },
+        "voteVisibility": {
+          "type": "string",
+          "knownValues": ["public", "party_only", "anonymous"]
+        },
+        "phase": {
+          "type": "string",
+          "knownValues": ["draft", "open", "deliberating", "voting", "resolved"]
+        },
+        "phaseDeadline": { "type": "string", "format": "datetime" },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "optionSummary": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#optionSummary" }
+        },
+        "positionCounts": { "type": "ref", "ref": "#positionCounts" },
+        "voteTotals": { "type": "ref", "ref": "#voteTotals" },
+        "partyVoteSummary": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#partyVoteSummary" }
+        },
+        "outcomeSummary": { "type": "ref", "ref": "#outcomeSummary" },
+        "viewerContext": { "type": "ref", "ref": "#viewerContext" },
+        "liveSession": { "type": "ref", "ref": "#liveSessionView" }
+      }
+    },
+    "positionView": {
+      "type": "object",
+      "required": [
+        "uri",
+        "cid",
+        "creator",
+        "indexedAt",
+        "cabildeo",
+        "stance",
+        "text",
+        "createdAt"
+      ],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "cid-link" },
+        "creator": { "type": "string", "format": "did" },
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "cabildeo": { "type": "string", "format": "at-uri" },
+        "stance": {
+          "type": "string",
+          "knownValues": ["for", "against", "amendment"]
+        },
+        "optionIndex": { "type": "integer", "minimum": 0 },
+        "text": { "type": "string", "maxLength": 3000 },
+        "compassQuadrant": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "policySignalBucket": {
+      "type": "object",
+      "required": ["signal", "count"],
+      "properties": {
+        "signal": { "type": "integer", "minimum": -3, "maximum": 3 },
+        "count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "policyTally": {
+      "type": "object",
+      "required": [
+        "subject",
+        "subjectType",
+        "community",
+        "voteCount",
+        "directVoteCount",
+        "delegatedVoteCount",
+        "signalSum",
+        "signalAverage",
+        "eligibleVoterCount",
+        "quorumTarget",
+        "quorumMet",
+        "official",
+        "certified",
+        "outcome",
+        "state",
+        "breakdown",
+        "computedAt"
+      ],
+      "properties": {
+        "subject": { "type": "string", "format": "at-uri" },
+        "subjectType": { "type": "string", "knownValues": ["policy"] },
+        "community": { "type": "string", "maxLength": 100 },
+        "voteCount": { "type": "integer", "minimum": 0 },
+        "directVoteCount": { "type": "integer", "minimum": 0 },
+        "delegatedVoteCount": { "type": "integer", "minimum": 0 },
+        "signalSum": { "type": "integer" },
+        "signalAverage": { "type": "string", "maxLength": 32 },
+        "eligibleVoterCount": { "type": "integer", "minimum": 0 },
+        "quorumTarget": { "type": "integer", "minimum": 1 },
+        "quorumMet": { "type": "boolean" },
+        "official": { "type": "boolean" },
+        "certified": { "type": "boolean" },
+        "outcome": {
+          "type": "string",
+          "knownValues": [
+            "insufficient_quorum",
+            "contested",
+            "passed",
+            "strong_passed",
+            "failed"
+          ]
+        },
+        "state": {
+          "type": "string",
+          "knownValues": [
+            "draft",
+            "deliberation",
+            "voting",
+            "passed",
+            "failed",
+            "official"
+          ]
+        },
+        "breakdown": {
+          "type": "array",
+          "maxLength": 7,
+          "items": { "type": "ref", "ref": "#policySignalBucket" }
+        },
+        "computedAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "geoPoint": {
+      "type": "object",
+      "description": "Geographic coordinates in E7 (degrees × 10⁷) for map placement.",
+      "required": ["latE7", "lngE7"],
+      "properties": {
+        "latE7": {
+          "type": "integer",
+          "minimum": -900000000,
+          "maximum": 900000000
+        },
+        "lngE7": {
+          "type": "integer",
+          "minimum": -1800000000,
+          "maximum": 1800000000
+        }
+      }
+    }
+  }
+}

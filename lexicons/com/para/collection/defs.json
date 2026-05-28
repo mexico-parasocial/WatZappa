@@ -1,0 +1,90 @@
+{
+  "lexicon": 1,
+  "id": "com.para.collection.defs",
+  "defs": {
+    "collection": {
+      "type": "object",
+      "required": ["id", "name", "items"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "color": { "type": "string", "maxLength": 7 },
+        "items": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#civicTreeItem" }
+        },
+        "relations": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#civicTreeRelation" }
+        }
+      }
+    },
+    "civicTreeItem": {
+      "type": "object",
+      "required": ["addedAt"],
+      "properties": {
+        "itemId": { "type": "string", "maxLength": 200 },
+        "kind": {
+          "type": "string",
+          "knownValues": ["policy", "post", "link", "note", "evidence"]
+        },
+        "title": { "type": "string", "maxLength": 500 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "url": { "type": "string", "format": "uri", "maxLength": 2000 },
+        "sourceUri": { "type": "string", "format": "at-uri" },
+        "sourceLabel": { "type": "string", "maxLength": 500 },
+        "policyUri": { "type": "string", "format": "at-uri" },
+        "policyCid": { "type": "string", "format": "cid" },
+        "policyTitle": { "type": "string", "maxLength": 500 },
+        "policyCategory": { "type": "string", "maxLength": 200 },
+        "policyColor": { "type": "string", "maxLength": 7 },
+        "note": { "type": "string", "maxLength": 1000 },
+        "addedAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "civicTreeRelation": {
+      "type": "object",
+      "required": ["id", "fromItemId", "toItemId", "kind", "createdAt"],
+      "properties": {
+        "id": { "type": "string", "maxLength": 200 },
+        "fromItemId": { "type": "string", "maxLength": 200 },
+        "toItemId": { "type": "string", "maxLength": 200 },
+        "kind": {
+          "type": "string",
+          "knownValues": [
+            "supports",
+            "opposes",
+            "evidence_for",
+            "context_for",
+            "duplicates",
+            "depends_on",
+            "related_to"
+          ]
+        },
+        "note": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "collectionView": {
+      "type": "object",
+      "required": ["id", "name", "items", "createdAt", "updatedAt"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "color": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#civicTreeItem" }
+        },
+        "relations": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#civicTreeRelation" }
+        },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "updatedAt": { "type": "string", "format": "datetime" }
+      }
+    }
+  }
+}

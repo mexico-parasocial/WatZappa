@@ -1,0 +1,55 @@
+{
+  "lexicon": 1,
+  "id": "com.para.civic.amendment",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "An inline amendment proposing a specific text replacement in a Cabildeo.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "subject",
+          "start",
+          "end",
+          "originalText",
+          "replacementText",
+          "createdAt"
+        ],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The AT-URI of the Cabildeo being amended."
+          },
+          "start": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Start index in the original text."
+          },
+          "end": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "End index in the original text."
+          },
+          "originalText": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "The exact substring being replaced."
+          },
+          "replacementText": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "The proposed replacement text."
+          },
+          "justification": {
+            "type": "string",
+            "maxLength": 5000,
+            "description": "Rationale for the amendment."
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

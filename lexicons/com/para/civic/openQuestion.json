@@ -1,0 +1,38 @@
+{
+  "lexicon": 1,
+  "id": "com.para.civic.openQuestion",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "An open question post — a community question designed for structured replies and voting.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["text", "createdAt"],
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 3000,
+            "maxGraphemes": 300,
+            "description": "The question text."
+          },
+          "community": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Optional community this question is posted to."
+          },
+          "tags": {
+            "type": "array",
+            "maxLength": 8,
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "maxGraphemes": 64
+            }
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "default_server_config": {
+    "m.homeserver": {
+      "base_url": "https://chat.para.social",
+      "server_name": "matrix.para.social"
+    }
+  },
+  "brand": "PARA Chat",
+  "room_directory": {
+    "servers": ["matrix.para.social"]
+  },
+  "disable_custom_urls": true,
+  "disable_guests": true,
+  "disable_login_language_selector": false,
+  "disable_3pid_login": true,
+  "features": {
+    "feature_threadenabled": true,
+    "feature_roomlist_video_layout": false
+  },
+  "setting_defaults": {
+    "breadcrumbs": true,
+    "show_labs_settings": false
+  },
+  "integrations_ui_url": "",
+  "integrations_rest_url": "",
+  "integrations_widgets_urls": [],
+  "embedded_pages": {
+    "home_url": ""
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.getTallySimulation",
+  "defs": {
+    "main": {
+      "type": "query",
+      "parameters": {
+        "type": "params",
+        "required": ["proposal"],
+        "properties": {
+          "proposal": { "type": "string", "format": "at-uri" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["flat", "sqrtN", "correlation", "metrics"],
+          "properties": {
+            "flat": { "type": "ref", "ref": "#tallyResult" },
+            "sqrtN": { "type": "ref", "ref": "#tallyResult" },
+            "correlation": { "type": "ref", "ref": "#tallyResult" },
+            "metrics": { "type": "ref", "ref": "#concentrationMetrics" }
+          }
+        }
+      }
+    },
+    "tallyResult": {
+      "type": "object",
+      "required": ["voteCount", "signalSum", "signalAverage", "quorumMet"],
+      "properties": {
+        "voteCount": { "type": "integer" },
+        "signalSum": { "type": "string" },
+        "signalAverage": { "type": "string" },
+        "effectiveWeightSum": { "type": "string" },
+        "quorumMet": { "type": "boolean" },
+        "quorumTarget": { "type": "integer" },
+
+        "breakdown": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#breakdownBucket" }
+        }
+      }
+    },
+    "breakdownBucket": {
+      "type": "object",
+      "required": ["signal", "count"],
+      "properties": {
+        "signal": { "type": "integer" },
+        "count": { "type": "integer" }
+      }
+    },
+    "concentrationMetrics": {
+      "type": "object",
+      "required": [
+        "maxWeightRatio",
+        "effectiveParticipants",
+        "revocationRate",
+        "directVotePct",
+        "shadowMode"
+      ],
+      "properties": {
+        "maxWeightRatio": {
+          "type": "string",
+          "description": "Max effective weight / total effective weight (post-√n). 0 = equal, 1 = all power in one block."
+        },
+        "effectiveParticipants": {
+          "type": "string",
+          "description": "1 / HHI over effective weights. Approximate number of equally-weighted voters."
+        },
+        "revocationRate": {
+          "type": "string",
+          "description": "Percentage of delegations that were revoked."
+        },
+        "directVotePct": {
+          "type": "string",
+          "description": "Percentage of votes cast directly (not delegated)"
+        },
+        "shadowMode": {
+          "type": "boolean",
+          "description": "Whether these tallies are advisory only"
+        }
+      }
+    }
+  }
+}

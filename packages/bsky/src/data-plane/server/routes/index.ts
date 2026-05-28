@@ -1,0 +1,90 @@
+import { ConnectRouter } from '@connectrpc/connect'
+import { IdResolver } from '@atproto/identity'
+import { Service } from '../../../proto/bsky_connect.js'
+import { Database } from '../db/index.js'
+import activitySubscription from './activity-subscription.js'
+import blocks from './blocks.js'
+import bookmarks from './bookmarks.js'
+import cabildeo from './cabildeo.js'
+import collections from './collections.js'
+import community from './community.js'
+import deliberation from './deliberation.js'
+import discourse from './discourse.js'
+import drafts from './drafts.js'
+import feedGens from './feed-gens.js'
+import feeds from './feeds.js'
+import follows from './follows.js'
+import highlight from './highlight.js'
+import identity from './identity.js'
+import interactions from './interactions.js'
+import labels from './labels.js'
+import likes from './likes.js'
+import lists from './lists.js'
+import moderation from './moderation.js'
+import mutes from './mutes.js'
+import notifs from './notifs.js'
+import postSubscription from './post-subscription.js'
+import profile from './profile.js'
+import quotes from './quotes.js'
+import qvlAudit from './qvl-audit.js'
+import qvlSimulation from './qvl-simulation.js'
+import qvlVoting from './qvl-voting.js'
+import raq from './raq.js'
+import records from './records.js'
+import relationships from './relationships.js'
+import reposts from './reposts.js'
+import search from './search.js'
+import sitemap from './sitemap.js'
+import siteStandard from './site-standard.js'
+import starterPacks from './starter-packs.js'
+import suggestions from './suggestions.js'
+import sync from './sync.js'
+import threads from './threads.js'
+
+export default (db: Database, idResolver: IdResolver) =>
+  (router: ConnectRouter) => {
+    router.service(Service, {
+      ...activitySubscription(db),
+      ...blocks(db),
+      ...bookmarks(db),
+      ...cabildeo(db),
+      ...collections(db),
+      ...community(db),
+      ...deliberation(db),
+      ...discourse(db),
+      ...qvlAudit(db),
+      ...qvlSimulation(db),
+      ...qvlVoting(db),
+      ...raq(db),
+      ...drafts(db),
+      ...feedGens(db),
+      ...feeds(db),
+      ...follows(db),
+      ...identity(db, idResolver),
+      ...interactions(db),
+      ...labels(db),
+      ...highlight(db),
+      ...likes(db),
+      ...lists(db),
+      ...moderation(db),
+      ...mutes(db),
+      ...notifs(db),
+      ...postSubscription(db),
+      ...profile(db),
+      ...quotes(db),
+      ...records(db),
+      ...relationships(db),
+      ...reposts(db),
+      ...search(db),
+      ...sitemap(),
+      ...siteStandard(db),
+      ...suggestions(db),
+      ...sync(db),
+      ...threads(db),
+      ...starterPacks(db),
+
+      async ping() {
+        return {}
+      },
+    })
+  }

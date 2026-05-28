@@ -1,0 +1,57 @@
+{
+  "lexicon": 1,
+  "id": "com.para.highlight.listHighlights",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "List indexed public highlight annotations with optional filters.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "community": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "state": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "subject": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "creator": {
+            "type": "string",
+            "format": "did"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 30
+          },
+          "cursor": {
+            "type": "string"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["highlights"],
+          "properties": {
+            "cursor": { "type": "string" },
+            "highlights": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "com.para.highlight.defs#highlightView"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

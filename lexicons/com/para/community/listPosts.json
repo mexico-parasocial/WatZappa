@@ -1,0 +1,48 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.listPosts",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get a paginated feed of Para posts for a specific community.",
+      "parameters": {
+        "type": "params",
+        "required": ["community"],
+        "properties": {
+          "community": {
+            "type": "string",
+            "description": "Community identifier (slug or normalized name)."
+          },
+          "postType": {
+            "type": "string",
+            "description": "Filter by post type (e.g. policy, matter, meme)."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          },
+          "cursor": { "type": "string" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["feed"],
+          "properties": {
+            "cursor": { "type": "string" },
+            "feed": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "com.para.feed.getAuthorFeed#postView"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

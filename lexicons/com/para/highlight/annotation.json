@@ -1,0 +1,73 @@
+{
+  "lexicon": 1,
+  "id": "com.para.highlight.annotation",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A public or private highlight annotation over a post or record.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "subjectUri",
+          "text",
+          "start",
+          "end",
+          "color",
+          "visibility",
+          "createdAt"
+        ],
+        "properties": {
+          "subjectUri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "subjectCid": {
+            "type": "string",
+            "description": "Optional CID of the highlighted record at creation time."
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "start": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "end": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "color": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "tag": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "community": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "state": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "party": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "visibility": {
+            "type": "string",
+            "knownValues": ["public", "private"]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "lexicon": 1,
+  "id": "com.para.actor.defs",
+  "defs": {
+    "profileStats": {
+      "type": "object",
+      "description": "Aggregated Para profile statistics.",
+      "required": [
+        "influence",
+        "votesReceivedAllTime",
+        "votesCastAllTime",
+        "contributions",
+        "activeIn",
+        "computedAt"
+      ],
+      "properties": {
+        "influence": {
+          "type": "integer",
+          "description": "All-time influence score (Para equivalent of cumulative karma)."
+        },
+        "votesReceivedAllTime": {
+          "type": "integer",
+          "description": "Total support received by this actor's Para posts across all time."
+        },
+        "votesCastAllTime": {
+          "type": "integer",
+          "description": "Total votes/interactions cast by this actor across all time."
+        },
+        "contributions": {
+          "type": "ref",
+          "ref": "#contributions"
+        },
+        "activeIn": {
+          "type": "array",
+          "description": "Top communities where this actor contributes.",
+          "items": {
+            "type": "string",
+            "maxLength": 64,
+            "maxGraphemes": 64
+          }
+        },
+        "computedAt": {
+          "type": "string",
+          "format": "datetime",
+          "description": "Timestamp of the last stats computation."
+        }
+      }
+    },
+    "contributions": {
+      "type": "object",
+      "description": "All-time contribution counters.",
+      "required": ["policies", "matters", "comments"],
+      "properties": {
+        "policies": { "type": "integer" },
+        "matters": { "type": "integer" },
+        "comments": { "type": "integer" }
+      }
+    },
+    "statusView": {
+      "type": "object",
+      "description": "Resolved Para account status view.",
+      "required": ["status", "createdAt"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "maxLength": 300,
+          "maxGraphemes": 300
+        },
+        "party": {
+          "type": "string",
+          "maxLength": 64,
+          "maxGraphemes": 64
+        },
+        "community": {
+          "type": "string",
+          "maxLength": 64,
+          "maxGraphemes": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    }
+  }
+}

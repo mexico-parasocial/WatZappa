@@ -1,0 +1,45 @@
+{
+  "lexicon": 1,
+  "id": "com.para.official.action",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Public official action emitted by a civic entity with private controller auditability.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "entity",
+          "actionType",
+          "subjectUri",
+          "controllerHash",
+          "controllerVisibility",
+          "summary",
+          "createdAt"
+        ],
+        "properties": {
+          "entity": { "type": "string", "maxLength": 500 },
+          "entityName": { "type": "string", "maxLength": 300 },
+          "actionType": {
+            "type": "string",
+            "knownValues": [
+              "pajareo.response",
+              "post.write",
+              "cabildeo.signature"
+            ]
+          },
+          "subjectUri": { "type": "string", "maxLength": 1000 },
+          "recordUri": { "type": "string", "format": "at-uri" },
+          "controllerHash": { "type": "string", "maxLength": 128 },
+          "controllerVisibility": {
+            "type": "string",
+            "knownValues": ["entity_default", "revealed"]
+          },
+          "revealedControllerDid": { "type": "string", "format": "did" },
+          "summary": { "type": "string", "maxLength": 3000 },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

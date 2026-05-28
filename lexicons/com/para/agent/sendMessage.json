@@ -1,0 +1,43 @@
+{
+  "lexicon": 1,
+  "id": "com.para.agent.sendMessage",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Send a message to an AI agent and receive a response. Requires auth.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["agentId", "text"],
+          "properties": {
+            "agentId": {
+              "type": "string",
+              "description": "Identifier of the agent to message."
+            },
+            "text": {
+              "type": "string",
+              "maxLength": 10000,
+              "maxGraphemes": 1000,
+              "description": "The message text to send."
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["message"],
+          "properties": {
+            "message": {
+              "type": "ref",
+              "ref": "com.para.agent.defs#messageView",
+              "description": "The agent's response message."
+            }
+          }
+        }
+      }
+    }
+  }
+}

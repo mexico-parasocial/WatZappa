@@ -1,0 +1,26 @@
+{
+  "lexicon": 1,
+  "id": "com.para.civic.position",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "User's structured debate stance on a Cabildeo.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["cabildeo", "stance", "text", "createdAt"],
+        "properties": {
+          "cabildeo": { "type": "string", "format": "at-uri" },
+          "stance": {
+            "type": "string",
+            "knownValues": ["for", "against", "amendment"]
+          },
+          "optionIndex": { "type": "integer", "minimum": 0 },
+          "text": { "type": "string", "maxLength": 3000 },
+          "compassQuadrant": { "type": "string", "maxLength": 100 },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

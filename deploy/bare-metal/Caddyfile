@@ -1,0 +1,40 @@
+# Copy to /etc/caddy/Caddyfile and replace the example hostnames.
+#
+# Caddy terminates TLS on :80/:443 and proxies only to private localhost
+# service ports. Keep PDS/AppView bound to localhost on the host.
+#
+# For Matrix homeserver config, see deploy/matrix/Caddyfile.matrix
+
+pds.example.com {
+	reverse_proxy 127.0.0.1:2583
+}
+
+appview.example.com {
+	reverse_proxy 127.0.0.1:2584
+}
+
+web.example.com {
+	reverse_proxy 127.0.0.1:8100
+}
+
+# Matrix homeserver (uncomment after running deploy/matrix/setup.sh)
+# matrix.example.com {
+# 	handle /.well-known/matrix/server {
+# 		header Content-Type application/json
+# 		respond `{ "m.server": "matrix.example.com:443" }`
+# 	}
+# 	handle /.well-known/matrix/client {
+# 		header Content-Type application/json
+# 		header Access-Control-Allow-Origin *
+# 		respond `{ "m.homeserver": { "base_url": "https://matrix.example.com" } }`
+# 	}
+# 	reverse_proxy 127.0.0.1:8008
+# }
+#
+# matrix.example.com:8448 {
+# 	reverse_proxy 127.0.0.1:8008
+# }
+#
+# chat.example.com {
+# 	reverse_proxy 127.0.0.1:8080
+# }

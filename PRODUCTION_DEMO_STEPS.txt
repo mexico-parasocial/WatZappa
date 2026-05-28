@@ -1,0 +1,183 @@
+Production Demo Steps (Para + atproto stack)
+=============================================
+
+Date: 2026-02-27
+
+Goal
+----
+Run a production-like demo where:
+- PDS and AppView are reachable via public HTTPS hostnames.
+- Relay can crawl your PDS host (no localhost/private-host rejection).
+- Tap can consume relay events.
+- Backend state can survive normal restarts when using the persistent launcher.
+
+Persistent shared-demo shortcut
+------------------------------
+If you want stable local state on the host machine instead of the ephemeral
+`run-dev-env` path, use the new persistent launcher and env template:
+
+  cp -n .env.shared-demo.example .env.shared-demo
+  make run-dev-env-persistent
+
+See `PARAMX_SHARED_DEMO.md` for the `paramx.social` runbook.
+
+
+Part 1: How to get your ngrok token
+-----------------------------------
+You need an ngrok auth token for:
+  ngrok config add-authtoken <YOUR_TOKEN>
+
+How to find it:
+1) Create/login account at https://dashboard.ngrok.com
+2) Open "Your Authtoken" page:
+   https://dashboard.ngrok.com/get-started/your-authtoken
+3) Copy the token shown there.
+
+If you already configured it before, you can inspect local config:
+  cat ~/.config/ngrok/ngrok.yml
+or
+  cat ~/Library/Application\ Support/ngrok/ngrok.yml
+
+Look for a line like:
+  authtoken: xxxxx
+
+
+Part 2: Install and configure tunnel tooling
+---------------------------------------------
+1) Install ngrok:
+   brew install ngrok/ngrok/ngrok
+
+2) Configure token once:
+   ngrok config add-authtoken <YOUR_TOKEN>
+
+3) Verify ngrok:
+   ngrok version
+
+
+Part 3: Start public tunnels (one per local service)
+----------------------------------------------------
+Open 2 terminals.
+
+Terminal A (PDS):
+  ngrok http 2583
+
+Terminal B (AppView):
+  ngrok http 2584
+
+Each terminal prints "Forwarding" URLs.
+Example:
+  PDS:     https://abc123.ngrok-free.app  -> http://localhost:2583
+  AppView: https://xyz789.ngrok-free.app  -> http://localhost:2584
+
+
+Part 4: Derive required env vars
+--------------------------------
+From the tunnel URLs above:
+
+- DEV_ENV_PDS_HOSTNAME is the hostname only (no scheme):
+    DEV_ENV_PDS_HOSTNAME=abc123.ngrok-free.app
+
+- DEV_ENV_BSKY_PUBLIC_URL is full HTTPS URL:
+    DEV_ENV_BSKY_PUBLIC_URL=https://xyz789.ngrok-free.app
+
+
+Part 5: Start dev-env with production-like identities
+------------------------------------------------------
+Run from repo root:
+
+  DEV_ENV_PDS_HOSTNAME=abc123.ngrok-free.app \
+  DEV_ENV_BSKY_PUBLIC_URL=https://xyz789.ngrok-free.app \
+  DEV_ENV_ENABLE_DID_DOC_WITH_SESSION=false \
+  make run-dev-env
+
+This makes service identity/public URL compatible with relay crawl checks.
+If bootstrap fails with internal errors while using tunnel hostnames, keep
+`DEV_ENV_ENABLE_DID_DOC_WITH_SESSION=false` for this dev-env flow.
+
+
+Part 6: Verify health (local and public)
+----------------------------------------
+Local:
+  curl http://localhost:2583/xrpc/_health
+  curl http://localhost:2584/xrpc/_health
+
+Public:
+  curl https://abc123.ngrok-free.app/xrpc/_health
+  curl https://xyz789.ngrok-free.app/xrpc/_health
+
+
+Part 7: Start relay and tap
+---------------------------
+Terminal C:
+  make run-indigo-relay
+
+Terminal D:
+  make run-indigo-tap-para
+
+Health checks:
+  curl http://localhost:2470/xrpc/_health
+  curl http://localhost:2480/health
+
+
+Part 8: Register your public PDS host in relay
+-----------------------------------------------
+Use host from DEV_ENV_PDS_HOSTNAME (hostname only):
+
+  http --ignore-stdin POST :2470/admin/pds/requestCrawl \
+    -a admin:localdev \
+    hostname=abc123.ngrok-free.app
+
+Confirm:
+  http --ignore-stdin GET :2470/admin/pds/list -a admin:localdev
+
+
+Part 9: Validate event flow
+---------------------------
+Relay firehose:
+  websocat ws://localhost:2470/xrpc/com.atproto.sync.subscribeRepos
+
+Tap channel:
+  websocat ws://localhost:2480/channel
+
+Then create/update Para records and verify events appear.
+
+
+Part 10: Production hardening checklist
+---------------------------------------
+For actual production, do NOT depend on random tunnel hostnames.
+
+Use stable DNS + TLS:
+- pds.yourdomain.com
+- appview.yourdomain.com
+- relay.yourdomain.com (if used)
+- tap.yourdomain.com (if used)
+
+Infra:
+- PostgreSQL for relay/tap
+- persistent storage for relay replay window
+- monitoring + alerts
+- secret management for admin passwords
+
+Minimum configs to set explicitly:
+- RELAY_ADMIN_PASSWORD
+- TAP_ADMIN_PASSWORD
+- DATABASE_URL (relay/tap)
+- RELAY_PERSIST_DIR
+
+
+Common failures and fixes
+-------------------------
+1) "HostNotFound ... not a public IP address"
+   Cause: relay crawl target is localhost/private host.
+   Fix: use public hostname in hostname=<...> for requestCrawl.
+
+2) "address already in use :2582/:2583/:2584"
+   Cause: dev-env already running.
+   Fix: stop existing process or reuse it.
+
+3) HTTPie stdin error "cannot be mixed"
+   Fix: add --ignore-stdin to http commands.
+
+4) Tunnel URL changed after restart
+   Cause: free ephemeral tunnel hostnames.
+   Fix: update env vars and re-run; use stable domain for real staging/prod.

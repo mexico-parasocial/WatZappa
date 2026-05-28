@@ -1,0 +1,49 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.vote",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["proposal", "community", "voter", "signal"],
+        "properties": {
+          "proposal": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "URI of the proposal being voted on"
+          },
+          "community": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "voter": {
+            "type": "string",
+            "format": "did"
+          },
+          "signal": {
+            "type": "integer",
+            "minimum": -3,
+            "maximum": 3,
+            "description": "Base political signal: -3 strong against … +3 strong for. 0 = abstain."
+          },
+          "voteNullifier": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Privacy-preserving one-person-one-vote nullifier for this proposal, issued by m8."
+          },
+          "eligibilityProofRef": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Opaque reference to the m8 eligibility/nullifier proof used to cast this vote."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+[Unit]
+Description=PARA backend dev-env stack
+After=network-online.target postgresql.service redis-server.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=para
+Group=para
+WorkingDirectory=/opt/para/final/WhatZatppa/packages/dev-env
+EnvironmentFile=/etc/para/para-backend.env
+ExecStart=/usr/bin/env node --enable-source-maps dist/bin.js
+Restart=always
+RestartSec=5
+KillSignal=SIGINT
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/srv/para
+
+[Install]
+WantedBy=multi-user.target
