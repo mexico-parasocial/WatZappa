@@ -1,0 +1,77 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.delegation",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["delegate", "delegator", "scope"],
+        "properties": {
+          "delegate": {
+            "type": "string",
+            "format": "did",
+            "description": "Who receives the delegated voting power"
+          },
+          "delegator": {
+            "type": "string",
+            "format": "did",
+            "description": "Who is lending their voice"
+          },
+          "delegateRole": {
+            "type": "string",
+            "description": "Role under which the delegate receives power: representative, moderator, official, board_member, etc."
+          },
+          "party": {
+            "type": "string",
+            "description": "Party or flair context for this delegation"
+          },
+          "scope": {
+            "type": "ref",
+            "ref": "#delegationScope"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Auto-expiration. If absent, delegation expires in 90 days by default."
+          },
+          "revokedAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "When the delegator explicitly revoked this delegation"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    },
+    "delegationScope": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["community", "topic", "proposal", "topicCommunity"]
+        },
+        "community": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "Required for community, topicCommunity modes"
+        },
+        "topic": {
+          "type": "string",
+          "enum": ["general", "budget", "amendment", "moderation"],
+          "description": "Required for topic, topicCommunity modes"
+        },
+        "proposal": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "Required for proposal mode"
+        }
+      }
+    }
+  }
+}

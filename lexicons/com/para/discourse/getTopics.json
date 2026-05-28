@@ -1,0 +1,47 @@
+{
+  "lexicon": 1,
+  "id": "com.para.discourse.getTopics",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Identify emerging clusters and topics within a community discourse.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "community": { "type": "string", "format": "at-uri" },
+          "limit": { "type": "integer", "default": 10 }
+        },
+        "required": ["community"]
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["topics"],
+          "properties": {
+            "topics": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "#topic" }
+            }
+          }
+        }
+      }
+    },
+    "topic": {
+      "type": "object",
+      "required": ["label", "weight", "growthRate"],
+      "properties": {
+        "label": { "type": "string" },
+        "weight": {
+          "type": "integer",
+          "description": "Relative importance/frequency (0-100)"
+        },
+        "growthRate": {
+          "type": "integer",
+          "description": "Percentage change in mentions over the last period"
+        },
+        "relatedKeywords": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

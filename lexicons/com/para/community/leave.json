@@ -1,0 +1,58 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.leave",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Leaves a PARA community board by marking the caller's membership record as left.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["communityUri"],
+          "properties": {
+            "communityUri": {
+              "type": "string",
+              "format": "at-uri",
+              "description": "URI of the com.para.community.board record to leave."
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "#output"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "uri",
+        "cid",
+        "communityUri",
+        "membershipState",
+        "viewerCapabilities"
+      ],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "communityUri": { "type": "string", "format": "at-uri" },
+        "membershipState": {
+          "type": "string",
+          "knownValues": ["pending", "active", "left", "removed", "blocked"]
+        },
+        "viewerCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxGraphemes": 64,
+            "maxLength": 128
+          }
+        }
+      }
+    }
+  }
+}

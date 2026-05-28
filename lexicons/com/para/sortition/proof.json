@@ -1,0 +1,62 @@
+{
+  "lexicon": 1,
+  "id": "com.para.sortition.proof",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "did",
+          "community",
+          "chamber",
+          "drandRound",
+          "drandRandomness",
+          "hashInput",
+          "hashOutput",
+          "threshold",
+          "timestamp"
+        ],
+        "properties": {
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "community": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "chamber": {
+            "type": "string",
+            "enum": ["A", "B"]
+          },
+          "drandRound": {
+            "type": "integer",
+            "description": "drand beacon round number used for sortition"
+          },
+          "drandRandomness": {
+            "type": "string",
+            "description": "Hex-encoded drand randomness beacon"
+          },
+          "hashInput": {
+            "type": "string",
+            "description": "Hex-encoded input to SHA-256: beacon || did || communityUri"
+          },
+          "hashOutput": {
+            "type": "string",
+            "description": "Hex-encoded SHA-256 output"
+          },
+          "threshold": {
+            "type": "string",
+            "description": "Load-balancing threshold used (0.0-1.0)"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

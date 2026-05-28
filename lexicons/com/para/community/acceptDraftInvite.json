@@ -1,0 +1,38 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.acceptDraftInvite",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Accepts an invitation to a draft community, adding the caller to the community's founder starter pack and tracking the quorum. The PDS proxies the listitem creation for the starter pack.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["communityUri"],
+          "properties": {
+            "communityUri": {
+              "type": "string",
+              "format": "at-uri"
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["status", "memberCount"],
+          "properties": {
+            "status": {
+              "type": "string"
+            },
+            "memberCount": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    }
+  }
+}

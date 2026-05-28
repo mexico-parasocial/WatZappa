@@ -1,0 +1,67 @@
+# PARA Production Caddyfile
+# Place this at /etc/caddy/Caddyfile on your edge server (Computer A).
+# For single-machine deploys, mount it via docker-compose.prod.yaml.
+#
+# Bluesky official PDS ships with Caddy in its compose.
+# This config follows the same pattern: automatic HTTPS, simple routing.
+#
+# NOTE: Rate limiting is handled at the application level (PDS already has
+# PDS_RATE_LIMITS_ENABLED=true). For additional edge protection, consider
+# fail2ban or a Cloudflare/AWS WAF in front of Caddy.
+
+# ---------------------------------------------------------------------------
+# PDS — Personal Data Server (auth, repos, writes)
+# ---------------------------------------------------------------------------
+pds.para-g0v.app {
+	reverse_proxy pds:2583
+
+	header {
+		# Security headers
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}
+
+# ---------------------------------------------------------------------------
+# AppView — Feeds, search, hydration, Civic Map
+# ---------------------------------------------------------------------------
+appview.para-g0v.app {
+	reverse_proxy bsky:2584
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Ozone — Moderation (staff-only)
+# ---------------------------------------------------------------------------
+ozone.para-g0v.app {
+	reverse_proxy ozone:3000
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Well-known endpoints (AT Protocol discovery)
+# These MUST be available at the domain root for federation.
+# ---------------------------------------------------------------------------
+para-g0v.app {
+	# Serve .well-known/atproto-did for handle resolution
+	handle /.well-known/* {
+		reverse_proxy pds:2583
+	}
+
+	# Fallback: redirect to marketing site or app
+	redir https://para.social/app
+}

@@ -1,0 +1,69 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.intensity",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["proposal", "voter", "signal", "units"],
+        "properties": {
+          "proposal": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "URI of the proposal this intensity declaration applies to"
+          },
+          "voter": {
+            "type": "string",
+            "format": "did",
+            "description": "DID of the voter making this intensity declaration"
+          },
+          "signal": {
+            "type": "integer",
+            "minimum": -3,
+            "maximum": 3,
+            "description": "Signal direction, must match the base vote record"
+          },
+          "units": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 16,
+            "description": "Quadratic voice credits allocated. 1=1², 4=2², 9=3², 16=4². Maps to intensity level 1-4."
+          },
+          "creditsSpent": {
+            "type": "integer",
+            "description": "Same as units, explicit alias for clarity in audit trails"
+          },
+          "delegatedFrom": {
+            "type": "array",
+            "items": { "type": "string", "format": "did" },
+            "description": "DIDs whose voting power was aggregated into this intensity record. Empty = direct."
+          },
+          "delegationDepth": {
+            "type": "integer",
+            "description": "0 = direct, 1 = one hop. Max 1 in PARA QV-LD."
+          },
+          "effectiveWeight": {
+            "type": "string",
+            "description": "Computed effective weight after QV sqrt and correlation discounting. Stored for audit trail."
+          },
+          "voteNullifier": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Privacy-preserving one-person-one-vote nullifier for this proposal intensity declaration, issued by m8."
+          },
+          "eligibilityProofRef": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Opaque reference to the m8 eligibility/nullifier proof used to cast this intensity declaration."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

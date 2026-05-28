@@ -1,0 +1,55 @@
+{
+  "lexicon": 1,
+  "id": "com.para.civic.listCabildeos",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "List indexed Cabildeos with aggregate summaries and optional viewer context.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "community": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Optional community filter."
+          },
+          "phase": {
+            "type": "string",
+            "knownValues": [
+              "draft",
+              "open",
+              "deliberating",
+              "voting",
+              "resolved"
+            ],
+            "description": "Optional phase filter."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 30
+          },
+          "cursor": { "type": "string" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["cabildeos"],
+          "properties": {
+            "cursor": { "type": "string" },
+            "cabildeos": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "com.para.civic.defs#cabildeoView"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

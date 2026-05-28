@@ -1,0 +1,54 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.listSharedContent",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Lists content shared into a PARA community, optionally including child community shares and removed shares for stewards.",
+      "parameters": {
+        "type": "params",
+        "required": ["communityUri"],
+        "properties": {
+          "communityUri": { "type": "string", "format": "at-uri" },
+          "contentType": {
+            "type": "string",
+            "knownValues": [
+              "post",
+              "cabildeo",
+              "collection",
+              "mapInitiative",
+              "external"
+            ]
+          },
+          "includeRemoved": { "type": "boolean", "default": false },
+          "includeChildren": { "type": "boolean", "default": false },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          },
+          "cursor": { "type": "string" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": { "type": "ref", "ref": "#output" }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "com.para.community.defs#sharedContentView"
+          }
+        },
+        "cursor": { "type": "string" }
+      }
+    }
+  }
+}

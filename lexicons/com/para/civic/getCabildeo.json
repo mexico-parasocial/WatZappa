@@ -1,0 +1,33 @@
+{
+  "lexicon": 1,
+  "id": "com.para.civic.getCabildeo",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get a single indexed Cabildeo by URI, including aggregate and viewer context fields.",
+      "parameters": {
+        "type": "params",
+        "required": ["cabildeo"],
+        "properties": {
+          "cabildeo": {
+            "type": "string",
+            "format": "at-uri"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["cabildeo"],
+          "properties": {
+            "cabildeo": {
+              "type": "ref",
+              "ref": "com.para.civic.defs#cabildeoView"
+            }
+          }
+        }
+      }
+    }
+  }
+}

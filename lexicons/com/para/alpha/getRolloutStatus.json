@@ -1,0 +1,41 @@
+{
+  "lexicon": 1,
+  "id": "com.para.alpha.getRolloutStatus",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get alpha rollout status per state. Admin-only endpoint.",
+      "parameters": {
+        "type": "params",
+        "properties": {}
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["states"],
+          "properties": {
+            "states": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "#stateStatus"
+              }
+            }
+          }
+        }
+      }
+    },
+    "stateStatus": {
+      "type": "object",
+      "required": ["state", "totalSlots", "usedSlots", "isOpen"],
+      "properties": {
+        "state": { "type": "string" },
+        "totalSlots": { "type": "integer" },
+        "usedSlots": { "type": "integer" },
+        "isOpen": { "type": "boolean" },
+        "openedAt": { "type": "string", "format": "datetime" }
+      }
+    }
+  }
+}

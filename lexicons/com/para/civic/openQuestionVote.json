@@ -1,0 +1,39 @@
+{
+  "lexicon": 1,
+  "id": "com.para.civic.openQuestionVote",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A vote on an open question reply. Stores the voter's upvote/downvote on a specific reply.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["subject", "value", "createdAt"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The reply post URI being voted on."
+          },
+          "value": {
+            "type": "integer",
+            "minimum": -1,
+            "maximum": 1,
+            "description": "Vote value: -1 = downvote, 0 = none (removal), 1 = upvote."
+          },
+          "voteNullifier": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Privacy-preserving one-person-one-vote nullifier for this open question reply, issued by m8."
+          },
+          "eligibilityProofRef": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Opaque reference to the m8 eligibility/nullifier proof used to cast this vote."
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

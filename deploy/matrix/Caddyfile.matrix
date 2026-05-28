@@ -1,0 +1,32 @@
+# PARA Matrix Homeserver — Caddy additions
+# Append these blocks to /etc/caddy/Caddyfile (or your main Caddyfile)
+# and replace matrix.para.social / chat.para.social with your real domains.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Synapse / Continuwuity homeserver
+# ─────────────────────────────────────────────────────────────────────────────
+matrix.para.social {
+	# Serve well-known files for federation discovery
+	handle /.well-known/matrix/server {
+		header Content-Type application/json
+		respond `{ "m.server": "matrix.para.social:443" }`
+	}
+
+	handle /.well-known/matrix/client {
+		header Content-Type application/json
+		header Access-Control-Allow-Origin *
+		respond `{ "m.homeserver": { "base_url": "https://matrix.para.social" } }`
+	}
+
+	# Reverse proxy to Synapse (port 8008)
+	reverse_proxy 127.0.0.1:8008
+
+	# PARA-only mode: no public federation listener is exposed.
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Element Web client
+# ─────────────────────────────────────────────────────────────────────────────
+chat.para.social {
+	reverse_proxy 127.0.0.1:8080
+}

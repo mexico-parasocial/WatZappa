@@ -1,0 +1,97 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.board",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A repository record acting as the anchor for a PARA community, linking the spatial map quadrant to the underlying ATProto group chats.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "name",
+          "quadrant",
+          "delegatesChatId",
+          "subdelegatesChatId",
+          "createdAt",
+          "status"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxGraphemes": 128,
+            "maxLength": 1280
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 3000
+          },
+          "quadrant": {
+            "type": "string",
+            "description": "Spatial mapping token indicating the nonant or 25th block.",
+            "maxLength": 64
+          },
+          "geo": { "type": "ref", "ref": "#geoPoint" },
+          "delegatesChatId": {
+            "type": "string",
+            "description": "Reference to the 270-member bounded bsky group chat."
+          },
+          "subdelegatesChatId": {
+            "type": "string",
+            "description": "Reference to the 30-member bounded public-view bsky group chat."
+          },
+          "status": {
+            "type": "string",
+            "description": "The lifecycle status of the community.",
+            "knownValues": ["draft", "active"]
+          },
+          "founderStarterPackUri": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Reference to the starter pack used to track the founding member quorum."
+          },
+          "visibility": {
+            "type": "string",
+            "description": "Visibility of the community.",
+            "knownValues": ["open", "closed", "secret"],
+            "default": "open"
+          },
+          "chamberMode": {
+            "type": "string",
+            "description": "Deliberation structure.",
+            "knownValues": ["unicameral", "bicameral"],
+            "default": "unicameral"
+          },
+          "governanceMode": {
+            "type": "string",
+            "description": "Governance model for this community.",
+            "knownValues": ["hierarchical", "horizontal"],
+            "default": "hierarchical"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    },
+    "geoPoint": {
+      "type": "object",
+      "description": "Geographic coordinates in E7 (degrees × 10⁷) for map placement.",
+      "required": ["latE7", "lngE7"],
+      "properties": {
+        "latE7": {
+          "type": "integer",
+          "minimum": -900000000,
+          "maximum": 900000000
+        },
+        "lngE7": {
+          "type": "integer",
+          "minimum": -1800000000,
+          "maximum": 1800000000
+        }
+      }
+    }
+  }
+}

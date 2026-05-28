@@ -1,0 +1,32 @@
+{
+  "name": "@atproto-labs/fetch",
+  "version": "0.2.3",
+  "license": "MIT",
+  "description": "Isomorphic wrapper utilities for fetch API",
+  "keywords": [
+    "atproto",
+    "fetch"
+  ],
+  "homepage": "https://atproto.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bluesky-social/atproto",
+    "directory": "packages/internal/fetch"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@atproto-labs/pipe": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  },
+  "scripts": {
+    "build": "tsc --build tsconfig.json"
+  }
+}

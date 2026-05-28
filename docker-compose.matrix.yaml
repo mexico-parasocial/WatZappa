@@ -1,0 +1,136 @@
+# PARA Matrix Homeserver Stack
+# Add this to your infrastructure for community deliberation via Matrix.
+#
+# Two options are provided below:
+#   A) Synapse  — mature, full-featured, battle-tested (RECOMMENDED)
+#   B) Continuwuity — lightweight, Rust-based, minimal resource use
+#
+# Your 5950X + 128GB RAM can run either without any stress.
+# Synapse uses ~4-8 GB RAM. Continuwuity uses < 1 GB RAM.
+#
+# Quick start:
+#   1. Choose your server below (uncomment one block, comment the other).
+#   2. Set MATRIX_SERVER_NAME and MATRIX_DOMAIN in your .env.
+#   3. Run: ./WhatZatppa/deploy/matrix/setup.sh
+#   4. Run: docker compose -f WhatZatppa/docker-compose.matrix.yaml up -d
+
+services:
+  # ═════════════════════════════════════════════════════════════════════════════
+  # OPTION A: Synapse (Recommended for production)
+  # ═════════════════════════════════════════════════════════════════════════════
+  synapse:
+    image: matrixdotorg/synapse:v1.127.1
+    container_name: para-matrix-synapse
+    restart: unless-stopped
+    # Share the existing Postgres or use a dedicated one.
+    # If you use the existing para-postgres, create the DB first:
+    #   CREATE DATABASE matrix OWNER pg;
+    depends_on:
+      - synapse-db
+    environment:
+      SYNAPSE_SERVER_NAME: ${MATRIX_SERVER_NAME:-matrix.para.social}
+      SYNAPSE_REPORT_STATS: 'no'
+      SYNAPSE_CONFIG_PATH: /data/homeserver.yaml
+      SYNAPSE_DATA_DIR: /data
+      SYNAPSE_DB_HOST: synapse-db
+      SYNAPSE_DB_NAME: ${MATRIX_DB_NAME:-matrix}
+      SYNAPSE_DB_USER: ${POSTGRES_USER:-pg}
+      SYNAPSE_DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      SYNAPSE_DB_PORT: 5432
+      SYNAPSE_ENABLE_REGISTRATION: 'no' # Keep closed; invite-only via admin
+      SYNAPSE_LOG_LEVEL: INFO
+    volumes:
+      - synapse_data:/data
+      - ./deploy/matrix/synapse:/config:ro
+    ports:
+      - '127.0.0.1:8008:8008'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8008/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  synapse-db:
+    image: postgres:14.4-alpine
+    container_name: para-matrix-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pg}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${MATRIX_DB_NAME:-matrix}
+    volumes:
+      - matrix_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-pg}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ═════════════════════════════════════════════════════════════════════════════
+  # OPTION B: Continuwuity (Ultra-lightweight alternative)
+  # Uncomment the block below and comment out the Synapse block above to use.
+  # ═════════════════════════════════════════════════════════════════════════════
+  # continuwuity:
+  #   image: ghcr.io/continuwuity/continuwuity:v0.5.0
+  #   container_name: para-matrix-continuwuity
+  #   restart: unless-stopped
+  #   volumes:
+  #     - continuwuity_data:/var/lib/continuwuity
+  #   ports:
+  #     - "6167:6167"
+  #     - "127.0.0.1:8008:8008"   # Client API behind reverse proxy
+  #   environment:
+  #     CONTINUWUITY_SERVER_NAME: ${MATRIX_SERVER_NAME:-matrix.para.social}
+  #     CONTINUWUITY_ALLOW_FEDERATION: "false"
+  #     CONTINUWUITY_ALLOW_REGISTRATION: "false"
+  #     CONTINUWUITY_LOG_LEVEL: info
+
+  # ═════════════════════════════════════════════════════════════════════════════
+  # Element Web — client UI (works with Synapse OR Continuwuity)
+  # ═════════════════════════════════════════════════════════════════════════════
+  element-web:
+    image: vectorim/element-web:v1.11.96
+    container_name: para-matrix-element
+    restart: unless-stopped
+    volumes:
+      - ./deploy/matrix/element-config.json:/app/config.json:ro
+    ports:
+      - '127.0.0.1:8080:80'
+    depends_on:
+      - synapse
+
+  # ═════════════════════════════════════════════════════════════════════════════
+  # Matrix↔PARA Community Bridge
+  # ═════════════════════════════════════════════════════════════════════════════
+  matrix-bridge:
+    build:
+      context: .
+      dockerfile: ./services/matrix-bridge/Dockerfile
+    container_name: para-matrix-bridge
+    restart: unless-stopped
+    environment:
+      PDS_FIREHOSE_URL: ${PDS_FIREHOSE_URL:-wss://pds.para.social/xrpc/com.atproto.sync.subscribeRepos}
+      MATRIX_HOMESERVER_URL: ${MATRIX_HOMESERVER_URL:-http://synapse:8008}
+      MATRIX_ADMIN_TOKEN: ${MATRIX_ADMIN_TOKEN}
+      M8_BASE_URL: ${M8_BASE_URL:-http://host.docker.internal:8787/v1}
+      BRIDGE_DB_PATH: /data/bridge.db
+      BRIDGE_LOG_LEVEL: ${BRIDGE_LOG_LEVEL:-info}
+      PORT: 3001
+    volumes:
+      - bridge_data:/data
+    ports:
+      - '127.0.0.1:3001:3001'
+    depends_on:
+      synapse:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:3001/healthz']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  synapse_data:
+  matrix_postgres_data:
+  bridge_data:
+  # continuwuity_data:

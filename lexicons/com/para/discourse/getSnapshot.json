@@ -1,0 +1,84 @@
+{
+  "lexicon": 1,
+  "id": "com.para.discourse.getSnapshot",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get a high-level executive summary of the current state of a deliberation, including ideological diversity metrics.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "subject": { "type": "string", "format": "at-uri" }
+        },
+        "required": ["subject"]
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["subject", "status", "keyTakeaways", "consensusLevel"],
+          "properties": {
+            "subject": { "type": "string", "format": "at-uri" },
+            "status": {
+              "type": "string",
+              "description": "Short human-readable status (e.g., 'Altamente polarizado')."
+            },
+            "keyTakeaways": {
+              "type": "array",
+              "items": { "type": "string" },
+              "maxLength": 5
+            },
+            "consensusLevel": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "participationMetrics": {
+              "type": "ref",
+              "ref": "#participationMetrics"
+            },
+            "compassDistribution": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "#compassPoint" },
+              "description": "The ideological spread of the participants in this consensus."
+            }
+          }
+        }
+      }
+    },
+    "participationMetrics": {
+      "type": "object",
+      "properties": {
+        "totalVoices": { "type": "integer" },
+        "diversityIndex": {
+          "type": "integer",
+          "description": "Measure of ideological breadth from the compass."
+        }
+      }
+    },
+    "compassPoint": {
+      "type": "object",
+      "required": ["position", "density"],
+      "properties": {
+        "position": {
+          "type": "string",
+          "knownValues": [
+            "auth-left",
+            "auth-center",
+            "auth-right",
+            "center-left",
+            "center",
+            "center-right",
+            "lib-left",
+            "lib-center",
+            "lib-right"
+          ]
+        },
+        "density": {
+          "type": "integer",
+          "description": "Percentage of voices coming from this quadrant (0-100)."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.restoreSharedContent",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Restores a previously removed sharedContent wrapper by creating a moderation action record.",
+      "input": {
+        "encoding": "application/json",
+        "schema": { "type": "ref", "ref": "#input" }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": { "type": "ref", "ref": "#output" }
+      }
+    },
+    "input": {
+      "type": "object",
+      "required": ["sharedContent", "communityUri"],
+      "properties": {
+        "sharedContent": { "type": "ref", "ref": "com.atproto.repo.strongRef" },
+        "communityUri": { "type": "string", "format": "at-uri" },
+        "note": { "type": "string", "maxGraphemes": 300, "maxLength": 3000 }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["uri", "cid", "action"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "action": {
+          "type": "ref",
+          "ref": "com.para.community.defs#sharedContentActionView"
+        }
+      }
+    }
+  }
+}

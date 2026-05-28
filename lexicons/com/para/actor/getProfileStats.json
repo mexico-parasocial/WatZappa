@@ -1,0 +1,47 @@
+{
+  "lexicon": 1,
+  "id": "com.para.actor.getProfileStats",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get Para profile stats and current Para status for an actor.",
+      "parameters": {
+        "type": "params",
+        "required": ["actor"],
+        "properties": {
+          "actor": {
+            "type": "string",
+            "format": "at-identifier",
+            "description": "Handle or DID of the actor."
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["actor", "stats"],
+          "properties": {
+            "actor": {
+              "type": "string",
+              "format": "did"
+            },
+            "stats": {
+              "type": "ref",
+              "ref": "com.para.actor.defs#profileStats"
+            },
+            "status": {
+              "type": "ref",
+              "ref": "com.para.actor.defs#statusView"
+            }
+          }
+        }
+      },
+      "errors": [
+        { "name": "NotFound" },
+        { "name": "BlockedActor" },
+        { "name": "BlockedByActor" }
+      ]
+    }
+  }
+}

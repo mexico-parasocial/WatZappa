@@ -1,0 +1,47 @@
+{
+  "name": "@atproto/repo",
+  "version": "0.10.0",
+  "license": "MIT",
+  "description": "atproto repo and MST implementation",
+  "keywords": [
+    "atproto",
+    "mst"
+  ],
+  "engines": {
+    "node": ">=24.15.0"
+  },
+  "homepage": "https://atproto.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bluesky-social/atproto",
+    "directory": "packages/repo"
+  },
+  "scripts": {
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:profile": "node --inspect ../../node_modules/.bin/jest",
+    "build": "tsc --build tsconfig.build.json"
+  },
+  "dependencies": {
+    "@atproto/common": "workspace:^",
+    "@atproto/common-web": "workspace:^",
+    "@atproto/crypto": "workspace:^",
+    "@atproto/lex-cbor": "workspace:^",
+    "@atproto/lex-data": "workspace:^",
+    "@atproto/lexicon": "workspace:^",
+    "@atproto/syntax": "workspace:^",
+    "varint": "^6.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "jest": "^30.0.0",
+    "typescript": "^6.0.3",
+    "@jest/globals": "^30.0.0"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  }
+}

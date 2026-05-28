@@ -1,0 +1,96 @@
+{
+  "lexicon": 1,
+  "id": "com.para.feed.getAuthorFeed",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get a paginated feed of Para posts authored by the given actor.",
+      "parameters": {
+        "type": "params",
+        "required": ["actor"],
+        "properties": {
+          "actor": {
+            "type": "string",
+            "format": "at-identifier",
+            "description": "Handle or DID of the actor."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          },
+          "cursor": { "type": "string" },
+          "party": { "type": "string", "maxLength": 128 },
+          "community": { "type": "string", "maxLength": 128 },
+          "flairTag": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Filter by an exact Para flair tag, e.g. |#Sanidad or ||#TransportePublico."
+          },
+          "postType": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Filter by post type, e.g. meme, proposal, debate."
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["feed"],
+          "properties": {
+            "cursor": { "type": "string" },
+            "feed": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "#postView" }
+            }
+          }
+        }
+      },
+      "errors": [{ "name": "BlockedActor" }, { "name": "BlockedByActor" }]
+    },
+    "postView": {
+      "type": "object",
+      "required": ["uri", "cid", "author", "text", "createdAt"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "author": { "type": "string", "format": "did" },
+        "text": { "type": "string", "maxLength": 3000, "maxGraphemes": 300 },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "replyRoot": { "type": "string", "format": "at-uri" },
+        "replyParent": { "type": "string", "format": "at-uri" },
+        "langs": {
+          "type": "array",
+          "maxLength": 3,
+          "items": { "type": "string", "format": "language" }
+        },
+        "tags": {
+          "type": "array",
+          "maxLength": 8,
+          "items": {
+            "type": "string",
+            "maxLength": 64,
+            "maxGraphemes": 64
+          }
+        },
+        "flairs": {
+          "type": "array",
+          "maxLength": 8,
+          "items": {
+            "type": "string",
+            "maxLength": 64,
+            "maxGraphemes": 64
+          }
+        },
+        "postType": {
+          "type": "string",
+          "maxLength": 64,
+          "maxGraphemes": 64
+        }
+      }
+    }
+  }
+}

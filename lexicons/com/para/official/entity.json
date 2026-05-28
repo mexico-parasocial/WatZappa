@@ -1,0 +1,41 @@
+{
+  "lexicon": 1,
+  "id": "com.para.official.entity",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Official civic entity account reserved or verified by PARA.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["kind", "status", "name", "createdAt"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "knownValues": [
+              "representative",
+              "office",
+              "community",
+              "party",
+              "ngo"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "knownValues": ["unclaimed", "verified", "retired"]
+          },
+          "name": { "type": "string", "maxLength": 300 },
+          "handle": { "type": "string", "maxLength": 300 },
+          "entityDid": { "type": "string", "format": "did" },
+          "representativeId": { "type": "string", "maxLength": 200 },
+          "office": { "type": "string", "maxLength": 300 },
+          "jurisdiction": { "type": "string", "maxLength": 300 },
+          "state": { "type": "string", "maxLength": 120 },
+          "source": { "type": "string", "maxLength": 2000 },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

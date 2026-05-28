@@ -1,0 +1,58 @@
+{
+  "lexicon": 1,
+  "id": "com.para.social.postMeta",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Metadata associated with a Para post.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["post", "postType", "voteScore", "createdAt"],
+        "properties": {
+          "post": { "type": "string", "format": "at-uri" },
+          "postType": {
+            "type": "string",
+            "enum": ["policy", "matter", "meme"]
+          },
+          "official": { "type": "boolean", "default": false },
+          "party": {
+            "type": "string",
+            "maxLength": 64,
+            "maxGraphemes": 64
+          },
+          "community": {
+            "type": "string",
+            "maxLength": 64,
+            "maxGraphemes": 64
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 64,
+            "maxGraphemes": 64
+          },
+          "tags": {
+            "type": "array",
+            "maxLength": 16,
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "maxGraphemes": 64
+            }
+          },
+          "flairs": {
+            "type": "array",
+            "maxLength": 16,
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "maxGraphemes": 64
+            }
+          },
+          "voteScore": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

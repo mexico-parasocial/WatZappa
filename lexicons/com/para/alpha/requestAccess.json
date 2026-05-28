@@ -1,0 +1,51 @@
+{
+  "lexicon": 1,
+  "id": "com.para.alpha.requestAccess",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Request alpha access for a given state. Optionally provide an invite code to skip the waitlist.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["state"],
+          "properties": {
+            "state": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "description": "Mexican state abbreviation or name"
+            },
+            "inviteCode": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "description": "Optional invite code in format STATE-XXXX-XXXX"
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["status"],
+          "properties": {
+            "status": {
+              "type": "string",
+              "knownValues": [
+                "approved",
+                "waitlisted",
+                "rejected",
+                "already_has_access"
+              ]
+            },
+            "position": { "type": "integer" },
+            "state": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

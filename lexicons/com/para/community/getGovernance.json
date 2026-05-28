@@ -1,0 +1,116 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.getGovernance",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get governance roster and role hierarchy for a Para community.",
+      "parameters": {
+        "type": "params",
+        "required": ["community"],
+        "properties": {
+          "community": {
+            "type": "string",
+            "maxLength": 64,
+            "maxGraphemes": 64,
+            "description": "Community identifier or label (for example: mx-federal or p/mx-federal)."
+          },
+          "communityId": {
+            "type": "string",
+            "maxLength": 128,
+            "maxGraphemes": 128,
+            "description": "Optional stable identifier for the community."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50,
+            "description": "Maximum number of candidate members considered for role assignment."
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "source",
+            "community",
+            "slug",
+            "createdAt",
+            "updatedAt",
+            "moderators",
+            "officials",
+            "deputies",
+            "editHistory",
+            "counters",
+            "summary",
+            "computedAt"
+          ],
+          "properties": {
+            "source": {
+              "type": "string",
+              "knownValues": ["network", "repo", "mock"]
+            },
+            "community": { "type": "string" },
+            "communityId": { "type": "string" },
+            "slug": { "type": "string" },
+            "createdAt": {
+              "type": "string",
+              "format": "datetime"
+            },
+            "updatedAt": {
+              "type": "string",
+              "format": "datetime"
+            },
+            "moderators": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "com.para.community.defs#moderatorView"
+              }
+            },
+            "officials": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "com.para.community.defs#officialView"
+              }
+            },
+            "deputies": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "com.para.community.defs#deputyRoleView"
+              }
+            },
+            "metadata": {
+              "type": "ref",
+              "ref": "com.para.community.defs#metadata"
+            },
+            "editHistory": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "com.para.community.defs#historyEntry"
+              }
+            },
+            "counters": {
+              "type": "ref",
+              "ref": "com.para.community.defs#summary"
+            },
+            "summary": {
+              "type": "ref",
+              "ref": "com.para.community.defs#summary"
+            },
+            "computedAt": {
+              "type": "string",
+              "format": "datetime"
+            }
+          }
+        }
+      }
+    }
+  }
+}

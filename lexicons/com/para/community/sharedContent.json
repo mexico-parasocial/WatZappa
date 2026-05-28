@@ -1,0 +1,75 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.sharedContent",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A member-owned wrapper that shares original content into a PARA community without moving or duplicating the original record.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "subject",
+          "communityUri",
+          "contentType",
+          "sharedBy",
+          "createdAt"
+        ],
+        "properties": {
+          "subject": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The original content being shared."
+          },
+          "communityUri": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "URI of the target com.para.community.board record."
+          },
+          "contentType": {
+            "type": "string",
+            "knownValues": [
+              "post",
+              "cabildeo",
+              "collection",
+              "mapInitiative",
+              "external"
+            ]
+          },
+          "sharedBy": {
+            "type": "string",
+            "format": "did"
+          },
+          "note": {
+            "type": "string",
+            "maxGraphemes": 300,
+            "maxLength": 3000
+          },
+          "visibility": {
+            "type": "string",
+            "knownValues": ["community", "public", "stewards"]
+          },
+          "sourceApp": {
+            "type": "string",
+            "maxGraphemes": 128,
+            "maxLength": 512
+          },
+          "embedContext": {
+            "type": "unknown"
+          },
+          "pinned": {
+            "type": "boolean",
+            "default": false
+          },
+          "sortRank": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

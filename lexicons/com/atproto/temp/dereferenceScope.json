@@ -1,0 +1,38 @@
+{
+  "lexicon": 1,
+  "id": "com.atproto.temp.dereferenceScope",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Dereference an OAuth scope reference into the original scope string.",
+      "parameters": {
+        "type": "params",
+        "required": ["scope"],
+        "properties": {
+          "scope": {
+            "type": "string",
+            "description": "The scope reference to dereference."
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["scope"],
+          "properties": {
+            "scope": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "InvalidScopeReference",
+          "description": "The scope reference is invalid or could not be found."
+        }
+      ]
+    }
+  }
+}

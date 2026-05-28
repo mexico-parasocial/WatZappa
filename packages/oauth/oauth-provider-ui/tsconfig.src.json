@@ -1,0 +1,15 @@
+{
+  "extends": [
+    "../../../tsconfig/browser.json",
+    "../../../tsconfig/bundler.json"
+  ],
+  "compilerOptions": {
+    "rootDir": "src",
+    "paths": {
+      "#/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx",
+    "../../../tsconfig/cjs-default-exports.d.ts"
+  ]
+}

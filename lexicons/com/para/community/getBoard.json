@@ -1,0 +1,150 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.getBoard",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Returns a hydrated PARA community board with viewer membership and governance summary.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "communityId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "#output"
+        }
+      }
+    },
+    "governanceSummary": {
+      "type": "object",
+      "required": ["moderatorCount", "officialCount", "deputyRoleCount"],
+      "properties": {
+        "moderatorCount": { "type": "integer" },
+        "officialCount": { "type": "integer" },
+        "deputyRoleCount": { "type": "integer" },
+        "lastPublishedAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "boardView": {
+      "type": "object",
+      "required": [
+        "uri",
+        "cid",
+        "creatorDid",
+        "communityId",
+        "slug",
+        "name",
+        "quadrant",
+        "delegatesChatId",
+        "subdelegatesChatId",
+        "memberCount",
+        "viewerMembershipState",
+        "createdAt"
+      ],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "creatorDid": { "type": "string", "format": "did" },
+        "creatorHandle": { "type": "string", "format": "handle" },
+        "creatorDisplayName": {
+          "type": "string",
+          "maxGraphemes": 64,
+          "maxLength": 640
+        },
+        "communityId": {
+          "type": "string",
+          "maxGraphemes": 128,
+          "maxLength": 256
+        },
+        "slug": {
+          "type": "string",
+          "maxGraphemes": 128,
+          "maxLength": 256
+        },
+        "name": {
+          "type": "string",
+          "maxGraphemes": 128,
+          "maxLength": 256
+        },
+        "description": {
+          "type": "string",
+          "maxGraphemes": 300,
+          "maxLength": 3000
+        },
+        "quadrant": {
+          "type": "string",
+          "maxGraphemes": 64,
+          "maxLength": 128
+        },
+        "delegatesChatId": { "type": "string" },
+        "subdelegatesChatId": { "type": "string" },
+        "memberCount": { "type": "integer" },
+        "viewerMembershipState": {
+          "type": "string",
+          "knownValues": [
+            "none",
+            "pending",
+            "active",
+            "left",
+            "removed",
+            "blocked"
+          ]
+        },
+        "viewerRoles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxGraphemes": 64,
+            "maxLength": 128
+          }
+        },
+        "status": {
+          "type": "string",
+          "knownValues": ["draft", "active"]
+        },
+        "founderStarterPackUri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "governanceMode": {
+          "type": "string",
+          "knownValues": ["hierarchical", "horizontal"]
+        },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "governanceSummary": {
+          "type": "ref",
+          "ref": "#governanceSummary"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["board", "viewerCapabilities"],
+      "properties": {
+        "board": {
+          "type": "ref",
+          "ref": "#boardView"
+        },
+        "viewerCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxGraphemes": 64,
+            "maxLength": 128
+          }
+        }
+      }
+    }
+  }
+}

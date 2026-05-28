@@ -1,0 +1,23 @@
+{
+  "lexicon": 1,
+  "id": "com.para.agent.defs",
+  "defs": {
+    "messageView": {
+      "type": "object",
+      "required": ["id", "text", "sender", "createdAt"],
+      "properties": {
+        "id": { "type": "string" },
+        "text": {
+          "type": "string",
+          "maxLength": 10000,
+          "maxGraphemes": 1000
+        },
+        "sender": {
+          "type": "string",
+          "knownValues": ["user", "agent"]
+        },
+        "createdAt": { "type": "string", "format": "datetime" }
+      }
+    }
+  }
+}

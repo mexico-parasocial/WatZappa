@@ -1,0 +1,456 @@
+npm warn Unknown project config "enable-pre-post-scripts". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+ RUN  v4.0.16 /Users/mlv/Desktop/MASTER/watx
+
+ ✓ |@atproto/lex| tests/unknown.test.ts (1 test) 2ms
+ ✓ |@atproto/lex| tests/byte.test.ts (1 test) 4ms
+ ❯ |@atproto/lex| tests/integer.test.ts (4 tests | 1 failed) 5ms
+     ✓ Applies integer range constraint 1ms
+     ✓ Applies integer enum constraint 0ms
+     ✓ Applies integer const constraint 0ms
+     × Applies integer whole-number constraint 3ms
+ ✓ |@atproto/lex| tests/defaults.test.ts (2 tests) 5ms
+ ❯ |@atproto/lex| tests/union.test.ts (1 test | 1 failed) 9ms
+     × Handles unions correctly 8ms
+ ❯ |@atproto/lex| tests/array.test.ts (2 tests | 1 failed) 10ms
+     ✓ Applies array length constraints 3ms
+     × Applies array item constraints 6ms
+ ❯ |@atproto/lex| tests/query.test.ts (10 tests | 3 failed) 10ms
+       ✓ passes valid parameters 1ms
+       ✓ preserves unknown parameters 1ms
+       ✓ passes valid parameters 0ms
+       ✓ rejects missing parameters 1ms
+       ✓ rejects undefined parameters 0ms
+       × rejects invalid parameter value 5ms
+       × rejects invalid parameter type 1ms
+       ✓ properly infers the type of default parameters 0ms
+       ✓ Passes valid outputs 0ms
+       × Rejects invalid output 0ms
+ ❯ |@atproto/lex| tests/procedure.test.ts (8 tests | 1 failed) 12ms
+     ✓ Passes valid parameters 2ms
+     ✓ Passes valid inputs 0ms
+     × Validates input property type 7ms
+     ✓ Rejects missing properties 0ms
+     ✓ Passes valid outputs 0ms
+     ✓ Rejects invalid output 0ms
+     ✓ properly types knownValues in params 0ms
+     ✓ properly types knownValues in input body 0ms
+ ✓ |@atproto/lex| tests/string.test.ts (69 tests) 14ms
+ ✓ |@atproto/lex-builder| src/filtered-indexer.test.ts (2 tests) 3ms
+ ✓ |@atproto/lex-cbor| tests/vectors.test.ts (5 tests) 8ms
+ ✓ |@atproto/lex-cbor| tests/codec.test.ts (23 tests) 15ms
+ ✓ |@atproto/lex| tests/unsafe.test.ts (2 tests) 2ms
+ ✓ |@atproto/lex| tests/token.test.ts (12 tests) 4ms
+ ✓ |@atproto/lex| tests/parameters.test.ts (2 tests) 4ms
+ ✓ |@atproto/lex| tests/boolean.test.ts (1 test) 2ms
+ ✓ |@atproto/lex-cbor| tests/dag-cbor.test.ts (19 tests) 151ms
+ ✓ |@atproto/lex-cbor| tests/fixtures.test.ts (3 tests) 10ms
+ ✓ |@atproto/lex-client| src/www-authenticate.test.ts (33 tests) 3ms
+ ✓ |@atproto/lex-client| src/util.test.ts (33 tests) 45ms
+ ✓ |@atproto/lex-client| src/agent.test.ts (18 tests) 35ms
+ ✓ |@atproto/lex-builder| src/ref-resolver.test.ts (2 tests) 15ms
+ ✓ |@atproto/lex-client| src/errors.test.ts (36 tests) 39ms
+ ✓ |@atproto/lex-client| src/xrpc.test.ts (58 tests) 92ms
+ ✓ |@atproto/lex-data| src/utf8-from-bytes.test.ts (32 tests) 40ms
+ ✓ |@atproto/lex-data| src/uint8array.test.ts (69 tests) 10ms
+ ✓ |@atproto/lex-data| src/blob.test.ts (21 tests) 48ms
+ ✓ |@atproto/lex-data| src/cid.test.ts (38 tests) 16ms
+ ✓ |@atproto/lex-data| src/uint8array-from-base64.test.ts (249 tests) 334ms
+ ✓ |@atproto/lex-data| src/object.test.ts (13 tests) 7ms
+ ✓ |@atproto/lex-data| src/lex.test.ts (42 tests) 350ms
+     ✓ handles deeply nested structures  347ms
+ ✓ |@atproto/lex-data| src/lex-error.test.ts (8 tests) 3ms
+ ✓ |@atproto/lex-data| src/lex-equals.test.ts (15 tests) 9ms
+ ✓ |@atproto/lex-data| src/utf8-to-base64.test.ts (4 tests) 4ms
+ ✓ |@atproto/lex-data| src/uint8array-concat.test.ts (34 tests) 544ms
+       ✓ handles large arrays  342ms
+ ✓ |@atproto/lex-data| src/utf8-from-base64.test.ts (4 tests) 3ms
+ ✓ |@atproto/lex-data| src/utf8-grapheme-len.test.ts (2 tests) 2ms
+ ✓ |@atproto/lex-data| src/lib/util.test.ts (8 tests) 2ms
+ ✓ |@atproto/lex-data| src/cid-implementation.test.ts (3 tests) 2ms
+ ✓ |@atproto/lex-data| src/utf8-len.test.ts (2 tests) 3ms
+ ✓ |@atproto/lex-installer| src/lexicons-manifest.test.ts (2 tests) 3ms
+ ✓ |@atproto/lex-document| src/lexicon-document.test.ts (6 tests) 6ms
+ ✓ |@atproto/lex-document| src/lexicon-schema-builder.test.ts (9 tests) 10ms
+ ✓ |@atproto/lex-document| tests/fixtures.test.ts (9 tests) 5ms
+ ✓ |@atproto/lex-json| src/json-transform.test.ts (4 tests) 43ms
+ ✓ |@atproto/lex-json| src/bytes.test.ts (7 tests) 4ms
+ ✓ |@atproto/lex-json| tests/fixtures.test.ts (17 tests) 11ms
+ ✓ |@atproto/lex-json| src/lex-parse.test.ts (3 tests) 26ms
+ ✓ |@atproto/lex-data| src/uint8array-to-base64.test.ts (117 tests) 1466ms
+       ✓ encodes 10MB  1448ms
+ ✓ |@atproto/lex-json| src/lex-json.test.ts (126 tests) 145ms
+ ✓ |@atproto/lex-resolver| tests/index.test.ts (1 test) 1ms
+ ✓ |@atproto/lex-json| src/lex-stringify.test.ts (137 tests) 294ms
+ ✓ |@atproto/lex-password-session| src/password-session-utils.test.ts (8 tests) 4ms
+ ✓ |@atproto/lex-schema| src/schema/literal.test.ts (78 tests) 5ms
+ ✓ |@atproto/lex-schema| src/schema/nullable.test.ts (64 tests) 10ms
+ ✓ |@atproto/lex-schema| src/schema/record.test.ts (75 tests) 14ms
+ ✓ |@atproto/lex-schema| src/schema/blob.test.ts (68 tests) 12ms
+ ✓ |@atproto/lex-schema| src/schema/refine.test.ts (70 tests) 13ms
+ ✓ |@atproto/lex-schema| src/schema/params.test.ts (144 tests) 23ms
+ ✓ |@atproto/lex-password-session| src/password-session.test.ts (15 tests) 86ms
+ ✓ |@atproto/lex-schema| src/schema/procedure.test.ts (19 tests) 8ms
+ ✓ |@atproto/lex-schema| src/schema/enum.test.ts (59 tests) 5ms
+ ✓ |@atproto/lex-schema| src/schema/lex-map.test.ts (69 tests) 18ms
+ ✓ |@atproto/lex-schema| src/schema/token.test.ts (24 tests) 9ms
+ ✓ |@atproto/lex-schema| src/schema/array.test.ts (32 tests) 7ms
+ ✓ |@atproto/lex-schema| src/schema/boolean.test.ts (16 tests) 13ms
+ ✓ |@atproto/lex-schema| src/schema/optional.test.ts (61 tests) 18ms
+ ✓ |@atproto/lex-schema| src/schema/typed-ref.test.ts (36 tests) 14ms
+ ✓ |@atproto/lex-schema| tests/l.test.ts (60 tests) 12ms
+ ✓ |@atproto/lex-schema| src/schema/typed-object.test.ts (83 tests) 9ms
+ ✓ |@atproto/lex-schema| src/schema/ref.test.ts (30 tests) 10ms
+ ✓ |@atproto/lex-schema| src/schema/string.test.ts (109 tests) 25ms
+ ✓ |@atproto/lex-schema| src/schema/regexp.test.ts (97 tests) 13ms
+ ✓ |@atproto/lex-schema| src/schema/integer.test.ts (50 tests) 7ms
+ ✓ |@atproto/lex-schema| src/core/standard-schema.test.ts (16 tests) 8ms
+ ✓ |@atproto/lex-schema| src/schema/custom.test.ts (25 tests) 10ms
+ ✓ |@atproto/lex-schema| src/schema/unknown.test.ts (33 tests) 11ms
+ ✓ |@atproto/lex-schema| src/schema/permission.test.ts (70 tests) 9ms
+ ✓ |@atproto/lex-schema| src/schema/query.test.ts (20 tests) 8ms
+ ✓ |@atproto/lex-schema| src/schema/discriminated-union.test.ts (59 tests) 12ms
+ ✓ |@atproto/lex-schema| src/schema/subscription.test.ts (29 tests) 12ms
+ ✓ |@atproto/lex-schema| src/schema/union.test.ts (29 tests) 7ms
+ ✓ |@atproto/lex-schema| src/schema/payload.test.ts (41 tests) 13ms
+ ✓ |@atproto/lex-schema| src/schema/typed-union.test.ts (35 tests) 7ms
+ ✓ |@atproto/lex-schema| src/schema/permission-set.test.ts (35 tests) 10ms
+ ✓ |@atproto/lex-schema| src/schema/dict.test.ts (19 tests) 3ms
+ ✓ |@atproto/lex-schema| src/schema/null.test.ts (13 tests) 2ms
+ ✓ |@atproto/lex-schema| src/schema/bytes.test.ts (35 tests) 7ms
+ ✓ |@atproto/lex-schema| src/schema/lex-value.test.ts (24 tests) 4ms
+ ✓ |@atproto/lex-schema| src/schema/object.test.ts (7 tests) 2ms
+ ✓ |@atproto/lex-schema| src/schema/never.test.ts (29 tests) 9ms
+ ✓ |@atproto/lex-schema| src/core/$type.test.ts (1 test) 2ms
+ ✓ |@atproto/lex-schema| src/util/array-agg.test.ts (3 tests) 1ms
+ ✓ |@atproto/lex-schema| src/schema/cid.test.ts (18 tests) 5ms
+ ✓ |@atproto/lex-schema| src/helpers.test.ts (26 tests) 5ms
+ ✓ |@atproto/lex-schema| src/schema/intersection.test.ts (2 tests) 5ms
+ ✓ |@atproto/lex-server| src/lib/www-authenticate.test.ts (15 tests) 4ms
+ ✓ |@atproto/lex-server| src/errors.test.ts (24 tests) 35ms
+ ✓ |@atproto/lex-server| src/nodejs.test.ts (5 tests) 97ms
+ ✓ |@atproto/syntax| tests/nsid.test.ts (109 tests) 15ms
+ ✓ |@atproto/syntax| tests/aturi.test.ts (15 tests) 22ms
+ ✓ |@atproto/syntax| tests/datetime.test.ts (303 tests) 39ms
+ ✓ |@atproto/lex-client| tests/client.test.ts (15 tests) 77ms
+ ✓ |@atproto/syntax| tests/aturi-string.test.ts (69 tests) 14ms
+ ✓ |@atproto/syntax| tests/did.test.ts (4 tests) 7ms
+ ✓ |@atproto/syntax| tests/language.test.ts (2 tests) 4ms
+ ✓ |@atproto/syntax| tests/recordkey.test.ts (2 tests) 3ms
+ ✓ |@atproto/syntax| tests/handle.test.ts (13 tests) 7ms
+ ✓ |@atproto/syntax| tests/tid.test.ts (2 tests) 3ms
+ ❯ |@atproto/lex-server| src/lex-server.test.ts (56 tests | 7 failed) 267ms
+     ✓ returns MethodNotImplemented when the route is not found 5ms
+     ✓ streams payloads 154ms
+     ✓ maps params to body 4ms
+     ✓ echoes text 1ms
+     ✓ streams text 0ms
+     ✓ performs simple query 0ms
+     ✓ can send and receive ipld vals 2ms
+     × fails on bad auth before invalid request payload 7ms
+     ✓ fails on invalid request payload after good auth 3ms
+     ✓ succeeds on good auth and payload 0ms
+     × handles missing auth header 1ms
+       × throws custom error using LexError 0ms
+       ✓ returns custom error via Response object 0ms
+       × handles falsy values thrown as InternalError 1ms
+       ✓ rejects POST for query endpoints 0ms
+       ✓ rejects GET for procedure endpoints 0ms
+       ✓ returns MethodNotImplemented for non-existent methods 5ms
+       ✓ allows custom onHandlerError handler 2ms
+     ✓ validates query params - valid input 1ms
+     ✓ applies default values 0ms
+     ✓ coerces types from query strings 2ms
+     ✓ rejects string too short 1ms
+     ✓ rejects string too long 1ms
+     ✓ rejects missing required parameter str 1ms
+     ✓ rejects missing required parameter int 0ms
+     ✓ rejects missing required parameter bool 0ms
+     ✓ rejects integer too small 0ms
+     ✓ rejects integer too large 0ms
+     ✓ rejects missing required array parameter 0ms
+     ✓ rejects array too large 0ms
+     ✓ serves procedure with params returning text 0ms
+     ✓ serves procedure with text input/output 0ms
+     ✓ serves procedure with binary input/output 0ms
+     ✓ serves procedure with JSON input/output 0ms
+     ✓ serves query with text response 0ms
+     ✓ serves query with binary response 0ms
+     ✓ serves query with JSON response and custom headers 0ms
+     × rejects query with content-type header 0ms
+       ✓ returns readable streams of bytes 0ms
+       ✓ handles errors on readable streams of bytes 1ms
+       ✓ handles responses with no body 0ms
+       ✓ handles responses with headers but no body 0ms
+       ✓ allows returning custom Response objects 0ms
+       ✓ validates input and output bodies 0ms
+       ✓ rejects missing required fields 0ms
+       ✓ rejects wrong types 0ms
+       × rejects wrong content-type 1ms
+       ✓ supports ArrayBuffers 1ms
+       ✓ supports empty payload 0ms
+       ✓ supports ReadableStream 0ms
+       ✓ requires any parsable Content-Type for blob uploads 0ms
+       × errors on missing Content-Type for JSON payload 0ms
+       ✓ defaults to application/octet-stream for empty Content-Type 1ms
+     ✓ handles subscriptions with cleanup 44ms
+     ✓ returns 405 for non-GET request 14ms
+     ✓ returns 426 for non-WebSocket request 6ms
+ ✓ |@atproto/lex-server| src/lex-router.test.ts (85 tests) 298ms
+ ✓ |@atproto/tap| tests/simple-indexer.test.ts (10 tests) 3ms
+ ✓ |@atproto/tap| tests/lex-indexer.test.ts (20 tests) 6ms
+ ✓ |@atproto/tap| tests/util.test.ts (9 tests) 2ms
+ ✓ |@atproto/tap| tests/client.test.ts (11 tests) 55ms
+ ✓ |@atproto/tap| tests/channel.test.ts (9 tests) 1354ms
+       ✓ handles reconnection and receives events from new connection  1006ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 14 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |@atproto/lex-server| src/lex-server.test.ts > Authentication > fails on bad auth before invalid request payload
+AssertionError: expected 500 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 500
+
+ ❯ src/lex-server.test.ts:340:29
+    338|     const response = await router.fetch(request)
+    339| 
+    340|     expect(response.status).toBe(400)
+       |                             ^
+    341|     const data = await response.json()
+    342|     expect(data.error).toBe('AuthenticationRequired')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/14]⎯
+
+ FAIL  |@atproto/lex-server| src/lex-server.test.ts > Authentication > handles missing auth header
+AssertionError: expected 500 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 500
+
+ ❯ src/lex-server.test.ts:410:29
+    408|     const response = await router.fetch(request)
+    409| 
+    410|     expect(response.status).toBe(400)
+       |                             ^
+    411|     const data = await response.json()
+    412|     expect(data.error).toBe('AuthenticationRequired')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/14]⎯
+
+ FAIL  |@atproto/lex-server| src/lex-server.test.ts > Error Handling > Custom Errors > throws custom error using LexError
+AssertionError: expected 500 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 500
+
+ ❯ src/lex-server.test.ts:466:31
+    464|       const response = await router.fetch(request)
+    465| 
+    466|       expect(response.status).toBe(400)
+       |                               ^
+    467|       const data = await response.json()
+    468|       expect(data.error).toBe('Foo')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/14]⎯
+
+ FAIL  |@atproto/lex-server| src/lex-server.test.ts > Error Handling > Custom Errors > handles falsy values thrown as InternalError
+AssertionError: expected 'InternalServerError' to be 'InternalError' // Object.is equality
+
+Expected: "InternalError"
+Received: "InternalServerError"
+
+ ❯ src/lex-server.test.ts:514:26
+    512|       expect(response.status).toBe(500)
+    513|       const data = await response.json()
+    514|       expect(data.error).toBe('InternalError')
+       |                          ^
+    515|     })
+    516|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/14]⎯
+
+ FAIL  |@atproto/lex-server| src/lex-server.test.ts > Queries > rejects query with content-type header
+AssertionError: expected 500 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 500
+
+ ❯ src/lex-server.test.ts:1020:29
+    1018|     const response = await router.fetch(request)
+    1019| 
+    1020|     expect(response.status).toBe(400)
+       |                             ^
+    1021|     const data = await response.json()
+    1022|     expect(data.error).toBe('InvalidRequest')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/14]⎯
+
+ FAIL  |@atproto/lex-server| src/lex-server.test.ts > Body Handling > Input Validation > rejects wrong content-type
+AssertionError: expected 500 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 500
+
+ ❯ src/lex-server.test.ts:1310:31
+    1308|       const response = await router.fetch(request)
+    1309| 
+    1310|       expect(response.status).toBe(400)
+       |                               ^
+    1311|       const data = await response.json()
+    1312|       expect(data.error).toBe('InvalidRequest')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/14]⎯
+
+ FAIL  |@atproto/lex-server| src/lex-server.test.ts > Body Handling > Edge Cases > errors on missing Content-Type for JSON payload
+AssertionError: expected 500 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 500
+
+ ❯ src/lex-server.test.ts:1449:31
+    1447|       const response = await router.fetch(request)
+    1448| 
+    1449|       expect(response.status).toBe(400)
+       |                               ^
+    1450|       const data = await response.json()
+    1451|       expect(data.error).toBe('InvalidRequest')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/14]⎯
+
+ FAIL  |@atproto/lex| tests/array.test.ts > array > Applies array item constraints
+AssertionError: expected [Function] to throw error including 'Expected integer value type (got stri…' but got 'Expected integer value type (got "2")…'
+
+Expected: "Expected integer value type (got string) at $.array[1]"
+Received: "Expected integer value type (got "2") at $.array[1]"
+
+ ❯ tests/array.test.ts:30:7
+     28|         array: [1, '2', 3],
+     29|       }),
+     30|     ).toThrow('Expected integer value type (got string) at $.array[1]')
+       |       ^
+     31|     expect(() =>
+     32|       com.example.arrayLength.$parse({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/14]⎯
+
+ FAIL  |@atproto/lex| tests/integer.test.ts > integer > Applies integer whole-number constraint
+AssertionError: expected [Function] to throw error including 'Expected integer value type (got floa…' but got 'Expected integer value type (got 2.5)…'
+
+Expected: "Expected integer value type (got float) at $.integer"
+Received: "Expected integer value type (got 2.5) at $.integer"
+
+ ❯ tests/integer.test.ts:56:7
+     54|         integer: 2.5,
+     55|       }),
+     56|     ).toThrow('Expected integer value type (got float) at $.integer')
+       |       ^
+     57|   })
+     58| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/14]⎯
+
+ FAIL  |@atproto/lex| tests/procedure.test.ts > com.example.procedure > Validates input property type
+AssertionError: expected [Function] to throw error including 'Expected boolean value type (got stri…' but got 'Expected boolean value type (got "str…'
+
+Expected: "Expected boolean value type (got string) at $.object.boolean"
+Received: "Expected boolean value type (got "string") at $.object.boolean"
+
+ ❯ tests/procedure.test.ts:44:8
+     42|         string: 'string',
+     43|       })
+     44|     }).toThrow('Expected boolean value type (got string) at $.object.b…
+       |        ^
+     45|   })
+     46| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/14]⎯
+
+ FAIL  |@atproto/lex| tests/query.test.ts > com.example.query > parameters > rejects invalid parameter value
+AssertionError: expected [Function] to throw error including 'Expected boolean value type (got stri…' but got 'Expected boolean value type (got "str…'
+
+Expected: "Expected boolean value type (got string) at $.boolean"
+Received: "Expected boolean value type (got "string") at $.boolean"
+
+ ❯ tests/query.test.ts:67:9
+     65|           string: 'string',
+     66|         }),
+     67|       ).toThrow('Expected boolean value type (got string) at $.boolean…
+       |         ^
+     68|     })
+     69| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/14]⎯
+
+ FAIL  |@atproto/lex| tests/query.test.ts > com.example.query > parameters > rejects invalid parameter type
+AssertionError: expected [Function] to throw error including 'Expected one of boolean, integer, str…' but got 'Expected one of boolean, integer, str…'
+
+Expected: "Expected one of boolean, integer, string or array value type (got float) at $.float"
+Received: "Expected one of boolean, integer, string or array value type (got 123.45) at $.float"
+
+ ❯ tests/query.test.ts:77:9
+     75|           float: 123.45,
+     76|         }),
+     77|       ).toThrow(
+       |         ^
+     78|         'Expected one of boolean, integer, string or array value type …
+     79|       )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/14]⎯
+
+ FAIL  |@atproto/lex| tests/query.test.ts > com.example.query > output > Rejects invalid output
+AssertionError: expected [Function] to throw error including 'Expected boolean value type (got stri…' but got 'Expected boolean value type (got "str…'
+
+Expected: "Expected boolean value type (got string) at $.object.boolean"
+Received: "Expected boolean value type (got "string") at $.object.boolean"
+
+ ❯ tests/query.test.ts:144:10
+    142|           string: 'string',
+    143|         })
+    144|       }).toThrow('Expected boolean value type (got string) at $.object…
+       |          ^
+    145|     })
+    146|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/14]⎯
+
+ FAIL  |@atproto/lex| tests/union.test.ts > union > Handles unions correctly
+AssertionError: expected [Function] to throw error including 'Expected an object which includes the…' but got 'Expected an object which includes the…'
+
+Expected: "Expected an object which includes the "$type" property value type (got object) at $.unionOpen"
+Received: "Expected an object which includes the "$type" property value type (got {}) at $.unionOpen"
+
+ ❯ tests/union.test.ts:37:7
+     35|         unionClosed: {},
+     36|       }),
+     37|     ).toThrow(
+       |       ^
+     38|       'Expected an object which includes the "$type" property value ty…
+     39|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/14]⎯
+
+
+ Test Files  6 failed | 110 passed (116)
+      Tests  14 failed | 3929 passed (3943)
+   Start at  23:52:23
+   Duration  6.93s (transform 9.14s, setup 0ms, import 20.09s, tests 6.69s, environment 16ms)
+

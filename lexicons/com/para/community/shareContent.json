@@ -1,0 +1,64 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.shareContent",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Shares existing content into a PARA community by creating a member-owned sharedContent wrapper.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["subject", "communityUri", "contentType"],
+          "properties": {
+            "subject": { "type": "ref", "ref": "com.atproto.repo.strongRef" },
+            "communityUri": { "type": "string", "format": "at-uri" },
+            "contentType": {
+              "type": "string",
+              "knownValues": [
+                "post",
+                "cabildeo",
+                "collection",
+                "mapInitiative",
+                "external"
+              ]
+            },
+            "note": {
+              "type": "string",
+              "maxGraphemes": 300,
+              "maxLength": 3000
+            },
+            "visibility": {
+              "type": "string",
+              "knownValues": ["community", "public", "stewards"]
+            },
+            "sourceApp": {
+              "type": "string",
+              "maxGraphemes": 128,
+              "maxLength": 512
+            },
+            "embedContext": { "type": "unknown" },
+            "pinned": { "type": "boolean" },
+            "sortRank": { "type": "integer" }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": { "type": "ref", "ref": "#output" }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["uri", "cid", "sharedContent"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "sharedContent": {
+          "type": "ref",
+          "ref": "com.para.community.defs#sharedContentView"
+        }
+      }
+    }
+  }
+}

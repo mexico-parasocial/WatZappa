@@ -1,0 +1,32 @@
+{
+  "lexicon": 1,
+  "id": "com.para.highlight.getHighlight",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get a single indexed highlight annotation by URI.",
+      "parameters": {
+        "type": "params",
+        "required": ["highlight"],
+        "properties": {
+          "highlight": {
+            "type": "string",
+            "format": "at-uri"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "highlight": {
+              "type": "ref",
+              "ref": "com.para.highlight.defs#highlightView"
+            }
+          }
+        }
+      }
+    }
+  }
+}

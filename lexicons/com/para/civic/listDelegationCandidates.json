@@ -1,0 +1,88 @@
+{
+  "lexicon": 1,
+  "id": "com.para.civic.listDelegationCandidates",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Lists real delegation candidates for a cabildeo/community.",
+      "auth": {
+        "type": "access"
+      },
+      "parameters": {
+        "type": "params",
+        "required": ["cabildeo"],
+        "properties": {
+          "cabildeo": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "communityId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          },
+          "cursor": {
+            "type": "string"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "#output"
+        }
+      }
+    },
+    "candidateView": {
+      "type": "object",
+      "required": ["did", "roles", "activeDelegationCount", "hasVoted"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string", "format": "handle" },
+        "displayName": {
+          "type": "string",
+          "maxGraphemes": 64,
+          "maxLength": 640
+        },
+        "avatar": { "type": "string", "format": "uri" },
+        "description": {
+          "type": "string",
+          "maxGraphemes": 300,
+          "maxLength": 3000
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxGraphemes": 64,
+            "maxLength": 128
+          }
+        },
+        "activeDelegationCount": { "type": "integer", "minimum": 0 },
+        "hasVoted": { "type": "boolean" },
+        "votedAt": { "type": "string", "format": "datetime" },
+        "selectedOption": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["candidates"],
+      "properties": {
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "#candidateView"
+          }
+        },
+        "cursor": { "type": "string" }
+      }
+    }
+  }
+}

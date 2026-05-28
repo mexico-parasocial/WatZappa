@@ -1,0 +1,25 @@
+{
+  "lexicon": 1,
+  "id": "com.para.collection.updateCollection",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Update an existing policy collection.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["id", "collection"],
+          "properties": {
+            "id": { "type": "string" },
+            "collection": {
+              "type": "ref",
+              "ref": "com.para.collection.defs#collection"
+            }
+          }
+        }
+      },
+      "errors": [{ "name": "NotFound" }]
+    }
+  }
+}

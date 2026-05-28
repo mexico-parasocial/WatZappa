@@ -1,0 +1,29 @@
+{
+  "lexicon": 1,
+  "id": "com.para.raq.proposalAnswer",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A user's answer (-3 to 3) to a proposed RAQ question.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["subject", "value", "createdAt"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "URI of the com.para.raq.proposal being answered"
+          },
+          "value": {
+            "type": "integer",
+            "minimum": -3,
+            "maximum": 3,
+            "description": "Answer value: -3 strongly disagree to +3 strongly agree"
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

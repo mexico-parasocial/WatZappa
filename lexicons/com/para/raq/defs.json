@@ -1,0 +1,87 @@
+{
+  "lexicon": 1,
+  "id": "com.para.raq.defs",
+  "defs": {
+    "axisResult": {
+      "type": "object",
+      "required": ["axisId", "axisTitle", "score", "label"],
+      "properties": {
+        "axisId": { "type": "string", "maxLength": 64 },
+        "axisTitle": { "type": "string", "maxLength": 128 },
+        "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "label": { "type": "string", "maxLength": 64 },
+        "labelLow": { "type": "string", "maxLength": 64 },
+        "labelHigh": { "type": "string", "maxLength": 64 },
+        "rawScore": { "type": "integer" }
+      }
+    },
+    "ideologyMatch": {
+      "type": "object",
+      "required": ["name", "description", "matchPercent"],
+      "properties": {
+        "name": { "type": "string", "maxLength": 128 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "matchPercent": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "partyMatch": {
+      "type": "object",
+      "required": ["partyId", "partyName", "matchPercent"],
+      "properties": {
+        "partyId": { "type": "string", "maxLength": 64 },
+        "partyName": { "type": "string", "maxLength": 128 },
+        "partyFullName": { "type": "string", "maxLength": 256 },
+        "partyColor": { "type": "string", "maxLength": 32 },
+        "matchPercent": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "compassPosition": {
+      "type": "object",
+      "required": ["x", "y", "ninth"],
+      "properties": {
+        "x": {
+          "type": "integer",
+          "minimum": -1000,
+          "maximum": 1000,
+          "description": "Scaled by 1000, e.g. -500 = -0.5"
+        },
+        "y": {
+          "type": "integer",
+          "minimum": -1000,
+          "maximum": 1000,
+          "description": "Scaled by 1000, e.g. 750 = 0.75"
+        },
+        "ninth": { "type": "string", "maxLength": 64 }
+      }
+    },
+    "communityAxisView": {
+      "type": "object",
+      "required": ["id", "name", "description", "votes"],
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 128 },
+        "description": { "type": "string", "maxLength": 512 },
+        "color": { "type": "string", "maxLength": 32 },
+        "votes": { "type": "integer", "minimum": 0 },
+        "author": { "type": "string", "format": "did" },
+        "viewerHasVoted": { "type": "boolean" }
+      }
+    },
+    "proposedQuestionView": {
+      "type": "object",
+      "required": ["id", "text", "upvotes", "downvotes", "isMainstream"],
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "text": { "type": "string", "maxLength": 1000 },
+        "targetCommunity": { "type": "string", "maxLength": 128 },
+        "upvotes": { "type": "integer", "minimum": 0 },
+        "downvotes": { "type": "integer", "minimum": 0 },
+        "isMainstream": { "type": "boolean" },
+        "viewerHasUpvoted": { "type": "boolean" },
+        "viewerHasDownvoted": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "creator": { "type": "string", "format": "did" }
+      }
+    }
+  }
+}

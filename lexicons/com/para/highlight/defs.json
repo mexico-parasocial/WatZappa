@@ -1,0 +1,43 @@
+{
+  "lexicon": 1,
+  "id": "com.para.highlight.defs",
+  "defs": {
+    "highlightView": {
+      "type": "object",
+      "required": [
+        "uri",
+        "cid",
+        "creator",
+        "indexedAt",
+        "subjectUri",
+        "text",
+        "start",
+        "end",
+        "color",
+        "visibility",
+        "createdAt"
+      ],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "cid-link" },
+        "creator": { "type": "string", "format": "did" },
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "subjectUri": { "type": "string", "format": "at-uri" },
+        "subjectCid": { "type": "string" },
+        "text": { "type": "string", "maxLength": 2000 },
+        "start": { "type": "integer", "minimum": 0 },
+        "end": { "type": "integer", "minimum": 0 },
+        "color": { "type": "string", "maxLength": 32 },
+        "tag": { "type": "string", "maxLength": 128 },
+        "community": { "type": "string", "maxLength": 100 },
+        "state": { "type": "string", "maxLength": 100 },
+        "party": { "type": "string", "maxLength": 100 },
+        "visibility": {
+          "type": "string",
+          "knownValues": ["public", "private"]
+        },
+        "createdAt": { "type": "string", "format": "datetime" }
+      }
+    }
+  }
+}
