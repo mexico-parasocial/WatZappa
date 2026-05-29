@@ -39,8 +39,8 @@ import * as paraPost from './tables/para-post.js'
 import * as paraPostMeta from './tables/para-post-meta.js'
 import * as paraProfileStats from './tables/para-profile-stats.js'
 import * as paraQvlDelegation from './tables/para-qvl-delegation.js'
-import * as paraQvlDeliberationStatement from './tables/para-qvl-deliberation-statement.js'
-import * as paraQvlDeliberationVote from './tables/para-qvl-deliberation-vote.js'
+import * as paraQvlCivicTreeStatement from './tables/para-qvl-civic-tree-statement.js'
+import * as paraQvlCivicTreeVote from './tables/para-qvl-civic-tree-vote.js'
 import * as paraQvlEigenstateSnapshot from './tables/para-qvl-eigenstate-snapshot.js'
 import * as paraQvlGovernanceConfig from './tables/para-qvl-governance-config.js'
 import * as paraQvlIntensity from './tables/para-qvl-intensity.js'
@@ -122,8 +122,8 @@ export type DatabaseSchemaType = duplicateRecord.PartialDB &
   paraCommunityRelation.PartialDB &
   paraCommunitySharedContent.PartialDB &
   paraCommunitySharedContentAction.PartialDB &
-  paraQvlDeliberationStatement.PartialDB &
-  paraQvlDeliberationVote.PartialDB &
+  paraQvlCivicTreeStatement.PartialDB &
+  paraQvlCivicTreeVote.PartialDB &
   paraQvlEigenstateSnapshot.PartialDB &
   paraQvlDelegation.PartialDB &
   paraQvlGovernanceConfig.PartialDB &

@@ -7,10 +7,10 @@ export interface ParaQvldGovernanceConfig {
   community: string
   version: string
   metaRules: unknown // JSON: quorumPct, thresholdPct, amendmentQuorumPct, maxIntensityUnits
-  deliberationRules: unknown | null // JSON: windowHours, minStatements, clusteringEnabled
+  civicTreeRules: unknown | null // JSON: windowHours, minStatements, clusteringEnabled
   delegationRules: unknown | null // JSON: eligibleRoles, maxDepth, autoExpireDays
   countingRules: unknown | null // JSON: modes, correlationAlpha, bindingMode
-  visibilityRules: unknown | null // JSON: deliberationPublic, votesPublic, delegationGraphPublic
+  visibilityRules: unknown | null // JSON: civicTreePublic, votesPublic, delegationGraphPublic
   createdAt: string
   indexedAt: string
 }

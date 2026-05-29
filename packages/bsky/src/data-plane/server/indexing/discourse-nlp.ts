@@ -112,7 +112,7 @@ export function analyzeDiscourse(text: string): {
   let constructiveness = diversity * 0.5 + lengthBonus
 
   if (label === 'anger') constructiveness -= 0.3
-  if (text.includes('?')) constructiveness += 0.1 // Questions often provoke deliberation
+  if (text.includes('?')) constructiveness += 0.1 // Questions often provoke civicTree
 
   return {
     sentiment: {

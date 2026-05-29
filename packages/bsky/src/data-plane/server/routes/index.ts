@@ -8,7 +8,7 @@ import bookmarks from './bookmarks.js'
 import cabildeo from './cabildeo.js'
 import collections from './collections.js'
 import community from './community.js'
-import deliberation from './deliberation.js'
+import civicTree from './civic-tree.js'
 import discourse from './discourse.js'
 import drafts from './drafts.js'
 import feedGens from './feed-gens.js'
@@ -50,7 +50,7 @@ export default (db: Database, idResolver: IdResolver) =>
       ...cabildeo(db),
       ...collections(db),
       ...community(db),
-      ...deliberation(db),
+      ...civicTree(db),
       ...discourse(db),
       ...qvlAudit(db),
       ...qvlSimulation(db),

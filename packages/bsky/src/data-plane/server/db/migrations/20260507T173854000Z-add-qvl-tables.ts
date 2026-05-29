@@ -36,9 +36,9 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .column('voter')
     .execute()
 
-  // 2. Deliberation statements (Polis-style)
+  // 2. CivicTree statements (Polis-style)
   await db.schema
-    .createTable('para_qvld_deliberation_statement')
+    .createTable('para_qvld_civicTree_statement')
     .addColumn('uri', 'varchar', (col) => col.primaryKey())
     .addColumn('cid', 'varchar', (col) => col.notNull())
     .addColumn('creator', 'varchar', (col) => col.notNull())
@@ -56,14 +56,14 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .execute()
 
   await db.schema
-    .createIndex('para_qvld_deliberation_statement_proposal_idx')
-    .on('para_qvld_deliberation_statement')
+    .createIndex('para_qvld_civicTree_statement_proposal_idx')
+    .on('para_qvld_civicTree_statement')
     .column('proposal')
     .execute()
 
-  // 3. Deliberation votes (agree/disagree/pass on statements)
+  // 3. CivicTree votes (agree/disagree/pass on statements)
   await db.schema
-    .createTable('para_qvld_deliberation_vote')
+    .createTable('para_qvld_civicTree_vote')
     .addColumn('uri', 'varchar', (col) => col.primaryKey())
     .addColumn('cid', 'varchar', (col) => col.notNull())
     .addColumn('creator', 'varchar', (col) => col.notNull())
@@ -78,14 +78,14 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .execute()
 
   await db.schema
-    .createIndex('para_qvld_deliberation_vote_statement_idx')
-    .on('para_qvld_deliberation_vote')
+    .createIndex('para_qvld_civicTree_vote_statement_idx')
+    .on('para_qvld_civicTree_vote')
     .column('statement')
     .execute()
 
   await db.schema
-    .createIndex('para_qvld_deliberation_vote_voter_idx')
-    .on('para_qvld_deliberation_vote')
+    .createIndex('para_qvld_civicTree_vote_voter_idx')
+    .on('para_qvld_civicTree_vote')
     .column('voter')
     .execute()
 
@@ -119,7 +119,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn('community', 'varchar', (col) => col.notNull())
     .addColumn('version', 'varchar', (col) => col.notNull())
     .addColumn('metaRules', sql`jsonb`, (col) => col.notNull())
-    .addColumn('deliberationRules', sql`jsonb`)
+    .addColumn('civicTreeRules', sql`jsonb`)
     .addColumn('delegationRules', sql`jsonb`)
     .addColumn('countingRules', sql`jsonb`)
     .addColumn('visibilityRules', sql`jsonb`)
@@ -137,7 +137,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
 export async function down(db: Kysely<unknown>): Promise<void> {
   await db.schema.dropTable('para_qvld_governance_config').execute()
   await db.schema.dropTable('para_qvld_eigenstate_snapshot').execute()
-  await db.schema.dropTable('para_qvld_deliberation_vote').execute()
-  await db.schema.dropTable('para_qvld_deliberation_statement').execute()
+  await db.schema.dropTable('para_qvld_civicTree_vote').execute()
+  await db.schema.dropTable('para_qvld_civicTree_statement').execute()
   await db.schema.dropTable('para_qvld_intensity').execute()
 }

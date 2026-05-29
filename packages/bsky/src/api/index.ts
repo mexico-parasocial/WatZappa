@@ -115,15 +115,15 @@ import listParaCollections from './com/para/collection/listCollections.js'
 import updateParaCollection from './com/para/collection/updateCollection.js'
 import getParaAuditTrail from './com/para/community/getAuditTrail.js'
 import getParaCommunityBoard from './com/para/community/getBoard.js'
-import getParaDeliberationClusters from './com/para/community/getDeliberationClusters.js'
+import getParaCivicTree from './com/para/community/getCivicTree.js'
 import getParaCommunityGovernance from './com/para/community/getGovernance.js'
 import getParaTallySimulation from './com/para/community/getTallySimulation.js'
 import listParaCommunityBoards from './com/para/community/listBoards.js'
 import listParaChildCommunities from './com/para/community/listChildCommunities.js'
 import listParaCommunityRelations from './com/para/community/listCommunityRelations.js'
 import listParaDelegations from './com/para/community/listDelegations.js'
-import listParaDeliberationVotes from './com/para/community/listDeliberationVotes.js'
-import listParaDeliberations from './com/para/community/listDeliberations.js'
+import listParaCivicTreeVotes from './com/para/community/listCivicTreeVotes.js'
+import listParaCivicTrees from './com/para/community/listCivicTrees.js'
 import listParaIntensities from './com/para/community/listIntensities.js'
 import listParaCommunityMembers from './com/para/community/listMembers.js'
 import listParaParentCommunities from './com/para/community/listParentCommunities.js'
@@ -280,14 +280,14 @@ export default function (server: Server, ctx: AppContext) {
   getParaCommunityBoard(paraServer, ctx)
   getParaCommunityGovernance(paraServer, ctx)
   getParaAuditTrail(paraServer, ctx)
-  getParaDeliberationClusters(paraServer, ctx)
+  getParaCivicTree(paraServer, ctx)
   getParaTallySimulation(paraServer, ctx)
   listParaCommunityBoards(paraServer, ctx)
   listParaDelegations(paraServer, ctx)
   listParaIntensities(paraServer, ctx)
   listParaVotes(paraServer, ctx)
-  listParaDeliberations(paraServer, ctx)
-  listParaDeliberationVotes(paraServer, ctx)
+  listParaCivicTrees(paraServer, ctx)
+  listParaCivicTreeVotes(paraServer, ctx)
   listParaCommunityMembers(paraServer, ctx)
   listParaCommunityPosts(paraServer, ctx)
   listParaCommunitySharedContent(paraServer, ctx)

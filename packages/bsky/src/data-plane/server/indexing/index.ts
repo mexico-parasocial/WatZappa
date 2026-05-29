@@ -44,8 +44,8 @@ import * as ParaCommunitySharedContentAction from './plugins/para-community-shar
 import * as ParaPost from './plugins/para-post.js'
 import * as ParaPostMeta from './plugins/para-post-meta.js'
 import * as ParaQvlDelegation from './plugins/para-qvl-delegation.js'
-import * as ParaQvlDeliberation from './plugins/para-qvl-deliberation.js'
-import * as ParaQvlDeliberationVote from './plugins/para-qvl-deliberation-vote.js'
+import * as ParaQvlCivicTree from './plugins/para-qvl-civic-tree.js'
+import * as ParaQvlCivicTreeVote from './plugins/para-qvl-civic-tree-vote.js'
 import * as ParaQvlIntensity from './plugins/para-qvl-intensity.js'
 import * as ParaQvlVote from './plugins/para-qvl-vote.js'
 import * as ParaStatus from './plugins/para-status.js'
@@ -94,8 +94,8 @@ export class IndexingService {
     paraCommunitySharedContent: ParaCommunitySharedContent.PluginType
     paraCommunitySharedContentAction: ParaCommunitySharedContentAction.PluginType
     paraPostMeta: ParaPostMeta.PluginType
-    paraQvlDeliberation: ParaQvlDeliberation.PluginType
-    paraQvlDeliberationVote: ParaQvlDeliberationVote.PluginType
+    paraQvlCivicTree: ParaQvlCivicTree.PluginType
+    paraQvlCivicTreeVote: ParaQvlCivicTreeVote.PluginType
     paraQvlDelegation: ParaQvlDelegation.PluginType
     paraQvlIntensity: ParaQvlIntensity.PluginType
     paraQvlVote: ParaQvlVote.PluginType
@@ -169,11 +169,11 @@ export class IndexingService {
         this.background,
         this.paraCache,
       ),
-      paraQvlDeliberation: ParaQvlDeliberation.makePlugin(
+      paraQvlCivicTree: ParaQvlCivicTree.makePlugin(
         this.db,
         this.background,
       ),
-      paraQvlDeliberationVote: ParaQvlDeliberationVote.makePlugin(
+      paraQvlCivicTreeVote: ParaQvlCivicTreeVote.makePlugin(
         this.db,
         this.background,
       ),
@@ -552,11 +552,11 @@ export class IndexingService {
       .where('creator', '=', did)
       .execute()
     await this.db.db
-      .deleteFrom('para_qvld_deliberation_vote')
+      .deleteFrom('para_qvld_civicTree_vote')
       .where('creator', '=', did)
       .execute()
     await this.db.db
-      .deleteFrom('para_qvld_deliberation_statement')
+      .deleteFrom('para_qvld_civicTree_statement')
       .where('creator', '=', did)
       .execute()
     await this.db.db

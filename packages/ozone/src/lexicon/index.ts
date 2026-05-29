@@ -269,17 +269,17 @@ import * as ComParaCommunityAcceptDraftInvite from './types/com/para/community/a
 import * as ComParaCommunityCreateBoard from './types/com/para/community/createBoard.js'
 import * as ComParaCommunityGetAuditTrail from './types/com/para/community/getAuditTrail.js'
 import * as ComParaCommunityGetBoard from './types/com/para/community/getBoard.js'
-import * as ComParaCommunityGetDeliberationClusters from './types/com/para/community/getDeliberationClusters.js'
+import * as ComParaCommunityGetCivicTree from './types/com/para/community/getCivicTree.js'
 import * as ComParaCommunityGetGovernance from './types/com/para/community/getGovernance.js'
 import * as ComParaCommunityGetTallySimulation from './types/com/para/community/getTallySimulation.js'
 import * as ComParaCommunityJoin from './types/com/para/community/join.js'
 import * as ComParaCommunityLeave from './types/com/para/community/leave.js'
 import * as ComParaCommunityListBoards from './types/com/para/community/listBoards.js'
 import * as ComParaCommunityListChildCommunities from './types/com/para/community/listChildCommunities.js'
+import * as ComParaCommunityListCivicTreeVotes from './types/com/para/community/listCivicTreeVotes.js'
+import * as ComParaCommunityListCivicTrees from './types/com/para/community/listCivicTrees.js'
 import * as ComParaCommunityListCommunityRelations from './types/com/para/community/listCommunityRelations.js'
 import * as ComParaCommunityListDelegations from './types/com/para/community/listDelegations.js'
-import * as ComParaCommunityListDeliberationVotes from './types/com/para/community/listDeliberationVotes.js'
-import * as ComParaCommunityListDeliberations from './types/com/para/community/listDeliberations.js'
 import * as ComParaCommunityListIntensities from './types/com/para/community/listIntensities.js'
 import * as ComParaCommunityListMembers from './types/com/para/community/listMembers.js'
 import * as ComParaCommunityListParentCommunities from './types/com/para/community/listParentCommunities.js'
@@ -4006,15 +4006,15 @@ export class ComParaCommunityNS {
     return this._server.xrpc.method(nsid, cfg)
   }
 
-  getDeliberationClusters<A extends Auth = void>(
+  getCivicTree<A extends Auth = void>(
     cfg: MethodConfigOrHandler<
       A,
-      ComParaCommunityGetDeliberationClusters.QueryParams,
-      ComParaCommunityGetDeliberationClusters.HandlerInput,
-      ComParaCommunityGetDeliberationClusters.HandlerOutput
+      ComParaCommunityGetCivicTree.QueryParams,
+      ComParaCommunityGetCivicTree.HandlerInput,
+      ComParaCommunityGetCivicTree.HandlerOutput
     >,
   ) {
-    const nsid = 'com.para.community.getDeliberationClusters' // @ts-ignore
+    const nsid = 'com.para.community.getCivicTree' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
 
@@ -4090,6 +4090,30 @@ export class ComParaCommunityNS {
     return this._server.xrpc.method(nsid, cfg)
   }
 
+  listCivicTreeVotes<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ComParaCommunityListCivicTreeVotes.QueryParams,
+      ComParaCommunityListCivicTreeVotes.HandlerInput,
+      ComParaCommunityListCivicTreeVotes.HandlerOutput
+    >,
+  ) {
+    const nsid = 'com.para.community.listCivicTreeVotes' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  listCivicTrees<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ComParaCommunityListCivicTrees.QueryParams,
+      ComParaCommunityListCivicTrees.HandlerInput,
+      ComParaCommunityListCivicTrees.HandlerOutput
+    >,
+  ) {
+    const nsid = 'com.para.community.listCivicTrees' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
   listCommunityRelations<A extends Auth = void>(
     cfg: MethodConfigOrHandler<
       A,
@@ -4111,30 +4135,6 @@ export class ComParaCommunityNS {
     >,
   ) {
     const nsid = 'com.para.community.listDelegations' // @ts-ignore
-    return this._server.xrpc.method(nsid, cfg)
-  }
-
-  listDeliberationVotes<A extends Auth = void>(
-    cfg: MethodConfigOrHandler<
-      A,
-      ComParaCommunityListDeliberationVotes.QueryParams,
-      ComParaCommunityListDeliberationVotes.HandlerInput,
-      ComParaCommunityListDeliberationVotes.HandlerOutput
-    >,
-  ) {
-    const nsid = 'com.para.community.listDeliberationVotes' // @ts-ignore
-    return this._server.xrpc.method(nsid, cfg)
-  }
-
-  listDeliberations<A extends Auth = void>(
-    cfg: MethodConfigOrHandler<
-      A,
-      ComParaCommunityListDeliberations.QueryParams,
-      ComParaCommunityListDeliberations.HandlerInput,
-      ComParaCommunityListDeliberations.HandlerOutput
-    >,
-  ) {
-    const nsid = 'com.para.community.listDeliberations' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
 

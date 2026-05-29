@@ -3257,28 +3257,43 @@ export default async (sc: SeedClient) => {
 
   for (const l of listDefs) {
     const creator = users.find((u) => u.short === l.creator)!
+    const listRkey = `seed-curate-list-${seedRkeySlug(l.name)}`
+    const listUri = `at://${creator.did}/app.bsky.graph.list/${listRkey}`
     try {
-      const listRes = await creator.agent.app.bsky.graph.list.create(
-        { repo: creator.did },
-        {
+      await cleanupDuplicateSeedLists({
+        agent: creator.agent,
+        repo: creator.did,
+        name: l.name,
+        description: l.description,
+        keepRkey: listRkey,
+      })
+      await creator.agent.com.atproto.repo.putRecord({
+        repo: creator.did,
+        collection: 'app.bsky.graph.list',
+        rkey: listRkey,
+        record: {
+          $type: 'app.bsky.graph.list',
           name: l.name,
           description: l.description,
           createdAt: createdAt(),
           purpose: 'app.bsky.graph.defs#curatelist',
         },
-      )
+      })
       for (const memberShort of l.members) {
         const member = users.find((u) => u.short === memberShort)!
         if (member.did !== creator.did) {
           try {
-            await creator.agent.app.bsky.graph.listitem.create(
-              { repo: creator.did },
-              {
-                list: listRes.uri,
+            await creator.agent.com.atproto.repo.putRecord({
+              repo: creator.did,
+              collection: 'app.bsky.graph.listitem',
+              rkey: `seed-curate-listitem-${seedRkeySlug(l.name)}-${seedRkeySlug(memberShort)}`,
+              record: {
+                $type: 'app.bsky.graph.listitem',
+                list: listUri,
                 subject: member.did,
                 createdAt: createdAt(),
               },
-            )
+            })
           } catch (e) {
             /* ignore */
           }
@@ -3667,4 +3682,85 @@ export default async (sc: SeedClient) => {
     })),
     alice,
   }
+}
+
+function seedRkeySlug(value: string) {
+  return (
+    value
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80) || 'item'
+  )
+}
+
+async function cleanupDuplicateSeedLists({
+  agent,
+  repo,
+  name,
+  description,
+  keepRkey,
+}: {
+  agent: any
+  repo: string
+  name: string
+  description: string
+  keepRkey: string
+}) {
+  const staleListUris = new Set<string>()
+  let cursor: string | undefined
+
+  do {
+    const res = await agent.com.atproto.repo.listRecords({
+      repo,
+      collection: 'app.bsky.graph.list',
+      limit: 100,
+      cursor,
+    })
+    cursor = res.data.cursor
+    for (const record of res.data.records) {
+      const value = record.value as any
+      const rkey = record.uri.split('/').pop()
+      const isSeedList =
+        value?.purpose === 'app.bsky.graph.defs#curatelist' &&
+        value?.name === name &&
+        value?.description === description
+      if (!isSeedList || !rkey || rkey === keepRkey) continue
+
+      staleListUris.add(record.uri)
+      await agent.com.atproto.repo.deleteRecord({
+        repo,
+        collection: 'app.bsky.graph.list',
+        rkey,
+      })
+    }
+  } while (cursor)
+
+  if (staleListUris.size === 0) return
+
+  cursor = undefined
+  do {
+    const res = await agent.com.atproto.repo.listRecords({
+      repo,
+      collection: 'app.bsky.graph.listitem',
+      limit: 100,
+      cursor,
+    })
+    cursor = res.data.cursor
+    for (const record of res.data.records) {
+      const value = record.value as any
+      if (!staleListUris.has(value?.list)) continue
+
+      const rkey = record.uri.split('/').pop()
+      if (!rkey) continue
+      await agent.com.atproto.repo.deleteRecord({
+        repo,
+        collection: 'app.bsky.graph.listitem',
+        rkey,
+      })
+    }
+  } while (cursor)
 }

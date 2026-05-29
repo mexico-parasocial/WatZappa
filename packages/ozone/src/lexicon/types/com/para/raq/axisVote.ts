@@ -20,6 +20,10 @@ export interface Main {
   axisId: string
   /** Vote direction: -1 oppose, 0 neutral, 1 support */
   value?: number
+  /** Privacy-preserving one-person-one-vote nullifier for this RAQ axis, issued by m8. */
+  voteNullifier?: string
+  /** Opaque reference to the m8 eligibility/nullifier proof used to cast this vote. */
+  eligibilityProofRef?: string
   createdAt: string
   [k: string]: unknown
 }

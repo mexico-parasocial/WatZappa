@@ -355,7 +355,7 @@ const getPolicyState = ({
     return 'passed'
   }
   if (outcome === 'contested') {
-    return 'deliberation'
+    return 'civicTree'
   }
   if (voteCount > 0 && !quorumMet) {
     return 'voting'

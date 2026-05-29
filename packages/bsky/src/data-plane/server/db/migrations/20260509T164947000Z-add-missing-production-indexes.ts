@@ -56,7 +56,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .execute()
 
   // ==========================================================================
-  // cabildeo_position — Deliberation positions
+  // cabildeo_position — CivicTree positions
   // ==========================================================================
 
   // getParaCabildeoPositions filters by cabildeo and stance, orders by sortAt.
@@ -69,7 +69,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .execute()
 
   // ==========================================================================
-  // cabildeo_live_session / cabildeo_live_presence — Live deliberation
+  // cabildeo_live_session / cabildeo_live_presence — Live civicTree
   // ==========================================================================
 
   // getActiveLiveSession: WHERE cabildeo = ? AND endedAt IS NULL

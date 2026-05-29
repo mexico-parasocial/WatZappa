@@ -20,6 +20,10 @@ export interface Main {
   subject: string
   /** Vote value: -1 = downvote, 0 = none (removal), 1 = upvote. */
   value: number
+  /** Privacy-preserving one-person-one-vote nullifier for this open question reply, issued by m8. */
+  voteNullifier?: string
+  /** Opaque reference to the m8 eligibility/nullifier proof used to cast this vote. */
+  eligibilityProofRef?: string
   createdAt: string
   [k: string]: unknown
 }

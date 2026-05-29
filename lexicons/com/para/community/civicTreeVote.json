@@ -1,0 +1,42 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.civicTreeVote",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["civicTree", "voter", "direction"],
+        "properties": {
+          "civicTree": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "voter": {
+            "type": "string",
+            "format": "did"
+          },
+          "direction": {
+            "type": "string",
+            "enum": ["agree", "disagree", "pass"]
+          },
+          "voteNullifier": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Privacy-preserving one-person-one-vote nullifier for this civicTree statement, issued by m8."
+          },
+          "eligibilityProofRef": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Opaque reference to the m8 eligibility/nullifier proof used to cast this vote."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

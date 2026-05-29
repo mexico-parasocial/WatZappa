@@ -21026,6 +21026,95 @@ export const schemaDict = {
       },
     },
   },
+  ComParaCommunityCivicTree: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree',
+    defs: {
+      main: {
+        type: 'record',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['proposal', 'community', 'author', 'body'],
+          properties: {
+            proposal: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'URI of the proposal being deliberated on',
+            },
+            community: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            author: {
+              type: 'string',
+              format: 'did',
+            },
+            body: {
+              type: 'string',
+              maxLength: 500,
+              description:
+                'Short statement for civicTree, like a Polis comment',
+            },
+            stance: {
+              type: 'string',
+              enum: ['for', 'against', 'neutral', 'bridging'],
+              description:
+                "Author's self-reported stance. Bridging = attempts to find common ground.",
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeVote: {
+    lexicon: 1,
+    id: 'com.para.community.civicTreeVote',
+    defs: {
+      main: {
+        type: 'record',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['civicTree', 'voter', 'direction'],
+          properties: {
+            civicTree: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            voter: {
+              type: 'string',
+              format: 'did',
+            },
+            direction: {
+              type: 'string',
+              enum: ['agree', 'disagree', 'pass'],
+            },
+            voteNullifier: {
+              type: 'string',
+              maxLength: 128,
+              description:
+                'Privacy-preserving one-person-one-vote nullifier for this civicTree statement, issued by m8.',
+            },
+            eligibilityProofRef: {
+              type: 'string',
+              maxLength: 512,
+              description:
+                'Opaque reference to the m8 eligibility/nullifier proof used to cast this vote.',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
   ComParaCommunityConstitution: {
     lexicon: 1,
     id: 'com.para.community.constitution',
@@ -21892,95 +21981,6 @@ export const schemaDict = {
       },
     },
   },
-  ComParaCommunityDeliberation: {
-    lexicon: 1,
-    id: 'com.para.community.deliberation',
-    defs: {
-      main: {
-        type: 'record',
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: ['proposal', 'community', 'author', 'body'],
-          properties: {
-            proposal: {
-              type: 'string',
-              format: 'at-uri',
-              description: 'URI of the proposal being deliberated on',
-            },
-            community: {
-              type: 'string',
-              format: 'at-uri',
-            },
-            author: {
-              type: 'string',
-              format: 'did',
-            },
-            body: {
-              type: 'string',
-              maxLength: 500,
-              description:
-                'Short statement for deliberation, like a Polis comment',
-            },
-            stance: {
-              type: 'string',
-              enum: ['for', 'against', 'neutral', 'bridging'],
-              description:
-                "Author's self-reported stance. Bridging = attempts to find common ground.",
-            },
-            createdAt: {
-              type: 'string',
-              format: 'datetime',
-            },
-          },
-        },
-      },
-    },
-  },
-  ComParaCommunityDeliberationVote: {
-    lexicon: 1,
-    id: 'com.para.community.deliberationVote',
-    defs: {
-      main: {
-        type: 'record',
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: ['deliberation', 'voter', 'direction'],
-          properties: {
-            deliberation: {
-              type: 'string',
-              format: 'at-uri',
-            },
-            voter: {
-              type: 'string',
-              format: 'did',
-            },
-            direction: {
-              type: 'string',
-              enum: ['agree', 'disagree', 'pass'],
-            },
-            voteNullifier: {
-              type: 'string',
-              maxLength: 128,
-              description:
-                'Privacy-preserving one-person-one-vote nullifier for this deliberation statement, issued by m8.',
-            },
-            eligibilityProofRef: {
-              type: 'string',
-              maxLength: 512,
-              description:
-                'Opaque reference to the m8 eligibility/nullifier proof used to cast this vote.',
-            },
-            createdAt: {
-              type: 'string',
-              format: 'datetime',
-            },
-          },
-        },
-      },
-    },
-  },
   ComParaCommunityEigenstate: {
     lexicon: 1,
     id: 'com.para.community.eigenstate',
@@ -22526,17 +22526,17 @@ export const schemaDict = {
       },
     },
   },
-  ComParaCommunityGetDeliberationClusters: {
+  ComParaCommunityGetCivicTree: {
     lexicon: 1,
-    id: 'com.para.community.getDeliberationClusters',
+    id: 'com.para.community.getCivicTree',
     defs: {
       main: {
         type: 'query',
         parameters: {
           type: 'params',
-          required: ['proposal'],
+          required: ['community'],
           properties: {
-            proposal: {
+            community: {
               type: 'string',
               format: 'at-uri',
             },
@@ -22546,72 +22546,21 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'object',
-            required: ['clusters', 'bridging'],
+            required: ['nodes', 'edges'],
             properties: {
-              clusters: {
+              nodes: {
                 type: 'array',
                 items: {
-                  type: 'ref',
-                  ref: 'lex:com.para.community.getDeliberationClusters#clusterView',
+                  type: 'unknown',
                 },
               },
-              bridging: {
+              edges: {
                 type: 'array',
                 items: {
-                  type: 'ref',
-                  ref: 'lex:com.para.community.getDeliberationClusters#statementView',
+                  type: 'unknown',
                 },
               },
             },
-          },
-        },
-      },
-      clusterView: {
-        type: 'object',
-        required: [
-          'stance',
-          'statementCount',
-          'totalAgree',
-          'totalDisagree',
-          'totalPass',
-        ],
-        properties: {
-          stance: {
-            type: 'string',
-          },
-          statementCount: {
-            type: 'integer',
-          },
-          totalAgree: {
-            type: 'integer',
-          },
-          totalDisagree: {
-            type: 'integer',
-          },
-          totalPass: {
-            type: 'integer',
-          },
-        },
-      },
-      statementView: {
-        type: 'object',
-        required: ['uri', 'body', 'agreeCount', 'disagreeCount', 'passCount'],
-        properties: {
-          uri: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          body: {
-            type: 'string',
-          },
-          agreeCount: {
-            type: 'integer',
-          },
-          disagreeCount: {
-            type: 'integer',
-          },
-          passCount: {
-            type: 'integer',
           },
         },
       },
@@ -23608,6 +23557,198 @@ export const schemaDict = {
       },
     },
   },
+  ComParaCommunityListCivicTreeVotes: {
+    lexicon: 1,
+    id: 'com.para.community.listCivicTreeVotes',
+    defs: {
+      main: {
+        type: 'query',
+        parameters: {
+          type: 'params',
+          required: ['statement'],
+          properties: {
+            statement: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            direction: {
+              type: 'string',
+              enum: ['agree', 'disagree', 'pass'],
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['votes'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              votes: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.community.listCivicTreeVotes#voteView',
+                },
+              },
+            },
+          },
+        },
+      },
+      voteView: {
+        type: 'object',
+        required: [
+          'uri',
+          'cid',
+          'statement',
+          'voter',
+          'direction',
+          'createdAt',
+        ],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          statement: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          voter: {
+            type: 'string',
+            format: 'did',
+          },
+          direction: {
+            type: 'string',
+            enum: ['agree', 'disagree', 'pass'],
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityListCivicTrees: {
+    lexicon: 1,
+    id: 'com.para.community.listCivicTrees',
+    defs: {
+      main: {
+        type: 'query',
+        parameters: {
+          type: 'params',
+          required: ['proposal'],
+          properties: {
+            proposal: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            stance: {
+              type: 'string',
+              enum: ['for', 'against', 'neutral', 'bridging'],
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['statements'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              statements: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.community.listCivicTrees#statementView',
+                },
+              },
+            },
+          },
+        },
+      },
+      statementView: {
+        type: 'object',
+        required: [
+          'uri',
+          'cid',
+          'creator',
+          'proposal',
+          'body',
+          'stance',
+          'agreeCount',
+          'disagreeCount',
+          'passCount',
+          'createdAt',
+        ],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          creator: {
+            type: 'string',
+            format: 'did',
+          },
+          proposal: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          body: {
+            type: 'string',
+          },
+          stance: {
+            type: 'string',
+            enum: ['for', 'against', 'neutral', 'bridging'],
+          },
+          agreeCount: {
+            type: 'integer',
+          },
+          disagreeCount: {
+            type: 'integer',
+          },
+          passCount: {
+            type: 'integer',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+    },
+  },
   ComParaCommunityListCommunityRelations: {
     lexicon: 1,
     id: 'com.para.community.listCommunityRelations',
@@ -23761,198 +23902,6 @@ export const schemaDict = {
           revokedAt: {
             type: 'string',
             format: 'datetime',
-          },
-          createdAt: {
-            type: 'string',
-            format: 'datetime',
-          },
-        },
-      },
-    },
-  },
-  ComParaCommunityListDeliberationVotes: {
-    lexicon: 1,
-    id: 'com.para.community.listDeliberationVotes',
-    defs: {
-      main: {
-        type: 'query',
-        parameters: {
-          type: 'params',
-          required: ['statement'],
-          properties: {
-            statement: {
-              type: 'string',
-              format: 'at-uri',
-            },
-            direction: {
-              type: 'string',
-              enum: ['agree', 'disagree', 'pass'],
-            },
-            limit: {
-              type: 'integer',
-              minimum: 1,
-              maximum: 100,
-              default: 50,
-            },
-            cursor: {
-              type: 'string',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['votes'],
-            properties: {
-              cursor: {
-                type: 'string',
-              },
-              votes: {
-                type: 'array',
-                items: {
-                  type: 'ref',
-                  ref: 'lex:com.para.community.listDeliberationVotes#voteView',
-                },
-              },
-            },
-          },
-        },
-      },
-      voteView: {
-        type: 'object',
-        required: [
-          'uri',
-          'cid',
-          'statement',
-          'voter',
-          'direction',
-          'createdAt',
-        ],
-        properties: {
-          uri: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          cid: {
-            type: 'string',
-            format: 'cid',
-          },
-          statement: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          voter: {
-            type: 'string',
-            format: 'did',
-          },
-          direction: {
-            type: 'string',
-            enum: ['agree', 'disagree', 'pass'],
-          },
-          createdAt: {
-            type: 'string',
-            format: 'datetime',
-          },
-        },
-      },
-    },
-  },
-  ComParaCommunityListDeliberations: {
-    lexicon: 1,
-    id: 'com.para.community.listDeliberations',
-    defs: {
-      main: {
-        type: 'query',
-        parameters: {
-          type: 'params',
-          required: ['proposal'],
-          properties: {
-            proposal: {
-              type: 'string',
-              format: 'at-uri',
-            },
-            stance: {
-              type: 'string',
-              enum: ['for', 'against', 'neutral', 'bridging'],
-            },
-            limit: {
-              type: 'integer',
-              minimum: 1,
-              maximum: 100,
-              default: 50,
-            },
-            cursor: {
-              type: 'string',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['statements'],
-            properties: {
-              cursor: {
-                type: 'string',
-              },
-              statements: {
-                type: 'array',
-                items: {
-                  type: 'ref',
-                  ref: 'lex:com.para.community.listDeliberations#statementView',
-                },
-              },
-            },
-          },
-        },
-      },
-      statementView: {
-        type: 'object',
-        required: [
-          'uri',
-          'cid',
-          'creator',
-          'proposal',
-          'body',
-          'stance',
-          'agreeCount',
-          'disagreeCount',
-          'passCount',
-          'createdAt',
-        ],
-        properties: {
-          uri: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          cid: {
-            type: 'string',
-            format: 'cid',
-          },
-          creator: {
-            type: 'string',
-            format: 'did',
-          },
-          proposal: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          body: {
-            type: 'string',
-          },
-          stance: {
-            type: 'string',
-            enum: ['for', 'against', 'neutral', 'bridging'],
-          },
-          agreeCount: {
-            type: 'integer',
-          },
-          disagreeCount: {
-            type: 'integer',
-          },
-          passCount: {
-            type: 'integer',
           },
           createdAt: {
             type: 'string',
@@ -35125,18 +35074,17 @@ export const ids = {
   ComParaCollectionUpdateCollection: 'com.para.collection.updateCollection',
   ComParaCommunityAcceptDraftInvite: 'com.para.community.acceptDraftInvite',
   ComParaCommunityBoard: 'com.para.community.board',
+  ComParaCommunityCivicTree: 'com.para.community.civicTree',
+  ComParaCommunityCivicTreeVote: 'com.para.community.civicTreeVote',
   ComParaCommunityConstitution: 'com.para.community.constitution',
   ComParaCommunityCreateBoard: 'com.para.community.createBoard',
   ComParaCommunityDecision: 'com.para.community.decision',
   ComParaCommunityDefs: 'com.para.community.defs',
   ComParaCommunityDelegation: 'com.para.community.delegation',
-  ComParaCommunityDeliberation: 'com.para.community.deliberation',
-  ComParaCommunityDeliberationVote: 'com.para.community.deliberationVote',
   ComParaCommunityEigenstate: 'com.para.community.eigenstate',
   ComParaCommunityGetAuditTrail: 'com.para.community.getAuditTrail',
   ComParaCommunityGetBoard: 'com.para.community.getBoard',
-  ComParaCommunityGetDeliberationClusters:
-    'com.para.community.getDeliberationClusters',
+  ComParaCommunityGetCivicTree: 'com.para.community.getCivicTree',
   ComParaCommunityGetGovernance: 'com.para.community.getGovernance',
   ComParaCommunityGetTallySimulation: 'com.para.community.getTallySimulation',
   ComParaCommunityGovernance: 'com.para.community.governance',
@@ -35147,12 +35095,11 @@ export const ids = {
   ComParaCommunityListBoards: 'com.para.community.listBoards',
   ComParaCommunityListChildCommunities:
     'com.para.community.listChildCommunities',
+  ComParaCommunityListCivicTreeVotes: 'com.para.community.listCivicTreeVotes',
+  ComParaCommunityListCivicTrees: 'com.para.community.listCivicTrees',
   ComParaCommunityListCommunityRelations:
     'com.para.community.listCommunityRelations',
   ComParaCommunityListDelegations: 'com.para.community.listDelegations',
-  ComParaCommunityListDeliberationVotes:
-    'com.para.community.listDeliberationVotes',
-  ComParaCommunityListDeliberations: 'com.para.community.listDeliberations',
   ComParaCommunityListIntensities: 'com.para.community.listIntensities',
   ComParaCommunityListMembers: 'com.para.community.listMembers',
   ComParaCommunityListParentCommunities:

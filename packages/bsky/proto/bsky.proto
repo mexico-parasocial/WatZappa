@@ -1776,22 +1776,22 @@ message GetParaAuditTrailRequest {
 message GetParaAuditTrailResponse {
   string audit_json = 1;
 }
-message GetParaDeliberationsRequest {
+message GetParaCivicTreesRequest {
   string proposal = 1;
   string stance = 2;
   int32 limit = 3;
   string cursor = 4;
 }
-message GetParaDeliberationVotesRequest {
+message GetParaCivicTreeVotesRequest {
   string statement = 1;
   string direction = 2;
   int32 limit = 3;
   string cursor = 4;
 }
-message GetParaDeliberationClustersRequest {
+message GetParaCivicTreeClustersRequest {
   string proposal = 1;
 }
-message GetParaDeliberationClustersResponse {
+message GetParaCivicTreeClustersResponse {
   string clusters_json = 1;
   string bridging_json = 2;
 }
@@ -2295,9 +2295,9 @@ service Service {
   rpc GetParaHighlights(GetParaHighlightsRequest) returns (GetParaHighlightsResponse);
   rpc GetParaHighlight(GetParaHighlightRequest) returns (GetParaHighlightResponse);
   rpc GetParaAuditTrail(GetParaAuditTrailRequest) returns (GetParaAuditTrailResponse);
-  rpc GetParaDeliberations(GetParaDeliberationsRequest) returns (ParaJsonPageResponse);
-  rpc GetParaDeliberationVotes(GetParaDeliberationVotesRequest) returns (ParaJsonPageResponse);
-  rpc GetParaDeliberationClusters(GetParaDeliberationClustersRequest) returns (GetParaDeliberationClustersResponse);
+  rpc GetParaCivicTrees(GetParaCivicTreesRequest) returns (ParaJsonPageResponse);
+  rpc GetParaCivicTreeVotes(GetParaCivicTreeVotesRequest) returns (ParaJsonPageResponse);
+  rpc GetParaCivicTreeClusters(GetParaCivicTreeClustersRequest) returns (GetParaCivicTreeClustersResponse);
   rpc GetParaDiscourseSnapshot(GetParaDiscourseSnapshotRequest) returns (GetParaDiscourseSnapshotResponse);
   rpc GetParaDiscourseTopics(GetParaDiscourseTopicsRequest) returns (GetParaDiscourseTopicsResponse);
   rpc GetParaDiscourseSentiment(GetParaDiscourseSentimentRequest) returns (GetParaDiscourseSentimentResponse);

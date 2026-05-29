@@ -32,6 +32,10 @@ export interface Main {
   delegationDepth?: number
   /** Computed effective weight after QV sqrt and correlation discounting. Stored for audit trail. */
   effectiveWeight?: string
+  /** Privacy-preserving one-person-one-vote nullifier for this proposal intensity declaration, issued by m8. */
+  voteNullifier?: string
+  /** Opaque reference to the m8 eligibility/nullifier proof used to cast this intensity declaration. */
+  eligibilityProofRef?: string
   createdAt?: string
   [k: string]: unknown
 }

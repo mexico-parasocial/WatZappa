@@ -22,6 +22,10 @@ export interface Main {
   voter: string
   /** Base political signal: -3 strong against … +3 strong for. 0 = abstain. */
   signal: number
+  /** Privacy-preserving one-person-one-vote nullifier for this proposal, issued by m8. */
+  voteNullifier?: string
+  /** Opaque reference to the m8 eligibility/nullifier proof used to cast this vote. */
+  eligibilityProofRef?: string
   createdAt?: string
   [k: string]: unknown
 }
