@@ -51,7 +51,8 @@
             "chat.bsky.group.listJoinRequests",
             "chat.bsky.group.rejectJoinRequest",
             "chat.bsky.group.removeMembers",
-            "chat.bsky.group.requestJoin"
+            "chat.bsky.group.requestJoin",
+            "chat.bsky.group.withdrawJoinRequest"
           ]
         },
         {

@@ -16,7 +16,7 @@ This API is a client for ATProtocol servers. It communicates using HTTP. It incl
 First install the package:
 
 ```sh
-yarn add @atproto/api
+pnpmadd @atproto/api
 ```
 
 Then in your application:
