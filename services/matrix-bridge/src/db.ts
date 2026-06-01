@@ -26,6 +26,15 @@ export interface UserPushToken {
   updatedAt: string
 }
 
+export type CommunityRoomKind = 'main' | 'chamber-a' | 'chamber-b' | 'observers'
+
+export interface CommunityRoomSummary {
+  roomId: string
+  communityUri: string
+  slug: string
+  kind: CommunityRoomKind
+}
+
 export interface SyncLogEntry {
   id: number
   eventType: string
@@ -567,23 +576,82 @@ export class BridgeDatabase {
     return row?.membership_state === 'active'
   }
 
-  getActiveCommunityRoomsForDid(
-    did: string,
-  ): { roomId: string; communityUri: string; slug: string }[] {
+  getActiveCommunityRoomsForDid(did: string): CommunityRoomSummary[] {
     const rows = this.db
       .prepare(
-        `SELECT csm.space_id as room_id, csm.community_uri, csm.slug
+        `SELECT
+          csm.space_id,
+          csm.community_uri,
+          csm.slug,
+          csm.chamber_mode,
+          csm.chamber_a_room_id,
+          csm.chamber_b_room_id,
+          csm.observer_room_id,
+          cms.roles_json,
+          ca.chamber
          FROM community_space_map csm
          INNER JOIN community_membership_state cms
            ON cms.community_uri = csm.community_uri
+         LEFT JOIN chamber_assignment ca
+           ON ca.community_uri = csm.community_uri AND ca.did = cms.did
          WHERE cms.did = ? AND cms.membership_state = 'active'`,
       )
-      .all(did) as { room_id: string; community_uri: string; slug: string }[]
-    return rows.map((row) => ({
-      roomId: row.room_id,
-      communityUri: row.community_uri,
-      slug: row.slug,
-    }))
+      .all(did) as Array<{
+        space_id: string
+        community_uri: string
+        slug: string
+        chamber_mode: string
+        chamber_a_room_id: string | null
+        chamber_b_room_id: string | null
+        observer_room_id: string | null
+        roles_json: string
+        chamber: string | null
+      }>
+
+    return rows.flatMap((row) => {
+      const rooms: CommunityRoomSummary[] = [
+        {
+          roomId: row.space_id,
+          communityUri: row.community_uri,
+          slug: row.slug,
+          kind: 'main',
+        },
+      ]
+
+      if (row.chamber_mode !== 'bicameral') {
+        return rooms
+      }
+
+      const roles = JSON.parse(row.roles_json || '[]') as string[]
+      const isObserver = roles.includes('observer')
+      if (isObserver && row.observer_room_id) {
+        rooms.push({
+          roomId: row.observer_room_id,
+          communityUri: row.community_uri,
+          slug: row.slug,
+          kind: 'observers',
+        })
+        return rooms
+      }
+
+      if (row.chamber === 'A' && row.chamber_a_room_id) {
+        rooms.push({
+          roomId: row.chamber_a_room_id,
+          communityUri: row.community_uri,
+          slug: row.slug,
+          kind: 'chamber-a',
+        })
+      } else if (row.chamber === 'B' && row.chamber_b_room_id) {
+        rooms.push({
+          roomId: row.chamber_b_room_id,
+          communityUri: row.community_uri,
+          slug: row.slug,
+          kind: 'chamber-b',
+        })
+      }
+
+      return rooms
+    })
   }
 
   // Sync logging
@@ -1438,11 +1506,12 @@ export class BridgeDatabase {
 
   getUnreadCountsForDid(
     did: string,
-  ): { roomId: string; communityUri: string; slug: string; unread: number }[] {
+  ): Array<CommunityRoomSummary & { unread: number }> {
     return this.getActiveCommunityRoomsForDid(did).map((r) => ({
       roomId: r.roomId,
       communityUri: r.communityUri,
       slug: r.slug,
+      kind: r.kind,
       unread: this.getUnreadCount(did, r.roomId),
     }))
   }

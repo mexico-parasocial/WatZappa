@@ -253,6 +253,10 @@ export interface VerificationView {
   $type?: 'app.bsky.actor.defs#verificationView'
   /** The user who issued this verification. */
   issuer: string
+  /** The display name of the issuer. */
+  issuerDisplayName?: string
+  /** The handle of the issuer. */
+  issuerHandle?: string
   /** The AT-URI of the verification record. */
   uri: string
   /** True if the verification passes validation, otherwise false. */

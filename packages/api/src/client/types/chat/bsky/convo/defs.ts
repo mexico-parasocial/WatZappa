@@ -11,6 +11,7 @@ import {
 } from '../../../../util.js'
 import type * as AppBskyRichtextFacet from '../../../app/bsky/richtext/facet.js'
 import type * as AppBskyEmbedRecord from '../../../app/bsky/embed/record.js'
+import type * as ChatBskyEmbedJoinLink from '../embed/joinLink.js'
 import type * as ChatBskyActorDefs from '../actor/defs.js'
 import type * as ChatBskyGroupDefs from '../group/defs.js'
 
@@ -64,7 +65,10 @@ export interface MessageInput {
   text: string
   /** Annotations of text (mentions, URLs, hashtags, etc) */
   facets?: AppBskyRichtextFacet.Main[]
-  embed?: $Typed<AppBskyEmbedRecord.Main> | { $type: string }
+  embed?:
+    | $Typed<AppBskyEmbedRecord.Main>
+    | $Typed<ChatBskyEmbedJoinLink.Main>
+    | { $type: string }
 }
 
 const hashMessageInput = 'messageInput'
@@ -84,7 +88,10 @@ export interface MessageView {
   text: string
   /** Annotations of text (mentions, URLs, hashtags, etc) */
   facets?: AppBskyRichtextFacet.Main[]
-  embed?: $Typed<AppBskyEmbedRecord.View> | { $type: string }
+  embed?:
+    | $Typed<AppBskyEmbedRecord.View>
+    | $Typed<ChatBskyEmbedJoinLink.View>
+    | { $type: string }
   /** Reactions to this message, in ascending order of creation time. */
   reactions?: ReactionView[]
   sender: MessageViewSender
@@ -505,17 +512,19 @@ export function validateDirectConvo<V>(v: V) {
 /** [NOTE: This is under active development and should be considered unstable while this note is here]. */
 export interface GroupConvo {
   $type?: 'chat.bsky.convo.defs#groupConvo'
-  /** The display name of the group conversation. */
-  name: string
+  createdAt: string
+  joinLink?: ChatBskyGroupDefs.JoinLinkView
+  /** The total number of pending join requests for the group conversation. This information is only visible to the owner and to moderators. Capped at 21. */
+  joinRequestCount?: number
+  lockStatus: ConvoLockStatus
   /** The total number of members in the group conversation. */
   memberCount: number
-  createdAt: string
-  /** The total number of pending join requests for the group conversation. Only present for the owner. Capped at 21. */
-  joinRequestCount?: number
-  joinLink?: ChatBskyGroupDefs.JoinLinkView
   /** The maximum number of members allowed in the group conversation. */
   memberLimit: number
-  lockStatus: ConvoLockStatus
+  /** The display name of the group conversation. */
+  name: string
+  /** The number of unread join requests for the group conversation. Only present for the owner. */
+  unreadJoinRequestCount?: number
 }
 
 const hashGroupConvo = 'groupConvo'
@@ -1026,4 +1035,64 @@ export function isLogOutgoingJoinRequest<V>(v: V) {
 
 export function validateLogOutgoingJoinRequest<V>(v: V) {
   return validate<LogOutgoingJoinRequest & V>(v, id, hashLogOutgoingJoinRequest)
+}
+
+/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a prospective member withdrew their join request. Only the owner gets this. */
+export interface LogWithdrawIncomingJoinRequest {
+  $type?: 'chat.bsky.convo.defs#logWithdrawIncomingJoinRequest'
+  rev: string
+  convoId: string
+  member: ChatBskyActorDefs.ProfileViewBasic
+}
+
+const hashLogWithdrawIncomingJoinRequest = 'logWithdrawIncomingJoinRequest'
+
+export function isLogWithdrawIncomingJoinRequest<V>(v: V) {
+  return is$typed(v, id, hashLogWithdrawIncomingJoinRequest)
+}
+
+export function validateLogWithdrawIncomingJoinRequest<V>(v: V) {
+  return validate<LogWithdrawIncomingJoinRequest & V>(
+    v,
+    id,
+    hashLogWithdrawIncomingJoinRequest,
+  )
+}
+
+/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating the viewer withdrew their own join request. Only requester actor gets this. */
+export interface LogWithdrawOutgoingJoinRequest {
+  $type?: 'chat.bsky.convo.defs#logWithdrawOutgoingJoinRequest'
+  rev: string
+  convoId: string
+}
+
+const hashLogWithdrawOutgoingJoinRequest = 'logWithdrawOutgoingJoinRequest'
+
+export function isLogWithdrawOutgoingJoinRequest<V>(v: V) {
+  return is$typed(v, id, hashLogWithdrawOutgoingJoinRequest)
+}
+
+export function validateLogWithdrawOutgoingJoinRequest<V>(v: V) {
+  return validate<LogWithdrawOutgoingJoinRequest & V>(
+    v,
+    id,
+    hashLogWithdrawOutgoingJoinRequest,
+  )
+}
+
+/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating the group owner marked join requests as read. Only the owner gets this. */
+export interface LogReadJoinRequests {
+  $type?: 'chat.bsky.convo.defs#logReadJoinRequests'
+  rev: string
+  convoId: string
+}
+
+const hashLogReadJoinRequests = 'logReadJoinRequests'
+
+export function isLogReadJoinRequests<V>(v: V) {
+  return is$typed(v, id, hashLogReadJoinRequests)
+}
+
+export function validateLogReadJoinRequests<V>(v: V) {
+  return validate<LogReadJoinRequests & V>(v, id, hashLogReadJoinRequests)
 }

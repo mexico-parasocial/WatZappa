@@ -51,6 +51,9 @@ export interface OutputSchema {
     | $Typed<ChatBskyConvoDefs.LogApproveJoinRequest>
     | $Typed<ChatBskyConvoDefs.LogRejectJoinRequest>
     | $Typed<ChatBskyConvoDefs.LogOutgoingJoinRequest>
+    | $Typed<ChatBskyConvoDefs.LogWithdrawIncomingJoinRequest>
+    | $Typed<ChatBskyConvoDefs.LogWithdrawOutgoingJoinRequest>
+    | $Typed<ChatBskyConvoDefs.LogReadJoinRequests>
     | { $type: string }
   )[]
 }

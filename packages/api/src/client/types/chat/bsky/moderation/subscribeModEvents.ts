@@ -364,3 +364,24 @@ export function isEventGroupChatUpdated<V>(v: V) {
 export function validateEventGroupChatUpdated<V>(v: V) {
   return validate<EventGroupChatUpdated & V>(v, id, hashEventGroupChatUpdated)
 }
+
+/** Fired when a user exceeds a rate limit. */
+export interface EventRateLimitExceeded {
+  $type?: 'chat.bsky.moderation.subscribeModEvents#eventRateLimitExceeded'
+  /** The DID of the user who hit the rate limit. */
+  actorDid: string
+  createdAt: string
+  /** The NSID of the endpoint that was rate limited. */
+  endpoint: string
+  rev: string
+}
+
+const hashEventRateLimitExceeded = 'eventRateLimitExceeded'
+
+export function isEventRateLimitExceeded<V>(v: V) {
+  return is$typed(v, id, hashEventRateLimitExceeded)
+}
+
+export function validateEventRateLimitExceeded<V>(v: V) {
+  return validate<EventRateLimitExceeded & V>(v, id, hashEventRateLimitExceeded)
+}

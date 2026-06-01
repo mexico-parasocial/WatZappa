@@ -182,6 +182,7 @@ import * as ChatBskyConvoUnlockConvo from './types/chat/bsky/convo/unlockConvo.j
 import * as ChatBskyConvoUnmuteConvo from './types/chat/bsky/convo/unmuteConvo.js'
 import * as ChatBskyConvoUpdateAllRead from './types/chat/bsky/convo/updateAllRead.js'
 import * as ChatBskyConvoUpdateRead from './types/chat/bsky/convo/updateRead.js'
+import * as ChatBskyEmbedJoinLink from './types/chat/bsky/embed/joinLink.js'
 import * as ChatBskyGroupAddMembers from './types/chat/bsky/group/addMembers.js'
 import * as ChatBskyGroupApproveJoinRequest from './types/chat/bsky/group/approveJoinRequest.js'
 import * as ChatBskyGroupCreateGroup from './types/chat/bsky/group/createGroup.js'
@@ -197,7 +198,12 @@ import * as ChatBskyGroupListJoinRequests from './types/chat/bsky/group/listJoin
 import * as ChatBskyGroupRejectJoinRequest from './types/chat/bsky/group/rejectJoinRequest.js'
 import * as ChatBskyGroupRemoveMembers from './types/chat/bsky/group/removeMembers.js'
 import * as ChatBskyGroupRequestJoin from './types/chat/bsky/group/requestJoin.js'
+import * as ChatBskyGroupUpdateJoinRequestsRead from './types/chat/bsky/group/updateJoinRequestsRead.js'
+import * as ChatBskyGroupWithdrawJoinRequest from './types/chat/bsky/group/withdrawJoinRequest.js'
+import * as ChatBskyModerationDefs from './types/chat/bsky/moderation/defs.js'
 import * as ChatBskyModerationGetActorMetadata from './types/chat/bsky/moderation/getActorMetadata.js'
+import * as ChatBskyModerationGetConvo from './types/chat/bsky/moderation/getConvo.js'
+import * as ChatBskyModerationGetConvoMembers from './types/chat/bsky/moderation/getConvoMembers.js'
 import * as ChatBskyModerationGetMessageContext from './types/chat/bsky/moderation/getMessageContext.js'
 import * as ChatBskyModerationSubscribeModEvents from './types/chat/bsky/moderation/subscribeModEvents.js'
 import * as ChatBskyModerationUpdateActorAccess from './types/chat/bsky/moderation/updateActorAccess.js'
@@ -649,6 +655,7 @@ export * as ChatBskyConvoUnlockConvo from './types/chat/bsky/convo/unlockConvo.j
 export * as ChatBskyConvoUnmuteConvo from './types/chat/bsky/convo/unmuteConvo.js'
 export * as ChatBskyConvoUpdateAllRead from './types/chat/bsky/convo/updateAllRead.js'
 export * as ChatBskyConvoUpdateRead from './types/chat/bsky/convo/updateRead.js'
+export * as ChatBskyEmbedJoinLink from './types/chat/bsky/embed/joinLink.js'
 export * as ChatBskyGroupAddMembers from './types/chat/bsky/group/addMembers.js'
 export * as ChatBskyGroupApproveJoinRequest from './types/chat/bsky/group/approveJoinRequest.js'
 export * as ChatBskyGroupCreateGroup from './types/chat/bsky/group/createGroup.js'
@@ -664,7 +671,12 @@ export * as ChatBskyGroupListJoinRequests from './types/chat/bsky/group/listJoin
 export * as ChatBskyGroupRejectJoinRequest from './types/chat/bsky/group/rejectJoinRequest.js'
 export * as ChatBskyGroupRemoveMembers from './types/chat/bsky/group/removeMembers.js'
 export * as ChatBskyGroupRequestJoin from './types/chat/bsky/group/requestJoin.js'
+export * as ChatBskyGroupUpdateJoinRequestsRead from './types/chat/bsky/group/updateJoinRequestsRead.js'
+export * as ChatBskyGroupWithdrawJoinRequest from './types/chat/bsky/group/withdrawJoinRequest.js'
+export * as ChatBskyModerationDefs from './types/chat/bsky/moderation/defs.js'
 export * as ChatBskyModerationGetActorMetadata from './types/chat/bsky/moderation/getActorMetadata.js'
+export * as ChatBskyModerationGetConvo from './types/chat/bsky/moderation/getConvo.js'
+export * as ChatBskyModerationGetConvoMembers from './types/chat/bsky/moderation/getConvoMembers.js'
 export * as ChatBskyModerationGetMessageContext from './types/chat/bsky/moderation/getMessageContext.js'
 export * as ChatBskyModerationSubscribeModEvents from './types/chat/bsky/moderation/subscribeModEvents.js'
 export * as ChatBskyModerationUpdateActorAccess from './types/chat/bsky/moderation/updateActorAccess.js'
@@ -3908,6 +3920,7 @@ export class ChatBskyNS {
   _client: XrpcClient
   actor: ChatBskyActorNS
   convo: ChatBskyConvoNS
+  embed: ChatBskyEmbedNS
   group: ChatBskyGroupNS
   moderation: ChatBskyModerationNS
 
@@ -3915,6 +3928,7 @@ export class ChatBskyNS {
     this._client = client
     this.actor = new ChatBskyActorNS(client)
     this.convo = new ChatBskyConvoNS(client)
+    this.embed = new ChatBskyEmbedNS(client)
     this.group = new ChatBskyGroupNS(client)
     this.moderation = new ChatBskyModerationNS(client)
   }
@@ -4293,6 +4307,14 @@ export class ChatBskyConvoNS {
   }
 }
 
+export class ChatBskyEmbedNS {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+}
+
 export class ChatBskyGroupNS {
   _client: XrpcClient
 
@@ -4454,6 +4476,28 @@ export class ChatBskyGroupNS {
         throw ChatBskyGroupRequestJoin.toKnownErr(e)
       })
   }
+
+  updateJoinRequestsRead(
+    data?: ChatBskyGroupUpdateJoinRequestsRead.InputSchema,
+    opts?: ChatBskyGroupUpdateJoinRequestsRead.CallOptions,
+  ): Promise<ChatBskyGroupUpdateJoinRequestsRead.Response> {
+    return this._client
+      .call('chat.bsky.group.updateJoinRequestsRead', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ChatBskyGroupUpdateJoinRequestsRead.toKnownErr(e)
+      })
+  }
+
+  withdrawJoinRequest(
+    data?: ChatBskyGroupWithdrawJoinRequest.InputSchema,
+    opts?: ChatBskyGroupWithdrawJoinRequest.CallOptions,
+  ): Promise<ChatBskyGroupWithdrawJoinRequest.Response> {
+    return this._client
+      .call('chat.bsky.group.withdrawJoinRequest', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ChatBskyGroupWithdrawJoinRequest.toKnownErr(e)
+      })
+  }
 }
 
 export class ChatBskyModerationNS {
@@ -4473,6 +4517,28 @@ export class ChatBskyModerationNS {
       undefined,
       opts,
     )
+  }
+
+  getConvo(
+    params?: ChatBskyModerationGetConvo.QueryParams,
+    opts?: ChatBskyModerationGetConvo.CallOptions,
+  ): Promise<ChatBskyModerationGetConvo.Response> {
+    return this._client
+      .call('chat.bsky.moderation.getConvo', params, undefined, opts)
+      .catch((e) => {
+        throw ChatBskyModerationGetConvo.toKnownErr(e)
+      })
+  }
+
+  getConvoMembers(
+    params?: ChatBskyModerationGetConvoMembers.QueryParams,
+    opts?: ChatBskyModerationGetConvoMembers.CallOptions,
+  ): Promise<ChatBskyModerationGetConvoMembers.Response> {
+    return this._client
+      .call('chat.bsky.moderation.getConvoMembers', params, undefined, opts)
+      .catch((e) => {
+        throw ChatBskyModerationGetConvoMembers.toKnownErr(e)
+      })
   }
 
   getMessageContext(

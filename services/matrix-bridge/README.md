@@ -47,6 +47,8 @@ Synchronizes PARA community memberships with Matrix spaces. **PARA-only — fede
 - `POST /api/matrix-token` — requires M8 bearer token; returns a Matrix login token for the authenticated session DID
 - `POST /api/push-token` — requires M8 bearer token; registers push token for the authenticated session DID
 - `GET /api/space-for-community?uri=...` — requires M8 bearer token and active community membership
+- `GET /api/rooms` — requires M8 bearer token; lists the authenticated user's active Matrix rooms with unread counts
+- `GET /api/unread` — requires M8 bearer token; returns total unread counts for the authenticated user's active Matrix rooms
 
 ## Cursor Persistence
 

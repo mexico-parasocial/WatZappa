@@ -396,6 +396,15 @@ export const schemaDict = {
             description: 'The user who issued this verification.',
             format: 'did',
           },
+          issuerDisplayName: {
+            type: 'string',
+            description: 'The display name of the issuer.',
+          },
+          issuerHandle: {
+            type: 'string',
+            description: 'The handle of the issuer.',
+            format: 'handle',
+          },
           uri: {
             type: 'string',
             description: 'The AT-URI of the verification record.',
@@ -10211,7 +10220,7 @@ export const schemaDict = {
           },
           embed: {
             type: 'union',
-            refs: ['lex:app.bsky.embed.record'],
+            refs: ['lex:app.bsky.embed.record', 'lex:chat.bsky.embed.joinLink'],
           },
         },
       },
@@ -10240,7 +10249,10 @@ export const schemaDict = {
           },
           embed: {
             type: 'union',
-            refs: ['lex:app.bsky.embed.record#view'],
+            refs: [
+              'lex:app.bsky.embed.record#view',
+              'lex:chat.bsky.embed.joinLink#view',
+            ],
           },
           reactions: {
             type: 'array',
@@ -10588,46 +10600,51 @@ export const schemaDict = {
           '[NOTE: This is under active development and should be considered unstable while this note is here].',
         type: 'object',
         required: [
-          'name',
+          'createdAt',
           'lockStatus',
           'memberCount',
           'memberLimit',
-          'createdAt',
+          'name',
         ],
         properties: {
-          name: {
+          createdAt: {
             type: 'string',
-            description: 'The display name of the group conversation.',
-            maxGraphemes: 128,
-            maxLength: 1280,
+            format: 'datetime',
+          },
+          joinLink: {
+            type: 'ref',
+            ref: 'lex:chat.bsky.group.defs#joinLinkView',
+          },
+          joinRequestCount: {
+            type: 'integer',
+            description:
+              'The total number of pending join requests for the group conversation. This information is only visible to the owner and to moderators. Capped at 21.',
+          },
+          lockStatus: {
+            description: 'The lock status of the conversation.',
+            type: 'ref',
+            ref: 'lex:chat.bsky.convo.defs#convoLockStatus',
           },
           memberCount: {
             type: 'integer',
             description:
               'The total number of members in the group conversation.',
           },
-          createdAt: {
-            type: 'string',
-            format: 'datetime',
-          },
-          joinRequestCount: {
-            type: 'integer',
-            description:
-              'The total number of pending join requests for the group conversation. Only present for the owner. Capped at 21.',
-          },
-          joinLink: {
-            type: 'ref',
-            ref: 'lex:chat.bsky.group.defs#joinLinkView',
-          },
           memberLimit: {
             type: 'integer',
             description:
               'The maximum number of members allowed in the group conversation.',
           },
-          lockStatus: {
-            description: 'The lock status of the conversation.',
-            type: 'ref',
-            ref: 'lex:chat.bsky.convo.defs#convoLockStatus',
+          name: {
+            type: 'string',
+            description: 'The display name of the group conversation.',
+            maxGraphemes: 128,
+            maxLength: 1280,
+          },
+          unreadJoinRequestCount: {
+            type: 'integer',
+            description:
+              'The number of unread join requests for the group conversation. Only present for the owner.',
           },
         },
       },
@@ -11149,6 +11166,53 @@ export const schemaDict = {
           },
         },
       },
+      logWithdrawIncomingJoinRequest: {
+        description:
+          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a prospective member withdrew their join request. Only the owner gets this.',
+        type: 'object',
+        required: ['rev', 'convoId', 'member'],
+        properties: {
+          rev: {
+            type: 'string',
+          },
+          convoId: {
+            type: 'string',
+          },
+          member: {
+            description: 'Prospective member who withdrew their join request.',
+            type: 'ref',
+            ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+          },
+        },
+      },
+      logWithdrawOutgoingJoinRequest: {
+        description:
+          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating the viewer withdrew their own join request. Only requester actor gets this.',
+        type: 'object',
+        required: ['rev', 'convoId'],
+        properties: {
+          rev: {
+            type: 'string',
+          },
+          convoId: {
+            type: 'string',
+          },
+        },
+      },
+      logReadJoinRequests: {
+        description:
+          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating the group owner marked join requests as read. Only the owner gets this.',
+        type: 'object',
+        required: ['rev', 'convoId'],
+        properties: {
+          rev: {
+            type: 'string',
+          },
+          convoId: {
+            type: 'string',
+          },
+        },
+      },
     },
   },
   ChatBskyConvoDeleteMessageForSelf: {
@@ -11440,6 +11504,9 @@ export const schemaDict = {
                     'lex:chat.bsky.convo.defs#logApproveJoinRequest',
                     'lex:chat.bsky.convo.defs#logRejectJoinRequest',
                     'lex:chat.bsky.convo.defs#logOutgoingJoinRequest',
+                    'lex:chat.bsky.convo.defs#logWithdrawIncomingJoinRequest',
+                    'lex:chat.bsky.convo.defs#logWithdrawOutgoingJoinRequest',
+                    'lex:chat.bsky.convo.defs#logReadJoinRequests',
                   ],
                 },
               },
@@ -12084,6 +12151,34 @@ export const schemaDict = {
                 ref: 'lex:chat.bsky.convo.defs#convoView',
               },
             },
+          },
+        },
+      },
+    },
+  },
+  ChatBskyEmbedJoinLink: {
+    lexicon: 1,
+    id: 'chat.bsky.embed.joinLink',
+    description:
+      '[NOTE: This is under active development and should be considered unstable while this note is here]. A join link embedded in a chat message.',
+    defs: {
+      main: {
+        type: 'object',
+        required: ['code'],
+        properties: {
+          code: {
+            type: 'string',
+            description: 'The join link code.',
+          },
+        },
+      },
+      view: {
+        type: 'object',
+        required: ['joinLinkPreview'],
+        properties: {
+          joinLinkPreview: {
+            type: 'ref',
+            ref: 'lex:chat.bsky.group.defs#joinLinkPreviewView',
           },
         },
       },
@@ -12765,7 +12860,7 @@ export const schemaDict = {
       main: {
         type: 'query',
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Get public information about groups from join links. Invalid or disabled codes are silently omitted from results.',
+          "[NOTE: This is under active development and should be considered unstable while this note is here]. Get public information about groups from join links. Invalid or disabled codes are silently omitted from results. Use the 'code' property on the views to correlate with the input codes, not array positions.",
         parameters: {
           type: 'params',
           required: ['codes'],
@@ -13012,6 +13107,165 @@ export const schemaDict = {
       },
     },
   },
+  ChatBskyGroupUpdateJoinRequestsRead: {
+    lexicon: 1,
+    id: 'chat.bsky.group.updateJoinRequestsRead',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          '[NOTE: This is under active development and should be considered unstable while this note is here]. Marks all join requests as read for the group owner.',
+        errors: [
+          {
+            name: 'InvalidConvo',
+          },
+          {
+            name: 'InsufficientRole',
+          },
+        ],
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['convoId'],
+            properties: {
+              convoId: {
+                type: 'string',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: [],
+            properties: {},
+          },
+        },
+      },
+    },
+  },
+  ChatBskyGroupWithdrawJoinRequest: {
+    lexicon: 1,
+    id: 'chat.bsky.group.withdrawJoinRequest',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          '[NOTE: This is under active development and should be considered unstable while this note is here]. Withdraws a pending request to join a group. Action taken by the prospective member who originally requested to join.',
+        errors: [
+          {
+            name: 'InvalidJoinRequest',
+          },
+        ],
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['convoId'],
+            properties: {
+              convoId: {
+                type: 'string',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: [],
+            properties: {},
+          },
+        },
+      },
+    },
+  },
+  ChatBskyModerationDefs: {
+    lexicon: 1,
+    id: 'chat.bsky.moderation.defs',
+    defs: {
+      convoView: {
+        description:
+          '[NOTE: This is under active development and should be considered unstable while this note is here]. A view of a conversation for moderation purposes. Unlike chat.bsky.convo.defs#convoView, it does not include viewer-specific data (such as muted, unreadCount, status, lastMessage, lastReaction), since the requester is a moderator and not a member of the conversation. The member list is not included; use chat.bsky.moderation.getConvoMembers to list members.',
+        type: 'object',
+        required: ['id', 'rev'],
+        properties: {
+          id: {
+            type: 'string',
+          },
+          rev: {
+            type: 'string',
+          },
+          kind: {
+            description:
+              'Union field that has data specific to different kinds of convos.',
+            type: 'union',
+            refs: [
+              'lex:chat.bsky.moderation.defs#directConvo',
+              'lex:chat.bsky.moderation.defs#groupConvo',
+            ],
+          },
+        },
+      },
+      directConvo: {
+        description:
+          '[NOTE: This is under active development and should be considered unstable while this note is here]. Data specific to a direct conversation, for moderation purposes.',
+        type: 'object',
+        properties: {},
+      },
+      groupConvo: {
+        description:
+          '[NOTE: This is under active development and should be considered unstable while this note is here]. Data specific to a group conversation, for moderation purposes. Unlike chat.bsky.convo.defs#groupConvo, it does not include viewer-specific data (such as unreadJoinRequestCount), since the requester is a moderator and not a member of the conversation.',
+        type: 'object',
+        required: [
+          'createdAt',
+          'joinRequestCount',
+          'lockStatus',
+          'memberCount',
+          'memberLimit',
+          'name',
+        ],
+        properties: {
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          joinLink: {
+            type: 'ref',
+            ref: 'lex:chat.bsky.group.defs#joinLinkView',
+          },
+          joinRequestCount: {
+            type: 'integer',
+            description:
+              'The total number of pending join requests for the group conversation. This information is only visible to the owner and to moderators. Capped at 21.',
+          },
+          lockStatus: {
+            description: 'The lock status of the conversation.',
+            type: 'ref',
+            ref: 'lex:chat.bsky.convo.defs#convoLockStatus',
+          },
+          memberCount: {
+            type: 'integer',
+            description:
+              'The total number of members in the group conversation.',
+          },
+          memberLimit: {
+            type: 'integer',
+            description:
+              'The maximum number of members allowed in the group conversation.',
+          },
+          name: {
+            type: 'string',
+            description: 'The display name of the group conversation.',
+            maxGraphemes: 128,
+            maxLength: 1280,
+          },
+        },
+      },
+    },
+  },
   ChatBskyModerationGetActorMetadata: {
     lexicon: 1,
     id: 'chat.bsky.moderation.getActorMetadata',
@@ -13070,6 +13324,97 @@ export const schemaDict = {
           },
           convosStarted: {
             type: 'integer',
+          },
+        },
+      },
+    },
+  },
+  ChatBskyModerationGetConvo: {
+    lexicon: 1,
+    id: 'chat.bsky.moderation.getConvo',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          '[NOTE: This is under active development and should be considered unstable while this note is here]. Gets an existing conversation by its ID, for moderation purposes. Does not require the requester to be a member of the conversation.',
+        errors: [
+          {
+            name: 'InvalidConvo',
+          },
+        ],
+        parameters: {
+          type: 'params',
+          required: ['convoId'],
+          properties: {
+            convoId: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['convo'],
+            properties: {
+              convo: {
+                type: 'ref',
+                ref: 'lex:chat.bsky.moderation.defs#convoView',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ChatBskyModerationGetConvoMembers: {
+    lexicon: 1,
+    id: 'chat.bsky.moderation.getConvoMembers',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          '[NOTE: This is under active development and should be considered unstable while this note is here]. Returns a paginated list of members from a conversation, for moderation purposes. Does not require the requester to be a member of the conversation.',
+        errors: [
+          {
+            name: 'InvalidConvo',
+          },
+        ],
+        parameters: {
+          type: 'params',
+          required: ['convoId'],
+          properties: {
+            convoId: {
+              type: 'string',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['members'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              members: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+                },
+              },
+            },
           },
         },
       },
@@ -13169,6 +13514,7 @@ export const schemaDict = {
               'lex:chat.bsky.moderation.subscribeModEvents#eventChatAccepted',
               'lex:chat.bsky.moderation.subscribeModEvents#eventGroupChatMemberLeft',
               'lex:chat.bsky.moderation.subscribeModEvents#eventGroupChatUpdated',
+              'lex:chat.bsky.moderation.subscribeModEvents#eventRateLimitExceeded',
             ],
           },
         },
@@ -13789,6 +14135,29 @@ export const schemaDict = {
               'join_link_disabled',
               'join_link_settings_changed',
             ],
+          },
+        },
+      },
+      eventRateLimitExceeded: {
+        type: 'object',
+        description: 'Fired when a user exceeds a rate limit.',
+        required: ['actorDid', 'createdAt', 'endpoint', 'rev'],
+        properties: {
+          actorDid: {
+            description: 'The DID of the user who hit the rate limit.',
+            type: 'string',
+            format: 'did',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          endpoint: {
+            description: 'The NSID of the endpoint that was rate limited.',
+            type: 'string',
+          },
+          rev: {
+            type: 'string',
           },
         },
       },
@@ -34918,6 +35287,7 @@ export const ids = {
   ChatBskyConvoUnmuteConvo: 'chat.bsky.convo.unmuteConvo',
   ChatBskyConvoUpdateAllRead: 'chat.bsky.convo.updateAllRead',
   ChatBskyConvoUpdateRead: 'chat.bsky.convo.updateRead',
+  ChatBskyEmbedJoinLink: 'chat.bsky.embed.joinLink',
   ChatBskyGroupAddMembers: 'chat.bsky.group.addMembers',
   ChatBskyGroupApproveJoinRequest: 'chat.bsky.group.approveJoinRequest',
   ChatBskyGroupCreateGroup: 'chat.bsky.group.createGroup',
@@ -34933,7 +35303,12 @@ export const ids = {
   ChatBskyGroupRejectJoinRequest: 'chat.bsky.group.rejectJoinRequest',
   ChatBskyGroupRemoveMembers: 'chat.bsky.group.removeMembers',
   ChatBskyGroupRequestJoin: 'chat.bsky.group.requestJoin',
+  ChatBskyGroupUpdateJoinRequestsRead: 'chat.bsky.group.updateJoinRequestsRead',
+  ChatBskyGroupWithdrawJoinRequest: 'chat.bsky.group.withdrawJoinRequest',
+  ChatBskyModerationDefs: 'chat.bsky.moderation.defs',
   ChatBskyModerationGetActorMetadata: 'chat.bsky.moderation.getActorMetadata',
+  ChatBskyModerationGetConvo: 'chat.bsky.moderation.getConvo',
+  ChatBskyModerationGetConvoMembers: 'chat.bsky.moderation.getConvoMembers',
   ChatBskyModerationGetMessageContext: 'chat.bsky.moderation.getMessageContext',
   ChatBskyModerationSubscribeModEvents:
     'chat.bsky.moderation.subscribeModEvents',

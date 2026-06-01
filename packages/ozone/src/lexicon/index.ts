@@ -159,7 +159,11 @@ import * as ChatBskyGroupListJoinRequests from './types/chat/bsky/group/listJoin
 import * as ChatBskyGroupRejectJoinRequest from './types/chat/bsky/group/rejectJoinRequest.js'
 import * as ChatBskyGroupRemoveMembers from './types/chat/bsky/group/removeMembers.js'
 import * as ChatBskyGroupRequestJoin from './types/chat/bsky/group/requestJoin.js'
+import * as ChatBskyGroupUpdateJoinRequestsRead from './types/chat/bsky/group/updateJoinRequestsRead.js'
+import * as ChatBskyGroupWithdrawJoinRequest from './types/chat/bsky/group/withdrawJoinRequest.js'
 import * as ChatBskyModerationGetActorMetadata from './types/chat/bsky/moderation/getActorMetadata.js'
+import * as ChatBskyModerationGetConvo from './types/chat/bsky/moderation/getConvo.js'
+import * as ChatBskyModerationGetConvoMembers from './types/chat/bsky/moderation/getConvoMembers.js'
 import * as ChatBskyModerationGetMessageContext from './types/chat/bsky/moderation/getMessageContext.js'
 import * as ChatBskyModerationSubscribeModEvents from './types/chat/bsky/moderation/subscribeModEvents.js'
 import * as ChatBskyModerationUpdateActorAccess from './types/chat/bsky/moderation/updateActorAccess.js'
@@ -1996,6 +2000,7 @@ export class ChatBskyNS {
   _server: Server
   actor: ChatBskyActorNS
   convo: ChatBskyConvoNS
+  embed: ChatBskyEmbedNS
   group: ChatBskyGroupNS
   moderation: ChatBskyModerationNS
 
@@ -2003,6 +2008,7 @@ export class ChatBskyNS {
     this._server = server
     this.actor = new ChatBskyActorNS(server)
     this.convo = new ChatBskyConvoNS(server)
+    this.embed = new ChatBskyEmbedNS(server)
     this.group = new ChatBskyGroupNS(server)
     this.moderation = new ChatBskyModerationNS(server)
   }
@@ -2312,6 +2318,14 @@ export class ChatBskyConvoNS {
   }
 }
 
+export class ChatBskyEmbedNS {
+  _server: Server
+
+  constructor(server: Server) {
+    this._server = server
+  }
+}
+
 export class ChatBskyGroupNS {
   _server: Server
 
@@ -2486,6 +2500,30 @@ export class ChatBskyGroupNS {
     const nsid = 'chat.bsky.group.requestJoin' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
+
+  updateJoinRequestsRead<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ChatBskyGroupUpdateJoinRequestsRead.QueryParams,
+      ChatBskyGroupUpdateJoinRequestsRead.HandlerInput,
+      ChatBskyGroupUpdateJoinRequestsRead.HandlerOutput
+    >,
+  ) {
+    const nsid = 'chat.bsky.group.updateJoinRequestsRead' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  withdrawJoinRequest<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ChatBskyGroupWithdrawJoinRequest.QueryParams,
+      ChatBskyGroupWithdrawJoinRequest.HandlerInput,
+      ChatBskyGroupWithdrawJoinRequest.HandlerOutput
+    >,
+  ) {
+    const nsid = 'chat.bsky.group.withdrawJoinRequest' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
 }
 
 export class ChatBskyModerationNS {
@@ -2504,6 +2542,30 @@ export class ChatBskyModerationNS {
     >,
   ) {
     const nsid = 'chat.bsky.moderation.getActorMetadata' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  getConvo<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ChatBskyModerationGetConvo.QueryParams,
+      ChatBskyModerationGetConvo.HandlerInput,
+      ChatBskyModerationGetConvo.HandlerOutput
+    >,
+  ) {
+    const nsid = 'chat.bsky.moderation.getConvo' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  getConvoMembers<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ChatBskyModerationGetConvoMembers.QueryParams,
+      ChatBskyModerationGetConvoMembers.HandlerInput,
+      ChatBskyModerationGetConvoMembers.HandlerOutput
+    >,
+  ) {
+    const nsid = 'chat.bsky.moderation.getConvoMembers' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
 

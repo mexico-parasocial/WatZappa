@@ -45,9 +45,11 @@ import { WithRequired } from './util/types.js'
 
 // key-encoder is CJS with exports.default; Node ESM interop wraps it as { default: Class }
 const KeyEncoder =
-  (KeyEncoderModule as typeof KeyEncoderModule & {
-    default?: typeof KeyEncoderModule
-  }).default ?? KeyEncoderModule
+  (
+    KeyEncoderModule as typeof KeyEncoderModule & {
+      default?: typeof KeyEncoderModule
+    }
+  ).default ?? KeyEncoderModule
 
 export type VerifiedOptions = {
   checkTakedown?: boolean

@@ -703,6 +703,38 @@
         "rev": { "type": "string" },
         "convoId": { "type": "string" }
       }
+    },
+    "logWithdrawIncomingJoinRequest": {
+      "description": "[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a prospective member withdrew their join request. Only the owner gets this.",
+      "type": "object",
+      "required": ["rev", "convoId", "member"],
+      "properties": {
+        "rev": { "type": "string" },
+        "convoId": { "type": "string" },
+        "member": {
+          "description": "Prospective member who withdrew their join request.",
+          "type": "ref",
+          "ref": "chat.bsky.actor.defs#profileViewBasic"
+        }
+      }
+    },
+    "logWithdrawOutgoingJoinRequest": {
+      "description": "[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating the viewer withdrew their own join request. Only requester actor gets this.",
+      "type": "object",
+      "required": ["rev", "convoId"],
+      "properties": {
+        "rev": { "type": "string" },
+        "convoId": { "type": "string" }
+      }
+    },
+    "logReadJoinRequests": {
+      "description": "[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating the group owner marked join requests as read. Only the owner gets this.",
+      "type": "object",
+      "required": ["rev", "convoId"],
+      "properties": {
+        "rev": { "type": "string" },
+        "convoId": { "type": "string" }
+      }
     }
   }
 }

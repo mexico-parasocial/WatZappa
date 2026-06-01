@@ -242,6 +242,7 @@ describe('BridgeDatabase — community Matrix rooms', () => {
         roomId: '!space:matrix.test',
         communityUri,
         slug: 'test',
+        kind: 'main',
         unread: 0,
       },
     ])
@@ -249,6 +250,42 @@ describe('BridgeDatabase — community Matrix rooms', () => {
     db.setCommunityMembership(did, communityUri, 'left', [])
     expect(db.isActiveCommunityMember(did, communityUri)).toBe(false)
     expect(db.getUnreadCountsForDid(did)).toEqual([])
+  })
+
+  it('lists assigned bicameral rooms for active members', () => {
+    const communityUri = 'at://creator/com.para.community.board/bicameral'
+    const did = 'did:plc:member'
+    db.setSpaceForCommunity(
+      communityUri,
+      '!space:matrix.test',
+      'bicameral',
+      'bicameral',
+    )
+    db.setChamberRooms(
+      communityUri,
+      '!a:matrix.test',
+      '!b:matrix.test',
+      '!observer:matrix.test',
+    )
+    db.setCommunityMembership(did, communityUri, 'active', ['member'])
+    db.setChamberAssignment(communityUri, did, 'A')
+
+    expect(db.getUnreadCountsForDid(did)).toEqual([
+      {
+        roomId: '!space:matrix.test',
+        communityUri,
+        slug: 'bicameral',
+        kind: 'main',
+        unread: 0,
+      },
+      {
+        roomId: '!a:matrix.test',
+        communityUri,
+        slug: 'bicameral',
+        kind: 'chamber-a',
+        unread: 0,
+      },
+    ])
   })
 
   it('stores Matrix event metadata without raw content', () => {

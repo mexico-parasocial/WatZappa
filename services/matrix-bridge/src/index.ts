@@ -475,6 +475,10 @@ async function main() {
         const communities = db.getUnreadCountsForDid(did)
         const total = communities.reduce((sum, c) => sum + c.unread, 0)
         writeJson(res, 200, { unread: total, communities })
+      } else if (req.url === '/api/rooms' && req.method === 'GET') {
+        const auth = await authenticateM8(req, config)
+        const rooms = db.getUnreadCountsForDid(auth.did)
+        writeJson(res, 200, { rooms })
       } else if (req.url === '/api/sortition/runs' && req.method === 'POST') {
         const body = await readBody(req)
         const {
