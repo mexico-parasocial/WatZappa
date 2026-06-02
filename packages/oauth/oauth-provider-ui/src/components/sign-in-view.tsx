@@ -1,8 +1,8 @@
+import { useCustomizationData } from '#/contexts/customization.tsx'
 import { msg } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { ReactNode, useCallback, useEffect, useState } from 'react'
 import type { Session } from '@atproto/oauth-provider-api'
-import { useCustomizationData } from '#/contexts/customization.tsx'
 import { LayoutTitle } from './layouts/layout-title.tsx'
 import { SignInForm, SignInFormOutput } from './sign-in-form.tsx'
 import { SignInPicker } from './sign-in-picker.tsx'
@@ -14,10 +14,7 @@ export type SignInViewProps = {
   setSession: (session: Session | null) => void
   forcedIdentifier?: string
 
-  onSignIn: (
-    credentials: SignInFormOutput,
-    signal: AbortSignal,
-  ) => void | PromiseLike<void>
+  onSignIn: (credentials: SignInFormOutput) => void | PromiseLike<void>
   onSignUp?: () => void
   onForgotPassword?: (emailHint?: string) => void
   onBack?: () => void

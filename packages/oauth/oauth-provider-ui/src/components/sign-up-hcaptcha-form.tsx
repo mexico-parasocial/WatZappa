@@ -1,12 +1,12 @@
-import HCaptcha from '@hcaptcha/react-hcaptcha'
-import { ForwardedRef, ReactNode, useCallback, useRef, useState } from 'react'
 import {
   FormCardAsync,
   FormCardAsyncProps,
 } from '#/components/forms/form-card-async.tsx'
 import { useBrowserColorScheme } from '#/hooks/use-browser-color-scheme.ts'
-import { mergeRefs } from '#/lib/ref.ts'
 import { Override } from '#/lib/util.ts'
+import HCaptcha from '@hcaptcha/react-hcaptcha'
+import { composeRefs } from '@radix-ui/react-compose-refs'
+import { ForwardedRef, ReactNode, useCallback, useRef, useState } from 'react'
 
 export type SignUpHcaptchaFormProps = Override<
   Omit<
@@ -23,7 +23,7 @@ export type SignUpHcaptchaFormProps = Override<
     onPrev?: () => void
 
     nextLabel?: ReactNode
-    onNext: (signal: AbortSignal) => void | PromiseLike<void>
+    onNext: () => void | PromiseLike<void>
 
     ref?: ForwardedRef<HCaptcha>
   }
@@ -68,14 +68,11 @@ export function SignUpHcaptchaForm({
     [onToken],
   )
 
-  const doSubmit = useCallback(
-    (signal: AbortSignal) => {
-      if (token) return onNext(signal)
-      else if (captchaRef.current) captchaRef.current.execute()
-      else throw new Error('Unable to load hCaptcha')
-    },
-    [token, onNext],
-  )
+  const doSubmit = useCallback(() => {
+    if (token) return onNext()
+    else if (captchaRef.current) captchaRef.current.execute()
+    else throw new Error('Unable to load hCaptcha')
+  }, [token, onNext])
 
   return (
     <FormCardAsync
@@ -92,7 +89,7 @@ export function SignUpHcaptchaForm({
         sitekey={siteKey}
         onLoad={onLoad}
         onVerify={onVerify}
-        ref={mergeRefs([ref, captchaRef])}
+        ref={composeRefs(ref, captchaRef)}
       />
     </FormCardAsync>
   )

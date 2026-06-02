@@ -1,6 +1,7 @@
-import { TicketIcon } from '@phosphor-icons/react'
-import { ChangeEvent, useState } from 'react'
 import { Override } from '#/lib/util.ts'
+import { TicketIcon } from '@phosphor-icons/react'
+import { composeEventHandlers } from '@radix-ui/primitive'
+import { useState } from 'react'
 import { InputText, InputTextProps } from './input-text.tsx'
 
 export type InputTokenProps = Override<
@@ -57,7 +58,7 @@ export function InputToken({
       placeholder={example}
       title={title}
       value={token}
-      onChange={(event: ChangeEvent<HTMLInputElement>) => {
+      onChange={composeEventHandlers(onChange, (event) => {
         const { value, selectionEnd, selectionStart } = event.currentTarget
 
         const fixedValue = fix(value)
@@ -73,12 +74,11 @@ export function InputToken({
         }
 
         setToken(fixedValue)
-        onChange?.(event)
 
         if (!event.isDefaultPrevented()) {
           onToken?.(fixedValue.length === 11 ? fixedValue : null)
         }
-      }}
+      })}
     />
   )
 }

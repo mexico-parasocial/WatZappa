@@ -1,3 +1,6 @@
+import { Api, UnauthorizedError, UnknownRequestUriError } from '#/lib/api.ts'
+import { upsert } from '#/lib/util.ts'
+import { useCurrentLocale } from '#/locales/locale-provider'
 import { useLingui } from '@lingui/react/macro'
 import {
   ReactNode,
@@ -18,9 +21,6 @@ import type {
   SignUpInput,
   VerifyHandleAvailabilityInput,
 } from '@atproto/oauth-provider-api'
-import { Api, UnauthorizedError, UnknownRequestUriError } from '#/lib/api.ts'
-import { upsert } from '#/lib/util.ts'
-import { useCurrentLocale } from '#/locales/locale-provider'
 import { useNotificationsContext } from './notifications.js'
 
 export type { Session }
@@ -203,6 +203,10 @@ export function SessionProvider({
           updateAccount(input.sub, {
             email: input.email,
             email_verified: true,
+          }),
+        '/update-handle': ({ input }) =>
+          updateAccount(input.sub, {
+            preferred_username: input.handle,
           }),
       },
       headers: session?.ephemeralToken

@@ -1,6 +1,6 @@
+import { Override } from '#/lib/util.ts'
 import { clsx } from 'clsx'
 import { JSX, ReactNode, createContext, useContext, useMemo } from 'react'
-import { Override } from '#/lib/util.ts'
 
 export type FormContextValue = {
   disabled: boolean
@@ -65,7 +65,7 @@ export function FormCard({
         {(actions || cancel) && (
           <div
             key="buttons"
-            className="flex flex-row-reverse flex-wrap items-center justify-end space-x-2 space-x-reverse"
+            className="flex flex-row-reverse flex-wrap items-center justify-start gap-2"
           >
             {actions}
             <div className="flex-auto" />

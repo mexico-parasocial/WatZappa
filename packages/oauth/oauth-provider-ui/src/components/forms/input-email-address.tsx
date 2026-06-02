@@ -1,11 +1,13 @@
+import { Override } from '#/lib/util.ts'
 import { useLingui } from '@lingui/react/macro'
 import { AtIcon } from '@phosphor-icons/react'
-import { ChangeEvent, useCallback, useState } from 'react'
-import { Override } from '#/lib/util.ts'
+import { composeEventHandlers } from '@radix-ui/primitive'
+import { composeRefs } from '@radix-ui/react-compose-refs'
+import { useRef, useState } from 'react'
 import { InputText, InputTextProps } from './input-text.tsx'
 
 export type InputEmailAddressProps = Override<
-  Omit<InputTextProps, 'type'>,
+  Omit<InputTextProps, 'defaultValue' | 'type'>,
   {
     onEmail?: (email: string | undefined) => void
   }
@@ -20,46 +22,37 @@ export function InputEmailAddress({
   autoCorrect = 'off',
   dir = 'auto',
   icon = <AtIcon aria-hidden weight="bold" className="w-5" />,
-  onBlur,
   onChange,
   pattern = '^[^@]+@[^@]+\\.[^@]+$',
   spellCheck = 'false',
-  value,
-  defaultValue = value,
+  value: valueInit = '',
   title,
+  ref,
   ...props
 }: InputEmailAddressProps) {
   const { t } = useLingui()
-  const [email, setEmail] = useState<string>(
-    typeof defaultValue === 'string' ? defaultValue : '',
-  )
-
-  const doChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const email = event.target.value.toLowerCase()
-
-      setEmail(email)
-      onChange?.(event)
-      onEmail?.(event.target.validity.valid ? email : undefined)
-    },
-    [onChange, onEmail],
-  )
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [value, setValue] = useState(valueInit)
 
   return (
     <InputText
       {...props}
       title={title ?? t`Email address`}
+      ref={composeRefs(ref, inputRef)}
       type="email"
       autoCapitalize={autoCapitalize}
+      autoComplete={autoComplete}
       autoCorrect={autoCorrect}
-      dir={dir}
       spellCheck={spellCheck}
+      dir={dir}
       icon={icon}
       pattern={pattern}
-      autoComplete={autoComplete}
-      value={email}
-      onChange={doChange}
-      onBlur={onBlur}
+      value={value}
+      onChange={composeEventHandlers(onChange, (event) => {
+        const { value } = event.target
+        setValue(value)
+        onEmail?.(event.target.validity.valid ? value.toLowerCase() : undefined)
+      })}
     />
   )
 }

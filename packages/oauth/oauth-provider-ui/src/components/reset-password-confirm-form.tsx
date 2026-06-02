@@ -1,5 +1,3 @@
-import { Trans } from '@lingui/react/macro'
-import { useRef, useState } from 'react'
 import {
   FormCardAsync,
   FormCardAsyncProps,
@@ -8,17 +6,16 @@ import { FormField } from '#/components/forms/form-field'
 import { InputNewPassword } from '#/components/forms/input-new-password.tsx'
 import { InputToken } from '#/components/forms/input-token.tsx'
 import { Override } from '#/lib/util.ts'
+import { Trans } from '@lingui/react/macro'
+import { useRef, useState } from 'react'
 
 export type ResetPasswordConfirmFormProps = Override<
   FormCardAsyncProps,
   {
-    onSubmit: (
-      data: {
-        token: string
-        password: string
-      },
-      signal: AbortSignal,
-    ) => void | PromiseLike<void>
+    onSubmit: (data: {
+      token: string
+      password: string
+    }) => void | PromiseLike<void>
   }
 >
 
@@ -27,6 +24,7 @@ export function ResetPasswordConfirmForm({
 
   // FormCardAsyncProps
   invalid,
+  children,
   ...props
 }: ResetPasswordConfirmFormProps) {
   const passwordRef = useRef<HTMLInputElement>(null)
@@ -37,11 +35,13 @@ export function ResetPasswordConfirmForm({
   return (
     <FormCardAsync
       {...props}
-      onSubmit={async (signal) => {
-        if (token && password) return onSubmit({ token, password }, signal)
+      invalid={!token || !password || invalid}
+      onSubmit={async () => {
+        if (token && password) await onSubmit({ token, password })
       }}
-      invalid={invalid || !token || !password}
     >
+      {children}
+
       <FormField label={<Trans>Reset code</Trans>}>
         <InputToken
           name="code"
@@ -62,7 +62,7 @@ export function ResetPasswordConfirmForm({
           name="password"
           enterKeyHint="done"
           required
-          password={password}
+          value={password}
           onPassword={setPassword}
         />
       </FormField>

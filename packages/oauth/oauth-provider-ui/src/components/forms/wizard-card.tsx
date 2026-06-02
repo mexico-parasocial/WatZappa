@@ -1,12 +1,12 @@
+import { DisabledStep, Step, useStepper } from '#/hooks/use-stepper.ts'
+import { Override } from '#/lib/util.ts'
 import { Trans } from '@lingui/react/macro'
 import { clsx } from 'clsx'
 import { JSX, ReactNode, useCallback } from 'react'
-import { DisabledStep, Step, useStepper } from '#/hooks/use-stepper.ts'
-import { Override } from '#/lib/util.ts'
 
 export type DoneFn = (...a: any) => unknown
 
-export type WizardRenderProps<TDone extends DoneFn> = {
+export type WizardRenderProps = {
   /**
    * Indicates wether the render function being invoked corresponds to the step
    * currently active. The steps titles could, for example, be rendered in a
@@ -22,39 +22,39 @@ export type WizardRenderProps<TDone extends DoneFn> = {
   prev?: () => void
   prevLabel: ReactNode
 
-  // On the last step, the "next()" function will actually be the done function
-  next: (() => void) | TDone
+  next: () => void
   nextLabel: ReactNode
 }
 
-export type WizardRenderFn<TDone extends DoneFn> = (
-  data: WizardRenderProps<TDone>,
-) => ReactNode
+export type WizardRenderFn = (data: WizardRenderProps) => ReactNode
 
-export type WizardStep<TDone extends DoneFn> = Step & {
-  titleRender?: WizardRenderFn<TDone>
-  contentRender: WizardRenderFn<TDone>
+export type WizardStep = Step & {
+  titleRender?: WizardRenderFn
+  contentRender: WizardRenderFn
 }
 
-export type WizardCardProps<TDone extends DoneFn> = Override<
+export type WizardCardProps = Override<
   Omit<JSX.IntrinsicElements['div'], 'children'>,
   {
     prevLabel?: ReactNode
     nextLabel?: ReactNode
+    hideSteps?: boolean
 
     onBack?: () => void
     backLabel?: ReactNode
 
-    onDone: TDone
+    onDone: () => void
     doneLabel?: ReactNode
 
-    steps: readonly (WizardStep<TDone> | DisabledStep)[]
+    steps: readonly (WizardStep | DisabledStep)[]
   }
 >
 
-export function WizardCard<TDone extends DoneFn>({
+export function WizardCard({
   prevLabel,
   nextLabel,
+
+  hideSteps = false,
 
   onBack,
   backLabel,
@@ -65,8 +65,10 @@ export function WizardCard<TDone extends DoneFn>({
   steps,
   className,
 
+  // div
+  key,
   ...props
-}: WizardCardProps<TDone>) {
+}: WizardCardProps) {
   const {
     atFirst,
     atLast,
@@ -85,7 +87,7 @@ export function WizardCard<TDone extends DoneFn>({
     if (!toNext()) toRequired()
   }, [toNext, toRequired])
 
-  const data: WizardRenderProps<TDone> = {
+  const data: WizardRenderProps = {
     // The current UI only displays the current title & content.
     current: true,
     invalid: current ? current.invalid : false,
@@ -101,12 +103,20 @@ export function WizardCard<TDone extends DoneFn>({
   const stepContent = current?.contentRender?.(data)
 
   return (
-    <div className={clsx(className, 'flex flex-col')} {...props}>
-      <p className="text-contrast-500">
-        <Trans>
-          Step {currentPosition} of {count}
-        </Trans>
-      </p>
+    <div
+      className={clsx(className, 'flex flex-col')}
+      // Force re-render of the title & content when the step changes, to avoid
+      // keeping stale internal state
+      key={`${key}-${currentPosition}`}
+      {...props}
+    >
+      {!hideSteps && (
+        <p className="text-contrast-500">
+          <Trans>
+            Step {currentPosition} of {count}
+          </Trans>
+        </p>
+      )}
 
       {stepTitle && <h2 className="mb-4 text-xl font-medium">{stepTitle}</h2>}
 

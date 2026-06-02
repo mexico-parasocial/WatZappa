@@ -1,12 +1,9 @@
-import { Trans, useLingui } from '@lingui/react/macro'
-import { AtIcon } from '@phosphor-icons/react'
-import { ReactNode, useCallback, useRef, useState } from 'react'
 import { Button } from '#/components/forms/button.tsx'
 import {
   FormCardAsync,
   FormCardAsyncProps,
 } from '#/components/forms/form-card-async.tsx'
-import { FormField } from '#/components/forms/form-field'
+import { FormField } from '#/components/forms/form-field.tsx'
 import { InputCheckbox } from '#/components/forms/input-checkbox.tsx'
 import { InputPassword } from '#/components/forms/input-password.tsx'
 import { InputText } from '#/components/forms/input-text.tsx'
@@ -17,9 +14,12 @@ import {
   InvalidCredentialsError,
   SecondAuthenticationFactorRequiredError,
 } from '#/lib/api.ts'
-import { isValidDomain } from '#/lib/handle'
-import { mergeRefs } from '#/lib/ref.ts'
+import { isValidDomain } from '#/lib/handle.ts'
 import { Override } from '#/lib/util.ts'
+import { Trans, useLingui } from '@lingui/react/macro'
+import { AtIcon } from '@phosphor-icons/react'
+import { composeRefs } from '@radix-ui/react-compose-refs'
+import { ReactNode, useCallback, useRef, useState } from 'react'
 
 export type SignInFormOutput = {
   username: string
@@ -39,10 +39,7 @@ export type SignInFormProps = Override<
     onBack?: () => void
     backLabel?: ReactNode
     onForgotPassword?: (emailHint?: string) => void
-    onSubmit: (
-      credentials: SignInFormOutput,
-      signal: AbortSignal,
-    ) => void | PromiseLike<void>
+    onSubmit: (credentials: SignInFormOutput) => void | PromiseLike<void>
   }
 >
 
@@ -77,7 +74,7 @@ export function SignInForm({
 
   const [loading, setLoading] = useState(false)
 
-  const formRef = useRef<AsyncActionController>(null)
+  const formRef = useRe > f<HTMLFormElement>(null)
 
   const clearSecondFactor = useCallback(() => {
     setOtp(null)
@@ -89,56 +86,45 @@ export function SignInForm({
     formRef.current?.reset()
   }, [clearSecondFactor, formRef])
 
-  const doSubmit = useCallback(
-    async (signal: AbortSignal) => {
-      try {
-        await onSubmit(
-          {
-            username,
-            password,
-            remember: !disableRemember && remember,
-            ...(secondFactor ? { [secondFactor.type]: otp } : {}),
-          },
-          signal,
-        )
-      } catch (err) {
-        if (signal.aborted) {
-          // If the action was aborted, ignore the error
-          return
-        }
+  const doSubmit = useCallback(async () => {
+    try {
+      await onSubmit({
+        username,
+        password,
+        remember: !disableRemember && remember,
+        ...(secondFactor ? { [secondFactor.type]: otp } : {}),
+      })
+    } catch (err) {
+      if (err instanceof SecondAuthenticationFactorRequiredError) {
+        setSecondFactor(err)
 
-        if (err instanceof SecondAuthenticationFactorRequiredError) {
-          setSecondFactor(err)
-
-          // Do not re-throw 2FA required error to prevent the form from from
-          // displaying it. Instead, we handle the error by showing the second
-          // factor form.
-          return
-        }
-
-        if (err instanceof InvalidCredentialsError) {
-          // If the username/password are not valid, clear the second factor
-          // as valid credentials are a pre-requisite for 2FA.
-          clearSecondFactor()
-        }
-
-        // Any thrown err will be displayed through the form's errorRender
-        throw err
+        // Do not re-throw 2FA required error to prevent the form from from
+        // displaying it. Instead, we handle the error by showing the second
+        // factor form.
+        return
       }
-    },
-    [username, password, remember, secondFactor, otp, onSubmit],
-  )
+
+      if (err instanceof InvalidCredentialsError) {
+        // If the username/password are not valid, clear the second factor
+        // as valid credentials are a pre-requisite for 2FA.
+        clearSecondFactor()
+      }
+
+      // Any thrown err will be displayed through the form's errorRender
+      throw err
+    }
+  }, [username, password, remember, secondFactor, otp, onSubmit])
 
   return (
     <FormCardAsync
       {...props}
-      ref={mergeRefs([ref, formRef])}
+      ref={composeRefs(ref, formRef)}
       onLoading={setLoading}
       onCancel={onBack}
       cancelLabel={backLabel ?? t`Back`}
       append={children}
       invalid={
-        invalid || !username || !password || (secondFactor != null && !otp)
+        !username || !password || (secondFactor != null && !otp) || invalid
       }
       submitLabel={
         secondFactor ? (

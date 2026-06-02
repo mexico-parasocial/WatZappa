@@ -202,6 +202,11 @@ export type VerifyHandleAvailabilityInput = {
   handle: string
 }
 
+export type UpdateHandleInput = {
+  sub: string
+  handle: string
+}
+
 export type RevokeAccountSessionInput = {
   sub: string
   deviceId: string

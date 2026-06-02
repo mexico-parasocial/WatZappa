@@ -44,6 +44,7 @@ import {
   UpdateEmailConfirmInput,
   UpdateEmailRequestInput,
   UpdateEmailRequestOutput,
+  UpdateHandleData,
   UpdateRequestData,
   VerifyEmailConfirmInput,
   VerifyEmailRequestInput,
@@ -61,9 +62,9 @@ import { ServerMailer } from '../mailer/index.js'
 import { Sequencer, syncEvtDataFromCommit } from '../sequencer/index.js'
 import { AccountManager, InvalidPasswordError } from './account-manager.js'
 import * as schemas from './db/schema/index.js'
+import * as accountDeviceHelper from './helpers/account-device.js'
 import * as accountHelper from './helpers/account.js'
 import { AccountStatus, UserAlreadyExistsError } from './helpers/account.js'
-import * as accountDeviceHelper from './helpers/account-device.js'
 import * as authRequestHelper from './helpers/authorization-request.js'
 import * as authorizedClientHelper from './helpers/authorized-client.js'
 import * as deviceHelper from './helpers/device.js'
@@ -326,7 +327,7 @@ export class OAuthStore
   ): Promise<DeviceAccount[]> {
     const rows = await accountDeviceHelper.selectQB(this.db, filter).execute()
 
-    const uniqueDids = [...new Set(rows.map((row) => row.did))]
+    const uniqueDids: string[] = [...new Set(rows.map((row) => row.did))]
 
     // Enrich all distinct account with their profile data
     const accounts = new Map(
@@ -422,13 +423,7 @@ export class OAuthStore
         throw new HandleUnavailableError('taken')
       }
     } catch (err) {
-      if (err instanceof XrpcInvalidRequestError) {
-        throw err.customErrorName === 'HandleNotAvailable'
-          ? new HandleUnavailableError('taken', err.message)
-          : new HandleUnavailableError('syntax', err.message)
-      }
-
-      throw err
+      throw toHandleUnavailableError(err)
     }
   }
 
@@ -682,6 +677,19 @@ export class OAuthStore
     }
   }
 
+  async updateHandle({ sub: did, handle }: UpdateHandleData): Promise<Account> {
+    // @TODO @atproto/oauth-provider should strongly type `Sub` as `DidString`
+    assert(isDidString(did), 'sub must be a valid DID string')
+
+    try {
+      const account = await this.accountManager.updateHandle(did, handle)
+
+      return this.buildAccount(account)
+    } catch (err) {
+      throw toHandleUnavailableError(err)
+    }
+  }
+
   private async toTokenInfo(
     row: accountHelper.ActorAccount & Selectable<schemas.Token>,
   ): Promise<TokenInfo> {
@@ -728,4 +736,33 @@ export class OAuthStore
 
     return account
   }
+}
+
+function toHandleUnavailableError(err: unknown): unknown {
+  if (err instanceof XrpcInvalidRequestError) {
+    if (err.message === 'External handle did not resolve to DID') {
+      return new HandleUnavailableError('resolution', err.message, err)
+    }
+
+    if (err.customErrorName === 'HandleNotAvailable') {
+      return new HandleUnavailableError('reserved', err.message, err)
+    }
+
+    if (err.customErrorName === 'UnsupportedDomain') {
+      return new HandleUnavailableError('domain', err.message, err)
+    }
+
+    if (err.customErrorName === 'InvalidHandle') {
+      if (err.message === 'Inappropriate language in handle') {
+        return new HandleUnavailableError('slur', err.message, err)
+      }
+
+      return new HandleUnavailableError('syntax', err.message, err)
+    }
+
+    // Unexpected case
+    return new InvalidRequestError(err.message, err)
+  }
+
+  return err
 }

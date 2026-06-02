@@ -1,8 +1,4 @@
-import { Trans, useLingui } from '@lingui/react/macro'
-import { NumpadIcon } from '@phosphor-icons/react'
-import { ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  AsyncActionController,
   FormCardAsync,
   FormCardAsyncProps,
 } from '#/components/forms/form-card-async.tsx'
@@ -10,8 +6,11 @@ import { FormField } from '#/components/forms/form-field'
 import { InputEmailAddress } from '#/components/forms/input-email-address.tsx'
 import { InputNewPassword } from '#/components/forms/input-new-password.tsx'
 import { InputText } from '#/components/forms/input-text.tsx'
-import { mergeRefs } from '#/lib/ref.ts'
 import { Override } from '#/lib/util.ts'
+import { Trans, useLingui } from '@lingui/react/macro'
+import { NumpadIcon } from '@phosphor-icons/react'
+import { composeRefs } from '@radix-ui/react-compose-refs'
+import { ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 
 export type SignUpAccountFormOutput = {
   email: string
@@ -30,7 +29,7 @@ export type SignUpAccountFormProps = Override<
     credentials?: SignUpAccountFormOutput
     onCredentials?: (credentials?: SignUpAccountFormOutput) => void
 
-    onNext: (signal: AbortSignal) => void | PromiseLike<void>
+    onNext: () => void | PromiseLike<void>
     nextLabel?: ReactNode
 
     onPrev?: () => void
@@ -62,8 +61,7 @@ export function SignUpAccountForm({
   const [password, setPassword] = useState(creds?.password)
   const [inviteCode, setInviteCode] = useState(creds?.inviteCode)
 
-  const formRef = useRef<AsyncActionController>(null)
-  const resetForm = () => formRef.current?.reset()
+  const formRef = useRef<HTMLFormElement>(null)
 
   const credentials = useMemo(
     () =>
@@ -84,7 +82,7 @@ export function SignUpAccountForm({
   return (
     <FormCardAsync
       {...props}
-      ref={mergeRefs([ref, formRef])}
+      ref={composeRefs(ref, formRef)}
       invalid={invalid || !credentials}
       onCancel={onPrev}
       cancelLabel={prevLabel}
@@ -104,7 +102,7 @@ export function SignUpAccountForm({
             value={inviteCode || ''}
             onChange={(event) => {
               setInviteCode(event.target.value || undefined)
-              resetForm()
+              formRef.current?.reset()
             }}
             enterKeyHint="next"
           />
@@ -117,10 +115,10 @@ export function SignUpAccountForm({
           name="email"
           enterKeyHint="next"
           required
-          defaultValue={email}
+          value={email}
           onEmail={(email) => {
             setEmail(email)
-            resetForm()
+            formRef.current?.reset()
           }}
         />
       </FormField>
@@ -130,10 +128,10 @@ export function SignUpAccountForm({
           name="password"
           enterKeyHint="next"
           required
-          password={password}
+          value={password}
           onPassword={(value) => {
             setPassword(value)
-            resetForm()
+            formRef.current?.reset()
           }}
         />
       </FormField>
