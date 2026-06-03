@@ -5,6 +5,7 @@ import { Database } from '../db/index.js'
 import activitySubscription from './activity-subscription.js'
 import blocks from './blocks.js'
 import bookmarks from './bookmarks.js'
+import briefingPack from './briefing-pack.js'
 import cabildeo from './cabildeo.js'
 import collections from './collections.js'
 import community from './community.js'
@@ -23,6 +24,7 @@ import lists from './lists.js'
 import moderation from './moderation.js'
 import mutes from './mutes.js'
 import notifs from './notifs.js'
+import personalCivicTree from './personal-civic-tree.js'
 import postSubscription from './post-subscription.js'
 import profile from './profile.js'
 import quotes from './quotes.js'
@@ -47,6 +49,7 @@ export default (db: Database, idResolver: IdResolver) =>
       ...activitySubscription(db),
       ...blocks(db),
       ...bookmarks(db),
+      ...briefingPack(db),
       ...cabildeo(db),
       ...collections(db),
       ...community(db),
@@ -69,6 +72,7 @@ export default (db: Database, idResolver: IdResolver) =>
       ...moderation(db),
       ...mutes(db),
       ...notifs(db),
+      ...personalCivicTree(db),
       ...postSubscription(db),
       ...profile(db),
       ...quotes(db),

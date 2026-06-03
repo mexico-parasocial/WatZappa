@@ -273,6 +273,64 @@
         "createdAt": { "type": "string", "format": "datetime" },
         "createdBy": { "type": "string", "format": "did" }
       }
+    },
+    "briefingPackView": {
+      "type": "object",
+      "required": [
+        "uri",
+        "cid",
+        "packType",
+        "communityUri",
+        "party",
+        "title",
+        "status",
+        "createdBy",
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "packType": { "type": "string", "enum": ["party_lobbying"] },
+        "communityUri": { "type": "string", "format": "at-uri" },
+        "party": { "type": "string", "maxLength": 120 },
+        "title": { "type": "string", "maxLength": 300 },
+        "summary": { "type": "string", "maxLength": 5000 },
+        "cabildeoUris": {
+          "type": "array",
+          "items": { "type": "string", "format": "at-uri" },
+          "maxLength": 100
+        },
+        "civicTreeCardIds": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 200 },
+          "maxLength": 200
+        },
+        "evidenceUris": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 2000 },
+          "maxLength": 300
+        },
+        "sembleCollectionUri": { "type": "string", "format": "at-uri" },
+        "marginCollectionUri": { "type": "string", "format": "at-uri" },
+        "obsidianExportUri": { "type": "string", "maxLength": 2000 },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "published", "archived"]
+        },
+        "createdBy": { "type": "string", "format": "did" },
+        "creator": { "type": "ref", "ref": "app.bsky.actor.defs#profileView" },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "updatedAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "obsidianFileView": {
+      "type": "object",
+      "required": ["path", "content"],
+      "properties": {
+        "path": { "type": "string" },
+        "content": { "type": "string" }
+      }
     }
   }
 }

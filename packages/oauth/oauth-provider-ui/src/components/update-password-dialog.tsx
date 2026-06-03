@@ -3,7 +3,7 @@ import { ResetPasswordConfirmForm } from '#/components/reset-password-confirm-fo
 import { Trans, useLingui } from '@lingui/react/macro'
 import { ReactNode, useEffect, useState } from 'react'
 import { ButtonRequestCode } from '#/components/forms/button-request-code'
-import { DialogSimple } from './dialog-simple.tsx'
+import { DialogSimple } from './utils/dialog-simple.tsx'
 
 export type UpdatePasswordDialogProps = {
   requestPending?: boolean

@@ -1,6 +1,6 @@
 import { Trans } from '@lingui/react/macro'
 import { ReactNode, useCallback, useEffect, useState } from 'react'
-import { DialogSimple } from './dialog-simple.tsx'
+import { DialogSimple } from './utils/dialog-simple.tsx'
 import { Button } from './forms/button.tsx'
 import { UpdateHandleCustomForm } from './update-handle-custom-form.tsx'
 import { UpdateHandleDefaultForm } from './update-handle-default-form.tsx'

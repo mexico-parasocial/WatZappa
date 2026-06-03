@@ -1,0 +1,26 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.getBriefingPack",
+  "defs": {
+    "main": {
+      "type": "query",
+      "parameters": {
+        "type": "params",
+        "required": ["uri"],
+        "properties": {
+          "uri": {"type": "string", "format": "at-uri"}
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["pack"],
+          "properties": {
+            "pack": { "type": "ref", "ref": "com.para.community.defs#briefingPackView" }
+          }
+        }
+      }
+    }
+  }
+}

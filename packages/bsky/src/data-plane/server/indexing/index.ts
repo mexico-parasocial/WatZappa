@@ -18,10 +18,10 @@ import { BackgroundQueue } from '../background.js'
 import { Database } from '../db/index.js'
 import { Actor } from '../db/tables/actor.js'
 import * as Block from './plugins/block.js'
-import * as Cabildeo from './plugins/cabildeo.js'
 import * as CabildeoDelegation from './plugins/cabildeo-delegation.js'
 import * as CabildeoPosition from './plugins/cabildeo-position.js'
 import * as CabildeoVote from './plugins/cabildeo-vote.js'
+import * as Cabildeo from './plugins/cabildeo.js'
 import * as ChatDeclaration from './plugins/chat-declaration.js'
 import * as FeedGenerator from './plugins/feed-generator.js'
 import * as Follow from './plugins/follow.js'
@@ -29,34 +29,35 @@ import * as GermDeclaration from './plugins/germ-declaration.js'
 import * as Highlight from './plugins/highlight.js'
 import * as Labeler from './plugins/labeler.js'
 import * as Like from './plugins/like.js'
-import * as List from './plugins/list.js'
 import * as ListBlock from './plugins/list-block.js'
 import * as ListItem from './plugins/list-item.js'
+import * as List from './plugins/list.js'
 import * as NotifDeclaration from './plugins/notif-declaration.js'
-import * as OpenQuestion from './plugins/open-question.js'
 import * as OpenQuestionVote from './plugins/open-question-vote.js'
+import * as OpenQuestion from './plugins/open-question.js'
 import * as ParaCommunityBoard from './plugins/para-community-board.js'
+import * as ParaCommunityBriefingPack from './plugins/para-community-briefing-pack.js'
 import * as ParaCommunityGovernance from './plugins/para-community-governance.js'
 import * as ParaCommunityMembership from './plugins/para-community-membership.js'
 import * as ParaCommunityRelation from './plugins/para-community-relation.js'
-import * as ParaCommunitySharedContent from './plugins/para-community-shared-content.js'
 import * as ParaCommunitySharedContentAction from './plugins/para-community-shared-content-action.js'
-import * as ParaPost from './plugins/para-post.js'
+import * as ParaCommunitySharedContent from './plugins/para-community-shared-content.js'
 import * as ParaPostMeta from './plugins/para-post-meta.js'
-import * as ParaQvlDelegation from './plugins/para-qvl-delegation.js'
-import * as ParaQvlCivicTree from './plugins/para-qvl-civic-tree.js'
+import * as ParaPost from './plugins/para-post.js'
 import * as ParaQvlCivicTreeVote from './plugins/para-qvl-civic-tree-vote.js'
+import * as ParaQvlCivicTree from './plugins/para-qvl-civic-tree.js'
+import * as ParaQvlDelegation from './plugins/para-qvl-delegation.js'
 import * as ParaQvlIntensity from './plugins/para-qvl-intensity.js'
 import * as ParaQvlVote from './plugins/para-qvl-vote.js'
 import * as ParaStatus from './plugins/para-status.js'
-import * as Post from './plugins/post.js'
 import * as Postgate from './plugins/post-gate.js'
+import * as Post from './plugins/post.js'
 import * as Profile from './plugins/profile.js'
 import * as RaqAssessment from './plugins/raq-assessment.js'
 import * as RaqAxisVote from './plugins/raq-axis-vote.js'
-import * as RaqProposal from './plugins/raq-proposal.js'
 import * as RaqProposalAnswer from './plugins/raq-proposal-answer.js'
 import * as RaqProposalVote from './plugins/raq-proposal-vote.js'
+import * as RaqProposal from './plugins/raq-proposal.js'
 import * as Repost from './plugins/repost.js'
 import * as StarterPack from './plugins/starter-pack.js'
 import * as Status from './plugins/status.js'
@@ -88,6 +89,7 @@ export class IndexingService {
     openQuestionVote: OpenQuestionVote.PluginType
     paraPost: ParaPost.PluginType
     paraCommunityBoard: ParaCommunityBoard.PluginType
+    paraCommunityBriefingPack: ParaCommunityBriefingPack.PluginType
     paraCommunityGovernance: ParaCommunityGovernance.PluginType
     paraCommunityMembership: ParaCommunityMembership.PluginType
     paraCommunityRelation: ParaCommunityRelation.PluginType
@@ -145,6 +147,10 @@ export class IndexingService {
         this.db,
         this.background,
       ),
+      paraCommunityBriefingPack: ParaCommunityBriefingPack.makePlugin(
+        this.db,
+        this.background,
+      ),
       paraCommunityGovernance: ParaCommunityGovernance.makePlugin(
         this.db,
         this.background,
@@ -169,10 +175,7 @@ export class IndexingService {
         this.background,
         this.paraCache,
       ),
-      paraQvlCivicTree: ParaQvlCivicTree.makePlugin(
-        this.db,
-        this.background,
-      ),
+      paraQvlCivicTree: ParaQvlCivicTree.makePlugin(this.db, this.background),
       paraQvlCivicTreeVote: ParaQvlCivicTreeVote.makePlugin(
         this.db,
         this.background,

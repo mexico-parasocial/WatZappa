@@ -370,6 +370,7 @@ export interface ReportActivityView {
   /** DID of the actor who created this activity, or the service DID for automated activities. */
   createdBy: string
   moderator?: ToolsOzoneTeamDefs.Member
+  report?: ReportView
   /** When this activity was created */
   createdAt: string
 }

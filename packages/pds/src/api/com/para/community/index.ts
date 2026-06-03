@@ -3,6 +3,8 @@ import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'
 import acceptDraftInvite from './acceptDraftInvite.js'
 import createBoard from './createBoard.js'
+import createBriefingPack from './createBriefingPack.js'
+import updateBriefingPack from './updateBriefingPack.js'
 import getBoard from './getBoard.js'
 import getGovernance from './getGovernance.js'
 import join from './join.js'
@@ -16,6 +18,8 @@ import {
 
 export default function (server: Server, ctx: AppContext) {
   createBoard(server, ctx)
+  createBriefingPack(server, ctx)
+  updateBriefingPack(server, ctx)
   getBoard(server, ctx)
   getGovernance(server, ctx)
   listBoards(server, ctx)

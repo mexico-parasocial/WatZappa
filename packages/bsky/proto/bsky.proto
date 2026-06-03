@@ -1910,6 +1910,39 @@ message GetParaCommunityBoardsResponse {
   repeated ParaCommunityBoardView boards = 1;
   string cursor = 2;
 }
+message ParaCommunityBriefingPackView {
+  string uri = 1;
+  string cid = 2;
+  string community_uri = 3;
+  string title = 4;
+  string description = 5;
+  string content_markdown = 6;
+  string status = 7;
+  string created_at = 8;
+  string updated_at = 9;
+  string last_exported_at = 10;
+  string created_by = 11;
+  string created_by_handle = 12;
+}
+message GetParaCommunityBriefingPacksRequest {
+  string community_uri = 1;
+  string viewer_did = 2;
+  int32 limit = 3;
+  string cursor = 4;
+  string query = 5;
+  string status = 6;
+}
+message GetParaCommunityBriefingPacksResponse {
+  repeated ParaCommunityBriefingPackView briefing_packs = 1;
+  string cursor = 2;
+}
+message GetParaCommunityBriefingPackRequest {
+  string uri = 1;
+  string viewer_did = 2;
+}
+message GetParaCommunityBriefingPackResponse {
+  ParaCommunityBriefingPackView briefing_pack = 1;
+}
 message ParaCommunityMemberView {
   string did = 1;
   string handle = 2;
@@ -2309,6 +2342,9 @@ service Service {
   rpc GetParaCommunityPosts(GetParaCommunityPostsRequest) returns (GetParaCommunityPostsResponse);
   rpc GetParaCommunitySharedContent(GetParaCommunitySharedContentRequest) returns (GetParaCommunitySharedContentResponse);
   rpc GetParaCommunityRelations(GetParaCommunityRelationsRequest) returns (GetParaCommunityRelationsResponse);
+  rpc GetParaCommunityBriefingPacks(GetParaCommunityBriefingPacksRequest) returns (GetParaCommunityBriefingPacksResponse);
+  rpc GetParaCommunityBriefingPack(GetParaCommunityBriefingPackRequest) returns (GetParaCommunityBriefingPackResponse);
+  rpc GetParaPersonalCivicTree(GetParaPersonalCivicTreeRequest) returns (GetParaPersonalCivicTreeResponse);
   rpc GetPostSubscription(GetPostSubscriptionRequest) returns (GetPostSubscriptionResponse);
   rpc PutPostSubscription(PutPostSubscriptionRequest) returns (PutPostSubscriptionResponse);
 
@@ -2469,3 +2505,14 @@ message ClearThreadMutesRequest {
 }
 
 message ClearThreadMutesResponse {}
+
+message GetParaPersonalCivicTreeRequest {
+  string actor_did = 1;
+  int32 limit = 2;
+  string cursor = 3;
+}
+
+message GetParaPersonalCivicTreeResponse {
+  string items_json = 1;
+  string cursor = 2;
+}

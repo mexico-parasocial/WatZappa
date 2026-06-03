@@ -2883,6 +2883,90 @@ export const schemaDict = {
       },
     },
   },
+  AppBskyEmbedGallery: {
+    lexicon: 1,
+    id: 'app.bsky.embed.gallery',
+    description:
+      'A gallery of media embedded in a Bluesky record. Intended for larger imported media sets, such as Instagram profile or carousel imports.',
+    defs: {
+      main: {
+        type: 'object',
+        required: ['items'],
+        properties: {
+          items: {
+            type: 'array',
+            items: {
+              type: 'union',
+              refs: ['lex:app.bsky.embed.gallery#image'],
+            },
+            maxLength: 20,
+          },
+        },
+      },
+      image: {
+        type: 'object',
+        required: ['image', 'alt'],
+        properties: {
+          image: {
+            type: 'blob',
+            description: 'The raw image file. May be up to 2 MB.',
+            accept: ['image/*'],
+            maxSize: 2000000,
+          },
+          alt: {
+            type: 'string',
+            description:
+              'Alt text description of the image, for accessibility.',
+          },
+          aspectRatio: {
+            type: 'ref',
+            ref: 'lex:app.bsky.embed.defs#aspectRatio',
+          },
+        },
+      },
+      view: {
+        type: 'object',
+        required: ['media'],
+        properties: {
+          media: {
+            type: 'array',
+            items: {
+              type: 'union',
+              refs: ['lex:app.bsky.embed.gallery#viewImage'],
+            },
+            maxLength: 20,
+          },
+        },
+      },
+      viewImage: {
+        type: 'object',
+        required: ['thumbnail', 'fullsize', 'alt'],
+        properties: {
+          thumbnail: {
+            type: 'string',
+            format: 'uri',
+            description:
+              'Fully-qualified URL where a thumbnail of the image can be fetched. For example, CDN location provided by the App View.',
+          },
+          fullsize: {
+            type: 'string',
+            format: 'uri',
+            description:
+              'Fully-qualified URL where a large version of the image can be fetched. May or may not be the exact original blob. For example, CDN location provided by the App View.',
+          },
+          alt: {
+            type: 'string',
+            description:
+              'Alt text description of the image, for accessibility.',
+          },
+          aspectRatio: {
+            type: 'ref',
+            ref: 'lex:app.bsky.embed.defs#aspectRatio',
+          },
+        },
+      },
+    },
+  },
   AppBskyEmbedGetEmbedExternalView: {
     lexicon: 1,
     id: 'app.bsky.embed.getEmbedExternalView',
@@ -3119,6 +3203,7 @@ export const schemaDict = {
               refs: [
                 'lex:app.bsky.embed.images#view',
                 'lex:app.bsky.embed.video#view',
+                'lex:app.bsky.embed.gallery#view',
                 'lex:app.bsky.embed.external#view',
                 'lex:app.bsky.embed.record#view',
                 'lex:app.bsky.embed.recordWithMedia#view',
@@ -3198,6 +3283,7 @@ export const schemaDict = {
             refs: [
               'lex:app.bsky.embed.images',
               'lex:app.bsky.embed.video',
+              'lex:app.bsky.embed.gallery',
               'lex:app.bsky.embed.external',
             ],
           },
@@ -3216,6 +3302,7 @@ export const schemaDict = {
             refs: [
               'lex:app.bsky.embed.images#view',
               'lex:app.bsky.embed.video#view',
+              'lex:app.bsky.embed.gallery#view',
               'lex:app.bsky.embed.external#view',
             ],
           },
@@ -3342,6 +3429,7 @@ export const schemaDict = {
             refs: [
               'lex:app.bsky.embed.images#view',
               'lex:app.bsky.embed.video#view',
+              'lex:app.bsky.embed.gallery#view',
               'lex:app.bsky.embed.external#view',
               'lex:app.bsky.embed.record#view',
               'lex:app.bsky.embed.recordWithMedia#view',
@@ -4870,6 +4958,7 @@ export const schemaDict = {
               refs: [
                 'lex:app.bsky.embed.images',
                 'lex:app.bsky.embed.video',
+                'lex:app.bsky.embed.gallery',
                 'lex:app.bsky.embed.external',
                 'lex:app.bsky.embed.record',
                 'lex:app.bsky.embed.recordWithMedia',
@@ -13420,6 +13509,47 @@ export const schemaDict = {
       },
     },
   },
+  ChatBskyModerationGetConvos: {
+    lexicon: 1,
+    id: 'chat.bsky.moderation.getConvos',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          '[NOTE: This is under active development and should be considered unstable while this note is here]. Gets existing conversations by their IDs, for moderation purposes. Does not require the requester to be a member of the conversations. Unknown IDs are silently omitted from the response.',
+        parameters: {
+          type: 'params',
+          required: ['convoIds'],
+          properties: {
+            convoIds: {
+              type: 'array',
+              minLength: 1,
+              maxLength: 100,
+              items: {
+                type: 'string',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['convos'],
+            properties: {
+              convos: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:chat.bsky.moderation.defs#convoView',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   ChatBskyModerationGetMessageContext: {
     lexicon: 1,
     id: 'chat.bsky.moderation.getMessageContext',
@@ -18992,6 +19122,98 @@ export const schemaDict = {
       },
     },
   },
+  ComParaActorExportCivicTree: {
+    lexicon: 1,
+    id: 'com.para.actor.exportCivicTree',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          "Export the authenticated user's personal civic tree as an Obsidian vault. Includes their communities, cabildeos they authored, votes, delegations, and public highlights.",
+        parameters: {
+          type: 'params',
+          properties: {
+            actor: {
+              type: 'string',
+              format: 'did',
+              description:
+                'DID of the actor to export. Defaults to the authenticated viewer.',
+            },
+            includeVotes: {
+              type: 'boolean',
+              description: "Include the actor's cast votes. Defaults to true.",
+            },
+            includeDelegations: {
+              type: 'boolean',
+              description:
+                "Include the actor's liquid-democracy delegations. Defaults to true.",
+            },
+            includeHighlights: {
+              type: 'boolean',
+              description:
+                "Include the actor's public compass highlights. Defaults to true.",
+            },
+            includeCommunities: {
+              type: 'boolean',
+              description:
+                'Include communities the actor is a member of. Defaults to true.',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['generatedAt', 'files'],
+            properties: {
+              generatedAt: {
+                type: 'string',
+                format: 'datetime',
+              },
+              files: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.community.defs#obsidianFileView',
+                },
+              },
+              summary: {
+                type: 'ref',
+                ref: 'lex:com.para.actor.exportCivicTree#summary',
+              },
+            },
+          },
+        },
+      },
+      summary: {
+        type: 'object',
+        required: [
+          'communityCount',
+          'cabildeoCount',
+          'voteCount',
+          'delegationCount',
+          'highlightCount',
+        ],
+        properties: {
+          communityCount: {
+            type: 'integer',
+          },
+          cabildeoCount: {
+            type: 'integer',
+          },
+          voteCount: {
+            type: 'integer',
+          },
+          delegationCount: {
+            type: 'integer',
+          },
+          highlightCount: {
+            type: 'integer',
+          },
+        },
+      },
+    },
+  },
   ComParaActorGetProfileStats: {
     lexicon: 1,
     id: 'com.para.actor.getProfileStats',
@@ -21464,6 +21686,107 @@ export const schemaDict = {
       },
     },
   },
+  ComParaCommunityBriefingPack: {
+    lexicon: 1,
+    id: 'com.para.community.briefingPack',
+    defs: {
+      main: {
+        type: 'record',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: [
+            'packType',
+            'communityUri',
+            'party',
+            'title',
+            'summary',
+            'cabildeoUris',
+            'civicTreeCardIds',
+            'evidenceUris',
+            'status',
+            'createdBy',
+            'createdAt',
+            'updatedAt',
+          ],
+          properties: {
+            packType: {
+              type: 'string',
+              enum: ['party_lobbying'],
+            },
+            communityUri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            party: {
+              type: 'string',
+              maxLength: 120,
+            },
+            title: {
+              type: 'string',
+              maxLength: 300,
+            },
+            summary: {
+              type: 'string',
+              maxLength: 5000,
+            },
+            cabildeoUris: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'at-uri',
+              },
+              maxLength: 100,
+            },
+            civicTreeCardIds: {
+              type: 'array',
+              items: {
+                type: 'string',
+                maxLength: 200,
+              },
+              maxLength: 200,
+            },
+            evidenceUris: {
+              type: 'array',
+              items: {
+                type: 'string',
+                maxLength: 2000,
+              },
+              maxLength: 300,
+            },
+            sembleCollectionUri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            marginCollectionUri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            obsidianExportUri: {
+              type: 'string',
+              maxLength: 2000,
+            },
+            status: {
+              type: 'string',
+              enum: ['draft', 'published', 'archived'],
+            },
+            createdBy: {
+              type: 'string',
+              format: 'did',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
   ComParaCommunityCivicTree: {
     lexicon: 1,
     id: 'com.para.community.civicTree',
@@ -21731,6 +22054,93 @@ export const schemaDict = {
                 format: 'at-uri',
                 description:
                   'Reference to the newly created founder starter pack. Present if status is draft.',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCreateBriefingPack: {
+    lexicon: 1,
+    id: 'com.para.community.createBriefingPack',
+    defs: {
+      main: {
+        type: 'procedure',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['packType', 'communityUri', 'party', 'title', 'summary'],
+            properties: {
+              packType: {
+                type: 'string',
+                enum: ['party_lobbying'],
+              },
+              communityUri: {
+                type: 'string',
+                format: 'at-uri',
+              },
+              party: {
+                type: 'string',
+                maxLength: 120,
+              },
+              title: {
+                type: 'string',
+                maxLength: 300,
+              },
+              summary: {
+                type: 'string',
+                maxLength: 5000,
+              },
+              cabildeoUris: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  format: 'at-uri',
+                },
+                maxLength: 100,
+              },
+              civicTreeCardIds: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  maxLength: 200,
+                },
+                maxLength: 200,
+              },
+              evidenceUris: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  maxLength: 2000,
+                },
+                maxLength: 300,
+              },
+              sembleCollectionUri: {
+                type: 'string',
+                format: 'at-uri',
+              },
+              marginCollectionUri: {
+                type: 'string',
+                format: 'at-uri',
+              },
+              obsidianExportUri: {
+                type: 'string',
+                maxLength: 2000,
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['pack'],
+            properties: {
+              pack: {
+                type: 'ref',
+                ref: 'lex:com.para.community.defs#briefingPackView',
               },
             },
           },
@@ -22337,6 +22747,119 @@ export const schemaDict = {
           },
         },
       },
+      briefingPackView: {
+        type: 'object',
+        required: [
+          'uri',
+          'cid',
+          'packType',
+          'communityUri',
+          'party',
+          'title',
+          'status',
+          'createdBy',
+          'createdAt',
+          'updatedAt',
+        ],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          packType: {
+            type: 'string',
+            enum: ['party_lobbying'],
+          },
+          communityUri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          party: {
+            type: 'string',
+            maxLength: 120,
+          },
+          title: {
+            type: 'string',
+            maxLength: 300,
+          },
+          summary: {
+            type: 'string',
+            maxLength: 5000,
+          },
+          cabildeoUris: {
+            type: 'array',
+            items: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            maxLength: 100,
+          },
+          civicTreeCardIds: {
+            type: 'array',
+            items: {
+              type: 'string',
+              maxLength: 200,
+            },
+            maxLength: 200,
+          },
+          evidenceUris: {
+            type: 'array',
+            items: {
+              type: 'string',
+              maxLength: 2000,
+            },
+            maxLength: 300,
+          },
+          sembleCollectionUri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          marginCollectionUri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          obsidianExportUri: {
+            type: 'string',
+            maxLength: 2000,
+          },
+          status: {
+            type: 'string',
+            enum: ['draft', 'published', 'archived'],
+          },
+          createdBy: {
+            type: 'string',
+            format: 'did',
+          },
+          creator: {
+            type: 'ref',
+            ref: 'lex:app.bsky.actor.defs#profileView',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          updatedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      obsidianFileView: {
+        type: 'object',
+        required: ['path', 'content'],
+        properties: {
+          path: {
+            type: 'string',
+          },
+          content: {
+            type: 'string',
+          },
+        },
+      },
     },
   },
   ComParaCommunityDelegation: {
@@ -22516,6 +23039,51 @@ export const schemaDict = {
             },
             description:
               'Why they are correlated: party, delegation, civic_stamps, etc.',
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityExportObsidianVault: {
+    lexicon: 1,
+    id: 'com.para.community.exportObsidianVault',
+    defs: {
+      main: {
+        type: 'query',
+        parameters: {
+          type: 'params',
+          properties: {
+            community: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            briefingPack: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            collection: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['generatedAt', 'files'],
+            properties: {
+              generatedAt: {
+                type: 'string',
+                format: 'datetime',
+              },
+              files: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.community.defs#obsidianFileView',
+                },
+              },
+            },
           },
         },
       },
@@ -22958,6 +23526,38 @@ export const schemaDict = {
               type: 'string',
               maxGraphemes: 64,
               maxLength: 128,
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityGetBriefingPack: {
+    lexicon: 1,
+    id: 'com.para.community.getBriefingPack',
+    defs: {
+      main: {
+        type: 'query',
+        parameters: {
+          type: 'params',
+          required: ['uri'],
+          properties: {
+            uri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['pack'],
+            properties: {
+              pack: {
+                type: 'ref',
+                ref: 'lex:com.para.community.defs#briefingPackView',
+              },
             },
           },
         },
@@ -23954,6 +24554,65 @@ export const schemaDict = {
           },
           canCreateCommunity: {
             type: 'boolean',
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityListBriefingPacks: {
+    lexicon: 1,
+    id: 'com.para.community.listBriefingPacks',
+    defs: {
+      main: {
+        type: 'query',
+        parameters: {
+          type: 'params',
+          properties: {
+            community: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            party: {
+              type: 'string',
+            },
+            cabildeo: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            civicTreeCard: {
+              type: 'string',
+            },
+            status: {
+              type: 'string',
+              enum: ['draft', 'published', 'archived'],
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['packs'],
+            properties: {
+              packs: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.community.defs#briefingPackView',
+                },
+              },
+              cursor: {
+                type: 'string',
+              },
+            },
           },
         },
       },
@@ -25336,6 +25995,106 @@ export const schemaDict = {
               type: 'string',
               format: 'datetime',
             },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityUpdateBriefingPack: {
+    lexicon: 1,
+    id: 'com.para.community.updateBriefingPack',
+    defs: {
+      main: {
+        type: 'procedure',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['uri', 'pack'],
+            properties: {
+              uri: {
+                type: 'string',
+                format: 'at-uri',
+              },
+              cid: {
+                type: 'string',
+                format: 'cid',
+              },
+              pack: {
+                type: 'ref',
+                ref: 'lex:com.para.community.updateBriefingPack#packInput',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['pack'],
+            properties: {
+              pack: {
+                type: 'ref',
+                ref: 'lex:com.para.community.defs#briefingPackView',
+              },
+            },
+          },
+        },
+      },
+      packInput: {
+        type: 'object',
+        properties: {
+          party: {
+            type: 'string',
+            maxLength: 120,
+          },
+          title: {
+            type: 'string',
+            maxLength: 300,
+          },
+          summary: {
+            type: 'string',
+            maxLength: 5000,
+          },
+          cabildeoUris: {
+            type: 'array',
+            items: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            maxLength: 100,
+          },
+          civicTreeCardIds: {
+            type: 'array',
+            items: {
+              type: 'string',
+              maxLength: 200,
+            },
+            maxLength: 200,
+          },
+          evidenceUris: {
+            type: 'array',
+            items: {
+              type: 'string',
+              maxLength: 2000,
+            },
+            maxLength: 300,
+          },
+          sembleCollectionUri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          marginCollectionUri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          obsidianExportUri: {
+            type: 'string',
+            maxLength: 2000,
+          },
+          status: {
+            type: 'string',
+            enum: ['draft', 'published', 'archived'],
           },
         },
       },
@@ -32625,6 +33384,11 @@ export const schemaDict = {
             description:
               'Full member record of the moderator who created this activity',
           },
+          report: {
+            type: 'ref',
+            ref: 'lex:tools.ozone.report.defs#reportView',
+            description: 'Full view of the report this activity belongs to.',
+          },
           createdAt: {
             type: 'string',
             format: 'datetime',
@@ -33025,6 +33789,76 @@ export const schemaDict = {
             },
             cursor: {
               type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['activities'],
+            properties: {
+              activities: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:tools.ozone.report.defs#reportActivityView',
+                },
+              },
+              cursor: {
+                type: 'string',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ToolsOzoneReportQueryActivities: {
+    lexicon: 1,
+    id: 'tools.ozone.report.queryActivities',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Query report activities across all reports, ordered by createdAt. Used by downstream pollers; for per-report activity history use listActivities.',
+        parameters: {
+          type: 'params',
+          properties: {
+            activityTypes: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+              description:
+                'Filter to specific activity types (e.g. closeActivity, escalationActivity). If omitted, all types are returned.',
+            },
+            createdAfter: {
+              type: 'string',
+              format: 'datetime',
+              description:
+                'Retrieve activities created at or after a given timestamp',
+            },
+            createdBefore: {
+              type: 'string',
+              format: 'datetime',
+              description:
+                'Retrieve activities created at or before a given timestamp',
+            },
+            sortDirection: {
+              type: 'string',
+              default: 'desc',
+              enum: ['asc', 'desc'],
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+              description: 'Cursor of the form `<createdAtMs>::<activityId>`.',
             },
           },
         },
@@ -35191,6 +36025,7 @@ export const ids = {
   AppBskyDraftUpdateDraft: 'app.bsky.draft.updateDraft',
   AppBskyEmbedDefs: 'app.bsky.embed.defs',
   AppBskyEmbedExternal: 'app.bsky.embed.external',
+  AppBskyEmbedGallery: 'app.bsky.embed.gallery',
   AppBskyEmbedGetEmbedExternalView: 'app.bsky.embed.getEmbedExternalView',
   AppBskyEmbedImages: 'app.bsky.embed.images',
   AppBskyEmbedRecord: 'app.bsky.embed.record',
@@ -35378,6 +36213,7 @@ export const ids = {
   ChatBskyModerationGetActorMetadata: 'chat.bsky.moderation.getActorMetadata',
   ChatBskyModerationGetConvo: 'chat.bsky.moderation.getConvo',
   ChatBskyModerationGetConvoMembers: 'chat.bsky.moderation.getConvoMembers',
+  ChatBskyModerationGetConvos: 'chat.bsky.moderation.getConvos',
   ChatBskyModerationGetMessageContext: 'chat.bsky.moderation.getMessageContext',
   ChatBskyModerationSubscribeModEvents:
     'chat.bsky.moderation.subscribeModEvents',
@@ -35486,6 +36322,7 @@ export const ids = {
     'com.atproto.temp.revokeAccountCredentials',
   ComGermnetworkDeclaration: 'com.germnetwork.declaration',
   ComParaActorDefs: 'com.para.actor.defs',
+  ComParaActorExportCivicTree: 'com.para.actor.exportCivicTree',
   ComParaActorGetProfileStats: 'com.para.actor.getProfileStats',
   ComParaAgentDefs: 'com.para.agent.defs',
   ComParaAgentGetConversation: 'com.para.agent.getConversation',
@@ -35519,16 +36356,20 @@ export const ids = {
   ComParaCollectionUpdateCollection: 'com.para.collection.updateCollection',
   ComParaCommunityAcceptDraftInvite: 'com.para.community.acceptDraftInvite',
   ComParaCommunityBoard: 'com.para.community.board',
+  ComParaCommunityBriefingPack: 'com.para.community.briefingPack',
   ComParaCommunityCivicTree: 'com.para.community.civicTree',
   ComParaCommunityCivicTreeVote: 'com.para.community.civicTreeVote',
   ComParaCommunityConstitution: 'com.para.community.constitution',
   ComParaCommunityCreateBoard: 'com.para.community.createBoard',
+  ComParaCommunityCreateBriefingPack: 'com.para.community.createBriefingPack',
   ComParaCommunityDecision: 'com.para.community.decision',
   ComParaCommunityDefs: 'com.para.community.defs',
   ComParaCommunityDelegation: 'com.para.community.delegation',
   ComParaCommunityEigenstate: 'com.para.community.eigenstate',
+  ComParaCommunityExportObsidianVault: 'com.para.community.exportObsidianVault',
   ComParaCommunityGetAuditTrail: 'com.para.community.getAuditTrail',
   ComParaCommunityGetBoard: 'com.para.community.getBoard',
+  ComParaCommunityGetBriefingPack: 'com.para.community.getBriefingPack',
   ComParaCommunityGetCivicTree: 'com.para.community.getCivicTree',
   ComParaCommunityGetGovernance: 'com.para.community.getGovernance',
   ComParaCommunityGetTallySimulation: 'com.para.community.getTallySimulation',
@@ -35538,6 +36379,7 @@ export const ids = {
   ComParaCommunityJoin: 'com.para.community.join',
   ComParaCommunityLeave: 'com.para.community.leave',
   ComParaCommunityListBoards: 'com.para.community.listBoards',
+  ComParaCommunityListBriefingPacks: 'com.para.community.listBriefingPacks',
   ComParaCommunityListChildCommunities:
     'com.para.community.listChildCommunities',
   ComParaCommunityListCivicTreeVotes: 'com.para.community.listCivicTreeVotes',
@@ -35561,6 +36403,7 @@ export const ids = {
   ComParaCommunityShareContent: 'com.para.community.shareContent',
   ComParaCommunitySharedContent: 'com.para.community.sharedContent',
   ComParaCommunitySharedContentAction: 'com.para.community.sharedContentAction',
+  ComParaCommunityUpdateBriefingPack: 'com.para.community.updateBriefingPack',
   ComParaCommunityVote: 'com.para.community.vote',
   ComParaDiscourseGetAnalysis: 'com.para.discourse.getAnalysis',
   ComParaDiscourseGetSnapshot: 'com.para.discourse.getSnapshot',
@@ -35648,6 +36491,7 @@ export const ids = {
   ToolsOzoneReportGetLiveStats: 'tools.ozone.report.getLiveStats',
   ToolsOzoneReportGetReport: 'tools.ozone.report.getReport',
   ToolsOzoneReportListActivities: 'tools.ozone.report.listActivities',
+  ToolsOzoneReportQueryActivities: 'tools.ozone.report.queryActivities',
   ToolsOzoneReportQueryReports: 'tools.ozone.report.queryReports',
   ToolsOzoneReportReassignQueue: 'tools.ozone.report.reassignQueue',
   ToolsOzoneReportRefreshStats: 'tools.ozone.report.refreshStats',

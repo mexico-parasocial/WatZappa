@@ -15,6 +15,11 @@ import {
   normalizeDatetimeAlways,
 } from '@atproto/syntax'
 import { Actor, ProfileViewerState } from '../hydration/actor.js'
+import {
+  SiteStandardDocument,
+  SiteStandardPublication,
+  siteStandardRecordKey,
+} from '../hydration/external.js'
 import { FeedItem, Like, Post, Repost } from '../hydration/feed.js'
 import { Follow, Verification } from '../hydration/graph.js'
 import { HydrationState } from '../hydration/hydrator.js'
@@ -24,6 +29,10 @@ import { ImageUriBuilder } from '../image/uri.js'
 import { app, site } from '../lexicons/index.js'
 import { viewsLogger } from '../logger.js'
 import { Notification } from '../proto/bsky_pb.js'
+import {
+  estimateReadingTimeMinutes,
+  validateStandardSiteForUrl,
+} from '../util/standard-site.js'
 import {
   postUriToPostgateUri,
   postUriToThreadgateUri,
@@ -50,9 +59,16 @@ import {
   Embed,
   EmbedView,
   ExternalEmbed,
+  ExternalEmbedColorRgb,
+  ExternalEmbedSourceThemeView,
+  ExternalEmbedSourceView,
   ExternalEmbedView,
   FeedViewPost,
   FollowRecord,
+  GalleryEmbed,
+  GalleryEmbedView,
+  GalleryImageEmbed,
+  GalleryImageEmbedView,
   GeneratorView,
   GetPostThreadV2QueryParams,
   ImagesEmbed,
@@ -88,6 +104,8 @@ import {
   RecordWithMediaView,
   ReplyRef,
   RepostRecord,
+  SiteStandardDocumentRecord,
+  SiteStandardPublicationRecord,
   StarterPackView,
   StarterPackViewBasic,
   StatusView,
@@ -101,6 +119,8 @@ import {
   VideoEmbed,
   VideoEmbedView,
   isExternalEmbedType,
+  isGalleryEmbedType,
+  isGalleryImageEmbedType,
   isImagesEmbedType,
   isLabelerRecordType,
   isListRuleType,
@@ -111,21 +131,7 @@ import {
   isRecordWithMediaType,
   isSelfLabelsType,
   isVideoEmbedType,
-  ExternalEmbedSourceView,
-  ExternalEmbedSourceThemeView,
-  ExternalEmbedColorRgb,
-  SiteStandardDocumentRecord,
-  SiteStandardPublicationRecord,
 } from './types.js'
-import {
-  SiteStandardDocument,
-  SiteStandardPublication,
-  siteStandardRecordKey,
-} from '../hydration/external.js'
-import {
-  estimateReadingTimeMinutes,
-  validateStandardSiteForUrl,
-} from '../util/standard-site.js'
 import { VideoUriBuilder, parsePostgate, parseThreadGate } from './util.js'
 
 const notificationDeletedRecord =
@@ -569,7 +575,6 @@ export class Views {
           !!handle &&
           handle === actor.handle
 
-
         // Expose the *issuer's* current handle/displayName, sourced from the
         // issuer's hydrated actor record (see `Hydrator.hydrateProfiles`).
         const issuerActor = state.actors?.get(issuer)
@@ -656,7 +661,7 @@ export class Views {
       status: record.status,
       embed:
         record.embed && isExternalEmbedType(record.embed)
-          ? this.externalEmbed(did, record.embed)
+          ? this.externalEmbed(did, record.embed, state)
           : undefined,
       labels,
       expiresAt,
@@ -2117,6 +2122,8 @@ export class Views {
       return this.imagesEmbed(creatorFromUri(postUri), embed)
     } else if (isVideoEmbedType(embed)) {
       return this.videoEmbed(creatorFromUri(postUri), embed)
+    } else if (isGalleryEmbedType(embed)) {
+      return this.galleryEmbed(creatorFromUri(postUri), embed)
     } else if (isExternalEmbedType(embed)) {
       return this.externalEmbed(creatorFromUri(postUri), embed, state)
     } else if (isRecordEmbedType(embed)) {
@@ -2160,31 +2167,73 @@ export class Views {
     })
   }
 
+  galleryEmbed(did: DidString, embed: GalleryEmbed): $Typed<GalleryEmbedView> {
+    const media = embed.items.flatMap((item) => {
+      const view = this.galleryItemView(did, item)
+      return view ? [view] : []
+    })
+    return app.bsky.embed.gallery.view.$build({ media })
+  }
+
+  private galleryItemView(
+    did: DidString,
+    item: GalleryEmbed['items'][number],
+  ): $Typed<GalleryImageEmbedView> | undefined {
+    if (isGalleryImageEmbedType(item)) {
+      return this.galleryImageView(did, item)
+    }
+    return undefined
+  }
+
+  private galleryImageView(
+    did: DidString,
+    item: GalleryImageEmbed,
+  ): $Typed<GalleryImageEmbedView> {
+    return app.bsky.embed.gallery.viewImage.$build({
+      thumbnail: this.imgUriBuilder.getPresetUri(
+        'feed_thumbnail',
+        did,
+        getBlobCidString(item.image),
+      ),
+      fullsize: this.imgUriBuilder.getPresetUri(
+        'feed_fullsize',
+        did,
+        getBlobCidString(item.image),
+      ),
+      alt: item.alt,
+      aspectRatio: item.aspectRatio,
+    })
+  }
+
   externalEmbed(
     did: DidString,
     embed: ExternalEmbed,
-    state?: HydrationState,
+    state: HydrationState,
   ): $Typed<ExternalEmbedView> {
     const { uri, title, description, thumb, associatedRefs } = embed.external
-    const ssView =
-      state && associatedRefs
-        ? this.externalEmbedFromStandardSite(associatedRefs, state, uri)
-        : undefined
-
+    const ssView = this.externalEmbedFromStandardSite(
+      embed.external.associatedRefs,
+      state,
+      embed.external.uri,
+    )
+    // The author-supplied (scraped) thumbnail always wins when present —
+    // it's the per-article OG image. Only when the embed has no thumb do
+    // we fall back to whatever the SS overlay provides (the document's
+    // `coverImage`). `thumb` is set after the `...ssView` spread so the
+    // overlay's `coverImage`-derived thumb can't clobber the embed's.
+    const embeddedThumb = embed.external.thumb
+      ? this.imgUriBuilder.getPresetUri(
+          'feed_thumbnail',
+          did,
+          getBlobCidString(embed.external.thumb),
+        )
+      : undefined
     return app.bsky.embed.external.view.$build({
       external: {
         title: ssView?.title ?? title,
         description: ssView?.description ?? description,
-        thumb: ssView?.thumb
-          ? ssView.thumb
-          : thumb
-          ? this.imgUriBuilder.getPresetUri(
-              'feed_thumbnail',
-              did,
-              getBlobCidString(thumb),
-            )
-          : undefined,
         ...ssView,
+        thumb: embeddedThumb ?? ssView?.thumb,
         uri: embed.external.uri,
         associatedRefs: embed.external.associatedRefs,
       },
@@ -2461,11 +2510,14 @@ export class Views {
     let mediaEmbed:
       | $Typed<ImagesEmbedView>
       | $Typed<VideoEmbedView>
+      | $Typed<GalleryEmbedView>
       | $Typed<ExternalEmbedView>
     if (isImagesEmbedType(embed.media)) {
       mediaEmbed = this.imagesEmbed(creator, embed.media)
     } else if (isVideoEmbedType(embed.media)) {
       mediaEmbed = this.videoEmbed(creator, embed.media)
+    } else if (isGalleryEmbedType(embed.media)) {
+      mediaEmbed = this.galleryEmbed(creator, embed.media)
     } else if (isExternalEmbedType(embed.media)) {
       mediaEmbed = this.externalEmbed(creator, embed.media, state)
     } else {

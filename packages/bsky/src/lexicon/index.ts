@@ -164,6 +164,7 @@ import * as ChatBskyGroupWithdrawJoinRequest from './types/chat/bsky/group/withd
 import * as ChatBskyModerationGetActorMetadata from './types/chat/bsky/moderation/getActorMetadata.js'
 import * as ChatBskyModerationGetConvo from './types/chat/bsky/moderation/getConvo.js'
 import * as ChatBskyModerationGetConvoMembers from './types/chat/bsky/moderation/getConvoMembers.js'
+import * as ChatBskyModerationGetConvos from './types/chat/bsky/moderation/getConvos.js'
 import * as ChatBskyModerationGetMessageContext from './types/chat/bsky/moderation/getMessageContext.js'
 import * as ChatBskyModerationSubscribeModEvents from './types/chat/bsky/moderation/subscribeModEvents.js'
 import * as ChatBskyModerationUpdateActorAccess from './types/chat/bsky/moderation/updateActorAccess.js'
@@ -249,6 +250,7 @@ import * as ComAtprotoSyncSubscribeRepos from './types/com/atproto/sync/subscrib
 import * as ComAtprotoTempDereferenceScope from './types/com/atproto/temp/dereferenceScope.js'
 import * as ComAtprotoTempFetchLabels from './types/com/atproto/temp/fetchLabels.js'
 import * as ComAtprotoTempRevokeAccountCredentials from './types/com/atproto/temp/revokeAccountCredentials.js'
+import * as ComParaActorExportCivicTree from './types/com/para/actor/exportCivicTree.js'
 import * as ComParaActorGetProfileStats from './types/com/para/actor/getProfileStats.js'
 import * as ComParaAgentGetConversation from './types/com/para/agent/getConversation.js'
 import * as ComParaAgentSendMessage from './types/com/para/agent/sendMessage.js'
@@ -271,14 +273,18 @@ import * as ComParaCollectionListCollections from './types/com/para/collection/l
 import * as ComParaCollectionUpdateCollection from './types/com/para/collection/updateCollection.js'
 import * as ComParaCommunityAcceptDraftInvite from './types/com/para/community/acceptDraftInvite.js'
 import * as ComParaCommunityCreateBoard from './types/com/para/community/createBoard.js'
+import * as ComParaCommunityCreateBriefingPack from './types/com/para/community/createBriefingPack.js'
+import * as ComParaCommunityExportObsidianVault from './types/com/para/community/exportObsidianVault.js'
 import * as ComParaCommunityGetAuditTrail from './types/com/para/community/getAuditTrail.js'
 import * as ComParaCommunityGetBoard from './types/com/para/community/getBoard.js'
+import * as ComParaCommunityGetBriefingPack from './types/com/para/community/getBriefingPack.js'
 import * as ComParaCommunityGetCivicTree from './types/com/para/community/getCivicTree.js'
 import * as ComParaCommunityGetGovernance from './types/com/para/community/getGovernance.js'
 import * as ComParaCommunityGetTallySimulation from './types/com/para/community/getTallySimulation.js'
 import * as ComParaCommunityJoin from './types/com/para/community/join.js'
 import * as ComParaCommunityLeave from './types/com/para/community/leave.js'
 import * as ComParaCommunityListBoards from './types/com/para/community/listBoards.js'
+import * as ComParaCommunityListBriefingPacks from './types/com/para/community/listBriefingPacks.js'
 import * as ComParaCommunityListChildCommunities from './types/com/para/community/listChildCommunities.js'
 import * as ComParaCommunityListCivicTreeVotes from './types/com/para/community/listCivicTreeVotes.js'
 import * as ComParaCommunityListCivicTrees from './types/com/para/community/listCivicTrees.js'
@@ -293,6 +299,7 @@ import * as ComParaCommunityListVotes from './types/com/para/community/listVotes
 import * as ComParaCommunityRemoveSharedContent from './types/com/para/community/removeSharedContent.js'
 import * as ComParaCommunityRestoreSharedContent from './types/com/para/community/restoreSharedContent.js'
 import * as ComParaCommunityShareContent from './types/com/para/community/shareContent.js'
+import * as ComParaCommunityUpdateBriefingPack from './types/com/para/community/updateBriefingPack.js'
 import * as ComParaDiscourseGetAnalysis from './types/com/para/discourse/getAnalysis.js'
 import * as ComParaDiscourseGetSnapshot from './types/com/para/discourse/getSnapshot.js'
 import * as ComParaDiscourseGetTopics from './types/com/para/discourse/getTopics.js'
@@ -348,6 +355,7 @@ import * as ToolsOzoneReportGetLatestReport from './types/tools/ozone/report/get
 import * as ToolsOzoneReportGetLiveStats from './types/tools/ozone/report/getLiveStats.js'
 import * as ToolsOzoneReportGetReport from './types/tools/ozone/report/getReport.js'
 import * as ToolsOzoneReportListActivities from './types/tools/ozone/report/listActivities.js'
+import * as ToolsOzoneReportQueryActivities from './types/tools/ozone/report/queryActivities.js'
 import * as ToolsOzoneReportQueryReports from './types/tools/ozone/report/queryReports.js'
 import * as ToolsOzoneReportReassignQueue from './types/tools/ozone/report/reassignQueue.js'
 import * as ToolsOzoneReportRefreshStats from './types/tools/ozone/report/refreshStats.js'
@@ -2569,6 +2577,18 @@ export class ChatBskyModerationNS {
     return this._server.xrpc.method(nsid, cfg)
   }
 
+  getConvos<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ChatBskyModerationGetConvos.QueryParams,
+      ChatBskyModerationGetConvos.HandlerInput,
+      ChatBskyModerationGetConvos.HandlerOutput
+    >,
+  ) {
+    const nsid = 'chat.bsky.moderation.getConvos' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
   getMessageContext<A extends Auth = void>(
     cfg: MethodConfigOrHandler<
       A,
@@ -3740,6 +3760,18 @@ export class ComParaActorNS {
     this._server = server
   }
 
+  exportCivicTree<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ComParaActorExportCivicTree.QueryParams,
+      ComParaActorExportCivicTree.HandlerInput,
+      ComParaActorExportCivicTree.HandlerOutput
+    >,
+  ) {
+    const nsid = 'com.para.actor.exportCivicTree' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
   getProfileStats<A extends Auth = void>(
     cfg: MethodConfigOrHandler<
       A,
@@ -4044,6 +4076,30 @@ export class ComParaCommunityNS {
     return this._server.xrpc.method(nsid, cfg)
   }
 
+  createBriefingPack<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ComParaCommunityCreateBriefingPack.QueryParams,
+      ComParaCommunityCreateBriefingPack.HandlerInput,
+      ComParaCommunityCreateBriefingPack.HandlerOutput
+    >,
+  ) {
+    const nsid = 'com.para.community.createBriefingPack' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  exportObsidianVault<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ComParaCommunityExportObsidianVault.QueryParams,
+      ComParaCommunityExportObsidianVault.HandlerInput,
+      ComParaCommunityExportObsidianVault.HandlerOutput
+    >,
+  ) {
+    const nsid = 'com.para.community.exportObsidianVault' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
   getAuditTrail<A extends Auth = void>(
     cfg: MethodConfigOrHandler<
       A,
@@ -4065,6 +4121,18 @@ export class ComParaCommunityNS {
     >,
   ) {
     const nsid = 'com.para.community.getBoard' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  getBriefingPack<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ComParaCommunityGetBriefingPack.QueryParams,
+      ComParaCommunityGetBriefingPack.HandlerInput,
+      ComParaCommunityGetBriefingPack.HandlerOutput
+    >,
+  ) {
+    const nsid = 'com.para.community.getBriefingPack' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
 
@@ -4137,6 +4205,18 @@ export class ComParaCommunityNS {
     >,
   ) {
     const nsid = 'com.para.community.listBoards' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  listBriefingPacks<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ComParaCommunityListBriefingPacks.QueryParams,
+      ComParaCommunityListBriefingPacks.HandlerInput,
+      ComParaCommunityListBriefingPacks.HandlerOutput
+    >,
+  ) {
+    const nsid = 'com.para.community.listBriefingPacks' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
 
@@ -4305,6 +4385,18 @@ export class ComParaCommunityNS {
     >,
   ) {
     const nsid = 'com.para.community.shareContent' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  updateBriefingPack<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ComParaCommunityUpdateBriefingPack.QueryParams,
+      ComParaCommunityUpdateBriefingPack.HandlerInput,
+      ComParaCommunityUpdateBriefingPack.HandlerOutput
+    >,
+  ) {
+    const nsid = 'com.para.community.updateBriefingPack' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
 }
@@ -5121,6 +5213,18 @@ export class ToolsOzoneReportNS {
     >,
   ) {
     const nsid = 'tools.ozone.report.listActivities' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  queryActivities<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ToolsOzoneReportQueryActivities.QueryParams,
+      ToolsOzoneReportQueryActivities.HandlerInput,
+      ToolsOzoneReportQueryActivities.HandlerOutput
+    >,
+  ) {
+    const nsid = 'tools.ozone.report.queryActivities' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
 

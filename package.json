@@ -31,6 +31,8 @@
     }
   },
   "scripts": {
+    "preinstall": "node -e \"const v=process.versions.node.split('.'); const major=+v[0]; if(major<22){console.error('\\n\\n>>> WatZappa requires Node >=22.1.0 (got '+process.versions.node+'). Run: nvm use 22 <<\\n\\n'); process.exit(1)}\"",
+    "postinstall": "pnpm rebuild better-sqlite3 || true",
     "lint:fix": "pnpm lint --fix",
     "lint": "NODE_OPTIONS=--max_old_space_size=4096 eslint . --ext .ts,.js,.tsx,.jsx",
     "style:fix": "prettier --write .",

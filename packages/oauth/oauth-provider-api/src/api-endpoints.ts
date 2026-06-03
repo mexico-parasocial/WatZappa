@@ -106,6 +106,11 @@ export type ApiEndpoints = {
     input: ConfirmEmailVerificationInput
     output: { success: true }
   }
+  '/update-handle': {
+    method: 'POST'
+    input: UpdateHandleInput
+    output: { success: true }
+  }
   '/consent': {
     method: 'POST'
     input: ConsentInput

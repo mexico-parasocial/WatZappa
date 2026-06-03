@@ -66,6 +66,7 @@ const knownSchemas = new Map<string, RecordSchema>(
     com.para.civic.vote.main,
     com.para.civic.cabildeo.main,
     com.para.community.board.main,
+    com.para.community.briefingPack.main,
     com.para.community.membership.main,
     com.para.community.governance.main,
     com.para.highlight.annotation.main,

@@ -3,7 +3,7 @@ import { ReactNode, useEffect, useState } from 'react'
 import { ButtonRequestCode } from '#/components/forms/button-request-code.tsx'
 import { Button } from '#/components/forms/button.tsx'
 import { VerifyEmailConfirmForm } from '#/components/verify-email-confirm-form.tsx'
-import { DialogSimple } from './dialog-simple.tsx'
+import { DialogSimple } from './utils/dialog-simple.tsx'
 
 export type VerifyEmailDialogProps = {
   email: string

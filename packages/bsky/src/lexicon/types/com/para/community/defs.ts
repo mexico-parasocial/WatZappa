@@ -10,6 +10,7 @@ import {
   type OmitKey,
 } from '../../../../util.js'
 import type * as ComAtprotoRepoStrongRef from '../../atproto/repo/strongRef.js'
+import type * as AppBskyActorDefs from '../../../app/bsky/actor/defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -275,4 +276,52 @@ export function isCommunityRelationView<V>(v: V) {
 
 export function validateCommunityRelationView<V>(v: V) {
   return validate<CommunityRelationView & V>(v, id, hashCommunityRelationView)
+}
+
+export interface BriefingPackView {
+  $type?: 'com.para.community.defs#briefingPackView'
+  uri: string
+  cid: string
+  packType: 'party_lobbying'
+  communityUri: string
+  party: string
+  title: string
+  summary?: string
+  cabildeoUris?: string[]
+  civicTreeCardIds?: string[]
+  evidenceUris?: string[]
+  sembleCollectionUri?: string
+  marginCollectionUri?: string
+  obsidianExportUri?: string
+  status: 'draft' | 'published' | 'archived'
+  createdBy: string
+  creator?: AppBskyActorDefs.ProfileView
+  createdAt: string
+  updatedAt: string
+}
+
+const hashBriefingPackView = 'briefingPackView'
+
+export function isBriefingPackView<V>(v: V) {
+  return is$typed(v, id, hashBriefingPackView)
+}
+
+export function validateBriefingPackView<V>(v: V) {
+  return validate<BriefingPackView & V>(v, id, hashBriefingPackView)
+}
+
+export interface ObsidianFileView {
+  $type?: 'com.para.community.defs#obsidianFileView'
+  path: string
+  content: string
+}
+
+const hashObsidianFileView = 'obsidianFileView'
+
+export function isObsidianFileView<V>(v: V) {
+  return is$typed(v, id, hashObsidianFileView)
+}
+
+export function validateObsidianFileView<V>(v: V) {
+  return validate<ObsidianFileView & V>(v, id, hashObsidianFileView)
 }

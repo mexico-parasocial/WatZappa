@@ -43,6 +43,7 @@ import * as AppBskyDraftGetDrafts from './types/app/bsky/draft/getDrafts.js'
 import * as AppBskyDraftUpdateDraft from './types/app/bsky/draft/updateDraft.js'
 import * as AppBskyEmbedDefs from './types/app/bsky/embed/defs.js'
 import * as AppBskyEmbedExternal from './types/app/bsky/embed/external.js'
+import * as AppBskyEmbedGallery from './types/app/bsky/embed/gallery.js'
 import * as AppBskyEmbedGetEmbedExternalView from './types/app/bsky/embed/getEmbedExternalView.js'
 import * as AppBskyEmbedImages from './types/app/bsky/embed/images.js'
 import * as AppBskyEmbedRecord from './types/app/bsky/embed/record.js'
@@ -204,6 +205,7 @@ import * as ChatBskyModerationDefs from './types/chat/bsky/moderation/defs.js'
 import * as ChatBskyModerationGetActorMetadata from './types/chat/bsky/moderation/getActorMetadata.js'
 import * as ChatBskyModerationGetConvo from './types/chat/bsky/moderation/getConvo.js'
 import * as ChatBskyModerationGetConvoMembers from './types/chat/bsky/moderation/getConvoMembers.js'
+import * as ChatBskyModerationGetConvos from './types/chat/bsky/moderation/getConvos.js'
 import * as ChatBskyModerationGetMessageContext from './types/chat/bsky/moderation/getMessageContext.js'
 import * as ChatBskyModerationSubscribeModEvents from './types/chat/bsky/moderation/subscribeModEvents.js'
 import * as ChatBskyModerationUpdateActorAccess from './types/chat/bsky/moderation/updateActorAccess.js'
@@ -300,6 +302,7 @@ import * as ComAtprotoTempFetchLabels from './types/com/atproto/temp/fetchLabels
 import * as ComAtprotoTempRevokeAccountCredentials from './types/com/atproto/temp/revokeAccountCredentials.js'
 import * as ComGermnetworkDeclaration from './types/com/germnetwork/declaration.js'
 import * as ComParaActorDefs from './types/com/para/actor/defs.js'
+import * as ComParaActorExportCivicTree from './types/com/para/actor/exportCivicTree.js'
 import * as ComParaActorGetProfileStats from './types/com/para/actor/getProfileStats.js'
 import * as ComParaAgentDefs from './types/com/para/agent/defs.js'
 import * as ComParaAgentGetConversation from './types/com/para/agent/getConversation.js'
@@ -332,16 +335,20 @@ import * as ComParaCollectionListCollections from './types/com/para/collection/l
 import * as ComParaCollectionUpdateCollection from './types/com/para/collection/updateCollection.js'
 import * as ComParaCommunityAcceptDraftInvite from './types/com/para/community/acceptDraftInvite.js'
 import * as ComParaCommunityBoard from './types/com/para/community/board.js'
+import * as ComParaCommunityBriefingPack from './types/com/para/community/briefingPack.js'
 import * as ComParaCommunityCivicTree from './types/com/para/community/civicTree.js'
 import * as ComParaCommunityCivicTreeVote from './types/com/para/community/civicTreeVote.js'
 import * as ComParaCommunityConstitution from './types/com/para/community/constitution.js'
 import * as ComParaCommunityCreateBoard from './types/com/para/community/createBoard.js'
+import * as ComParaCommunityCreateBriefingPack from './types/com/para/community/createBriefingPack.js'
 import * as ComParaCommunityDecision from './types/com/para/community/decision.js'
 import * as ComParaCommunityDefs from './types/com/para/community/defs.js'
 import * as ComParaCommunityDelegation from './types/com/para/community/delegation.js'
 import * as ComParaCommunityEigenstate from './types/com/para/community/eigenstate.js'
+import * as ComParaCommunityExportObsidianVault from './types/com/para/community/exportObsidianVault.js'
 import * as ComParaCommunityGetAuditTrail from './types/com/para/community/getAuditTrail.js'
 import * as ComParaCommunityGetBoard from './types/com/para/community/getBoard.js'
+import * as ComParaCommunityGetBriefingPack from './types/com/para/community/getBriefingPack.js'
 import * as ComParaCommunityGetCivicTree from './types/com/para/community/getCivicTree.js'
 import * as ComParaCommunityGetGovernance from './types/com/para/community/getGovernance.js'
 import * as ComParaCommunityGetTallySimulation from './types/com/para/community/getTallySimulation.js'
@@ -351,6 +358,7 @@ import * as ComParaCommunityIntensity from './types/com/para/community/intensity
 import * as ComParaCommunityJoin from './types/com/para/community/join.js'
 import * as ComParaCommunityLeave from './types/com/para/community/leave.js'
 import * as ComParaCommunityListBoards from './types/com/para/community/listBoards.js'
+import * as ComParaCommunityListBriefingPacks from './types/com/para/community/listBriefingPacks.js'
 import * as ComParaCommunityListChildCommunities from './types/com/para/community/listChildCommunities.js'
 import * as ComParaCommunityListCivicTreeVotes from './types/com/para/community/listCivicTreeVotes.js'
 import * as ComParaCommunityListCivicTrees from './types/com/para/community/listCivicTrees.js'
@@ -370,6 +378,7 @@ import * as ComParaCommunityRestoreSharedContent from './types/com/para/communit
 import * as ComParaCommunityShareContent from './types/com/para/community/shareContent.js'
 import * as ComParaCommunitySharedContent from './types/com/para/community/sharedContent.js'
 import * as ComParaCommunitySharedContentAction from './types/com/para/community/sharedContentAction.js'
+import * as ComParaCommunityUpdateBriefingPack from './types/com/para/community/updateBriefingPack.js'
 import * as ComParaCommunityVote from './types/com/para/community/vote.js'
 import * as ComParaDiscourseGetAnalysis from './types/com/para/discourse/getAnalysis.js'
 import * as ComParaDiscourseGetSnapshot from './types/com/para/discourse/getSnapshot.js'
@@ -446,6 +455,7 @@ import * as ToolsOzoneReportGetLatestReport from './types/tools/ozone/report/get
 import * as ToolsOzoneReportGetLiveStats from './types/tools/ozone/report/getLiveStats.js'
 import * as ToolsOzoneReportGetReport from './types/tools/ozone/report/getReport.js'
 import * as ToolsOzoneReportListActivities from './types/tools/ozone/report/listActivities.js'
+import * as ToolsOzoneReportQueryActivities from './types/tools/ozone/report/queryActivities.js'
 import * as ToolsOzoneReportQueryReports from './types/tools/ozone/report/queryReports.js'
 import * as ToolsOzoneReportReassignQueue from './types/tools/ozone/report/reassignQueue.js'
 import * as ToolsOzoneReportRefreshStats from './types/tools/ozone/report/refreshStats.js'
@@ -516,6 +526,7 @@ export * as AppBskyDraftGetDrafts from './types/app/bsky/draft/getDrafts.js'
 export * as AppBskyDraftUpdateDraft from './types/app/bsky/draft/updateDraft.js'
 export * as AppBskyEmbedDefs from './types/app/bsky/embed/defs.js'
 export * as AppBskyEmbedExternal from './types/app/bsky/embed/external.js'
+export * as AppBskyEmbedGallery from './types/app/bsky/embed/gallery.js'
 export * as AppBskyEmbedGetEmbedExternalView from './types/app/bsky/embed/getEmbedExternalView.js'
 export * as AppBskyEmbedImages from './types/app/bsky/embed/images.js'
 export * as AppBskyEmbedRecord from './types/app/bsky/embed/record.js'
@@ -677,6 +688,7 @@ export * as ChatBskyModerationDefs from './types/chat/bsky/moderation/defs.js'
 export * as ChatBskyModerationGetActorMetadata from './types/chat/bsky/moderation/getActorMetadata.js'
 export * as ChatBskyModerationGetConvo from './types/chat/bsky/moderation/getConvo.js'
 export * as ChatBskyModerationGetConvoMembers from './types/chat/bsky/moderation/getConvoMembers.js'
+export * as ChatBskyModerationGetConvos from './types/chat/bsky/moderation/getConvos.js'
 export * as ChatBskyModerationGetMessageContext from './types/chat/bsky/moderation/getMessageContext.js'
 export * as ChatBskyModerationSubscribeModEvents from './types/chat/bsky/moderation/subscribeModEvents.js'
 export * as ChatBskyModerationUpdateActorAccess from './types/chat/bsky/moderation/updateActorAccess.js'
@@ -773,6 +785,7 @@ export * as ComAtprotoTempFetchLabels from './types/com/atproto/temp/fetchLabels
 export * as ComAtprotoTempRevokeAccountCredentials from './types/com/atproto/temp/revokeAccountCredentials.js'
 export * as ComGermnetworkDeclaration from './types/com/germnetwork/declaration.js'
 export * as ComParaActorDefs from './types/com/para/actor/defs.js'
+export * as ComParaActorExportCivicTree from './types/com/para/actor/exportCivicTree.js'
 export * as ComParaActorGetProfileStats from './types/com/para/actor/getProfileStats.js'
 export * as ComParaAgentDefs from './types/com/para/agent/defs.js'
 export * as ComParaAgentGetConversation from './types/com/para/agent/getConversation.js'
@@ -805,16 +818,20 @@ export * as ComParaCollectionListCollections from './types/com/para/collection/l
 export * as ComParaCollectionUpdateCollection from './types/com/para/collection/updateCollection.js'
 export * as ComParaCommunityAcceptDraftInvite from './types/com/para/community/acceptDraftInvite.js'
 export * as ComParaCommunityBoard from './types/com/para/community/board.js'
+export * as ComParaCommunityBriefingPack from './types/com/para/community/briefingPack.js'
 export * as ComParaCommunityCivicTree from './types/com/para/community/civicTree.js'
 export * as ComParaCommunityCivicTreeVote from './types/com/para/community/civicTreeVote.js'
 export * as ComParaCommunityConstitution from './types/com/para/community/constitution.js'
 export * as ComParaCommunityCreateBoard from './types/com/para/community/createBoard.js'
+export * as ComParaCommunityCreateBriefingPack from './types/com/para/community/createBriefingPack.js'
 export * as ComParaCommunityDecision from './types/com/para/community/decision.js'
 export * as ComParaCommunityDefs from './types/com/para/community/defs.js'
 export * as ComParaCommunityDelegation from './types/com/para/community/delegation.js'
 export * as ComParaCommunityEigenstate from './types/com/para/community/eigenstate.js'
+export * as ComParaCommunityExportObsidianVault from './types/com/para/community/exportObsidianVault.js'
 export * as ComParaCommunityGetAuditTrail from './types/com/para/community/getAuditTrail.js'
 export * as ComParaCommunityGetBoard from './types/com/para/community/getBoard.js'
+export * as ComParaCommunityGetBriefingPack from './types/com/para/community/getBriefingPack.js'
 export * as ComParaCommunityGetCivicTree from './types/com/para/community/getCivicTree.js'
 export * as ComParaCommunityGetGovernance from './types/com/para/community/getGovernance.js'
 export * as ComParaCommunityGetTallySimulation from './types/com/para/community/getTallySimulation.js'
@@ -824,6 +841,7 @@ export * as ComParaCommunityIntensity from './types/com/para/community/intensity
 export * as ComParaCommunityJoin from './types/com/para/community/join.js'
 export * as ComParaCommunityLeave from './types/com/para/community/leave.js'
 export * as ComParaCommunityListBoards from './types/com/para/community/listBoards.js'
+export * as ComParaCommunityListBriefingPacks from './types/com/para/community/listBriefingPacks.js'
 export * as ComParaCommunityListChildCommunities from './types/com/para/community/listChildCommunities.js'
 export * as ComParaCommunityListCivicTreeVotes from './types/com/para/community/listCivicTreeVotes.js'
 export * as ComParaCommunityListCivicTrees from './types/com/para/community/listCivicTrees.js'
@@ -843,6 +861,7 @@ export * as ComParaCommunityRestoreSharedContent from './types/com/para/communit
 export * as ComParaCommunityShareContent from './types/com/para/community/shareContent.js'
 export * as ComParaCommunitySharedContent from './types/com/para/community/sharedContent.js'
 export * as ComParaCommunitySharedContentAction from './types/com/para/community/sharedContentAction.js'
+export * as ComParaCommunityUpdateBriefingPack from './types/com/para/community/updateBriefingPack.js'
 export * as ComParaCommunityVote from './types/com/para/community/vote.js'
 export * as ComParaDiscourseGetAnalysis from './types/com/para/discourse/getAnalysis.js'
 export * as ComParaDiscourseGetSnapshot from './types/com/para/discourse/getSnapshot.js'
@@ -919,6 +938,7 @@ export * as ToolsOzoneReportGetLatestReport from './types/tools/ozone/report/get
 export * as ToolsOzoneReportGetLiveStats from './types/tools/ozone/report/getLiveStats.js'
 export * as ToolsOzoneReportGetReport from './types/tools/ozone/report/getReport.js'
 export * as ToolsOzoneReportListActivities from './types/tools/ozone/report/listActivities.js'
+export * as ToolsOzoneReportQueryActivities from './types/tools/ozone/report/queryActivities.js'
 export * as ToolsOzoneReportQueryReports from './types/tools/ozone/report/queryReports.js'
 export * as ToolsOzoneReportReassignQueue from './types/tools/ozone/report/reassignQueue.js'
 export * as ToolsOzoneReportRefreshStats from './types/tools/ozone/report/refreshStats.js'
@@ -4541,6 +4561,18 @@ export class ChatBskyModerationNS {
       })
   }
 
+  getConvos(
+    params?: ChatBskyModerationGetConvos.QueryParams,
+    opts?: ChatBskyModerationGetConvos.CallOptions,
+  ): Promise<ChatBskyModerationGetConvos.Response> {
+    return this._client.call(
+      'chat.bsky.moderation.getConvos',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
   getMessageContext(
     params?: ChatBskyModerationGetMessageContext.QueryParams,
     opts?: ChatBskyModerationGetMessageContext.CallOptions,
@@ -5835,6 +5867,18 @@ export class ComParaActorNS {
     this._client = client
   }
 
+  exportCivicTree(
+    params?: ComParaActorExportCivicTree.QueryParams,
+    opts?: ComParaActorExportCivicTree.CallOptions,
+  ): Promise<ComParaActorExportCivicTree.Response> {
+    return this._client.call(
+      'com.para.actor.exportCivicTree',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
   getProfileStats(
     params?: ComParaActorGetProfileStats.QueryParams,
     opts?: ComParaActorGetProfileStats.CallOptions,
@@ -6682,6 +6726,7 @@ export class ComParaCollectionNS {
 export class ComParaCommunityNS {
   _client: XrpcClient
   board: ComParaCommunityBoardRecord
+  briefingPack: ComParaCommunityBriefingPackRecord
   civicTree: ComParaCommunityCivicTreeRecord
   civicTreeVote: ComParaCommunityCivicTreeVoteRecord
   constitution: ComParaCommunityConstitutionRecord
@@ -6701,6 +6746,7 @@ export class ComParaCommunityNS {
   constructor(client: XrpcClient) {
     this._client = client
     this.board = new ComParaCommunityBoardRecord(client)
+    this.briefingPack = new ComParaCommunityBriefingPackRecord(client)
     this.civicTree = new ComParaCommunityCivicTreeRecord(client)
     this.civicTreeVote = new ComParaCommunityCivicTreeVoteRecord(client)
     this.constitution = new ComParaCommunityConstitutionRecord(client)
@@ -6744,6 +6790,30 @@ export class ComParaCommunityNS {
     )
   }
 
+  createBriefingPack(
+    data?: ComParaCommunityCreateBriefingPack.InputSchema,
+    opts?: ComParaCommunityCreateBriefingPack.CallOptions,
+  ): Promise<ComParaCommunityCreateBriefingPack.Response> {
+    return this._client.call(
+      'com.para.community.createBriefingPack',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
+
+  exportObsidianVault(
+    params?: ComParaCommunityExportObsidianVault.QueryParams,
+    opts?: ComParaCommunityExportObsidianVault.CallOptions,
+  ): Promise<ComParaCommunityExportObsidianVault.Response> {
+    return this._client.call(
+      'com.para.community.exportObsidianVault',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
   getAuditTrail(
     params?: ComParaCommunityGetAuditTrail.QueryParams,
     opts?: ComParaCommunityGetAuditTrail.CallOptions,
@@ -6762,6 +6832,18 @@ export class ComParaCommunityNS {
   ): Promise<ComParaCommunityGetBoard.Response> {
     return this._client.call(
       'com.para.community.getBoard',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  getBriefingPack(
+    params?: ComParaCommunityGetBriefingPack.QueryParams,
+    opts?: ComParaCommunityGetBriefingPack.CallOptions,
+  ): Promise<ComParaCommunityGetBriefingPack.Response> {
+    return this._client.call(
+      'com.para.community.getBriefingPack',
       params,
       undefined,
       opts,
@@ -6824,6 +6906,18 @@ export class ComParaCommunityNS {
   ): Promise<ComParaCommunityListBoards.Response> {
     return this._client.call(
       'com.para.community.listBoards',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  listBriefingPacks(
+    params?: ComParaCommunityListBriefingPacks.QueryParams,
+    opts?: ComParaCommunityListBriefingPacks.CallOptions,
+  ): Promise<ComParaCommunityListBriefingPacks.Response> {
+    return this._client.call(
+      'com.para.community.listBriefingPacks',
       params,
       undefined,
       opts,
@@ -6997,6 +7091,18 @@ export class ComParaCommunityNS {
       opts,
     )
   }
+
+  updateBriefingPack(
+    data?: ComParaCommunityUpdateBriefingPack.InputSchema,
+    opts?: ComParaCommunityUpdateBriefingPack.CallOptions,
+  ): Promise<ComParaCommunityUpdateBriefingPack.Response> {
+    return this._client.call(
+      'com.para.community.updateBriefingPack',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
 }
 
 export class ComParaCommunityBoardRecord {
@@ -7077,6 +7183,89 @@ export class ComParaCommunityBoardRecord {
       'com.atproto.repo.deleteRecord',
       undefined,
       { collection: 'com.para.community.board', ...params },
+      { headers },
+    )
+  }
+}
+
+export class ComParaCommunityBriefingPackRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: ComParaCommunityBriefingPack.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'com.para.community.briefingPack',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: ComParaCommunityBriefingPack.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'com.para.community.briefingPack',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityBriefingPack.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.briefingPack'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityBriefingPack.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.briefingPack'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'com.para.community.briefingPack', ...params },
       { headers },
     )
   }
@@ -10202,6 +10391,18 @@ export class ToolsOzoneReportNS {
   ): Promise<ToolsOzoneReportListActivities.Response> {
     return this._client.call(
       'tools.ozone.report.listActivities',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  queryActivities(
+    params?: ToolsOzoneReportQueryActivities.QueryParams,
+    opts?: ToolsOzoneReportQueryActivities.CallOptions,
+  ): Promise<ToolsOzoneReportQueryActivities.Response> {
+    return this._client.call(
+      'tools.ozone.report.queryActivities',
       params,
       undefined,
       opts,

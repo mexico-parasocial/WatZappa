@@ -99,6 +99,7 @@ import resolveHandle from './com/atproto/identity/resolveHandle.js'
 import queryLabels from './com/atproto/label/queryLabels.js'
 import getRecord from './com/atproto/repo/getRecord.js'
 import getParaProfileStats from './com/para/actor/getProfileStats.js'
+import exportParaCivicTree from './com/para/actor/exportCivicTree.js'
 import getParaAgentConversation from './com/para/agent/getConversation.js'
 import sendParaAgentMessage from './com/para/agent/sendMessage.js'
 import getParaCabildeo from './com/para/civic/getCabildeo.js'
@@ -115,10 +116,13 @@ import listParaCollections from './com/para/collection/listCollections.js'
 import updateParaCollection from './com/para/collection/updateCollection.js'
 import getParaAuditTrail from './com/para/community/getAuditTrail.js'
 import getParaCommunityBoard from './com/para/community/getBoard.js'
+import getParaBriefingPack from './com/para/community/getBriefingPack.js'
 import getParaCivicTree from './com/para/community/getCivicTree.js'
+import exportParaObsidianVault from './com/para/community/exportObsidianVault.js'
 import getParaCommunityGovernance from './com/para/community/getGovernance.js'
 import getParaTallySimulation from './com/para/community/getTallySimulation.js'
 import listParaCommunityBoards from './com/para/community/listBoards.js'
+import listParaBriefingPacks from './com/para/community/listBriefingPacks.js'
 import listParaChildCommunities from './com/para/community/listChildCommunities.js'
 import listParaCommunityRelations from './com/para/community/listCommunityRelations.js'
 import listParaDelegations from './com/para/community/listDelegations.js'
@@ -268,6 +272,7 @@ export default function (server: Server, ctx: AppContext) {
   queryLabels(server, ctx)
   // com.para
   getParaProfileStats(paraServer, ctx)
+  exportParaCivicTree(paraServer, ctx)
   getParaAgentConversation(paraServer, ctx)
   sendParaAgentMessage(paraServer, ctx)
   listParaCabildeos(paraServer, ctx)
@@ -294,6 +299,9 @@ export default function (server: Server, ctx: AppContext) {
   listParaCommunityRelations(paraServer, ctx)
   listParaChildCommunities(paraServer, ctx)
   listParaParentCommunities(paraServer, ctx)
+  listParaBriefingPacks(paraServer, ctx)
+  getParaBriefingPack(paraServer, ctx)
+  exportParaObsidianVault(paraServer, ctx)
   listParaHighlights(paraServer, ctx)
   getParaHighlight(paraServer, ctx)
   getParaPostSubscription(paraServer, ctx)

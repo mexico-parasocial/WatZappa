@@ -1,0 +1,79 @@
+{
+  "lexicon": 1,
+  "id": "app.bsky.embed.gallery",
+  "description": "A gallery of media embedded in a Bluesky record. Intended for larger imported media sets, such as Instagram profile or carousel imports.",
+  "defs": {
+    "main": {
+      "type": "object",
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "union",
+            "refs": ["#image"]
+          },
+          "maxLength": 20
+        }
+      }
+    },
+    "image": {
+      "type": "object",
+      "required": ["image", "alt"],
+      "properties": {
+        "image": {
+          "type": "blob",
+          "description": "The raw image file. May be up to 2 MB.",
+          "accept": ["image/*"],
+          "maxSize": 2000000
+        },
+        "alt": {
+          "type": "string",
+          "description": "Alt text description of the image, for accessibility."
+        },
+        "aspectRatio": {
+          "type": "ref",
+          "ref": "app.bsky.embed.defs#aspectRatio"
+        }
+      }
+    },
+    "view": {
+      "type": "object",
+      "required": ["media"],
+      "properties": {
+        "media": {
+          "type": "array",
+          "items": {
+            "type": "union",
+            "refs": ["#viewImage"]
+          },
+          "maxLength": 20
+        }
+      }
+    },
+    "viewImage": {
+      "type": "object",
+      "required": ["thumbnail", "fullsize", "alt"],
+      "properties": {
+        "thumbnail": {
+          "type": "string",
+          "format": "uri",
+          "description": "Fully-qualified URL where a thumbnail of the image can be fetched. For example, CDN location provided by the App View."
+        },
+        "fullsize": {
+          "type": "string",
+          "format": "uri",
+          "description": "Fully-qualified URL where a large version of the image can be fetched. May or may not be the exact original blob. For example, CDN location provided by the App View."
+        },
+        "alt": {
+          "type": "string",
+          "description": "Alt text description of the image, for accessibility."
+        },
+        "aspectRatio": {
+          "type": "ref",
+          "ref": "app.bsky.embed.defs#aspectRatio"
+        }
+      }
+    }
+  }
+}

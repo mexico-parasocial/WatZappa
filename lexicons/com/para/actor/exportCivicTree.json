@@ -1,0 +1,68 @@
+{
+  "lexicon": 1,
+  "id": "com.para.actor.exportCivicTree",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Export the authenticated user's personal civic tree as an Obsidian vault. Includes their communities, cabildeos they authored, votes, delegations, and public highlights.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "actor": {
+            "type": "string",
+            "format": "did",
+            "description": "DID of the actor to export. Defaults to the authenticated viewer."
+          },
+          "includeVotes": {
+            "type": "boolean",
+            "description": "Include the actor's cast votes. Defaults to true."
+          },
+          "includeDelegations": {
+            "type": "boolean",
+            "description": "Include the actor's liquid-democracy delegations. Defaults to true."
+          },
+          "includeHighlights": {
+            "type": "boolean",
+            "description": "Include the actor's public compass highlights. Defaults to true."
+          },
+          "includeCommunities": {
+            "type": "boolean",
+            "description": "Include communities the actor is a member of. Defaults to true."
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["generatedAt", "files"],
+          "properties": {
+            "generatedAt": {
+              "type": "string",
+              "format": "datetime"
+            },
+            "files": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "com.para.community.defs#obsidianFileView" }
+            },
+            "summary": {
+              "type": "ref",
+              "ref": "#summary"
+            }
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["communityCount", "cabildeoCount", "voteCount", "delegationCount", "highlightCount"],
+      "properties": {
+        "communityCount": { "type": "integer" },
+        "cabildeoCount": { "type": "integer" },
+        "voteCount": { "type": "integer" },
+        "delegationCount": { "type": "integer" },
+        "highlightCount": { "type": "integer" }
+      }
+    }
+  }
+}

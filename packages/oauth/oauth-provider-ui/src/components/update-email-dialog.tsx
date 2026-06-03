@@ -4,15 +4,17 @@ import { InputEmailAddress } from '#/components/forms/input-email-address.tsx'
 import { InputToken } from '#/components/forms/input-token.tsx'
 import { Trans } from '@lingui/react/macro'
 import { ReactNode, useEffect, useState } from 'react'
-import { DialogSimple } from './dialog-simple'
+import { DialogSimple } from './utils/dialog-simple.tsx'
 import { ButtonRequestCode } from './forms/button-request-code'
 
 export type UpdateEmailDialogProps = {
   email: string
   requestPending?: boolean
   confirmPending?: boolean
+  verifyRequestPending?: boolean
   onRequest: () => Promise<{ tokenRequired: boolean }>
   onConfirm: (data: { email: string; token?: string }) => Promise<void>
+  onVerifyRequest?: () => Promise<void>
   onVerify?: (data: { email: string; token: string }) => Promise<void>
   children: Exclude<ReactNode, false | null | undefined>
 }
@@ -27,8 +29,10 @@ export function UpdateEmailDialog({
   email: emailCurrent,
   requestPending,
   confirmPending,
+  verifyRequestPending,
   onRequest,
   onConfirm,
+  onVerifyRequest,
   onVerify,
   children,
 }: UpdateEmailDialogProps) {
@@ -111,6 +115,23 @@ export function UpdateEmailDialog({
               onToken={setVerifyToken}
             />
           </FormField>
+
+          {onVerifyRequest && (
+            <p className="text-sm italic">
+              <Trans>Don't see an email?</Trans>
+              <ButtonRequestCode
+                disabled={confirmPending}
+                loading={verifyRequestPending}
+                action={onVerifyRequest}
+                transparent
+                size="sm"
+                shape="padded"
+                cooldownInitial={30}
+              >
+                <Trans>Click here to resend.</Trans>
+              </ButtonRequestCode>
+            </p>
+          )}
         </FormCardAsync>
       </DialogSimple>
     )
