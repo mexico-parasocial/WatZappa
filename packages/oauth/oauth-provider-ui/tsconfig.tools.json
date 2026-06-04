@@ -5,7 +5,5 @@
     "module": "Node18",
     "noEmit": true
   },
-  "include": ["./*.js", "./*.cjs", "./*.mjs", "./*.ts", "./*.cts", "./*.mts",
-    "../../../tsconfig/cjs-default-exports.d.ts"
-  ]
+  "include": ["./*.js", "./*.cjs", "./*.mjs", "./*.ts", "./*.cts", "./*.mts"]
 }

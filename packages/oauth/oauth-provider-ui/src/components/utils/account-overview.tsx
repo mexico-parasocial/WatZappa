@@ -1,7 +1,7 @@
-import { Override } from '#/lib/util.ts'
 import { clsx } from 'clsx'
 import { JSX, ReactNode } from 'react'
 import type { Account } from '@atproto/oauth-provider-api'
+import { Override } from '#/lib/util.ts'
 import { AccountIdentifier } from './account-identifier.tsx'
 import { AccountImage } from './account-image.tsx'
 import { AccountName } from './account-name.tsx'
@@ -24,7 +24,7 @@ export function AccountOverview({
   return (
     <div
       className={clsx(
-        'flex max-w-full flex-col items-center justify-start gap-1',
+        'flex max-w-full flex-col items-center justify-start gap-2',
         className,
       )}
       {...props}

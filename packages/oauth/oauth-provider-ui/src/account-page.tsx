@@ -1,6 +1,5 @@
 import './style.css'
 
-import type { HydrationData } from '#/hydration-data.d.ts'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
@@ -10,6 +9,7 @@ import { errorViewRender } from '#/components/error-view.tsx'
 import { CustomizationProvider } from '#/contexts/customization.tsx'
 import { NotificationsProvider } from '#/contexts/notifications.tsx'
 import { InitialSelectedSession, SessionProvider } from '#/contexts/session.tsx'
+import type { HydrationData } from '#/hydration-data.d.ts'
 import { LocaleProvider } from '#/locales/locale-provider.tsx'
 import { router } from '#/pages/router'
 

@@ -1,10 +1,7 @@
 import { Trans, useLingui } from '@lingui/react/macro'
 import type { ActiveOAuthSession } from '@atproto/oauth-provider-api'
 import { Button } from '#/components/forms/button'
-import {
-  Admonition,
-  AdmonitionAction,
-} from '#/components/utils/admonition.tsx'
+import { Admonition, AdmonitionAction } from '#/components/utils/admonition.tsx'
 import { CircularProgress } from '#/components/utils/circular-progress'
 import { DateAgo } from '#/components/utils/date-ago'
 import { useAuthenticatedSession } from '#/contexts/authentication.tsx'
@@ -84,7 +81,7 @@ function ApplicationSessionCard({
     tokenId,
     createdAt,
     updatedAt,
-    scope = clientMetadata?.scope,
+    scope: _scope = clientMetadata?.scope, // @TODO Display scopes using <ScopeDescription />
   },
   sub,
 }: {
@@ -121,9 +118,6 @@ function ApplicationSessionCard({
       })
     }
   }
-
-  // @TODO Display scopes using <ScopeDescription />
-  scope
 
   return (
     <div className="border-contrast-50 dark:border-contrast-100 flex flex-wrap items-center justify-between space-x-4 border-t px-2 pt-3">

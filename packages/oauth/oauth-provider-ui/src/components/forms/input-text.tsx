@@ -1,9 +1,9 @@
-import { Override } from '#/lib/util.ts'
 import { composeEventHandlers } from '@radix-ui/primitive'
 import { composeRefs } from '@radix-ui/react-compose-refs'
 import { clsx } from 'clsx'
-import { JSX, ReactNode, useContext, useRef } from 'react'
-import { FieldsetContext } from './form-field.tsx'
+import { JSX, ReactNode, useRef } from 'react'
+import { Override } from '#/lib/util.ts'
+import { useFieldsetContext } from './fieldset-context.tsx'
 import { InputContainer } from './input-container.tsx'
 
 export type InputTextProps = Override<
@@ -32,7 +32,7 @@ export function InputText({
   placeholder = ariaLabel,
   ...props
 }: InputTextProps) {
-  const ctx = useContext(FieldsetContext)
+  const ctx = useFieldsetContext()
   const isDisabled = disabled ?? ctx.disabled
 
   const inputRef = useRef<HTMLInputElement>(null)
@@ -68,7 +68,7 @@ export function InputText({
         placeholder={placeholder}
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy ?? ctx.labelId}
-        ref={composeRefs([ref, inputRef])}
+        ref={composeRefs(ref, inputRef)}
         className={clsx(
           'outline-hidden w-full text-ellipsis bg-transparent bg-clip-padding text-base text-inherit dark:placeholder-gray-400',
           // Disabled state is handled by the parent Fieldset, or parent form element.

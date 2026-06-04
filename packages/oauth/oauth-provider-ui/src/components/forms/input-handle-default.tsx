@@ -1,3 +1,10 @@
+import { Trans, useLingui } from '@lingui/react/macro'
+import { AtIcon, CheckIcon, XIcon } from '@phosphor-icons/react'
+import { composeRefs } from '@radix-ui/react-compose-refs'
+import { clsx } from 'clsx'
+import { JSX, useCallback, useEffect, useRef, useState } from 'react'
+import { HandleString, isValidHandle } from '@atproto/syntax'
+import { useStableCallback } from '#/hooks/use-stable-callback.ts'
 import {
   MAX_FULL_LENGTH,
   MAX_LENGTH,
@@ -6,11 +13,6 @@ import {
   isValidDomain,
 } from '#/lib/handle.ts'
 import { Override } from '#/lib/util.ts'
-import { Trans, useLingui } from '@lingui/react/macro'
-import { AtIcon, CheckIcon, XIcon } from '@phosphor-icons/react'
-import { composeRefs } from '@radix-ui/react-compose-refs'
-import { clsx } from 'clsx'
-import { JSX, useCallback, useEffect, useRef, useState } from 'react'
 import { Handle } from '../utils/handle.tsx'
 import { InputText, InputTextProps } from './input-text.tsx'
 
@@ -29,9 +31,9 @@ export type InputHandleProvidedProps = Override<
   >,
   {
     /** Initial handle, used to seed the segment + selected domain. */
-    handle?: string
+    handle?: HandleString
     /** Called whenever the current handle becomes valid or invalid. */
-    onHandle?: (handle: string | undefined) => void
+    onHandle?: (handle: HandleString | undefined) => void
     /** List of available domains for the handle */
     domains: string[]
   }
@@ -62,22 +64,43 @@ export function InputHandleDefault({
     const idx = domains.findIndex((d) => handleInit.endsWith(d))
     return idx === -1 ? 0 : idx
   })
-  const [segment, setSegment] = useState(() => handleInit?.split('.')[0] || '')
-
-  // Automatically update the domain index when the list length changes
-  useEffect(() => {
-    setDomainIdx((v) => Math.min(v, domains.length - 1))
-  }, [domains.length])
+  const [segment, setSegment] = useState(() => {
+    if (!handleInit) return ''
+    const domain = domains[domainIdx]
+    return handleInit.endsWith(domain)
+      ? handleInit.slice(0, -domain.length)
+      : ''
+  })
 
   const domain: ValidDomain | null = domains[domainIdx] || domains[0] || null
 
   const { minLength, maxLength, validateSegment } = useSegmentValidator(domain)
 
-  const validity = validateSegment(segment)
-  const handle = domain && validity.valid ? `${segment}${domain}` : undefined
+  const [handle, setHandle] = useState<HandleString | undefined>(handleInit)
+  const [validity, setValidity] = useState(() => validateSegment(segment))
+
+  const update = useStableCallback((segment: string, domainIdx: number) => {
+    const validity = validateSegment(segment)
+    const domain = domains[domainIdx]
+    const handle = domain && validity.valid && `${segment}${domain}`
+
+    setSegment(segment)
+    setValidity(validity)
+    setDomainIdx(domainIdx)
+
+    if (handle && isValidHandle(handle)) {
+      setHandle(handle)
+      onHandle?.(handle)
+    } else {
+      setHandle(undefined)
+      onHandle?.(undefined)
+    }
+  })
+
+  // Automatically update the domain index when the list length changes
   useEffect(() => {
-    onHandle?.(handle)
-  }, [onHandle, handle])
+    if (domainIdx >= domains.length) update(segment, 0)
+  }, [update, segment, domains.length, domainIdx])
 
   return (
     <>
@@ -115,7 +138,7 @@ export function InputHandleDefault({
           event.target.value = value
           event.target.setSelectionRange(selectionStart, selectionEnd)
 
-          setSegment(value)
+          update(value, domainIdx)
         }}
         append={
           // @TODO refactor this to a separate component
@@ -126,7 +149,7 @@ export function InputHandleDefault({
               value={domainIdx}
               aria-label={t`Select domain`}
               onChange={(event) => {
-                setDomainIdx(Number(event.target.value))
+                update(segment, Number(event.target.value))
                 inputRef.current?.focus()
               }}
               className={clsx(
@@ -157,14 +180,19 @@ export function InputHandleDefault({
           )
         }
       >
-        <Trans>
-          Your full username will be:{' '}
-          {handle ? (
-            <Handle className="text-text-default" handle={handle} />
-          ) : (
-            <span aria-hidden className="bg-text-light w-24 rounded-md p-2" />
-          )}
-        </Trans>
+        <span className="truncate">
+          <Trans>
+            Your full username will be:{' '}
+            {handle ? (
+              <Handle className="text-text-default" handle={handle} />
+            ) : (
+              <span
+                aria-hidden
+                className="bg-text-light inline-block h-[1em] w-24 rounded-md align-middle"
+              />
+            )}
+          </Trans>
+        </span>
       </InputText>
     </>
   )
@@ -179,7 +207,7 @@ function useSegmentValidator(domain: ValidDomain | null) {
   const validateSegment = useCallback(
     (segment: string) => {
       const validLength = segment.length >= minLen && segment.length <= maxLen
-      const validCharset = /^[a-z0-9][a-z0-9-]+[a-z0-9]$/g.test(segment)
+      const validCharset = /^[a-z0-9][a-z0-9-]+[a-z0-9]$/.test(segment)
 
       return { validLength, validCharset, valid: validLength && validCharset }
     },

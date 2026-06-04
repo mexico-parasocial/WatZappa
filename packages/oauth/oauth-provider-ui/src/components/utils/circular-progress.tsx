@@ -1,6 +1,6 @@
-import { Override } from '#/lib/util.ts'
 import { clsx } from 'clsx'
 import { JSX } from 'react'
+import { Override } from '#/lib/util.ts'
 
 export type CircularProgressProps = Override<
   JSX.IntrinsicElements['svg'],

@@ -1,11 +1,10 @@
 import { EventEmitter, once } from 'node:events'
 import { Selectable } from 'kysely'
-import { SendMailOptions } from 'nodemailer'
+import Mail from 'nodemailer/lib/mailer'
 import { AtpAgent } from '@atproto/api'
 import { fileExists } from '@atproto/common'
 import { SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
 import { BlobNotFoundError } from '@atproto/repo'
-import { AppContext } from '../src/index.js'
 import {
   Account,
   AppPassword,
@@ -13,6 +12,7 @@ import {
   RefreshToken,
   RepoRoot,
 } from '../src/account-manager/db/index.js'
+import { AppContext } from '../src/index.js'
 import { ServerMailer } from '../src/mailer/index.js'
 import { RepoSeq } from '../src/sequencer/db/index.js'
 import basicSeed from './seeds/basic.js'
@@ -60,12 +60,12 @@ describe('account deletion', () => {
     await network.close()
   })
 
-  const getMailFrom = async (promise): Promise<SendMailOptions> => {
+  const getMailFrom = async (promise): Promise<Mail.Options> => {
     const result = await Promise.all([once(mailCatcher, 'mail'), promise])
     return result[0][0]
   }
 
-  const getTokenFromMail = (mail: SendMailOptions) =>
+  const getTokenFromMail = (mail: Mail.Options) =>
     mail.html?.toString().match(/>([a-z0-9]{5}-[a-z0-9]{5})</i)?.[1]
 
   let token

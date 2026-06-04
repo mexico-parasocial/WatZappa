@@ -1,11 +1,10 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { createRequire } from 'node:module'
-
+// eslint-disable-next-line import/default, import/no-named-as-default-member
+import accept from '@hapi/accept'
+// eslint-disable-next-line import/no-named-as-default-member
+const { mediaType } = accept
 import { SubCtx, subCtx } from './context.js'
 import { Middleware, NextFunction } from './types.js'
-
-const require = createRequire(import.meta.url)
-const { mediaType } = require('@hapi/accept') as typeof import('@hapi/accept')
 
 type View<
   T extends object | void,

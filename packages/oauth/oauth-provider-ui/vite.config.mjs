@@ -1,3 +1,4 @@
+import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { lingui } from '@lingui/vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
@@ -5,11 +6,14 @@ import react from '@vitejs/plugin-react-swc'
 import { defineConfig } from 'vite'
 import { bundleManifest } from '@atproto-labs/rollup-plugin-bundle-manifest'
 
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
 export default defineConfig({
   resolve: {
     alias: {
-      '#': fileURLToPath(new URL('./src', import.meta.url)),
+      '#': resolve(__dirname, './src'),
     },
+    conditions: ['browser', 'import', 'module', 'default'],
   },
   plugins: [
     react({
@@ -67,6 +71,7 @@ export default defineConfig({
       '@atproto/oauth-scopes',
       '@atproto/oauth-types',
       '@atproto/syntax',
+      'multiformats',
     ],
   },
 })

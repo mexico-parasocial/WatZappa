@@ -1,4 +1,3 @@
-import type { PermissionSet, PermissionSets } from '#/hydration-data.d.ts'
 import { Trans, useLingui } from '@lingui/react/macro'
 import {
   AtomIcon,
@@ -22,6 +21,7 @@ import {
   RpcPermission,
   ScopePermissionsTransition,
 } from '@atproto/oauth-scopes'
+import type { PermissionSet, PermissionSets } from '#/hydration-data.d.ts'
 import { Override } from '#/lib/util'
 import { Checkbox } from '../forms/checkbox.tsx'
 import { Admonition } from './admonition.tsx'

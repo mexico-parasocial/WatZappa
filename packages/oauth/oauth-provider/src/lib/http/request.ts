@@ -1,6 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { createRequire } from 'node:module'
-
+// eslint-disable-next-line import/default, import/no-named-as-default-member
+import accept from '@hapi/accept'
+// eslint-disable-next-line import/no-named-as-default-member
+const { languages, mediaType } = accept
 import {
   CookieSerializeOptions,
   parse as parseCookie,
@@ -10,9 +12,6 @@ import forwarded from 'forwarded'
 import createHttpError from 'http-errors'
 import { appendHeader } from './headers.js'
 import { UrlReference, urlMatch } from './url.js'
-
-const require = createRequire(import.meta.url)
-const { languages, mediaType } = require('@hapi/accept') as typeof import('@hapi/accept')
 
 export function validateHeaderValue(
   req: IncomingMessage,

@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 import { EventEmitter, once } from 'node:events'
-import { SendMailOptions } from 'nodemailer'
+import Mail from 'nodemailer/lib/mailer'
 import { AtpAgent, ComAtprotoServerResetPassword } from '@atproto/api'
 import * as crypto from '@atproto/crypto'
 import { TestNetworkNoAppView } from '@atproto/dev-env'
@@ -411,12 +411,12 @@ describe('account', () => {
     expect(res.data.email).toBe(email)
   })
 
-  const getMailFrom = async (promise): Promise<SendMailOptions> => {
+  const getMailFrom = async (promise): Promise<Mail.Options> => {
     const result = await Promise.all([once(mailCatcher, 'mail'), promise])
     return result[0][0]
   }
 
-  const getTokenFromMail = (mail: SendMailOptions) =>
+  const getTokenFromMail = (mail: Mail.Options) =>
     mail.html?.toString().match(/>([a-z0-9]{5}-[a-z0-9]{5})</i)?.[1]
 
   it('can reset account password', async () => {

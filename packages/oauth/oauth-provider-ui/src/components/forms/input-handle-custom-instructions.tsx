@@ -1,6 +1,6 @@
-import { Override } from '#/lib/util.ts'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { JSX, useMemo, useState } from 'react'
+import { Override } from '#/lib/util.ts'
 import { CodeSnippet } from '../utils/code-snippet.tsx'
 import { LinkExternal } from '../utils/link-external.tsx'
 import { FormField } from './form-field.tsx'
@@ -131,12 +131,9 @@ Thank you.`
       <p className="my-2">{currentInstructions.message}</p>
 
       {currentInstructions.values.map(({ label, value, copyable }, index) => (
-        <CodeSnippet
-          key={index}
-          label={label}
-          value={value}
-          copyable={copyable}
-        />
+        <CodeSnippet key={index} label={label} copyable={copyable}>
+          {value}
+        </CodeSnippet>
       ))}
 
       <p className="my-2 flex flex-row flex-wrap gap-3">

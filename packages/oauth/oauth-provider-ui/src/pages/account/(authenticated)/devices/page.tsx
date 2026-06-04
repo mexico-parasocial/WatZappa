@@ -2,10 +2,7 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { Link } from '@tanstack/react-router'
 import type { ActiveAccountSession } from '@atproto/oauth-provider-api'
 import { Button } from '#/components/forms/button'
-import {
-  Admonition,
-  AdmonitionAction,
-} from '#/components/utils/admonition.tsx'
+import { Admonition, AdmonitionAction } from '#/components/utils/admonition.tsx'
 import { CircularProgress } from '#/components/utils/circular-progress'
 import { useAuthenticatedSession } from '#/contexts/authentication.tsx'
 import { useNotificationsContext } from '#/contexts/notifications.tsx'
@@ -91,7 +88,7 @@ function AccountSessionCard({
         title: t`Successfully removed device`,
         duration: 2e3,
       })
-    } catch (e) {
+    } catch {
       notify({
         variant: 'error',
         title: t`Failed to remove device`,

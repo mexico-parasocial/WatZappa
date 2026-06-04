@@ -1,10 +1,10 @@
-import { Override } from '#/lib/util.ts'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { composeEventHandlers } from '@radix-ui/primitive'
 import { useEffect, useMemo, useState } from 'react'
 import { ErrorParser, ParsedError, parseError } from '#/lib/error-parser.ts'
+import { Override } from '#/lib/util.ts'
 import { Admonition, AdmonitionAction, AdmonitionProps } from './admonition.tsx'
 import { ErrorDetails } from './error-details.tsx'
 

@@ -1,13 +1,13 @@
-import { Override } from '#/lib/util.ts'
 import { Trans } from '@lingui/react/macro'
 import { ReactNode } from '@tanstack/react-router'
 import { clsx } from 'clsx'
 import { JSX } from 'react'
+import { Override } from '#/lib/util.ts'
 
 export type ErrorDetailsProps = Override<
   JSX.IntrinsicElements['dl'],
   {
-    name: string
+    name?: string
     code?: string
     message?: string
     payload?: string
@@ -34,9 +34,11 @@ export function ErrorDetails({
       )}
       {...props}
     >
-      <DetailRow label={<Trans context="Error">Name</Trans>}>
-        <code>{name}</code>
-      </DetailRow>
+      {name && (
+        <DetailRow label={<Trans context="Error">Name</Trans>}>
+          <code>{name}</code>
+        </DetailRow>
+      )}
 
       {code && (
         <DetailRow label={<Trans context="Error">Code</Trans>}>

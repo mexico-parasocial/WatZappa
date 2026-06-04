@@ -24,8 +24,8 @@ import { OAuthError } from '../oauth-errors.js'
 import type { OAuthProvider } from '../oauth-provider.js'
 import type { MiddlewareOptions } from './middleware-options.js'
 
-// CORS preflight for public metadata endpoints (well-known, jwks)
-const corsHeadersPublic: Middleware = function (req, res, next) {
+// CORS preflight
+const corsHeaders: Middleware = function (req, res, next) {
   res.setHeader('Access-Control-Max-Age', '86400') // 1 day
 
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
@@ -38,35 +38,22 @@ const corsHeadersPublic: Middleware = function (req, res, next) {
   //
   // A "*" is safer to use than reflecting the request origin.
   res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
 
-  next()
-}
+  // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Methods
+  // > The value "*" only counts as a special wildcard value for
+  // > requests without credentials (requests without HTTP cookies or
+  // > HTTP authentication information). In requests with credentials,
+  // > it is treated as the literal method name "*" without special
+  // > semantics.
+  res.setHeader('Access-Control-Allow-Methods', '*')
 
-// CORS for private OAuth endpoints (par, token, revoke)
-const corsHeadersPrivate: Middleware = function (req, res, next) {
-  res.setHeader('Access-Control-Max-Age', '86400') // 1 day
-  const origin = req.headers.origin
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin)
-    res.setHeader('Vary', 'Origin')
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type,DPoP')
 
   next()
 }
 
-const corsPreflightPublic: Middleware = combineMiddlewares([
-  corsHeadersPublic,
-  (req, res) => {
-    res.writeHead(200).end()
-  },
-])
-
-const corsPreflightPrivate: Middleware = combineMiddlewares([
-  corsHeadersPrivate,
+const corsPreflight: Middleware = combineMiddlewares([
+  corsHeaders,
   (req, res) => {
     res.writeHead(200).end()
   },
@@ -84,26 +71,26 @@ export function createOAuthMiddleware<
 
   //- Public OAuth endpoints
 
-  router.options('/.well-known/oauth-authorization-server', corsPreflightPublic)
+  router.options('/.well-known/oauth-authorization-server', corsPreflight)
   router.get(
     '/.well-known/oauth-authorization-server',
-    corsHeadersPublic,
+    corsHeaders,
     cacheControlMiddleware(300),
     staticJsonMiddleware(server.metadata),
   )
 
-  router.options('/oauth/jwks', corsPreflightPublic)
+  router.options('/oauth/jwks', corsPreflight)
   router.get(
     '/oauth/jwks',
-    corsHeadersPublic,
+    corsHeaders,
     cacheControlMiddleware(300),
     staticJsonMiddleware(server.jwks),
   )
 
-  router.options('/oauth/par', corsPreflightPrivate)
+  router.options('/oauth/par', corsPreflight)
   router.post(
     '/oauth/par',
-    corsHeadersPrivate,
+    corsHeaders,
     oauthHandler(async function (req) {
       const payload = await parseHttpRequest(req, ['json', 'urlencoded'])
 
@@ -140,10 +127,10 @@ export function createOAuthMiddleware<
     res.writeHead(405).end()
   })
 
-  router.options('/oauth/token', corsPreflightPrivate)
+  router.options('/oauth/token', corsPreflight)
   router.post(
     '/oauth/token',
-    corsHeadersPrivate,
+    corsHeaders,
     oauthHandler(async function (req) {
       const payload = await parseHttpRequest(req, ['json', 'urlencoded'])
 
@@ -172,10 +159,10 @@ export function createOAuthMiddleware<
     }),
   )
 
-  router.options('/oauth/revoke', corsPreflightPrivate)
+  router.options('/oauth/revoke', corsPreflight)
   router.post(
     '/oauth/revoke',
-    corsHeadersPrivate,
+    corsHeaders,
     oauthHandler(async function (req, res) {
       const payload = await parseHttpRequest(req, ['json', 'urlencoded'])
 

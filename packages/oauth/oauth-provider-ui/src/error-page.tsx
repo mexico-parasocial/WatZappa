@@ -1,10 +1,10 @@
 import './style.css'
 
-import type { HydrationData } from '#/hydration-data.d.ts'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ErrorView } from '#/components/error-view.tsx'
 import { CustomizationProvider } from '#/contexts/customization'
+import type { HydrationData } from '#/hydration-data.d.ts'
 import { LocaleProvider } from '#/locales/locale-provider.tsx'
 
 const {

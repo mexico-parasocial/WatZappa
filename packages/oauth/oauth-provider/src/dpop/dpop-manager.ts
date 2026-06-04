@@ -39,7 +39,7 @@ export class DpopManager {
     this.dpopNonce =
       dpopSecret === false
         ? undefined
-        : new DpopNonce(dpopSecret as DpopSecret, dpopRotationInterval)
+        : new DpopNonce(dpopSecret, dpopRotationInterval)
   }
 
   nextNonce(): string | undefined {

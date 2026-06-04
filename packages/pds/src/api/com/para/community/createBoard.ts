@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { CID } from 'multiformats/cid'
 import { TID } from '@atproto/common'
-import { AtUri } from '@atproto/syntax'
+import { atUri } from '@atproto/lex'
 import { InvalidRequestError } from '@atproto/xrpc-server'
 import { ActorStoreTransactor } from '../../../../actor-store/actor-store-transactor.js'
 import { AppContext } from '../../../../context.js'

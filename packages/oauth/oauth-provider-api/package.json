@@ -1,6 +1,9 @@
 {
   "name": "@atproto/oauth-provider-api",
-  "version": "0.6.0",
+  "version": "0.6.1",
+  "engines": {
+    "node": ">=22"
+  },
   "license": "MIT",
   "description": "Shared data types for the @atproto/oauth-provider and @atproto/oauth-provider-ui packages",
   "keywords": [
@@ -16,11 +19,11 @@
     "directory": "packages/oauth/oauth-provider-api"
   },
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
-    "./package.json": "./package.json"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "dependencies": {
     "@atproto/jwk": "workspace:^",

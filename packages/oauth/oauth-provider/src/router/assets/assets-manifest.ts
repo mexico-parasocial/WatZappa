@@ -31,13 +31,13 @@ type Asset =
     }
 
 const ASSETS_URL_PREFIX = '/@atproto/oauth-provider/~assets/'
-const require = createRequire(import.meta.url)
 
 export function parseAssetsManifest(manifestPath: string) {
   // Using `require` instead of `JSON.parse(readFileSync())` so that node's
   // watch mode can pick up changes to the manifest file.
+  const require = createRequire(import.meta.url)
 
-  // eslint-disable-next-line
+  // eslint-disable-next-line import/no-dynamic-require
   const manifest = require(manifestPath) as Manifest
 
   const assets = new Map<string, Asset>(

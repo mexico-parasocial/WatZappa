@@ -1,4 +1,3 @@
-import { Override } from '#/lib/util.ts'
 import { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
@@ -6,6 +5,7 @@ import { Trans } from '@lingui/react/macro'
 import { CopyIcon } from '@phosphor-icons/react'
 import * as Popover from '@radix-ui/react-popover'
 import { useEffect, useRef, useState } from 'react'
+import { Override } from '#/lib/util.ts'
 import { Button, ButtonProps } from './button.tsx'
 
 export type ButtonCopyProps = Override<

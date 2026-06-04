@@ -1,7 +1,6 @@
-import { Override } from '#/lib/util.ts'
 import { TicketIcon } from '@phosphor-icons/react'
 import { composeEventHandlers } from '@radix-ui/primitive'
-import { useState } from 'react'
+import { Override } from '#/lib/util.ts'
 import { InputText, InputTextProps } from './input-text.tsx'
 
 export type InputTokenProps = Override<
@@ -34,14 +33,8 @@ export function InputToken({
   icon = <TicketIcon className="w-5" weight="bold" />,
   title = example,
   onChange,
-  value,
-  defaultValue = value,
   ...props
 }: InputTokenProps) {
-  const [token, setToken] = useState<string>(
-    typeof defaultValue === 'string' ? defaultValue : '',
-  )
-
   return (
     <InputText
       {...props}
@@ -57,7 +50,6 @@ export function InputToken({
       pattern="^[A-Z2-7]{5}-[A-Z2-7]{5}$"
       placeholder={example}
       title={title}
-      value={token}
       onChange={composeEventHandlers(onChange, (event) => {
         const { value, selectionEnd, selectionStart } = event.currentTarget
 
@@ -73,11 +65,7 @@ export function InputToken({
             event.currentTarget.selectionEnd = fixedSlicedValue.length
         }
 
-        setToken(fixedValue)
-
-        if (!event.isDefaultPrevented()) {
-          onToken?.(fixedValue.length === 11 ? fixedValue : null)
-        }
+        onToken?.(fixedValue.length === 11 ? fixedValue : null)
       })}
     />
   )

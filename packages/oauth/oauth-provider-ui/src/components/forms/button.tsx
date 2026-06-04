@@ -1,6 +1,6 @@
-import { Override } from '#/lib/util.ts'
 import { clsx } from 'clsx'
 import { JSX } from 'react'
+import { Override } from '#/lib/util.ts'
 
 export type ButtonColor =
   | 'primary'
@@ -36,14 +36,14 @@ const TEXT_SIZES = {
 
 const PADDING_SIZES = {
   rounded: {
+    sm: 'px-4 py-1',
+    md: 'px-6 py-2',
+    lg: 'px-8 py-3',
+  },
+  padded: {
     sm: 'py-1 px-2',
     md: 'py-2 px-3',
     lg: 'py-3 px-4',
-  },
-  padded: {
-    sm: 'p-1 px-2',
-    md: 'p-2',
-    lg: 'p-3',
   },
   circle: {
     sm: 'size-6',

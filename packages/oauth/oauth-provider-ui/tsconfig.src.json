@@ -5,11 +5,10 @@
   ],
   "compilerOptions": {
     "rootDir": "src",
+    "types": ["vite/client"],
     "paths": {
       "#/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx",
-    "../../../tsconfig/cjs-default-exports.d.ts"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
 }

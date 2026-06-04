@@ -1,13 +1,13 @@
-import {
-  RateLimitedActionOptions,
-  useRateLimitedAction,
-} from '#/hooks/use-rate-limited-action.ts'
-import { Override } from '#/lib/util.ts'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { Icon } from '@phosphor-icons/react'
 import * as Popover from '@radix-ui/react-popover'
 import { clsx } from 'clsx'
 import { useState } from 'react'
+import {
+  RateLimitedActionOptions,
+  useRateLimitedAction,
+} from '#/hooks/use-rate-limited-action.ts'
+import { Override } from '#/lib/util.ts'
 import { CircularProgress } from '../utils/circular-progress.tsx'
 import { Button, ButtonProps } from './button.tsx'
 
@@ -20,10 +20,11 @@ export type ButtonCooldownProps = Override<
 
 export function ButtonCooldown({
   idleIcon: IdleIcon,
+
   // RateLimitedActionOptions
   action,
   cooldown,
-  cooldownInitial,
+  startWithCooldown,
 
   // ButtonProps
   children,
@@ -36,22 +37,16 @@ export function ButtonCooldown({
 }: ButtonCooldownProps) {
   const { t } = useLingui()
   const [isHovered, setIsHovered] = useState(false)
-  const [isPending, setIsPending] = useState(false)
-  const actionAsync = async (...args: Parameters<typeof action>) => {
-    setIsPending(true)
-    try {
-      await action?.(...args)
-    } finally {
-      setIsPending(false)
-    }
-  }
+
   const handler = useRateLimitedAction({
-    action: actionAsync,
+    action,
     cooldown,
-    cooldownInitial,
+    startWithCooldown,
   })
   const remainingSeconds = Math.ceil(handler.remaining)
-  const isRateLimited = !disabled && handler.isRateLimited
+
+  const showRateLimit = !disabled && handler.isRateLimited
+  const percent = ((handler.total - handler.remaining) / handler.total) * 100
 
   return (
     <span
@@ -59,7 +54,7 @@ export function ButtonCooldown({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Popover.Root open={isRateLimited && isHovered}>
+      <Popover.Root open={showRateLimit && isHovered}>
         <Popover.Trigger asChild>
           <Button
             onClick={(event) => {
@@ -69,23 +64,23 @@ export function ButtonCooldown({
               }
             }}
             size={size}
-            loading={loading || isPending}
-            disabled={disabled || isRateLimited}
+            loading={loading || handler.isPending}
+            disabled={disabled || handler.isRateLimited}
             className={clsx(
               'relative',
               size === 'sm' ? 'pl-7' : 'pl-9',
               className,
             )}
             aria-label={
-              isRateLimited
+              showRateLimit
                 ? t`Please wait ${remainingSeconds} seconds before trying again.`
                 : undefined
             }
-            aria-live={isRateLimited ? 'polite' : undefined}
+            aria-live={showRateLimit ? 'polite' : undefined}
             aria-atomic="true"
             {...props}
           >
-            {!isRateLimited && IdleIcon ? (
+            {!showRateLimit && IdleIcon ? (
               <IdleIcon
                 className={clsx(
                   'absolute top-1/2 -translate-y-1/2',
@@ -102,9 +97,7 @@ export function ButtonCooldown({
                 )}
                 aria-hidden
                 size={16}
-                value={
-                  ((handler.total - handler.remaining) / handler.total) * 100
-                }
+                value={percent}
                 startAngle={-90}
               />
             )}

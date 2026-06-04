@@ -2,8 +2,8 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { ReactNode, useEffect, useState } from 'react'
 import { ButtonRequestCode } from '#/components/forms/button-request-code.tsx'
 import { Button } from '#/components/forms/button.tsx'
+import { DialogSimple } from '#/components/utils/dialog-simple.tsx'
 import { VerifyEmailConfirmForm } from '#/components/verify-email-confirm-form.tsx'
-import { DialogSimple } from './utils/dialog-simple.tsx'
 
 export type VerifyEmailDialogProps = {
   email: string
@@ -32,10 +32,13 @@ export function VerifyEmailDialog({
   const [state, setState] = useState<VerifyEmailDialogState>(
     VerifyEmailDialogState.Request,
   )
+  const [confirmSubmitting, setConfirmSubmitting] = useState(false)
 
   useEffect(() => {
     if (!open) setState(VerifyEmailDialogState.Request)
   }, [open])
+
+  const dismissable = !requestPending && !confirmSubmitting
 
   return (
     <DialogSimple
@@ -49,6 +52,7 @@ export function VerifyEmailDialog({
       }
       open={open}
       onOpenChange={setOpen}
+      dismissable={dismissable}
     >
       {state === VerifyEmailDialogState.Request ? (
         <div className="align-stretch flex flex-col gap-4">
@@ -73,7 +77,8 @@ export function VerifyEmailDialog({
       ) : (
         <VerifyEmailConfirmForm
           disabled={confirmPending}
-          onSubmit={async (data) => {
+          onLoadingChange={setConfirmSubmitting}
+          handler={async (data) => {
             await onConfirm(data)
             setOpen(false)
           }}

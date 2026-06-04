@@ -1,9 +1,9 @@
+import { Trans } from '@lingui/react/macro'
+import { PaperPlaneTiltIcon } from '@phosphor-icons/react'
 import {
   ButtonCooldown,
   ButtonCooldownProps,
 } from '#/components/forms/button-cooldown.tsx'
-import { Trans } from '@lingui/react/macro'
-import { PaperPlaneTiltIcon } from '@phosphor-icons/react'
 
 export type ButtonRequestCodeProps = ButtonCooldownProps
 

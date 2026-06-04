@@ -1,6 +1,6 @@
-import { Override } from '#/lib/util.ts'
 import { msg } from '@lingui/core/macro'
 import { apiErrorParser } from '#/lib/api-error-parser.ts'
+import { Override } from '#/lib/util.ts'
 import { LayoutApp, LayoutAppProps } from './layouts/layout-app.tsx'
 import { ErrorCard } from './utils/error-card.tsx'
 

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { CID } from 'multiformats/cid'
 import { jsonToLex } from '@atproto/lexicon'
-import { AtUri } from '@atproto/syntax'
+import { atUri } from '@atproto/lex'
 import { ActorStoreReader } from '../../../../actor-store/actor-store-reader.js'
 import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'

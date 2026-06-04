@@ -20,7 +20,6 @@ describe('notif service proxy', () => {
     network = await TestNetworkNoAppView.create({
       dbPostgresSchema: 'proxy_notifs',
     })
-    network.pds.server.app.get
     const plc = network.plc.getClient()
     agent = network.pds.getAgent()
     sc = network.getSeedClient()
@@ -38,7 +37,7 @@ describe('notif service proxy', () => {
       return x
     })
     await network.pds.ctx.idResolver.did.resolve(notifDid, true)
-  })
+  }, 20_000) // @NOTE seeding can take a while
 
   afterAll(async () => {
     await network.close()

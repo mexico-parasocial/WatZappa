@@ -1,19 +1,23 @@
 import { Trans } from '@lingui/react/macro'
-import { ReactNode, useCallback, useEffect, useState } from 'react'
-import { DialogSimple } from './utils/dialog-simple.tsx'
-import { Button } from './forms/button.tsx'
+import { ReactNode, useEffect, useState } from 'react'
+import { HandleString } from '@atproto/syntax'
+import { Button } from '#/components/forms/button.tsx'
+import { DialogSimple } from '#/components/utils/dialog-simple.tsx'
+import { LinkExternal } from '#/components/utils/link-external.tsx'
 import { UpdateHandleCustomForm } from './update-handle-custom-form.tsx'
 import { UpdateHandleDefaultForm } from './update-handle-default-form.tsx'
-import { LinkExternal } from './utils/link-external.tsx'
 
 export type UpdateHandleDialogProps = {
   children: Exclude<ReactNode, false | null | undefined>
 
   domains: string[]
-  currentHandle?: string
+  currentHandle?: HandleString
   /** The current user's DID, used in own-domain verification instructions. */
   did: string
-  onSubmit: (data: { handle: string }) => void | PromiseLike<void>
+  handler: (
+    data: { handle: string },
+    signal: AbortSignal,
+  ) => void | PromiseLike<void>
 }
 
 enum HandleType {
@@ -22,7 +26,7 @@ enum HandleType {
 }
 
 export function UpdateHandleDialog({
-  onSubmit,
+  handler,
   children,
   domains,
   currentHandle,
@@ -30,34 +34,38 @@ export function UpdateHandleDialog({
 }: UpdateHandleDialogProps) {
   const [open, setOpen] = useState(false)
   const [view, setView] = useState<HandleType | null>(null)
-
-  const submitAndClose = useCallback(
-    async (...args: Parameters<typeof onSubmit>) => {
-      await onSubmit(...args)
-      setOpen(false)
-    },
-    [onSubmit],
-  )
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (!open) setView(null)
   }, [open])
+
+  const dismissable = !submitting
+
+  const [defaultHandle, customHandle] =
+    currentHandle && domains.some((dom) => currentHandle.endsWith(dom))
+      ? [currentHandle, undefined]
+      : [undefined, currentHandle]
 
   if (view === HandleType.Default && domains.length) {
     return (
       <DialogSimple
         open={open}
         onOpenChange={setOpen}
+        dismissable={dismissable}
         trigger={children}
         title={<Trans>Update your username</Trans>}
         description={<Trans>Choose a new default username.</Trans>}
       >
         <UpdateHandleDefaultForm
           domains={domains}
-          currentHandle={currentHandle}
-          cancelLabel={<Trans>Back</Trans>}
-          onCancel={() => setView(null)}
-          onSubmit={submitAndClose}
+          onBack={() => setView(null)}
+          values={{ handle: defaultHandle }}
+          onLoadingChange={setSubmitting}
+          handler={async (data, signal) => {
+            await handler(data, signal)
+            setOpen(false)
+          }}
         />
       </DialogSimple>
     )
@@ -68,6 +76,7 @@ export function UpdateHandleDialog({
       <DialogSimple
         open={open}
         onOpenChange={setOpen}
+        dismissable={dismissable}
         trigger={children}
         title={<Trans>Update your username</Trans>}
         description={
@@ -78,13 +87,15 @@ export function UpdateHandleDialog({
         }
       >
         <UpdateHandleCustomForm
-          domains={domains}
-          currentHandle={currentHandle}
           did={did}
-          cancelLabel={<Trans>Back</Trans>}
-          onCancel={() => setView(null)}
+          onBack={() => setView(null)}
           submitLabel={<Trans>Verify and Save</Trans>}
-          onSubmit={submitAndClose}
+          values={{ handle: customHandle }}
+          onLoadingChange={setSubmitting}
+          handler={async (data, signal) => {
+            await handler(data, signal)
+            setOpen(false)
+          }}
         />
       </DialogSimple>
     )

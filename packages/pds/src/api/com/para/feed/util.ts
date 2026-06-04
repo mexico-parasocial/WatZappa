@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { AtUri } from '@atproto/syntax'
+import { atUri } from '@atproto/lex'
 import { AppContext } from '../../../../context.js'
 import { PostView } from '../../../../lexicon/types/com/para/feed/getAuthorFeed.js'
 import { Record as ParaPostRecord } from '../../../../lexicon/types/com/para/post.js'

@@ -1,4 +1,3 @@
-import { Override } from '#/lib/util.ts'
 import {
   CheckCircleIcon,
   type Icon,
@@ -15,13 +14,15 @@ import {
   useContext,
   useMemo,
 } from 'react'
-import { Button, ButtonProps } from '../forms/button.tsx'
+import { Button, ButtonProps } from '#/components/forms/button.tsx'
+import { Override } from '#/lib/util.ts'
 
 type Variant = 'info' | 'warning' | 'error' | 'success'
 
 const ROLE_VARIANT_MAP: ReadonlyMap<AriaRole, Variant> = new Map([
   ['note', 'info'],
   ['status', 'warning'],
+  ['warning', 'warning'],
   ['alert', 'error'],
 ])
 
