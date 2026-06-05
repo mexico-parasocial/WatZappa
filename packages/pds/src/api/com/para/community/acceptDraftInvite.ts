@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { CID } from 'multiformats/cid'
 import { TID } from '@atproto/common'
-import { atUri } from '@atproto/lex'
+import { AtUri } from '@atproto/syntax'
 import { InvalidRequestError } from '@atproto/xrpc-server'
 import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'

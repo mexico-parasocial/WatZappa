@@ -38,7 +38,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
   `.execute(db)
   await sql`
     CREATE UNIQUE INDEX IF NOT EXISTS para_qvld_civicTree_vote_unique_nullifier
-    ON para_qvld_civicTree_vote ("statement", "voteNullifier")
+    ON "para_qvld_civicTree_vote" ("statement", "voteNullifier")
     WHERE "voteNullifier" IS NOT NULL
   `.execute(db)
   await sql`
