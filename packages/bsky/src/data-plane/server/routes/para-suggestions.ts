@@ -121,12 +121,15 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     // 4. Topical candidate set
     const topicalCandidates: {did: string; postCount: number}[] = []
     if (subTags.length > 0) {
+      const thirtyDaysAgo = new Date(
+        Date.now() - 30 * 24 * 60 * 60 * 1000,
+      ).toISOString()
       const rows = await db.db
         .selectFrom('para_post_meta')
         .where(
-          sql<boolean>`"para_post_meta"."tags" ?& ${JSON.stringify(subTags)}`,
+          sql<boolean>`"para_post_meta"."tags" ?& array[${sql.join(subTags)}]`,
         )
-        .where('createdAt', '>=', sql<string>`now() - interval '30 days'`)
+        .where('createdAt', '>=', thirtyDaysAgo)
         .select(['creator as did', sql<number>`count(*)::int`.as('postCount')])
         .groupBy('creator')
         .orderBy('postCount', 'desc')
