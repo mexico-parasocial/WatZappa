@@ -252,6 +252,7 @@ import * as ComAtprotoTempFetchLabels from './types/com/atproto/temp/fetchLabels
 import * as ComAtprotoTempRevokeAccountCredentials from './types/com/atproto/temp/revokeAccountCredentials.js'
 import * as ComParaActorExportCivicTree from './types/com/para/actor/exportCivicTree.js'
 import * as ComParaActorGetProfileStats from './types/com/para/actor/getProfileStats.js'
+import * as ComParaActorGetSuggestedUsers from './types/com/para/actor/getSuggestedUsers.js'
 import * as ComParaAgentGetConversation from './types/com/para/agent/getConversation.js'
 import * as ComParaAgentSendMessage from './types/com/para/agent/sendMessage.js'
 import * as ComParaAlphaCreateInvite from './types/com/para/alpha/createInvite.js'
@@ -308,6 +309,7 @@ import * as ComParaFeedGetAuthorFeed from './types/com/para/feed/getAuthorFeed.j
 import * as ComParaFeedGetPostThread from './types/com/para/feed/getPostThread.js'
 import * as ComParaFeedGetPosts from './types/com/para/feed/getPosts.js'
 import * as ComParaFeedGetTimeline from './types/com/para/feed/getTimeline.js'
+import * as ComParaFeedSearchPosts from './types/com/para/feed/searchPosts.js'
 import * as ComParaHighlightGetHighlight from './types/com/para/highlight/getHighlight.js'
 import * as ComParaHighlightListHighlights from './types/com/para/highlight/listHighlights.js'
 import * as ComParaNotificationGetPostSubscription from './types/com/para/notification/getPostSubscription.js'
@@ -3783,6 +3785,18 @@ export class ComParaActorNS {
     const nsid = 'com.para.actor.getProfileStats' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
+
+  getSuggestedUsers<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ComParaActorGetSuggestedUsers.QueryParams,
+      ComParaActorGetSuggestedUsers.HandlerInput,
+      ComParaActorGetSuggestedUsers.HandlerOutput
+    >,
+  ) {
+    const nsid = 'com.para.actor.getSuggestedUsers' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
 }
 
 export class ComParaAgentNS {
@@ -4509,6 +4523,18 @@ export class ComParaFeedNS {
     >,
   ) {
     const nsid = 'com.para.feed.getTimeline' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  searchPosts<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ComParaFeedSearchPosts.QueryParams,
+      ComParaFeedSearchPosts.HandlerInput,
+      ComParaFeedSearchPosts.HandlerOutput
+    >,
+  ) {
+    const nsid = 'com.para.feed.searchPosts' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
 }

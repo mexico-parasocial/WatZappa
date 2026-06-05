@@ -304,6 +304,7 @@ import * as ComGermnetworkDeclaration from './types/com/germnetwork/declaration.
 import * as ComParaActorDefs from './types/com/para/actor/defs.js'
 import * as ComParaActorExportCivicTree from './types/com/para/actor/exportCivicTree.js'
 import * as ComParaActorGetProfileStats from './types/com/para/actor/getProfileStats.js'
+import * as ComParaActorGetSuggestedUsers from './types/com/para/actor/getSuggestedUsers.js'
 import * as ComParaAgentDefs from './types/com/para/agent/defs.js'
 import * as ComParaAgentGetConversation from './types/com/para/agent/getConversation.js'
 import * as ComParaAgentSendMessage from './types/com/para/agent/sendMessage.js'
@@ -388,6 +389,7 @@ import * as ComParaFeedGetAuthorFeed from './types/com/para/feed/getAuthorFeed.j
 import * as ComParaFeedGetPostThread from './types/com/para/feed/getPostThread.js'
 import * as ComParaFeedGetPosts from './types/com/para/feed/getPosts.js'
 import * as ComParaFeedGetTimeline from './types/com/para/feed/getTimeline.js'
+import * as ComParaFeedSearchPosts from './types/com/para/feed/searchPosts.js'
 import * as ComParaHighlightAnnotation from './types/com/para/highlight/annotation.js'
 import * as ComParaHighlightDefs from './types/com/para/highlight/defs.js'
 import * as ComParaHighlightGetHighlight from './types/com/para/highlight/getHighlight.js'
@@ -787,6 +789,7 @@ export * as ComGermnetworkDeclaration from './types/com/germnetwork/declaration.
 export * as ComParaActorDefs from './types/com/para/actor/defs.js'
 export * as ComParaActorExportCivicTree from './types/com/para/actor/exportCivicTree.js'
 export * as ComParaActorGetProfileStats from './types/com/para/actor/getProfileStats.js'
+export * as ComParaActorGetSuggestedUsers from './types/com/para/actor/getSuggestedUsers.js'
 export * as ComParaAgentDefs from './types/com/para/agent/defs.js'
 export * as ComParaAgentGetConversation from './types/com/para/agent/getConversation.js'
 export * as ComParaAgentSendMessage from './types/com/para/agent/sendMessage.js'
@@ -871,6 +874,7 @@ export * as ComParaFeedGetAuthorFeed from './types/com/para/feed/getAuthorFeed.j
 export * as ComParaFeedGetPostThread from './types/com/para/feed/getPostThread.js'
 export * as ComParaFeedGetPosts from './types/com/para/feed/getPosts.js'
 export * as ComParaFeedGetTimeline from './types/com/para/feed/getTimeline.js'
+export * as ComParaFeedSearchPosts from './types/com/para/feed/searchPosts.js'
 export * as ComParaHighlightAnnotation from './types/com/para/highlight/annotation.js'
 export * as ComParaHighlightDefs from './types/com/para/highlight/defs.js'
 export * as ComParaHighlightGetHighlight from './types/com/para/highlight/getHighlight.js'
@@ -5889,6 +5893,17 @@ export class ComParaActorNS {
         throw ComParaActorGetProfileStats.toKnownErr(e)
       })
   }
+
+  getSuggestedUsers(
+    params?: ComParaActorGetSuggestedUsers.QueryParams,
+    opts?: ComParaActorGetSuggestedUsers.CallOptions,
+  ): Promise<ComParaActorGetSuggestedUsers.Response> {
+    return this._client
+      .call('com.para.actor.getSuggestedUsers', params, undefined, opts)
+      .catch((e) => {
+        throw ComParaActorGetSuggestedUsers.toKnownErr(e)
+      })
+  }
 }
 
 export class ComParaAgentNS {
@@ -8613,6 +8628,18 @@ export class ComParaFeedNS {
   ): Promise<ComParaFeedGetTimeline.Response> {
     return this._client.call(
       'com.para.feed.getTimeline',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  searchPosts(
+    params?: ComParaFeedSearchPosts.QueryParams,
+    opts?: ComParaFeedSearchPosts.CallOptions,
+  ): Promise<ComParaFeedSearchPosts.Response> {
+    return this._client.call(
+      'com.para.feed.searchPosts',
       params,
       undefined,
       opts,

@@ -9,33 +9,33 @@ import {
   is$typed as _is$typed,
   type OmitKey,
 } from '../../../../util.js'
-import type * as ComParaCivicDefs from './defs.js'
+import type * as AppBskyActorDefs from '../../../app/bsky/actor/defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
-const id = 'com.para.civic.listCabildeos'
+const id = 'com.para.actor.getSuggestedUsers'
 
 export type QueryParams = {
-  /** Optional community filter. */
-  community?: string
-  /** Optional phase filter. */
-  phase?:
-    | 'draft'
-    | 'open'
-    | 'deliberating'
-    | 'voting'
-    | 'resolved'
+  /** Civic pillar to bias the suggestions toward. Authors who have recently posted under this pillar's sub-tags will rank higher. */
+  category?:
+    | 'public-services'
+    | 'internal-revenue'
+    | 'economy'
+    | 'social-issues'
+    | 'external-affairs'
+    | 'internal-affairs'
     | (string & {})
-  /** Optional search query */
-  query?: string
+  /** Optional list of sub-tag interest keys (e.g. 'healthcare', 'minimum-wage'). When provided, authors with matching post tags are boosted. */
+  interests?: string[]
   limit: number
   cursor?: string
 }
 export type InputSchema = undefined
 
 export interface OutputSchema {
+  actors: AppBskyActorDefs.ProfileView[]
+  recId?: string
   cursor?: string
-  cabildeos: ComParaCivicDefs.CabildeoView[]
 }
 
 export type HandlerInput = void
@@ -49,6 +49,7 @@ export interface HandlerSuccess {
 export interface HandlerError {
   status: number
   message?: string
+  error?: 'NotFound' | 'BlockedActor' | 'BlockedByActor'
 }
 
 export type HandlerOutput = HandlerError | HandlerSuccess

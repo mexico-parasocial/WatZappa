@@ -1,7 +1,11 @@
 import { ServiceImpl } from '@connectrpc/connect'
 import { Service } from '../../../proto/bsky_connect.js'
 import { Database } from '../db/index.js'
-import { CreatedAtCidKeyset, TimeCidKeyset, paginate } from '../db/pagination.js'
+import {
+  CreatedAtCidKeyset,
+  TimeCidKeyset,
+  paginate,
+} from '../db/pagination.js'
 
 export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   async getActorFeeds(req) {
@@ -71,22 +75,18 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   },
 
   async searchFeedGenerators(req) {
-    const { ref } = db.db.dynamic
-    const limit = req.limit
-    const query = req.query.trim()
-    let builder = db.db
-      .selectFrom('feed_generator')
-      .if(!!query, (q) => q.where('displayName', 'ilike', `%${query}%`))
-      .selectAll()
-    const keyset = new TimeCidKeyset(
-      ref('feed_generator.createdAt'),
-      ref('feed_generator.cid'),
+    return searchFeedGeneratorsImpl(db, req.query, req.limit)
+  },
+
+  async searchFeedGeneratorsV2(req) {
+    const { uris, cursor } = await searchFeedGeneratorsImpl(
+      db,
+      req.params?.query ?? '',
+      req.params?.limit ?? 25,
     )
-    builder = paginate(builder, { limit, keyset })
-    const feeds = await builder.execute()
     return {
-      uris: feeds.map((f) => f.uri),
-      cursor: keyset.packFromResult(feeds),
+      feedGenerators: uris.map((uri) => ({ uri, score: 0 })),
+      pageInfo: { cursor: cursor ?? '', hitsTotal: 0n },
     }
   },
 
@@ -94,3 +94,26 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     throw new Error('unimplemented')
   },
 })
+
+const searchFeedGeneratorsImpl = async (
+  db: Database,
+  query: string,
+  limit: number,
+) => {
+  const { ref } = db.db.dynamic
+  const trimmed = query.trim()
+  let builder = db.db
+    .selectFrom('feed_generator')
+    .if(!!trimmed, (q) => q.where('displayName', 'ilike', `%${trimmed}%`))
+    .selectAll()
+  const keyset = new TimeCidKeyset(
+    ref('feed_generator.createdAt'),
+    ref('feed_generator.cid'),
+  )
+  builder = paginate(builder, { limit, keyset })
+  const feeds = await builder.execute()
+  return {
+    uris: feeds.map((f) => f.uri),
+    cursor: keyset.packFromResult(feeds),
+  }
+}

@@ -19268,6 +19268,85 @@ export const schemaDict = {
       },
     },
   },
+  ComParaActorGetSuggestedUsers: {
+    lexicon: 1,
+    id: 'com.para.actor.getSuggestedUsers',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Get suggested PARA users ranked by civic relevance: shared community memberships, compass proximity, recent PARA-flair usage, and follower popularity. Returns the same profileView shape as app.bsky.actor.getProfile so callers can drop in.',
+        parameters: {
+          type: 'params',
+          properties: {
+            category: {
+              type: 'string',
+              knownValues: [
+                'public-services',
+                'internal-revenue',
+                'economy',
+                'social-issues',
+                'external-affairs',
+                'internal-affairs',
+              ],
+              description:
+                "Civic pillar to bias the suggestions toward. Authors who have recently posted under this pillar's sub-tags will rank higher.",
+            },
+            interests: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+              description:
+                "Optional list of sub-tag interest keys (e.g. 'healthcare', 'minimum-wage'). When provided, authors with matching post tags are boosted.",
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 25,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['actors'],
+            properties: {
+              actors: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:app.bsky.actor.defs#profileView',
+                },
+              },
+              recId: {
+                type: 'string',
+              },
+              cursor: {
+                type: 'string',
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'NotFound',
+          },
+          {
+            name: 'BlockedActor',
+          },
+          {
+            name: 'BlockedByActor',
+          },
+        ],
+      },
+    },
+  },
   ComParaAgentDefs: {
     lexicon: 1,
     id: 'com.para.agent.defs',
@@ -20764,6 +20843,10 @@ export const schemaDict = {
                 'resolved',
               ],
               description: 'Optional phase filter.',
+            },
+            query: {
+              type: 'string',
+              description: 'Optional search query',
             },
             limit: {
               type: 'integer',
@@ -27040,6 +27123,110 @@ export const schemaDict = {
                 type: 'string',
               },
               feed: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.feed.getAuthorFeed#postView',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaFeedSearchPosts: {
+    lexicon: 1,
+    id: 'com.para.feed.searchPosts',
+    defs: {
+      main: {
+        type: 'query',
+        description: 'Find Para posts matching search criteria.',
+        parameters: {
+          type: 'params',
+          required: ['q'],
+          properties: {
+            q: {
+              type: 'string',
+            },
+            sort: {
+              type: 'string',
+              knownValues: ['top', 'latest'],
+              default: 'latest',
+            },
+            since: {
+              type: 'string',
+            },
+            until: {
+              type: 'string',
+            },
+            mentions: {
+              type: 'string',
+              format: 'at-identifier',
+            },
+            author: {
+              type: 'string',
+              format: 'at-identifier',
+            },
+            lang: {
+              type: 'string',
+              format: 'language',
+            },
+            domain: {
+              type: 'string',
+            },
+            url: {
+              type: 'string',
+              format: 'uri',
+            },
+            tag: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+            limit: {
+              type: 'integer',
+              default: 25,
+            },
+            cursor: {
+              type: 'string',
+            },
+            communityUris: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'at-uri',
+              },
+            },
+            cabildeoUris: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'at-uri',
+              },
+            },
+            politicalCompassPositions: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['posts'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              hitsTotal: {
+                type: 'integer',
+              },
+              posts: {
                 type: 'array',
                 items: {
                   type: 'ref',
@@ -36324,6 +36511,7 @@ export const ids = {
   ComParaActorDefs: 'com.para.actor.defs',
   ComParaActorExportCivicTree: 'com.para.actor.exportCivicTree',
   ComParaActorGetProfileStats: 'com.para.actor.getProfileStats',
+  ComParaActorGetSuggestedUsers: 'com.para.actor.getSuggestedUsers',
   ComParaAgentDefs: 'com.para.agent.defs',
   ComParaAgentGetConversation: 'com.para.agent.getConversation',
   ComParaAgentSendMessage: 'com.para.agent.sendMessage',
@@ -36413,6 +36601,7 @@ export const ids = {
   ComParaFeedGetPostThread: 'com.para.feed.getPostThread',
   ComParaFeedGetPosts: 'com.para.feed.getPosts',
   ComParaFeedGetTimeline: 'com.para.feed.getTimeline',
+  ComParaFeedSearchPosts: 'com.para.feed.searchPosts',
   ComParaHighlightAnnotation: 'com.para.highlight.annotation',
   ComParaHighlightDefs: 'com.para.highlight.defs',
   ComParaHighlightGetHighlight: 'com.para.highlight.getHighlight',

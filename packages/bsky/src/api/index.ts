@@ -99,6 +99,7 @@ import resolveHandle from './com/atproto/identity/resolveHandle.js'
 import queryLabels from './com/atproto/label/queryLabels.js'
 import getRecord from './com/atproto/repo/getRecord.js'
 import getParaProfileStats from './com/para/actor/getProfileStats.js'
+import getParaSuggestedUsers from './com/para/actor/getSuggestedUsers.js'
 import exportParaCivicTree from './com/para/actor/exportCivicTree.js'
 import getParaAgentConversation from './com/para/agent/getConversation.js'
 import sendParaAgentMessage from './com/para/agent/sendMessage.js'
@@ -139,6 +140,7 @@ import getParaDiscourseTopics from './com/para/discourse/getTopics.js'
 import getParaAuthorFeed from './com/para/feed/getAuthorFeed.js'
 import getParaPostThread from './com/para/feed/getPostThread.js'
 import getParaPosts from './com/para/feed/getPosts.js'
+import searchParaPosts from './com/para/feed/searchPosts.js'
 import getParaTimeline from './com/para/feed/getTimeline.js'
 import getParaHighlight from './com/para/highlight/getHighlight.js'
 import listParaHighlights from './com/para/highlight/listHighlights.js'
@@ -272,6 +274,7 @@ export default function (server: Server, ctx: AppContext) {
   queryLabels(server, ctx)
   // com.para
   getParaProfileStats(paraServer, ctx)
+  getParaSuggestedUsers(paraServer, ctx)
   exportParaCivicTree(paraServer, ctx)
   getParaAgentConversation(paraServer, ctx)
   sendParaAgentMessage(paraServer, ctx)
@@ -309,6 +312,7 @@ export default function (server: Server, ctx: AppContext) {
   getParaAuthorFeed(paraServer, ctx)
   getParaPostThread(paraServer, ctx)
   getParaPosts(paraServer, ctx)
+  searchParaPosts(paraServer, ctx)
   getParaTimeline(paraServer, ctx)
   getParaPostMeta(paraServer, ctx)
   getParaDiscourseSnapshot(paraServer, ctx)

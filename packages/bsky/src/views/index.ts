@@ -142,6 +142,11 @@ const notificationDeletedRecord =
 const notificationDeletedRecordCid =
   'bafyreidad6nyekfa4a67yfb573ptxiv6s7kyxyg2ra6qbbemcruadvtuim'
 
+// Soft-limit for `app.bsky.embed.gallery#main.items`. The lexicon's
+// schema-level cap is 20, but clients are expected to enforce a soft limit
+// of 10 today. The AppView trims defensively at the view boundary.
+const GALLERY_SOFT_LIMIT = 10
+
 export class Views {
   public imgUriBuilder: ImageUriBuilder = this.opts.imgUriBuilder
   public videoUriBuilder: VideoUriBuilder = this.opts.videoUriBuilder
@@ -2161,11 +2166,14 @@ export class Views {
   }
 
   galleryEmbed(did: DidString, embed: GalleryEmbed): $Typed<GalleryEmbedView> {
-    const media = embed.items.flatMap((item) => {
+    // The lexicon's schema-level cap is 20, but clients are expected to
+    // enforce a soft limit of 10. Trim defensively at the view boundary so
+    // viewers see at most 10 items regardless of what was authored.
+    const items = embed.items.slice(0, GALLERY_SOFT_LIMIT).flatMap((item) => {
       const view = this.galleryItemView(did, item)
       return view ? [view] : []
     })
-    return app.bsky.embed.gallery.view.$build({ media })
+    return app.bsky.embed.gallery.view.$build({ media: items })
   }
 
   private galleryItemView(

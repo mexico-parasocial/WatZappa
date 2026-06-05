@@ -24,6 +24,7 @@ import lists from './lists.js'
 import moderation from './moderation.js'
 import mutes from './mutes.js'
 import notifs from './notifs.js'
+import paraSuggestions from './para-suggestions.js'
 import personalCivicTree from './personal-civic-tree.js'
 import postSubscription from './post-subscription.js'
 import profile from './profile.js'
@@ -72,6 +73,7 @@ export default (db: Database, idResolver: IdResolver) =>
       ...moderation(db),
       ...mutes(db),
       ...notifs(db),
+      ...paraSuggestions(db),
       ...personalCivicTree(db),
       ...postSubscription(db),
       ...profile(db),

@@ -24,6 +24,10 @@
             ],
             "description": "Optional phase filter."
           },
+          "query": {
+            "type": "string",
+            "description": "Optional search query"
+          },
           "limit": {
             "type": "integer",
             "minimum": 1,

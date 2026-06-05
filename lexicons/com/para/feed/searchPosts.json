@@ -1,0 +1,46 @@
+{
+  "lexicon": 1,
+  "id": "com.para.feed.searchPosts",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Find Para posts matching search criteria.",
+      "parameters": {
+        "type": "params",
+        "required": ["q"],
+        "properties": {
+          "q": { "type": "string" },
+          "sort": { "type": "string", "knownValues": ["top", "latest"], "default": "latest" },
+          "since": { "type": "string" },
+          "until": { "type": "string" },
+          "mentions": { "type": "string", "format": "at-identifier" },
+          "author": { "type": "string", "format": "at-identifier" },
+          "lang": { "type": "string", "format": "language" },
+          "domain": { "type": "string" },
+          "url": { "type": "string", "format": "uri" },
+          "tag": { "type": "array", "items": { "type": "string" } },
+          "limit": { "type": "integer", "default": 25 },
+          "cursor": { "type": "string" },
+          "communityUris": { "type": "array", "items": { "type": "string", "format": "at-uri" } },
+          "cabildeoUris": { "type": "array", "items": { "type": "string", "format": "at-uri" } },
+          "politicalCompassPositions": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["posts"],
+          "properties": {
+            "cursor": { "type": "string" },
+            "hitsTotal": { "type": "integer" },
+            "posts": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "com.para.feed.getAuthorFeed#postView" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

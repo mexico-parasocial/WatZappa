@@ -44,6 +44,7 @@ const listCabildeos = async (inputs: {
   const res = await ctx.dataplane.getParaCabildeos({
     community: params.community ?? '',
     phase: params.phase ?? '',
+    query: params.query ?? '',
     limit: params.limit,
     cursor: params.cursor ?? '',
     viewerDid: viewer ?? '',

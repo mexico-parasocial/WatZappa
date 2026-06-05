@@ -1,6 +1,6 @@
 import { CID } from 'multiformats/cid'
 import { InvalidRequestError } from '@atproto/xrpc-server'
-import { atUri } from '@atproto/lex'
+import { AtUri } from '@atproto/syntax'
 import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'
 import { prepareUpdate } from '../../../../repo/index.js'

@@ -97,6 +97,78 @@ proto3.util.setEnumType(FeedType, "bsky.FeedType", [
 ]);
 
 /**
+ * @generated from enum bsky.SearchSortOrder
+ */
+export enum SearchSortOrder {
+  /**
+   * @generated from enum value: SEARCH_SORT_ORDER_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: SEARCH_SORT_ORDER_RECENT = 1;
+   */
+  RECENT = 1,
+
+  /**
+   * @generated from enum value: SEARCH_SORT_ORDER_TOP = 2;
+   */
+  TOP = 2,
+}
+// Retrieve enum metadata with: proto3.getEnumType(SearchSortOrder)
+proto3.util.setEnumType(SearchSortOrder, "bsky.SearchSortOrder", [
+  { no: 0, name: "SEARCH_SORT_ORDER_UNSPECIFIED" },
+  { no: 1, name: "SEARCH_SORT_ORDER_RECENT" },
+  { no: 2, name: "SEARCH_SORT_ORDER_TOP" },
+]);
+
+/**
+ * @generated from enum bsky.SearchQueryLanguage
+ */
+export enum SearchQueryLanguage {
+  /**
+   * @generated from enum value: SEARCH_QUERY_LANGUAGE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Japanese (Kuromoji)
+   *
+   * @generated from enum value: SEARCH_QUERY_LANGUAGE_JA = 1;
+   */
+  JA = 1,
+
+  /**
+   * Chinese (smartcn)
+   *
+   * @generated from enum value: SEARCH_QUERY_LANGUAGE_ZH = 2;
+   */
+  ZH = 2,
+
+  /**
+   * Korean (nori)
+   *
+   * @generated from enum value: SEARCH_QUERY_LANGUAGE_KO = 3;
+   */
+  KO = 3,
+
+  /**
+   * Thai
+   *
+   * @generated from enum value: SEARCH_QUERY_LANGUAGE_TH = 4;
+   */
+  TH = 4,
+}
+// Retrieve enum metadata with: proto3.getEnumType(SearchQueryLanguage)
+proto3.util.setEnumType(SearchQueryLanguage, "bsky.SearchQueryLanguage", [
+  { no: 0, name: "SEARCH_QUERY_LANGUAGE_UNSPECIFIED" },
+  { no: 1, name: "SEARCH_QUERY_LANGUAGE_JA" },
+  { no: 2, name: "SEARCH_QUERY_LANGUAGE_ZH" },
+  { no: 3, name: "SEARCH_QUERY_LANGUAGE_KO" },
+  { no: 4, name: "SEARCH_QUERY_LANGUAGE_TH" },
+]);
+
+/**
  * @generated from enum bsky.SitemapPageType
  */
 export enum SitemapPageType {
@@ -8179,6 +8251,822 @@ export class SearchStarterPacksResponse extends Message<SearchStarterPacksRespon
 }
 
 /**
+ * @generated from message bsky.SearchParams
+ */
+export class SearchParams extends Message<SearchParams> {
+  /**
+   * @generated from field: string query = 1;
+   */
+  query = "";
+
+  /**
+   * @generated from field: string viewer = 2;
+   */
+  viewer = "";
+
+  /**
+   * Pagination
+   *
+   * @generated from field: int32 limit = 3;
+   */
+  limit = 0;
+
+  /**
+   * @generated from field: string cursor = 4;
+   */
+  cursor = "";
+
+  constructor(data?: PartialMessage<SearchParams>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SearchParams";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "query", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "viewer", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 4, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchParams {
+    return new SearchParams().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SearchParams {
+    return new SearchParams().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SearchParams {
+    return new SearchParams().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SearchParams | PlainMessage<SearchParams> | undefined, b: SearchParams | PlainMessage<SearchParams> | undefined): boolean {
+    return proto3.util.equals(SearchParams, a, b);
+  }
+}
+
+/**
+ * SearchRecordResult represents a generic result hit corresponding to a record.
+ *
+ * @generated from message bsky.SearchRecordResult
+ */
+export class SearchRecordResult extends Message<SearchRecordResult> {
+  /**
+   * AT URI of the record, e.g. "at://did:example:alice/app.bsky.feed.post/12345"
+   *
+   * @generated from field: string uri = 1;
+   */
+  uri = "";
+
+  /**
+   * @generated from field: double score = 2;
+   */
+  score = 0;
+
+  constructor(data?: PartialMessage<SearchRecordResult>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SearchRecordResult";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "score", kind: "scalar", T: 1 /* ScalarType.DOUBLE */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchRecordResult {
+    return new SearchRecordResult().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SearchRecordResult {
+    return new SearchRecordResult().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SearchRecordResult {
+    return new SearchRecordResult().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SearchRecordResult | PlainMessage<SearchRecordResult> | undefined, b: SearchRecordResult | PlainMessage<SearchRecordResult> | undefined): boolean {
+    return proto3.util.equals(SearchRecordResult, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.SearchActorResult
+ */
+export class SearchActorResult extends Message<SearchActorResult> {
+  /**
+   * @generated from field: string did = 1;
+   */
+  did = "";
+
+  /**
+   * @generated from field: double score = 2;
+   */
+  score = 0;
+
+  constructor(data?: PartialMessage<SearchActorResult>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SearchActorResult";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "score", kind: "scalar", T: 1 /* ScalarType.DOUBLE */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchActorResult {
+    return new SearchActorResult().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SearchActorResult {
+    return new SearchActorResult().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SearchActorResult {
+    return new SearchActorResult().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SearchActorResult | PlainMessage<SearchActorResult> | undefined, b: SearchActorResult | PlainMessage<SearchActorResult> | undefined): boolean {
+    return proto3.util.equals(SearchActorResult, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.PageInfo
+ */
+export class PageInfo extends Message<PageInfo> {
+  /**
+   * @generated from field: string cursor = 1;
+   */
+  cursor = "";
+
+  /**
+   * @generated from field: int64 hits_total = 2;
+   */
+  hitsTotal = protoInt64.zero;
+
+  constructor(data?: PartialMessage<PageInfo>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.PageInfo";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "hits_total", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PageInfo {
+    return new PageInfo().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): PageInfo {
+    return new PageInfo().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): PageInfo {
+    return new PageInfo().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: PageInfo | PlainMessage<PageInfo> | undefined, b: PageInfo | PlainMessage<PageInfo> | undefined): boolean {
+    return proto3.util.equals(PageInfo, a, b);
+  }
+}
+
+/**
+ * PostFilters are logical filters that should be used to match or exclude posts.
+ * Each repeated field is applied as OR within the field with all fields applied together as AND.
+ * example:
+ *  filters: {
+ *    authors: [alice, bob]
+ *    mentions: [carol]
+ *  }
+ * => (author is alice OR bob) AND (mentions carol)
+ *
+ *
+ * @generated from message bsky.PostsFilters
+ */
+export class PostsFilters extends Message<PostsFilters> {
+  /**
+   * Author/mention filters
+   *
+   * @generated from field: repeated string authors = 1;
+   */
+  authors: string[] = [];
+
+  /**
+   * @generated from field: repeated string mentions = 2;
+   */
+  mentions: string[] = [];
+
+  /**
+   * Content filters
+   *
+   * @generated from field: repeated string domains = 3;
+   */
+  domains: string[] = [];
+
+  /**
+   * @generated from field: repeated string urls = 4;
+   */
+  urls: string[] = [];
+
+  /**
+   * @generated from field: repeated string embed_uris = 5;
+   */
+  embedUris: string[] = [];
+
+  /**
+   * @generated from field: repeated string hashtags = 6;
+   */
+  hashtags: string[] = [];
+
+  /**
+   * PARA specific filters
+   *
+   * @generated from field: repeated string community_uris = 7;
+   */
+  communityUris: string[] = [];
+
+  /**
+   * @generated from field: repeated string cabildeo_uris = 8;
+   */
+  cabildeoUris: string[] = [];
+
+  /**
+   * @generated from field: repeated string political_compass_positions = 9;
+   */
+  politicalCompassPositions: string[] = [];
+
+  constructor(data?: PartialMessage<PostsFilters>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.PostsFilters";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "authors", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 2, name: "mentions", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 3, name: "domains", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 4, name: "urls", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 5, name: "embed_uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 6, name: "hashtags", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 7, name: "community_uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 8, name: "cabildeo_uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 9, name: "political_compass_positions", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PostsFilters {
+    return new PostsFilters().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): PostsFilters {
+    return new PostsFilters().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): PostsFilters {
+    return new PostsFilters().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: PostsFilters | PlainMessage<PostsFilters> | undefined, b: PostsFilters | PlainMessage<PostsFilters> | undefined): boolean {
+    return proto3.util.equals(PostsFilters, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.SearchPostsV2Request
+ */
+export class SearchPostsV2Request extends Message<SearchPostsV2Request> {
+  /**
+   * Required fields
+   *
+   * @generated from field: bsky.SearchParams params = 1;
+   */
+  params?: SearchParams;
+
+  /**
+   * @generated from field: bsky.SearchSortOrder sort = 2;
+   */
+  sort = SearchSortOrder.UNSPECIFIED;
+
+  /**
+   * Logical filters and exclude fields applied together as AND
+   *
+   * filters: include posts matching the filters
+   *
+   * @generated from field: bsky.PostsFilters filters = 3;
+   */
+  filters?: PostsFilters;
+
+  /**
+   * Exclude filters: exclude posts matching the filters
+   *
+   * @generated from field: bsky.PostsFilters exclude = 4;
+   */
+  exclude?: PostsFilters;
+
+  /**
+   * Date range filters
+   *
+   * @generated from field: optional google.protobuf.Timestamp since = 5;
+   */
+  since?: Timestamp;
+
+  /**
+   * defaults to "now"
+   *
+   * @generated from field: optional google.protobuf.Timestamp until = 6;
+   */
+  until?: Timestamp;
+
+  /**
+   * If false, will only query against last 30 days of posts
+   * so `since` and `until` will silently be capped
+   *
+   * @generated from field: optional bool all_time = 7;
+   */
+  allTime?: boolean;
+
+  /**
+   * Language filter - match posts in this language
+   * Supports 2-char ISO prefixes ("en", "ja, "fr", etc")
+   * and compares against the 2-char prefix of any `langs` field values of the post record
+   * e.g. a post with langs=["en-US", "fr"] would match "en" or "fr" but not "ja"
+   *
+   * @generated from field: optional string language = 8;
+   */
+  language?: string;
+
+  /**
+   * Media filters
+   *
+   * @generated from field: optional bool has_media = 9;
+   */
+  hasMedia?: boolean;
+
+  /**
+   * @generated from field: optional bool has_video = 10;
+   */
+  hasVideo?: boolean;
+
+  /**
+   * Reply filters
+   *
+   * @generated from field: optional string reply_parent_uri = 11;
+   */
+  replyParentUri?: string;
+
+  /**
+   * @generated from field: optional string thread_root_uri = 12;
+   */
+  threadRootUri?: string;
+
+  /**
+   * @generated from field: optional bool exclude_replies = 13;
+   */
+  excludeReplies?: boolean;
+
+  /**
+   * @generated from field: optional bool replies_only = 14;
+   */
+  repliesOnly?: boolean;
+
+  /**
+   * Social filters
+   *
+   * @generated from field: optional bool following = 15;
+   */
+  following?: boolean;
+
+  /**
+   * Query analysis hint — forces a specific language analyzer.
+   * Auto-detects from query text when unset.
+   *
+   * @generated from field: optional bsky.SearchQueryLanguage query_language = 16;
+   */
+  queryLanguage?: SearchQueryLanguage;
+
+  constructor(data?: PartialMessage<SearchPostsV2Request>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SearchPostsV2Request";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "params", kind: "message", T: SearchParams },
+    { no: 2, name: "sort", kind: "enum", T: proto3.getEnumType(SearchSortOrder) },
+    { no: 3, name: "filters", kind: "message", T: PostsFilters },
+    { no: 4, name: "exclude", kind: "message", T: PostsFilters },
+    { no: 5, name: "since", kind: "message", T: Timestamp, opt: true },
+    { no: 6, name: "until", kind: "message", T: Timestamp, opt: true },
+    { no: 7, name: "all_time", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 8, name: "language", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 9, name: "has_media", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 10, name: "has_video", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 11, name: "reply_parent_uri", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 12, name: "thread_root_uri", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 13, name: "exclude_replies", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 14, name: "replies_only", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 15, name: "following", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 16, name: "query_language", kind: "enum", T: proto3.getEnumType(SearchQueryLanguage), opt: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchPostsV2Request {
+    return new SearchPostsV2Request().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SearchPostsV2Request {
+    return new SearchPostsV2Request().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SearchPostsV2Request {
+    return new SearchPostsV2Request().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SearchPostsV2Request | PlainMessage<SearchPostsV2Request> | undefined, b: SearchPostsV2Request | PlainMessage<SearchPostsV2Request> | undefined): boolean {
+    return proto3.util.equals(SearchPostsV2Request, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.SearchPostsV2Response
+ */
+export class SearchPostsV2Response extends Message<SearchPostsV2Response> {
+  /**
+   * @generated from field: repeated bsky.SearchRecordResult posts = 1;
+   */
+  posts: SearchRecordResult[] = [];
+
+  /**
+   * @generated from field: bsky.PageInfo page_info = 2;
+   */
+  pageInfo?: PageInfo;
+
+  constructor(data?: PartialMessage<SearchPostsV2Response>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SearchPostsV2Response";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "posts", kind: "message", T: SearchRecordResult, repeated: true },
+    { no: 2, name: "page_info", kind: "message", T: PageInfo },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchPostsV2Response {
+    return new SearchPostsV2Response().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SearchPostsV2Response {
+    return new SearchPostsV2Response().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SearchPostsV2Response {
+    return new SearchPostsV2Response().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SearchPostsV2Response | PlainMessage<SearchPostsV2Response> | undefined, b: SearchPostsV2Response | PlainMessage<SearchPostsV2Response> | undefined): boolean {
+    return proto3.util.equals(SearchPostsV2Response, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.SearchActorsV2Request
+ */
+export class SearchActorsV2Request extends Message<SearchActorsV2Request> {
+  /**
+   * @generated from field: bsky.SearchParams params = 1;
+   */
+  params?: SearchParams;
+
+  constructor(data?: PartialMessage<SearchActorsV2Request>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SearchActorsV2Request";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "params", kind: "message", T: SearchParams },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchActorsV2Request {
+    return new SearchActorsV2Request().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SearchActorsV2Request {
+    return new SearchActorsV2Request().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SearchActorsV2Request {
+    return new SearchActorsV2Request().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SearchActorsV2Request | PlainMessage<SearchActorsV2Request> | undefined, b: SearchActorsV2Request | PlainMessage<SearchActorsV2Request> | undefined): boolean {
+    return proto3.util.equals(SearchActorsV2Request, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.SearchActorsV2Response
+ */
+export class SearchActorsV2Response extends Message<SearchActorsV2Response> {
+  /**
+   * @generated from field: repeated bsky.SearchActorResult actors = 1;
+   */
+  actors: SearchActorResult[] = [];
+
+  /**
+   * @generated from field: bsky.PageInfo page_info = 2;
+   */
+  pageInfo?: PageInfo;
+
+  constructor(data?: PartialMessage<SearchActorsV2Response>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SearchActorsV2Response";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "actors", kind: "message", T: SearchActorResult, repeated: true },
+    { no: 2, name: "page_info", kind: "message", T: PageInfo },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchActorsV2Response {
+    return new SearchActorsV2Response().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SearchActorsV2Response {
+    return new SearchActorsV2Response().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SearchActorsV2Response {
+    return new SearchActorsV2Response().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SearchActorsV2Response | PlainMessage<SearchActorsV2Response> | undefined, b: SearchActorsV2Response | PlainMessage<SearchActorsV2Response> | undefined): boolean {
+    return proto3.util.equals(SearchActorsV2Response, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.SearchActorsTypeaheadRequest
+ */
+export class SearchActorsTypeaheadRequest extends Message<SearchActorsTypeaheadRequest> {
+  /**
+   * @generated from field: string viewer = 1;
+   */
+  viewer = "";
+
+  /**
+   * @generated from field: string query = 2;
+   */
+  query = "";
+
+  /**
+   * @generated from field: int32 limit = 3;
+   */
+  limit = 0;
+
+  constructor(data?: PartialMessage<SearchActorsTypeaheadRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SearchActorsTypeaheadRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "viewer", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "query", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchActorsTypeaheadRequest {
+    return new SearchActorsTypeaheadRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SearchActorsTypeaheadRequest {
+    return new SearchActorsTypeaheadRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SearchActorsTypeaheadRequest {
+    return new SearchActorsTypeaheadRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SearchActorsTypeaheadRequest | PlainMessage<SearchActorsTypeaheadRequest> | undefined, b: SearchActorsTypeaheadRequest | PlainMessage<SearchActorsTypeaheadRequest> | undefined): boolean {
+    return proto3.util.equals(SearchActorsTypeaheadRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.SearchActorsTypeaheadResponse
+ */
+export class SearchActorsTypeaheadResponse extends Message<SearchActorsTypeaheadResponse> {
+  /**
+   * @generated from field: repeated bsky.SearchActorResult actors = 1;
+   */
+  actors: SearchActorResult[] = [];
+
+  constructor(data?: PartialMessage<SearchActorsTypeaheadResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SearchActorsTypeaheadResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "actors", kind: "message", T: SearchActorResult, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchActorsTypeaheadResponse {
+    return new SearchActorsTypeaheadResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SearchActorsTypeaheadResponse {
+    return new SearchActorsTypeaheadResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SearchActorsTypeaheadResponse {
+    return new SearchActorsTypeaheadResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SearchActorsTypeaheadResponse | PlainMessage<SearchActorsTypeaheadResponse> | undefined, b: SearchActorsTypeaheadResponse | PlainMessage<SearchActorsTypeaheadResponse> | undefined): boolean {
+    return proto3.util.equals(SearchActorsTypeaheadResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.SearchFeedGeneratorsV2Request
+ */
+export class SearchFeedGeneratorsV2Request extends Message<SearchFeedGeneratorsV2Request> {
+  /**
+   * @generated from field: bsky.SearchParams params = 1;
+   */
+  params?: SearchParams;
+
+  constructor(data?: PartialMessage<SearchFeedGeneratorsV2Request>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SearchFeedGeneratorsV2Request";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "params", kind: "message", T: SearchParams },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchFeedGeneratorsV2Request {
+    return new SearchFeedGeneratorsV2Request().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SearchFeedGeneratorsV2Request {
+    return new SearchFeedGeneratorsV2Request().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SearchFeedGeneratorsV2Request {
+    return new SearchFeedGeneratorsV2Request().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SearchFeedGeneratorsV2Request | PlainMessage<SearchFeedGeneratorsV2Request> | undefined, b: SearchFeedGeneratorsV2Request | PlainMessage<SearchFeedGeneratorsV2Request> | undefined): boolean {
+    return proto3.util.equals(SearchFeedGeneratorsV2Request, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.SearchFeedGeneratorsV2Response
+ */
+export class SearchFeedGeneratorsV2Response extends Message<SearchFeedGeneratorsV2Response> {
+  /**
+   * @generated from field: repeated bsky.SearchRecordResult feed_generators = 1;
+   */
+  feedGenerators: SearchRecordResult[] = [];
+
+  /**
+   * @generated from field: bsky.PageInfo page_info = 2;
+   */
+  pageInfo?: PageInfo;
+
+  constructor(data?: PartialMessage<SearchFeedGeneratorsV2Response>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SearchFeedGeneratorsV2Response";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "feed_generators", kind: "message", T: SearchRecordResult, repeated: true },
+    { no: 2, name: "page_info", kind: "message", T: PageInfo },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchFeedGeneratorsV2Response {
+    return new SearchFeedGeneratorsV2Response().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SearchFeedGeneratorsV2Response {
+    return new SearchFeedGeneratorsV2Response().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SearchFeedGeneratorsV2Response {
+    return new SearchFeedGeneratorsV2Response().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SearchFeedGeneratorsV2Response | PlainMessage<SearchFeedGeneratorsV2Response> | undefined, b: SearchFeedGeneratorsV2Response | PlainMessage<SearchFeedGeneratorsV2Response> | undefined): boolean {
+    return proto3.util.equals(SearchFeedGeneratorsV2Response, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.SearchStarterPacksV2Request
+ */
+export class SearchStarterPacksV2Request extends Message<SearchStarterPacksV2Request> {
+  /**
+   * @generated from field: bsky.SearchParams params = 1;
+   */
+  params?: SearchParams;
+
+  constructor(data?: PartialMessage<SearchStarterPacksV2Request>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SearchStarterPacksV2Request";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "params", kind: "message", T: SearchParams },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchStarterPacksV2Request {
+    return new SearchStarterPacksV2Request().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SearchStarterPacksV2Request {
+    return new SearchStarterPacksV2Request().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SearchStarterPacksV2Request {
+    return new SearchStarterPacksV2Request().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SearchStarterPacksV2Request | PlainMessage<SearchStarterPacksV2Request> | undefined, b: SearchStarterPacksV2Request | PlainMessage<SearchStarterPacksV2Request> | undefined): boolean {
+    return proto3.util.equals(SearchStarterPacksV2Request, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.SearchStarterPacksV2Response
+ */
+export class SearchStarterPacksV2Response extends Message<SearchStarterPacksV2Response> {
+  /**
+   * @generated from field: repeated bsky.SearchRecordResult starter_packs = 1;
+   */
+  starterPacks: SearchRecordResult[] = [];
+
+  /**
+   * @generated from field: bsky.PageInfo page_info = 2;
+   */
+  pageInfo?: PageInfo;
+
+  constructor(data?: PartialMessage<SearchStarterPacksV2Response>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SearchStarterPacksV2Response";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "starter_packs", kind: "message", T: SearchRecordResult, repeated: true },
+    { no: 2, name: "page_info", kind: "message", T: PageInfo },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchStarterPacksV2Response {
+    return new SearchStarterPacksV2Response().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SearchStarterPacksV2Response {
+    return new SearchStarterPacksV2Response().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SearchStarterPacksV2Response {
+    return new SearchStarterPacksV2Response().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SearchStarterPacksV2Response | PlainMessage<SearchStarterPacksV2Response> | undefined, b: SearchStarterPacksV2Response | PlainMessage<SearchStarterPacksV2Response> | undefined): boolean {
+    return proto3.util.equals(SearchStarterPacksV2Response, a, b);
+  }
+}
+
+/**
  * - Return DIDs of suggested follows for a user, excluding anyone they already follow
  *     - `getSuggestions`, `getSuggestedFollowsByActor`
  *
@@ -11890,6 +12778,159 @@ export class GetParaPostsResponse extends Message<GetParaPostsResponse> {
 }
 
 /**
+ * @generated from message bsky.GetParaSuggestedUsersRequest
+ */
+export class GetParaSuggestedUsersRequest extends Message<GetParaSuggestedUsersRequest> {
+  /**
+   * @generated from field: string viewer_did = 1;
+   */
+  viewerDid = "";
+
+  /**
+   * @generated from field: string category = 2;
+   */
+  category = "";
+
+  /**
+   * @generated from field: repeated string interests = 3;
+   */
+  interests: string[] = [];
+
+  /**
+   * @generated from field: int32 limit = 4;
+   */
+  limit = 0;
+
+  /**
+   * @generated from field: string cursor = 5;
+   */
+  cursor = "";
+
+  constructor(data?: PartialMessage<GetParaSuggestedUsersRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaSuggestedUsersRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "viewer_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "category", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "interests", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 4, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 5, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaSuggestedUsersRequest {
+    return new GetParaSuggestedUsersRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaSuggestedUsersRequest {
+    return new GetParaSuggestedUsersRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaSuggestedUsersRequest {
+    return new GetParaSuggestedUsersRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaSuggestedUsersRequest | PlainMessage<GetParaSuggestedUsersRequest> | undefined, b: GetParaSuggestedUsersRequest | PlainMessage<GetParaSuggestedUsersRequest> | undefined): boolean {
+    return proto3.util.equals(GetParaSuggestedUsersRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetParaSuggestedUsersResponse
+ */
+export class GetParaSuggestedUsersResponse extends Message<GetParaSuggestedUsersResponse> {
+  /**
+   * @generated from field: repeated bsky.ParaSuggestedUser candidates = 1;
+   */
+  candidates: ParaSuggestedUser[] = [];
+
+  /**
+   * @generated from field: string cursor = 2;
+   */
+  cursor = "";
+
+  constructor(data?: PartialMessage<GetParaSuggestedUsersResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaSuggestedUsersResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "candidates", kind: "message", T: ParaSuggestedUser, repeated: true },
+    { no: 2, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaSuggestedUsersResponse {
+    return new GetParaSuggestedUsersResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaSuggestedUsersResponse {
+    return new GetParaSuggestedUsersResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaSuggestedUsersResponse {
+    return new GetParaSuggestedUsersResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaSuggestedUsersResponse | PlainMessage<GetParaSuggestedUsersResponse> | undefined, b: GetParaSuggestedUsersResponse | PlainMessage<GetParaSuggestedUsersResponse> | undefined): boolean {
+    return proto3.util.equals(GetParaSuggestedUsersResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.ParaSuggestedUser
+ */
+export class ParaSuggestedUser extends Message<ParaSuggestedUser> {
+  /**
+   * @generated from field: string did = 1;
+   */
+  did = "";
+
+  /**
+   * @generated from field: int32 followers_count = 2;
+   */
+  followersCount = 0;
+
+  /**
+   * @generated from field: double score = 3;
+   */
+  score = 0;
+
+  constructor(data?: PartialMessage<ParaSuggestedUser>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.ParaSuggestedUser";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "followers_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 3, name: "score", kind: "scalar", T: 1 /* ScalarType.DOUBLE */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ParaSuggestedUser {
+    return new ParaSuggestedUser().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ParaSuggestedUser {
+    return new ParaSuggestedUser().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ParaSuggestedUser {
+    return new ParaSuggestedUser().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ParaSuggestedUser | PlainMessage<ParaSuggestedUser> | undefined, b: ParaSuggestedUser | PlainMessage<ParaSuggestedUser> | undefined): boolean {
+    return proto3.util.equals(ParaSuggestedUser, a, b);
+  }
+}
+
+/**
  * @generated from message bsky.GetParaThreadRequest
  */
 export class GetParaThreadRequest extends Message<GetParaThreadRequest> {
@@ -12187,6 +13228,11 @@ export class GetParaCabildeosRequest extends Message<GetParaCabildeosRequest> {
    */
   viewerDid = "";
 
+  /**
+   * @generated from field: string query = 6;
+   */
+  query = "";
+
   constructor(data?: PartialMessage<GetParaCabildeosRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -12200,6 +13246,7 @@ export class GetParaCabildeosRequest extends Message<GetParaCabildeosRequest> {
     { no: 3, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
     { no: 4, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 5, name: "viewer_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 6, name: "query", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaCabildeosRequest {

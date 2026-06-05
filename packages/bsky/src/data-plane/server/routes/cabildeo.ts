@@ -56,6 +56,13 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     if (phase) {
       builder = builder.where('phase', '=', phase)
     }
+    if (req.query) {
+      builder = builder.where((qb) =>
+        qb
+          .where('title', 'ilike', `%${req.query}%`)
+          .orWhere('description', 'ilike', `%${req.query}%`),
+      )
+    }
 
     const keyset = new RankedTimeCidKeyset(
       sortRankSql,

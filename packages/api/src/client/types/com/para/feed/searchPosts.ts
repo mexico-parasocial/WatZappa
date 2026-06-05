@@ -10,33 +10,35 @@ import {
   is$typed as _is$typed,
   type OmitKey,
 } from '../../../../util.js'
-import type * as ComParaCivicDefs from './defs.js'
+import type * as ComParaFeedGetAuthorFeed from './getAuthorFeed.js'
 
 const is$typed = _is$typed,
   validate = _validate
-const id = 'com.para.civic.listCabildeos'
+const id = 'com.para.feed.searchPosts'
 
 export type QueryParams = {
-  /** Optional community filter. */
-  community?: string
-  /** Optional phase filter. */
-  phase?:
-    | 'draft'
-    | 'open'
-    | 'deliberating'
-    | 'voting'
-    | 'resolved'
-    | (string & {})
-  /** Optional search query */
-  query?: string
+  q: string
+  sort?: 'top' | 'latest' | (string & {})
+  since?: string
+  until?: string
+  mentions?: string
+  author?: string
+  lang?: string
+  domain?: string
+  url?: string
+  tag?: string[]
   limit?: number
   cursor?: string
+  communityUris?: string[]
+  cabildeoUris?: string[]
+  politicalCompassPositions?: string[]
 }
 export type InputSchema = undefined
 
 export interface OutputSchema {
   cursor?: string
-  cabildeos: ComParaCivicDefs.CabildeoView[]
+  hitsTotal?: number
+  posts: ComParaFeedGetAuthorFeed.PostView[]
 }
 
 export interface CallOptions {

@@ -26,6 +26,8 @@ export type QueryParams = {
     | 'voting'
     | 'resolved'
     | (string & {})
+  /** Optional search query */
+  query?: string
   limit: number
   cursor?: string
 }
