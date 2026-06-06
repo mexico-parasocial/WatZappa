@@ -23,7 +23,7 @@
     "migration:create": "ts-node ./bin/migration-create.ts"
   },
   "engines": {
-    "node": ">=24.15.0"
+    "node": ">=22.1.0"
   },
   "dependencies": {
     "@atproto/api": "workspace:^",

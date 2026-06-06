@@ -18,7 +18,7 @@
   },
   "pnpm": {
     "executionEnv": {
-      "nodeVersion": ">=24.15.0"
+      "nodeVersion": ">=22.1.0"
     },
     "overrides": {
       "better-sqlite3": "^12.9.0",

@@ -14,7 +14,7 @@
     "directory": "packages/xrpc-server"
   },
   "engines": {
-    "node": ">=24.15.0"
+    "node": ">=22.1.0"
   },
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",

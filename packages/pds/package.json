@@ -14,7 +14,7 @@
     "directory": "packages/pds"
   },
   "engines": {
-    "node": ">=24.15.0"
+    "node": ">=22.1.0"
   },
   "scripts": {
     "codegen": "node ../lex-cli/bin.js gen-server --yes ./src/lexicon ../../lexicons/com/atproto/*/* ../../lexicons/app/bsky/*/* ../../lexicons/chat/bsky/*/* ../../lexicons/tools/ozone/*/* ../../lexicons/com/para/* ../../lexicons/com/para/*/* && node ../lex/lex/bin/lex build --clear --indexFile --lexicons ../../lexicons --out ./src/lexicons",

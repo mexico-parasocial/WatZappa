@@ -115,9 +115,8 @@ describe('handle invalidation', () => {
 
   it('deals with handle contention', async () => {
     await backdateIndexedAt(bob)
-    // update alices handle so that the pds will let bob take her old handle
-    await network.pds.ctx.accountManager.updateHandle(alice, 'not-alice.test')
-
+    // make alice lose her handle so that the pds will let bob take her old handle
+    mockHandles['not-alice.test'] = null
     await pdsAgent.api.com.atproto.identity.updateHandle(
       {
         handle: sc.accounts[alice].handle,
