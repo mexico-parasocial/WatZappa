@@ -1,4 +1,5 @@
 import { vi } from 'vitest'
+import type { DidString, HandleString } from '@atproto/syntax'
 import {
   AppBskyActorDefs,
   AppBskyNotificationDeclaration,
@@ -26,15 +27,15 @@ describe('notification views', () => {
   let sc: SeedClient
 
   // account dids, for convenience
-  let alice: string
-  let bob: string
-  let carol: string
-  let dan: string
-  let eve: string
-  let fred: string
-  let greg: string
-  let han: string
-  let blocked: string
+  let alice: DidString
+  let bob: DidString
+  let carol: DidString
+  let dan: DidString
+  let eve: DidString
+  let fred: DidString
+  let greg: DidString
+  let han: DidString
+  let blocked: DidString
 
   beforeAll(async () => {
     network = await TestNetwork.create({
@@ -838,7 +839,7 @@ describe('notification views', () => {
     let delayNetwork: TestNetwork
     let delayAgent: AtpAgent
     let delaySc: SeedClient
-    let delayAlice: string
+    let delayAlice: DidString
 
     beforeAll(async () => {
       delayNetwork = await TestNetwork.create({
@@ -1244,7 +1245,7 @@ describe('notification views', () => {
       return profiles.sort((a, b) => (a.handle > b.handle ? 1 : -1))
     }
 
-    const declare = async (actor: string, value: string) => {
+    const declare = async (actor: DidString, value: string) => {
       await pdsAgent.com.atproto.repo.createRecord(
         {
           repo: actor,
@@ -1259,8 +1260,8 @@ describe('notification views', () => {
     }
 
     const put = async (
-      actor: string,
-      subject: string,
+      actor: DidString,
+      subject: DidString,
       val: AppBskyNotificationDefs.ActivitySubscription,
     ) =>
       agent.app.bsky.notification.putActivitySubscription(
@@ -1277,7 +1278,7 @@ describe('notification views', () => {
       )
 
     const list = async (
-      actor: string,
+      actor: DidString,
       params?: AppBskyNotificationListActivitySubscriptions.QueryParams,
     ) =>
       agent.app.bsky.notification.listActivitySubscriptions(params ?? {}, {

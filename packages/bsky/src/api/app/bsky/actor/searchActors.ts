@@ -14,7 +14,7 @@ import {
   createPipeline,
 } from '../../../../pipeline.js'
 import { Views } from '../../../../views/index.js'
-import { resHeaders } from '../../../util.js'
+import { resHeaders, resolveSearchV2Override } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
   const searchActors = createPipeline(
@@ -35,7 +35,14 @@ export default function (server: Server, ctx: AppContext) {
         includeTakedowns,
         skipViewerBlocks,
       })
-      const results = await searchActors({ ...params, hydrateCtx }, ctx)
+      const results = await searchActors(
+        {
+          ...params,
+          hydrateCtx,
+          isV2Override: resolveSearchV2Override(req, ctx.cfg),
+        },
+        ctx,
+      )
       return {
         encoding: 'application/json',
         body: results,
@@ -117,7 +124,10 @@ type Context = {
   searchClient?: Client
 }
 
-type Params = app.bsky.actor.searchActors.$Params & { hydrateCtx: HydrateCtx }
+type Params = app.bsky.actor.searchActors.$Params & {
+  hydrateCtx: HydrateCtx
+  isV2Override: boolean
+}
 
 type Skeleton = {
   dids: DidString[]

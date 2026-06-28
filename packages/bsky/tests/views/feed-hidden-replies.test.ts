@@ -1,4 +1,5 @@
 import { AtpAgent, ids } from '@atproto/api'
+import type { DidString, HandleString } from '@atproto/syntax'
 import { SeedClient, TestNetwork } from '@atproto/dev-env'
 import { Users, feedHiddenRepliesSeed } from '../seed/feed-hidden-replies.js'
 
@@ -46,7 +47,7 @@ describe('feed hidden replies', () => {
           createdAt: new Date().toISOString(),
           hiddenReplies: [B.ref.uriStr],
         },
-        sc.getHeaders(A.ref.uri.host),
+        sc.getHeaders(A.ref.uri.host as DidString),
       )
 
       await network.processAll()
@@ -89,7 +90,7 @@ describe('feed hidden replies', () => {
           createdAt: new Date().toISOString(),
           hiddenReplies: [B.ref.uriStr],
         },
-        sc.getHeaders(A.ref.uri.host),
+        sc.getHeaders(A.ref.uri.host as DidString),
       )
 
       await network.processAll()
@@ -177,7 +178,7 @@ describe('feed hidden replies', () => {
           createdAt: new Date().toISOString(),
           hiddenReplies: [C.ref.uriStr],
         },
-        sc.getHeaders(A.ref.uri.host),
+        sc.getHeaders(A.ref.uri.host as DidString),
       )
       await network.processAll()
       const D = await sc.reply(users.viewer.did, A.ref, C.ref, `D`)
@@ -236,7 +237,7 @@ describe('feed hidden replies', () => {
           repo: A.ref.uri.host,
           rkey: A.ref.uri.rkey,
         },
-        sc.getHeaders(A.ref.uri.host),
+        sc.getHeaders(A.ref.uri.host as DidString),
       )
       await network.processAll()
     })

@@ -17,6 +17,7 @@ import {
   basicSeed,
 } from '@atproto/dev-env'
 import { SkeletonHandler, app } from '@atproto/pds'
+import type { DidString } from '@atproto/syntax'
 import { AuthRequiredError } from '@atproto/xrpc-server'
 import { forSnapshot, paginateAll } from './_util.js'
 
@@ -27,7 +28,7 @@ describe('feed generation', () => {
   let sc: SeedClient
   let gen: TestFeedGen
 
-  let alice: string
+  let alice: DidString
   let feedUriAll: string
   let feedUriAllRef: RecordRef
   let feedUriEven: string

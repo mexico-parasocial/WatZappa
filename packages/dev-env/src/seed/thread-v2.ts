@@ -1,4 +1,5 @@
 import { AppBskyFeedPost } from '@atproto/api'
+import type { DidString, HandleString } from '@atproto/syntax'
 import type { DatabaseSchema } from '@atproto/bsky'
 import { TestNetwork } from '../network.js'
 import { TestNetworkNoAppView } from '../network-no-appview.js'
@@ -6,9 +7,9 @@ import { RecordRef, SeedClient } from './client.js'
 
 type User = {
   id: string
-  did: string
+  did: DidString
   email: string
-  handle: string
+  handle: HandleString
   password: string
   displayName: string
   description: string
@@ -21,7 +22,7 @@ function createUserStub(name: string): User {
     // @ts-ignore overwritten during seeding
     did: undefined,
     email: `${name}@test.com`,
-    handle: `${name}.test`,
+    handle: `${name}.test` as HandleString,
     password: `${name}-pass`,
     displayName: name,
     description: `hi im ${name} label_me`,

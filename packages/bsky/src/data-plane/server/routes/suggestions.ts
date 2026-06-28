@@ -38,12 +38,13 @@ const getFollowSuggestionsGlobal = async (
   input: { actorDid: string; cursor?: string; limit?: number },
 ) => {
   const alreadyIncluded = parseCursor(input.cursor)
-  const suggestions = await db.db
+  let suggestionsQuery = db.db
     .selectFrom('suggested_follow')
     .innerJoin('actor', 'actor.did', 'suggested_follow.did')
-    .if(alreadyIncluded.length > 0, (qb) =>
-      qb.where('suggested_follow.order', 'not in', alreadyIncluded),
-    )
+  if (alreadyIncluded.length > 0) {
+    suggestionsQuery = suggestionsQuery.where('suggested_follow.order', 'not in', alreadyIncluded)
+  }
+  const suggestions = await suggestionsQuery
     .selectAll()
     .orderBy('suggested_follow.order', 'asc')
     .execute()
@@ -109,20 +110,23 @@ const getFollowSuggestionsRelativeTo = async (
 
   if (resultDids.length < limit) {
     // backfill with popular accounts followed by actor
-    const mostPopularAccountsActorFollows = await db.db
+    let mostPopularAccountsActorFollowsQuery = db.db
       .selectFrom('follow')
       .innerJoin('profile_agg', 'follow.subjectDid', 'profile_agg.did')
       .select('follow.subjectDid as did')
       .where('follow.creator', '=', input.actorDid)
       .where('follow.subjectDid', '!=', input.relativeToDid)
       .where('follow.subjectDid', 'not in', actorsViewerFollows)
-      .if(resultDids.length > 0, (qb) =>
-        qb.where(
-          'subjectDid',
-          'not in',
-          resultDids.map((a) => a.did),
-        ),
+    
+    if (resultDids.length > 0) {
+      mostPopularAccountsActorFollowsQuery = mostPopularAccountsActorFollowsQuery.where(
+        'subjectDid',
+        'not in',
+        resultDids.map((a) => a.did),
       )
+    }
+
+    const mostPopularAccountsActorFollows = await mostPopularAccountsActorFollowsQuery
       .orderBy('profile_agg.followersCount', 'desc')
       .limit(limit)
       .execute()

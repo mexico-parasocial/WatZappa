@@ -1,4 +1,5 @@
 import { AppBskyFeedGetLikes, AtpAgent, ids } from '@atproto/api'
+import type { DidString, HandleString } from '@atproto/syntax'
 import { SeedClient, TestNetwork, likesSeed } from '@atproto/dev-env'
 import { constantDate, forSnapshot, paginateAll, stripViewer } from '../_util.js'
 
@@ -8,10 +9,10 @@ describe('pds like views', () => {
   let sc: SeedClient
 
   // account dids, for convenience
-  let alice: string
-  let bob: string
-  let carol: string
-  let frankie: string
+  let alice: DidString
+  let bob: DidString
+  let carol: DidString
+  let frankie: DidString
 
   beforeAll(async () => {
     network = await TestNetwork.create({

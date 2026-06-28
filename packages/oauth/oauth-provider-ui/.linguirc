@@ -4,7 +4,9 @@
   "locales": [
     "en",
     "fr",
-    "ja"
+    "ja",
+    "ko",
+    "sv"
   ],
   "fallbackLocales": {
     "default": "en"

@@ -1,4 +1,5 @@
 import { AtpAgent, ids } from '@atproto/api'
+import type { DidString, HandleString } from '@atproto/syntax'
 import { SeedClient, TestNetwork } from '@atproto/dev-env'
 import { knownFollowersSeed } from '../seed/known-followers.js'
 
@@ -8,7 +9,7 @@ describe('known followers (social proof)', () => {
   let pdsAgent: AtpAgent
   let seedClient: SeedClient
 
-  let dids: Record<string, string>
+  let dids: Record<string, DidString>
 
   beforeAll(async () => {
     network = await TestNetwork.create({

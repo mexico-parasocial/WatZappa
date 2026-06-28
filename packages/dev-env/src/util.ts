@@ -1,5 +1,4 @@
 import * as plc from '@did-plc/lib'
-import axios from 'axios'
 import * as ui8 from 'uint8arrays'
 import { request } from 'undici'
 import { Secp256k1Keypair } from '@atproto/crypto'
@@ -83,8 +82,10 @@ export const resolveHandleInPlc = async (
   handle: string,
 ): Promise<string | undefined> => {
   try {
-    const res = await axios.get(`${plcUrl}/handle/${handle}`)
-    return res.data.did
+    const res = await request(`${plcUrl}/handle/${handle}`)
+    if (res.statusCode !== 200) return undefined
+    const data = await res.body.json() as { did: string }
+    return data.did
   } catch (e) {
     return undefined
   }

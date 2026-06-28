@@ -1,4 +1,5 @@
 import { AtpAgent, ids } from '@atproto/api'
+import type { DidString, HandleString } from '@atproto/syntax'
 import { cborDecode, cborEncode } from '@atproto/common'
 import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 import { CommitDataWithOps, sequencer } from '@atproto/pds'
@@ -95,7 +96,7 @@ describe('sync', () => {
 
   async function updateProfile(
     agent: AtpAgent,
-    did: string,
+    did: DidString,
     record: Record<string, unknown>,
   ) {
     return await agent.api.com.atproto.repo.putRecord(

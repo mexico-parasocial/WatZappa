@@ -1,4 +1,5 @@
 import { AtpAgent } from '@atproto/api'
+import type { DidString, HandleString } from '@atproto/syntax'
 import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 
 describe('label hydration', () => {
@@ -6,10 +7,10 @@ describe('label hydration', () => {
   let pdsAgent: AtpAgent
   let sc: SeedClient
 
-  let alice: string
-  let bob: string
-  let carol: string
-  let labelerDid: string
+  let alice: DidString
+  let bob: DidString
+  let carol: DidString
+  let labelerDid: DidString
 
   beforeAll(async () => {
     network = await TestNetwork.create({

@@ -322,8 +322,8 @@ importers:
         specifier: ^5.0.0
         version: 5.1.1
       undici:
-        specifier: ^6.19.8
-        version: 6.19.8
+        specifier: ^8.5.0
+        version: 8.5.0
       zod:
         specifier: 3.23.8
         version: 3.23.8
@@ -582,8 +582,8 @@ importers:
         specifier: ^5.0.0
         version: 5.1.1
       undici:
-        specifier: ^6.14.1
-        version: 6.19.8
+        specifier: ^8.5.0
+        version: 8.5.0
     devDependencies:
       '@jest/globals':
         specifier: ^30.0.0
@@ -698,8 +698,8 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0
       undici:
-        specifier: ^6.14.1
-        version: 6.19.8
+        specifier: ^8.5.0
+        version: 8.5.0
     devDependencies:
       typescript:
         specifier: ^6.0.3
@@ -1791,8 +1791,8 @@ importers:
         specifier: ^5.0.0
         version: 5.1.1
       undici:
-        specifier: ^6.14.1
-        version: 6.19.8
+        specifier: ^8.5.0
+        version: 8.5.0
       ws:
         specifier: ^8.12.0
         version: 8.18.0
@@ -1975,8 +1975,8 @@ importers:
         specifier: ^5.0.0
         version: 5.1.1
       undici:
-        specifier: ^6.19.8
-        version: 6.19.8
+        specifier: ^8.5.0
+        version: 8.5.0
       zod:
         specifier: ^3.23.8
         version: 3.24.2
@@ -19829,6 +19829,11 @@ packages:
   /undici@6.19.8:
     resolution: {integrity: sha512-U8uCCl2x9TK3WANvmBavymRzxbfFYG+tAu+fgx3zxQy3qdagQqBLwJVrdyO1TBfUXvfKveMKJZhpvUYoOjM+4g==}
     engines: {node: '>=18.17'}
+    dev: false
+
+  /undici@8.5.0:
+    resolution: {integrity: sha512-xamtWoB1EshgjpmlXd7GGm2VfdDtw1+rD8uhry8pSNW3If6S8E0m2T2+orSKeZXEn/aPJMviCpDBA65WJt8zhg==}
+    engines: {node: '>=22.19.0'}
     dev: false
 
   /unicode-canonical-property-names-ecmascript@2.0.1:

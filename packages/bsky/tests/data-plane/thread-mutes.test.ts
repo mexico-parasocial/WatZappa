@@ -1,4 +1,5 @@
 import { AtpAgent, ids } from '@atproto/api'
+import type { DidString, HandleString } from '@atproto/syntax'
 import { RecordRef, SeedClient, TestNetwork, usersSeed } from '@atproto/dev-env'
 
 describe('thread mutes', () => {
@@ -6,8 +7,8 @@ describe('thread mutes', () => {
   let agent: AtpAgent
   let sc: SeedClient
 
-  let alice: string
-  let bob: string
+  let alice: DidString
+  let bob: DidString
 
   let rootPost: RecordRef
   let replyPost: RecordRef

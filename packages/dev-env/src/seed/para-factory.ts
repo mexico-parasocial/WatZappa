@@ -1,4 +1,5 @@
 import { request } from 'undici'
+import type { DidString } from '@atproto/syntax'
 import { AppBskyEmbedExternal } from '@atproto/api'
 import { SeedClient } from './client.js'
 
@@ -36,7 +37,7 @@ const APP_BSKY_FEED_LIKE = 'app.bsky.feed.like'
 
 export const createParaPost = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   text: string,
   opts: {
     root?: ParaStrongRef
@@ -86,7 +87,7 @@ export const createParaPost = async (
 
 export const createParaCommunityBoard = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   name: string,
 ): Promise<ParaStrongRef & { slug: string }> => {
   const { data } = await sc.agent.com.atproto.repo.createRecord(
@@ -129,7 +130,7 @@ export const normalizeBoardSlug = (value: string) =>
 
 export const createCommunityBoardRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   opts: {
     name: string
     quadrant: string
@@ -162,7 +163,7 @@ export const createCommunityBoardRecord = async (
 
 export const createCommunityMembershipRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   community: string,
   membershipState: CommunityMembershipState,
 ): Promise<ParaStrongRef> => {
@@ -238,7 +239,7 @@ export type CommunityGovernanceRecord = {
 
 export const createCommunityGovernanceRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   community: string,
   record: CommunityGovernanceRecord,
 ): Promise<ParaStrongRef> => {
@@ -276,7 +277,7 @@ export const createCommunityGovernanceRecord = async (
 
 export const createParaPostMeta = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   postUri: string,
   opts: {
     postType: ParaPostType
@@ -321,7 +322,7 @@ export const createParaPostMeta = async (
 
 export const createParaStatus = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   opts: {
     status: string
     party?: string
@@ -355,7 +356,7 @@ export const createParaStatus = async (
 
 export const likeParaRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   subject: ParaStrongRef,
 ): Promise<void> => {
   await sc.agent.com.atproto.repo.createRecord(
@@ -377,7 +378,7 @@ export const likeParaRecord = async (
 
 export const createCabildeoRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   opts: {
     title: string
     description: string
@@ -411,7 +412,7 @@ export const createCabildeoRecord = async (
 
 export const createCabildeoPositionRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   opts: {
     cabildeo: string
     stance: 'for' | 'against' | 'amendment'
@@ -443,7 +444,7 @@ export const createCabildeoPositionRecord = async (
 
 export const createCabildeoVoteRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   opts: {
     cabildeo: string
     selectedOption: number
@@ -479,7 +480,7 @@ export const createCabildeoVoteRecord = async (
 
 export const createCabildeoDelegationRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   opts: {
     cabildeo?: string
     delegateTo: string
@@ -507,7 +508,7 @@ export const createCabildeoDelegationRecord = async (
 
 export const createLiveStatusRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   opts: { uri: string; durationMinutes?: number },
 ): Promise<ParaStrongRef> => {
   const embed: AppBskyEmbedExternal.Main = {
@@ -546,7 +547,7 @@ export const putCabildeoLivePresence = async (
     bsky: { url: string }
     serviceHeaders(did: string, lxm: string): Promise<Record<string, string>>
   },
-  by: string,
+  by: DidString,
   opts: {
     cabildeo: string
     sessionId: string
@@ -593,7 +594,7 @@ const COM_PARA_COMMUNITY_DELIBERATION_VOTE =
 
 export const createQvlVoteRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   opts: {
     proposal: string
     community: string
@@ -627,10 +628,10 @@ export const createQvlVoteRecord = async (
 
 export const createQvlIntensityRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   opts: {
     proposal: string
-    voter: string
+    voter: DidString
     signal: number
     units: number
     creditsSpent?: number
@@ -670,10 +671,10 @@ export const createQvlIntensityRecord = async (
 
 export const createQvlDelegationRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   opts: {
-    delegate: string
-    delegator: string
+    delegate: DidString
+    delegator: DidString
     delegateRole?: string
     party?: string
     scope: {
@@ -710,7 +711,7 @@ export const createQvlDelegationRecord = async (
 
 export const createQvlDeliberationRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   opts: {
     proposal: string
     community: string
@@ -742,10 +743,10 @@ export const createQvlDeliberationRecord = async (
 
 export const createQvlDeliberationVoteRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   opts: {
     deliberation: string
-    voter: string
+    voter: DidString
     direction: 'agree' | 'disagree' | 'pass'
     voteNullifier?: string
     eligibilityProofRef?: string
@@ -780,7 +781,7 @@ const COM_PARA_RAQ_PROPOSAL = 'com.para.raq.proposal'
 
 export const createRaqAssessmentRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   opts: {
     answers: { questionId: string; value: number }[]
     results: {
@@ -837,7 +838,7 @@ export const createRaqAssessmentRecord = async (
 
 export const createRaqAxisVoteRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   opts: {
     axisId: string
     value?: number
@@ -868,7 +869,7 @@ export const createRaqAxisVoteRecord = async (
 
 export const createRaqProposalRecord = async (
   sc: SeedClient,
-  by: string,
+  by: DidString,
   opts: {
     text: string
     targetAxis?: string

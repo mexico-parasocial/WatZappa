@@ -22,7 +22,7 @@ import {
 import { SearchSortOrder } from '../../../../proto/bsky_pb.js'
 import { uriToDid as creatorFromUri } from '../../../../util/uris.js'
 import { Views } from '../../../../views/index.js'
-import { resHeaders } from '../../../util.js'
+import { resHeaders, resolveSearchV2Override } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
   const searchPosts = createPipeline(
@@ -50,7 +50,12 @@ export default function (server: Server, ctx: AppContext) {
         ),
       })
       const results = await searchPosts(
-        { ...params, hydrateCtx, isModService },
+        {
+          ...params,
+          hydrateCtx,
+          isModService,
+          isV2Override: resolveSearchV2Override(req, ctx.cfg),
+        },
         ctx,
       )
       return {
@@ -237,6 +242,7 @@ type Context = {
 type Params = app.bsky.feed.searchPosts.$Params & {
   hydrateCtx: HydrateCtx
   isModService: boolean
+  isV2Override: boolean
 }
 
 type Skeleton = {

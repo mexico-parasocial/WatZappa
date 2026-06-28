@@ -15,7 +15,7 @@ import {
 } from '../../../../pipeline.js'
 import { uriToDid as creatorFromUri } from '../../../../util/uris.js'
 import { Views } from '../../../../views/index.js'
-import { resHeaders } from '../../../util.js'
+import { resHeaders, resolveSearchV2Override } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
   const searchStarterPacks = createPipeline(
@@ -42,7 +42,14 @@ export default function (server: Server, ctx: AppContext) {
           }),
         ),
       })
-      const results = await searchStarterPacks({ ...params, hydrateCtx }, ctx)
+      const results = await searchStarterPacks(
+        {
+          ...params,
+          hydrateCtx,
+          isV2Override: resolveSearchV2Override(req, ctx.cfg),
+        },
+        ctx,
+      )
       return {
         encoding: 'application/json',
         body: results,
@@ -152,6 +159,7 @@ type Context = {
 
 type Params = app.bsky.graph.searchStarterPacks.$Params & {
   hydrateCtx: HydrateCtx
+  isV2Override: boolean
 }
 
 type Skeleton = {

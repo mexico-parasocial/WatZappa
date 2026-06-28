@@ -13,7 +13,7 @@ import {
   createPipeline,
 } from '../../../../pipeline.js'
 import { Views } from '../../../../views/index.js'
-import { resHeaders } from '../../../util.js'
+import { resHeaders, resolveSearchV2Override } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
   const searchActorsTypeahead = createPipeline(
@@ -38,7 +38,11 @@ export default function (server: Server, ctx: AppContext) {
         ),
       })
       const results = await searchActorsTypeahead(
-        { ...params, hydrateCtx },
+        {
+          ...params,
+          hydrateCtx,
+          isV2Override: resolveSearchV2Override(req, ctx.cfg),
+        },
         ctx,
       )
       return {
@@ -149,6 +153,7 @@ type Context = {
 
 type Params = app.bsky.actor.searchActorsTypeahead.$Params & {
   hydrateCtx: HydrateCtx
+  isV2Override: boolean
 }
 
 type Skeleton = {

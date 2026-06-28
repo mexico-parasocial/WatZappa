@@ -12,4 +12,4 @@ export interface ListBlock {
   sortAt: GeneratedAlways<string>
 }
 
-export type PartialDB = { [tableName]: ListBlock }
+export type PartialDB = { list_block: ListBlock }

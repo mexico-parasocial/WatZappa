@@ -200,12 +200,17 @@ export async function createParaFeedGens(
     .select('uri')
     .where('displayName', 'in', allDisplayNames)
     .execute()
-  const staleByUri = await db
+  const staleByUri1 = await db
     .selectFrom('feed_generator')
     .select('uri')
     .where('uri', 'like', '%/app.bsky.feed.generator/para-%')
-    .orWhere('uri', 'like', '%/app.bsky.feed.generator/bluesky-%')
     .execute()
+  const staleByUri2 = await db
+    .selectFrom('feed_generator')
+    .select('uri')
+    .where('uri', 'like', '%/app.bsky.feed.generator/bluesky-%')
+    .execute()
+  const staleByUri = [...staleByUri1, ...staleByUri2]
   const staleUris = [
     ...new Set([
       ...staleByName.map((f) => f.uri),

@@ -1,4 +1,5 @@
 import { AtUri, AtpAgent, ids } from '@atproto/api'
+import type { DidString, HandleString } from '@atproto/syntax'
 import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 
 describe('bsky actor likes feed views', () => {
@@ -8,9 +9,9 @@ describe('bsky actor likes feed views', () => {
   let sc: SeedClient
 
   // account dids, for convenience
-  let alice: string
-  let bob: string
-  let carol: string
+  let alice: DidString
+  let bob: DidString
+  let carol: DidString
 
   beforeAll(async () => {
     network = await TestNetwork.create({

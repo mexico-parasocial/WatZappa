@@ -1,4 +1,5 @@
 import { AtpAgent, ids } from '@atproto/api'
+import type { DidString, HandleString } from '@atproto/syntax'
 import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 
 describe('bsky account deactivation', () => {
@@ -6,7 +7,7 @@ describe('bsky account deactivation', () => {
   let agent: AtpAgent
   let sc: SeedClient
 
-  let alice: string
+  let alice: DidString
 
   beforeAll(async () => {
     network = await TestNetwork.create({

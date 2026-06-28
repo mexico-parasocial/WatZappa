@@ -1,4 +1,5 @@
 import { AppBskyFeedGetListFeed, AtpAgent, ids } from '@atproto/api'
+import type { DidString, HandleString } from '@atproto/syntax'
 import { RecordRef, SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 import {
   forSnapshot,
@@ -13,9 +14,9 @@ describe('list feed views', () => {
   let sc: SeedClient
 
   // account dids, for convenience
-  let alice: string
-  let bob: string
-  let carol: string
+  let alice: DidString
+  let bob: DidString
+  let carol: DidString
 
   let listRef: RecordRef
 
@@ -53,7 +54,9 @@ describe('list feed views', () => {
 
     // all posts are from alice or bob
     expect(
-      res.data.feed.every((row) => [alice, bob].includes(row.post.author.did)),
+      res.data.feed.every((row) =>
+        [alice, bob].includes(row.post.author.did as DidString),
+      ),
     ).toBeTruthy()
   })
 
