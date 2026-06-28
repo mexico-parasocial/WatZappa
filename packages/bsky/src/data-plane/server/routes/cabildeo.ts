@@ -57,10 +57,11 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       builder = builder.where('phase', '=', phase)
     }
     if (req.query) {
-      builder = builder.where((qb) =>
-        qb
-          .where('title', 'ilike', `%${req.query}%`)
-          .orWhere('description', 'ilike', `%${req.query}%`),
+      builder = builder.where((eb) =>
+        eb.or([
+          eb('title', 'ilike', `%${req.query}%`),
+          eb('description', 'ilike', `%${req.query}%`),
+        ]),
       )
     }
 
@@ -764,8 +765,8 @@ const getViewerContext = async (
     db.db
       .selectFrom('cabildeo_delegation')
       .where('creator', '=', viewerDid)
-      .where((qb) =>
-        qb.where('cabildeo', '=', cabildeoUri).orWhere('cabildeo', 'is', null),
+      .where((eb) =>
+        eb.or([eb('cabildeo', '=', cabildeoUri), eb('cabildeo', 'is', null)]),
       )
       .orderBy(sql`case when "cabildeo" = ${cabildeoUri} then 0 else 1 end`)
       .orderBy('createdAt', 'desc')

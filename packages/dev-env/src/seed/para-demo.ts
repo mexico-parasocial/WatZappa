@@ -1,4 +1,5 @@
 import { RecordRef, SeedClient } from './client.js'
+import type { HandleString } from '@atproto/syntax'
 import { ParaSeedCheckpointRunner } from './para-checkpoints.js'
 
 export default async (sc: SeedClient) => {
@@ -177,7 +178,7 @@ export default async (sc: SeedClient) => {
     if (!sc.dids[u.short]) {
       await sc.createAccount(u.short, {
         email: u.email,
-        handle: u.handle,
+        handle: u.handle as HandleString,
         password: u.password,
       })
     }

@@ -1,10 +1,10 @@
-import { Kysely } from 'kysely'
+import { Kysely, sql } from 'kysely'
 
-export async function up(db: Kysely<unknown>): Promise<void> {
+export async function up(db: Kysely<any>): Promise<void> {
   // Deduplicate: keep latest per (creator, subjectType, subject)
   await db
-    .deleteFrom('para_policy_vote' as any)
-    .where('uri' as any, 'in', (qb: any) =>
+    .deleteFrom('para_policy_vote')
+    .where('uri', 'in', (qb: any) =>
       qb
         .selectFrom('para_policy_vote')
         .select('uri')
@@ -30,6 +30,6 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .execute()
 }
 
-export async function down(db: Kysely<unknown>): Promise<void> {
+export async function down(db: Kysely<any>): Promise<void> {
   await db.schema.dropIndex('para_policy_vote_unique_idx').execute()
 }

@@ -272,18 +272,19 @@ const getEligiblePolicyVoterCount = async (
   const boardUris = await db.db
     .selectFrom('para_community_board')
     .select('uri')
-    .where((qb) =>
-      qb
-        .where(
+    .where((eb) =>
+      eb.or([
+        eb(
           sql`lower(regexp_replace(coalesce("slug", ''), '^p/', ''))`,
           '=',
           normalizedCommunity,
-        )
-        .orWhere(
+        ),
+        eb(
           sql`lower(regexp_replace(coalesce("name", ''), '^p/', ''))`,
           '=',
           normalizedCommunity,
         ),
+      ]),
     )
     .execute()
 

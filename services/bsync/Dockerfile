@@ -9,7 +9,8 @@ COPY ./package.json ./
 RUN corepack install
 
 # Move files into the image and install
-COPY ./*.* ./
+COPY ./pnpm-lock.yaml ./
+COPY ./pnpm-workspace.yaml ./
 COPY ./tsconfig ./tsconfig
 
 # NOTE bsync's transitive dependencies go here: if that changes, this needs to be updated.

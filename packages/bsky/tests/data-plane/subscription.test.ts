@@ -1,8 +1,8 @@
 import { AtpAgent, ids } from '@atproto/api'
-import type { DidString, HandleString } from '@atproto/syntax'
 import { cborDecode, cborEncode } from '@atproto/common'
 import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 import { CommitDataWithOps, sequencer } from '@atproto/pds'
+import type { DidString, HandleString } from '@atproto/syntax'
 import { DatabaseSchemaType } from '../../src/data-plane/server/db/database-schema.js'
 import { forSnapshot } from '../_util.js'
 
@@ -116,8 +116,8 @@ async function dumpTable<T extends keyof DatabaseSchemaType>(
   tableName: T,
   pkeys: (keyof DatabaseSchemaType[T] & string)[],
 ) {
-  const { ref } = db.db.dynamic
-  let builder = db.db.selectFrom(tableName).selectAll()
+  const { ref, table } = db.db.dynamic
+  let builder = db.db.selectFrom(table(tableName).as('t')).selectAll()
   pkeys.forEach((key) => {
     builder = builder.orderBy(ref(key))
   })

@@ -134,6 +134,7 @@ describe('account manager', () => {
     const [params] = sendResetPasswordMock.mock.lastCall!
     expect(params).toEqual({
       handle: 'bob.test',
+      locale: 'fr',
       token: expect.any(String),
     })
 
@@ -301,5 +302,161 @@ describe('account manager', () => {
 
     // The email needs to be verified again
     await page.ensureTextVisibility('Votre adresse email doit être vérifiée.')
+  })
+
+  it('rejects racial slurs when changing username', async () => {
+    await using page = await PageHelper.from(browser, { languages })
+
+    await page.goto(new URL('/account', network.pds.url))
+
+    await page.assertTitle('Mon compte Atmosphère')
+
+    await page.clickOnText('Compte utilisateur', 'a')
+
+    await page.clickOnText("Nom d'utilisateur")
+
+    await page.clickOnText("Utiliser un nom d'utilisateur par défaut")
+
+    // Try to change username to a racial slur
+    await page.typeInInput('handle', 'nigger')
+
+    await page.clickOnText('Valider')
+
+    await page.waitForNetworkIdle()
+
+    // Should display appropriate error message
+    await page.ensureTextVisibility(
+      "Le nom d'utilisateur contient un langage inapproprié",
+    )
+
+    // Username should not have changed
+    await page.clickOnText('Retour')
+    await page.ensureTextVisibility('bob-renamed.test', 'span')
+  })
+
+  it('rejects custom domain when not configured', async () => {
+    await using page = await PageHelper.from(browser, { languages })
+
+    await page.goto(new URL('/account', network.pds.url))
+
+    await page.assertTitle('Mon compte Atmosphère')
+
+    await page.clickOnText('Compte utilisateur', 'a')
+
+    await page.clickOnText("Nom d'utilisateur")
+
+    await page.clickOnText('Utiliser un nom de domaine que je possède')
+
+    // DNS is the default verification method
+    await page.ensureTextVisibility(
+      'Ajoutez le champ suivant à la configuration DNS de votre domaine.',
+    )
+    await page.ensureTextVisibility('_atproto.<votre-domaine>', 'code')
+    await page.ensureTextVisibility('TXT', 'code')
+
+    // Switch to HTTP verification method
+    await page.clickOnText('HTTP', 'span')
+
+    await page.ensureTextVisibility(
+      "Rendez un fichier texte avec le contenu ci-dessous disponible à l'URL suivante.",
+    )
+    await page.ensureTextVisibility(
+      'https://<votre-domaine>/.well-known/atproto-did',
+      'code',
+    )
+
+    // Try to use an unconfigured domain
+    await page.typeInInput('domain', 'notconfigured.com')
+
+    await page.clickOnText('Vérifier et enregistrer')
+
+    await page.waitForNetworkIdle()
+
+    // Should display appropriate error message
+    await page.ensureTextVisibility(
+      "Le nom d'utilisateur n'a pas pu être résolu",
+    )
+
+    // Username should not have changed
+    await page.clickOnText('Retour')
+    await page.ensureTextVisibility('bob-renamed.test', 'span')
+  })
+
+  it('allows deactivating & reactivating the account', async () => {
+    await using page = await PageHelper.from(browser, { languages })
+
+    await page.goto(new URL('/account', network.pds.url))
+
+    await page.assertTitle('Mon compte Atmosphère')
+
+    await page.clickOnText('Compte utilisateur', 'a')
+
+    await page.clickOnText('Désactiver le compte')
+
+    await page.ensureTextVisibility(
+      'limite de temps pour la désactivation du compte',
+    )
+
+    await page.clickOnText('Oui, désactiver')
+
+    await page.waitForNetworkIdle()
+
+    // The row should now offer re-activation
+    await page.ensureTextVisibility('Réactiver le compte', 'span')
+
+    await page.clickOnText('Réactiver le compte')
+
+    // @NOTE The dialog's submit label ("Réactiver") is a substring of the
+    // trigger row ("Réactiver le compte"), which comes first in DOM order, so
+    // we target the dialog's submit button instead of using its text.
+    await page.clickOn('[role="dialog"] button[type="submit"]')
+
+    await page.waitForNetworkIdle()
+
+    await page.ensureTextVisibility('Désactiver le compte', 'span')
+  })
+
+  it('allows deleting the account', async () => {
+    await using page = await PageHelper.from(browser, { languages })
+
+    await page.goto(new URL('/account', network.pds.url))
+
+    await page.assertTitle('Mon compte Atmosphère')
+
+    await page.clickOnText('Compte utilisateur', 'a')
+
+    await page.clickOnText('Supprimer le compte')
+
+    using sendAccountDeleteMock = jest
+      .spyOn(network.pds.ctx.mailer, 'sendAccountDelete')
+      .mockImplementation(async () => {
+        // noop
+      })
+
+    await page.clickOnText("Envoyer l'email")
+
+    await page.waitForNetworkIdle()
+
+    expect(sendAccountDeleteMock).toHaveBeenCalledTimes(1)
+
+    const [params] = sendAccountDeleteMock.mock.lastCall!
+    expect(params).toEqual({
+      locale: 'fr',
+      token: expect.any(String),
+    })
+
+    await page.typeInInput('code', params.token)
+    await page.typeInInput('password', 'bob-new-pass')
+
+    await page.clickOnText('Supprimer mon compte')
+
+    // A final confirmation step is displayed
+    await page.ensureTextVisibility('Êtes-vous vraiment, vraiment sûr ?', 'h2')
+
+    await page.clickOnText('Oui, supprimer mon compte')
+
+    // Once the account is deleted, the session is gone and the user is
+    // brought back to the sign-in page.
+    await page.assertTitle('Se connecter')
   })
 })

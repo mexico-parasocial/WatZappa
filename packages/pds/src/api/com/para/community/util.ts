@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { AtUri } from '@atproto/syntax'
 import { InvalidRequestError } from '@atproto/xrpc-server'
 import { ActorStoreReader } from '../../../../actor-store/actor-store-reader.js'

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { TID } from '@atproto/common'
 import { AtUri } from '@atproto/syntax'
 import { InvalidRequestError } from '@atproto/xrpc-server'
@@ -39,7 +38,7 @@ const registerAction = (
 
     const result = await ctx.actorStore.transact(did, async (actorTxn) => {
       const membership = await getLocalMembership({
-        store: actorTxn.record,
+        store: actorTxn.record as any,
         viewerDid: did,
         boardUri: communityUri.toString(),
       })
@@ -75,7 +74,7 @@ const registerAction = (
           throw new InvalidRequestError(err.message, 'InvalidSwap')
         }
         if (err instanceof InvalidRecordError) {
-          throw new InvalidRequestError(err.message)
+    throw new InvalidRequestError((err as Error).message)
         }
         throw err
       })
@@ -138,7 +137,7 @@ const assertBoardUri = (value: string) => {
   try {
     return assertCommunityBoardUri(value)
   } catch (err) {
-    throw new InvalidRequestError(err.message)
+    throw new InvalidRequestError((err as Error).message)
   }
 }
 

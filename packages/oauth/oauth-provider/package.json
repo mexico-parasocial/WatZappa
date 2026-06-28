@@ -1,6 +1,6 @@
 {
   "name": "@atproto/oauth-provider",
-  "version": "0.18.2",
+  "version": "0.19.6",
   "license": "MIT",
   "description": "Generic OAuth2 and OpenID Connect provider for Node.js. Currently only supports features needed for Atproto.",
   "keywords": [
@@ -19,14 +19,14 @@
     "directory": "packages/oauth/oauth-provider"
   },
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
-    "./package.json": "./package.json"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "engines": {
-    "node": ">=22.1.0"
+    "node": ">=22"
   },
   "dependencies": {
     "@atproto-labs/fetch": "workspace:^",
@@ -65,6 +65,6 @@
     "@types/send": "^0.17.4"
   },
   "scripts": {
-    "build": "tsc --build tsconfig.build.json"
+    "build": "tsgo --build tsconfig.build.json"
   }
 }

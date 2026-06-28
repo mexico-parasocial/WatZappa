@@ -1,12 +1,13 @@
-// @ts-nocheck
 import { TID } from '@atproto/common'
 import { InvalidRequestError } from '@atproto/xrpc-server'
 import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'
+import { dbLogger } from '../../../../logger.js'
 import { ids } from '../../../../lexicon/lexicons.js'
 import { com } from '../../../../lexicons.js'
 import {
   BadCommitSwapError,
+  BadRecordSwapError,
   InvalidRecordError,
   prepareCreate,
 } from '../../../../repo/index.js'
@@ -68,6 +69,9 @@ export default function (server: Server, ctx: AppContext) {
             if (err instanceof BadCommitSwapError) {
               throw new InvalidRequestError(err.message, 'InvalidSwap')
             }
+            if (err instanceof BadRecordSwapError) {
+              throw new InvalidRequestError(err.message, 'InvalidSwap')
+            }
             if (err instanceof InvalidRecordError) {
               throw new InvalidRequestError(err.message)
             }
@@ -79,7 +83,12 @@ export default function (server: Server, ctx: AppContext) {
 
       await ctx.accountManager
         .updateRepoRoot(did, commit.cid, commit.rev)
-        .catch(() => {})
+        .catch((err) => {
+          dbLogger.error(
+            { err, did, cid: commit.cid, rev: commit.rev },
+            'failed to update account root after castVote',
+          )
+        })
 
       return {
         encoding: 'application/json' as const,
@@ -131,10 +140,10 @@ const getCabildeoForVote = async (
     did,
     ids.ComParaCivicGetCabildeo,
   )
-  const res = await ctx.bskyAppView.client
+  const res = await ctx.bskyAppView!.client
     .call(
       com.para.civic.getCabildeo.main,
-      { cabildeo: cabildeoUri },
+      { cabildeo: cabildeoUri as any },
       { headers },
     )
     .catch((err) => {
@@ -191,7 +200,7 @@ const assertActiveCommunityMember = async (
     did,
     ids.ComParaCommunityGetBoard,
   )
-  const res = await ctx.bskyAppView.client
+  const res = await ctx.bskyAppView!.client
     .call(com.para.community.getBoard.main, { communityId }, { headers })
     .catch(() => null)
 

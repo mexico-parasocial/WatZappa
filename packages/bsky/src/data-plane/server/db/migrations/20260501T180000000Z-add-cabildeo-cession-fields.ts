@@ -3,8 +3,7 @@ import { Kysely } from 'kysely'
 export async function up(db: Kysely<unknown>): Promise<void> {
   await db.schema
     .alterTable('cabildeo_delegation')
-    .alterColumn('delegateTo')
-    .dropNotNull()
+    .alterColumn('delegateTo', (col) => col.dropNotNull())
     .execute()
   await db.schema
     .alterTable('cabildeo_delegation')
@@ -48,7 +47,6 @@ export async function down(db: Kysely<unknown>): Promise<void> {
   await db.schema.alterTable('cabildeo_delegation').dropColumn('mode').execute()
   await db.schema
     .alterTable('cabildeo_delegation')
-    .alterColumn('delegateTo')
-    .setNotNull()
+    .alterColumn('delegateTo', (col) => col.setNotNull())
     .execute()
 }

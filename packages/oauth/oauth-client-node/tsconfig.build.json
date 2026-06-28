@@ -2,9 +2,7 @@
   "extends": "../../../tsconfig/node.json",
   "compilerOptions": {
     "rootDir": "./src",
-    "outDir": "./dist"
+    "outDir": "./dist",
   },
-  "include": ["./src",
-    "../../../tsconfig/cjs-default-exports.d.ts"
-  ]
+  "include": ["./src"],
 }

@@ -1,11 +1,14 @@
-// @ts-nocheck
 import { CID } from 'multiformats/cid'
 import { TID } from '@atproto/common'
 import { AtUri } from '@atproto/syntax'
 import { InvalidRequestError } from '@atproto/xrpc-server'
 import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'
+import { dbLogger } from '../../../../logger.js'
 import {
+  BadCommitSwapError,
+  BadRecordSwapError,
+  InvalidRecordError,
   PreparedCreate,
   PreparedUpdate,
   prepareCreate,
@@ -34,7 +37,7 @@ export default function (server: Server, ctx: AppContext) {
         })
       }
 
-      const boardCreatorDid = communityUri.host
+      const boardCreatorDid = communityUri.host as string
 
       const { board, starterPackRecord, listItems } = await ctx.actorStore.read(
         boardCreatorDid,
@@ -108,7 +111,7 @@ export default function (server: Server, ctx: AppContext) {
         }
 
         const listItemWrite = await prepareCreate({
-          did: boardCreatorDid,
+          did: boardCreatorDid as `did:${string}:${string}`,
           collection: LIST_ITEM_COLLECTION,
           rkey: listItemRkey,
           record: listItemRecord,
@@ -118,19 +121,32 @@ export default function (server: Server, ctx: AppContext) {
 
         if (newSize >= 9) {
           const boardWrite = await prepareUpdate({
-            did: boardCreatorDid,
+            did: boardCreatorDid as `did:${string}:${string}`,
             collection: BOARD_COLLECTION,
             rkey: communityUri.rkey,
-            record: { ...board.record, status: 'active' },
+            record: { ...board.record, status: 'active' } as any,
             swapCid: CID.parse(board.cid),
           })
           writes.push(boardWrite)
         }
 
-        const commit = await creatorTxn.repo.processWrites(writes)
-        await ctx.sequencer.sequenceCommit(boardCreatorDid, commit)
+        const commit = await creatorTxn.repo
+          .processWrites(writes)
+          .catch((err) => {
+            if (err instanceof BadCommitSwapError) {
+              throw new InvalidRequestError(err.message, 'InvalidSwap')
+            }
+            if (err instanceof BadRecordSwapError) {
+              throw new InvalidRequestError(err.message, 'InvalidSwap')
+            }
+            if (err instanceof InvalidRecordError) {
+              throw new InvalidRequestError(err.message)
+            }
+            throw err
+          })
+        await ctx.sequencer.sequenceCommit(boardCreatorDid as `did:${string}:${string}`, commit)
 
-        updatedCreatorRootCid = commit.cid
+        updatedCreatorRootCid = commit.cid as CID
         updatedCreatorRootRev = commit.rev
       })
 
@@ -152,27 +168,60 @@ export default function (server: Server, ctx: AppContext) {
             joinedAt: new Date().toISOString(),
           },
         })
-        const commit = await actorTxn.repo.processWrites([memWrite])
+        const commit = await actorTxn.repo
+          .processWrites([memWrite])
+          .catch((err) => {
+            if (err instanceof BadCommitSwapError) {
+              throw new InvalidRequestError(err.message, 'InvalidSwap')
+            }
+            if (err instanceof BadRecordSwapError) {
+              throw new InvalidRequestError(err.message, 'InvalidSwap')
+            }
+            if (err instanceof InvalidRecordError) {
+              throw new InvalidRequestError(err.message)
+            }
+            throw err
+          })
         await ctx.sequencer.sequenceCommit(did, commit)
 
-        updatedCallerRootCid = commit.cid
+        updatedCallerRootCid = commit.cid as CID
         updatedCallerRootRev = commit.rev
       })
 
       if (updatedCreatorRootCid && updatedCreatorRootRev) {
         await ctx.accountManager
           .updateRepoRoot(
-            boardCreatorDid,
+            boardCreatorDid as `did:${string}:${string}`,
             updatedCreatorRootCid,
             updatedCreatorRootRev,
           )
-          .catch(() => {})
+          .catch((err) => {
+            dbLogger.error(
+              {
+                err,
+                did: boardCreatorDid,
+                cid: updatedCreatorRootCid,
+                rev: updatedCreatorRootRev,
+              },
+              'failed to update account root after acceptDraftInvite (creator)',
+            )
+          })
       }
 
       if (updatedCallerRootCid && updatedCallerRootRev) {
         await ctx.accountManager
           .updateRepoRoot(did, updatedCallerRootCid, updatedCallerRootRev)
-          .catch(() => {})
+          .catch((err) => {
+            dbLogger.error(
+              {
+                err,
+                did,
+                cid: updatedCallerRootCid,
+                rev: updatedCallerRootRev,
+              },
+              'failed to update account root after acceptDraftInvite (caller)',
+            )
+          })
       }
 
       return {

@@ -2,8 +2,14 @@ import { TID } from '@atproto/common'
 import { InvalidRequestError } from '@atproto/xrpc-server'
 import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'
+import { dbLogger } from '../../../../logger.js'
 import type { BriefingPackView } from '../../../../lexicon/types/com/para/community/defs.js'
-import { prepareCreate } from '../../../../repo/index.js'
+import {
+  BadCommitSwapError,
+  BadRecordSwapError,
+  InvalidRecordError,
+  prepareCreate,
+} from '../../../../repo/index.js'
 
 export const BRIEFING_PACK_COLLECTION = 'com.para.community.briefingPack'
 
@@ -118,7 +124,20 @@ export default function (server: Server, ctx: AppContext) {
           record,
         })
 
-        const commit = await actorTxn.repo.processWrites([write])
+        const commit = await actorTxn.repo
+          .processWrites([write])
+          .catch((err) => {
+            if (err instanceof BadCommitSwapError) {
+              throw new InvalidRequestError(err.message, 'InvalidSwap')
+            }
+            if (err instanceof BadRecordSwapError) {
+              throw new InvalidRequestError(err.message, 'InvalidSwap')
+            }
+            if (err instanceof InvalidRecordError) {
+              throw new InvalidRequestError(err.message)
+            }
+            throw err
+          })
         await ctx.sequencer.sequenceCommit(did, commit)
 
         return { commit, write }
@@ -127,7 +146,12 @@ export default function (server: Server, ctx: AppContext) {
       if (commit) {
         await ctx.accountManager
           .updateRepoRoot(did, commit.cid, commit.rev)
-          .catch(() => {})
+          .catch((err) => {
+            dbLogger.error(
+              { err, did, cid: commit.cid, rev: commit.rev },
+              'failed to update account root after createBriefingPack',
+            )
+          })
       }
 
       return {

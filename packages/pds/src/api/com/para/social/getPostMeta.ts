@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'
 import { ids } from '../../../../lexicon/lexicons.js'

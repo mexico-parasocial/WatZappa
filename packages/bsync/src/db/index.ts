@@ -4,7 +4,6 @@ import { createRequire } from 'node:module'
 import {
   Kysely,
   KyselyPlugin,
-  Migrator,
   PluginTransformQueryArgs,
   PluginTransformResultArgs,
   PostgresDialect,
@@ -12,6 +11,7 @@ import {
   RootOperationNode,
   UnknownRow,
 } from 'kysely'
+import { Migrator } from 'kysely/migration'
 import type { Pool as PgPool } from 'pg'
 
 import { dbLogger } from '../logger.js'
@@ -71,7 +71,9 @@ export class Database {
 
       this.pool = pool
       this.db = new Kysely<DatabaseSchemaType>({
-        dialect: new PostgresDialect({ pool }),
+        dialect: new PostgresDialect({
+          pool: pool as any,
+        }),
       })
     }
 

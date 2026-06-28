@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'
 import { ids } from '../../../../lexicon/lexicons.js'
@@ -28,7 +27,7 @@ export default function (server: Server, ctx: AppContext) {
         ctx,
         reqCtx,
         com.para.feed.getTimeline.main,
-        getTimelineMunge,
+        getTimelineMunge as any,
       )
     },
   })

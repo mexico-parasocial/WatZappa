@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { InvalidRequestError } from '@atproto/xrpc-server'
 import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'
@@ -6,7 +5,9 @@ import { requestAlphaAccess } from './util.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.com.para.alpha.requestAccess({
-    auth: ctx.authVerifier.standardOptional,
+    auth: ctx.authVerifier.authorization({
+      authorize: () => {},
+    }),
     handler: async ({ input, auth }) => {
       const did = auth.credentials.did
       const state = input.body.state

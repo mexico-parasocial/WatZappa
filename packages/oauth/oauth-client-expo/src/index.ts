@@ -1,4 +1,4 @@
-import './polyfill.js'
+import './polyfill'
 
 export * from '@atproto/oauth-client'
 

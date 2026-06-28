@@ -32,18 +32,16 @@ export const recomputeCabildeoAggregates = async (
       .execute(),
     db
       .selectFrom('cabildeo_delegation')
-      .where((qb) =>
+      .where((eb) =>
         scopedFlairs.length
-          ? qb
-              .where('cabildeo', '=', cabildeoUri)
-              .orWhere((eb) =>
-                eb
-                  .where('cabildeo', 'is', null)
-                  .where(
-                    sql`"scopeFlairs" ?| ${sql`ARRAY[${sql.join(scopedFlairs)}]` as any}`,
-                  ),
-              )
-          : qb.where('cabildeo', '=', cabildeoUri),
+          ? eb.or([
+              eb('cabildeo', '=', cabildeoUri),
+              eb.and([
+                eb('cabildeo', 'is', null),
+                sql<boolean>`"scopeFlairs" ?| ${sql`ARRAY[${sql.join(scopedFlairs)}]`}`,
+              ]),
+            ])
+          : eb('cabildeo', '=', cabildeoUri),
       )
       .select(sql<number>`count(*)::int`.as('count'))
       .executeTakeFirst(),

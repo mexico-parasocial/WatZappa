@@ -5,7 +5,11 @@ import { AtUri } from '@atproto/syntax'
 import { app } from '../../../lexicons.js'
 import { Service } from '../../../proto/bsky_connect.js'
 import { Database } from '../db/index.js'
-import { CreatedAtDidKeyset, TimeCidKeyset, paginate } from '../db/pagination.js'
+import {
+  CreatedAtDidKeyset,
+  TimeCidKeyset,
+  paginate,
+} from '../db/pagination.js'
 
 export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   async getActorMutesActor(req) {
@@ -84,12 +88,14 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     const { ref } = db.db.dynamic
     let builder = db.db
       .selectFrom('list')
-      .whereExists(
-        db.db
-          .selectFrom('list_mute')
-          .where('list_mute.mutedByDid', '=', actorDid)
-          .whereRef('list_mute.listUri', '=', ref('list.uri'))
-          .selectAll(),
+      .where(({ exists }) =>
+        exists(
+          db.db
+            .selectFrom('list_mute')
+            .where('list_mute.mutedByDid', '=', actorDid)
+            .whereRef('list_mute.listUri', '=', ref('list.uri'))
+            .selectAll(),
+        ),
       )
       .selectAll('list')
 

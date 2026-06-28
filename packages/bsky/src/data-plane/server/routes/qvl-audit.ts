@@ -48,10 +48,11 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
 
     const delegations = await db.db
       .selectFrom(paraQvldDelegationTableName)
-      .where((qb) =>
-        qb
-          .where('scopeProposal', '=', proposal)
-          .orWhere('scopeCommunity', '=', community?.community ?? ''),
+      .where((eb) =>
+        eb.or([
+          eb('scopeProposal', '=', proposal),
+          eb('scopeCommunity', '=', community?.community ?? ''),
+        ]),
       )
       .where('revokedAt', 'is', null)
       .select([

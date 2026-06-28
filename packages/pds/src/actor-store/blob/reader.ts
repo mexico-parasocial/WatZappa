@@ -130,11 +130,15 @@ export class BlobReader {
     const { cursor, limit } = opts
     let builder = this.db.db
       .selectFrom('record_blob')
-      .whereNotExists((qb) =>
-        qb
-          .selectFrom('blob')
-          .selectAll()
-          .whereRef('blob.cid', '=', 'record_blob.blobCid'),
+      .where(({ eb, not, exists }) =>
+        not(
+          exists(
+            eb
+              .selectFrom('blob')
+              .selectAll()
+              .whereRef('blob.cid', '=', 'record_blob.blobCid'),
+          ),
+        ),
       )
       .selectAll()
       .orderBy('blobCid', 'asc')

@@ -35,7 +35,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     builder = builder.where(
       'indexedAt',
       '>',
-      sql`now() - ${interval}::interval`,
+      sql<string>`now() - ${interval}::interval`,
     )
 
     const rows = await builder.execute()
@@ -82,7 +82,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     builder = builder.where(
       'indexedAt',
       '>',
-      sql`now() - ${interval}::interval`,
+      sql<string>`now() - ${interval}::interval`,
     )
 
     const rows = await builder.execute()
@@ -115,7 +115,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     builder = builder.where(
       'indexedAt',
       '>',
-      sql`now() - ${interval}::interval`,
+      sql<string>`now() - ${interval}::interval`,
     )
 
     const rows = await builder.execute()
@@ -151,7 +151,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         sql`count(*)`.as('count'),
       ])
       .where('tags', 'is not', null)
-      .where('indexedAt', '>', sql`now() - ${interval}::interval`)
+      .where('indexedAt', '>', sql<string>`now() - ${interval}::interval`)
       .groupBy(sql`jsonb_array_elements_text(tags)`)
       .orderBy(sql`count(*)`, 'desc')
       .limit(maxResults)
@@ -162,7 +162,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       .selectFrom(paraPostMetaTableName)
       .select(['community', sql`count(*)`.as('count')])
       .where('community', 'is not', null)
-      .where('indexedAt', '>', sql`now() - ${interval}::interval`)
+      .where('indexedAt', '>', sql<string>`now() - ${interval}::interval`)
       .groupBy('community')
       .orderBy(sql`count(*)`, 'desc')
       .limit(Math.ceil(maxResults / 2))

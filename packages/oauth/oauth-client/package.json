@@ -1,6 +1,9 @@
 {
   "name": "@atproto/oauth-client",
-  "version": "0.7.2",
+  "version": "0.7.5",
+  "engines": {
+    "node": ">=22"
+  },
   "license": "MIT",
   "description": "OAuth client for ATPROTO PDS. This package serves as common base for environment-specific implementations (NodeJS, Browser, React-Native).",
   "keywords": [
@@ -20,8 +23,7 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./package.json": "./package.json"
+    }
   },
   "dependencies": {
     "@atproto-labs/did-resolver": "workspace:^",
@@ -39,9 +41,10 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "typescript": "^6.0.3"
+    "vitest": "^4.0.16"
   },
   "scripts": {
-    "build": "tsc --build tsconfig.build.json"
+    "build": "tsgo --build tsconfig.build.json",
+    "test": "vitest run"
   }
 }

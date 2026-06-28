@@ -75,10 +75,11 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => {
 
     let postBuilder = baseFilters(db.db.selectFrom('post'), 'post')
     if (tags && tags.length > 0) {
-      postBuilder = postBuilder.where((qb) =>
-        qb
-          .where(sql<boolean>`"post"."tags" ?& ${JSON.stringify(tags)}`)
-          .orWhere('post.replyRoot', 'in', tags),
+      postBuilder = postBuilder.where((eb) =>
+        eb.or([
+          eb(sql<boolean>`"post"."tags" ?& ${JSON.stringify(tags)}`),
+          eb('post.replyRoot', 'in', tags),
+        ]),
       )
     }
 
@@ -87,12 +88,13 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => {
       'para_post',
     )
     if (tags && tags.length > 0) {
-      paraPostBuilder = paraPostBuilder.where((qb) =>
-        qb
-          .where(sql<boolean>`"para_post"."tags" ?& ${JSON.stringify(tags)}`)
-          .orWhere('para_post.party', 'in', tags)
-          .orWhere('para_post.community', 'in', tags)
-          .orWhere('para_post.replyRoot', 'in', tags),
+      paraPostBuilder = paraPostBuilder.where((eb) =>
+        eb.or([
+          eb(sql<boolean>`"para_post"."tags" ?& ${JSON.stringify(tags)}`),
+          eb('para_post.party', 'in', tags),
+          eb('para_post.community', 'in', tags),
+          eb('para_post.replyRoot', 'in', tags),
+        ]),
       )
     }
 

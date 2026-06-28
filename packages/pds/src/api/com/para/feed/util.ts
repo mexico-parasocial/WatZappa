@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { AtUri } from '@atproto/syntax'
 import { AppContext } from '../../../../context.js'
 import { PostView } from '../../../../lexicon/types/com/para/feed/getAuthorFeed.js'
@@ -57,7 +56,7 @@ export const resolveLocalActorDid = async (
   actor: string,
 ): Promise<string | undefined> => {
   if (actor.startsWith('did:')) return actor
-  return (await ctx.accountManager.getDidForActor(actor)) ?? undefined
+  return (await ctx.accountManager.getDidForActor(actor as any)) ?? undefined
 }
 
 export const resolveDidUri = async (

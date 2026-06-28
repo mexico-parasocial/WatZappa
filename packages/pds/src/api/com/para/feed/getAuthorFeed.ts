@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'
 import { ids } from '../../../../lexicon/lexicons.js'
@@ -30,8 +29,8 @@ export default function (server: Server, ctx: AppContext) {
         ctx,
         reqCtx,
         com.para.feed.getAuthorFeed.main,
-        (localViewer, original, local, requester) =>
-          getAuthorFeedMunge(localViewer, original, local, requester, actorDid),
+        ((localViewer: any, original: any, local: any, requester: any) =>
+          getAuthorFeedMunge(localViewer, original, local, requester, actorDid)) as any,
       )
     },
   })

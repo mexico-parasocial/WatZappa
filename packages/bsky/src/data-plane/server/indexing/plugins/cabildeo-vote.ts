@@ -218,15 +218,16 @@ const getCabildeoVoteEligibility = async (
   const community = normalizeCommunitySlug(cabildeo.community)
   const board = await db
     .selectFrom('para_community_board')
-    .where((qb) =>
-      qb
-        .where('uri', '=', cabildeo.community)
-        .orWhere('slug', '=', community)
-        .orWhere(
+    .where((eb) =>
+      eb.or([
+        eb('uri', '=', cabildeo.community),
+        eb('slug', '=', community),
+        eb(
           sql`regexp_replace(lower(coalesce("name", '')), '[^a-z0-9]+', '-', 'g')`,
           '=',
           community,
         ),
+      ]),
     )
     .select(['uri'])
     .executeTakeFirst()

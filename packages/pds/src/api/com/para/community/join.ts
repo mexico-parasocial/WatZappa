@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { CID } from 'multiformats/cid'
 import { AtUri } from '@atproto/syntax'
 import { InvalidRequestError } from '@atproto/xrpc-server'
@@ -138,7 +137,7 @@ export default function (server: Server, ctx: AppContext) {
             cid: result.cid,
             communityUri: communityUri.toString(),
             membershipState: result.record.membershipState,
-            viewerCapabilities: getViewerCapabilities(result.record),
+            viewerCapabilities: getViewerCapabilities(result.record as any),
           },
         }
       } catch (err) {

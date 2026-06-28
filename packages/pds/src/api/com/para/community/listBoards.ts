@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { jsonToLex } from '@atproto/lexicon'
 import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'

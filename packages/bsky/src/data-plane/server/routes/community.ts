@@ -545,9 +545,9 @@ const selectBoards = async (
   const flairId = opts.flairId?.trim()
   if (flairId) {
     if (opts.participationKind === 'matter') {
-      builder = builder.where(sql`gov."matterFlairIds" ? ${flairId}`)
+      builder = builder.where(sql<boolean>`gov."matterFlairIds" ? ${flairId}`)
     } else if (opts.participationKind === 'policy') {
-      builder = builder.where(sql`gov."policyFlairIds" ? ${flairId}`)
+      builder = builder.where(sql<boolean>`gov."policyFlairIds" ? ${flairId}`)
     }
   }
 

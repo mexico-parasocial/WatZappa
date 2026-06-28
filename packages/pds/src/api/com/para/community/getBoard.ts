@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { jsonToLex } from '@atproto/lexicon'
 import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'
@@ -60,10 +59,10 @@ export default function (server: Server, ctx: AppContext) {
             memberCount: foundingMemberCount,
           }),
           viewerCapabilities: getViewerCapabilities(
-            membership ?? {
+            (membership ?? {
               membershipState: 'active',
               roles: ['owner', 'moderator'],
-            },
+            }) as any,
           ),
           governanceSummary: toGovernanceSummary(governance),
         }

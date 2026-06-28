@@ -25,15 +25,17 @@ export const preferredOrderCmp =
     return aIdx - bIdx
   }
 
+/* eslint-disable @typescript-eslint/no-unused-vars -- `v` is used at runtime in the returned type guards; v8 false-positive */
 export function matchesAny<T extends string | number | symbol | boolean>(
   value: null | undefined | T | readonly T[],
-): (_v: unknown) => _v is T {
+): (v: unknown) => v is T {
   return value == null
-    ? (_v): _v is T => true
+    ? (v): v is T => true
     : Array.isArray(value)
-      ? (_v): _v is T => value.includes(_v)
-      : (_v): _v is T => _v === value
+      ? (v): v is T => value.includes(v)
+      : (v): v is T => v === value
 }
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
 /**
  * Decorator to cache the result of a getter on a class instance.
@@ -181,6 +183,6 @@ export const segmentedStringRefinementFactory = <C extends number>(
 
 export function isLastOccurrence<
   T extends number | boolean | string | null | undefined | symbol | bigint,
->(_v: T, i: number, arr: readonly T[]): boolean {
-  return arr.indexOf(_v, i + 1) === -1
+>(v: T, i: number, arr: readonly T[]): boolean {
+  return arr.indexOf(v, i + 1) === -1
 }

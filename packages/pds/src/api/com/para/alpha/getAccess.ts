@@ -1,11 +1,12 @@
-// @ts-nocheck
 import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'
 import { getAlphaAccess } from './util.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.com.para.alpha.getAccess({
-    auth: ctx.authVerifier.standardOptional,
+    auth: ctx.authVerifier.authorization({
+      authorize: () => {},
+    }),
     handler: async ({ auth }) => {
       const did = auth.credentials.did
       const access = await getAlphaAccess(ctx.accountManager.db, did)

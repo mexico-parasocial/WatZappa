@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { TID } from '@atproto/common'
 import { AtUri } from '@atproto/syntax'
 import { InvalidRequestError } from '@atproto/xrpc-server'
@@ -50,7 +49,7 @@ export default function (server: Server, ctx: AppContext) {
 
       const result = await ctx.actorStore.transact(did, async (actorTxn) => {
         const membership = await getLocalMembership({
-          store: actorTxn.record,
+          store: actorTxn.record as any,
           viewerDid: did,
           boardUri: communityUri.toString(),
         })
@@ -92,7 +91,7 @@ export default function (server: Server, ctx: AppContext) {
           did,
           collection: SHARED_CONTENT_COLLECTION,
           rkey: TID.nextStr(),
-          record,
+          record: record as any,
         })
 
         const commit = await actorTxn.repo
@@ -149,7 +148,7 @@ const assertBoardUri = (value: string) => {
   try {
     return assertCommunityBoardUri(value)
   } catch (err) {
-    throw new InvalidRequestError(err.message)
+    throw new InvalidRequestError((err as Error).message)
   }
 }
 

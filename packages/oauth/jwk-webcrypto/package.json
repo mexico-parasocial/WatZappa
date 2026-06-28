@@ -1,6 +1,9 @@
 {
   "name": "@atproto/jwk-webcrypto",
-  "version": "0.3.0",
+  "version": "0.3.2",
+  "engines": {
+    "node": ">=22"
+  },
   "license": "MIT",
   "description": "Webcrypto based implementation of @atproto/jwk Key's",
   "keywords": [
@@ -15,21 +18,19 @@
     "directory": "packages/oauth/jwk-webcrypto"
   },
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
-    "./package.json": "./package.json"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "dependencies": {
     "@atproto/jwk": "workspace:^",
     "@atproto/jwk-jose": "workspace:^",
     "zod": "^3.23.8"
   },
-  "devDependencies": {
-    "typescript": "^6.0.3"
-  },
+  "devDependencies": {},
   "scripts": {
-    "build": "tsc --build tsconfig.build.json"
+    "build": "tsgo --build tsconfig.build.json"
   }
 }

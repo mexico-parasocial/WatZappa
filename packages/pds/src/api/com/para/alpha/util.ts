@@ -1,4 +1,5 @@
 // @ts-nocheck
+import * as crypto from '@atproto/crypto'
 import { InvalidRequestError } from '@atproto/xrpc-server'
 import { AccountDb } from '../../../../account-manager/db/index.js'
 
@@ -64,9 +65,7 @@ export const parseInviteCode = (
 
 export const buildInviteCode = (state: string): string => {
   const normalized = normalizeState(state)
-  const token = Array.from({ length: 8 }, () =>
-    Math.random().toString(36).charAt(2).toUpperCase(),
-  ).join('')
+  const token = crypto.randomStr(8, 'base32').toUpperCase()
   return `${normalized}-${token.slice(0, 4)}-${token.slice(4)}`
 }
 
@@ -160,40 +159,42 @@ export const requestAlphaAccess = async (
     const quotaState = isFriendInvite ? 'FRIEND' : normalizedState
     const requestState = isFriendInvite ? normalizedState : normalizedState
 
-    // Mark invite as used
-    await db.db
-      .updateTable('alpha_invite')
-      .set({ did, usedAt: now })
-      .where('code', '=', invite.code)
-      .execute()
+    await db.transaction(async (dbTxn) => {
+      // Mark invite as used
+      await dbTxn
+        .updateTable('alpha_invite')
+        .set({ did, usedAt: now })
+        .where('code', '=', invite.code)
+        .execute()
 
-    // Upsert access request as approved
-    await db.db
-      .insertInto('alpha_access_request')
-      .values({
-        did,
-        state: requestState,
-        inviteCode: invite.code,
-        status: 'approved',
-        createdAt: now,
-        approvedAt: now,
-      })
-      .onConflict((oc) =>
-        oc.column('did').doUpdateSet({
+      // Upsert access request as approved
+      await dbTxn
+        .insertInto('alpha_access_request')
+        .values({
+          did,
           state: requestState,
           inviteCode: invite.code,
           status: 'approved',
+          createdAt: now,
           approvedAt: now,
-        }),
-      )
-      .execute()
+        })
+        .onConflict((oc) =>
+          oc.column('did').doUpdateSet({
+            state: requestState,
+            inviteCode: invite.code,
+            status: 'approved',
+            approvedAt: now,
+          }),
+        )
+        .execute()
 
-    // Increment used slots
-    await db.db
-      .updateTable('alpha_rollout')
-      .set((eb) => ({ usedSlots: eb('usedSlots', '+', 1) }))
-      .where('state', '=', quotaState)
-      .execute()
+      // Increment used slots
+      await dbTxn
+        .updateTable('alpha_rollout')
+        .set((eb) => ({ usedSlots: eb('usedSlots', '+', 1) }))
+        .where('state', '=', quotaState)
+        .execute()
+    })
 
     return { status: 'approved', state: requestState }
   }
@@ -251,29 +252,31 @@ export const requestAlphaAccess = async (
   }
 
   // Auto-approve — slot available
-  await db.db
-    .insertInto('alpha_access_request')
-    .values({
-      did,
-      state: normalizedState,
-      status: 'approved',
-      createdAt: now,
-      approvedAt: now,
-    })
-    .onConflict((oc) =>
-      oc.column('did').doUpdateSet({
+  await db.transaction(async (dbTxn) => {
+    await dbTxn
+      .insertInto('alpha_access_request')
+      .values({
+        did,
         state: normalizedState,
         status: 'approved',
+        createdAt: now,
         approvedAt: now,
-      }),
-    )
-    .execute()
+      })
+      .onConflict((oc) =>
+        oc.column('did').doUpdateSet({
+          state: normalizedState,
+          status: 'approved',
+          approvedAt: now,
+        }),
+      )
+      .execute()
 
-  await db.db
-    .updateTable('alpha_rollout')
-    .set((eb) => ({ usedSlots: eb('usedSlots', '+', 1) }))
-    .where('state', '=', normalizedState)
-    .execute()
+    await dbTxn
+      .updateTable('alpha_rollout')
+      .set((eb) => ({ usedSlots: eb('usedSlots', '+', 1) }))
+      .where('state', '=', normalizedState)
+      .execute()
+  })
 
   return { status: 'approved', state: normalizedState }
 }

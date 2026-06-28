@@ -2,9 +2,7 @@
   "extends": ["../../../tsconfig/isomorphic.json"],
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
   },
-  "include": ["src",
-    "../../../tsconfig/cjs-default-exports.d.ts"
-  ]
+  "include": ["src"],
 }

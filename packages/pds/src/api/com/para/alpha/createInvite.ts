@@ -1,11 +1,13 @@
-// @ts-nocheck
+import * as crypto from '@atproto/crypto'
 import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'
 import { buildInviteCode, normalizeState } from './util.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.com.para.alpha.createInvite({
-    auth: ctx.authVerifier.standardOptional,
+    auth: ctx.authVerifier.authorization({
+      authorize: () => {},
+    }),
     handler: async ({ input, auth }) => {
       // @TODO: add proper admin role check via auth credentials
       const did = auth.credentials.did
@@ -24,15 +26,7 @@ export default function (server: Server, ctx: AppContext) {
 
       for (let i = 0; i < count; i++) {
         const code = isFriend
-          ? `FRIEND-${Array.from({ length: 8 }, () =>
-              Math.random().toString(36).charAt(2).toUpperCase(),
-            )
-              .join('')
-              .slice(0, 4)}-${Array.from({ length: 8 }, () =>
-              Math.random().toString(36).charAt(2).toUpperCase(),
-            )
-              .join('')
-              .slice(4)}`
+          ? `FRIEND-${crypto.randomStr(4, 'base32').toUpperCase()}-${crypto.randomStr(4, 'base32').toUpperCase()}`
           : buildInviteCode(normalizedState)
 
         await ctx.accountManager.db.db
@@ -42,7 +36,7 @@ export default function (server: Server, ctx: AppContext) {
             state: isFriend ? 'FRIEND' : normalizedState,
             did: null,
             createdBy: did,
-            createdAt: now,
+            createdAt: now as any,
             usedAt: null,
           })
           .execute()
