@@ -1,5 +1,6 @@
-import { LexValue } from '@atproto/lex-data'
-import { Infer, NsidString, Schema } from '../core.js'
+import type { LexValue } from '@atproto/lex-data'
+import type { Infer, NsidString } from '../core.js'
+import { Schema } from '../core.js'
 import { ParamsSchema } from './params.js'
 
 /**
@@ -57,7 +58,6 @@ export class Subscription<
     readonly parameters: TParameters,
     readonly message: TMessage,
     readonly errors: TErrors,
-    readonly auth?: { type: string },
   ) {}
 }
 
@@ -104,12 +104,6 @@ export function subscription<
   const P extends ParamsSchema,
   const M extends Schema<LexValue>,
   const E extends undefined | readonly string[] = undefined,
->(
-  nsid: N,
-  parameters: P,
-  message: M,
-  errors: E = undefined as E,
-  auth?: { type: string },
-) {
-  return new Subscription<N, P, M, E>(nsid, parameters, message, errors, auth)
+>(nsid: N, parameters: P, message: M, errors: E = undefined as E) {
+  return new Subscription<N, P, M, E>(nsid, parameters, message, errors)
 }

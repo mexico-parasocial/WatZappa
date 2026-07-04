@@ -1,4 +1,4 @@
-import { NsidString } from '../core.js'
+import type { NsidString } from '../core.js'
 import { ParamsSchema } from './params.js'
 import { Payload } from './payload.js'
 
@@ -43,7 +43,6 @@ export class Procedure<
     readonly input: TInputPayload,
     readonly output: TOutputPayload,
     readonly errors: TErrors,
-    readonly auth?: { type: string },
   ) {}
 }
 
@@ -94,20 +93,6 @@ export function procedure<
   const I extends Payload,
   const O extends Payload,
   const E extends undefined | readonly string[] = undefined,
->(
-  nsid: N,
-  parameters: P,
-  input: I,
-  output: O,
-  errors: E = undefined as E,
-  auth?: { type: string },
-) {
-  return new Procedure<N, P, I, O, E>(
-    nsid,
-    parameters,
-    input,
-    output,
-    errors,
-    auth,
-  )
+>(nsid: N, parameters: P, input: I, output: O, errors: E = undefined as E) {
+  return new Procedure<N, P, I, O, E>(nsid, parameters, input, output, errors)
 }

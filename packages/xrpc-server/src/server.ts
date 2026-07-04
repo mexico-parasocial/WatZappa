@@ -17,7 +17,7 @@ import {
   LexXrpcSubscription,
   LexiconDoc,
   Lexicons,
-  stringifyLex,
+  lexToJson,
 } from '@atproto/lexicon'
 import {
   InternalServerError,
@@ -31,11 +31,17 @@ import { HttpRateLimiter } from './rate-limiter-http.js'
 import {
   CalcKeyFn,
   CalcPointsFn,
+  RateLimiterErrorHandlerDetails,
   RateLimiterI,
   RateLimiterOptions,
   WrappedRateLimiter,
 } from './rate-limiter.js'
-import { ErrorFrame, Frame, MessageFrame, XrpcStreamServer } from './stream/index.js'
+import {
+  ErrorFrame,
+  Frame,
+  MessageFrame,
+  XrpcStreamServer,
+} from './stream/index.js'
 import {
   Auth,
   AuthResult,
@@ -196,6 +202,13 @@ export class Server {
     schema: M,
     config: LexMethodConfig<M, A>,
   ): void {
+    this.routes.get(`/xrpc/${schema.nsid}`, (req, res, next) => {
+      next(
+        new InvalidRequestError(
+          `Incorrect HTTP method (${req.method}) expected POST`,
+        ),
+      )
+    })
     this.routes.post(
       `/xrpc/${schema.nsid}`,
       this.createHandlerInternal<
@@ -218,6 +231,13 @@ export class Server {
     schema: M,
     config: LexMethodConfig<M, A>,
   ): void {
+    this.routes.post(`/xrpc/${schema.nsid}`, (req, res, next) => {
+      next(
+        new InvalidRequestError(
+          `Incorrect HTTP method (${req.method}) expected GET`,
+        ),
+      )
+    })
     this.routes.get(
       `/xrpc/${schema.nsid}`,
       this.createHandlerInternal<
@@ -483,11 +503,8 @@ export class Server {
             // a stream, which would be a bug.
             await pipeline(output.body, res)
           } else if (encoding === 'application/json') {
-            // @NOTE using "stringifyLex" instead of
-            // "JSON.stringify(lexToJson(...))" because stringifyLex handles
-            // deeply nested LexValues better.
-            res.header('Content-Type', `${encoding}; charset=utf-8`)
-            res.send(stringifyLex(output.body))
+            const json = lexToJson(output.body)
+            res.json(json)
           } else {
             res.send(
               Buffer.isBuffer(output.body)
@@ -670,7 +687,7 @@ export class Server {
     // specific rate limiter (HandlerContext<A, P, I>).
 
     const globalRateLimiter = this.globalRateLimiter as
-      | HttpRateLimiter<any>
+      | HttpRateLimiter<HandlerContext<A, P, I>>
       | undefined
 
     // No route specific rate limiting configured, use the global rate limiter.
@@ -689,12 +706,15 @@ export class Server {
         const rateLimiter = this.sharedRateLimiters?.get(options.name) as
           | RateLimiterI<HandlerContext<A, P, I>>
           | undefined
-          
+
         // The route config references a shared rate limiter that does not
         // exist. This is a configuration error.
         assert(rateLimiter, `Shared rate limiter "${options.name}" not defined`)
 
-        return WrappedRateLimiter.from<any>(rateLimiter, options)
+        return WrappedRateLimiter.from<HandlerContext<A, P, I>>(
+          rateLimiter,
+          options,
+        )
       } else {
         return creator({
           ...options,
@@ -712,7 +732,9 @@ export class Server {
     // the route specific rate limiters.
     if (globalRateLimiter) rateLimiters.push(globalRateLimiter)
 
-    return HttpRateLimiter.from<any>(rateLimiters, { bypass })
+    return HttpRateLimiter.from<HandlerContext<A, P, I>>(rateLimiters, {
+      bypass,
+    })
   }
 }
 
@@ -727,18 +749,18 @@ function createErrorMiddleware({
     // (id, timing) and logging configuration (serialization, etc.).
     const logger = isPinoHttpRequest(req) ? req.log : log
 
-    const isInternalError = xrpcError instanceof InternalServerError
-
-    const msgPrefix = isInternalError ? 'unhandled exception' : 'error'
-    const msgSuffix = nsid ? `xrpc method ${nsid}` : `${req.method} ${req.url}`
-    const msg = `${msgPrefix} in ${msgSuffix}`
+    const msgError = xrpcError.error || 'Unknown'
+    const msgLoc = nsid ? `xrpc method ${nsid}` : `${req.method} ${req.url}`
+    const msgDetail = xrpcError.message ? ` (${xrpcError.message})` : ''
+    const msg = `${msgError} error in ${msgLoc}${msgDetail}`
 
     logger.error(
       {
         // @NOTE Computation of error stack is an expensive operation, so
-        // we strip it for expected errors.
+        // we strip it for expected (non-server) errors.
         err:
-          isInternalError || process.env.NODE_ENV === 'development'
+          xrpcError instanceof InternalServerError ||
+          process.env.NODE_ENV === 'development'
             ? err
             : toSimplifiedErrorLike(err),
 
@@ -793,9 +815,20 @@ function buildRateLimiterOptions<C extends HandlerContext = HandlerContext>({
   name,
   calcKey = defaultKey,
   calcPoints = defaultPoints,
-  ...desc
+  failClosed = false,
+  durationMs,
+  points,
 }: ServerRateLimitDescription<C>): RateLimiterOptions<C> {
-  return { ...desc, calcKey, calcPoints, keyPrefix: `rl-${name}` }
+  return {
+    durationMs,
+    points,
+    calcKey,
+    calcPoints,
+    keyPrefix: `rl-${name}`,
+    onError: failClosed
+      ? undefined // Let the error propagate
+      : rateLimiterLoggerErrorHandler,
+  }
 }
 
 const defaultPoints: CalcPointsFn = () => 1
@@ -807,3 +840,19 @@ const defaultPoints: CalcPointsFn = () => 1
  * @see {@link https://expressjs.com/en/guide/behind-proxies.html}
  */
 const defaultKey: CalcKeyFn<HandlerContext> = ({ req }) => req.ip
+
+async function rateLimiterLoggerErrorHandler(
+  err: unknown,
+  ctx: HandlerContext,
+  { limiter: { keyPrefix, points, duration } }: RateLimiterErrorHandlerDetails,
+): Promise<null> {
+  const { req } = ctx
+  const logger = isPinoHttpRequest(req) ? req.log : log
+
+  logger.error(
+    { err, keyPrefix, points, duration },
+    'rate limiter failed to consume points',
+  )
+
+  return null
+}

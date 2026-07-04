@@ -1,9 +1,6 @@
-import {
-  InferRecordKey,
-  LexiconRecordKey,
-  RecordSchema,
-} from '@atproto/lex-schema'
-import type { DidString, Service } from './types.js'
+import type { InferRecordKey, LexiconRecordKey } from '@atproto/lex-schema'
+import { RecordSchema } from '@atproto/lex-schema'
+import type { DidString, Service } from './types.ts'
 
 export function applyDefaults<
   TDefaults extends Record<string, unknown>,
@@ -133,7 +130,7 @@ export function toReadableStreamPonyfill(
   data: AsyncIterable<Uint8Array>,
 ): ReadableStream<Uint8Array> {
   let iterator: AsyncIterator<Uint8Array> | undefined
-  return new ReadableStream({
+  return new ReadableStream<Uint8Array>({
     async pull(controller) {
       try {
         iterator ??= data[Symbol.asyncIterator]()

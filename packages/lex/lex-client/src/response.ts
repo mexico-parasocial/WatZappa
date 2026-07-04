@@ -1,25 +1,21 @@
-import { JsonToLexOptions, jsonToLex } from '@atproto/lex-json'
-import {
+import type { LexParseOptions } from '@atproto/lex-json'
+import { jsonToLex } from '@atproto/lex-json'
+import type {
   InferMethodOutputEncoding,
   InferOutput,
   LexValue,
-  Payload,
-  Procedure,
-  Query,
   ResultSuccess,
   Validator,
 } from '@atproto/lex-schema'
+import { Payload, Procedure, Query } from '@atproto/lex-schema'
 import {
   XrpcAuthenticationError,
   XrpcInvalidResponseError,
   XrpcResponseError,
   XrpcResponseValidationError,
 } from './errors.js'
-import {
-  EncodingString,
-  XrpcUnknownResponsePayload,
-  isEncodingString,
-} from './types.js'
+import { isEncodingString } from './types.js'
+import type { EncodingString, XrpcUnknownResponsePayload } from './types.js'
 
 const CONTENT_TYPE_BINARY = 'application/octet-stream'
 const CONTENT_TYPE_JSON = 'application/json'
@@ -43,7 +39,7 @@ type InferBodyType<
   ? InferOutput<TSchema>
   : TEncoding extends `application/json`
     ? LexValue
-    : Uint8Array<ArrayBuffer>
+    : Uint8Array
 
 /**
  * The body type of an XRPC response, inferred from the method's output schema.
@@ -57,7 +53,7 @@ export type XrpcResponseBody<M extends Procedure | Query> =
   M['output'] extends Payload<infer TEncoding, infer TSchema>
     ? TEncoding extends string
       ? InferBodyType<TEncoding, TSchema>
-      : undefined | LexValue | Uint8Array<ArrayBuffer>
+      : undefined | LexValue | Uint8Array
     : never
 
 /**
@@ -76,7 +72,7 @@ export type XrpcResponsePayload<M extends Procedure | Query> =
         }
       : // If the schema does not specify an output encoding, anything could be
         // returned, including no payload at all (undefined).
-        undefined | { body: LexValue | Uint8Array<ArrayBuffer>; encoding: string }
+        undefined | { body: LexValue | Uint8Array; encoding: string }
     : never
 
 export type XrpcResponseOptions = {
@@ -111,7 +107,7 @@ export type XrpcResponseOptions = {
    * the response even if the server returns invalid Lex data.
    *
    * @default true
-   * @see {@link JsonToLexOptions.strict}
+   * @see {@link LexParseOptions.strict}
    */
   strictResponseProcessing?: boolean
 }
@@ -301,7 +297,7 @@ type ReadPayloadOptions = {
    *
    * @default false
    */
-  parse?: false | JsonToLexOptions
+  parse?: false | LexParseOptions
 }
 
 /**

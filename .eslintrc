@@ -51,13 +51,11 @@
       {
         "argsIgnorePattern": "^_",
         "varsIgnorePattern": "^_",
-        "caughtErrorsIgnorePattern": "^_|^err|^error|^e$|^cause$",
+        "caughtErrorsIgnorePattern": "^_|^err$|^error$",
         "ignoreRestSiblings": true,
         "reportUsedIgnorePattern": false
       }
     ],
-    "@typescript-eslint/no-unused-expressions": "off",
-    "@typescript-eslint/no-require-imports": "off",
     "@typescript-eslint/no-empty-object-type": "off",
     "@typescript-eslint/ban-ts-comment": "off",
     "@typescript-eslint/no-empty-interface": "off",
@@ -79,8 +77,10 @@
       "env": { "jest": true }
     },
     {
-      "files": ["*.js", "*.cjs"],
-      "rules": {}
+      "files": ["*.js", "*.cjs", "*.cts"],
+      "rules": {
+        "@typescript-eslint/no-require-imports": "off"
+      }
     },
     {
       "files": ["**/*.test.ts", "**/tests/**/*.ts"],
@@ -94,7 +94,7 @@
           {
             "argsIgnorePattern": "^_",
             "varsIgnorePattern": "^_",
-            "caughtErrorsIgnorePattern": "^_|^err|^error|^e$|^cause$",
+            "caughtErrorsIgnorePattern": "^_|^err$|^error$",
             "ignoreRestSiblings": true,
             "reportUsedIgnorePattern": false
           }
@@ -109,12 +109,15 @@
     "import/resolver": {
       "typescript": {
         "project": [
-          "tsconfig.json",
-          "packages/lex/*/tsconfig.json",
-          "packages/oauth/*/tsconfig.json",
-          "packages/oauth/*/tsconfig.src.json",
-          "packages/internal/*/tsconfig.json",
-          "packages/*/tsconfig.json"
+          "packages/lex/*/tsconfig.build.json",
+          "packages/lex/*/tsconfig.test.json",
+          "packages/oauth/*/tsconfig.build.json",
+          "packages/oauth/*/tsconfig.test.json",
+          "packages/oauth/*/tsconfig.lib.json",
+          "packages/internal/*/tsconfig.build.json",
+          "packages/internal/*/tsconfig.test.json",
+          "packages/*/tsconfig.build.json",
+          "packages/*/tsconfig.test.json"
         ]
       },
       "node": {

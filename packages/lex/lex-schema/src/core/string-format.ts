@@ -1,39 +1,18 @@
-function isValidISODateString(input: string): boolean {
-  if (typeof input !== 'string') return false
-  // Reject -00:00 timezone (RFC3339 forbids it as a local time indicator)
-  if (/-00:00$/.test(input)) return false
-  // Extended format: YYYY-MM-DDTHH:MM:SS[.sss][Z|±HH:MM|±HHMM]
-  const extended =
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2}|[+-]\d{4})?$/
-  if (extended.test(input)) return !isNaN(new Date(input).getTime())
-  // Basic format: YYYYMMDDTHHMMSS[.sss][Z|±HHMM] (ISO 8601 §4.3.2 basic)
-  // JS Date() can't parse this directly, so we reformat to extended
-  const basicMatch = input.match(
-    /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(\.\d+)?(Z|[+-]\d{4})?$/,
-  )
-  if (basicMatch) {
-    const [, yr, mo, dy, hr, mn, sc, ms = '', tz = ''] = basicMatch
-    const tzFormatted =
-      tz.length === 5 ? `${tz.slice(0, 3)}:${tz.slice(3)}` : tz
-    const normalized = `${yr}-${mo}-${dy}T${hr}:${mn}:${sc}${ms}${tzFormatted}`
-    return !isNaN(new Date(normalized).getTime())
-  }
-  return false
-}
 import { validateCidString } from '@atproto/lex-data'
 import {
-  AtIdentifierString,
-  AtUriString,
-  DatetimeString,
-  DidString,
-  HandleString,
-  NsidString,
-  RecordKeyString,
-  TidString,
-  UriString,
+  type AtIdentifierString,
+  type AtUriString,
+  type DatetimeString,
+  type DidString,
+  type HandleString,
+  type NsidString,
+  type RecordKeyString,
+  type TidString,
+  type UriString,
   isAtIdentifierString,
   isAtUriString,
   isDatetimeString,
+  isDatetimeStringLenient,
   isValidDid,
   isValidHandle,
   isValidLanguage,
@@ -41,9 +20,8 @@ import {
   isValidRecordKey,
   isValidTid,
   isValidUri,
-  parseLanguageString,
 } from '@atproto/syntax'
-import { CheckFn } from '../util/assertion-util.js'
+import type { CheckFn } from '../util/assertion-util.js'
 
 // -----------------------------------------------------------------------------
 // Individual string format types and type guards
@@ -71,27 +49,8 @@ export {
   assertDatetimeString,
   ifDatetimeString,
   isDatetimeString,
+  isDatetimeStringLenient,
 } from '@atproto/syntax'
-
-/**
- * Matches any ISO-ish datetime string. This is a more lenient check than
- * the strict {@link isDatetimeString} guard, which only allows datetimes that
- * fully conform to the AT Protocol specification (e.g. must include timezone).
- */
-export function isDatetimeStringLenient<I>(
-  input: I,
-): input is I & DatetimeString {
-  // @NOTE the returned type assertion is inaccurate wrt. the DatetimeString
-  // type definition. A more accurate solution would be to use a branded type
-  // instead of a template literal for the "datetime" format
-  if (typeof input !== 'string') return false
-  try {
-    return isValidISODateString(input)
-  } catch {
-    // @NOTE isValidISODateString throws on some inputs
-    return false
-  }
-}
 
 // DatetimeString utilities
 export { currentDatetimeString, toDatetimeString } from '@atproto/syntax'
@@ -116,10 +75,6 @@ export function isAtUriStringLenient<I>(input: I): input is I & AtUriString {
 
 /**
  * Type guard that checks if a value is a valid CID string.
- *
- * Strict: rejects tags whose syntax is well-formed but violate semantic
- * constraints from RFC 5646 §4.1 (e.g. repeated variant subtags or repeated
- * extension singletons). Use {@link isLanguageStringLenient} to accept those.
  *
  * @param value - The value to check
  * @returns `true` if the value is a valid CID string
@@ -174,18 +129,7 @@ export type {
  * @param value - The value to check
  * @returns `true` if the value is a valid language string
  */
-export const isLanguageString = ((v) =>
-  parseLanguageString(v) !== null) as CheckFn<LanguageString>
-
-/**
- * Lenient version of {@link isLanguageString} that only checks well-formed
- * BCP 47 syntax (RFC 5646 §2.1) and does not enforce semantic constraints
- * from §4.1.
- *
- * @see {@link isLanguageString}
- */
-export const isLanguageStringLenient =
-  isValidLanguage as CheckFn<LanguageString>
+export const isLanguageString = isValidLanguage as CheckFn<LanguageString>
 /**
  * A BCP-47 language tag string.
  *
@@ -298,7 +242,7 @@ const stringFormatVerifiers: {
   datetime: [isDatetimeString, isDatetimeStringLenient],
   did: [isDidString],
   handle: [isHandleString],
-  language: [isLanguageString, isLanguageStringLenient],
+  language: [isLanguageString],
   nsid: [isNsidString],
   'record-key': [isRecordKeyString],
   tid: [isTidString],

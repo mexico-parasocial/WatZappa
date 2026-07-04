@@ -1,4 +1,4 @@
-import { NsidString } from '../core.js'
+import type { NsidString } from '../core.js'
 import { ParamsSchema } from './params.js'
 import { Payload } from './payload.js'
 
@@ -39,7 +39,6 @@ export class Query<
     readonly parameters: TParameters,
     readonly output: TOutputPayload,
     readonly errors: TErrors,
-    readonly auth?: { type: string },
   ) {}
 }
 
@@ -82,12 +81,6 @@ export function query<
   const P extends ParamsSchema,
   const O extends Payload,
   const E extends undefined | readonly string[] = undefined,
->(
-  nsid: N,
-  parameters: P,
-  output: O,
-  errors: E = undefined as E,
-  auth?: { type: string },
-) {
-  return new Query<N, P, O, E>(nsid, parameters, output, errors, auth)
+>(nsid: N, parameters: P, output: O, errors: E = undefined as E) {
+  return new Query<N, P, O, E>(nsid, parameters, output, errors)
 }
