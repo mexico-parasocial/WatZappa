@@ -228,6 +228,23 @@ describe('BridgeDatabase — community Matrix rooms', () => {
     ])
   })
 
+  it('counts active members for unicameral quorum', () => {
+    const communityUri = 'at://creator/com.para.community.board/test'
+    db.setSpaceForCommunity(communityUri, '!space:matrix.test', 'test')
+
+    expect(db.getActiveMemberCount(communityUri)).toBe(0)
+
+    db.setCommunityMembership('did:plc:active1', communityUri, 'active', [
+      'member',
+    ])
+    db.setCommunityMembership('did:plc:active2', communityUri, 'active', [
+      'member',
+    ])
+    db.setCommunityMembership('did:plc:left', communityUri, 'left', [])
+
+    expect(db.getActiveMemberCount(communityUri)).toBe(2)
+  })
+
   it('tracks active community membership for auth gates', () => {
     const communityUri = 'at://creator/com.para.community.board/test'
     const did = 'did:plc:member'

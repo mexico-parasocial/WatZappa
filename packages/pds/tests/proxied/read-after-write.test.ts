@@ -28,15 +28,14 @@ describe('proxy read after write', () => {
     agent = network.pds.getAgent()
     sc = network.getSeedClient()
     await basicSeed(sc, { addModLabels: network.bsky })
-    await network.processAll()
     alice = sc.dids.alice
     carol = sc.dids.carol
-    await network.bsky.sub.destroy()
+    await network.processAll()
+    await network.bsky.sub.stop()
   })
 
-  afterAll(async () => {
-    await network.close()
-  })
+  beforeEach(async () => network.processAll())
+  afterAll(async () => network?.close())
 
   it('handles read after write on profiles', async () => {
     await sc.updateProfile(alice, { displayName: 'blah' })
@@ -207,9 +206,7 @@ describe('proxy read after write', () => {
       { headers: { ...sc.getHeaders(alice) } },
     )
     assert(AppBskyFeedDefs.isThreadViewPost(res.data.thread))
-    // @ts-ignore "pnpm verify:types" fails though VSCode doesn't complain
     assert(res.data.thread.replies, 'replies is undefined')
-    // @ts-ignore "pnpm verify:types" fails though VSCode doesn't complain
     const { replies } = res.data.thread
     expect(replies.length).toBe(1)
     assert(AppBskyFeedDefs.isThreadViewPost(replies[0]))

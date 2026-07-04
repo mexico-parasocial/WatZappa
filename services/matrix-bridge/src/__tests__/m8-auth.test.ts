@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { authenticateM8, getBearerToken, HttpError } from '../m8-auth.js'
+import { HttpError, authenticateM8, getBearerToken } from '../m8-auth.js'
 
 function req(authorization?: string): any {
   return { headers: { authorization } }

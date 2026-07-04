@@ -32,3 +32,6 @@ test.sqlite
 coverage
 .env
 services/matrix-bridge/dist
+
+# Generated SeaweedFS S3 gateway config (from .env credentials)
+.seaweedfs/

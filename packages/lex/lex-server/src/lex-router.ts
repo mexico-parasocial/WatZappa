@@ -1,22 +1,22 @@
 import { encode } from '@atproto/lex-cbor'
 import {
   LexError,
-  LexErrorData,
-  LexValue,
+  type LexErrorData,
+  type LexValue,
   isPlainObject,
   ui8Concat,
 } from '@atproto/lex-data'
-import { lexParseJsonBytes, lexToJson } from '@atproto/lex-json'
+import { lexParse, lexToJson } from '@atproto/lex-json'
 import {
-  DidString,
-  InferMethodInput,
-  InferMethodMessage,
-  InferMethodOutput,
-  InferMethodOutputBody,
-  InferMethodOutputEncoding,
-  InferMethodParams,
-  Main,
-  NsidString,
+  type DidString,
+  type InferMethodInput,
+  type InferMethodMessage,
+  type InferMethodOutput,
+  type InferMethodOutputBody,
+  type InferMethodOutputEncoding,
+  type InferMethodParams,
+  type Main,
+  type NsidString,
   Procedure,
   Query,
   Subscription,
@@ -568,12 +568,16 @@ export class LexRouter {
   /** Map of NSID strings to their fetch handlers. */
   readonly handlers: Map<NsidString, FetchHandler> = new Map()
 
+  options: LexRouterOptions
+
   /**
    * Creates a new XRPC router.
    *
    * @param options - Router configuration options
    */
-  constructor(readonly options: LexRouterOptions = {}) {}
+  constructor(options: LexRouterOptions = {}) {
+    this.options = options
+  }
 
   /**
    * Registers a subscription handler without authentication.
@@ -1071,7 +1075,7 @@ async function getProcedureInput<M extends Procedure>(
 
   if (this.input.encoding === 'application/json') {
     // @TODO limit size?
-    const data = lexParseJsonBytes(await request.bytes())
+    const data = lexParse(await request.text())
     const body = this.input.schema ? this.input.schema.parse(data) : data
     return { encoding, body } as InferMethodInput<M, Body>
   } else if (this.input.encoding) {
@@ -1115,10 +1119,7 @@ function onMessage(this: WebSocket, _event: unknown) {
 const ERROR_FRAME_HEADER = /*#__PURE__*/ encode({ op: -1 })
 
 function encodeErrorFrame(errorData: LexErrorData): Uint8Array<ArrayBuffer> {
-  return ui8Concat([
-    ERROR_FRAME_HEADER,
-    encode(errorData),
-  ]) as Uint8Array<ArrayBuffer>
+  return ui8Concat([ERROR_FRAME_HEADER, encode(errorData)])
 }
 
 // Pre-encoded frame header for message frames with unknown type
@@ -1142,13 +1143,10 @@ function encodeMessageFrame(
             : $type,
       }),
       encode(rest),
-    ]) as Uint8Array<ArrayBuffer>
+    ])
   }
 
-  return ui8Concat([
-    UNKNOWN_MESSAGE_FRAME_HEADER,
-    encode(value),
-  ]) as Uint8Array<ArrayBuffer>
+  return ui8Concat([UNKNOWN_MESSAGE_FRAME_HEADER, encode(value)])
 }
 
 function isAbortReason(signal: AbortSignal, error: unknown): boolean {

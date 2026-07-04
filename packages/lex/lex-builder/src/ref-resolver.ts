@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import { join } from 'node:path'
 import { SourceFile } from 'ts-morph'
-import { LexiconDocument, LexiconIndexer } from '@atproto/lex-document'
+import type { LexiconDocument, LexiconIndexer } from '@atproto/lex-document'
 import {
   isGlobalIdentifier,
   isJsKeyword,
@@ -355,14 +355,14 @@ export class RefResolver {
   private conflictsWithImports(name: string) {
     return this.file.getImportDeclarations().some(
       (imp) =>
-        // import name from '....js'
+        // import name from '...'
         imp.getDefaultImport()?.getText() === name ||
-        // import * as name from '....js'
+        // import * as name from '...'
         imp.getNamespaceImport()?.getText() === name ||
         imp.getNamedImports().some(
           (named) =>
-            // import { name } from '....js'
-            // import { foo as name } from '....js'
+            // import { name } from '...'
+            // import { foo as name } from '...'
             (named.getAliasNode()?.getText() ?? named.getName()) === name,
         ),
     )

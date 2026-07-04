@@ -1,3 +1,4 @@
+import { AdminApis, MatrixClient } from 'matrix-bot-sdk'
 import type { Config } from './config.js'
 
 export interface MatrixRoomMember {
@@ -9,12 +10,18 @@ export interface MatrixRoomMember {
 export class MatrixAdminClient {
   private baseUrl: string
   private adminToken: string
+  private enableEncryption: boolean
   readonly botUserId: string | undefined
+  private client: MatrixClient
+  private admin: AdminApis
 
   constructor(config: Config) {
     this.baseUrl = config.matrixHomeserverUrl.replace(/\/$/, '')
     this.adminToken = config.matrixAdminToken
     this.botUserId = config.matrixBotUserId
+    this.enableEncryption = config.matrixEnableEncryption
+    this.client = new MatrixClient(this.baseUrl, this.adminToken)
+    this.admin = new AdminApis(this.client)
   }
 
   private async request(path: string, options: RequestInit = {}): Promise<any> {
@@ -45,6 +52,7 @@ export class MatrixAdminClient {
     state_key?: string
     content: Record<string, unknown>
   }> {
+    if (!this.enableEncryption) return []
     return [
       {
         type: 'm.room.encryption',
@@ -54,39 +62,14 @@ export class MatrixAdminClient {
   }
 
   async createSpace(name: string, slug: string): Promise<string> {
-    const res = await this.request('/_synapse/admin/v1/rooms', {
-      method: 'POST',
-      body: JSON.stringify({
-        room_alias_name: slug,
-        name,
-        preset: 'private_chat',
-        creation_content: {
-          type: 'm.space',
-        },
-        initial_state: this.encryptedInitialState(),
-        power_level_content_override: {
-          users_default: 0,
-          events_default: 50,
-          state_default: 50,
-          ban: 50,
-          kick: 50,
-          redact: 50,
-          invite: 50,
-        },
-      }),
-    })
-    return res.room_id as string
-  }
-
-  async createRoom(
-    name: string,
-    alias: string,
-    parentSpaceId?: string,
-  ): Promise<string> {
-    const body: any = {
-      room_alias_name: alias,
+    return this.client.createRoom({
+      room_alias_name: slug,
       name,
       preset: 'private_chat',
+      creation_content: {
+        type: 'm.space',
+      },
+      initial_state: this.encryptedInitialState(),
       power_level_content_override: {
         users_default: 0,
         events_default: 50,
@@ -96,24 +79,41 @@ export class MatrixAdminClient {
         redact: 50,
         invite: 50,
       },
-    }
-    if (parentSpaceId) {
-      body.initial_state = [
-        ...this.encryptedInitialState(),
-        {
-          type: 'm.space.parent',
-          state_key: parentSpaceId,
-          content: { via: [extractServerName(this.baseUrl)] },
-        },
-      ]
-    } else {
-      body.initial_state = this.encryptedInitialState()
-    }
-    const res = await this.request('/_synapse/admin/v1/rooms', {
-      method: 'POST',
-      body: JSON.stringify(body),
     })
-    return res.room_id as string
+  }
+
+  async createRoom(
+    name: string,
+    alias: string,
+    parentSpaceId?: string,
+  ): Promise<string> {
+    const initialState: Array<{
+      type: string
+      state_key?: string
+      content: Record<string, unknown>
+    }> = this.encryptedInitialState()
+    if (parentSpaceId) {
+      initialState.push({
+        type: 'm.space.parent',
+        state_key: parentSpaceId,
+        content: { via: [extractServerName(this.baseUrl)] },
+      })
+    }
+    return this.client.createRoom({
+      room_alias_name: alias,
+      name,
+      preset: 'private_chat',
+      initial_state: initialState,
+      power_level_content_override: {
+        users_default: 0,
+        events_default: 50,
+        state_default: 50,
+        ban: 50,
+        kick: 50,
+        redact: 50,
+        invite: 50,
+      },
+    })
   }
 
   async addChildSpace(
@@ -121,13 +121,10 @@ export class MatrixAdminClient {
     childId: string,
     via: string[],
   ): Promise<void> {
-    await this.request(
-      `/_matrix/client/v3/rooms/${encodeURIComponent(parentId)}/state/m.space.child/${encodeURIComponent(childId)}`,
-      {
-        method: 'PUT',
-        body: JSON.stringify({ via, suggested: false }),
-      },
-    )
+    await this.client.sendStateEvent(parentId, 'm.space.child', childId, {
+      via,
+      suggested: false,
+    })
   }
 
   async inviteUser(roomId: string, userId: string): Promise<void> {
@@ -177,9 +174,7 @@ export class MatrixAdminClient {
 
   async userExists(userId: string): Promise<boolean> {
     try {
-      await this.request(
-        `/_synapse/admin/v2/users/${encodeURIComponent(userId)}`,
-      )
+      await this.admin.synapse.getUser(userId)
       return true
     } catch {
       return false
@@ -191,17 +186,11 @@ export class MatrixAdminClient {
     displayName: string,
     password: string,
   ): Promise<void> {
-    await this.request(
-      `/_synapse/admin/v2/users/${encodeURIComponent(userId)}`,
-      {
-        method: 'PUT',
-        body: JSON.stringify({
-          displayname: displayName,
-          password,
-          admin: false,
-        }),
-      },
-    )
+    await this.admin.synapse.upsertUser(userId, {
+      displayname: displayName,
+      password,
+      admin: false,
+    })
   }
 
   async generateUserToken(
@@ -310,6 +299,37 @@ export class MatrixAdminClient {
       `/_synapse/admin/v1/rooms/${encodeURIComponent(roomId)}/messages?${params.toString()}`,
     )
     return res as any
+  }
+
+  /**
+   * Ban a user from a room.
+   */
+  async banUser(
+    roomId: string,
+    userId: string,
+    reason = 'Community moderation sanction',
+  ): Promise<void> {
+    await this.request(
+      `/_synapse/admin/v1/rooms/${encodeURIComponent(roomId)}/members/${encodeURIComponent(userId)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ membership: 'ban', reason }),
+      },
+    )
+  }
+
+  /**
+   * Mute a user in a room by setting their power level to -1 (read-only).
+   */
+  async muteUser(roomId: string, userId: string): Promise<void> {
+    await this.setPowerLevel(roomId, userId, -1)
+  }
+
+  /**
+   * Unmute a user in a room by restoring their power level to 0.
+   */
+  async unmuteUser(roomId: string, userId: string): Promise<void> {
+    await this.setPowerLevel(roomId, userId, 0)
   }
 }
 

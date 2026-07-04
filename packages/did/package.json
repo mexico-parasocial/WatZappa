@@ -1,6 +1,6 @@
 {
   "name": "@atproto/did",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "license": "MIT",
   "description": "DID resolution and verification library",
   "keywords": [
@@ -15,6 +15,10 @@
     "url": "https://github.com/bluesky-social/atproto",
     "directory": "packages/did"
   },
+  "files": [
+    "./dist",
+    "./CHANGELOG.md"
+  ],
   "type": "module",
   "exports": {
     ".": {
@@ -22,13 +26,15 @@
       "default": "./dist/index.js"
     }
   },
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@swc/jest": "^0.2.24",
-    "jest": "^30.0.0",
-    "@jest/globals": "^30.0.0"
+    "jest": "^30.0.0"
   },
   "scripts": {
     "build": "tsgo --build tsconfig.build.json",

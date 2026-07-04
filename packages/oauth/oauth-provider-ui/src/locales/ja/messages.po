@@ -8,7 +8,7 @@ msgstr ""
 "Language: ja\n"
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2026-07-02 00:00+0900\n"
+"PO-Revision-Date: 2026-06-18 01:45+0900\n"
 "Last-Translator: dolciss\n"
 "Language-Team: Japanese\n"
 "Plural-Forms: \n"
@@ -74,7 +74,7 @@ msgstr "2要素認証の確認"
 msgid "A local app"
 msgstr "ローカルアプリ"
 
-#: src/lib/api.ts:466
+#: src/lib/api.ts:467
 msgid "A second authentication factor is required ({hint})"
 msgstr "2番目の認証要素が必要です ({hint})"
 
@@ -159,7 +159,7 @@ msgstr "デバイス上のアプリ"
 msgid "An error occurred"
 msgstr "エラーが発生しました"
 
-#: src/lib/api.ts:354
+#: src/lib/api.ts:355
 msgid "An unexpected error occurred. Please try again."
 msgstr "予期しないエラーが発生しました。もう一度お試しください。"
 
@@ -246,7 +246,7 @@ msgstr "ブランディング"
 
 #: src/components/consent-form.tsx:164
 msgid "By clicking <0>Authorize</0>, you will grant this application access to your account in accordance with its <1>terms of service</1> and <2>privacy policy</2>."
-msgstr "<0>承認</0>をクリックすると、このアプリケーションは、あなたのアカウントへのアクセスを、その<1>利用規約</1>と<2>プライバシーポリシー</2>に従って付与します。"
+msgstr "<0>承認</0>をクリックすると、このアプリケーションは、あなたのアカウントへのアクセスを、その利用規約とプライバシーポリシーに従って付与します。"
 
 #. placeholder {0}: tosLink ? ( <LinkAnchor className="text-primary underline" link={tosLink}> <Trans>Terms of Service</Trans> </LinkAnchor> ) : ( <Trans>Terms of Service</Trans> )
 #. placeholder {1}: ppLink ? ( <LinkAnchor className="text-primary underline" link={ppLink}> <Trans>Privacy Policy</Trans> </LinkAnchor> ) : ( <Trans>Privacy Policy</Trans> )
@@ -391,7 +391,7 @@ msgstr "新規アカウントの作成"
 msgid "Create, update, and delete any public data linked to your account"
 msgstr "あなたのアカウントにリンクされたすべての公開データを作成、更新、および削除"
 
-#: src/lib/api.ts:435
+#: src/lib/api.ts:436
 msgid "Custom domains are not supported"
 msgstr "カスタムドメインはサポートされていません"
 
@@ -634,7 +634,8 @@ msgid ""
 "A detailed tutorial can be found here: {tutorialHref}\n"
 "\n"
 "Thank you."
-msgstr "こんにちは、\n"
+msgstr ""
+"こんにちは、\n"
 "\n"
 "ドメイン「{handle}」を私のATプロトコル識別子（{did}）に関連付けるには、次のいずれかの設定変更が必要です。どちらの方法でも十分であり、どちらか一方を適用するだけで済みます。\n"
 "\n"
@@ -1128,35 +1129,35 @@ msgstr "アプリは、あなたのBlueskyアカウントに対して次のア�
 msgid "The AT Protocol network uses an authentication mechanism that allows to uniquely identify users when communicating with external services. This is typically used to retrieve or update data linked to your account, such as chat messages, feeds or moderation content. The application requests the permissions necessary to perform the following authenticated actions on your behalf:"
 msgstr "ATプロトコルネットワークは、外部サービスと通信する際にユーザーを一意に識別できる認証メカニズムを使用しています。これは通常、チャットメッセージ、フィード、モデレーションコンテンツなどのアカウントにリンクされたデータを取得または更新するために使用されます。アプリは、あなたに代わって次の認証されたアクションを実行するために必要な権限を要求しています："
 
-#: src/lib/api.ts:393
+#: src/lib/api.ts:394
 msgid "The data you submitted is invalid. Please check the form and try again."
 msgstr "送信されたデータが無効です。フォームを確認して、もう一度お試しください。"
 
-#: src/lib/api.ts:423
+#: src/lib/api.ts:424
 msgid "The domain name is not allowed"
 msgstr "そのドメイン名は許可されていません"
 
-#: src/lib/api.ts:493
+#: src/lib/api.ts:494
 msgid "The invite code is not valid"
 msgstr "招待コードが有効ではありません"
 
-#: src/lib/api.ts:352
+#: src/lib/api.ts:353
 msgid "The server encountered an unexpected error. Please try again."
 msgstr "サーバーで予期しないエラーが発生しました。もう一度お試しください。"
 
-#: src/lib/api.ts:425
+#: src/lib/api.ts:426
 msgid "The username contains inappropriate language"
 msgstr "ユーザー名に不適切な言葉が含まれています"
 
-#: src/lib/api.ts:431
+#: src/lib/api.ts:432
 msgid "The username could not be resolved"
 msgstr "ユーザー名が見つかりません"
 
-#: src/lib/api.ts:429
+#: src/lib/api.ts:430
 msgid "The username is already in use"
 msgstr "そのユーザー名は既に使用されています"
 
-#: src/lib/api.ts:421
+#: src/lib/api.ts:422
 msgid "The username is invalid"
 msgstr "ユーザー名が無効です"
 
@@ -1172,21 +1173,21 @@ msgstr "これらのアプリはあなたのアカウントにアクセスでき
 msgid "This application is requesting the following permissions (scopes) to access your account:"
 msgstr "このアプリケーションは、あなたのアカウントにアクセスするために次の権限（スコープ）を要求しています："
 
-#: src/lib/api.ts:378
+#: src/lib/api.ts:379
 msgid "This authorization request has been denied. Please try again."
 msgstr "この承認リクエストは拒否されました。もう一度お試しください。"
 
-#: src/lib/api.ts:557
+#: src/lib/api.ts:558
 msgid "This email is already used"
 msgstr "このメールアドレスはすでに使用されています"
 
-#: src/lib/api.ts:363
-#: src/lib/api.ts:514
-#: src/lib/api.ts:545
+#: src/lib/api.ts:364
+#: src/lib/api.ts:515
+#: src/lib/api.ts:546
 msgid "This sign-in session has expired"
 msgstr "このサインインセッションの有効期限が切れました"
 
-#: src/lib/api.ts:427
+#: src/lib/api.ts:428
 msgid "This username is reserved"
 msgstr "このユーザー名は予約されています"
 
@@ -1370,7 +1371,7 @@ msgstr "どういう意味ですか？"
 msgid "What is an Atmosphere Account?"
 msgstr "Atmosphereアカウントとは何ですか？"
 
-#: src/lib/api.ts:529
+#: src/lib/api.ts:530
 msgid "Wrong identifier or password"
 msgstr "識別子またはパスワードが間違っています"
 

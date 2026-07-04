@@ -24,7 +24,6 @@ describe('email confirmation', () => {
     network = await TestNetworkNoAppView.create({
       dbPostgresSchema: 'email_confirmation',
     })
-    // @ts-expect-error Error due to circular dependency with the dev-env package
     mailer = network.pds.ctx.mailer
     agent = network.pds.getAgent()
     sc = network.getSeedClient()
@@ -42,7 +41,7 @@ describe('email confirmation', () => {
 
   afterAll(async () => {
     mailer.transporter.sendMail = _origSendMail
-    await network.close()
+    await network?.close()
   })
 
   const getMailFrom = async (promise): Promise<SendMailOptions> => {

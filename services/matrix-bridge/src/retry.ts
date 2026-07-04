@@ -1,5 +1,5 @@
 import type { Logger } from 'pino'
-import type { BridgeDatabase } from './db.js'
+import type { IBridgeDatabase } from './db/index.js'
 import type { MatrixAdminClient } from './matrix.js'
 import type { BridgeMetrics } from './metrics.js'
 
@@ -11,7 +11,7 @@ export class RetryWorker {
   private running = false
 
   constructor(
-    private db: BridgeDatabase,
+    private db: IBridgeDatabase,
     private matrix: MatrixAdminClient,
     private metrics: BridgeMetrics,
     private log: Logger,
@@ -39,14 +39,14 @@ export class RetryWorker {
     this.running = true
 
     try {
-      const failed = this.db.getFailedSyncs(50)
+      const failed = await this.db.getFailedSyncs(50)
       if (failed.length === 0) return
 
       this.log.info({ count: failed.length }, 'Retrying failed syncs')
 
       for (const entry of failed) {
         // Skip entries that have been retried too many times
-        const retryCount = this.db.getRetryCount(entry.id)
+        const retryCount = await this.db.getRetryCount(entry.id)
         if (retryCount >= MAX_RETRIES) {
           this.log.warn(
             { entryId: entry.id, retries: retryCount },
@@ -67,22 +67,20 @@ export class RetryWorker {
             entry.spaceId &&
             entry.did
           ) {
-            await this.matrix.inviteUser(
-              entry.spaceId,
-              this.db.getMxidForDid(entry.did)!,
-            )
-            this.db.markSyncSuccess(entry.id)
+            const mxid = await this.db.getMxidForDid(entry.did)
+            if (!mxid) continue
+            await this.matrix.inviteUser(entry.spaceId, mxid)
+            await this.db.markSyncSuccess(entry.id)
             this.metrics.retryAttemptsTotal.inc({
               event_type: entry.eventType,
               status: 'success',
             })
             this.log.info({ entryId: entry.id }, 'Retry succeeded')
           } else if (entry.eventType === 'kick' && entry.spaceId && entry.did) {
-            await this.matrix.kickUser(
-              entry.spaceId,
-              this.db.getMxidForDid(entry.did)!,
-            )
-            this.db.markSyncSuccess(entry.id)
+            const mxid = await this.db.getMxidForDid(entry.did)
+            if (!mxid) continue
+            await this.matrix.kickUser(entry.spaceId, mxid)
+            await this.db.markSyncSuccess(entry.id)
             this.metrics.retryAttemptsTotal.inc({
               event_type: entry.eventType,
               status: 'success',
@@ -90,7 +88,7 @@ export class RetryWorker {
             this.log.info({ entryId: entry.id }, 'Retry succeeded')
           }
         } catch (err: any) {
-          this.db.incrementRetryCount(entry.id)
+          await this.db.incrementRetryCount(entry.id)
           this.metrics.retryAttemptsTotal.inc({
             event_type: entry.eventType,
             status: 'failure',

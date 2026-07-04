@@ -529,6 +529,15 @@ export class BridgeDatabase {
     return row.count
   }
 
+  getActiveMemberCount(communityUri: string): number {
+    const row = this.db
+      .prepare(
+        "SELECT COUNT(*) as count FROM community_membership_state WHERE community_uri = ? AND membership_state = 'active'",
+      )
+      .get(communityUri) as { count: number }
+    return row.count
+  }
+
   // User <-> MXID mappings
   getMxidForDid(did: string): string | undefined {
     const row = this.db
@@ -597,16 +606,16 @@ export class BridgeDatabase {
          WHERE cms.did = ? AND cms.membership_state = 'active'`,
       )
       .all(did) as Array<{
-        space_id: string
-        community_uri: string
-        slug: string
-        chamber_mode: string
-        chamber_a_room_id: string | null
-        chamber_b_room_id: string | null
-        observer_room_id: string | null
-        roles_json: string
-        chamber: string | null
-      }>
+      space_id: string
+      community_uri: string
+      slug: string
+      chamber_mode: string
+      chamber_a_room_id: string | null
+      chamber_b_room_id: string | null
+      observer_room_id: string | null
+      roles_json: string
+      chamber: string | null
+    }>
 
     return rows.flatMap((row) => {
       const rooms: CommunityRoomSummary[] = [

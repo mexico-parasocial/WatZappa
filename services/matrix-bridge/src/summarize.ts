@@ -1,4 +1,4 @@
-import type { BridgeDatabase } from './db.js'
+import type { IBridgeDatabase } from './db/index.js'
 import type { OpenAIClient } from './openai-client.js'
 
 export interface DeliberationSummary {
@@ -80,10 +80,10 @@ Claims:`
 
 export async function summarizeCommunityDeliberation(
   client: OpenAIClient,
-  db: BridgeDatabase,
+  db: IBridgeDatabase,
   communityUri: string,
 ): Promise<DeliberationSummary | null> {
-  const cards = db.getCardsForCommunity(communityUri, { limit: 100 })
+  const cards = await db.getCardsForCommunity(communityUri, { limit: 100 })
   if (cards.length === 0) return null
 
   const claimsText = cards
@@ -102,7 +102,7 @@ export async function summarizeCommunityDeliberation(
     const parsed = parseJsonResponse(response)
     if (!parsed) return null
 
-    const rels = db.getGraphForCommunity(communityUri)
+    const rels = await db.getGraphForCommunity(communityUri)
 
     const normalizedClaims = Array.isArray(parsed.normalizedClaims)
       ? parsed.normalizedClaims

@@ -83,8 +83,6 @@ services:
       PDS_CRAWLERS: ${PDS_CRAWLERS:-https://bsky.network}
       PDS_INVITE_REQUIRED: ${PDS_INVITE_REQUIRED:-1}
       PDS_DISABLE_SSRF_PROTECTION: '0'
-    volumes:
-      - pds_data:/data/blobs
     # Internal port only — Caddy routes public traffic here
     expose:
       - '2583'
@@ -214,6 +212,5 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  pds_data:
   caddy_data:
   caddy_config:

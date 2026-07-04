@@ -1,136 +1,104 @@
+import { CID } from 'multiformats/cid'
 import {
-  IpldValue,
-  LegacyJsonValue,
+  type IpldValue,
+  type JsonValue,
+  check,
   ipldToJson,
   jsonToIpld,
 } from '@atproto/common-web'
-import {
-  CID,
-  LexValue,
-  MAX_PAYLOAD_NESTED_LEVELS,
-  isCid,
-} from '@atproto/lex-data'
-import {
-  IterativeTransformOptions,
-  iterativeTransform,
-  lexParse,
-  lexStringify,
-} from '@atproto/lex-json'
-import { BlobRef, typedJsonBlobRef, untypedJsonBlobRef } from './blob-refs.js'
+import { BlobRef, jsonBlobRef } from './blob-refs.js'
 
 /**
- * @note this is equivalent to `unknown` because of {@link IpldValue}
- * historically being `unknown`.
- *
- * @deprecated Use {@link LexValue} from `@atproto/lex-data` instead.
+ * @note this is equivalent to `unknown` because of {@link IpldValue} being `unknown`.
+ * @deprecated Use {@link Lex} from `@atproto/lex-data` instead.
  */
-export type LegacyLexValue = IpldValue | BlobRef
-
-export type { LegacyLexValue as LexValue }
+export type LexValue = unknown
 
 /**
  * @deprecated Use {@link TypedLexMap} from `@atproto/lex-data` instead.
  */
-export type RepoRecord = Record<string, LegacyLexValue>
+export type RepoRecord = Record<string, LexValue>
 
-/**
- * Lenient conversion defaults for {@link jsonToLex} and {@link lexToJson}.
- *
- * @internal
- */
-const IPLD_TRANSFORM_OPTS: IterativeTransformOptions = Object.freeze({
-  allowNonSafeIntegers: true,
-  maxContainerLength: Infinity,
-  maxNestedLevels: MAX_PAYLOAD_NESTED_LEVELS,
-  maxObjectKeyLen: Infinity,
-} satisfies Required<IterativeTransformOptions>)
+// @NOTE avoiding use of check.is() here only because it makes
+// these implementations slow, and they often live in hot paths.
 
 /**
  * @deprecated Use `LexValue` from `@atproto/lex-data` instead (which doesn't need conversion to IPLD).
  */
-export const lexToIpld = (input: LegacyLexValue): IpldValue => {
-  return iterativeTransform(input, lexObjectToIpld, IPLD_TRANSFORM_OPTS)
-}
-
-/**
- * @internal
- */
-function lexObjectToIpld(value: object): IpldValue | void {
-  if (value instanceof BlobRef) {
+export const lexToIpld = (val: LexValue): IpldValue => {
+  // walk arrays
+  if (Array.isArray(val)) {
+    return val.map((item) => lexToIpld(item))
+  }
+  // objects
+  if (val && typeof val === 'object') {
     // convert blobs, leaving the original encoding so that we don't change CIDs on re-encode
-    return value.original
+    if (val instanceof BlobRef) {
+      return val.original
+    }
+    // retain cids & bytes
+    if (CID.asCID(val) || val instanceof Uint8Array) {
+      return val
+    }
+    // walk plain objects
+    const toReturn: Record<string, LexValue> = {}
+    for (const key of Object.keys(val)) {
+      toReturn[key] = lexToIpld((val as any)[key])
+    }
+    return toReturn
   }
-
-  if (isCid(value) || value instanceof Uint8Array) {
-    return value
-  }
+  // pass through
+  return val
 }
 
 /**
  * @deprecated Use `LexValue` from `@atproto/lex-data` instead instead (which doesn't need conversion to IPLD).
  */
-export const ipldToLex = (input: IpldValue): LegacyLexValue => {
-  return iterativeTransform(input, ipldObjectToLex, IPLD_TRANSFORM_OPTS)
+export const ipldToLex = (val: IpldValue): LexValue => {
+  // map arrays
+  if (Array.isArray(val)) {
+    return val.map((item) => ipldToLex(item))
+  }
+  // objects
+  if (val && typeof val === 'object') {
+    // convert blobs, using hints to avoid expensive is() check
+    const obj = val as Record<string, unknown>
+
+    if (
+      (obj['$type'] === 'blob' ||
+        (typeof obj['cid'] === 'string' &&
+          typeof obj['mimeType'] === 'string')) &&
+      check.is(obj, jsonBlobRef)
+    ) {
+      return BlobRef.fromJsonRef(obj)
+    }
+    // retain cids, bytes
+    if (CID.asCID(val) || val instanceof Uint8Array) {
+      return val
+    }
+    // map plain objects
+    const toReturn: Record<string, LexValue> = {}
+    for (const key of Object.keys(obj)) {
+      toReturn[key] = ipldToLex(obj[key])
+    }
+    return toReturn
+  }
+  // pass through
+  return val
 }
 
-/** @internal */
-function ipldObjectToLex(value: object): LegacyLexValue | void {
-  // convert blobs, using hints to avoid expensive is() check
-  if ('$type' in value && value.$type !== undefined) {
-    const result = typedJsonBlobRef.safeParse(value)
-    if (result.success) {
-      return new BlobRef(
-        result.data.ref,
-        result.data.mimeType,
-        result.data.size,
-        value as any,
-      )
-    }
-  } else if ('cid' in value && 'mimeType' in value) {
-    const result = untypedJsonBlobRef.safeParse(value)
-    if (result.success) {
-      return new BlobRef(
-        CID.parse(result.data.cid),
-        result.data.mimeType,
-        -1,
-        value as any,
-      )
-    }
-  }
-
-  if (isCid(value) || value instanceof Uint8Array) {
-    return value
-  }
-}
-
-/**
- * @deprecated use {@link lexToJson} from `@atproto/lex-json` instead
- */
-export const lexToJson = (val: LegacyLexValue): LegacyJsonValue => {
+export const lexToJson = (val: LexValue): JsonValue => {
   return ipldToJson(lexToIpld(val))
 }
 
-/**
- * @deprecated use {@link lexStringify} from `@atproto/lex-json` instead
- */
-export const stringifyLex = (val: LegacyLexValue): string => {
-  return lexStringify(lexToIpld(val) as LexValue, { strict: false })
+export const stringifyLex = (val: LexValue): string => {
+  return JSON.stringify(lexToJson(val))
 }
 
-/**
- * @deprecated use {@link jsonToLex} from `@atproto/lex-json` instead
- */
-const jsonToLexLegacy = (val: LegacyJsonValue): LegacyLexValue => {
+export const jsonToLex = (val: JsonValue): LexValue => {
   return ipldToLex(jsonToIpld(val))
 }
 
-// @NOTE we use a different name internally to avoid conflict with jsonToLex
-// from `@atproto/lex-json`.
-export { jsonToLexLegacy as jsonToLex }
-
-/**
- * @deprecated use {@link lexParse} from `@atproto/lex-json` instead
- */
-export const jsonStringToLex = (val: string): LegacyLexValue => {
-  return ipldToLex(lexParse(val, { strict: false }))
+export const jsonStringToLex = (val: string): LexValue => {
+  return jsonToLex(JSON.parse(val))
 }

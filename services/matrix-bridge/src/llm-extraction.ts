@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { BridgeDatabase } from './db.js'
+import type { IBridgeDatabase } from './db/index.js'
 import type { OpenAIClient } from './openai-client.js'
 
 export interface LLMEnrichmentResult {
@@ -184,7 +184,7 @@ function parseJsonResponse(text: string): unknown {
  */
 export async function processCardWithLLM(
   client: OpenAIClient,
-  db: BridgeDatabase,
+  db: IBridgeDatabase,
   card: {
     id: string
     title: string
@@ -197,7 +197,7 @@ export async function processCardWithLLM(
   const enrichment = await enrichCardWithLLM(client, card)
   if (enrichment) {
     for (const entity of enrichment.entities) {
-      db.insertEntity({
+      await db.insertEntity({
         cardId: card.id,
         entityType: `llm:${entity.type}`,
         entityValue: entity.value,
@@ -206,8 +206,9 @@ export async function processCardWithLLM(
   }
 
   // Get existing cards in same community for relationship inference
-  const existingCards = db
-    .getCardsForCommunity(card.communityUri, { limit: 20 })
+  const existingCards = (
+    await db.getCardsForCommunity(card.communityUri, { limit: 20 })
+  )
     .filter((c: { id: string }) => c.id !== card.id)
     .map((c: { id: string; title: string; content: string }) => ({
       id: c.id,
@@ -226,7 +227,7 @@ export async function processCardWithLLM(
 
   for (const sugg of suggestions) {
     try {
-      db.insertSuggestedRelationship({
+      await db.insertSuggestedRelationship({
         id: randomUUID(),
         sourceCardId: card.id,
         targetCardId: sugg.targetCardId,

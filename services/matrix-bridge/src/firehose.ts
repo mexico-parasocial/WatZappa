@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import type { Logger } from 'pino'
 import { IdResolver } from '@atproto/identity'
 import { Firehose } from '@atproto/sync'
@@ -5,7 +6,7 @@ import type { CommitEvt, Event } from '@atproto/sync'
 import { ChatModerationEngine } from './chat-moderation.js'
 import type { Config } from './config.js'
 import { parseConstitution } from './constitution.js'
-import type { BridgeDatabase } from './db.js'
+import type { IBridgeDatabase } from './db/index.js'
 import type { MatrixAdminClient } from './matrix.js'
 import { didToMxid, extractServerName } from './matrix.js'
 import type { BridgeMetrics } from './metrics.js'
@@ -16,7 +17,7 @@ const CURSOR_SAVE_INTERVAL_MS = 30000
 
 export class FirehoseConsumer {
   private firehose: Firehose
-  private db: BridgeDatabase
+  private db: IBridgeDatabase
   private matrix: MatrixAdminClient
   private metrics: BridgeMetrics
   private proposals: ProposalEngine
@@ -24,11 +25,12 @@ export class FirehoseConsumer {
   private log: Logger
   private serverName: string
   private lastSeq: number | undefined
+  private initialCursor: number | undefined
   private cursorSaveTimer: NodeJS.Timeout | null = null
 
   constructor(
     config: Config,
-    db: BridgeDatabase,
+    db: IBridgeDatabase,
     matrix: MatrixAdminClient,
     metrics: BridgeMetrics,
     log: Logger,
@@ -58,13 +60,7 @@ export class FirehoseConsumer {
       onError: (err) => {
         this.log.error({ err }, 'Firehose error')
       },
-      getCursor: () => {
-        const cursor = db.getSyncCursor()
-        if (cursor) {
-          this.log.info({ cursor }, 'Resuming firehose from cursor')
-        }
-        return cursor ?? undefined
-      },
+      getCursor: () => this.initialCursor ?? undefined,
     })
   }
 
@@ -73,21 +69,30 @@ export class FirehoseConsumer {
       { url: this.firehose.opts.service },
       'Starting firehose consumer',
     )
+    this.initialCursor = await this.db.getSyncCursor()
+    if (this.initialCursor) {
+      this.log.info(
+        { cursor: this.initialCursor },
+        'Resuming firehose from cursor',
+      )
+    }
     this.cursorSaveTimer = setInterval(() => {
-      if (this.lastSeq !== undefined) {
-        this.db.setSyncCursor(this.lastSeq)
-      }
+      void (async () => {
+        if (this.lastSeq !== undefined) {
+          await this.db.setSyncCursor(this.lastSeq)
+        }
+      })()
     }, CURSOR_SAVE_INTERVAL_MS)
     await this.firehose.start()
   }
 
-  stop(): void {
+  async stop(): Promise<void> {
     this.log.info('Stopping firehose consumer')
     if (this.cursorSaveTimer) {
       clearInterval(this.cursorSaveTimer)
     }
     if (this.lastSeq !== undefined) {
-      this.db.setSyncCursor(this.lastSeq)
+      await this.db.setSyncCursor(this.lastSeq)
     }
     this.firehose.destroy().catch((err) => {
       this.log.error({ err }, 'Error destroying firehose')
@@ -141,7 +146,7 @@ export class FirehoseConsumer {
     const chamberMode = (record.chamberMode ?? 'unicameral') as string
     const communityUri = `at://${creatorDid}/com.para.community.board/${slug}`
 
-    const existing = this.db.getSpaceForCommunity(communityUri)
+    const existing = await this.db.getSpaceForCommunity(communityUri)
     if (existing) {
       this.log.debug({ communityUri }, 'Community space already exists')
       return
@@ -152,7 +157,12 @@ export class FirehoseConsumer {
     })
     try {
       const spaceId = await this.matrix.createSpace(name, slug)
-      this.db.setSpaceForCommunity(communityUri, spaceId, slug, chamberMode)
+      await this.db.setSpaceForCommunity(
+        communityUri,
+        spaceId,
+        slug,
+        chamberMode,
+      )
       this.metrics.spacesCreatedTotal.inc({ status: 'success' })
       this.log.info(
         { communityUri, spaceId, name, chamberMode },
@@ -179,7 +189,12 @@ export class FirehoseConsumer {
           ),
         ])
 
-        this.db.setChamberRooms(communityUri, chamberA, chamberB, observerRoom)
+        await this.db.setChamberRooms(
+          communityUri,
+          chamberA,
+          chamberB,
+          observerRoom,
+        )
         this.log.info(
           { communityUri, chamberA, chamberB, observerRoom },
           'Created bicameral chamber rooms',
@@ -193,21 +208,27 @@ export class FirehoseConsumer {
         ])
       }
 
-      const creatorMxid = this.ensureMxid(creatorDid)
-      this.db.setCommunityMembership(creatorDid, communityUri, 'active', [
+      const creatorMxid = await this.ensureMxid(creatorDid)
+      await this.db.setCommunityMembership(creatorDid, communityUri, 'active', [
         'owner',
       ])
       await this.ensureUserExists(creatorMxid, creatorDid)
       await this.matrix.inviteUser(spaceId, creatorMxid)
       await this.matrix.setPowerLevel(spaceId, creatorMxid, 100)
-      this.db.logSync('create_space', communityUri, creatorDid, spaceId, true)
+      await this.db.logSync(
+        'create_space',
+        communityUri,
+        creatorDid,
+        spaceId,
+        true,
+      )
     } catch (err: any) {
       this.metrics.spacesCreatedTotal.inc({ status: 'failure' })
       this.log.error(
         { err, communityUri },
         'Failed to create Matrix space for community',
       )
-      this.db.logSync(
+      await this.db.logSync(
         'create_space',
         communityUri,
         creatorDid,
@@ -230,9 +251,9 @@ export class FirehoseConsumer {
     const state = record.membershipState as string
     const roles = (record.roles ?? []) as string[]
     const isObserver = roles.includes('observer')
-    this.db.setCommunityMembership(userDid, communityUri, state, roles)
+    await this.db.setCommunityMembership(userDid, communityUri, state, roles)
 
-    const space = this.db.getSpaceForCommunity(communityUri)
+    const space = await this.db.getSpaceForCommunity(communityUri)
     if (!space) {
       this.log.debug(
         { communityUri },
@@ -241,7 +262,7 @@ export class FirehoseConsumer {
       return
     }
 
-    const userMxid = this.ensureMxid(userDid)
+    const userMxid = await this.ensureMxid(userDid)
 
     const end = this.metrics.syncLatency.startTimer({
       event_type: state === 'active' ? 'invite' : 'kick',
@@ -279,19 +300,36 @@ export class FirehoseConsumer {
 
         await this.matrix.setPowerLevel(space.spaceId, userMxid, powerLevel)
 
-        this.chatMod.recordMembership(userDid, communityUri, space.spaceId, {
-          isModerator: roles.includes('moderator') || roles.includes('owner'),
-          isDelegate: roles.includes('delegate'),
-          chamber: null,
-        })
+        await this.chatMod.recordMembership(
+          userDid,
+          communityUri,
+          space.spaceId,
+          {
+            isModerator: roles.includes('moderator') || roles.includes('owner'),
+            isDelegate: roles.includes('delegate'),
+            chamber: null,
+          },
+        )
 
-        this.db.logSync('invite', communityUri, userDid, space.spaceId, true)
+        await this.db.logSync(
+          'invite',
+          communityUri,
+          userDid,
+          space.spaceId,
+          true,
+        )
       } else if (
         (state === 'left' || state === 'removed' || state === 'blocked') &&
         action === 'update'
       ) {
         await this.kickFromAllRooms(space, userMxid, state)
-        this.db.logSync('kick', communityUri, userDid, space.spaceId, true)
+        await this.db.logSync(
+          'kick',
+          communityUri,
+          userDid,
+          space.spaceId,
+          true,
+        )
       }
     } catch (err: any) {
       const eventType = state === 'active' ? 'invite' : 'kick'
@@ -310,7 +348,7 @@ export class FirehoseConsumer {
         { err, communityUri, userDid, state },
         'Failed to sync membership to Matrix',
       )
-      this.db.logSync(
+      await this.db.logSync(
         eventType,
         communityUri,
         userDid,
@@ -331,10 +369,10 @@ export class FirehoseConsumer {
     roles: string[],
   ): Promise<void> {
     // Assign to chamber via verifiable sortition (drand) with deterministic fallback
-    let chamber = this.db.getChamberAssignment(communityUri, userDid)
+    let chamber = await this.db.getChamberAssignment(communityUri, userDid)
     if (!chamber) {
-      const countA = this.db.getChamberMemberCount(communityUri, 'A')
-      const countB = this.db.getChamberMemberCount(communityUri, 'B')
+      const countA = await this.db.getChamberMemberCount(communityUri, 'A')
+      const countB = await this.db.getChamberMemberCount(communityUri, 'B')
 
       try {
         const proof = await assignChamberVerifiable(
@@ -344,7 +382,7 @@ export class FirehoseConsumer {
           countB,
         )
         chamber = proof.chamber
-        this.db.saveSortitionProof({
+        await this.db.saveSortitionProof({
           did: proof.did,
           communityUri: proof.communityUri,
           chamber: proof.chamber,
@@ -370,7 +408,7 @@ export class FirehoseConsumer {
         )
       }
 
-      this.db.setChamberAssignment(communityUri, userDid, chamber)
+      await this.db.setChamberAssignment(communityUri, userDid, chamber)
     }
 
     const chamberRoomId =
@@ -401,7 +439,7 @@ export class FirehoseConsumer {
     else if (roles.includes('moderator')) powerLevel = 50
     await this.matrix.setPowerLevel(chamberRoomId, userMxid, powerLevel)
 
-    this.chatMod.recordMembership(userDid, communityUri, chamberRoomId, {
+    await this.chatMod.recordMembership(userDid, communityUri, chamberRoomId, {
       isModerator: roles.includes('moderator') || roles.includes('owner'),
       isDelegate: roles.includes('delegate'),
       chamber: chamber ?? null,
@@ -415,7 +453,7 @@ export class FirehoseConsumer {
     if (!record) return
     try {
       const constitution = parseConstitution(record)
-      this.db.setConstitution(
+      await this.db.setConstitution(
         constitution.community,
         constitution.version,
         JSON.stringify(constitution.rules),
@@ -440,7 +478,7 @@ export class FirehoseConsumer {
     const createdAt = (record.createdAt ?? new Date().toISOString()) as string
     const uri = `at://${did}/com.para.community.proposal/${Date.now()}`
 
-    this.proposals.onProposalCreated(
+    await this.proposals.onProposalCreated(
       uri,
       communityUri,
       did,
@@ -456,11 +494,20 @@ export class FirehoseConsumer {
     if (!record) return
     const proposalUri = record.proposal as string
     const communityUri = record.community as string
-    const choice = record.choice as string
+    // The lexicon uses `signal` (integer -3..3) rather than a string `choice`.
+    const signal = Number(record.signal)
+    const choice = signalToChoice(signal)
+    if (!choice) {
+      this.log.warn(
+        { did, proposalUri, signal },
+        'Ignoring vote with unrecognized signal',
+      )
+      return
+    }
     const createdAt = (record.createdAt ?? new Date().toISOString()) as string
     const uri = `at://${did}/com.para.community.vote/${Date.now()}`
 
-    this.proposals.onVoteCast(
+    await this.proposals.onVoteCast(
       uri,
       proposalUri,
       communityUri,
@@ -549,19 +596,28 @@ export class FirehoseConsumer {
   private async ensureUserExists(mxid: string, did: string): Promise<void> {
     const exists = await this.matrix.userExists(mxid)
     if (!exists) {
-      const password = crypto.randomUUID()
+      const password = randomUUID()
       await this.matrix.createUser(mxid, did, password)
-      this.db.setMxidForDid(did, mxid, password)
+      await this.db.setMxidForDid(did, mxid, password)
       this.log.info({ did, mxid }, 'Created Matrix user')
     }
   }
 
-  private ensureMxid(did: string): string {
-    let mxid = this.db.getMxidForDid(did)
+  private async ensureMxid(did: string): Promise<string> {
+    let mxid = await this.db.getMxidForDid(did)
     if (!mxid) {
       mxid = didToMxid(did, this.serverName)
-      this.db.setMxidForDid(did, mxid, '')
+      await this.db.setMxidForDid(did, mxid, '')
     }
     return mxid
   }
+}
+
+export function signalToChoice(
+  signal: number,
+): 'for' | 'against' | 'abstain' | null {
+  if (signal > 0) return 'for'
+  if (signal < 0) return 'against'
+  if (signal === 0) return 'abstain'
+  return null
 }

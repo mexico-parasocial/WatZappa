@@ -1,5 +1,6 @@
 import { TID } from '@atproto/common-web'
 import { TestNetworkNoAppView } from '@atproto/dev-env'
+import { asPredicate } from '../src/client/util.js'
 import {
   AppBskyActorDefs,
   AppBskyActorProfile,
@@ -7,7 +8,6 @@ import {
   ComAtprotoRepoPutRecord,
   DEFAULT_LABEL_SETTINGS,
 } from '../src/index.js'
-import { asPredicate } from '../src/client/util.js'
 import {
   getSavedFeedType,
   savedFeedsToUriArrays,
@@ -24,7 +24,7 @@ describe('agent', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   const getProfileDisplayName = async (
@@ -3860,4 +3860,5 @@ describe('agent', () => {
   })
 })
 
-const byType = (a, b) => a.$type.localeCompare(b.$type)
+const byType = (a: { $type: string }, b: { $type: string }) =>
+  a.$type.localeCompare(b.$type)

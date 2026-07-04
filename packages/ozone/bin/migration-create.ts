@@ -1,4 +1,4 @@
-#!/usr/bin/env ts-node
+#!/usr/bin/env node
 
 import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
@@ -14,12 +14,12 @@ export async function main() {
     )
   }
   const filename = `${prefix}-${name}`
-  const dir = path.join(import.meta.dirname, '..', 'src', 'db', 'migrations')
+  const dir = path.join(__dirname, '..', 'src', 'db', 'migrations')
 
   await fs.writeFile(path.join(dir, `${filename}.ts`), template, { flag: 'wx' })
   await fs.writeFile(
     path.join(dir, 'index.ts'),
-    `export * as _${prefix} from './${filename}'\n`,
+    `export * as _${prefix} from './${filename}.js'\n`,
     { flag: 'a' },
   )
 }

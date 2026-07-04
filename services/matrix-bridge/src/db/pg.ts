@@ -63,6 +63,7 @@ export interface IBridgeDatabase {
     chamber: string,
   ): Promise<void>
   getChamberMemberCount(communityUri: string, chamber: string): Promise<number>
+  getActiveMemberCount(communityUri: string): Promise<number>
   getMxidForDid(did: string): Promise<string | undefined>
   setMxidForDid(did: string, mxid: string, password: string): Promise<void>
   getUserPassword(did: string): Promise<string | undefined>
@@ -271,13 +272,8 @@ export interface IBridgeDatabase {
     membershipState: string,
     roles?: string[],
   ): Promise<void>
-  isActiveCommunityMember(
-    did: string,
-    communityUri: string,
-  ): Promise<boolean>
-  getActiveCommunityRoomsForDid(
-    did: string,
-  ): Promise<
+  isActiveCommunityMember(did: string, communityUri: string): Promise<boolean>
+  getActiveCommunityRoomsForDid(did: string): Promise<
     Array<{
       roomId: string
       communityUri: string
@@ -322,14 +318,8 @@ export interface IBridgeDatabase {
     processedAt: string
   }): Promise<any | undefined>
   failSortitionRun(id: string): Promise<void>
-  getSortitionCandidates(
-    runId: string,
-    selectedOnly?: boolean,
-  ): Promise<any[]>
-  getSortitionCandidate(
-    runId: string,
-    did: string,
-  ): Promise<any | undefined>
+  getSortitionCandidates(runId: string, selectedOnly?: boolean): Promise<any[]>
+  getSortitionCandidate(runId: string, did: string): Promise<any | undefined>
   insertCommunityMapContribution(contribution: {
     id: string
     communityUri: string
@@ -955,6 +945,14 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     return row?.count ?? 0
   }
 
+  async getActiveMemberCount(communityUri: string): Promise<number> {
+    const row = await this.queryOne<{ count: number }>(
+      "SELECT COUNT(*) as count FROM community_membership_state WHERE community_uri = $1 AND membership_state = 'active'",
+      [communityUri],
+    )
+    return row?.count ?? 0
+  }
+
   // User <-> MXID mappings
   async getMxidForDid(did: string): Promise<string | undefined> {
     const row = await this.queryOne<{ matrix_user_id: string }>(
@@ -1292,10 +1290,9 @@ export class PgBridgeDatabase implements IBridgeDatabase {
   }
 
   async getDecision(proposalUri: string): Promise<any | undefined> {
-    return this.queryOne(
-      'SELECT * FROM decisions WHERE proposal_uri = $1',
-      [proposalUri],
-    )
+    return this.queryOne('SELECT * FROM decisions WHERE proposal_uri = $1', [
+      proposalUri,
+    ])
   }
 
   async getDecisionsByCommunity(communityUri: string): Promise<any[]> {
@@ -1400,9 +1397,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     return row?.membership_state === 'active'
   }
 
-  async getActiveCommunityRoomsForDid(
-    did: string,
-  ): Promise<
+  async getActiveCommunityRoomsForDid(did: string): Promise<
     Array<{
       roomId: string
       communityUri: string
@@ -1550,10 +1545,9 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     const client = await this.pool.connect()
     try {
       await client.query('BEGIN')
-      await client.query(
-        'DELETE FROM sortition_candidates WHERE run_id = $1',
-        [runId],
-      )
+      await client.query('DELETE FROM sortition_candidates WHERE run_id = $1', [
+        runId,
+      ])
       for (const c of candidates) {
         await client.query(
           `INSERT INTO sortition_candidates (
@@ -1777,9 +1771,8 @@ export class PgBridgeDatabase implements IBridgeDatabase {
         [contributionId, voterDid, vote],
       )
 
-      const counts = await this.getCommunityContributionVoteCounts(
-        contributionId,
-      )
+      const counts =
+        await this.getCommunityContributionVoteCounts(contributionId)
       const shouldApprove =
         counts.approve >= 3 && counts.approve - counts.reject >= 2
       const shouldReject =
@@ -2025,7 +2018,10 @@ export class PgBridgeDatabase implements IBridgeDatabase {
   }
 
   async expireBadges(): Promise<{ did: string; communityUri: string }[]> {
-    const affected = await this.queryAll<{ did: string; community_uri: string }>(
+    const affected = await this.queryAll<{
+      did: string
+      community_uri: string
+    }>(
       'SELECT did, community_uri FROM chat_user_badges WHERE expires_at IS NOT NULL AND expires_at <= NOW()',
     )
     await this.run(

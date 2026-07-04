@@ -72,16 +72,19 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      seaweed-s3:
+        condition: service_healthy
     env_file:
       - .env
     environment:
       PDS_PORT: 2583
       PDS_DB_POSTGRES_URL: postgres://${POSTGRES_USER:-pg}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-para}
-      PDS_BLOBSTORE_DISK_LOCATION: /data/blobs
+      PDS_BLOBSTORE_S3_BUCKET: blobs
+      PDS_BLOBSTORE_S3_REGION: us-east-1
+      PDS_BLOBSTORE_S3_ENDPOINT: http://seaweed-s3:8333
+      PDS_BLOBSTORE_S3_FORCE_PATH_STYLE: 'true'
       PDS_RATE_LIMITS_ENABLED: 'true'
       PDS_DISABLE_SSRF_PROTECTION: '0'
-    volumes:
-      - pds_data:/data/blobs
     deploy:
       replicas: ${PDS_REPLICAS:-4}
       resources:
@@ -187,6 +190,138 @@ services:
           cpus: '1.0'
           memory: 2G
 
+  # ------------------------------------------------------------
+  # SeaweedFS – self-hosted S3-compatible blobstore
+  # Replaces local disk blobstore. PDS talks to seaweed-s3:8333.
+  # ------------------------------------------------------------
+  seaweed-master:
+    image: chrislusf/seaweedfs:4.37
+    container_name: para-seaweed-master
+    restart: unless-stopped
+    command: >
+      master
+      -ip=seaweed-master
+      -port=9333
+      -mdir=/data
+      -defaultReplication=000
+      -metricsPort=9324
+    ports:
+      - '9333:9333'
+      - '9324:9324'
+    volumes:
+      - seaweed_master_data:/data
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://seaweed-master:9333/cluster/status']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+
+  seaweed-volume:
+    image: chrislusf/seaweedfs:4.37
+    container_name: para-seaweed-volume
+    restart: unless-stopped
+    command: >
+      volume
+      -mserver=seaweed-master:9333
+      -ip=seaweed-volume
+      -port=8080
+      -dir=/data
+      -max=100
+      -metricsPort=9325
+    ports:
+      - '8080:8080'
+      - '9325:9325'
+    volumes:
+      - seaweed_volume_data:/data
+    depends_on:
+      seaweed-master:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://seaweed-volume:8080/status']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+
+  seaweed-filer:
+    image: chrislusf/seaweedfs:4.37
+    container_name: para-seaweed-filer
+    restart: unless-stopped
+    command: >
+      filer
+      -master=seaweed-master:9333
+      -ip=seaweed-filer
+      -port=8888
+      -metricsPort=9326
+    ports:
+      - '8888:8888'
+      - '9326:9326'
+      - '18888:18888'
+    volumes:
+      - seaweed_filer_data:/data
+    depends_on:
+      seaweed-master:
+        condition: service_healthy
+      seaweed-volume:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://seaweed-filer:8888/?limit=1']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+
+  seaweed-s3:
+    image: chrislusf/seaweedfs:4.37
+    container_name: para-seaweed-s3
+    restart: unless-stopped
+    command: >
+      s3
+      -filer=seaweed-filer:8888
+      -ip.bind=0.0.0.0
+      -port=8333
+      -metricsPort=9327
+      -config=/etc/seaweedfs/s3-config.json
+    ports:
+      - '8333:8333'
+      - '9327:9327'
+    volumes:
+      - ./.seaweedfs/s3-config.json:/etc/seaweedfs/s3-config.json:ro
+    depends_on:
+      seaweed-filer:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'code=$$(curl -s -o /dev/null -w "%{http_code}" http://seaweed-s3:8333/); [ "$$code" = "200" ] || [ "$$code" = "403" ]',
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+
   nginx:
     image: nginx:alpine
     container_name: para-nginx
@@ -229,4 +364,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  pds_data:
+  seaweed_master_data:
+  seaweed_volume_data:
+  seaweed_filer_data:

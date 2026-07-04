@@ -21,7 +21,7 @@
 import pino from 'pino'
 import { AtpAgent } from '@atproto/api'
 import { loadConfig } from './config.js'
-import { BridgeDatabase } from './db.js'
+import { type IBridgeDatabase, createDatabase } from './db/index.js'
 import { MatrixAdminClient, didToMxid, extractServerName } from './matrix.js'
 
 const log = pino({
@@ -36,7 +36,7 @@ async function main() {
   const communityUriIndex = args.indexOf('--community-uri')
 
   const config = loadConfig()
-  const db = new BridgeDatabase(config)
+  const db = createDatabase(config)
   const matrix = new MatrixAdminClient(config)
   const serverName = extractServerName(config.matrixHomeserverUrl)
 
@@ -104,14 +104,14 @@ async function main() {
         2,
       ),
     )
-    db.close()
+    await db.close()
     return
   }
 
   for (const comm of communities) {
     log.info({ uri: comm.uri, name: comm.name }, 'Processing community')
 
-    const existing = db.getSpaceForCommunity(comm.uri)
+    const existing = await db.getSpaceForCommunity(comm.uri)
     if (existing) {
       log.info(
         { uri: comm.uri },
@@ -120,7 +120,7 @@ async function main() {
     } else {
       try {
         const spaceId = await matrix.createSpace(comm.name, comm.slug)
-        db.setSpaceForCommunity(
+        await db.setSpaceForCommunity(
           comm.uri,
           spaceId,
           comm.slug,
@@ -146,7 +146,7 @@ async function main() {
               spaceId,
             ),
           ])
-          db.setChamberRooms(comm.uri, chamberA, chamberB, observerRoom)
+          await db.setChamberRooms(comm.uri, chamberA, chamberB, observerRoom)
           log.info(
             { uri: comm.uri, chamberA, chamberB, observerRoom },
             'Created chamber rooms',
@@ -160,7 +160,12 @@ async function main() {
         }
 
         // Invite creator as admin
-        const creatorMxid = ensureUser(matrix, db, comm.creatorDid, serverName)
+        const creatorMxid = await ensureUser(
+          matrix,
+          db,
+          comm.creatorDid,
+          serverName,
+        )
         await matrix.inviteUser(spaceId, creatorMxid)
         await matrix.setPowerLevel(spaceId, creatorMxid, 100)
         log.info({ uri: comm.uri, creatorMxid }, 'Invited creator as admin')
@@ -171,7 +176,7 @@ async function main() {
     }
 
     // Backfill memberships
-    const space = db.getSpaceForCommunity(comm.uri)
+    const space = await db.getSpaceForCommunity(comm.uri)
     if (!space) continue
 
     log.info({ uri: comm.uri }, 'Backfilling memberships...')
@@ -189,20 +194,20 @@ async function main() {
     )
   }
 
-  db.close()
+  await db.close()
   log.info('Backfill complete')
 }
 
-function ensureUser(
+async function ensureUser(
   matrix: MatrixAdminClient,
-  db: BridgeDatabase,
+  db: IBridgeDatabase,
   did: string,
   serverName: string,
-): string {
-  let mxid = db.getMxidForDid(did)
+): Promise<string> {
+  let mxid = await db.getMxidForDid(did)
   if (!mxid) {
     mxid = didToMxid(did, serverName)
-    db.setMxidForDid(did, mxid, '')
+    await db.setMxidForDid(did, mxid, '')
   }
 
   // Note: We don't create the user here because createUser is async.

@@ -36,7 +36,6 @@ describe('account deletion', () => {
     network = await TestNetworkNoAppView.create({
       dbPostgresSchema: 'account_deletion',
     })
-    // @ts-expect-error Error due to circular dependency with the dev-env package
     ctx = network.pds.ctx
     mailer = ctx.mailer
     agent = network.pds.getAgent()
@@ -57,7 +56,7 @@ describe('account deletion', () => {
 
   afterAll(async () => {
     mailer.transporter.sendMail = _origSendMail
-    await network.close()
+    await network?.close()
   })
 
   const getMailFrom = async (promise): Promise<Mail.Options> => {

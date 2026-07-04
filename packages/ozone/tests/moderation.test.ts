@@ -14,8 +14,8 @@ import {
   basicSeed,
 } from '@atproto/dev-env'
 import { AtUri } from '@atproto/syntax'
-import { EventReverser } from '../src/index.js'
 import { ImageInvalidator } from '../src/image-invalidator.js'
+import { EventReverser } from '../src/index.js'
 import { ids } from '../src/lexicon/lexicons.js'
 import {
   REASONMISLEADING,
@@ -81,7 +81,7 @@ describe('moderation', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   describe('reporting', () => {
@@ -198,30 +198,51 @@ describe('moderation', () => {
       ).toBe(true)
     })
 
-    it('creates reports of a DM conversation.', async () => {
-      const convoId = 'testconvoid3'
-      const report = await sc.createReport({
+    it('creates reports of convo', async () => {
+      const convoId1 = 'convoId1'
+      const convoId2 = 'convoId2'
+      const reportA = await sc.createReport({
         reportedBy: sc.dids.alice,
         reasonType: REASONSPAM,
-        // @ts-expect-error "chat.bsky.convo.defs#convoRef" is not spec'd as subject in createReport
-        subject: identity<ChatBskyConvoDefs.ConvoRef>({
+        subject: {
           $type: 'chat.bsky.convo.defs#convoRef',
           did: sc.dids.carol,
-          convoId,
-        }),
+          convoId: convoId1,
+        },
       })
-      expect(forSnapshot([report])).toMatchSnapshot()
-      const events = await ozone.ctx.db.db
-        .selectFrom('moderation_event')
-        .selectAll()
-        .where('subjectDid', '=', sc.dids.carol)
-        .where('action', '=', 'tools.ozone.moderation.defs#modEventReport')
-        .execute()
-      const convoEvents = events.filter(
-        (row) => row.subjectType === 'chat.bsky.convo.defs#convoRef',
-      )
-      expect(convoEvents.length).toBe(1)
-      expect(convoEvents[0].meta?.convoId).toBe(convoId)
+      const reportB = await sc.createReport({
+        reportedBy: sc.dids.carol,
+        reasonType: REASONOTHER,
+        reason: 'defamation',
+        subject: {
+          $type: 'chat.bsky.convo.defs#convoRef',
+          did: sc.dids.carol,
+          convoId: convoId2,
+        },
+      })
+
+      // Verify reportA
+      expect(reportA.subject.$type).toBe('chat.bsky.convo.defs#convoRef')
+      expect(ChatBskyConvoDefs.isConvoRef(reportA.subject)).toBe(true)
+      if (ChatBskyConvoDefs.isConvoRef(reportA.subject)) {
+        expect(reportA.subject.convoId).toBe(convoId1)
+        expect(reportA.subject.did).toBe(sc.dids.carol)
+      }
+      expect(reportA.reasonType).toBe(REASONSPAM)
+      expect(reportA.reportedBy).toBe(sc.dids.alice)
+      expect(reportA.id).toBeGreaterThan(0)
+
+      // Verify reportB
+      expect(reportB.subject.$type).toBe('chat.bsky.convo.defs#convoRef')
+      expect(ChatBskyConvoDefs.isConvoRef(reportB.subject)).toBe(true)
+      if (ChatBskyConvoDefs.isConvoRef(reportB.subject)) {
+        expect(reportB.subject.convoId).toBe(convoId2)
+        expect(reportB.subject.did).toBe(sc.dids.carol)
+      }
+      expect(reportB.reasonType).toBe(REASONOTHER)
+      expect(reportB.reason).toBe('defamation')
+      expect(reportB.reportedBy).toBe(sc.dids.carol)
+      expect(reportB.id).toBeGreaterThan(reportA.id)
     })
   })
 
@@ -728,7 +749,6 @@ describe('moderation', () => {
       // In the actual app, this will be instantiated and run on server startup
       const reverser = new EventReverser(
         network.ozone.ctx.db,
-        // @ts-expect-error Error due to circular dependency with the dev-env package
         network.ozone.ctx.modService,
       )
       await reverser.findAndRevertDueActions()
@@ -753,6 +773,32 @@ describe('moderation', () => {
             '[SCHEDULED_REVERSAL] Reverting action as originally scheduled',
         },
       })
+    })
+
+    it('allows conversation escalate', async () => {
+      const subject = {
+        $type: 'chat.bsky.convo.defs#convoRef',
+        did: sc.dids.bob,
+        convoId: '123',
+      }
+      await modClient.emitEvent({
+        event: {
+          $type: 'tools.ozone.moderation.defs#modEventEscalate',
+          comment: 'Y',
+        },
+        subject,
+        createdBy: 'did:example:admin',
+      })
+
+      const status = await network.ozone.ctx.db.db
+        .selectFrom('moderation_subject_status')
+        .selectAll()
+        .where('did', '=', subject.did)
+        .where('recordPath', '=', '')
+        .where('convoId', '=', subject.convoId)
+        .executeTakeFirst()
+
+      expect(status?.reviewState).toEqual(REVIEWESCALATED)
     })
 
     async function emitLabelEvent(

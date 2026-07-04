@@ -3,7 +3,7 @@ import { createServer } from 'node:http'
 import pino from 'pino'
 import { ChatModerationEngine } from './chat-moderation.js'
 import { loadConfig } from './config.js'
-import { BridgeDatabase } from './db.js'
+import { type IBridgeDatabase, createDatabase } from './db/index.js'
 import {
   computeAssemblySortitionHash,
   fetchBeacon,
@@ -11,8 +11,8 @@ import {
 } from './drand.js'
 import { extractFromText, persistExtractedCard } from './extraction.js'
 import { FirehoseConsumer } from './firehose.js'
+import { HttpError, authenticateM8 } from './m8-auth.js'
 import { MatrixSyncPoller } from './matrix-sync.js'
-import { authenticateM8, HttpError } from './m8-auth.js'
 import { MatrixAdminClient } from './matrix.js'
 import { BridgeMetrics } from './metrics.js'
 import { OpenAIClient } from './openai-client.js'
@@ -144,7 +144,7 @@ async function main() {
 
   log.info('Matrix↔PARA Community Bridge starting...')
 
-  const db = new BridgeDatabase(config)
+  const db = createDatabase(config)
   const matrix = new MatrixAdminClient(config)
   const metrics = new BridgeMetrics()
   const firehose = new FirehoseConsumer(config, db, matrix, metrics, log)
@@ -154,21 +154,20 @@ async function main() {
   const syncPoller = new MatrixSyncPoller(config, db, matrix, chatMod, log)
 
   const processSortitionRun = async (runId: string) => {
-    const run = db.getSortitionRun(runId) as SortitionRunRow | undefined
+    const run = (await db.getSortitionRun(runId)) as SortitionRunRow | undefined
     if (!run) {
       throw new Error('Sortition run not found')
     }
     if (run.status === 'active') {
+      const selected = await db.getSortitionCandidates(run.id, true)
       return {
         run: formatSortitionRun(run),
-        selected: db
-          .getSortitionCandidates(run.id, true)
-          .map(formatSortitionCandidate),
+        selected: selected.map(formatSortitionCandidate),
       }
     }
 
     const beacon = await fetchBeacon(run.drand_round)
-    const allMembers = db.getMemberList(run.community_uri, 10_000, 0)
+    const allMembers = await db.getMemberList(run.community_uri, 10_000, 0)
     const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000
     const eligible = allMembers.filter((member) => {
       if (!member.did) return false
@@ -185,7 +184,7 @@ async function main() {
     })
 
     if (eligible.length === 0) {
-      db.failSortitionRun(run.id)
+      await db.failSortitionRun(run.id)
       throw new Error('No eligible community members found for this sortition')
     }
 
@@ -216,20 +215,20 @@ async function main() {
       createdAt: now,
     }))
 
-    db.replaceSortitionCandidates(run.id, candidates)
-    const activated = db.activateSortitionRun({
+    await db.replaceSortitionCandidates(run.id, candidates)
+    const activated = (await db.activateSortitionRun({
       id: run.id,
       drandRandomness: beacon.randomness,
       threshold,
       eligibleCount: ranked.length,
       selectedCount,
       processedAt: now,
-    }) as SortitionRunRow | undefined
+    })) as SortitionRunRow | undefined
 
     const selectedDids = candidates
       .filter((candidate) => candidate.selected)
       .map((candidate) => candidate.did)
-    const pushTokens = db.getPushTokensByDid(selectedDids)
+    const pushTokens = await db.getPushTokensByDid(selectedDids)
     await sendExpoNotifications({
       tokens: pushTokens
         .map((token) => token.expoPushToken ?? (token as any).expo_push_token)
@@ -254,16 +253,17 @@ async function main() {
       'Processed Cabildeo sortition run',
     )
 
+    const selectedCandidates = await db.getSortitionCandidates(run.id, true)
     return {
       run: formatSortitionRun(activated),
-      selected: db
-        .getSortitionCandidates(run.id, true)
-        .map(formatSortitionCandidate),
+      selected: selectedCandidates.map(formatSortitionCandidate),
     }
   }
 
   const processScheduledSortitionRuns = async () => {
-    const scheduled = db.getScheduledSortitionRuns(10) as SortitionRunRow[]
+    const scheduled = (await db.getScheduledSortitionRuns(
+      10,
+    )) as SortitionRunRow[]
     for (const run of scheduled) {
       try {
         await processSortitionRun(run.id)
@@ -281,10 +281,12 @@ async function main() {
 
   // Update gauge metrics periodically
   setInterval(() => {
-    const userCount = db.getUserCount()
-    const spaceCount = db.getSpaceCount()
-    metrics.activeUsers.set(userCount)
-    metrics.activeSpaces.set(spaceCount)
+    void (async () => {
+      const userCount = await db.getUserCount()
+      const spaceCount = await db.getSpaceCount()
+      metrics.activeUsers.set(userCount)
+      metrics.activeSpaces.set(spaceCount)
+    })()
   }, 60_000)
 
   setInterval(() => {
@@ -297,7 +299,7 @@ async function main() {
   const server = createServer(async (req, res) => {
     try {
       if (req.url === '/healthz') {
-        const failedSyncs = db.getFailedSyncs(5)
+        const failedSyncs = await db.getFailedSyncs(5)
         const healthy = failedSyncs.length < 10
         res.writeHead(healthy ? 200 : 503, {
           'Content-Type': 'application/json',
@@ -325,11 +327,11 @@ async function main() {
           writeJson(res, 400, { error: 'Missing uri parameter' })
           return
         }
-        if (!db.isActiveCommunityMember(auth.did, communityUri)) {
+        if (!(await db.isActiveCommunityMember(auth.did, communityUri))) {
           writeJson(res, 403, { error: 'Not an active community member' })
           return
         }
-        const mapping = db.getSpaceForCommunity(communityUri)
+        const mapping = await db.getSpaceForCommunity(communityUri)
         if (!mapping) {
           writeJson(res, 404, { error: 'Space not found for community' })
           return
@@ -338,7 +340,7 @@ async function main() {
       } else if (req.url === '/api/matrix-token' && req.method === 'POST') {
         const auth = await authenticateM8(req, config)
         const did = auth.did
-        const mxid = db.getMxidForDid(did)
+        const mxid = await db.getMxidForDid(did)
         if (!mxid) {
           writeJson(res, 404, { error: 'User not mapped to Matrix' })
           return
@@ -362,10 +364,10 @@ async function main() {
           return
         }
 
-        db.setPushToken(did, expoPushToken, platform || 'unknown')
+        await db.setPushToken(did, expoPushToken, platform || 'unknown')
 
         // Register pusher in Synapse so it knows where to send notifications
-        const mxid = db.getMxidForDid(did)
+        const mxid = await db.getMxidForDid(did)
         if (mxid) {
           try {
             const tokenData = await matrix.generateUserToken(mxid)
@@ -406,7 +408,7 @@ async function main() {
         }>
 
         // Find community info for deep linking
-        const community = db.getCommunityByRoomId(roomId)
+        const community = await db.getCommunityByRoomId(roomId)
         const senderMxid = notification.sender as string | undefined
         // Build Expo data payload for deep linking
         const expoData: Record<string, unknown> = {
@@ -450,34 +452,30 @@ async function main() {
           writeJson(res, 400, { error: 'Missing roomId' })
           return
         }
-        const community = db.getCommunityByRoomId(roomId)
+        const community = await db.getCommunityByRoomId(roomId)
         if (
           !community ||
-          !db.isActiveCommunityMember(did, community.communityUri)
+          !(await db.isActiveCommunityMember(did, community.communityUri))
         ) {
           writeJson(res, 403, { error: 'Not an active community member' })
           return
         }
         // If no eventId provided, mark all current events as read
         const targetEventId =
-          eventId ||
-          (() => {
-            const events = db.getRecentEvents(roomId, 1)
-            return events[0]?.event_id
-          })()
+          eventId || (await db.getRecentEvents(roomId, 1))[0]?.event_id
         if (targetEventId) {
-          db.setReadMarker(did, roomId, targetEventId)
+          await db.setReadMarker(did, roomId, targetEventId)
         }
         writeJson(res, 200, { ok: true })
       } else if (req.url?.startsWith('/api/unread') && req.method === 'GET') {
         const auth = await authenticateM8(req, config)
         const did = auth.did
-        const communities = db.getUnreadCountsForDid(did)
+        const communities = await db.getUnreadCountsForDid(did)
         const total = communities.reduce((sum, c) => sum + c.unread, 0)
         writeJson(res, 200, { unread: total, communities })
       } else if (req.url === '/api/rooms' && req.method === 'GET') {
         const auth = await authenticateM8(req, config)
-        const rooms = db.getUnreadCountsForDid(auth.did)
+        const rooms = await db.getUnreadCountsForDid(auth.did)
         writeJson(res, 200, { rooms })
       } else if (req.url === '/api/sortition/runs' && req.method === 'POST') {
         const auth = await authenticateM8(req, config)
@@ -499,7 +497,7 @@ async function main() {
           )
           return
         }
-        const existing = db.getSortitionRunByCabildeo(cabildeoUri)
+        const existing = await db.getSortitionRunByCabildeo(cabildeoUri)
         if (existing) {
           res.writeHead(409, { 'Content-Type': 'application/json' })
           res.end(
@@ -537,7 +535,7 @@ async function main() {
           drandRound: targetRound,
           createdAt: now,
         }
-        const run = db.createSortitionRun({
+        const run = await db.createSortitionRun({
           id: randomUUID(),
           cabildeoUri,
           communityUri,
@@ -562,7 +560,7 @@ async function main() {
           res.end(JSON.stringify({ error: 'Missing cabildeo parameter' }))
           return
         }
-        const run = db.getSortitionRunByCabildeo(cabildeoUri) as
+        const run = (await db.getSortitionRunByCabildeo(cabildeoUri)) as
           | SortitionRunRow
           | undefined
         if (!run) {
@@ -570,12 +568,12 @@ async function main() {
           res.end(JSON.stringify({ error: 'Sortition run not found' }))
           return
         }
-        const selected = db
-          .getSortitionCandidates(run.id, true)
-          .map(formatSortitionCandidate)
+        const selected = (await db.getSortitionCandidates(run.id, true)).map(
+          formatSortitionCandidate,
+        )
         const viewerCandidate = viewerDid
           ? formatSortitionCandidate(
-              db.getSortitionCandidate(run.id, viewerDid),
+              await db.getSortitionCandidate(run.id, viewerDid),
             )
           : null
         res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -598,15 +596,19 @@ async function main() {
           res.end(JSON.stringify({ error: 'Missing runId' }))
           return
         }
-        const run = db.getSortitionRun(runId)
+        const run = await db.getSortitionRun(runId)
         if (!run) {
           res.writeHead(404, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'Sortition run not found' }))
           return
         }
-        if (!db.isActiveCommunityMember(auth.did, run.community_uri)) {
+        if (!(await db.isActiveCommunityMember(auth.did, run.community_uri))) {
           res.writeHead(403, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ error: 'Only community members can process sortitions' }))
+          res.end(
+            JSON.stringify({
+              error: 'Only community members can process sortitions',
+            }),
+          )
           return
         }
         const result = await processSortitionRun(runId)
@@ -623,7 +625,7 @@ async function main() {
           res.end(JSON.stringify({ error: 'Missing community parameter' }))
           return
         }
-        const proofs = db.getSortitionProofsByCommunity(communityUri)
+        const proofs = await db.getSortitionProofsByCommunity(communityUri)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ proofs }))
       } else if (
@@ -640,7 +642,7 @@ async function main() {
           )
           return
         }
-        const proof = db.getSortitionProof(did, communityUri)
+        const proof = await db.getSortitionProof(did, communityUri)
         if (!proof) {
           res.writeHead(404, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'Sortition proof not found' }))
@@ -669,7 +671,7 @@ async function main() {
           res.end(JSON.stringify({ error: 'Missing required fields' }))
           return
         }
-        const stored = db.getSortitionProof(did, communityUri)
+        const stored = await db.getSortitionProof(did, communityUri)
         if (!stored) {
           res.writeHead(404, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'No stored proof found' }))
@@ -702,7 +704,7 @@ async function main() {
           )
           return
         }
-        const stored = db.getSortitionProof(did, communityUri)
+        const stored = await db.getSortitionProof(did, communityUri)
         if (!stored) {
           res.writeHead(404, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'Sortition proof not found' }))
@@ -737,7 +739,7 @@ async function main() {
           res.end(JSON.stringify({ error: 'Missing uri parameter' }))
           return
         }
-        const row = db.getConstitution(communityUri)
+        const row = await db.getConstitution(communityUri)
         if (!row) {
           res.writeHead(404, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'Constitution not found' }))
@@ -764,7 +766,7 @@ async function main() {
           res.end(JSON.stringify({ error: 'Missing community parameter' }))
           return
         }
-        const items = db.getProposalsByCommunity(communityUri, state)
+        const items = await db.getProposalsByCommunity(communityUri, state)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ proposals: items }))
       } else if (
@@ -778,7 +780,7 @@ async function main() {
           res.end(JSON.stringify({ error: 'Missing community parameter' }))
           return
         }
-        const items = db.getDecisionsByCommunity(communityUri)
+        const items = await db.getDecisionsByCommunity(communityUri)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ decisions: items }))
       } else if (
@@ -795,10 +797,13 @@ async function main() {
           )
           return
         }
-        const badges = chatMod.recomputeUser(did, communityUri)
+        const badges = await chatMod.recomputeUser(did, communityUri)
         const visibleBadges = badges.filter((b) => b.visibleInChat)
         const hiddenBadges = badges.filter((b) => !b.visibleInChat)
-        const participation = chatMod.getParticipationSummary(did, communityUri)
+        const participation = await chatMod.getParticipationSummary(
+          did,
+          communityUri,
+        )
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(
           JSON.stringify({
@@ -822,7 +827,7 @@ async function main() {
         }
         const limit = parseInt(url.searchParams.get('limit') || '100', 10)
         const offset = parseInt(url.searchParams.get('offset') || '0', 10)
-        const members = chatMod.getMemberList(communityUri, limit, offset)
+        const members = await chatMod.getMemberList(communityUri, limit, offset)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ members, total: members.length }))
       } else if (
@@ -847,11 +852,15 @@ async function main() {
         }
         if (auth.did !== reporterDid) {
           res.writeHead(403, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ error: 'reporterDid must match authenticated DID' }))
+          res.end(
+            JSON.stringify({
+              error: 'reporterDid must match authenticated DID',
+            }),
+          )
           return
         }
         // Verify both are members
-        const reporterStats = db.getParticipationStats(
+        const reporterStats = await db.getParticipationStats(
           reporterDid,
           communityUri,
         )
@@ -862,7 +871,7 @@ async function main() {
           )
           return
         }
-        chatMod.ingestReport({
+        await chatMod.ingestReport({
           reportedDid,
           reporterDid,
           communityUri,
@@ -871,7 +880,7 @@ async function main() {
           matrixEventId,
           matrixRoomId,
         })
-        chatMod.recomputeUser(reportedDid, communityUri)
+        await chatMod.recomputeUser(reportedDid, communityUri)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true }))
       } else if (
@@ -895,11 +904,18 @@ async function main() {
         }
         if (auth.did !== sanctionedByDid) {
           res.writeHead(403, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ error: 'sanctionedByDid must match authenticated DID' }))
+          res.end(
+            JSON.stringify({
+              error: 'sanctionedByDid must match authenticated DID',
+            }),
+          )
           return
         }
         // Verify sanctionedBy is moderator
-        const modStats = db.getParticipationStats(sanctionedByDid, communityUri)
+        const modStats = await db.getParticipationStats(
+          sanctionedByDid,
+          communityUri,
+        )
         if (!modStats || !modStats.is_moderator) {
           res.writeHead(403, { 'Content-Type': 'application/json' })
           res.end(
@@ -907,7 +923,7 @@ async function main() {
           )
           return
         }
-        chatMod.ingestSanction({
+        await chatMod.ingestSanction({
           targetDid,
           communityUri,
           sanctionType: type,
@@ -915,6 +931,43 @@ async function main() {
           sanctionedByDid,
           matrixRoomId,
         })
+
+        // Enforce the sanction in Matrix rooms
+        try {
+          const targetMxid = await db.getMxidForDid(targetDid)
+          const space = await db.getSpaceForCommunity(communityUri)
+          if (targetMxid && space) {
+            const rooms = matrixRoomId
+              ? [matrixRoomId]
+              : [
+                  space.spaceId,
+                  space.chamberA_RoomId,
+                  space.chamberB_RoomId,
+                  space.observerRoomId,
+                ].filter((r): r is string => Boolean(r))
+            for (const roomId of rooms) {
+              try {
+                if (type === 'ban') {
+                  await matrix.banUser(roomId, targetMxid)
+                } else if (type === 'mute') {
+                  await matrix.muteUser(roomId, targetMxid)
+                }
+                // 'redact' is informational-only; actual redaction needs an event_id.
+              } catch (roomErr: any) {
+                log.warn(
+                  { err: roomErr, roomId, targetMxid, type },
+                  'Failed to apply moderation sanction in Matrix room',
+                )
+              }
+            }
+          }
+        } catch (err: any) {
+          log.error(
+            { err, targetDid, communityUri, type },
+            'Failed to enforce moderation sanction in Matrix',
+          )
+        }
+
         chatMod.recomputeUser(targetDid, communityUri)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true }))
@@ -932,7 +985,7 @@ async function main() {
           )
           return
         }
-        const modStats = db.getParticipationStats(modDid, communityUri)
+        const modStats = await db.getParticipationStats(modDid, communityUri)
         if (!modStats || !modStats.is_moderator) {
           res.writeHead(403, { 'Content-Type': 'application/json' })
           res.end(
@@ -940,7 +993,7 @@ async function main() {
           )
           return
         }
-        const dashboard = chatMod.getDashboard(communityUri)
+        const dashboard = await chatMod.getDashboard(communityUri)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify(dashboard))
       } else if (
@@ -955,13 +1008,20 @@ async function main() {
           res.end(JSON.stringify({ error: 'Missing communityUri' }))
           return
         }
-        const recomputeStats = db.getParticipationStats(auth.did, communityUri)
+        const recomputeStats = await db.getParticipationStats(
+          auth.did,
+          communityUri,
+        )
         if (!recomputeStats || !recomputeStats.is_moderator) {
           res.writeHead(403, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ error: 'Only moderators can recompute moderation' }))
+          res.end(
+            JSON.stringify({
+              error: 'Only moderators can recompute moderation',
+            }),
+          )
           return
         }
-        const count = chatMod.recomputeCommunity(communityUri)
+        const count = await chatMod.recomputeCommunity(communityUri)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ recomputed: count }))
       } else if (
@@ -975,7 +1035,7 @@ async function main() {
           res.end(JSON.stringify({ error: 'Missing did parameter' }))
           return
         }
-        const prefs = db.getChatPreferences(did)
+        const prefs = await db.getChatPreferences(did)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify(prefs))
       } else if (
@@ -995,7 +1055,7 @@ async function main() {
           res.end(JSON.stringify({ error: 'did must match authenticated DID' }))
           return
         }
-        db.setChatPreferences(did, showChatBadges)
+        await db.setChatPreferences(did, showChatBadges)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true }))
 
@@ -1019,7 +1079,7 @@ async function main() {
           res.end(
             JSON.stringify({
               error: 'Missing communityUri, authorDid, or title',
-            }          ),
+            }),
           )
           return
         }
@@ -1033,7 +1093,7 @@ async function main() {
           return
         }
         const id = crypto.randomUUID()
-        db.insertCard({
+        await db.insertCard({
           id,
           communityUri,
           authorDid,
@@ -1055,7 +1115,7 @@ async function main() {
           res.end(JSON.stringify({ error: 'Missing community parameter' }))
           return
         }
-        const cards = db.getCardsForCommunity(communityUri)
+        const cards = await db.getCardsForCommunity(communityUri)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ cards }))
       } else if (
@@ -1093,7 +1153,7 @@ async function main() {
           return
         }
         const id = crypto.randomUUID()
-        db.insertCommunityMapContribution({
+        await db.insertCommunityMapContribution({
           id,
           communityUri,
           authorDid,
@@ -1103,7 +1163,7 @@ async function main() {
           sourceType,
           metadata,
         })
-        const contribution = db.getCommunityMapContribution(id, authorDid)
+        const contribution = await db.getCommunityMapContribution(id, authorDid)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ contribution }))
       } else if (
@@ -1120,11 +1180,14 @@ async function main() {
           res.end(JSON.stringify({ error: 'Missing community parameter' }))
           return
         }
-        const contributions = db.getCommunityMapContributions(communityUri, {
-          status,
-          viewerDid,
-          limit: 50,
-        })
+        const contributions = await db.getCommunityMapContributions(
+          communityUri,
+          {
+            status,
+            viewerDid,
+            limit: 50,
+          },
+        )
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ contributions }))
       } else if (
@@ -1157,7 +1220,7 @@ async function main() {
           )
           return
         }
-        const contribution = db.voteCommunityMapContribution(
+        const contribution = await db.voteCommunityMapContribution(
           contributionId,
           voterDid,
           vote,
@@ -1201,7 +1264,7 @@ async function main() {
           return
         }
         const id = crypto.randomUUID()
-        db.insertRelationship({
+        await db.insertRelationship({
           id,
           sourceCardId,
           targetCardId,
@@ -1218,7 +1281,7 @@ async function main() {
           res.end(JSON.stringify({ error: 'Missing community parameter' }))
           return
         }
-        const graph = db.getGraphForCommunity(communityUri)
+        const graph = await db.getGraphForCommunity(communityUri)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify(graph))
       } else if (
@@ -1233,7 +1296,7 @@ async function main() {
           res.end(JSON.stringify({ error: 'Missing community parameter' }))
           return
         }
-        const suggestions = db.getSuggestionsForCommunity(communityUri, {
+        const suggestions = await db.getSuggestionsForCommunity(communityUri, {
           status,
           limit: 50,
         })
@@ -1260,7 +1323,7 @@ async function main() {
           )
           return
         }
-        db.acceptSuggestion(id, authorDid)
+        await db.acceptSuggestion(id, authorDid)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ success: true }))
       } else if (
@@ -1275,7 +1338,7 @@ async function main() {
           res.end(JSON.stringify({ error: 'Missing id' }))
           return
         }
-        db.rejectSuggestion(id)
+        await db.rejectSuggestion(id)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ success: true }))
       } else if (
@@ -1337,8 +1400,8 @@ async function main() {
           )
           return
         }
-        db.upsertCardVote(cardId, voterDid, influence)
-        const votes = db.getCardVotes(cardId)
+        await db.upsertCardVote(cardId, voterDid, influence)
+        const votes = await db.getCardVotes(cardId)
         const totalInfluence = votes.reduce(
           (sum: number, v: { influence: number }) => sum + v.influence,
           0,
@@ -1361,11 +1424,11 @@ async function main() {
         }
         const voterDid = url.searchParams.get('voter')
         if (voterDid) {
-          const vote = db.getCardVote(cardId, voterDid)
+          const vote = await db.getCardVote(cardId, voterDid)
           res.writeHead(200, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ vote: vote ?? null }))
         } else {
-          const votes = db.getCardVotes(cardId)
+          const votes = await db.getCardVotes(cardId)
           const totalInfluence = votes.reduce(
             (sum: number, v: { influence: number }) => sum + v.influence,
             0,
@@ -1387,7 +1450,7 @@ async function main() {
           res.end(JSON.stringify({ error: 'Missing community parameter' }))
           return
         }
-        const pulse = db.getCommunityPulse(communityUri, voterDid)
+        const pulse = await db.getCommunityPulse(communityUri, voterDid)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify(pulse))
       } else if (req.url === '/api/extract' && req.method === 'POST') {
@@ -1414,7 +1477,7 @@ async function main() {
         }
         const extracted = extractFromText(text, { communityUri })
         if (extracted) {
-          persistExtractedCard(db, extracted, { communityUri, authorDid })
+          await persistExtractedCard(db, extracted, { communityUri, authorDid })
         }
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ extracted }))
@@ -1452,13 +1515,17 @@ async function main() {
 
   // Badge recompute + expiry — runs every 5 minutes
   const badgeCron = setInterval(() => {
-    chatMod.runExpiry().catch((err: any) => {
-      log.error({ err }, 'Badge expiry error')
-    })
-    const communityUris = db.getActiveCommunityUris()
-    for (const uri of communityUris) {
-      chatMod.recomputeCommunity(uri)
-    }
+    void (async () => {
+      try {
+        await chatMod.runExpiry()
+      } catch (err: any) {
+        log.error({ err }, 'Badge expiry error')
+      }
+      const communityUris = await db.getActiveCommunityUris()
+      for (const uri of communityUris) {
+        await chatMod.recomputeCommunity(uri)
+      }
+    })()
   }, 300_000)
 
   // Graceful shutdown
@@ -1466,11 +1533,11 @@ async function main() {
     log.info({ signal }, 'Shutting down...')
     retryWorker.stop()
     syncPoller.stop()
-    firehose.stop()
+    await firehose.stop()
     clearInterval(proposalCron)
     clearInterval(badgeCron)
     server.close()
-    db.close()
+    await db.close()
     process.exit(0)
   }
 

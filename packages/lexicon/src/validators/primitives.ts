@@ -1,13 +1,13 @@
+import { CID } from 'multiformats/cid'
 import { graphemeLen, utf8Len } from '@atproto/common-web'
-import { ifCid } from '@atproto/lex-data'
 import { Lexicons } from '../lexicons.js'
-import {
+import { ValidationError } from '../types.js'
+import type {
   LexBoolean,
   LexBytes,
   LexInteger,
   LexString,
   LexUserType,
-  ValidationError,
   ValidationResult,
 } from '../types.js'
 import * as formats from './formats.js'
@@ -156,7 +156,7 @@ function string(
   path: string,
   def: LexUserType,
   value: unknown,
-): ValidationResult {
+): ValidationResult<string> {
   def = def as LexString
 
   // type
@@ -388,7 +388,7 @@ function cidLink(
   def: LexUserType,
   value: unknown,
 ): ValidationResult {
-  if (ifCid(value) === null) {
+  if (CID.asCID(value) === null) {
     return {
       success: false,
       error: new ValidationError(`${path} must be a CID`),

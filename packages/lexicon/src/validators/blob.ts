@@ -1,6 +1,7 @@
-import { BlobRef, jsonBlobRef } from '../blob-refs.js'
+import { BlobRef } from '../blob-refs.js'
 import { Lexicons } from '../lexicons.js'
-import { LexUserType, ValidationError, ValidationResult } from '../types.js'
+import type { LexUserType, ValidationResult } from '../types.js'
+import { ValidationError } from '../types.js'
 
 export function blob(
   lexicons: Lexicons,
@@ -9,16 +10,11 @@ export function blob(
   value: unknown,
 ): ValidationResult {
   // check
-  if (value instanceof BlobRef) {
-    return { success: true, value }
+  if (!value || !(value instanceof BlobRef)) {
+    return {
+      success: false,
+      error: new ValidationError(`${path} should be a blob ref`),
+    }
   }
-
-  if (jsonBlobRef.safeParse(value).success) {
-    return { success: true, value }
-  }
-
-  return {
-    success: false,
-    error: new ValidationError(`${path} should be a blob ref`),
-  }
+  return { success: true, value }
 }

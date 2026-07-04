@@ -54,7 +54,7 @@ if [ ! -d "${SCRIPT_DIR}/synapse" ]; then
         -e SYNAPSE_CONFIG_DIR=/data \
         -e SYNAPSE_DATA_DIR=/data \
         -v "${SCRIPT_DIR}/synapse:/data" \
-        matrixdotorg/synapse:v1.127.1 generate
+        matrixdotorg/synapse:v1.134.0 generate
 
     # Tune the generated config for PARA's bare-metal setup
     SYNAPSE_CFG="${SCRIPT_DIR}/synapse/homeserver.yaml"

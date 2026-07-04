@@ -42,9 +42,7 @@ describe('account', () => {
         privacyPolicyUrl: 'https://example.com/privacy-policy',
       },
     })
-    // @ts-expect-error Error due to circular dependency with the dev-env package
     mailer = network.pds.ctx.mailer
-    // @ts-expect-error Error due to circular dependency with the dev-env package
     ctx = network.pds.ctx
     idResolver = network.pds.ctx.idResolver
     agent = network.pds.getAgent()
@@ -60,7 +58,7 @@ describe('account', () => {
 
   afterAll(async () => {
     mailer.transporter.sendMail = _origSendMail
-    await network.close()
+    await network?.close()
   })
 
   it('serves the accounts system config', async () => {

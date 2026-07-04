@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { BridgeDatabase } from './db.js'
+import type { IBridgeDatabase } from './db/index.js'
 
 export interface ExtractedCard {
   id: string
@@ -331,8 +331,8 @@ export function extractFromText(
 /**
  * Persist an extracted card to the database.
  */
-export function persistExtractedCard(
-  db: BridgeDatabase,
+export async function persistExtractedCard(
+  db: IBridgeDatabase,
   card: ExtractedCard,
   opts: {
     communityUri: string
@@ -340,8 +340,8 @@ export function persistExtractedCard(
     roomId?: string
     eventId?: string
   },
-): void {
-  db.insertCard({
+): Promise<void> {
+  await db.insertCard({
     id: card.id,
     communityUri: opts.communityUri,
     authorDid: opts.authorDid,
@@ -359,7 +359,7 @@ export function persistExtractedCard(
   })
 
   for (const entity of card.entities) {
-    db.insertEntity({
+    await db.insertEntity({
       cardId: card.id,
       entityType: entity.type,
       entityValue: entity.value,
@@ -371,20 +371,20 @@ export function persistExtractedCard(
  * Find existing cards in the same community that share entities with the new card,
  * and generate suggested relationships.
  */
-export function generateRelationshipSuggestions(
-  db: BridgeDatabase,
+export async function generateRelationshipSuggestions(
+  db: IBridgeDatabase,
   newCard: ExtractedCard,
   opts: {
     communityUri: string
     authorDid: string
     stanceText?: string
   },
-): SuggestedRelationship[] {
+): Promise<SuggestedRelationship[]> {
   const suggestions: SuggestedRelationship[] = []
   if (newCard.entities.length === 0) return suggestions
 
   // Get existing cards in the same community (excluding the new one if already persisted)
-  const existingCards = db.getCardsForCommunity(opts.communityUri, {
+  const existingCards = await db.getCardsForCommunity(opts.communityUri, {
     limit: 200,
   })
 
@@ -396,7 +396,7 @@ export function generateRelationshipSuggestions(
   for (const existing of existingCards) {
     if (existing.id === newCard.id) continue
 
-    const existingEntities = db.getEntitiesForCard(existing.id)
+    const existingEntities = await db.getEntitiesForCard(existing.id)
     const sharedEntities: string[] = []
 
     for (const ee of existingEntities) {
@@ -440,13 +440,13 @@ export function generateRelationshipSuggestions(
 /**
  * Persist suggested relationships to the database.
  */
-export function persistSuggestions(
-  db: BridgeDatabase,
+export async function persistSuggestions(
+  db: IBridgeDatabase,
   suggestions: SuggestedRelationship[],
-): void {
+): Promise<void> {
   for (const s of suggestions) {
     try {
-      db.insertSuggestedRelationship(s)
+      await db.insertSuggestedRelationship(s)
     } catch {
       // Duplicate suggestion — ignore
     }

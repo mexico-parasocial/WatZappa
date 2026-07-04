@@ -11,7 +11,7 @@
 import type { Logger } from 'pino'
 import type { ChatModerationEngine } from './chat-moderation.js'
 import { getEffectiveRules, isApproved } from './constitution.js'
-import type { BridgeDatabase } from './db.js'
+import type { IBridgeDatabase } from './db/index.js'
 import type { MatrixAdminClient } from './matrix.js'
 
 export type ProposalState =
@@ -23,13 +23,13 @@ export type ProposalState =
   | 'quorum_not_met'
 
 export class ProposalEngine {
-  private db: BridgeDatabase
+  private db: IBridgeDatabase
   private matrix: MatrixAdminClient
   private chatMod: ChatModerationEngine
   private log: Logger
 
   constructor(
-    db: BridgeDatabase,
+    db: IBridgeDatabase,
     matrix: MatrixAdminClient,
     log: Logger,
     chatMod: ChatModerationEngine,
@@ -43,7 +43,7 @@ export class ProposalEngine {
   /**
    * Called when a new proposal is seen on the firehose.
    */
-  onProposalCreated(
+  async onProposalCreated(
     uri: string,
     communityUri: string,
     authorDid: string,
@@ -52,14 +52,14 @@ export class ProposalEngine {
     proposalType: string,
     budgetRequest: number | null,
     createdAt: string,
-  ): void {
-    const existing = this.db.getProposal(uri)
+  ): Promise<void> {
+    const existing = await this.db.getProposal(uri)
     if (existing) {
       this.log.debug({ uri }, 'Proposal already tracked')
       return
     }
 
-    this.db.insertProposal(
+    await this.db.insertProposal(
       uri,
       communityUri,
       authorDid,
@@ -70,7 +70,7 @@ export class ProposalEngine {
       createdAt,
     )
 
-    this.chatMod.recordProposal(authorDid, communityUri)
+    await this.chatMod.recordProposal(authorDid, communityUri)
 
     this.log.info(
       { uri, communityUri, authorDid, type: proposalType },
@@ -81,15 +81,15 @@ export class ProposalEngine {
   /**
    * Called when a vote is seen on the firehose.
    */
-  onVoteCast(
+  async onVoteCast(
     uri: string,
     proposalUri: string,
     communityUri: string,
     voterDid: string,
     choice: string,
     createdAt: string,
-  ): void {
-    const proposal = this.db.getProposal(proposalUri)
+  ): Promise<void> {
+    const proposal = await this.db.getProposal(proposalUri)
     if (!proposal) {
       this.log.debug({ proposalUri }, 'Vote for unknown proposal, skipping')
       return
@@ -103,7 +103,7 @@ export class ProposalEngine {
       return
     }
 
-    const constitution = this.db.getConstitution(communityUri)
+    const constitution = await this.db.getConstitution(communityUri)
     const parsedConstitution = constitution
       ? {
           community: constitution.communityUri,
@@ -122,7 +122,7 @@ export class ProposalEngine {
       weight = 1.0
     }
 
-    this.db.insertVote(
+    await this.db.insertVote(
       uri,
       proposalUri,
       communityUri,
@@ -132,10 +132,10 @@ export class ProposalEngine {
       createdAt,
     )
 
-    this.chatMod.recordVote(voterDid, communityUri)
+    await this.chatMod.recordVote(voterDid, communityUri)
 
     // Recalculate running totals
-    const votes = this.db.getVotesForProposal(proposalUri)
+    const votes = await this.db.getVotesForProposal(proposalUri)
     const forVotes = votes
       .filter((v: any) => v.choice === 'for')
       .reduce((sum: number, v: any) => sum + v.weight, 0)
@@ -146,7 +146,7 @@ export class ProposalEngine {
       .filter((v: any) => v.choice === 'abstain')
       .reduce((sum: number, v: any) => sum + v.weight, 0)
 
-    this.db.updateProposalVoteCounts(
+    await this.db.updateProposalVoteCounts(
       proposalUri,
       Math.round(forVotes),
       Math.round(againstVotes),
@@ -164,11 +164,11 @@ export class ProposalEngine {
     const now = new Date().toISOString()
 
     // 1. deliberating → voting (FIFO queue: one proposal per community at a time)
-    const deliberating = this.db.getProposalsByState('deliberating')
+    const deliberating = await this.db.getProposalsByState('deliberating')
     const communitiesWithActiveVoting = new Set<string>()
 
     // Pre-compute which communities already have a voting proposal
-    const activeVoting = this.db.getProposalsByState('voting')
+    const activeVoting = await this.db.getProposalsByState('voting')
     for (const v of activeVoting) {
       communitiesWithActiveVoting.add(v.community_uri)
     }
@@ -183,7 +183,7 @@ export class ProposalEngine {
         continue
       }
 
-      const constitution = this.db.getConstitution(p.community_uri)
+      const constitution = await this.db.getConstitution(p.community_uri)
       const parsedConstitution = constitution
         ? {
             community: constitution.communityUri,
@@ -204,7 +204,7 @@ export class ProposalEngine {
         const votingEnds = new Date(
           Date.now() + votingDays * 24 * 60 * 60 * 1000,
         ).toISOString()
-        this.db.updateProposalState(p.uri, 'voting', now, votingEnds)
+        await this.db.updateProposalState(p.uri, 'voting', now, votingEnds)
         communitiesWithActiveVoting.add(p.community_uri)
         this.log.info({ uri: p.uri }, 'Proposal moved to voting (FIFO)')
 
@@ -220,11 +220,11 @@ export class ProposalEngine {
     }
 
     // 2. voting → decided
-    const voting = this.db.getProposalsByState('voting')
+    const voting = await this.db.getProposalsByState('voting')
     for (const p of voting) {
       if (!p.voting_ends_at || now < p.voting_ends_at) continue
 
-      const constitution = this.db.getConstitution(p.community_uri)
+      const constitution = await this.db.getConstitution(p.community_uri)
       const parsedConstitution = constitution
         ? {
             community: constitution.communityUri,
@@ -254,7 +254,7 @@ export class ProposalEngine {
         result = 'rejected'
       }
 
-      this.db.finalizeProposal(p.uri, result, now)
+      await this.db.finalizeProposal(p.uri, result, now)
 
       const budgetAllocated =
         result === 'approved' &&
@@ -263,7 +263,7 @@ export class ProposalEngine {
           ? p.budget_request
           : null
 
-      this.db.insertDecision(
+      await this.db.insertDecision(
         p.uri,
         p.community_uri,
         result,
@@ -305,23 +305,30 @@ export class ProposalEngine {
   }
 
   private async getEligibleVoterCount(communityUri: string): Promise<number> {
-    // Count active members in chamber_assignment for bicameral, or estimate for unicameral
-    const space = this.db.getSpaceForCommunity(communityUri)
+    const space = await this.db.getSpaceForCommunity(communityUri)
     if (!space) return 0
 
-    // Simple heuristic: count chamber assignments + a buffer
-    const countA = this.db.getChamberMemberCount(communityUri, 'A')
-    const countB = this.db.getChamberMemberCount(communityUri, 'B')
-    return countA + countB
+    if (space.chamberMode === 'bicameral') {
+      // Bicameral: only chamber members can vote
+      const countA = await this.db.getChamberMemberCount(communityUri, 'A')
+      const countB = await this.db.getChamberMemberCount(communityUri, 'B')
+      return countA + countB
+    }
+
+    // Unicameral: count active community members
+    return await this.db.getActiveMemberCount(communityUri)
   }
 
   private async announceInMatrix(
     communityUri: string,
     message: string,
   ): Promise<void> {
-    const space = this.db.getSpaceForCommunity(communityUri)
+    const space = await this.db.getSpaceForCommunity(communityUri)
     if (!space?.spaceId) {
-      this.log.warn({ communityUri }, 'No Matrix space for community, skipping announcement')
+      this.log.warn(
+        { communityUri },
+        'No Matrix space for community, skipping announcement',
+      )
       return
     }
 

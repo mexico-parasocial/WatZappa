@@ -1,7 +1,7 @@
 import type { Logger } from 'pino'
 import type { ChatModerationEngine } from './chat-moderation.js'
 import type { Config } from './config.js'
-import type { BridgeDatabase } from './db.js'
+import type { IBridgeDatabase } from './db/index.js'
 import type { MatrixAdminClient } from './matrix.js'
 
 const DEFAULT_POLL_INTERVAL_MS = 30_000
@@ -14,7 +14,7 @@ interface RoomPollState {
 }
 
 export class MatrixSyncPoller {
-  private db: BridgeDatabase
+  private db: IBridgeDatabase
   private matrix: MatrixAdminClient
   private chatMod: ChatModerationEngine
   private log: Logger
@@ -25,7 +25,7 @@ export class MatrixSyncPoller {
 
   constructor(
     config: Config,
-    db: BridgeDatabase,
+    db: IBridgeDatabase,
     matrix: MatrixAdminClient,
     chatMod: ChatModerationEngine,
     log: Logger,
@@ -64,7 +64,7 @@ export class MatrixSyncPoller {
   }
 
   private async pollAllRooms(): Promise<void> {
-    const roomIds = this.db.getAllRoomIds()
+    const roomIds = await this.db.getAllRoomIds()
     if (roomIds.length === 0) {
       this.log.debug('No rooms to poll')
       return
@@ -101,16 +101,16 @@ export class MatrixSyncPoller {
       if (!event.event_id) continue
 
       // Skip if already processed
-      if (this.db.eventExists(event.event_id)) {
+      if (await this.db.eventExists(event.event_id)) {
         continue
       }
 
-      const inserted = this.db.insertMatrixEvent({
+      const inserted = await this.db.insertMatrixEvent({
         roomId,
         eventId: event.event_id,
         sender: event.sender,
         type: event.type,
-        content: null,
+        content: '',
         originServerTs: event.origin_server_ts,
       })
 
@@ -118,11 +118,18 @@ export class MatrixSyncPoller {
         newEvents++
 
         // Record participation metadata only. Content stays in Matrix/Synapse.
-        if (event.type === 'm.room.message' || event.type === 'm.room.encrypted') {
-          const did = this.db.getDidForMxid(event.sender)
-          const community = this.db.getCommunityByRoomId(roomId)
+        if (
+          event.type === 'm.room.message' ||
+          event.type === 'm.room.encrypted'
+        ) {
+          const did = await this.db.getDidForMxid(event.sender)
+          const community = await this.db.getCommunityByRoomId(roomId)
           if (did && community) {
-            this.chatMod.recordMessage(did, community.communityUri, roomId)
+            await this.chatMod.recordMessage(
+              did,
+              community.communityUri,
+              roomId,
+            )
             this.log.debug(
               { did, roomId, eventId: event.event_id },
               'Recorded message',

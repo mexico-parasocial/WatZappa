@@ -87,6 +87,10 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     )
   }
 
+  getActiveMemberCount(communityUri: string): Promise<number> {
+    return this.wrap(() => this.inner.getActiveMemberCount(communityUri))
+  }
+
   // ── User Matrix ──
 
   getMxidForDid(did: string): Promise<string | undefined> {
@@ -592,22 +596,22 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     roles: string[] = [],
   ): Promise<void> {
     return this.wrap(() =>
-      this.inner.setCommunityMembership(did, communityUri, membershipState, roles),
+      this.inner.setCommunityMembership(
+        did,
+        communityUri,
+        membershipState,
+        roles,
+      ),
     )
   }
 
-  isActiveCommunityMember(
-    did: string,
-    communityUri: string,
-  ): Promise<boolean> {
+  isActiveCommunityMember(did: string, communityUri: string): Promise<boolean> {
     return this.wrap(() =>
       this.inner.isActiveCommunityMember(did, communityUri),
     )
   }
 
-  getActiveCommunityRoomsForDid(
-    did: string,
-  ): Promise<
+  getActiveCommunityRoomsForDid(did: string): Promise<
     Array<{
       roomId: string
       communityUri: string
@@ -678,17 +682,13 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     return this.wrap(() => this.inner.failSortitionRun(id))
   }
 
-  getSortitionCandidates(
-    runId: string,
-    selectedOnly = false,
-  ): Promise<any[]> {
-    return this.wrap(() => this.inner.getSortitionCandidates(runId, selectedOnly))
+  getSortitionCandidates(runId: string, selectedOnly = false): Promise<any[]> {
+    return this.wrap(() =>
+      this.inner.getSortitionCandidates(runId, selectedOnly),
+    )
   }
 
-  getSortitionCandidate(
-    runId: string,
-    did: string,
-  ): Promise<any | undefined> {
+  getSortitionCandidate(runId: string, did: string): Promise<any | undefined> {
     return this.wrap(() => this.inner.getSortitionCandidate(runId, did))
   }
 
@@ -702,21 +702,27 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     sourceType: string
     metadata?: string
   }): Promise<void> {
-    return this.wrap(() => this.inner.insertCommunityMapContribution(contribution))
+    return this.wrap(() =>
+      this.inner.insertCommunityMapContribution(contribution),
+    )
   }
 
   getCommunityMapContributions(
     communityUri: string,
     opts?: { status?: string; viewerDid?: string; limit?: number },
   ): Promise<any[]> {
-    return this.wrap(() => this.inner.getCommunityMapContributions(communityUri, opts))
+    return this.wrap(() =>
+      this.inner.getCommunityMapContributions(communityUri, opts),
+    )
   }
 
   getCommunityMapContribution(
     id: string,
     viewerDid?: string,
   ): Promise<any | undefined> {
-    return this.wrap(() => this.inner.getCommunityMapContribution(id, viewerDid))
+    return this.wrap(() =>
+      this.inner.getCommunityMapContribution(id, viewerDid),
+    )
   }
 
   getCommunityContributionVote(

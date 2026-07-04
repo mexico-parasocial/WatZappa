@@ -9,7 +9,7 @@
  */
 
 import type { Logger } from 'pino'
-import type { BridgeDatabase } from './db.js'
+import type { IBridgeDatabase } from './db/index.js'
 
 export type BadgeSeverity = 'info' | 'warning' | 'critical'
 
@@ -61,14 +61,14 @@ const BADGE_DEFS: Record<
 
 export class ChatModerationEngine {
   constructor(
-    private db: BridgeDatabase,
+    private db: IBridgeDatabase,
     private log: Logger,
   ) {}
 
   /**
    * Ingest a user report from the app.
    */
-  ingestReport(params: {
+  async ingestReport(params: {
     reportedDid: string
     reporterDid: string
     communityUri: string
@@ -76,8 +76,8 @@ export class ChatModerationEngine {
     context?: string
     matrixEventId?: string
     matrixRoomId?: string
-  }): void {
-    this.db.insertModerationEvent({
+  }): Promise<void> {
+    await this.db.insertModerationEvent({
       did: params.reportedDid,
       communityUri: params.communityUri,
       eventType: 'report_received',
@@ -100,15 +100,15 @@ export class ChatModerationEngine {
   /**
    * Ingest a sanction applied by a moderator.
    */
-  ingestSanction(params: {
+  async ingestSanction(params: {
     targetDid: string
     communityUri: string
     sanctionType: 'mute' | 'ban' | 'redact'
     durationMinutes?: number
     sanctionedByDid: string
     matrixRoomId?: string
-  }): void {
-    this.db.insertModerationEvent({
+  }): Promise<void> {
+    await this.db.insertModerationEvent({
       did: params.targetDid,
       communityUri: params.communityUri,
       eventType: params.sanctionType,
@@ -126,35 +126,35 @@ export class ChatModerationEngine {
   /**
    * Record a message sent by a user in a community room.
    */
-  recordMessage(
+  async recordMessage(
     did: string,
     communityUri: string,
     matrixRoomId?: string,
-  ): void {
-    this.db.ensureParticipationStats(did, communityUri, matrixRoomId)
-    this.db.incrementMessageCount(did, communityUri)
+  ): Promise<void> {
+    await this.db.ensureParticipationStats(did, communityUri, matrixRoomId)
+    await this.db.incrementMessageCount(did, communityUri)
   }
 
   /**
    * Record a vote cast by a user.
    */
-  recordVote(did: string, communityUri: string): void {
-    this.db.ensureParticipationStats(did, communityUri)
-    this.db.incrementVoteCount(did, communityUri)
+  async recordVote(did: string, communityUri: string): Promise<void> {
+    await this.db.ensureParticipationStats(did, communityUri)
+    await this.db.incrementVoteCount(did, communityUri)
   }
 
   /**
    * Record a proposal created by a user.
    */
-  recordProposal(did: string, communityUri: string): void {
-    this.db.ensureParticipationStats(did, communityUri)
-    this.db.incrementProposalCount(did, communityUri)
+  async recordProposal(did: string, communityUri: string): Promise<void> {
+    await this.db.ensureParticipationStats(did, communityUri)
+    await this.db.incrementProposalCount(did, communityUri)
   }
 
   /**
    * Record membership / role changes.
    */
-  recordMembership(
+  async recordMembership(
     did: string,
     communityUri: string,
     matrixRoomId: string,
@@ -163,17 +163,17 @@ export class ChatModerationEngine {
       isModerator?: boolean
       chamber?: string | null
     },
-  ): void {
-    this.db.ensureParticipationStats(did, communityUri, matrixRoomId)
-    this.db.setParticipationRoles(did, communityUri, roles)
+  ): Promise<void> {
+    await this.db.ensureParticipationStats(did, communityUri, matrixRoomId)
+    await this.db.setParticipationRoles(did, communityUri, roles)
   }
 
   /**
    * Compute all badges for a user in a community.
    */
-  computeBadges(did: string, communityUri: string): ChatBadge[] {
-    const stats = this.db.getParticipationStats(did, communityUri)
-    const events = this.db.getModerationEvents(did, communityUri, 90)
+  async computeBadges(did: string, communityUri: string): Promise<ChatBadge[]> {
+    const stats = await this.db.getParticipationStats(did, communityUri)
+    const events = await this.db.getModerationEvents(did, communityUri, 90)
     const now = new Date()
 
     const badges: ChatBadge[] = []
@@ -269,10 +269,14 @@ export class ChatModerationEngine {
   /**
    * Persist computed badges to cache table.
    */
-  saveBadges(did: string, communityUri: string, badges: ChatBadge[]): void {
-    this.db.clearUserBadges(did, communityUri)
+  async saveBadges(
+    did: string,
+    communityUri: string,
+    badges: ChatBadge[],
+  ): Promise<void> {
+    await this.db.clearUserBadges(did, communityUri)
     for (const badge of badges) {
-      this.db.setUserBadge({
+      await this.db.setUserBadge({
         did,
         communityUri,
         badgeType: badge.type,
@@ -286,20 +290,20 @@ export class ChatModerationEngine {
   /**
    * Full recompute + save for a single user.
    */
-  recomputeUser(did: string, communityUri: string): ChatBadge[] {
-    const badges = this.computeBadges(did, communityUri)
-    this.saveBadges(did, communityUri, badges)
+  async recomputeUser(did: string, communityUri: string): Promise<ChatBadge[]> {
+    const badges = await this.computeBadges(did, communityUri)
+    await this.saveBadges(did, communityUri, badges)
     return badges
   }
 
   /**
    * Batch recompute for all members of a community.
    */
-  recomputeCommunity(communityUri: string): number {
-    const members = this.db.getParticipationStatsByCommunity(communityUri)
+  async recomputeCommunity(communityUri: string): Promise<number> {
+    const members = await this.db.getParticipationStatsByCommunity(communityUri)
     let count = 0
     for (const m of members) {
-      this.recomputeUser(m.did, communityUri)
+      await this.recomputeUser(m.did, communityUri)
       count++
     }
     this.log.info(
@@ -312,11 +316,11 @@ export class ChatModerationEngine {
   /**
    * Get participation summary for a user.
    */
-  getParticipationSummary(
+  async getParticipationSummary(
     did: string,
     communityUri: string,
-  ): ParticipationSummary | null {
-    const stats = this.db.getParticipationStats(did, communityUri)
+  ): Promise<ParticipationSummary | null> {
+    const stats = await this.db.getParticipationStats(did, communityUri)
     if (!stats) return null
     const now = new Date()
     const daysInCommunity = Math.floor(
@@ -340,46 +344,56 @@ export class ChatModerationEngine {
   /**
    * Get member list with badges for a community.
    */
-  getMemberList(
+  async getMemberList(
     communityUri: string,
     limit = 100,
     offset = 0,
-  ): Array<{
-    did: string
-    matrixUserId?: string
-    badges: ChatBadge[]
-    participation: ParticipationSummary | null
-    lastActiveAt?: string
-  }> {
-    const rows = this.db.getMemberList(communityUri, limit, offset)
-    return rows.map((row: any) => {
-      const badges = this.db
-        .getUserBadges(row.did, communityUri)
-        .map((b: any) => this.makeBadge(b.badge_type, b.visible_in_chat === 1))
-      return {
-        did: row.did,
-        matrixUserId: row.matrix_user_id,
-        badges,
-        participation: this.getParticipationSummary(row.did, communityUri),
-        lastActiveAt: row.last_message_at,
-      }
-    })
+  ): Promise<
+    Array<{
+      did: string
+      matrixUserId?: string
+      badges: ChatBadge[]
+      participation: ParticipationSummary | null
+      lastActiveAt?: string
+    }>
+  > {
+    const rows = await this.db.getMemberList(communityUri, limit, offset)
+    return Promise.all(
+      rows.map(async (row: any) => {
+        const badges = (await this.db.getUserBadges(row.did, communityUri)).map(
+          (b: any) => this.makeBadge(b.badge_type, b.visible_in_chat === 1),
+        )
+        return {
+          did: row.did,
+          matrixUserId: row.matrix_user_id,
+          badges,
+          participation: await this.getParticipationSummary(
+            row.did,
+            communityUri,
+          ),
+          lastActiveAt: row.last_message_at,
+        }
+      }),
+    )
   }
 
   /**
    * Get dashboard summary for moderators.
    */
-  getDashboard(communityUri: string): {
+  async getDashboard(communityUri: string): Promise<{
     totalMembers: number
     activeToday: number
     reportedThisWeek: number
     sanctionedNow: number
     riskDistribution: { low: number; warning: number; critical: number }
     recentEvents: any[]
-  } {
-    const stats = this.db.getParticipationStatsByCommunity(communityUri)
-    const summary = this.db.getCommunityBadgeSummary(communityUri)
-    const recentReports = this.db.getRecentReportsForCommunity(communityUri, 7)
+  }> {
+    const stats = await this.db.getParticipationStatsByCommunity(communityUri)
+    const summary = await this.db.getCommunityBadgeSummary(communityUri)
+    const recentReports = await this.db.getRecentReportsForCommunity(
+      communityUri,
+      7,
+    )
 
     const now = new Date()
     const activeToday = stats.filter(
@@ -389,12 +403,17 @@ export class ChatModerationEngine {
           new Date(now.getTime() - 24 * 60 * 60 * 1000),
     ).length
 
-    const sanctionedNow = stats.filter((s: any) => {
-      const badges = this.db.getUserBadges(s.did, communityUri)
-      return badges.some(
-        (b: any) => b.badge_type === 'sanctioned' && b.visible_in_chat === 1,
-      )
-    }).length
+    let sanctionedNow = 0
+    for (const s of stats) {
+      const badges = await this.db.getUserBadges(s.did, communityUri)
+      if (
+        badges.some(
+          (b: any) => b.badge_type === 'sanctioned' && b.visible_in_chat === 1,
+        )
+      ) {
+        sanctionedNow++
+      }
+    }
 
     return {
       totalMembers: stats.length,
@@ -417,7 +436,7 @@ export class ChatModerationEngine {
     const affected = await this.db.expireBadges()
     let count = 0
     for (const { did, communityUri } of affected) {
-      this.recomputeUser(did, communityUri)
+      await this.recomputeUser(did, communityUri)
       count++
     }
     if (count > 0) {

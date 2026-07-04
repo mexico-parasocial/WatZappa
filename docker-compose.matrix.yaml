@@ -19,7 +19,7 @@ services:
   # OPTION A: Synapse (Recommended for production)
   # ═════════════════════════════════════════════════════════════════════════════
   synapse:
-    image: matrixdotorg/synapse:v1.127.1
+    image: matrixdotorg/synapse:v1.134.0
     container_name: para-matrix-synapse
     restart: unless-stopped
     # Share the existing Postgres or use a dedicated one.
@@ -89,7 +89,7 @@ services:
   # Element Web — client UI (works with Synapse OR Continuwuity)
   # ═════════════════════════════════════════════════════════════════════════════
   element-web:
-    image: vectorim/element-web:v1.11.96
+    image: vectorim/element-web:v1.12.18
     container_name: para-matrix-element
     restart: unless-stopped
     volumes:
@@ -112,6 +112,7 @@ services:
       PDS_FIREHOSE_URL: ${PDS_FIREHOSE_URL:-wss://pds.para.social/xrpc/com.atproto.sync.subscribeRepos}
       MATRIX_HOMESERVER_URL: ${MATRIX_HOMESERVER_URL:-http://synapse:8008}
       MATRIX_ADMIN_TOKEN: ${MATRIX_ADMIN_TOKEN}
+      MATRIX_ENABLE_ENCRYPTION: ${MATRIX_ENABLE_ENCRYPTION:-false}
       M8_BASE_URL: ${M8_BASE_URL:-http://host.docker.internal:8787/v1}
       BRIDGE_DB_PATH: /data/bridge.db
       BRIDGE_LOG_LEVEL: ${BRIDGE_LOG_LEVEL:-info}

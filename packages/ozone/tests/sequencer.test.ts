@@ -16,12 +16,11 @@ describe('sequencer', () => {
     network = await TestNetwork.create({
       dbPostgresSchema: 'ozone_sequencer',
     })
-    // @ts-expect-error
     sequencer = network.ozone.ctx.sequencer
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   const loadFromDb = (lastSeen: number) => {

@@ -20,13 +20,12 @@ describe('account', () => {
         inviteEpoch: Date.now() - 3 * DAY,
       },
     })
-    // @ts-expect-error Error due to circular dependency with the dev-env package
     ctx = network.pds.ctx
     agent = network.pds.getAgent()
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   it('describes the fact that invites are required', async () => {

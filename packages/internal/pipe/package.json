@@ -1,6 +1,6 @@
 {
   "name": "@atproto-labs/pipe",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "license": "MIT",
   "description": "Library for combining multiple functions into a single function.",
   "keywords": [
@@ -14,14 +14,16 @@
     "directory": "packages/internal/pipe"
   },
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
-    "./package.json": "./package.json"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
-  "devDependencies": {  },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "build": "tsc --build tsconfig.json"
+    "build": "tsgo --build tsconfig.json"
   }
 }

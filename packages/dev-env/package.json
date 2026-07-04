@@ -12,15 +12,24 @@
     "url": "https://github.com/bluesky-social/atproto",
     "directory": "packages/dev-env"
   },
+  "files": [
+    "./src",
+    "./tsconfig.json",
+    "./tsconfig.build.json",
+    "./dist",
+    "./README.md",
+    "./CHANGELOG.md"
+  ],
   "bin": "bin.js",
-  "scripts": {
-    "build": "tsgo --build tsconfig.build.json",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "start": "../dev-infra/with-test-redis-and-db.sh node --enable-source-maps dist/bin.js",
-    "dev": "../dev-infra/with-test-redis-and-db.sh node --enable-source-maps --watch dist/bin.js"
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "engines": {
-    "node": ">=22.1.0"
+    "node": ">=22"
   },
   "dependencies": {
     "@atproto/api": "workspace:^",
@@ -38,24 +47,20 @@
     "@atproto/xrpc-server": "workspace:^",
     "@did-plc/lib": "^0.0.1",
     "@did-plc/server": "^0.0.1",
-    "axios": "^1.16.0",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "get-port": "^5.1.1",
+    "http-terminator": "^3.2.0",
     "multiformats": "^13.0.0",
     "uint8arrays": "^5.0.0",
     "undici": "^8.5.0"
   },
   "devDependencies": {
-    "@types/express": "^4.17.13",
-    "jest": "^30.0.0",
-    "@jest/globals": "^30.0.0"
+    "@types/express": "^4.17.13"
   },
-  "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
+  "scripts": {
+    "build": "tsgo --build tsconfig.build.json",
+    "start": "../dev-infra/with-test-redis-and-db.sh node --enable-source-maps dist/bin.js",
+    "dev": "../dev-infra/with-test-redis-and-db.sh node --enable-source-maps --watch dist/bin.js"
   }
 }

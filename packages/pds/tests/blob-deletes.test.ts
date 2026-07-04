@@ -17,7 +17,6 @@ describe('blob deletes', () => {
     network = await TestNetworkNoAppView.create({
       dbPostgresSchema: 'blob_deletes',
     })
-    // @ts-expect-error Error due to circular dependency with the dev-env package
     ctx = network.pds.ctx
     agent = network.pds.getAgent()
     sc = network.getSeedClient()
@@ -36,7 +35,7 @@ describe('blob deletes', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   const getDbBlobsForDid = (did: string) => {

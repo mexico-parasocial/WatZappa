@@ -40,7 +40,6 @@ describe('repo subscribe repos', () => {
       },
     })
     serverHost = network.pds.url.replace('http://', '')
-    // @ts-expect-error Error due to circular dependency with the dev-env package
     ctx = network.pds.ctx
     agent = network.pds.getAgent()
     sc = network.getSeedClient()
@@ -52,7 +51,7 @@ describe('repo subscribe repos', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   const getRepo = async (did: string): Promise<repo.VerifiedRepo> => {

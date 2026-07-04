@@ -9,8 +9,11 @@
 
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import { build } from '@atproto/lex-builder'
-import { install } from '@atproto/lex-installer'
+
+// @TODO lex-builder and lex-installer should both
+// - Define their own CLI commands and options
+// - Expose a "bin" entrypoint so they can be called independently
+// This package should only be a thin wrapper that delegates to those packages.
 
 yargs(hideBin(process.argv))
   .strict()
@@ -49,13 +52,7 @@ yargs(hideBin(process.argv))
         'ignore-errors': {
           type: 'boolean',
           default: false,
-          describe: 'Skip files that fail to parse or compile instead of aborting the build',
-        },
-        'pure-annotations': {
-          type: 'boolean',
-          default: false,
-          describe:
-            'adds `/*#__PURE__*/` annotations for tree-shaking tools. Set this to true if you are using generated lexicons in a library.',
+          describe: 'how to handle errors when processing input files',
         },
         exclude: {
           array: true,
@@ -114,6 +111,7 @@ yargs(hideBin(process.argv))
       })
     },
     async (argv) => {
+      const { build } = await import('@atproto/lex-builder')
       await build(argv)
     },
   )
@@ -155,6 +153,7 @@ yargs(hideBin(process.argv))
       })
     },
     async (argv) => {
+      const { install } = await import('@atproto/lex-installer')
       await install({
         add: argv.nsid,
         save: argv.save,

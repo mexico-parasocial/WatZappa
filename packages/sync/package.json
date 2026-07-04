@@ -15,37 +15,39 @@
     "url": "https://github.com/bluesky-social/atproto",
     "directory": "packages/sync"
   },
-  "engines": {
-    "node": ">=22.1.0"
-  },
-  "scripts": {
-    "codegen": "lex build --clear --indexFile --lexicons ../../lexicons --include com.atproto.sync.subscribeRepos",
-    "prebuild": "pnpm run codegen",
-    "build": "tsgo --build tsconfig.build.json",
-    "test": "../dev-infra/with-test-redis-and-db.sh NODE_OPTIONS=--experimental-vm-modules jest"
-  },
-  "dependencies": {
-    "@atproto/common": "workspace:^",
-    "@atproto/identity": "workspace:^",
-    "@atproto/lex": "workspace:^",
-    "@atproto/lexicon": "workspace:^",
-    "@atproto/repo": "workspace:^",
-    "@atproto/syntax": "workspace:^",
-    "@atproto/xrpc-server": "workspace:^",
-    "multiformats": "^13.0.0",
-    "p-queue": "^8.0.1",
-    "ws": "^8.12.0"
-  },
-  "devDependencies": {
-    "@types/ws": "^8.5.4",
-    "jest": "^30.0.0",
-    "@jest/globals": "^30.0.0"
-  },
+  "files": [
+    "./dist",
+    "./README.md",
+    "./CHANGELOG.md"
+  ],
   "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@atproto/common": "workspace:^",
+    "@atproto/identity": "workspace:^",
+    "@atproto/lex": "workspace:^",
+    "@atproto/repo": "workspace:^",
+    "@atproto/syntax": "workspace:^",
+    "@atproto/xrpc-server": "workspace:^",
+    "p-queue": "^8.0.0",
+    "ws": "^8.12.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.4",
+    "jest": "^30.0.0"
+  },
+  "scripts": {
+    "codegen:lex": "lex build --clear --indexFile --lexicons ../../lexicons --include com.atproto.sync.subscribeRepos",
+    "prebuild": "pnpm run '/^(codegen:.+)$/'",
+    "build": "tsgo --build tsconfig.build.json",
+    "test": "NODE_OPTIONS=--experimental-vm-modules ../dev-infra/with-test-redis-and-db.sh jest"
   }
 }

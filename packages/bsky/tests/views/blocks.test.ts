@@ -1,4 +1,5 @@
 import assert from 'node:assert'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {
   AppBskyEmbedRecord,
   AppBskyFeedDefs,
@@ -46,7 +47,7 @@ describe('pds views with blocking', () => {
       sc.posts[dan][0].ref,
       'alice replies to dan',
     )
-    const _carolReplyToAliceReplyToDan = await sc.reply(
+    await sc.reply(
       carol,
       sc.posts[dan][0].ref,
       aliceReplyToDan.ref,
@@ -65,12 +66,10 @@ describe('pds views with blocking', () => {
       sc.getHeaders(dan),
     )
     danBlockUri = danBlockCarol.uri
-    await network.processAll()
   })
 
-  afterAll(async () => {
-    await network.close()
-  })
+  beforeEach(async () => network.processAll())
+  afterAll(async () => network?.close())
 
   it('blocks thread post', async () => {
     const { data: threadAlice } = await agent.api.app.bsky.feed.getPostThread(
