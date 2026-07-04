@@ -242,7 +242,7 @@ export interface IBridgeDatabase {
     limit?: number,
     offset?: number,
   ): Promise<any[]>
-  expireBadges(): Promise<void>
+  expireBadges(): Promise<{ did: string; communityUri: string }[]>
   getChatPreferences(did: string): Promise<{ showChatBadges: boolean }>
   setChatPreferences(did: string, showChatBadges: boolean): Promise<void>
   insertMatrixEvent(event: {
@@ -264,6 +264,102 @@ export interface IBridgeDatabase {
   >
   getTotalUnreadForDid(did: string): Promise<number>
   getAllRoomIds(): Promise<string[]>
+  getActiveCommunityUris(): Promise<string[]>
+  setCommunityMembership(
+    did: string,
+    communityUri: string,
+    membershipState: string,
+    roles?: string[],
+  ): Promise<void>
+  isActiveCommunityMember(
+    did: string,
+    communityUri: string,
+  ): Promise<boolean>
+  getActiveCommunityRoomsForDid(
+    did: string,
+  ): Promise<
+    Array<{
+      roomId: string
+      communityUri: string
+      slug: string
+      kind: 'main' | 'chamber-a' | 'chamber-b' | 'observers'
+    }>
+  >
+  createSortitionRun(run: {
+    id: string
+    cabildeoUri: string
+    communityUri: string
+    createdByDid: string
+    assemblySize: number
+    eligibilityFilter: string
+    drandRound: number
+    configRecordJson: string
+    createdAt: string
+  }): Promise<any>
+  getSortitionRun(id: string): Promise<any | undefined>
+  getSortitionRunByCabildeo(cabildeoUri: string): Promise<any | undefined>
+  getScheduledSortitionRuns(limit?: number): Promise<any[]>
+  replaceSortitionCandidates(
+    runId: string,
+    candidates: Array<{
+      did: string
+      communityUri: string
+      cabildeoUri: string
+      hashInput: string
+      hashOutput: string
+      hashValue: number
+      threshold: number
+      selected: boolean
+      createdAt: string
+    }>,
+  ): Promise<void>
+  activateSortitionRun(run: {
+    id: string
+    drandRandomness: string
+    threshold: number
+    eligibleCount: number
+    selectedCount: number
+    processedAt: string
+  }): Promise<any | undefined>
+  failSortitionRun(id: string): Promise<void>
+  getSortitionCandidates(
+    runId: string,
+    selectedOnly?: boolean,
+  ): Promise<any[]>
+  getSortitionCandidate(
+    runId: string,
+    did: string,
+  ): Promise<any | undefined>
+  insertCommunityMapContribution(contribution: {
+    id: string
+    communityUri: string
+    authorDid: string
+    title: string
+    content?: string
+    sourceUrl?: string
+    sourceType: string
+    metadata?: string
+  }): Promise<void>
+  getCommunityMapContributions(
+    communityUri: string,
+    opts?: { status?: string; viewerDid?: string; limit?: number },
+  ): Promise<any[]>
+  getCommunityMapContribution(
+    id: string,
+    viewerDid?: string,
+  ): Promise<any | undefined>
+  getCommunityContributionVote(
+    contributionId: string,
+    voterDid: string,
+  ): Promise<{ vote: string } | undefined>
+  getCommunityContributionVoteCounts(
+    contributionId: string,
+  ): Promise<{ approve: number; reject: number }>
+  voteCommunityMapContribution(
+    contributionId: string,
+    voterDid: string,
+    vote: 'approve' | 'reject',
+  ): Promise<any>
   insertCard(card: {
     id: string
     communityUri: string
@@ -439,14 +535,14 @@ export class PgBridgeDatabase implements IBridgeDatabase {
         updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       );
 
-      CREATE TABLE IF NOT EXISTS community_constitutions (
+      CREATE TABLE IF NOT EXISTS community_constitution (
         community_uri TEXT PRIMARY KEY,
         version INTEGER NOT NULL DEFAULT 1,
         rules_json TEXT NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       );
 
-      CREATE TABLE IF NOT EXISTS para_proposals (
+      CREATE TABLE IF NOT EXISTS proposals (
         uri TEXT PRIMARY KEY,
         community_uri TEXT NOT NULL,
         author_did TEXT NOT NULL,
@@ -454,20 +550,20 @@ export class PgBridgeDatabase implements IBridgeDatabase {
         body TEXT NOT NULL,
         proposal_type TEXT NOT NULL DEFAULT 'general',
         budget_request REAL,
-        state TEXT NOT NULL DEFAULT 'draft',
+        state TEXT NOT NULL DEFAULT 'deliberating',
+        votes_for INTEGER NOT NULL DEFAULT 0,
+        votes_against INTEGER NOT NULL DEFAULT 0,
+        votes_abstain INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
         voting_starts_at TIMESTAMP WITH TIME ZONE,
         voting_ends_at TIMESTAMP WITH TIME ZONE,
-        decided_at TIMESTAMP WITH TIME ZONE,
-        result TEXT,
-        for_votes INTEGER NOT NULL DEFAULT 0,
-        against_votes INTEGER NOT NULL DEFAULT 0,
-        abstain_votes INTEGER NOT NULL DEFAULT 0,
-        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+        decided_at TIMESTAMP WITH TIME ZONE
       );
-      CREATE INDEX IF NOT EXISTS idx_proposals_community ON para_proposals(community_uri);
-      CREATE INDEX IF NOT EXISTS idx_proposals_state ON para_proposals(state);
+      CREATE INDEX IF NOT EXISTS idx_proposals_community ON proposals(community_uri);
+      CREATE INDEX IF NOT EXISTS idx_proposals_state ON proposals(state);
+      CREATE INDEX IF NOT EXISTS idx_proposals_created ON proposals(created_at);
 
-      CREATE TABLE IF NOT EXISTS para_votes (
+      CREATE TABLE IF NOT EXISTS votes (
         uri TEXT PRIMARY KEY,
         proposal_uri TEXT NOT NULL,
         community_uri TEXT NOT NULL,
@@ -476,24 +572,8 @@ export class PgBridgeDatabase implements IBridgeDatabase {
         weight REAL NOT NULL DEFAULT 1,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       );
-      CREATE INDEX IF NOT EXISTS idx_votes_proposal ON para_votes(proposal_uri);
-      CREATE UNIQUE INDEX IF NOT EXISTS idx_votes_voter_proposal ON para_votes(voter_did, proposal_uri);
-
-      CREATE TABLE IF NOT EXISTS para_decisions (
-        id SERIAL PRIMARY KEY,
-        proposal_uri TEXT NOT NULL UNIQUE,
-        community_uri TEXT NOT NULL,
-        result TEXT NOT NULL,
-        votes_for INTEGER NOT NULL DEFAULT 0,
-        votes_against INTEGER NOT NULL DEFAULT 0,
-        votes_abstain INTEGER NOT NULL DEFAULT 0,
-        total_members INTEGER,
-        quorum_required INTEGER NOT NULL DEFAULT 0,
-        threshold_required INTEGER NOT NULL DEFAULT 0,
-        constitution_version INTEGER NOT NULL DEFAULT 1,
-        budget_allocated REAL,
-        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-      );
+      CREATE INDEX IF NOT EXISTS idx_votes_proposal ON votes(proposal_uri);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_votes_voter_proposal ON votes(voter_did, proposal_uri);
 
       CREATE TABLE IF NOT EXISTS sortition_proofs (
         id SERIAL PRIMARY KEY,
@@ -504,87 +584,155 @@ export class PgBridgeDatabase implements IBridgeDatabase {
         drand_randomness TEXT NOT NULL,
         hash_input TEXT NOT NULL,
         hash_output TEXT NOT NULL,
-        threshold INTEGER NOT NULL,
+        threshold REAL NOT NULL DEFAULT 0.5,
         verified INTEGER NOT NULL DEFAULT 0,
         timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
         UNIQUE(did, community_uri)
       );
-      CREATE INDEX IF NOT EXISTS idx_sortition_did_community ON sortition_proofs(did, community_uri);
+      CREATE INDEX IF NOT EXISTS idx_sortition_community ON sortition_proofs(community_uri);
+      CREATE INDEX IF NOT EXISTS idx_sortition_did ON sortition_proofs(did);
 
-      CREATE TABLE IF NOT EXISTS moderation_events (
+      CREATE TABLE IF NOT EXISTS sortition_runs (
+        id TEXT PRIMARY KEY,
+        cabildeo_uri TEXT NOT NULL UNIQUE,
+        community_uri TEXT NOT NULL,
+        created_by_did TEXT NOT NULL,
+        assembly_size INTEGER NOT NULL,
+        eligibility_filter TEXT NOT NULL DEFAULT 'all',
+        drand_round INTEGER NOT NULL,
+        drand_randomness TEXT,
+        threshold REAL,
+        eligible_count INTEGER NOT NULL DEFAULT 0,
+        selected_count INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'scheduled',
+        config_record_json TEXT,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        processed_at TIMESTAMP WITH TIME ZONE
+      );
+      CREATE INDEX IF NOT EXISTS idx_sortition_runs_community ON sortition_runs(community_uri);
+      CREATE INDEX IF NOT EXISTS idx_sortition_runs_status_round ON sortition_runs(status, drand_round);
+
+      CREATE TABLE IF NOT EXISTS sortition_candidates (
+        run_id TEXT NOT NULL,
+        did TEXT NOT NULL,
+        community_uri TEXT NOT NULL,
+        cabildeo_uri TEXT NOT NULL,
+        hash_input TEXT NOT NULL,
+        hash_output TEXT NOT NULL,
+        hash_value REAL NOT NULL,
+        threshold REAL NOT NULL,
+        selected INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (run_id, did)
+      );
+      CREATE INDEX IF NOT EXISTS idx_sortition_candidates_run_selected ON sortition_candidates(run_id, selected);
+      CREATE INDEX IF NOT EXISTS idx_sortition_candidates_did ON sortition_candidates(did);
+
+      CREATE TABLE IF NOT EXISTS decisions (
+        proposal_uri TEXT PRIMARY KEY,
+        community_uri TEXT NOT NULL,
+        result TEXT NOT NULL,
+        votes_for INTEGER NOT NULL,
+        votes_against INTEGER NOT NULL,
+        votes_abstain INTEGER NOT NULL,
+        total_members INTEGER,
+        quorum_required REAL,
+        threshold_required REAL,
+        constitution_version INTEGER,
+        budget_allocated REAL,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS chat_moderation_events (
         id SERIAL PRIMARY KEY,
         did TEXT NOT NULL,
         community_uri TEXT NOT NULL,
         event_type TEXT NOT NULL,
-        severity TEXT,
-        reason TEXT,
-        evidence TEXT,
         reporter_did TEXT,
-        related_event_id INTEGER,
-        expires_at TIMESTAMP WITH TIME ZONE,
-        revoked_at TIMESTAMP WITH TIME ZONE,
+        report_reason TEXT,
+        reported_event_id TEXT,
+        reported_message_preview TEXT,
+        sanction_type TEXT,
+        sanction_duration_minutes INTEGER,
+        sanctioned_by_did TEXT,
+        matrix_room_id TEXT,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       );
-      CREATE INDEX IF NOT EXISTS idx_moderation_did ON moderation_events(did);
-      CREATE INDEX IF NOT EXISTS idx_moderation_community ON moderation_events(community_uri);
-      CREATE INDEX IF NOT EXISTS idx_moderation_type ON moderation_events(event_type);
-      CREATE INDEX IF NOT EXISTS idx_moderation_created ON moderation_events(created_at);
+      CREATE INDEX IF NOT EXISTS idx_moderation_events_did_community ON chat_moderation_events(did, community_uri);
+      CREATE INDEX IF NOT EXISTS idx_moderation_events_type_created ON chat_moderation_events(event_type, created_at);
+      CREATE INDEX IF NOT EXISTS idx_moderation_events_community_created ON chat_moderation_events(community_uri, created_at);
 
       CREATE TABLE IF NOT EXISTS chat_participation_stats (
         did TEXT NOT NULL,
         community_uri TEXT NOT NULL,
         matrix_room_id TEXT,
-        message_count INTEGER NOT NULL DEFAULT 0,
-        vote_count INTEGER NOT NULL DEFAULT 0,
-        proposal_count INTEGER NOT NULL DEFAULT 0,
-        is_delegate INTEGER NOT NULL DEFAULT 0,
-        is_moderator INTEGER NOT NULL DEFAULT 0,
+        message_count INTEGER DEFAULT 0,
+        first_message_at TIMESTAMP WITH TIME ZONE,
+        last_message_at TIMESTAMP WITH TIME ZONE,
+        votes_cast INTEGER DEFAULT 0,
+        proposals_created INTEGER DEFAULT 0,
+        proposals_reached_quorum INTEGER DEFAULT 0,
         chamber TEXT,
-        first_seen TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-        last_active TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        sortition_proof_id INTEGER,
+        is_delegate INTEGER DEFAULT 0,
+        is_moderator INTEGER DEFAULT 0,
+        joined_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
         PRIMARY KEY (did, community_uri)
       );
       CREATE INDEX IF NOT EXISTS idx_participation_community ON chat_participation_stats(community_uri);
+      CREATE INDEX IF NOT EXISTS idx_participation_joined ON chat_participation_stats(joined_at);
 
-      CREATE TABLE IF NOT EXISTS user_badges (
-        id SERIAL PRIMARY KEY,
+      CREATE TABLE IF NOT EXISTS chat_user_badges (
         did TEXT NOT NULL,
         community_uri TEXT NOT NULL,
         badge_type TEXT NOT NULL,
         severity TEXT,
-        visible_in_chat INTEGER NOT NULL DEFAULT 1,
-        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        visible_in_chat INTEGER DEFAULT 1,
         expires_at TIMESTAMP WITH TIME ZONE,
-        UNIQUE(did, community_uri, badge_type)
+        computed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (did, community_uri, badge_type)
       );
-      CREATE INDEX IF NOT EXISTS idx_badges_did_community ON user_badges(did, community_uri);
-      CREATE INDEX IF NOT EXISTS idx_badges_expires ON user_badges(expires_at);
+      CREATE INDEX IF NOT EXISTS idx_badges_did_community ON chat_user_badges(did, community_uri);
+      CREATE INDEX IF NOT EXISTS idx_badges_expires ON chat_user_badges(expires_at);
 
-      CREATE TABLE IF NOT EXISTS chat_preferences (
+      CREATE TABLE IF NOT EXISTS user_chat_preferences (
         did TEXT PRIMARY KEY,
-        show_chat_badges INTEGER NOT NULL DEFAULT 1
+        show_chat_badges INTEGER NOT NULL DEFAULT 0,
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       );
+
+      CREATE TABLE IF NOT EXISTS community_membership_state (
+        did TEXT NOT NULL,
+        community_uri TEXT NOT NULL,
+        membership_state TEXT NOT NULL,
+        roles_json TEXT NOT NULL DEFAULT '[]',
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (did, community_uri)
+      );
+      CREATE INDEX IF NOT EXISTS idx_membership_state_community ON community_membership_state(community_uri);
 
       CREATE TABLE IF NOT EXISTS matrix_events (
         id SERIAL PRIMARY KEY,
         room_id TEXT NOT NULL,
         event_id TEXT NOT NULL UNIQUE,
         sender TEXT NOT NULL,
-        event_type TEXT NOT NULL,
-        content TEXT NOT NULL,
-        timestamp INTEGER NOT NULL,
-        processed INTEGER NOT NULL DEFAULT 0
+        type TEXT NOT NULL,
+        content TEXT,
+        origin_server_ts INTEGER NOT NULL,
+        processed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       );
-      CREATE INDEX IF NOT EXISTS idx_matrix_events_room ON matrix_events(room_id, timestamp DESC);
-      CREATE INDEX IF NOT EXISTS idx_matrix_events_event_id ON matrix_events(event_id);
+      CREATE INDEX IF NOT EXISTS idx_matrix_events_room ON matrix_events(room_id, origin_server_ts DESC);
+      CREATE INDEX IF NOT EXISTS idx_matrix_events_sender ON matrix_events(sender);
 
       CREATE TABLE IF NOT EXISTS room_read_markers (
         did TEXT NOT NULL,
         room_id TEXT NOT NULL,
-        event_id TEXT NOT NULL,
-        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        last_read_event_id TEXT,
+        last_read_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
         PRIMARY KEY (did, room_id)
       );
+      CREATE INDEX IF NOT EXISTS idx_read_markers_room ON room_read_markers(room_id);
 
       CREATE TABLE IF NOT EXISTS deliberation_cards (
         id TEXT PRIMARY KEY,
@@ -597,8 +745,8 @@ export class PgBridgeDatabase implements IBridgeDatabase {
         source_event_id TEXT,
         source_url TEXT,
         extracted_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-        is_public INTEGER NOT NULL DEFAULT 1,
-        passport_visible INTEGER NOT NULL DEFAULT 1,
+        is_public INTEGER DEFAULT 0,
+        passport_visible INTEGER DEFAULT 0,
         metadata TEXT,
         llm_enriched_at TIMESTAMP WITH TIME ZONE,
         llm_model TEXT
@@ -606,7 +754,6 @@ export class PgBridgeDatabase implements IBridgeDatabase {
       CREATE INDEX IF NOT EXISTS idx_cards_community ON deliberation_cards(community_uri);
       CREATE INDEX IF NOT EXISTS idx_cards_author ON deliberation_cards(author_did);
       CREATE INDEX IF NOT EXISTS idx_cards_type ON deliberation_cards(card_type);
-      CREATE INDEX IF NOT EXISTS idx_cards_enriched ON deliberation_cards(llm_enriched_at);
 
       CREATE TABLE IF NOT EXISTS deliberation_relationships (
         id TEXT PRIMARY KEY,
@@ -658,6 +805,56 @@ export class PgBridgeDatabase implements IBridgeDatabase {
       );
       CREATE INDEX IF NOT EXISTS idx_entities_card ON extracted_entities(card_id);
       CREATE INDEX IF NOT EXISTS idx_entities_type_value ON extracted_entities(entity_type, entity_value);
+
+      CREATE TABLE IF NOT EXISTS community_map_contributions (
+        id TEXT PRIMARY KEY,
+        community_uri TEXT NOT NULL,
+        author_did TEXT NOT NULL,
+        title TEXT NOT NULL,
+        content TEXT,
+        source_url TEXT,
+        source_type TEXT NOT NULL DEFAULT 'article',
+        metadata TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        approved_card_id TEXT,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        decided_at TIMESTAMP WITH TIME ZONE
+      );
+      CREATE INDEX IF NOT EXISTS idx_map_contrib_community ON community_map_contributions(community_uri);
+      CREATE INDEX IF NOT EXISTS idx_map_contrib_status ON community_map_contributions(status);
+
+      CREATE TABLE IF NOT EXISTS community_map_contribution_votes (
+        contribution_id TEXT NOT NULL,
+        voter_did TEXT NOT NULL,
+        vote TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (contribution_id, voter_did)
+      );
+      CREATE INDEX IF NOT EXISTS idx_map_contrib_votes_contribution ON community_map_contribution_votes(contribution_id);
+
+      CREATE TABLE IF NOT EXISTS policy_collections (
+        id TEXT PRIMARY KEY,
+        did TEXT NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        color TEXT,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_policy_collections_did ON policy_collections(did);
+
+      CREATE TABLE IF NOT EXISTS policy_collection_items (
+        id TEXT PRIMARY KEY,
+        collection_id TEXT NOT NULL,
+        policy_uri TEXT NOT NULL,
+        policy_data TEXT NOT NULL,
+        note TEXT,
+        position INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        FOREIGN KEY (collection_id) REFERENCES policy_collections(id) ON DELETE CASCADE
+      );
+      CREATE INDEX IF NOT EXISTS idx_collection_items_collection ON policy_collection_items(collection_id);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_collection_items_unique ON policy_collection_items(collection_id, policy_uri);
     `)
   }
 
@@ -894,7 +1091,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     roomId: string,
   ): Promise<{ communityUri: string; slug: string } | undefined> {
     const row = await this.queryOne<{ community_uri: string; slug: string }>(
-      'SELECT community_uri, slug FROM community_space_map WHERE chamber_a_room_id = $1 OR chamber_b_room_id = $1 OR observer_room_id = $1',
+      'SELECT community_uri, slug FROM community_space_map WHERE space_id = $1 OR chamber_a_room_id = $1 OR chamber_b_room_id = $1 OR observer_room_id = $1',
       [roomId],
     )
     return row ? { communityUri: row.community_uri, slug: row.slug } : undefined
@@ -916,7 +1113,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     rulesJson: string,
   ): Promise<void> {
     await this.run(
-      `INSERT INTO community_constitutions (community_uri, version, rules_json, created_at) VALUES ($1, $2, $3, NOW())
+      `INSERT INTO community_constitution (community_uri, version, rules_json, created_at) VALUES ($1, $2, $3, NOW())
        ON CONFLICT (community_uri) DO UPDATE SET version = EXCLUDED.version, rules_json = EXCLUDED.rules_json, created_at = EXCLUDED.created_at`,
       [communityUri, version, rulesJson],
     )
@@ -936,7 +1133,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
       version: number
       rules_json: string
       created_at: string
-    }>('SELECT * FROM community_constitutions WHERE community_uri = $1', [
+    }>('SELECT * FROM community_constitution WHERE community_uri = $1', [
       communityUri,
     ])
     return row
@@ -961,7 +1158,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     createdAt: string,
   ): Promise<void> {
     await this.run(
-      'INSERT INTO para_proposals (uri, community_uri, author_did, title, body, proposal_type, budget_request, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+      'INSERT INTO proposals (uri, community_uri, author_did, title, body, proposal_type, budget_request, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
       [
         uri,
         communityUri,
@@ -976,7 +1173,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
   }
 
   async getProposal(uri: string): Promise<any | undefined> {
-    return this.queryOne('SELECT * FROM para_proposals WHERE uri = $1', [uri])
+    return this.queryOne('SELECT * FROM proposals WHERE uri = $1', [uri])
   }
 
   async getProposalsByCommunity(
@@ -985,19 +1182,19 @@ export class PgBridgeDatabase implements IBridgeDatabase {
   ): Promise<any[]> {
     if (state) {
       return this.queryAll(
-        'SELECT * FROM para_proposals WHERE community_uri = $1 AND state = $2 ORDER BY created_at ASC',
+        'SELECT * FROM proposals WHERE community_uri = $1 AND state = $2 ORDER BY created_at ASC',
         [communityUri, state],
       )
     }
     return this.queryAll(
-      'SELECT * FROM para_proposals WHERE community_uri = $1 ORDER BY created_at ASC',
+      'SELECT * FROM proposals WHERE community_uri = $1 ORDER BY created_at ASC',
       [communityUri],
     )
   }
 
   async getProposalsByState(state: string): Promise<any[]> {
     return this.queryAll(
-      'SELECT * FROM para_proposals WHERE state = $1 ORDER BY created_at ASC',
+      'SELECT * FROM proposals WHERE state = $1 ORDER BY created_at ASC',
       [state],
     )
   }
@@ -1009,7 +1206,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     votingEndsAt?: string,
   ): Promise<void> {
     await this.run(
-      'UPDATE para_proposals SET state = $1, voting_starts_at = $2, voting_ends_at = $3 WHERE uri = $4',
+      'UPDATE proposals SET state = $1, voting_starts_at = $2, voting_ends_at = $3 WHERE uri = $4',
       [state, votingStartsAt ?? null, votingEndsAt ?? null, uri],
     )
   }
@@ -1021,7 +1218,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     abstainVotes: number,
   ): Promise<void> {
     await this.run(
-      'UPDATE para_proposals SET for_votes = $1, against_votes = $2, abstain_votes = $3 WHERE uri = $4',
+      'UPDATE proposals SET votes_for = $1, votes_against = $2, votes_abstain = $3 WHERE uri = $4',
       [forVotes, againstVotes, abstainVotes, uri],
     )
   }
@@ -1032,7 +1229,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     decidedAt: string,
   ): Promise<void> {
     await this.run(
-      'UPDATE para_proposals SET state = $1, result = $1, decided_at = $2 WHERE uri = $3',
+      'UPDATE proposals SET state = $1, decided_at = $2 WHERE uri = $3',
       [result, decidedAt, uri],
     )
   }
@@ -1048,14 +1245,14 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     createdAt: string,
   ): Promise<void> {
     await this.run(
-      `INSERT INTO para_votes (uri, proposal_uri, community_uri, voter_did, choice, weight, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO votes (uri, proposal_uri, community_uri, voter_did, choice, weight, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (uri) DO UPDATE SET proposal_uri = EXCLUDED.proposal_uri, community_uri = EXCLUDED.community_uri, voter_did = EXCLUDED.voter_did, choice = EXCLUDED.choice, weight = EXCLUDED.weight, created_at = EXCLUDED.created_at`,
       [uri, proposalUri, communityUri, voterDid, choice, weight, createdAt],
     )
   }
 
   async getVotesForProposal(proposalUri: string): Promise<any[]> {
-    return this.queryAll('SELECT * FROM para_votes WHERE proposal_uri = $1', [
+    return this.queryAll('SELECT * FROM votes WHERE proposal_uri = $1', [
       proposalUri,
     ])
   }
@@ -1076,7 +1273,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     createdAt: string,
   ): Promise<void> {
     await this.run(
-      'INSERT INTO para_decisions (proposal_uri, community_uri, result, votes_for, votes_against, votes_abstain, total_members, quorum_required, threshold_required, constitution_version, budget_allocated, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',
+      'INSERT INTO decisions (proposal_uri, community_uri, result, votes_for, votes_against, votes_abstain, total_members, quorum_required, threshold_required, constitution_version, budget_allocated, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',
       [
         proposalUri,
         communityUri,
@@ -1096,14 +1293,14 @@ export class PgBridgeDatabase implements IBridgeDatabase {
 
   async getDecision(proposalUri: string): Promise<any | undefined> {
     return this.queryOne(
-      'SELECT * FROM para_decisions WHERE proposal_uri = $1',
+      'SELECT * FROM decisions WHERE proposal_uri = $1',
       [proposalUri],
     )
   }
 
   async getDecisionsByCommunity(communityUri: string): Promise<any[]> {
     return this.queryAll(
-      'SELECT * FROM para_decisions WHERE community_uri = $1 ORDER BY created_at DESC',
+      'SELECT * FROM decisions WHERE community_uri = $1 ORDER BY created_at DESC',
       [communityUri],
     )
   }
@@ -1174,6 +1371,450 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     return row?.count ?? 0
   }
 
+  // Community membership state
+  async setCommunityMembership(
+    did: string,
+    communityUri: string,
+    membershipState: string,
+    roles: string[] = [],
+  ): Promise<void> {
+    await this.run(
+      `INSERT INTO community_membership_state (did, community_uri, membership_state, roles_json, updated_at)
+       VALUES ($1, $2, $3, $4, NOW())
+       ON CONFLICT (did, community_uri) DO UPDATE SET
+         membership_state = EXCLUDED.membership_state,
+         roles_json = EXCLUDED.roles_json,
+         updated_at = NOW()`,
+      [did, communityUri, membershipState, JSON.stringify(roles)],
+    )
+  }
+
+  async isActiveCommunityMember(
+    did: string,
+    communityUri: string,
+  ): Promise<boolean> {
+    const row = await this.queryOne<{ membership_state: string }>(
+      'SELECT membership_state FROM community_membership_state WHERE did = $1 AND community_uri = $2',
+      [did, communityUri],
+    )
+    return row?.membership_state === 'active'
+  }
+
+  async getActiveCommunityRoomsForDid(
+    did: string,
+  ): Promise<
+    Array<{
+      roomId: string
+      communityUri: string
+      slug: string
+      kind: 'main' | 'chamber-a' | 'chamber-b' | 'observers'
+    }>
+  > {
+    const rows = await this.queryAll<{
+      space_id: string
+      community_uri: string
+      slug: string
+      chamber_mode: string
+      chamber_a_room_id: string | null
+      chamber_b_room_id: string | null
+      observer_room_id: string | null
+      roles_json: string
+      chamber: string | null
+    }>(
+      `SELECT
+        csm.space_id, csm.community_uri, csm.slug, csm.chamber_mode,
+        csm.chamber_a_room_id, csm.chamber_b_room_id, csm.observer_room_id,
+        cms.roles_json, ca.chamber
+       FROM community_space_map csm
+       INNER JOIN community_membership_state cms ON cms.community_uri = csm.community_uri
+       LEFT JOIN chamber_assignment ca ON ca.community_uri = csm.community_uri AND ca.did = cms.did
+       WHERE cms.did = $1 AND cms.membership_state = 'active'`,
+      [did],
+    )
+
+    const result: Array<{
+      roomId: string
+      communityUri: string
+      slug: string
+      kind: 'main' | 'chamber-a' | 'chamber-b' | 'observers'
+    }> = []
+
+    for (const row of rows) {
+      result.push({
+        roomId: row.space_id,
+        communityUri: row.community_uri,
+        slug: row.slug,
+        kind: 'main',
+      })
+
+      if (row.chamber_mode !== 'bicameral') continue
+
+      const roles = JSON.parse(row.roles_json || '[]') as string[]
+      const isObserver = roles.includes('observer')
+      if (isObserver && row.observer_room_id) {
+        result.push({
+          roomId: row.observer_room_id,
+          communityUri: row.community_uri,
+          slug: row.slug,
+          kind: 'observers',
+        })
+        continue
+      }
+
+      if (row.chamber === 'A' && row.chamber_a_room_id) {
+        result.push({
+          roomId: row.chamber_a_room_id,
+          communityUri: row.community_uri,
+          slug: row.slug,
+          kind: 'chamber-a',
+        })
+      } else if (row.chamber === 'B' && row.chamber_b_room_id) {
+        result.push({
+          roomId: row.chamber_b_room_id,
+          communityUri: row.community_uri,
+          slug: row.slug,
+          kind: 'chamber-b',
+        })
+      }
+    }
+
+    return result
+  }
+
+  // Sortition run lifecycle
+  async createSortitionRun(run: {
+    id: string
+    cabildeoUri: string
+    communityUri: string
+    createdByDid: string
+    assemblySize: number
+    eligibilityFilter: string
+    drandRound: number
+    configRecordJson: string
+    createdAt: string
+  }): Promise<any> {
+    await this.run(
+      `INSERT INTO sortition_runs (
+        id, cabildeo_uri, community_uri, created_by_did, assembly_size,
+        eligibility_filter, drand_round, status, config_record_json, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'scheduled', $8, $9)`,
+      [
+        run.id,
+        run.cabildeoUri,
+        run.communityUri,
+        run.createdByDid,
+        run.assemblySize,
+        run.eligibilityFilter,
+        run.drandRound,
+        run.configRecordJson,
+        run.createdAt,
+      ],
+    )
+    return this.getSortitionRun(run.id)
+  }
+
+  async getSortitionRun(id: string): Promise<any | undefined> {
+    return this.queryOne('SELECT * FROM sortition_runs WHERE id = $1', [id])
+  }
+
+  async getSortitionRunByCabildeo(
+    cabildeoUri: string,
+  ): Promise<any | undefined> {
+    return this.queryOne(
+      'SELECT * FROM sortition_runs WHERE cabildeo_uri = $1',
+      [cabildeoUri],
+    )
+  }
+
+  async getScheduledSortitionRuns(limit = 10): Promise<any[]> {
+    return this.queryAll(
+      "SELECT * FROM sortition_runs WHERE status = 'scheduled' ORDER BY drand_round ASC LIMIT $1",
+      [limit],
+    )
+  }
+
+  async replaceSortitionCandidates(
+    runId: string,
+    candidates: Array<{
+      did: string
+      communityUri: string
+      cabildeoUri: string
+      hashInput: string
+      hashOutput: string
+      hashValue: number
+      threshold: number
+      selected: boolean
+      createdAt: string
+    }>,
+  ): Promise<void> {
+    const client = await this.pool.connect()
+    try {
+      await client.query('BEGIN')
+      await client.query(
+        'DELETE FROM sortition_candidates WHERE run_id = $1',
+        [runId],
+      )
+      for (const c of candidates) {
+        await client.query(
+          `INSERT INTO sortition_candidates (
+            run_id, did, community_uri, cabildeo_uri, hash_input, hash_output,
+            hash_value, threshold, selected, created_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          [
+            runId,
+            c.did,
+            c.communityUri,
+            c.cabildeoUri,
+            c.hashInput,
+            c.hashOutput,
+            c.hashValue,
+            c.threshold,
+            c.selected ? 1 : 0,
+            c.createdAt,
+          ],
+        )
+      }
+      await client.query('COMMIT')
+    } catch (err) {
+      await client.query('ROLLBACK')
+      throw err
+    } finally {
+      client.release()
+    }
+  }
+
+  async activateSortitionRun(run: {
+    id: string
+    drandRandomness: string
+    threshold: number
+    eligibleCount: number
+    selectedCount: number
+    processedAt: string
+  }): Promise<any | undefined> {
+    await this.run(
+      `UPDATE sortition_runs
+       SET status = 'active', drand_randomness = $1, threshold = $2,
+           eligible_count = $3, selected_count = $4, processed_at = $5
+       WHERE id = $6`,
+      [
+        run.drandRandomness,
+        run.threshold,
+        run.eligibleCount,
+        run.selectedCount,
+        run.processedAt,
+        run.id,
+      ],
+    )
+    return this.getSortitionRun(run.id)
+  }
+
+  async failSortitionRun(id: string): Promise<void> {
+    await this.run(
+      "UPDATE sortition_runs SET status = 'failed', processed_at = NOW() WHERE id = $1",
+      [id],
+    )
+  }
+
+  async getSortitionCandidates(
+    runId: string,
+    selectedOnly = false,
+  ): Promise<any[]> {
+    if (selectedOnly) {
+      return this.queryAll(
+        'SELECT * FROM sortition_candidates WHERE run_id = $1 AND selected = 1 ORDER BY hash_value ASC',
+        [runId],
+      )
+    }
+    return this.queryAll(
+      'SELECT * FROM sortition_candidates WHERE run_id = $1 ORDER BY hash_value ASC',
+      [runId],
+    )
+  }
+
+  async getSortitionCandidate(
+    runId: string,
+    did: string,
+  ): Promise<any | undefined> {
+    return this.queryOne(
+      'SELECT * FROM sortition_candidates WHERE run_id = $1 AND did = $2',
+      [runId, did],
+    )
+  }
+
+  // Community map contributions
+  async insertCommunityMapContribution(contribution: {
+    id: string
+    communityUri: string
+    authorDid: string
+    title: string
+    content?: string
+    sourceUrl?: string
+    sourceType: string
+    metadata?: string
+  }): Promise<void> {
+    await this.run(
+      'INSERT INTO community_map_contributions (id, community_uri, author_did, title, content, source_url, source_type, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+      [
+        contribution.id,
+        contribution.communityUri,
+        contribution.authorDid,
+        contribution.title,
+        contribution.content ?? null,
+        contribution.sourceUrl ?? null,
+        contribution.sourceType,
+        contribution.metadata ?? null,
+      ],
+    )
+  }
+
+  async getCommunityMapContributions(
+    communityUri: string,
+    opts: { status?: string; viewerDid?: string; limit?: number } = {},
+  ): Promise<any[]> {
+    let sql =
+      'SELECT * FROM community_map_contributions WHERE community_uri = $1'
+    const params: (string | number)[] = [communityUri]
+    let idx = 2
+    if (opts.status) {
+      sql += ` AND status = $${idx++}`
+      params.push(opts.status)
+    }
+    sql += ' ORDER BY created_at DESC'
+    if (opts.limit) {
+      sql += ` LIMIT $${idx++}`
+      params.push(opts.limit)
+    }
+    const rows = await this.queryAll(sql, params)
+    return Promise.all(
+      rows.map(async (row) => {
+        const counts = await this.getCommunityContributionVoteCounts(row.id)
+        const viewerVote = opts.viewerDid
+          ? await this.getCommunityContributionVote(row.id, opts.viewerDid)
+          : undefined
+        return {
+          ...row,
+          approve_count: counts.approve,
+          reject_count: counts.reject,
+          viewer_vote: viewerVote?.vote,
+        }
+      }),
+    )
+  }
+
+  async getCommunityMapContribution(
+    id: string,
+    viewerDid?: string,
+  ): Promise<any | undefined> {
+    const row = await this.queryOne(
+      'SELECT * FROM community_map_contributions WHERE id = $1',
+      [id],
+    )
+    if (!row) return undefined
+    const counts = await this.getCommunityContributionVoteCounts(id)
+    const viewerVote = viewerDid
+      ? await this.getCommunityContributionVote(id, viewerDid)
+      : undefined
+    return {
+      ...row,
+      approve_count: counts.approve,
+      reject_count: counts.reject,
+      viewer_vote: viewerVote?.vote,
+    }
+  }
+
+  async getCommunityContributionVote(
+    contributionId: string,
+    voterDid: string,
+  ): Promise<{ vote: string } | undefined> {
+    return this.queryOne(
+      'SELECT vote FROM community_map_contribution_votes WHERE contribution_id = $1 AND voter_did = $2',
+      [contributionId, voterDid],
+    )
+  }
+
+  async getCommunityContributionVoteCounts(
+    contributionId: string,
+  ): Promise<{ approve: number; reject: number }> {
+    const rows = await this.queryAll<{ vote: string; count: number }>(
+      'SELECT vote, COUNT(*) as count FROM community_map_contribution_votes WHERE contribution_id = $1 GROUP BY vote',
+      [contributionId],
+    )
+    return {
+      approve: rows.find((r) => r.vote === 'approve')?.count ?? 0,
+      reject: rows.find((r) => r.vote === 'reject')?.count ?? 0,
+    }
+  }
+
+  async voteCommunityMapContribution(
+    contributionId: string,
+    voterDid: string,
+    vote: 'approve' | 'reject',
+  ): Promise<any> {
+    const client = await this.pool.connect()
+    try {
+      await client.query('BEGIN')
+      const existing = await client.query<{ status: string }>(
+        'SELECT status FROM community_map_contributions WHERE id = $1',
+        [contributionId],
+      )
+      if (existing.rows.length === 0) {
+        await client.query('ROLLBACK')
+        throw new Error('Contribution not found')
+      }
+      if (existing.rows[0].status !== 'pending') {
+        const row = await this.queryOne(
+          'SELECT * FROM community_map_contributions WHERE id = $1',
+          [contributionId],
+        )
+        await client.query('COMMIT')
+        return row
+      }
+
+      await client.query(
+        `INSERT INTO community_map_contribution_votes (contribution_id, voter_did, vote, created_at)
+         VALUES ($1, $2, $3, NOW())
+         ON CONFLICT (contribution_id, voter_did) DO UPDATE SET vote = EXCLUDED.vote`,
+        [contributionId, voterDid, vote],
+      )
+
+      const counts = await this.getCommunityContributionVoteCounts(
+        contributionId,
+      )
+      const shouldApprove =
+        counts.approve >= 3 && counts.approve - counts.reject >= 2
+      const shouldReject =
+        counts.reject >= 3 && counts.reject - counts.approve >= 2
+
+      if (shouldApprove) {
+        const { randomUUID } = await import('node:crypto')
+        const cardId = randomUUID()
+        await client.query(
+          `INSERT INTO deliberation_cards (id, community_uri, author_did, title, content, card_type, source_url, is_public, passport_visible, metadata, extracted_at)
+           SELECT $1, community_uri, author_did, title, content, source_type, source_url, 1, 1, metadata, NOW()
+           FROM community_map_contributions WHERE id = $2`,
+          [cardId, contributionId],
+        )
+        await client.query(
+          "UPDATE community_map_contributions SET status = 'approved', approved_card_id = $1, decided_at = NOW() WHERE id = $2",
+          [cardId, contributionId],
+        )
+      } else if (shouldReject) {
+        await client.query(
+          "UPDATE community_map_contributions SET status = 'rejected', decided_at = NOW() WHERE id = $1",
+          [contributionId],
+        )
+      }
+
+      await client.query('COMMIT')
+      return this.getCommunityMapContribution(contributionId, voterDid)
+    } catch (err) {
+      await client.query('ROLLBACK')
+      throw err
+    } finally {
+      client.release()
+    }
+  }
+
   // Chat moderation events
   async insertModerationEvent(event: {
     did: string
@@ -1188,20 +1829,20 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     sanctionedByDid?: string | null
     matrixRoomId?: string | null
   }): Promise<void> {
-    const relatedEventId = event.reportedEventId
-      ? parseInt(event.reportedEventId, 10) || null
-      : null
     await this.run(
-      'INSERT INTO moderation_events (did, community_uri, event_type, severity, reason, evidence, reporter_did, related_event_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+      'INSERT INTO chat_moderation_events (did, community_uri, event_type, reporter_did, report_reason, reported_event_id, reported_message_preview, sanction_type, sanction_duration_minutes, sanctioned_by_did, matrix_room_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
       [
         event.did,
         event.communityUri,
         event.eventType,
-        event.sanctionType ?? null,
-        event.reportReason ?? null,
-        event.reportedMessagePreview ?? null,
         event.reporterDid ?? null,
-        relatedEventId,
+        event.reportReason ?? null,
+        event.reportedEventId ?? null,
+        event.reportedMessagePreview ?? null,
+        event.sanctionType ?? null,
+        event.sanctionDurationMinutes ?? null,
+        event.sanctionedByDid ?? null,
+        event.matrixRoomId ?? null,
       ],
     )
   }
@@ -1212,7 +1853,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     sinceDays = 90,
   ): Promise<any[]> {
     return this.queryAll(
-      "SELECT * FROM moderation_events WHERE did = $1 AND community_uri = $2 AND created_at >= NOW() - INTERVAL '1 day' * $3 ORDER BY created_at DESC",
+      "SELECT * FROM chat_moderation_events WHERE did = $1 AND community_uri = $2 AND created_at >= NOW() - INTERVAL '1 day' * $3 ORDER BY created_at DESC",
       [did, communityUri, sinceDays],
     )
   }
@@ -1222,14 +1863,14 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     days = 30,
   ): Promise<any[]> {
     return this.queryAll(
-      "SELECT * FROM moderation_events WHERE community_uri = $1 AND event_type = 'report_received' AND created_at >= NOW() - INTERVAL '1 day' * $2 ORDER BY created_at DESC",
+      "SELECT * FROM chat_moderation_events WHERE community_uri = $1 AND event_type = 'report_received' AND created_at >= NOW() - INTERVAL '1 day' * $2 ORDER BY created_at DESC",
       [communityUri, days],
     )
   }
 
   async getActiveSanctions(did: string, communityUri: string): Promise<any[]> {
     return this.queryAll(
-      "SELECT * FROM moderation_events WHERE did = $1 AND community_uri = $2 AND event_type IN ('mute','ban') AND created_at >= NOW() - INTERVAL '90 days' ORDER BY created_at DESC",
+      "SELECT * FROM chat_moderation_events WHERE did = $1 AND community_uri = $2 AND event_type IN ('mute','ban') AND created_at >= NOW() - INTERVAL '90 days' ORDER BY created_at DESC",
       [did, communityUri],
     )
   }
@@ -1251,7 +1892,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     matrixRoomId?: string,
   ): Promise<void> {
     await this.run(
-      'INSERT INTO chat_participation_stats (did, community_uri, matrix_room_id, first_seen) VALUES ($1, $2, $3, NOW()) ON CONFLICT DO NOTHING',
+      'INSERT INTO chat_participation_stats (did, community_uri, matrix_room_id, joined_at) VALUES ($1, $2, $3, NOW()) ON CONFLICT DO NOTHING',
       [did, communityUri, matrixRoomId ?? null],
     )
   }
@@ -1261,14 +1902,14 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     communityUri: string,
   ): Promise<void> {
     await this.run(
-      'UPDATE chat_participation_stats SET message_count = message_count + 1, last_active = NOW() WHERE did = $1 AND community_uri = $2',
+      'UPDATE chat_participation_stats SET message_count = message_count + 1, last_message_at = NOW(), updated_at = NOW() WHERE did = $1 AND community_uri = $2',
       [did, communityUri],
     )
   }
 
   async incrementVoteCount(did: string, communityUri: string): Promise<void> {
     await this.run(
-      'UPDATE chat_participation_stats SET vote_count = vote_count + 1, last_active = NOW() WHERE did = $1 AND community_uri = $2',
+      'UPDATE chat_participation_stats SET votes_cast = votes_cast + 1, updated_at = NOW() WHERE did = $1 AND community_uri = $2',
       [did, communityUri],
     )
   }
@@ -1278,7 +1919,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     communityUri: string,
   ): Promise<void> {
     await this.run(
-      'UPDATE chat_participation_stats SET proposal_count = proposal_count + 1, last_active = NOW() WHERE did = $1 AND community_uri = $2',
+      'UPDATE chat_participation_stats SET proposals_created = proposals_created + 1, updated_at = NOW() WHERE did = $1 AND community_uri = $2',
       [did, communityUri],
     )
   }
@@ -1310,7 +1951,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     if (parts.length === 0) return
     values.push(did, communityUri)
     await this.run(
-      `UPDATE chat_participation_stats SET ${parts.join(', ')}, last_active = NOW() WHERE did = $${idx++} AND community_uri = $${idx++}`,
+      `UPDATE chat_participation_stats SET ${parts.join(', ')}, last_message_at = NOW(), updated_at = NOW() WHERE did = $${idx++} AND community_uri = $${idx++}`,
       values,
     )
   }
@@ -1332,11 +1973,11 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     expiresAt?: string | null
   }): Promise<void> {
     await this.run(
-      'DELETE FROM user_badges WHERE did = $1 AND community_uri = $2 AND badge_type = $3',
+      'DELETE FROM chat_user_badges WHERE did = $1 AND community_uri = $2 AND badge_type = $3',
       [badge.did, badge.communityUri, badge.badgeType],
     )
     await this.run(
-      'INSERT INTO user_badges (did, community_uri, badge_type, severity, visible_in_chat, expires_at, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW())',
+      'INSERT INTO chat_user_badges (did, community_uri, badge_type, severity, visible_in_chat, expires_at, computed_at) VALUES ($1, $2, $3, $4, $5, $6, NOW())',
       [
         badge.did,
         badge.communityUri,
@@ -1350,14 +1991,14 @@ export class PgBridgeDatabase implements IBridgeDatabase {
 
   async clearUserBadges(did: string, communityUri: string): Promise<void> {
     await this.run(
-      'DELETE FROM user_badges WHERE did = $1 AND community_uri = $2',
+      'DELETE FROM chat_user_badges WHERE did = $1 AND community_uri = $2',
       [did, communityUri],
     )
   }
 
   async getUserBadges(did: string, communityUri: string): Promise<any[]> {
     return this.queryAll(
-      'SELECT * FROM user_badges WHERE did = $1 AND community_uri = $2',
+      'SELECT * FROM chat_user_badges WHERE did = $1 AND community_uri = $2',
       [did, communityUri],
     )
   }
@@ -1366,7 +2007,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     communityUri: string,
   ): Promise<{ warning: number; critical: number }> {
     const row = await this.queryOne<{ warning: number; critical: number }>(
-      "SELECT COUNT(CASE WHEN severity = 'warning' THEN 1 END) as warning, COUNT(CASE WHEN severity = 'critical' THEN 1 END) as critical FROM user_badges WHERE community_uri = $1 AND visible_in_chat = 1 AND (expires_at IS NULL OR expires_at > NOW())",
+      "SELECT COUNT(CASE WHEN severity = 'warning' THEN 1 END) as warning, COUNT(CASE WHEN severity = 'critical' THEN 1 END) as critical FROM chat_user_badges WHERE community_uri = $1 AND visible_in_chat = 1 AND (expires_at IS NULL OR expires_at > NOW())",
       [communityUri],
     )
     return row ?? { warning: 0, critical: 0 }
@@ -1378,21 +2019,25 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     offset = 0,
   ): Promise<any[]> {
     return this.queryAll(
-      'SELECT ps.*, umm.matrix_user_id FROM chat_participation_stats ps LEFT JOIN user_matrix_map umm ON ps.did = umm.did WHERE ps.community_uri = $1 ORDER BY ps.last_active DESC LIMIT $2 OFFSET $3',
+      'SELECT ps.*, umm.matrix_user_id FROM chat_participation_stats ps LEFT JOIN user_matrix_map umm ON ps.did = umm.did WHERE ps.community_uri = $1 ORDER BY ps.last_message_at DESC LIMIT $2 OFFSET $3',
       [communityUri, limit, offset],
     )
   }
 
-  async expireBadges(): Promise<void> {
-    await this.run(
-      'DELETE FROM user_badges WHERE expires_at IS NOT NULL AND expires_at <= NOW()',
+  async expireBadges(): Promise<{ did: string; communityUri: string }[]> {
+    const affected = await this.queryAll<{ did: string; community_uri: string }>(
+      'SELECT did, community_uri FROM chat_user_badges WHERE expires_at IS NOT NULL AND expires_at <= NOW()',
     )
+    await this.run(
+      'DELETE FROM chat_user_badges WHERE expires_at IS NOT NULL AND expires_at <= NOW()',
+    )
+    return affected.map((r) => ({ did: r.did, communityUri: r.community_uri }))
   }
 
   // User chat preferences
   async getChatPreferences(did: string): Promise<{ showChatBadges: boolean }> {
     const row = await this.queryOne<{ show_chat_badges: number }>(
-      'SELECT show_chat_badges FROM chat_preferences WHERE did = $1',
+      'SELECT show_chat_badges FROM user_chat_preferences WHERE did = $1',
       [did],
     )
     return { showChatBadges: row ? row.show_chat_badges === 1 : false }
@@ -1403,7 +2048,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     showChatBadges: boolean,
   ): Promise<void> {
     await this.run(
-      `INSERT INTO chat_preferences (did, show_chat_badges, updated_at) VALUES ($1, $2, NOW())
+      `INSERT INTO user_chat_preferences (did, show_chat_badges, updated_at) VALUES ($1, $2, NOW())
        ON CONFLICT (did) DO UPDATE SET show_chat_badges = EXCLUDED.show_chat_badges, updated_at = NOW()`,
       [did, showChatBadges ? 1 : 0],
     )
@@ -1420,7 +2065,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
   }): Promise<boolean> {
     try {
       await this.run(
-        'INSERT INTO matrix_events (room_id, event_id, sender, event_type, content, timestamp) VALUES ($1, $2, $3, $4, $5, $6)',
+        'INSERT INTO matrix_events (room_id, event_id, sender, type, content, origin_server_ts) VALUES ($1, $2, $3, $4, $5, $6)',
         [
           event.roomId,
           event.eventId,
@@ -1449,7 +2094,7 @@ export class PgBridgeDatabase implements IBridgeDatabase {
 
   async getRecentEvents(roomId: string, limit = 100): Promise<any[]> {
     return this.queryAll(
-      'SELECT * FROM matrix_events WHERE room_id = $1 ORDER BY timestamp DESC LIMIT $2',
+      'SELECT * FROM matrix_events WHERE room_id = $1 ORDER BY origin_server_ts DESC LIMIT $2',
       [roomId, limit],
     )
   }
@@ -1461,21 +2106,21 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     eventId: string,
   ): Promise<void> {
     await this.run(
-      `INSERT INTO room_read_markers (did, room_id, event_id, updated_at) VALUES ($1, $2, $3, NOW())
-       ON CONFLICT (did, room_id) DO UPDATE SET event_id = EXCLUDED.event_id, updated_at = NOW()`,
+      `INSERT INTO room_read_markers (did, room_id, last_read_event_id, last_read_at) VALUES ($1, $2, $3, NOW())
+       ON CONFLICT (did, room_id) DO UPDATE SET last_read_event_id = EXCLUDED.last_read_event_id, last_read_at = NOW()`,
       [did, roomId, eventId],
     )
   }
 
   async getUnreadCount(did: string, roomId: string): Promise<number> {
-    const marker = await this.queryOne<{ event_id: string }>(
-      'SELECT event_id FROM room_read_markers WHERE did = $1 AND room_id = $2',
+    const marker = await this.queryOne<{ last_read_event_id: string }>(
+      'SELECT last_read_event_id FROM room_read_markers WHERE did = $1 AND room_id = $2',
       [did, roomId],
     )
 
-    if (!marker?.event_id) {
+    if (!marker?.last_read_event_id) {
       const row = await this.queryOne<{ count: number }>(
-        "SELECT COUNT(*) as count FROM matrix_events WHERE room_id = $1 AND timestamp > $2 AND event_type = 'm.room.message'",
+        "SELECT COUNT(*) as count FROM matrix_events WHERE room_id = $1 AND origin_server_ts > $2 AND type IN ('m.room.message', 'm.room.encrypted')",
         [roomId, Date.now() - 7 * 24 * 60 * 60 * 1000],
       )
       return Math.min(row?.count ?? 0, 99)
@@ -1483,11 +2128,11 @@ export class PgBridgeDatabase implements IBridgeDatabase {
 
     const row = await this.queryOne<{ count: number }>(
       `SELECT COUNT(*) as count FROM matrix_events me
-        WHERE me.room_id = $1 AND me.event_type = 'm.room.message'
-        AND me.timestamp > (
-          SELECT timestamp FROM matrix_events WHERE event_id = $2
+        WHERE me.room_id = $1 AND me.type IN ('m.room.message', 'm.room.encrypted')
+        AND me.origin_server_ts > (
+          SELECT origin_server_ts FROM matrix_events WHERE event_id = $2
         )`,
-      [roomId, marker.event_id],
+      [roomId, marker.last_read_event_id],
     )
     return row?.count ?? 0
   }
@@ -1502,11 +2147,39 @@ export class PgBridgeDatabase implements IBridgeDatabase {
       community_uri: string
       slug: string
     }>(
-      'SELECT space_id as room_id, community_uri, slug FROM community_space_map WHERE space_id IS NOT NULL',
+      `SELECT csm.space_id as room_id, csm.community_uri, csm.slug
+       FROM community_space_map csm
+       INNER JOIN community_membership_state cms ON cms.community_uri = csm.community_uri
+       WHERE cms.did = $1 AND cms.membership_state = 'active' AND csm.space_id IS NOT NULL`,
+      [did],
     )
 
+    const chamberRooms = await this.queryAll<{
+      room_id: string
+      community_uri: string
+      slug: string
+      kind: string
+    }>(
+      `SELECT
+        CASE ca.chamber
+          WHEN 'A' THEN csm.chamber_a_room_id
+          WHEN 'B' THEN csm.chamber_b_room_id
+        END as room_id,
+        csm.community_uri, csm.slug,
+        'chamber-' || ca.chamber as kind
+       FROM community_space_map csm
+       INNER JOIN community_membership_state cms ON cms.community_uri = csm.community_uri AND cms.did = $1 AND cms.membership_state = 'active'
+       INNER JOIN chamber_assignment ca ON ca.community_uri = csm.community_uri AND ca.did = $1
+       WHERE csm.chamber_mode = 'bicameral'
+         AND ((ca.chamber = 'A' AND csm.chamber_a_room_id IS NOT NULL)
+           OR (ca.chamber = 'B' AND csm.chamber_b_room_id IS NOT NULL))`,
+      [did],
+    )
+
+    const allRooms = [...rooms, ...chamberRooms]
+
     return Promise.all(
-      rooms.map(async (r) => ({
+      allRooms.map(async (r) => ({
         roomId: r.room_id,
         communityUri: r.community_uri,
         slug: r.slug,
@@ -1522,10 +2195,33 @@ export class PgBridgeDatabase implements IBridgeDatabase {
 
   // Get all tracked room IDs
   async getAllRoomIds(): Promise<string[]> {
-    const rows = await this.queryAll<{ space_id: string }>(
-      'SELECT space_id FROM community_space_map WHERE space_id IS NOT NULL',
+    const rows = await this.queryAll<{
+      space_id: string | null
+      chamber_a_room_id: string | null
+      chamber_b_room_id: string | null
+      observer_room_id: string | null
+    }>(
+      'SELECT space_id, chamber_a_room_id, chamber_b_room_id, observer_room_id FROM community_space_map',
     )
-    return rows.map((r) => r.space_id)
+    return Array.from(
+      new Set(
+        rows.flatMap((r) =>
+          [
+            r.space_id,
+            r.chamber_a_room_id,
+            r.chamber_b_room_id,
+            r.observer_room_id,
+          ].filter((id): id is string => Boolean(id)),
+        ),
+      ),
+    )
+  }
+
+  async getActiveCommunityUris(): Promise<string[]> {
+    const rows = await this.queryAll<{ community_uri: string }>(
+      "SELECT DISTINCT community_uri FROM chat_participation_stats WHERE last_message_at > NOW() - INTERVAL '1 hour'",
+    )
+    return rows.map((r) => r.community_uri)
   }
 
   // ── Deliberation Cards ──

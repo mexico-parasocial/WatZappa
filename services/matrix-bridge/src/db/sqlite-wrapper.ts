@@ -401,12 +401,14 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     did: string
     communityUri: string
     eventType: string
-    severity?: string
-    reason?: string
-    evidence?: string
-    reporterDid?: string
-    relatedEventId?: number
-    expiresAt?: string
+    reporterDid?: string | null
+    reportReason?: string | null
+    reportedEventId?: string | null
+    reportedMessagePreview?: string | null
+    sanctionType?: string | null
+    sanctionDurationMinutes?: number | null
+    sanctionedByDid?: string | null
+    matrixRoomId?: string | null
   }): Promise<void> {
     return this.wrap(() => this.inner.insertModerationEvent(event))
   }
@@ -518,7 +520,7 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     )
   }
 
-  expireBadges(): Promise<void> {
+  expireBadges(): Promise<{ did: string; communityUri: string }[]> {
     return this.wrap(() => this.inner.expireBadges())
   }
 
@@ -577,6 +579,171 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
 
   getAllRoomIds(): Promise<string[]> {
     return this.wrap(() => this.inner.getAllRoomIds())
+  }
+
+  getActiveCommunityUris(): Promise<string[]> {
+    return this.wrap(() => this.inner.getActiveCommunityUris())
+  }
+
+  setCommunityMembership(
+    did: string,
+    communityUri: string,
+    membershipState: string,
+    roles: string[] = [],
+  ): Promise<void> {
+    return this.wrap(() =>
+      this.inner.setCommunityMembership(did, communityUri, membershipState, roles),
+    )
+  }
+
+  isActiveCommunityMember(
+    did: string,
+    communityUri: string,
+  ): Promise<boolean> {
+    return this.wrap(() =>
+      this.inner.isActiveCommunityMember(did, communityUri),
+    )
+  }
+
+  getActiveCommunityRoomsForDid(
+    did: string,
+  ): Promise<
+    Array<{
+      roomId: string
+      communityUri: string
+      slug: string
+      kind: 'main' | 'chamber-a' | 'chamber-b' | 'observers'
+    }>
+  > {
+    return this.wrap(() => this.inner.getActiveCommunityRoomsForDid(did))
+  }
+
+  createSortitionRun(run: {
+    id: string
+    cabildeoUri: string
+    communityUri: string
+    createdByDid: string
+    assemblySize: number
+    eligibilityFilter: string
+    drandRound: number
+    configRecordJson: string
+    createdAt: string
+  }): Promise<any> {
+    return this.wrap(() => this.inner.createSortitionRun(run))
+  }
+
+  getSortitionRun(id: string): Promise<any | undefined> {
+    return this.wrap(() => this.inner.getSortitionRun(id))
+  }
+
+  getSortitionRunByCabildeo(cabildeoUri: string): Promise<any | undefined> {
+    return this.wrap(() => this.inner.getSortitionRunByCabildeo(cabildeoUri))
+  }
+
+  getScheduledSortitionRuns(limit = 10): Promise<any[]> {
+    return this.wrap(() => this.inner.getScheduledSortitionRuns(limit))
+  }
+
+  replaceSortitionCandidates(
+    runId: string,
+    candidates: Array<{
+      did: string
+      communityUri: string
+      cabildeoUri: string
+      hashInput: string
+      hashOutput: string
+      hashValue: number
+      threshold: number
+      selected: boolean
+      createdAt: string
+    }>,
+  ): Promise<void> {
+    return this.wrap(() =>
+      this.inner.replaceSortitionCandidates(runId, candidates),
+    )
+  }
+
+  activateSortitionRun(run: {
+    id: string
+    drandRandomness: string
+    threshold: number
+    eligibleCount: number
+    selectedCount: number
+    processedAt: string
+  }): Promise<any | undefined> {
+    return this.wrap(() => this.inner.activateSortitionRun(run))
+  }
+
+  failSortitionRun(id: string): Promise<void> {
+    return this.wrap(() => this.inner.failSortitionRun(id))
+  }
+
+  getSortitionCandidates(
+    runId: string,
+    selectedOnly = false,
+  ): Promise<any[]> {
+    return this.wrap(() => this.inner.getSortitionCandidates(runId, selectedOnly))
+  }
+
+  getSortitionCandidate(
+    runId: string,
+    did: string,
+  ): Promise<any | undefined> {
+    return this.wrap(() => this.inner.getSortitionCandidate(runId, did))
+  }
+
+  insertCommunityMapContribution(contribution: {
+    id: string
+    communityUri: string
+    authorDid: string
+    title: string
+    content?: string
+    sourceUrl?: string
+    sourceType: string
+    metadata?: string
+  }): Promise<void> {
+    return this.wrap(() => this.inner.insertCommunityMapContribution(contribution))
+  }
+
+  getCommunityMapContributions(
+    communityUri: string,
+    opts?: { status?: string; viewerDid?: string; limit?: number },
+  ): Promise<any[]> {
+    return this.wrap(() => this.inner.getCommunityMapContributions(communityUri, opts))
+  }
+
+  getCommunityMapContribution(
+    id: string,
+    viewerDid?: string,
+  ): Promise<any | undefined> {
+    return this.wrap(() => this.inner.getCommunityMapContribution(id, viewerDid))
+  }
+
+  getCommunityContributionVote(
+    contributionId: string,
+    voterDid: string,
+  ): Promise<{ vote: string } | undefined> {
+    return this.wrap(() =>
+      this.inner.getCommunityContributionVote(contributionId, voterDid),
+    )
+  }
+
+  getCommunityContributionVoteCounts(
+    contributionId: string,
+  ): Promise<{ approve: number; reject: number }> {
+    return this.wrap(() =>
+      this.inner.getCommunityContributionVoteCounts(contributionId),
+    )
+  }
+
+  voteCommunityMapContribution(
+    contributionId: string,
+    voterDid: string,
+    vote: 'approve' | 'reject',
+  ): Promise<any> {
+    return this.wrap(() =>
+      this.inner.voteCommunityMapContribution(contributionId, voterDid, vote),
+    )
   }
 
   // ── Deliberation Cards ──

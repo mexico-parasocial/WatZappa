@@ -9,10 +9,12 @@ export interface MatrixRoomMember {
 export class MatrixAdminClient {
   private baseUrl: string
   private adminToken: string
+  readonly botUserId: string | undefined
 
   constructor(config: Config) {
     this.baseUrl = config.matrixHomeserverUrl.replace(/\/$/, '')
     this.adminToken = config.matrixAdminToken
+    this.botUserId = config.matrixBotUserId
   }
 
   private async request(path: string, options: RequestInit = {}): Promise<any> {
@@ -247,6 +249,37 @@ export class MatrixAdminClient {
       const text = await res.text()
       throw new Error(`Matrix setPusher error ${res.status}: ${text}`)
     }
+  }
+
+  /**
+   * Send an event to a room using Synapse Admin API.
+   * If botUserId is set, sends as that user; otherwise sends as the admin.
+   * Returns the event_id.
+   */
+  async sendEvent(
+    roomId: string,
+    eventType: string,
+    content: Record<string, any>,
+    opts: { botUserId?: string; stateKey?: string } = {},
+  ): Promise<string> {
+    const body: Record<string, any> = {
+      type: eventType,
+      content,
+    }
+    if (opts.botUserId) {
+      body.user_id = opts.botUserId
+    }
+    if (opts.stateKey !== undefined) {
+      body.state_key = opts.stateKey
+    }
+    const res = await this.request(
+      `/_synapse/admin/v1/send_event/${encodeURIComponent(roomId)}`,
+      {
+        method: 'POST',
+        body: JSON.stringify(body),
+      },
+    )
+    return res.event_id as string
   }
 
   /**

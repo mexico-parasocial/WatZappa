@@ -413,9 +413,17 @@ export class ChatModerationEngine {
   /**
    * Expire old badges and recompute affected users.
    */
-  runExpiry(): number {
-    this.db.expireBadges()
-    return 0 // TODO: track which users were affected and recompute them
+  async runExpiry(): Promise<number> {
+    const affected = await this.db.expireBadges()
+    let count = 0
+    for (const { did, communityUri } of affected) {
+      this.recomputeUser(did, communityUri)
+      count++
+    }
+    if (count > 0) {
+      this.log.info({ count }, 'Recomputed badges for expired users')
+    }
+    return count
   }
 
   private makeBadge(type: string, visibleInChat: boolean): ChatBadge {

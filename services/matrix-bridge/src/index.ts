@@ -480,21 +480,21 @@ async function main() {
         const rooms = db.getUnreadCountsForDid(auth.did)
         writeJson(res, 200, { rooms })
       } else if (req.url === '/api/sortition/runs' && req.method === 'POST') {
+        const auth = await authenticateM8(req, config)
         const body = await readBody(req)
         const {
           cabildeoUri,
           communityUri,
-          createdByDid,
           assemblySize = 100,
           eligibilityFilter = 'all',
           drandRound,
           roundOffset = 20,
         } = JSON.parse(body)
-        if (!cabildeoUri || !communityUri || !createdByDid) {
+        if (!cabildeoUri || !communityUri) {
           res.writeHead(400, { 'Content-Type': 'application/json' })
           res.end(
             JSON.stringify({
-              error: 'Missing cabildeoUri, communityUri, or createdByDid',
+              error: 'Missing cabildeoUri or communityUri',
             }),
           )
           return
@@ -531,7 +531,7 @@ async function main() {
           $type: 'com.para.governance.sortitionConfig',
           cabildeo: cabildeoUri,
           community: communityUri,
-          createdBy: createdByDid,
+          createdBy: auth.did,
           assemblySize: size,
           eligibilityFilter: filter,
           drandRound: targetRound,
@@ -541,7 +541,7 @@ async function main() {
           id: randomUUID(),
           cabildeoUri,
           communityUri,
-          createdByDid,
+          createdByDid: auth.did,
           assemblySize: size,
           eligibilityFilter: filter,
           drandRound: targetRound,
@@ -587,14 +587,26 @@ async function main() {
           }),
         )
       } else if (
-        req.url === '/api/sortition/runs/process' &&
+        req.url?.startsWith('/api/sortition/runs/process') &&
         req.method === 'POST'
       ) {
+        const auth = await authenticateM8(req, config)
         const body = await readBody(req)
         const { runId } = JSON.parse(body)
         if (!runId) {
           res.writeHead(400, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'Missing runId' }))
+          return
+        }
+        const run = db.getSortitionRun(runId)
+        if (!run) {
+          res.writeHead(404, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'Sortition run not found' }))
+          return
+        }
+        if (!db.isActiveCommunityMember(auth.did, run.community_uri)) {
+          res.writeHead(403, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'Only community members can process sortitions' }))
           return
         }
         const result = await processSortitionRun(runId)
@@ -649,6 +661,7 @@ async function main() {
           }),
         )
       } else if (req.url === '/api/verify-sortition' && req.method === 'POST') {
+        const auth = await authenticateM8(req, config)
         const body = await readBody(req)
         const { did, communityUri, round, randomness } = JSON.parse(body)
         if (!did || !communityUri || !round || !randomness) {
@@ -816,6 +829,7 @@ async function main() {
         req.url === '/api/moderation-report' &&
         req.method === 'POST'
       ) {
+        const auth = await authenticateM8(req, config)
         const body = await readBody(req)
         const {
           reportedDid,
@@ -829,6 +843,11 @@ async function main() {
         if (!reportedDid || !reporterDid || !communityUri || !reason) {
           res.writeHead(400, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'Missing required fields' }))
+          return
+        }
+        if (auth.did !== reporterDid) {
+          res.writeHead(403, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'reporterDid must match authenticated DID' }))
           return
         }
         // Verify both are members
@@ -859,6 +878,7 @@ async function main() {
         req.url === '/api/moderation-sanction' &&
         req.method === 'POST'
       ) {
+        const auth = await authenticateM8(req, config)
         const body = await readBody(req)
         const {
           targetDid,
@@ -871,6 +891,11 @@ async function main() {
         if (!targetDid || !sanctionedByDid || !communityUri || !type) {
           res.writeHead(400, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'Missing required fields' }))
+          return
+        }
+        if (auth.did !== sanctionedByDid) {
+          res.writeHead(403, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'sanctionedByDid must match authenticated DID' }))
           return
         }
         // Verify sanctionedBy is moderator
@@ -922,11 +947,18 @@ async function main() {
         req.url === '/api/moderation-recompute' &&
         req.method === 'POST'
       ) {
+        const auth = await authenticateM8(req, config)
         const body = await readBody(req)
         const { communityUri } = JSON.parse(body)
         if (!communityUri) {
           res.writeHead(400, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'Missing communityUri' }))
+          return
+        }
+        const recomputeStats = db.getParticipationStats(auth.did, communityUri)
+        if (!recomputeStats || !recomputeStats.is_moderator) {
+          res.writeHead(403, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'Only moderators can recompute moderation' }))
           return
         }
         const count = chatMod.recomputeCommunity(communityUri)
@@ -950,11 +982,17 @@ async function main() {
         req.url === '/api/user-chat-preferences' &&
         req.method === 'POST'
       ) {
+        const auth = await authenticateM8(req, config)
         const body = await readBody(req)
         const { did, showChatBadges } = JSON.parse(body)
         if (!did || typeof showChatBadges !== 'boolean') {
           res.writeHead(400, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'Missing did or showChatBadges' }))
+          return
+        }
+        if (auth.did !== did) {
+          res.writeHead(403, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'did must match authenticated DID' }))
           return
         }
         db.setChatPreferences(did, showChatBadges)
@@ -963,6 +1001,7 @@ async function main() {
 
         // ── Deliberation / Knowledge Graph API ──
       } else if (req.url === '/api/cards' && req.method === 'POST') {
+        const auth = await authenticateM8(req, config)
         const body = await readBody(req)
         const {
           communityUri,
@@ -980,6 +1019,15 @@ async function main() {
           res.end(
             JSON.stringify({
               error: 'Missing communityUri, authorDid, or title',
+            }          ),
+          )
+          return
+        }
+        if (auth.did !== authorDid) {
+          res.writeHead(403, { 'Content-Type': 'application/json' })
+          res.end(
+            JSON.stringify({
+              error: 'authorDid must match authenticated DID',
             }),
           )
           return
@@ -1015,6 +1063,7 @@ async function main() {
           req.url === '/api/community-map/contributions') &&
         req.method === 'POST'
       ) {
+        const auth = await authenticateM8(req, config)
         const body = await readBody(req)
         const {
           communityUri,
@@ -1030,6 +1079,15 @@ async function main() {
           res.end(
             JSON.stringify({
               error: 'Missing communityUri, authorDid, title, or sourceType',
+            }),
+          )
+          return
+        }
+        if (auth.did !== authorDid) {
+          res.writeHead(403, { 'Content-Type': 'application/json' })
+          res.end(
+            JSON.stringify({
+              error: 'authorDid must match authenticated DID',
             }),
           )
           return
@@ -1074,6 +1132,7 @@ async function main() {
           req.url === '/api/community-map/contributions/vote') &&
         req.method === 'POST'
       ) {
+        const auth = await authenticateM8(req, config)
         const body = await readBody(req)
         const { contributionId, voterDid, vote } = JSON.parse(body)
         if (
@@ -1089,6 +1148,15 @@ async function main() {
           )
           return
         }
+        if (auth.did !== voterDid) {
+          res.writeHead(403, { 'Content-Type': 'application/json' })
+          res.end(
+            JSON.stringify({
+              error: 'voterDid must match authenticated DID',
+            }),
+          )
+          return
+        }
         const contribution = db.voteCommunityMapContribution(
           contributionId,
           voterDid,
@@ -1097,12 +1165,22 @@ async function main() {
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ contribution }))
       } else if (req.url === '/api/relationships' && req.method === 'POST') {
+        const auth = await authenticateM8(req, config)
         const body = await readBody(req)
         const { sourceCardId, targetCardId, relationshipType, authorDid } =
           JSON.parse(body)
         if (!sourceCardId || !targetCardId || !relationshipType || !authorDid) {
           res.writeHead(400, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'Missing required fields' }))
+          return
+        }
+        if (auth.did !== authorDid) {
+          res.writeHead(403, { 'Content-Type': 'application/json' })
+          res.end(
+            JSON.stringify({
+              error: 'authorDid must match authenticated DID',
+            }),
+          )
           return
         }
         const validTypes = [
@@ -1165,11 +1243,21 @@ async function main() {
         req.url === '/api/suggestions/accept' &&
         req.method === 'POST'
       ) {
+        const auth = await authenticateM8(req, config)
         const body = await readBody(req)
         const { id, authorDid } = JSON.parse(body)
         if (!id || !authorDid) {
           res.writeHead(400, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'Missing id or authorDid' }))
+          return
+        }
+        if (auth.did !== authorDid) {
+          res.writeHead(403, { 'Content-Type': 'application/json' })
+          res.end(
+            JSON.stringify({
+              error: 'authorDid must match authenticated DID',
+            }),
+          )
           return
         }
         db.acceptSuggestion(id, authorDid)
@@ -1179,6 +1267,7 @@ async function main() {
         req.url === '/api/suggestions/reject' &&
         req.method === 'POST'
       ) {
+        const auth = await authenticateM8(req, config)
         const body = await readBody(req)
         const { id } = JSON.parse(body)
         if (!id) {
@@ -1222,12 +1311,22 @@ async function main() {
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify(summary))
       } else if (req.url === '/api/vote' && req.method === 'POST') {
+        const auth = await authenticateM8(req, config)
         const body = await readBody(req)
         const { cardId, voterDid, influence } = JSON.parse(body)
         if (!cardId || !voterDid || typeof influence !== 'number') {
           res.writeHead(400, { 'Content-Type': 'application/json' })
           res.end(
             JSON.stringify({ error: 'Missing cardId, voterDid, or influence' }),
+          )
+          return
+        }
+        if (auth.did !== voterDid) {
+          res.writeHead(403, { 'Content-Type': 'application/json' })
+          res.end(
+            JSON.stringify({
+              error: 'voterDid must match authenticated DID',
+            }),
           )
           return
         }
@@ -1292,6 +1391,7 @@ async function main() {
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify(pulse))
       } else if (req.url === '/api/extract' && req.method === 'POST') {
+        const auth = await authenticateM8(req, config)
         const body = await readBody(req)
         const { text, communityUri, authorDid } = JSON.parse(body)
         if (!text || !communityUri || !authorDid) {
@@ -1299,6 +1399,15 @@ async function main() {
           res.end(
             JSON.stringify({
               error: 'Missing text, communityUri, or authorDid',
+            }),
+          )
+          return
+        }
+        if (auth.did !== authorDid) {
+          res.writeHead(403, { 'Content-Type': 'application/json' })
+          res.end(
+            JSON.stringify({
+              error: 'authorDid must match authenticated DID',
             }),
           )
           return
@@ -1343,8 +1452,13 @@ async function main() {
 
   // Badge recompute + expiry — runs every 5 minutes
   const badgeCron = setInterval(() => {
-    chatMod.runExpiry()
-    // TODO: batch recompute for communities with recent activity
+    chatMod.runExpiry().catch((err: any) => {
+      log.error({ err }, 'Badge expiry error')
+    })
+    const communityUris = db.getActiveCommunityUris()
+    for (const uri of communityUris) {
+      chatMod.recomputeCommunity(uri)
+    }
   }, 300_000)
 
   // Graceful shutdown

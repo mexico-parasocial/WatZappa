@@ -1393,12 +1393,27 @@ export class BridgeDatabase {
       .all(communityUri, limit, offset) as any[]
   }
 
-  expireBadges(): void {
+  getActiveCommunityUris(): string[] {
+    const rows = this.db
+      .prepare(
+        "SELECT DISTINCT community_uri FROM chat_participation_stats WHERE last_message_at > datetime('now', '-1 hour')",
+      )
+      .all() as { community_uri: string }[]
+    return rows.map((r) => r.community_uri)
+  }
+
+  expireBadges(): { did: string; communityUri: string }[] {
+    const affected = this.db
+      .prepare(
+        "SELECT did, community_uri FROM chat_user_badges WHERE expires_at IS NOT NULL AND expires_at <= datetime('now')",
+      )
+      .all() as { did: string; community_uri: string }[]
     this.db
       .prepare(
         "DELETE FROM chat_user_badges WHERE expires_at IS NOT NULL AND expires_at <= datetime('now')",
       )
       .run()
+    return affected.map((r) => ({ did: r.did, communityUri: r.community_uri }))
   }
 
   // User chat preferences

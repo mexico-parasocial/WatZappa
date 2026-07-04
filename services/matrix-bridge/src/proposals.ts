@@ -320,14 +320,27 @@ export class ProposalEngine {
     message: string,
   ): Promise<void> {
     const space = this.db.getSpaceForCommunity(communityUri)
-    if (!space?.spaceId) return
+    if (!space?.spaceId) {
+      this.log.warn({ communityUri }, 'No Matrix space for community, skipping announcement')
+      return
+    }
 
-    // Use the main space as announcement channel
-    // In a real implementation, we'd have a dedicated "announcements" room
-    // For now, we don't have a bot client to post messages — this is a placeholder
-    this.log.info(
-      { communityUri, message: message.slice(0, 100) },
-      'Matrix announcement (placeholder)',
-    )
+    try {
+      await this.matrix.sendEvent(
+        space.spaceId,
+        'm.room.message',
+        { msgtype: 'm.text', body: message },
+        { botUserId: this.matrix.botUserId },
+      )
+      this.log.info(
+        { communityUri, roomId: space.spaceId },
+        'Matrix announcement sent',
+      )
+    } catch (err) {
+      this.log.warn(
+        { err, communityUri, roomId: space.spaceId },
+        'Failed to send Matrix announcement',
+      )
+    }
   }
 }

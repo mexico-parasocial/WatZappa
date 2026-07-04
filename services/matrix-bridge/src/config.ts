@@ -2,6 +2,7 @@ export interface Config {
   pdsFirehoseUrl: string
   matrixHomeserverUrl: string
   matrixAdminToken: string
+  matrixBotUserId?: string
   m8BaseUrl: string
   pushGatewayUrl: string
   dbPath: string
@@ -28,6 +29,7 @@ export function loadConfig(): Config {
     ),
     matrixHomeserverUrl: env('MATRIX_HOMESERVER_URL', 'http://synapse:8008'),
     matrixAdminToken: env('MATRIX_ADMIN_TOKEN'),
+    matrixBotUserId: process.env.MATRIX_BOT_USER_ID || undefined,
     m8BaseUrl: env('M8_BASE_URL', 'http://localhost:8787/v1'),
     pushGatewayUrl: env(
       'PUSH_GATEWAY_URL',
