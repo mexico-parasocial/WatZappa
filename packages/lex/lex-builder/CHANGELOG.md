@@ -1,5 +1,12 @@
 # @atproto/lex-builder
 
+## 0.1.4
+
+### Patch Changes
+
+- @atproto/lex-schema@0.1.5
+- @atproto/lex-document@0.1.2
+
 ## 0.0.22
 
 ### Patch Changes

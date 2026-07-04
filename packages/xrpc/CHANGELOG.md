@@ -1,5 +1,11 @@
 # @atproto/xrpc
 
+## 0.8.2
+
+### Patch Changes
+
+- @atproto/lexicon@0.7.3
+
 ## 0.7.7
 
 ### Patch Changes

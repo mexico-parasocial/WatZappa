@@ -1,5 +1,12 @@
 # @atproto/common-web
 
+## 0.6.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @atproto/syntax@0.6.3
+
 ## 0.4.21
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @atproto/syntax
 
+## 0.6.3
+
+### Patch Changes
+
+- Test language syntax against atproto interop test files
+
 ## 0.5.4
 
 ### Patch Changes

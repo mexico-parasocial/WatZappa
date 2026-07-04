@@ -1,5 +1,11 @@
 # @atproto/common
 
+## 0.6.4
+
+### Patch Changes
+
+- @atproto/common-web@0.6.2
+
 ## 0.5.16
 
 ### Patch Changes

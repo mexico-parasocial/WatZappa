@@ -1,5 +1,20 @@
 # @atproto/ozone
 
+## 0.2.9
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @atproto/xrpc-server@0.11.5
+  - @atproto/syntax@0.6.3
+  - @atproto/api@0.20.24
+  - @atproto/lexicon@0.7.3
+  - @atproto/common@0.6.4
+  - @atproto/identity@0.5.2
+  - @atproto/xrpc@0.8.2
+  - @atproto/ws-client@0.1.2
+
 ## 0.1.174
 
 ### Patch Changes

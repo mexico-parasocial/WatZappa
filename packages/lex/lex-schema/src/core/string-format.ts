@@ -13,7 +13,8 @@ function isValidISODateString(input: string): boolean {
   )
   if (basicMatch) {
     const [, yr, mo, dy, hr, mn, sc, ms = '', tz = ''] = basicMatch
-    const tzFormatted = tz.length === 5 ? `${tz.slice(0, 3)}:${tz.slice(3)}` : tz
+    const tzFormatted =
+      tz.length === 5 ? `${tz.slice(0, 3)}:${tz.slice(3)}` : tz
     const normalized = `${yr}-${mo}-${dy}T${hr}:${mn}:${sc}${ms}${tzFormatted}`
     return !isNaN(new Date(normalized).getTime())
   }
@@ -40,6 +41,7 @@ import {
   isValidRecordKey,
   isValidTid,
   isValidUri,
+  parseLanguageString,
 } from '@atproto/syntax'
 import { CheckFn } from '../util/assertion-util.js'
 
@@ -115,6 +117,10 @@ export function isAtUriStringLenient<I>(input: I): input is I & AtUriString {
 /**
  * Type guard that checks if a value is a valid CID string.
  *
+ * Strict: rejects tags whose syntax is well-formed but violate semantic
+ * constraints from RFC 5646 §4.1 (e.g. repeated variant subtags or repeated
+ * extension singletons). Use {@link isLanguageStringLenient} to accept those.
+ *
  * @param value - The value to check
  * @returns `true` if the value is a valid CID string
  */
@@ -168,7 +174,18 @@ export type {
  * @param value - The value to check
  * @returns `true` if the value is a valid language string
  */
-export const isLanguageString = isValidLanguage as CheckFn<LanguageString>
+export const isLanguageString = ((v) =>
+  parseLanguageString(v) !== null) as CheckFn<LanguageString>
+
+/**
+ * Lenient version of {@link isLanguageString} that only checks well-formed
+ * BCP 47 syntax (RFC 5646 §2.1) and does not enforce semantic constraints
+ * from §4.1.
+ *
+ * @see {@link isLanguageString}
+ */
+export const isLanguageStringLenient =
+  isValidLanguage as CheckFn<LanguageString>
 /**
  * A BCP-47 language tag string.
  *
@@ -281,7 +298,7 @@ const stringFormatVerifiers: {
   datetime: [isDatetimeString, isDatetimeStringLenient],
   did: [isDidString],
   handle: [isHandleString],
-  language: [isLanguageString],
+  language: [isLanguageString, isLanguageStringLenient],
   nsid: [isNsidString],
   'record-key': [isRecordKeyString],
   tid: [isTidString],

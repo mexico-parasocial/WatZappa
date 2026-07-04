@@ -1,5 +1,15 @@
 # @atproto/api
 
+## 0.20.24
+
+### Patch Changes
+
+- Updated dependencies
+  - @atproto/syntax@0.6.3
+  - @atproto/common-web@0.6.2
+  - @atproto/lexicon@0.7.3
+  - @atproto/xrpc@0.8.2
+
 ## 0.19.12
 
 ### Patch Changes

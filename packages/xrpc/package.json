@@ -1,6 +1,6 @@
 {
   "name": "@atproto/xrpc",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "license": "MIT",
   "description": "atproto HTTP API (XRPC) client library",
   "keywords": [
@@ -22,7 +22,7 @@
     "@atproto/lexicon": "workspace:^",
     "zod": "^3.23.8"
   },
-  "devDependencies": {  },
+  "devDependencies": {},
   "type": "module",
   "exports": {
     ".": "./dist/index.js",

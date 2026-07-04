@@ -1,5 +1,13 @@
 # @atproto/aws
 
+## 0.3.2
+
+### Patch Changes
+
+- @atproto/common-web@0.6.2
+- @atproto/repo@0.10.3
+- @atproto/common@0.6.4
+
 ## 0.2.32
 
 ### Patch Changes

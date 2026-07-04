@@ -1,5 +1,20 @@
 # @atproto/sync
 
+## 0.3.6
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+  - @atproto/lex@0.1.5
+  - @atproto/xrpc-server@0.11.5
+  - @atproto/syntax@0.6.3
+  - @atproto/lexicon@0.7.3
+  - @atproto/repo@0.10.3
+  - @atproto/common@0.6.4
+  - @atproto/identity@0.5.2
+
 ## 0.2.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @atproto/lex-document
 
+## 0.1.2
+
+### Patch Changes
+
+- @atproto/lex-schema@0.1.5
+
 ## 0.0.20
 
 ### Patch Changes

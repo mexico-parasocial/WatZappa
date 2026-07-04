@@ -1,5 +1,25 @@
 # @atproto/dev-env
 
+## 0.5.23
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+  - @atproto/lex@0.1.5
+  - @atproto/xrpc-server@0.11.5
+  - @atproto/syntax@0.6.3
+  - @atproto/bsky@0.0.251
+  - @atproto/pds@0.5.12
+  - @atproto/sync@0.3.6
+  - @atproto/ozone@0.2.9
+  - @atproto/api@0.20.24
+  - @atproto/bsync@0.0.33
+  - @atproto/common-web@0.6.2
+  - @atproto/lexicon@0.7.3
+  - @atproto/identity@0.5.2
+
 ## 0.4.5
 
 ### Patch Changes

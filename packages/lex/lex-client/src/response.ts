@@ -43,7 +43,7 @@ type InferBodyType<
   ? InferOutput<TSchema>
   : TEncoding extends `application/json`
     ? LexValue
-    : Uint8Array
+    : Uint8Array<ArrayBuffer>
 
 /**
  * The body type of an XRPC response, inferred from the method's output schema.
@@ -57,7 +57,7 @@ export type XrpcResponseBody<M extends Procedure | Query> =
   M['output'] extends Payload<infer TEncoding, infer TSchema>
     ? TEncoding extends string
       ? InferBodyType<TEncoding, TSchema>
-      : undefined | LexValue | Uint8Array
+      : undefined | LexValue | Uint8Array<ArrayBuffer>
     : never
 
 /**
@@ -76,7 +76,7 @@ export type XrpcResponsePayload<M extends Procedure | Query> =
         }
       : // If the schema does not specify an output encoding, anything could be
         // returned, including no payload at all (undefined).
-        undefined | { body: LexValue | Uint8Array; encoding: string }
+        undefined | { body: LexValue | Uint8Array<ArrayBuffer>; encoding: string }
     : never
 
 export type XrpcResponseOptions = {

@@ -1,5 +1,13 @@
 # @atproto/lex-client
 
+## 0.1.5
+
+### Patch Changes
+
+- Type `Client` binary responses as `Uint8Array<ArrayBuffer>`
+- Add retry options to `xrpc` requests
+  - @atproto/lex-schema@0.1.5
+
 ## 0.0.20
 
 ### Patch Changes

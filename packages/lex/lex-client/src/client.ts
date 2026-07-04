@@ -1,5 +1,5 @@
-import { LexMap, LexValue, TypedLexMap } from '@atproto/lex-data'
-import {
+import type { LexMap, LexValue, TypedLexMap } from '@atproto/lex-data'
+import type {
   AtIdentifierString,
   AtUriString,
   CidString,
@@ -12,14 +12,12 @@ import {
   Main,
   NsidString,
   Params,
-  Procedure,
-  Query,
-  RecordSchema,
   Restricted,
-  getMain,
 } from '@atproto/lex-schema'
-import { Agent, AgentOptions, buildAgent } from './agent.js'
-import { XrpcFailure } from './errors.js'
+import { Procedure, Query, RecordSchema, getMain } from '@atproto/lex-schema'
+import type { Agent, AgentOptions } from './agent.js'
+import { buildAgent } from './agent.js'
+import { XrpcError, XrpcFailure, XrpcResponseError } from './errors.js'
 // @NOTE We could use import { com } from "./lexicons/index.js" here, but some
 // consumers might not know how to properly tree-shake that, so we import only
 // the needed lexicon schemas directly.
@@ -27,36 +25,39 @@ import applyWrites from './lexicons/com/atproto/repo/applyWrites.js'
 import createRecord from './lexicons/com/atproto/repo/createRecord.js'
 import deleteRecord from './lexicons/com/atproto/repo/deleteRecord.js'
 import getRecord from './lexicons/com/atproto/repo/getRecord.js'
-import listRecords from './lexicons/com/atproto/repo/listRecords.js'
+import listRecords, {
+  type Record as ListRecordsRecord,
+} from './lexicons/com/atproto/repo/listRecords.js'
 import putRecord from './lexicons/com/atproto/repo/putRecord.js'
 import uploadBlob from './lexicons/com/atproto/repo/uploadBlob.js'
 import getBlob from './lexicons/com/atproto/sync/getBlob.js'
 import {
   XrpcResponse,
-  XrpcResponseBody,
-  XrpcResponseOptions,
+  type XrpcResponseBody,
+  type XrpcResponseOptions,
 } from './response.js'
-import { BinaryBodyInit, Service } from './types.js'
+import type { BinaryBodyInit, Service } from './types.js'
 import {
-  RecordKeyOptions,
-  XrpcRequestHeadersOptions,
+  type RecordKeyOptions,
+  type XrpcRequestHeadersOptions,
   applyDefaults,
   buildXrpcRequestHeaders,
   getDefaultRecordKey,
   getLiteralRecordKey,
+  wait,
 } from './util.js'
 import {
-  WriteOperation,
-  WriteOperationCreateOptions,
-  WriteOperationDeleteOptions,
+  type WriteOperation,
+  type WriteOperationCreateOptions,
+  type WriteOperationDeleteOptions,
   WriteOperationHelper,
-  WriteOperationUpdateOptions,
-  WriteOperationsFactory,
+  type WriteOperationUpdateOptions,
+  type WriteOperationsFactory,
 } from './write-operation-builder.js'
 import {
-  XrpcOptions,
-  XrpcRequestParams,
-  XrpcRequestProcessingOptions,
+  type XrpcOptions,
+  type XrpcRequestParams,
+  type XrpcRequestProcessingOptions,
   xrpc,
   xrpcSafe,
 } from './xrpc.js'
@@ -75,9 +76,9 @@ export {
   type Main,
   type NsidString,
   type Params,
-  type Procedure,
-  type Query,
-  type RecordSchema,
+  Procedure,
+  Query,
+  RecordSchema,
   type Restricted,
   type TypedLexMap,
   type WriteOperation,
@@ -253,6 +254,11 @@ export type ListRecordsOptions = Omit<
   reverse?: boolean
 }
 
+/**
+ * Options for applying a batch of writes (create/update/delete) to an AT Protocol repository.
+ *
+ * @see {@link Client.applyWrites}
+ */
 export type ApplyWritesOptions = Omit<
   XrpcOptions<typeof applyWrites>,
   'body'
@@ -347,28 +353,21 @@ export type ListOptions = ListRecordsOptions
  * Contains validated records and any invalid records that failed schema validation.
  * @typeParam T - The record schema type
  */
-export type ListOutput<T extends RecordSchema> = InferMethodOutputBody<
-  typeof listRecords,
-  Uint8Array
+export type ListOutput<T extends RecordSchema> = Omit<
+  InferMethodOutputBody<typeof listRecords>,
+  'records'
 > & {
   /** Records that successfully validated against the schema. */
-  records: ListRecord<Infer<T>>[]
-  // @NOTE Because the schema uses "type": "unknown" instead of an open union,
-  // we have to use LexMap instead of Unknown$TypedObject here, which is
-  // unfortunate.
-  /** Records that failed schema validation. */
-  invalid: LexMap[]
+  records: ListRecordItem<Infer<T>>[]
 }
 
 /**
- * A record from a list operation with its value typed to the schema.
- * @typeParam Value - The validated record value type
+ * A discriminated union type representing the result of a record listing
+ * operation.
  */
-export type ListRecord<Value extends LexMap> = {
-  uri: AtUriString
-  cid: CidString
-  value: Value
-}
+export type ListRecordItem<Value extends LexMap> =
+  | { uri: AtUriString; cid: CidString; valid: true; value: Value }
+  | { uri: AtUriString; cid: CidString; valid: false; value: LexMap }
 
 /**
  * The Client class is the primary interface for interacting with AT Protocol
@@ -739,6 +738,44 @@ export class Client implements Agent {
   }
 
   /**
+   * Performs an atomic batch of create, update, and delete operations on records in a repository.
+   *
+   * @param builder - A function that receives an {@link ApplyWritesOperations} instance to build the operations
+   * @param options - ApplyWrites options including repo, validate, swapCommit
+   * @returns The XRPC response from the applyWrites call
+   *
+   * @example
+   * ```typescript
+   * const response = await client.applyWrites((op) => [
+   *   op.create(app.bsky.feed.post, { text: 'Hello!' }),
+   *   op.update(app.bsky.feed.post, { text: 'Updated text' }, { rkey: 'post123' }),
+   *   op.delete(app.bsky.feed.post, 'post456'),
+   *   op.update(app.bsky.actor.profile, { displayName: 'Alice' }),
+   * ], {
+   *   validate: true,
+   * })
+   *
+   * for (const result of response.body.results) {
+   *   console.log(result.uri)
+   * }
+   * ```
+   */
+  async applyWrites(
+    factory: WriteOperationsFactory,
+    options?: ApplyWritesOptions,
+  ) {
+    return this.xrpc(applyWrites, {
+      ...options,
+      body: {
+        repo: options?.repo ?? this.assertDid,
+        writes: WriteOperationHelper.build(factory),
+        validate: options?.validate,
+        swapCommit: options?.swapCommit,
+      },
+    })
+  }
+
+  /**
    * Uploads a blob to an AT Protocol repository.
    *
    * @param body - The blob data (Uint8Array, ReadableStream, Blob, etc.)
@@ -962,11 +999,11 @@ export class Client implements Agent {
   ): Promise<GetOutput<T>>
   public async get<const T extends RecordSchema>(
     ns: Main<T>,
-    options?: GetOptions<T>,
+    options: GetOptions<T> = {} as GetOptions<T>,
   ): Promise<GetOutput<T>> {
     const schema = getMain(ns)
     const rkey = schema.keySchema.parse(
-      options?.rkey ?? getLiteralRecordKey(schema),
+      options.rkey ?? getLiteralRecordKey(schema),
     )
     const response = await this.getRecord(schema.$type, rkey, options)
     const value = schema.validate(response.body.value)
@@ -1006,39 +1043,22 @@ export class Client implements Agent {
   }
 
   /**
-   * Performs an atomic batch of create, update, and delete operations on records in a repository.
-   *
-   * @param builder - A function that receives an {@link ApplyWritesOperations} instance to build the operations
-   * @param options - ApplyWrites options including repo, validate, swapCommit
-   * @returns The XRPC response from the applyWrites call
-   */
-  async applyWrites(
-    factory: WriteOperationsFactory,
-    options?: ApplyWritesOptions,
-  ) {
-    return this.xrpc(applyWrites, {
-      ...options,
-      body: {
-        repo: options?.repo ?? this.assertDid,
-        writes: WriteOperationHelper.build(factory),
-        validate: options?.validate,
-        swapCommit: options?.swapCommit,
-      },
-    })
-  }
-
-  /**
    * Lists records with type-safe validation and separation of valid/invalid records.
    *
    * @param ns - The record schema definition
    * @param options - List options
-   * @returns Records split into valid (matching schema) and invalid arrays
+   * @returns Records validated against the schema, with invalid records included as LexMap
    *
    * @example
    * ```typescript
    * const result = await client.list(app.bsky.feed.post.main, { limit: 100 })
-   * console.log(`Found ${result.records.length} valid posts`)
-   * console.log(`Found ${result.invalid.length} invalid records`)
+   * for (const record of result.records) {
+   *   if (record.valid) {
+   *     record.value // Fully typed
+   *   } else {
+   *     record.value // Invalid record, typed as LexMap
+   *   }
+   * }
    * ```
    */
   async list<const T extends RecordSchema>(
@@ -1047,21 +1067,57 @@ export class Client implements Agent {
   ): Promise<ListOutput<T>> {
     const schema = getMain(ns)
     const { body } = await this.listRecords(schema.$type, options)
+    const records = body.records.map(processListRecord, schema)
+    return { ...body, records }
+  }
 
-    const records: ListRecord<Infer<T>>[] = []
-    const invalid: LexMap[] = []
+  /**
+   * Asynchronously iterates over all records in a collection, handling
+   * pagination automatically.
+   *
+   * @param ns - The record schema definition
+   * @param options - List options including limit and cursor
+   * @returns An async generator yielding each record validated against the schema
+   */
+  async *listAll<const T extends RecordSchema>(
+    ns: Main<T>,
+    { maxRetries = 3, ...options }: ListOptions = {},
+  ): AsyncGenerator<ListRecordItem<Infer<T>>, void, unknown> {
+    const schema = getMain(ns)
 
-    for (const record of body.records) {
-      const parsed = schema.safeValidate(record.value)
-      if (parsed.success) {
-        records.push({ ...record, value: parsed.value })
-      } else {
-        invalid.push(record.value)
+    do {
+      options.signal?.throwIfAborted()
+
+      const { body } = await this.listRecords(schema.$type, {
+        ...options,
+        maxRetries,
+      })
+
+      // We don't use this.list() here so that we can lazily process records as
+      // they come in, rather than mapping and yielding the entire page at once.
+      for (const record of body.records) {
+        yield processListRecord.call(schema, record)
       }
-    }
 
-    return { ...body, records, invalid }
+      // If the server returns the same cursor, we may be in a loop. Stop
+      // iteration.
+      if (body.cursor && body.cursor === options.cursor) {
+        return
+      }
+
+      options.cursor = body.cursor
+    } while (options.cursor)
   }
 }
 
-
+function processListRecord<T extends RecordSchema>(
+  this: T,
+  record: ListRecordsRecord,
+): ListRecordItem<Infer<T>> {
+  const result = this.safeValidate(record.value)
+  if (result.success) {
+    return { ...record, valid: true, value: result.value }
+  } else {
+    return { ...record, valid: false }
+  }
+}

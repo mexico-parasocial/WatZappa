@@ -1,5 +1,11 @@
 # @atproto/identity
 
+## 0.5.2
+
+### Patch Changes
+
+- @atproto/common-web@0.6.2
+
 ## 0.4.12
 
 ### Patch Changes

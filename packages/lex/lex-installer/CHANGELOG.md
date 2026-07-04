@@ -1,5 +1,16 @@
 # @atproto/lex-installer
 
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @atproto/syntax@0.6.3
+  - @atproto/lex-resolver@0.1.2
+  - @atproto/lex-schema@0.1.5
+  - @atproto/lex-builder@0.1.4
+  - @atproto/lex-document@0.1.2
+
 ## 0.0.25
 
 ### Patch Changes

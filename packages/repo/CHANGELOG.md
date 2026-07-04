@@ -1,5 +1,15 @@
 # @atproto/repo
 
+## 0.10.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @atproto/syntax@0.6.3
+  - @atproto/common-web@0.6.2
+  - @atproto/lexicon@0.7.3
+  - @atproto/common@0.6.4
+
 ## 0.9.1
 
 ### Patch Changes

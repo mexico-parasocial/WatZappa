@@ -1,6 +1,6 @@
 {
   "name": "@atproto/lex-client",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "license": "MIT",
   "description": "HTTP client for interacting with Lexicon based APIs",
   "keywords": [
@@ -42,7 +42,7 @@
   "devDependencies": {
     "@atproto/lex-cbor": "workspace:^",
     "@atproto/lex-builder": "workspace:^",
-    "vitest": "^4.0.16"
+    "vitest": "^4.1.0"
   },
   "scripts": {
     "prebuild": "node ./scripts/lex-build.mjs",

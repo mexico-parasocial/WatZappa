@@ -1,5 +1,12 @@
 # @atproto/oauth-client-expo
 
+## 0.1.3
+
+### Patch Changes
+
+- @atproto/oauth-client@0.7.6
+- @atproto/oauth-client-browser@0.4.4
+
 ## 0.1.2
 
 ### Patch Changes

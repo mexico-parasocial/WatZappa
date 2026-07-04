@@ -1,5 +1,17 @@
 # @atproto/lex
 
+## 0.1.5
+
+### Patch Changes
+
+- Type `Client` binary responses as `Uint8Array<ArrayBuffer>`
+- Updated dependencies
+- Updated dependencies
+  - @atproto/lex-client@0.1.5
+  - @atproto/lex-installer@0.1.2
+  - @atproto/lex-schema@0.1.5
+  - @atproto/lex-builder@0.1.4
+
 ## 0.0.25
 
 ### Patch Changes

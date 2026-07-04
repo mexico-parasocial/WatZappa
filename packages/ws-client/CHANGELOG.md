@@ -1,5 +1,11 @@
 # @atproto/ws-client
 
+## 0.1.2
+
+### Patch Changes
+
+- @atproto/common@0.6.4
+
 ## 0.0.4
 
 ### Patch Changes

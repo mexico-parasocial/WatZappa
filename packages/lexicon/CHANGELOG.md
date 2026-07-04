@@ -1,5 +1,13 @@
 # @atproto/lexicon
 
+## 0.7.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @atproto/syntax@0.6.3
+  - @atproto/common-web@0.6.2
+
 ## 0.6.2
 
 ### Patch Changes

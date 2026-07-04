@@ -1,5 +1,14 @@
 # @atproto/lex-server
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @atproto/lex-client@0.1.5
+  - @atproto/lex-schema@0.1.5
+
 ## 0.0.17
 
 ### Patch Changes

@@ -1,5 +1,19 @@
 # @atproto/xrpc-server
 
+## 0.11.5
+
+### Patch Changes
+
+- Add `Retry-After` header to rate limited responses
+- Updated dependencies
+- Updated dependencies
+  - @atproto/lex-client@0.1.5
+  - @atproto/lex-schema@0.1.5
+  - @atproto/lexicon@0.7.3
+  - @atproto/common@0.6.4
+  - @atproto/xrpc@0.8.2
+  - @atproto/ws-client@0.1.2
+
 ## 0.10.20
 
 ### Patch Changes

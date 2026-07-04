@@ -29,7 +29,7 @@
     "pino-pretty": "^11.0.0",
     "tsx": "^4.0.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.0.16"
+    "vitest": "^4.1.0"
   },
   "exports": {
     "./package.json": "./package.json"

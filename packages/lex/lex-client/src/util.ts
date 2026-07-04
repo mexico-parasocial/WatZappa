@@ -60,6 +60,19 @@ export function isAsyncIterable<T>(
   )
 }
 
+export function asUint8ArrayArrayBuffer(
+  bytes: Uint8Array,
+): Uint8Array<ArrayBuffer> {
+  // If the Uint8Array is already backed by a non-shared ArrayBuffer, we can use
+  // it directly.
+  if (bytes.buffer instanceof ArrayBuffer) {
+    return bytes as Uint8Array<ArrayBuffer>
+  }
+
+  // Otherwise, we need to create a new ArrayBuffer and copy the data.
+  return new Uint8Array(bytes)
+}
+
 export type XrpcRequestHeadersOptions = {
   /** Additional HTTP headers to include in the request. */
   headers?: HeadersInit
@@ -166,4 +179,37 @@ export function getLiteralRecordKey<const T extends RecordSchema>(
   throw new TypeError(
     `An "rkey" must be provided for record key type "${schema.key}" (${schema.$type})`,
   )
+}
+
+export function wait(
+  ms: number,
+  { signal }: { signal?: AbortSignal } = {},
+): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    signal?.throwIfAborted()
+
+    const cleanup = () => {
+      clearTimeout(timeout)
+      signal?.removeEventListener('abort', onAbort)
+    }
+
+    const timeout = setTimeout(() => {
+      cleanup()
+      resolve()
+    }, ms)
+
+    const onAbort = () => {
+      cleanup()
+      reject(
+        // @NOTE the signal exists, and the reason should be set at this point.
+        signal?.reason ??
+          // React Native does not have DOMException
+          (typeof DOMException !== 'undefined'
+            ? new DOMException('Aborted', 'AbortError')
+            : new Error('Aborted')),
+      )
+    }
+
+    signal?.addEventListener('abort', onAbort)
+  })
 }

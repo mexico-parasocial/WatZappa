@@ -1,5 +1,13 @@
 # @atproto/bsync
 
+## 0.0.33
+
+### Patch Changes
+
+- Updated dependencies
+  - @atproto/syntax@0.6.3
+  - @atproto/common@0.6.4
+
 ## 0.0.25
 
 ### Patch Changes

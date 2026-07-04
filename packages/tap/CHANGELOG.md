@@ -1,5 +1,16 @@
 # @atproto/tap
 
+## 0.3.4
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @atproto/lex@0.1.5
+  - @atproto/syntax@0.6.3
+  - @atproto/common@0.6.4
+  - @atproto/ws-client@0.1.2
+
 ## 0.2.13
 
 ### Patch Changes

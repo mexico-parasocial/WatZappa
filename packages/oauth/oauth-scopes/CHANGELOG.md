@@ -1,5 +1,12 @@
 # @atproto/oauth-scopes
 
+## 0.5.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @atproto/syntax@0.6.3
+
 ## 0.5.2
 
 ### Patch Changes

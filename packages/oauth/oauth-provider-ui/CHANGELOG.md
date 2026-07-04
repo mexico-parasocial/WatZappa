@@ -1,5 +1,11 @@
 # @atproto/oauth-provider-ui
 
+## 0.8.4
+
+### Patch Changes
+
+- 2cb0174: fix: add missing links
+
 ## 0.8.3
 
 ### Patch Changes

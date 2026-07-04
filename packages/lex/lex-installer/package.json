@@ -1,6 +1,6 @@
 {
   "name": "@atproto/lex-installer",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT",
   "description": "Lexicon document packet manager for AT Lexicons",
   "keywords": [
@@ -44,7 +44,7 @@
     "tslib": "^2.8.1"
   },
   "devDependencies": {
-    "vitest": "^4.0.16"
+    "vitest": "^4.1.0"
   },
   "scripts": {
     "build": "tsgo --build tsconfig.build.json",
