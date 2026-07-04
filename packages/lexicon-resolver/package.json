@@ -1,6 +1,6 @@
 {
   "name": "@atproto/lexicon-resolver",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "type": "module",
   "license": "MIT",
   "description": "ATProto Lexicon resolution",
@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "build": "tsc --build tsconfig.build.json",
+    "build": "tsgo --build tsconfig.build.json",
     "prebuild": "pnpm run codegen",
     "codegen": "lex build --clear --indexFile --lexicons ../../lexicons --include com.atproto.sync.getRecord --include com.atproto.lexicon.schema"
   },
@@ -36,8 +36,6 @@
   },
   "devDependencies": {
     "@atproto/lex-cbor": "workspace:^",
-    "jest": "^30.0.0",
-    "typescript": "^6.0.3",
-    "@jest/globals": "^30.0.0"
+    "jest": "^30.0.0"
   }
 }

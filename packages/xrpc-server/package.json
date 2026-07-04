@@ -1,6 +1,6 @@
 {
   "name": "@atproto/xrpc-server",
-  "version": "0.11.1",
+  "version": "0.11.4",
   "license": "MIT",
   "description": "atproto HTTP API (XRPC) server library",
   "keywords": [
@@ -51,7 +51,6 @@
     "jose": "^5.0.1",
     "key-encoder": "^2.0.3",
     "multiformats": "^13.0.0",
-    "typescript": "^6.0.3",
     "@jest/globals": "^30.0.0"
   },
   "type": "module",

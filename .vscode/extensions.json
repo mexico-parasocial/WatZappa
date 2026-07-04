@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "streetsidesoftware.code-spell-checker",
+    "vitest.explorer",
+    "wengerk.highlight-bad-chars",
+    "yzhang.markdown-all-in-one",
+    "typescriptteam.native-preview",
+  ],
+}

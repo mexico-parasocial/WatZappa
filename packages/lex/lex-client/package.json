@@ -1,6 +1,6 @@
 {
   "name": "@atproto/lex-client",
-  "version": "0.0.20",
+  "version": "0.1.4",
   "license": "MIT",
   "description": "HTTP client for interacting with Lexicon based APIs",
   "keywords": [
@@ -46,7 +46,7 @@
   },
   "scripts": {
     "prebuild": "node ./scripts/lex-build.mjs",
-    "build": "tsc --build tsconfig.build.json",
+    "build": "tsgo --build tsconfig.build.json",
     "test": "vitest run"
   }
 }

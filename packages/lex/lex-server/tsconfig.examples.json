@@ -1,13 +1,6 @@
 {
   "extends": ["../../../tsconfig/isomorphic.json"],
-  "include": [
-    "./examples/**/*.ts",
-    "./examples/**/*.js",
-    "./examples/**/*.mjs",
-    "./examples/**/*.cjs"
-  ,
-    "../../../tsconfig/cjs-default-exports.d.ts"
-  ],
+  "include": ["./examples/**/*.ts"],
   "compilerOptions": {
     "allowJs": true,
     "noImplicitAny": true,
@@ -19,7 +12,7 @@
     "rewriteRelativeImportExtensions": true,
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
-    "rootDir": ".",
-    "baseUrl": "."
-  }
+    "ignoreDeprecations": "6.0",
+    "rootDir": "./",
+  },
 }

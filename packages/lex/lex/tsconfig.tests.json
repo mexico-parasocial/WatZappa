@@ -5,7 +5,6 @@
   ],
   "compilerOptions": {
     "noImplicitAny": true,
-    "rootDir": "./",
-    "baseUrl": "./"
+    "rootDir": "./"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@atproto-labs/handle-resolver",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "license": "MIT",
   "description": "Isomorphic ATProto handle to DID resolver",
   "keywords": [
@@ -31,9 +31,7 @@
     "@atproto/did": "workspace:^",
     "zod": "^3.23.8"
   },
-  "devDependencies": {
-    "typescript": "^6.0.3"
-  },
+  "devDependencies": {  },
   "scripts": {
     "build": "tsc --build tsconfig.build.json"
   }

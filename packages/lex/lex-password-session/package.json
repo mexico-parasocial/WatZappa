@@ -1,6 +1,6 @@
 {
   "name": "@atproto/lex-password-session",
-  "version": "0.0.13",
+  "version": "0.1.1",
   "license": "MIT",
   "description": "Password based client authentication for AT Lexicons",
   "keywords": [
@@ -44,7 +44,7 @@
   },
   "scripts": {
     "prebuild": "node ./scripts/lex-build.mjs",
-    "build": "tsc --build tsconfig.build.json",
+    "build": "tsgo --build tsconfig.build.json",
     "test": "vitest run"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@atproto/bsync",
-  "version": "0.0.28",
+  "version": "0.0.32",
   "license": "MIT",
   "description": "Sychronizing service for app.bsky App View (Bluesky API)",
   "keywords": [
@@ -14,7 +14,7 @@
     "directory": "packages/bsync"
   },
   "scripts": {
-    "build": "tsc --build tsconfig.build.json",
+    "build": "tsgo --build tsconfig.build.json",
     "start": "node --enable-source-maps dist/bin.js",
     "test": "../dev-infra/with-test-db.sh NODE_OPTIONS=--experimental-vm-modules jest",
     "test:log": "tail -50 test.log | pino-pretty",
@@ -45,7 +45,6 @@
     "get-port": "^5.1.1",
     "jest": "^30.0.0",
     "ts-node": "^10.8.2",
-    "typescript": "^6.0.3",
     "@jest/globals": "^30.0.0"
   },
   "type": "module",

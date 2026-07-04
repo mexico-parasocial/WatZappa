@@ -1,0 +1,39 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build:
+    name: Publish
+    if: github.repository == 'bluesky-social/atproto'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          cache: pnpm
+          node-version-file: '.nvmrc'
+          registry-url: 'https://registry.npmjs.org'
+      - run: pnpm install --frozen-lockfile
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: true
+      - name: Publish
+        uses: changesets/action@v1
+        id: changesets
+        with:
+          publish: pnpm run publish:ci
+          version: pnpm run version-packages
+          commit: 'Version packages'
+          title: 'Version packages'

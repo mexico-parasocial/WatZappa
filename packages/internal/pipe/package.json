@@ -1,6 +1,6 @@
 {
   "name": "@atproto-labs/pipe",
-  "version": "0.1.1",
+  "version": "0.2.1",
   "license": "MIT",
   "description": "Library for combining multiple functions into a single function.",
   "keywords": [
@@ -20,9 +20,7 @@
     ".": "./dist/index.js",
     "./package.json": "./package.json"
   },
-  "devDependencies": {
-    "typescript": "^6.0.3"
-  },
+  "devDependencies": {  },
   "scripts": {
     "build": "tsc --build tsconfig.json"
   }

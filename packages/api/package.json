@@ -1,6 +1,6 @@
 {
   "name": "@atproto/api",
-  "version": "0.20.16",
+  "version": "0.20.23",
   "license": "MIT",
   "description": "Client library for atproto and Bluesky",
   "keywords": [
@@ -17,7 +17,7 @@
   "scripts": {
     "codegen": "lex gen-api --yes ./src/client ../../lexicons/com/atproto/*/* ../../lexicons/app/bsky/*/* ../../lexicons/chat/bsky/*/* ../../lexicons/tools/ozone/*/* ../../lexicons/com/germnetwork/* ../../lexicons/com/para/* ../../lexicons/com/para/*/*",
     "prebuild": "node ./scripts/generate-code.mjs && ([ -f ./src/client/index.ts ] || pnpm run codegen)",
-    "build": "tsc --build tsconfig.build.json",
+    "build": "tsgo --build tsconfig.build.json",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest"
   },
   "dependencies": {
@@ -34,8 +34,7 @@
     "@atproto/lex-cli": "workspace:^",
     "@jest/globals": "^30.0.0",
     "jest": "^30.0.0",
-    "prettier": "^3.2.5",
-    "typescript": "^6.0.3"
+    "prettier": "^3.2.5"
   },
   "type": "module",
   "exports": {
