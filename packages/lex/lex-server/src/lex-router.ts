@@ -1118,7 +1118,7 @@ function onMessage(this: WebSocket, _event: unknown) {
 // Pre-encoded frame header for error frames
 const ERROR_FRAME_HEADER = /*#__PURE__*/ encode({ op: -1 })
 
-function encodeErrorFrame(errorData: LexErrorData): Uint8Array<ArrayBuffer> {
+function encodeErrorFrame(errorData: LexErrorData): Uint8Array {
   return ui8Concat([ERROR_FRAME_HEADER, encode(errorData)])
 }
 
@@ -1128,7 +1128,7 @@ const UNKNOWN_MESSAGE_FRAME_HEADER = /*#__PURE__*/ encode({ op: 1 })
 function encodeMessageFrame(
   method: Subscription,
   value: LexValue,
-): Uint8Array<ArrayBuffer> {
+): Uint8Array {
   if (isPlainObject(value) && typeof value.$type === 'string') {
     const { $type, ...rest } = value
     return ui8Concat([

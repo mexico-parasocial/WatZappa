@@ -1,7 +1,8 @@
 import { encode } from '@atproto/lex-cbor'
-import { LexError, LexValue, isPlainObject, ui8Concat } from '@atproto/lex-data'
+import { LexError, isPlainObject, ui8Concat } from '@atproto/lex-data'
+import type { LexValue } from '@atproto/lex-data'
 import { lexParse, lexToJson } from '@atproto/lex-json'
-import {
+import type {
   InferMethodInput,
   InferMethodMessage,
   InferMethodOutput,
@@ -13,9 +14,8 @@ import {
   Procedure,
   Query,
   Subscription,
-  getMain,
-  isNsidString,
 } from '@atproto/lex-schema'
+import { getMain, isNsidString } from '@atproto/lex-schema'
 import { LexServerError } from './errors.js'
 import { drainWebsocket } from './lib/drain-websocket.js'
 

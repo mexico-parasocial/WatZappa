@@ -1,10 +1,6 @@
-import { JsonValue } from './json.js'
-import {
-  Stack,
-  StackOptions,
-  isArrayFrame,
-  isObjectFrame,
-} from './lib/stack.js'
+import type { JsonValue } from './json.js'
+import { Stack, isArrayFrame, isObjectFrame } from './lib/stack.js'
+import type { StackOptions } from './lib/stack.js'
 
 const OMIT = Symbol('OMIT')
 const OBJECT = Symbol('object')

@@ -1,19 +1,15 @@
+import type { LexValue } from '@atproto/lex-data'
 import {
-  LexValue,
   MAX_CBOR_CONTAINER_LEN,
   MAX_CBOR_NESTED_LEVELS,
   MAX_CBOR_OBJECT_KEY_LEN,
   MAX_PAYLOAD_NESTED_LEVELS,
 } from '@atproto/lex-data'
-import {
-  IterativeTransformOptions,
-  iterativeTransform,
-} from './iterative-transform.js'
-import { JsonValue } from './json.js'
-import {
-  SpecialJsonObjectOptions,
-  parseSpecialJsonObject,
-} from './special-objects.js'
+import { iterativeTransform } from './iterative-transform.js'
+import type { IterativeTransformOptions } from './iterative-transform.js'
+import type { JsonValue } from './json.js'
+import { parseSpecialJsonObject } from './special-objects.js'
+import type { SpecialJsonObjectOptions } from './special-objects.js'
 
 /**
  * Options for {@link jsonToLex} function

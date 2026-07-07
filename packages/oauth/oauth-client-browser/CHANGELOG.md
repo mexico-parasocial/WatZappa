@@ -1,10 +1,38 @@
 # @atproto/oauth-client-browser
 
+## 0.4.6
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.7.8
+
+## 0.4.5
+
+### Patch Changes
+
+- [#5099](https://github.com/bluesky-social/atproto/pull/5099) [`b43ec31`](https://github.com/bluesky-social/atproto/commit/b43ec31f247f4461725b01226885f88bd430ca07) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Update TypeScript build to rely on references to composite internal projects
+
+- [#5099](https://github.com/bluesky-social/atproto/pull/5099) [`b43ec31`](https://github.com/bluesky-social/atproto/commit/b43ec31f247f4461725b01226885f88bd430ca07) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Bundle only necessary files in the NPM tarball, including the `CHANGELOG.md` and `README.md` files (if present).
+
+- [#5099](https://github.com/bluesky-social/atproto/pull/5099) [`b43ec31`](https://github.com/bluesky-social/atproto/commit/b43ec31f247f4461725b01226885f88bd430ca07) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Build with `noImplicitAny` enabled
+
+- Updated dependencies [[`b43ec31`](https://github.com/bluesky-social/atproto/commit/b43ec31f247f4461725b01226885f88bd430ca07), [`b43ec31`](https://github.com/bluesky-social/atproto/commit/b43ec31f247f4461725b01226885f88bd430ca07), [`b43ec31`](https://github.com/bluesky-social/atproto/commit/b43ec31f247f4461725b01226885f88bd430ca07)]:
+  - @atproto-labs/handle-resolver@0.4.4
+  - @atproto-labs/did-resolver@0.3.4
+  - @atproto-labs/simple-store@0.4.3
+  - @atproto/jwk-webcrypto@0.3.3
+  - @atproto/oauth-client@0.7.7
+  - @atproto/oauth-types@0.7.4
+  - @atproto/jwk@0.7.3
+  - @atproto/did@0.5.3
+
 ## 0.4.4
 
 ### Patch Changes
 
-- @atproto/oauth-client@0.7.6
+- Updated dependencies [[`8bcba69`](https://github.com/bluesky-social/atproto/commit/8bcba69cf1f02d09e07b51ce091918312029df63)]:
+  - @atproto/oauth-client@0.7.6
 
 ## 0.4.3
 

@@ -1,4 +1,5 @@
-import { Stack, StackOptions, getCopy, isArrayFrame } from './lib/stack.js'
+import { Stack, getCopy, isArrayFrame } from './lib/stack.js'
+import type { StackOptions } from './lib/stack.js'
 
 const OMIT = Symbol('OMIT')
 const OBJECT = Symbol('object')

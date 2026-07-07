@@ -1,6 +1,6 @@
 {
   "name": "@atproto/lex-password-session",
-  "version": "0.1.2",
+  "version": "0.1.5",
   "license": "MIT",
   "description": "Password based client authentication for AT Lexicons",
   "keywords": [
@@ -15,22 +15,19 @@
     "directory": "packages/lex/lex-password-session"
   },
   "files": [
-    "./src",
-    "./tsconfig.build.json",
-    "./tsconfig.test.json",
-    "./tsconfig.json",
     "./dist",
     "./CHANGELOG.md"
   ],
   "sideEffects": false,
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }
+  },
+  "engines": {
+    "node": ">=22"
   },
   "dependencies": {
     "@atproto/lex-client": "workspace:^",
@@ -40,10 +37,11 @@
   "devDependencies": {
     "@atproto/lex-builder": "workspace:^",
     "@atproto/lex-server": "workspace:^",
-    "vitest": "^4.1.0"
+    "vitest": "^4.0.16"
   },
   "scripts": {
-    "prebuild": "node ./scripts/lex-build.mjs",
+    "codegen:lex": "node ./scripts/lex-build.mjs",
+    "prebuild": "pnpm run '/^(codegen:.+)$/'",
     "build": "tsgo --build tsconfig.build.json",
     "test": "vitest run"
   }

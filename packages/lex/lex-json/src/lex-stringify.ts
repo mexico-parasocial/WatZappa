@@ -1,5 +1,6 @@
-import { LexValue } from '@atproto/lex-data'
-import { LexToJsonOptions, lexToJson } from './lex-to-json.js'
+import type { LexValue } from '@atproto/lex-data'
+import { lexToJson } from './lex-to-json.js'
+import type { LexToJsonOptions } from './lex-to-json.js'
 
 /**
  * Serialize a Lex value to a JSON string.

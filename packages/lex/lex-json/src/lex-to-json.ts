@@ -1,22 +1,16 @@
+import type { LexArray, LexMap, LexValue } from '@atproto/lex-data'
 import {
-  LexArray,
-  LexMap,
-  LexValue,
   MAX_CBOR_CONTAINER_LEN,
   MAX_CBOR_NESTED_LEVELS,
   MAX_CBOR_OBJECT_KEY_LEN,
   MAX_PAYLOAD_NESTED_LEVELS,
 } from '@atproto/lex-data'
-import {
-  IterativeTransformOptions,
-  iterativeTransform,
-} from './iterative-transform.js'
-import { JsonObject, JsonValue } from './json.js'
+import { iterativeTransform } from './iterative-transform.js'
+import type { IterativeTransformOptions } from './iterative-transform.js'
+import type { JsonObject, JsonValue } from './json.js'
 import { validateMaxUtf8Length } from './lib/validate-max-utf8-length.js'
-import {
-  SpecialJsonObjectOptions,
-  encodeSpecialJsonObject,
-} from './special-objects.js'
+import { encodeSpecialJsonObject } from './special-objects.js'
+import type { SpecialJsonObjectOptions } from './special-objects.js'
 
 /**
  * Using a too low threshold (e.g. 10) can cause performance degradation due to

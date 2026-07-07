@@ -47,7 +47,6 @@ export function unicastFetchWrap<C = FetchContext>({
       )
     }
 
-    // @ts-expect-error non-standard option
     const request = new Request(input, { ...init, dispatcher })
     return fetch.call(this, request)
   }

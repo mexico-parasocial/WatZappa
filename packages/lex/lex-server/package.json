@@ -1,6 +1,6 @@
 {
   "name": "@atproto/lex-server",
-  "version": "0.1.3",
+  "version": "0.1.6",
   "license": "MIT",
   "description": "Request router for Atproto Lexicon protocols and schemas",
   "keywords": [
@@ -16,18 +16,12 @@
     "directory": "packages/lex/lex-server"
   },
   "files": [
-    "./src",
-    "./tsconfig.build.json",
-    "./tsconfig.test.json",
-    "./tsconfig.json",
     "./dist",
-    "./nodejs.js",
+    "./README.md",
     "./CHANGELOG.md"
   ],
   "sideEffects": false,
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -35,9 +29,11 @@
     },
     "./nodejs": {
       "types": "./dist/nodejs.d.ts",
-      "require": "./dist/nodejs.js",
       "default": "./dist/nodejs.js"
     }
+  },
+  "engines": {
+    "node": ">=22"
   },
   "dependencies": {
     "@atproto-labs/did-resolver": "workspace:^",
@@ -57,7 +53,7 @@
     "@atproto/lex-client": "workspace:^",
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "4.0.16",
-    "vitest": "^4.1.0"
+    "vitest": "^4.0.16"
   },
   "scripts": {
     "build": "tsgo --build tsconfig.build.json",

@@ -1,5 +1,7 @@
-import { LexValue, utf8FromBytes } from '@atproto/lex-data'
-import { JsonToLexOptions, jsonToLex } from './json-to-lex.js'
+import type { LexValue } from '@atproto/lex-data'
+import { utf8FromBytes } from '@atproto/lex-data'
+import { jsonToLex } from './json-to-lex.js'
+import type { JsonToLexOptions } from './json-to-lex.js'
 
 export type LexParseOptions = JsonToLexOptions
 

@@ -1,7 +1,8 @@
-import { BlobRef, Cid, LexMap, LexValue, isCid } from '@atproto/lex-data'
+import type { BlobRef, Cid, LexMap, LexValue } from '@atproto/lex-data'
+import { isCid } from '@atproto/lex-data'
 import { parseTypedBlobRef } from './blob.js'
 import { encodeLexBytes, parseLexBytes } from './bytes.js'
-import { JsonValue } from './json.js'
+import type { JsonValue } from './json.js'
 import { encodeLexLink, parseLexLink } from './link.js'
 
 export type SpecialJsonObjectOptions = {

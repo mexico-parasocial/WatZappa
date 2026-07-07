@@ -1,10 +1,24 @@
 # @atproto/oauth-provider-ui
 
+## 0.8.5
+
+### Patch Changes
+
+- [#5177](https://github.com/bluesky-social/atproto/pull/5177) [`54a8364`](https://github.com/bluesky-social/atproto/commit/54a836416064e9394d58d156a0618a5afc73934c) Thanks [@dolciss](https://github.com/dolciss)! - fix: add missing links
+
+- Updated dependencies []:
+  - @atproto/oauth-provider-api@0.7.4
+
 ## 0.8.4
 
 ### Patch Changes
 
-- 2cb0174: fix: add missing links
+- [#5099](https://github.com/bluesky-social/atproto/pull/5099) [`b43ec31`](https://github.com/bluesky-social/atproto/commit/b43ec31f247f4461725b01226885f88bd430ca07) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Update TypeScript build to rely on references to composite internal projects
+
+- [#5099](https://github.com/bluesky-social/atproto/pull/5099) [`b43ec31`](https://github.com/bluesky-social/atproto/commit/b43ec31f247f4461725b01226885f88bd430ca07) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Bundle only necessary files in the NPM tarball, including the `CHANGELOG.md` and `README.md` files (if present).
+
+- Updated dependencies [[`b43ec31`](https://github.com/bluesky-social/atproto/commit/b43ec31f247f4461725b01226885f88bd430ca07), [`b43ec31`](https://github.com/bluesky-social/atproto/commit/b43ec31f247f4461725b01226885f88bd430ca07), [`b43ec31`](https://github.com/bluesky-social/atproto/commit/b43ec31f247f4461725b01226885f88bd430ca07)]:
+  - @atproto/oauth-provider-api@0.7.3
 
 ## 0.8.3
 
