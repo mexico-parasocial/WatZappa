@@ -49,12 +49,7 @@ export interface Output {
   cid: string
   communityUri: string
   membershipState:
-    | 'pending'
-    | 'active'
-    | 'left'
-    | 'removed'
-    | 'blocked'
-    | (string & {})
+    'pending' | 'active' | 'left' | 'removed' | 'blocked' | (string & {})
   viewerCapabilities: string[]
 }
 

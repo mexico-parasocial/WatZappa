@@ -155,7 +155,7 @@ const skeleton = async (input: SkeletonFnInput<Context, Params>) => {
   const useV2 = input.params.hydrateCtx.features.checkGate(
     input.params.hydrateCtx.features.Gate.SearchV2Enable,
   )
-  const skeletonFn = useV2 ? skeletonV2 : skeletonV1
+  const skeletonFn = useV2 || input.params.isV2Override ? skeletonV2 : skeletonV1
   return skeletonFn(input)
 }
 const hydration = async (
@@ -194,6 +194,13 @@ const noBlocksOrTagged = (inputs: RulesFnInput<Context, Params, Skeleton>) => {
 
     // Cases to never show.
     if (ctx.views.viewerBlockExists(creator, hydration)) return false
+
+    // Tags that are hidden from all search surfaces (Top and Latest),
+    // regardless of curation or author filtering.
+    const alwaysHidden = [...ctx.cfg.searchTagsHideAll].some((t) =>
+      post.tags.has(t),
+    )
+    if (alwaysHidden) return false
 
     let tagged = false
     if (

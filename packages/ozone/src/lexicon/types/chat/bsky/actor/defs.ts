@@ -32,9 +32,7 @@ export interface ProfileViewBasic {
   chatDisabled?: boolean
   verification?: AppBskyActorDefs.VerificationState
   kind?:
-    | $Typed<DirectConvoMember>
-    | $Typed<GroupConvoMember>
-    | { $type: string }
+    $Typed<DirectConvoMember> | $Typed<GroupConvoMember> | { $type: string }
 }
 
 const hashProfileViewBasic = 'profileViewBasic'

@@ -17,6 +17,10 @@ export interface ParaPost {
   postType: string | null
   party: string | null
   community: string | null
+  verifiedPublicFigure: boolean | null
+  state: string | null
+  districtKey: string | null
+  cabildeoPhase: string | null
   createdAt: string
   indexedAt: string
   sortAt: GeneratedAlways<string>

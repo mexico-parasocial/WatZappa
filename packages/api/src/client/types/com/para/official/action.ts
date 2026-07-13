@@ -19,10 +19,7 @@ export interface Main {
   entity: string
   entityName?: string
   actionType:
-    | 'pajareo.response'
-    | 'post.write'
-    | 'cabildeo.signature'
-    | (string & {})
+    'pajareo.response' | 'post.write' | 'cabildeo.signature' | (string & {})
   subjectUri: string
   recordUri?: string
   controllerHash: string

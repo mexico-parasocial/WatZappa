@@ -45,10 +45,7 @@ export interface HandlerError {
   status: number
   message?: string
   error?:
-    | 'InvalidEmail'
-    | 'DidTooLong'
-    | 'InvalidInitiation'
-    | 'RegionNotSupported'
+    'InvalidEmail' | 'DidTooLong' | 'InvalidInitiation' | 'RegionNotSupported'
 }
 
 export type HandlerOutput = HandlerError | HandlerSuccess

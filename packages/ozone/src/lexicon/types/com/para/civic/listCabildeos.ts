@@ -20,12 +20,7 @@ export type QueryParams = {
   community?: string
   /** Optional phase filter. */
   phase?:
-    | 'draft'
-    | 'open'
-    | 'deliberating'
-    | 'voting'
-    | 'resolved'
-    | (string & {})
+    'draft' | 'open' | 'deliberating' | 'voting' | 'resolved' | (string & {})
   /** Optional search query */
   query?: string
   limit: number

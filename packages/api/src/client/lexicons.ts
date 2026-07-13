@@ -733,6 +733,11 @@ export const schemaDict = {
             type: 'ref',
             ref: 'lex:app.bsky.actor.defs#bskyAppProgressGuide',
           },
+          isBetaUser: {
+            description:
+              'Indicates if the user is participating in the beta features program.',
+            type: 'boolean',
+          },
           queuedNudges: {
             description:
               'An array of tokens which identify nudges (modals, popups, tours, highlight dots) that should be shown to the user.',
@@ -1436,6 +1441,15 @@ export const schemaDict = {
             type: 'integer',
             description:
               'The minimum age (as a whole integer) required to use Bluesky in this region.',
+          },
+          additionalVerificationMethods: {
+            type: 'array',
+            description:
+              'Verification methods permitted in this region in addition to the third-party (KWS) flow, which is always supported. `device` permits using the native on-device age APIs (e.g. Apple Declared Age Range, Google Play Age Signals).',
+            items: {
+              type: 'string',
+              knownValues: ['device'],
+            },
           },
           rules: {
             type: 'array',
@@ -5249,6 +5263,250 @@ export const schemaDict = {
       },
     },
   },
+  AppBskyFeedSearchPostsV2: {
+    lexicon: 1,
+    id: 'app.bsky.feed.searchPostsV2',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Find posts matching a search query or filters, returning search hits for matching post records.',
+        parameters: {
+          type: 'params',
+          required: [],
+          properties: {
+            cursor: {
+              type: 'string',
+              description: 'Optional pagination cursor.',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 25,
+              description: 'Maximum number of results to return.',
+            },
+            query: {
+              type: 'string',
+              description:
+                'Search query string. A query or at least one filter is required.',
+            },
+            sort: {
+              type: 'string',
+              knownValues: ['recent', 'top'],
+              description:
+                "Ranking order for results. 'recent' sorts by recency; 'top' uses search ranking.",
+            },
+            authors: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'at-identifier',
+              },
+              description:
+                'Include posts by any of these authors. Handles are resolved to DIDs before searching.',
+            },
+            mentions: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'at-identifier',
+              },
+              description:
+                'Include posts that mention any of these accounts. Handles are resolved to DIDs before searching.',
+            },
+            domains: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+              description: 'Include posts that link to any of these domains.',
+            },
+            urls: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'uri',
+              },
+              description: 'Include posts that link to any of these URLs.',
+            },
+            embeddedAtUris: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'at-uri',
+              },
+              description: 'Include posts that embed any of these AT URIs.',
+            },
+            hashtags: {
+              type: 'array',
+              items: {
+                type: 'string',
+                maxLength: 640,
+                maxGraphemes: 64,
+              },
+              description:
+                'Include posts tagged with any of these hashtags. Do not include the hash (#) prefix.',
+            },
+            excludeAuthors: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'at-identifier',
+              },
+              description:
+                'Exclude posts by any of these authors. Handles are resolved to DIDs before searching.',
+            },
+            excludeMentions: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'at-identifier',
+              },
+              description:
+                'Exclude posts that mention any of these accounts. Handles are resolved to DIDs before searching.',
+            },
+            excludeDomains: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+              description: 'Exclude posts that link to any of these domains.',
+            },
+            excludeUrls: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'uri',
+              },
+              description: 'Exclude posts that link to any of these URLs.',
+            },
+            excludeEmbeddedAtUris: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'at-uri',
+              },
+              description: 'Exclude posts that embed any of these AT URIs.',
+            },
+            excludeHashtags: {
+              type: 'array',
+              items: {
+                type: 'string',
+                maxLength: 640,
+                maxGraphemes: 64,
+              },
+              description:
+                'Exclude posts tagged with any of these hashtags. Do not include the hash (#) prefix.',
+            },
+            since: {
+              type: 'string',
+              format: 'datetime',
+              description: 'Include posts indexed at or after this timestamp.',
+            },
+            until: {
+              type: 'string',
+              format: 'datetime',
+              description:
+                'Include posts indexed before this timestamp. Defaults to the current time.',
+            },
+            allTime: {
+              type: 'boolean',
+              description:
+                'Search the full index instead of the recent-post window.',
+            },
+            language: {
+              type: 'string',
+              format: 'language',
+              description:
+                'Include posts whose language matches this language code.',
+            },
+            hasMedia: {
+              type: 'boolean',
+              description: 'Include only posts with media.',
+            },
+            hasVideo: {
+              type: 'boolean',
+              description: 'Include only posts with video.',
+            },
+            replyParentUri: {
+              type: 'string',
+              format: 'at-uri',
+              description:
+                'Include only direct replies to this parent post URI.',
+            },
+            threadRootUri: {
+              type: 'string',
+              format: 'at-uri',
+              description:
+                'Include only posts in the thread rooted at this post URI.',
+            },
+            excludeReplies: {
+              type: 'boolean',
+              description:
+                'Exclude replies from results. Mutually exclusive with repliesOnly.',
+            },
+            repliesOnly: {
+              type: 'boolean',
+              description:
+                'Include only replies. Mutually exclusive with excludeReplies.',
+            },
+            following: {
+              type: 'boolean',
+              description:
+                'Include only posts from accounts followed by the viewer.',
+            },
+            queryLanguage: {
+              type: 'string',
+              knownValues: ['ja', 'zh', 'ko', 'th', 'ar'],
+              description:
+                'Language analyzer hint for the query text. If unset, the server auto-detects when possible.',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['posts'],
+            properties: {
+              cursor: {
+                type: 'string',
+                description: 'Cursor for the next page of results.',
+              },
+              hitsTotal: {
+                type: 'integer',
+                description:
+                  'Estimated total number of matching hits. May be rounded or truncated.',
+              },
+              posts: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:app.bsky.feed.defs#postView',
+                },
+                description: 'Hydrated views of matching posts.',
+              },
+              detectedQueryLanguages: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  knownValues: ['ja', 'zh', 'ko', 'th', 'ar'],
+                },
+                description:
+                  'Query languages detected for CJK, Thai, or Arabic text. Empty or omitted for other scripts.',
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'BadQueryString',
+          },
+        ],
+      },
+    },
+  },
   AppBskyFeedSendInteractions: {
     lexicon: 1,
     id: 'app.bsky.feed.sendInteractions',
@@ -7265,6 +7523,8 @@ export const schemaDict = {
       },
       chatPreference: {
         type: 'object',
+        description:
+          'Deprecated: use chat.bsky.notification preferences instead. This will only return a default value.',
         required: ['include', 'push'],
         properties: {
           include: {
@@ -7325,6 +7585,8 @@ export const schemaDict = {
           chat: {
             type: 'ref',
             ref: 'lex:app.bsky.notification.defs#chatPreference',
+            description:
+              'Deprecated: use chat.bsky.notification preferences instead. This will only return a default value.',
           },
           follow: {
             type: 'ref',
@@ -7731,6 +7993,8 @@ export const schemaDict = {
               chat: {
                 type: 'ref',
                 ref: 'lex:app.bsky.notification.defs#chatPreference',
+                description:
+                  "Deprecated: use chat.bsky.notification preferences instead. Setting this won't stick and the default values will be returned.",
               },
               follow: {
                 type: 'ref',
@@ -12445,8 +12709,8 @@ export const schemaDict = {
               name: {
                 type: 'string',
                 minLength: 1,
-                maxGraphemes: 128,
-                maxLength: 1280,
+                maxGraphemes: 50,
+                maxLength: 500,
               },
             },
           },
@@ -14314,6 +14578,103 @@ export const schemaDict = {
               },
               ref: {
                 type: 'string',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ChatBskyNotificationDefs: {
+    lexicon: 1,
+    id: 'chat.bsky.notification.defs',
+    defs: {
+      preferences: {
+        type: 'object',
+        required: ['chat', 'chatRequest'],
+        properties: {
+          chat: {
+            type: 'ref',
+            ref: 'lex:chat.bsky.notification.defs#chatPreference',
+          },
+          chatRequest: {
+            type: 'ref',
+            ref: 'lex:chat.bsky.notification.defs#chatPreference',
+          },
+        },
+      },
+      chatPreference: {
+        type: 'object',
+        required: ['include', 'push'],
+        properties: {
+          include: {
+            type: 'string',
+            knownValues: ['all', 'follows'],
+          },
+          push: {
+            type: 'boolean',
+          },
+        },
+      },
+    },
+  },
+  ChatBskyNotificationGetPreferences: {
+    lexicon: 1,
+    id: 'chat.bsky.notification.getPreferences',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          "Get the requesting account's chat notification preferences. Defaults are returned for accounts that have not set any preferences. Requires auth.",
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['preferences'],
+            properties: {
+              preferences: {
+                type: 'ref',
+                ref: 'lex:chat.bsky.notification.defs#preferences',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ChatBskyNotificationPutPreferences: {
+    lexicon: 1,
+    id: 'chat.bsky.notification.putPreferences',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          "Set the requesting account's chat notification preferences. Only the provided preferences are updated; omitted preferences are left unchanged.",
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              chat: {
+                type: 'ref',
+                ref: 'lex:chat.bsky.notification.defs#chatPreference',
+              },
+              chatRequest: {
+                type: 'ref',
+                ref: 'lex:chat.bsky.notification.defs#chatPreference',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['preferences'],
+            properties: {
+              preferences: {
+                type: 'ref',
+                ref: 'lex:chat.bsky.notification.defs#preferences',
               },
             },
           },
@@ -27212,6 +27573,36 @@ export const schemaDict = {
                 type: 'string',
               },
             },
+            postType: {
+              type: 'string',
+              maxLength: 64,
+            },
+            flairs: {
+              type: 'array',
+              items: {
+                type: 'string',
+                maxLength: 128,
+              },
+            },
+            party: {
+              type: 'string',
+              maxLength: 128,
+            },
+            verifiedPublicFigure: {
+              type: 'boolean',
+            },
+            state: {
+              type: 'string',
+              maxLength: 128,
+            },
+            districtKey: {
+              type: 'string',
+              maxLength: 128,
+            },
+            cabildeoPhase: {
+              type: 'string',
+              maxLength: 64,
+            },
           },
         },
         output: {
@@ -36241,6 +36632,7 @@ export const ids = {
   AppBskyFeedPostgate: 'app.bsky.feed.postgate',
   AppBskyFeedRepost: 'app.bsky.feed.repost',
   AppBskyFeedSearchPosts: 'app.bsky.feed.searchPosts',
+  AppBskyFeedSearchPostsV2: 'app.bsky.feed.searchPostsV2',
   AppBskyFeedSendInteractions: 'app.bsky.feed.sendInteractions',
   AppBskyFeedThreadgate: 'app.bsky.feed.threadgate',
   AppBskyGraphBlock: 'app.bsky.graph.block',
@@ -36405,6 +36797,9 @@ export const ids = {
   ChatBskyModerationSubscribeModEvents:
     'chat.bsky.moderation.subscribeModEvents',
   ChatBskyModerationUpdateActorAccess: 'chat.bsky.moderation.updateActorAccess',
+  ChatBskyNotificationDefs: 'chat.bsky.notification.defs',
+  ChatBskyNotificationGetPreferences: 'chat.bsky.notification.getPreferences',
+  ChatBskyNotificationPutPreferences: 'chat.bsky.notification.putPreferences',
   ComAtprotoAdminDefs: 'com.atproto.admin.defs',
   ComAtprotoAdminDeleteAccount: 'com.atproto.admin.deleteAccount',
   ComAtprotoAdminDisableAccountInvites:

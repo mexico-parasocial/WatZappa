@@ -168,12 +168,7 @@ export interface CabildeoLive {
   cabildeoUri: string
   community: string
   phase:
-    | 'draft'
-    | 'open'
-    | 'deliberating'
-    | 'voting'
-    | 'resolved'
-    | (string & {})
+    'draft' | 'open' | 'deliberating' | 'voting' | 'resolved' | (string & {})
   expiresAt: string
 }
 
@@ -205,12 +200,7 @@ export interface CabildeoView {
   minQuorum?: number
   voteVisibility?: 'public' | 'party_only' | 'anonymous' | (string & {})
   phase:
-    | 'draft'
-    | 'open'
-    | 'deliberating'
-    | 'voting'
-    | 'resolved'
-    | (string & {})
+    'draft' | 'open' | 'deliberating' | 'voting' | 'resolved' | (string & {})
   phaseDeadline?: string
   createdAt: string
   optionSummary: OptionSummary[]

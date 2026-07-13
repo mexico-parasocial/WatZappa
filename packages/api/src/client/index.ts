@@ -72,6 +72,7 @@ import * as AppBskyFeedPost from './types/app/bsky/feed/post.js'
 import * as AppBskyFeedPostgate from './types/app/bsky/feed/postgate.js'
 import * as AppBskyFeedRepost from './types/app/bsky/feed/repost.js'
 import * as AppBskyFeedSearchPosts from './types/app/bsky/feed/searchPosts.js'
+import * as AppBskyFeedSearchPostsV2 from './types/app/bsky/feed/searchPostsV2.js'
 import * as AppBskyFeedSendInteractions from './types/app/bsky/feed/sendInteractions.js'
 import * as AppBskyFeedThreadgate from './types/app/bsky/feed/threadgate.js'
 import * as AppBskyGraphBlock from './types/app/bsky/graph/block.js'
@@ -209,6 +210,9 @@ import * as ChatBskyModerationGetConvos from './types/chat/bsky/moderation/getCo
 import * as ChatBskyModerationGetMessageContext from './types/chat/bsky/moderation/getMessageContext.js'
 import * as ChatBskyModerationSubscribeModEvents from './types/chat/bsky/moderation/subscribeModEvents.js'
 import * as ChatBskyModerationUpdateActorAccess from './types/chat/bsky/moderation/updateActorAccess.js'
+import * as ChatBskyNotificationDefs from './types/chat/bsky/notification/defs.js'
+import * as ChatBskyNotificationGetPreferences from './types/chat/bsky/notification/getPreferences.js'
+import * as ChatBskyNotificationPutPreferences from './types/chat/bsky/notification/putPreferences.js'
 import * as ComAtprotoAdminDefs from './types/com/atproto/admin/defs.js'
 import * as ComAtprotoAdminDeleteAccount from './types/com/atproto/admin/deleteAccount.js'
 import * as ComAtprotoAdminDisableAccountInvites from './types/com/atproto/admin/disableAccountInvites.js'
@@ -557,6 +561,7 @@ export * as AppBskyFeedPost from './types/app/bsky/feed/post.js'
 export * as AppBskyFeedPostgate from './types/app/bsky/feed/postgate.js'
 export * as AppBskyFeedRepost from './types/app/bsky/feed/repost.js'
 export * as AppBskyFeedSearchPosts from './types/app/bsky/feed/searchPosts.js'
+export * as AppBskyFeedSearchPostsV2 from './types/app/bsky/feed/searchPostsV2.js'
 export * as AppBskyFeedSendInteractions from './types/app/bsky/feed/sendInteractions.js'
 export * as AppBskyFeedThreadgate from './types/app/bsky/feed/threadgate.js'
 export * as AppBskyGraphBlock from './types/app/bsky/graph/block.js'
@@ -694,6 +699,9 @@ export * as ChatBskyModerationGetConvos from './types/chat/bsky/moderation/getCo
 export * as ChatBskyModerationGetMessageContext from './types/chat/bsky/moderation/getMessageContext.js'
 export * as ChatBskyModerationSubscribeModEvents from './types/chat/bsky/moderation/subscribeModEvents.js'
 export * as ChatBskyModerationUpdateActorAccess from './types/chat/bsky/moderation/updateActorAccess.js'
+export * as ChatBskyNotificationDefs from './types/chat/bsky/notification/defs.js'
+export * as ChatBskyNotificationGetPreferences from './types/chat/bsky/notification/getPreferences.js'
+export * as ChatBskyNotificationPutPreferences from './types/chat/bsky/notification/putPreferences.js'
 export * as ComAtprotoAdminDefs from './types/com/atproto/admin/defs.js'
 export * as ComAtprotoAdminDeleteAccount from './types/com/atproto/admin/deleteAccount.js'
 export * as ComAtprotoAdminDisableAccountInvites from './types/com/atproto/admin/disableAccountInvites.js'
@@ -1860,6 +1868,17 @@ export class AppBskyFeedNS {
       .call('app.bsky.feed.searchPosts', params, undefined, opts)
       .catch((e) => {
         throw AppBskyFeedSearchPosts.toKnownErr(e)
+      })
+  }
+
+  searchPostsV2(
+    params?: AppBskyFeedSearchPostsV2.QueryParams,
+    opts?: AppBskyFeedSearchPostsV2.CallOptions,
+  ): Promise<AppBskyFeedSearchPostsV2.Response> {
+    return this._client
+      .call('app.bsky.feed.searchPostsV2', params, undefined, opts)
+      .catch((e) => {
+        throw AppBskyFeedSearchPostsV2.toKnownErr(e)
       })
   }
 
@@ -3947,6 +3966,7 @@ export class ChatBskyNS {
   embed: ChatBskyEmbedNS
   group: ChatBskyGroupNS
   moderation: ChatBskyModerationNS
+  notification: ChatBskyNotificationNS
 
   constructor(client: XrpcClient) {
     this._client = client
@@ -3955,6 +3975,7 @@ export class ChatBskyNS {
     this.embed = new ChatBskyEmbedNS(client)
     this.group = new ChatBskyGroupNS(client)
     this.moderation = new ChatBskyModerationNS(client)
+    this.notification = new ChatBskyNotificationNS(client)
   }
 }
 
@@ -4595,6 +4616,38 @@ export class ChatBskyModerationNS {
   ): Promise<ChatBskyModerationUpdateActorAccess.Response> {
     return this._client.call(
       'chat.bsky.moderation.updateActorAccess',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
+}
+
+export class ChatBskyNotificationNS {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  getPreferences(
+    params?: ChatBskyNotificationGetPreferences.QueryParams,
+    opts?: ChatBskyNotificationGetPreferences.CallOptions,
+  ): Promise<ChatBskyNotificationGetPreferences.Response> {
+    return this._client.call(
+      'chat.bsky.notification.getPreferences',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  putPreferences(
+    data?: ChatBskyNotificationPutPreferences.InputSchema,
+    opts?: ChatBskyNotificationPutPreferences.CallOptions,
+  ): Promise<ChatBskyNotificationPutPreferences.Response> {
+    return this._client.call(
+      'chat.bsky.notification.putPreferences',
       opts?.qp,
       data,
       opts,

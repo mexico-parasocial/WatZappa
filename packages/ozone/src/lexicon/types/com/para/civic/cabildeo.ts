@@ -49,12 +49,7 @@ export interface Main {
   /** Controls how voter identity is exposed. Existing records default to public. */
   voteVisibility?: 'public' | 'party_only' | 'anonymous' | (string & {})
   phase:
-    | 'draft'
-    | 'open'
-    | 'deliberating'
-    | 'voting'
-    | 'resolved'
-    | (string & {})
+    'draft' | 'open' | 'deliberating' | 'voting' | 'resolved' | (string & {})
   phaseDeadline?: string
   createdAt?: string
   [k: string]: unknown

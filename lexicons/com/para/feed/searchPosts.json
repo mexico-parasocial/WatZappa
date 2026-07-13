@@ -23,7 +23,14 @@
           "cursor": { "type": "string" },
           "communityUris": { "type": "array", "items": { "type": "string", "format": "at-uri" } },
           "cabildeoUris": { "type": "array", "items": { "type": "string", "format": "at-uri" } },
-          "politicalCompassPositions": { "type": "array", "items": { "type": "string" } }
+          "politicalCompassPositions": { "type": "array", "items": { "type": "string" } },
+          "postType": { "type": "string", "maxLength": 64 },
+          "flairs": { "type": "array", "items": { "type": "string", "maxLength": 128 } },
+          "party": { "type": "string", "maxLength": 128 },
+          "verifiedPublicFigure": { "type": "boolean" },
+          "state": { "type": "string", "maxLength": 128 },
+          "districtKey": { "type": "string", "maxLength": 128 },
+          "cabildeoPhase": { "type": "string", "maxLength": 64 }
         }
       },
       "output": {

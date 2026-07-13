@@ -27143,6 +27143,36 @@ export const schemaDict = {
                 type: 'string',
               },
             },
+            postType: {
+              type: 'string',
+              maxLength: 64,
+            },
+            flairs: {
+              type: 'array',
+              items: {
+                type: 'string',
+                maxLength: 128,
+              },
+            },
+            party: {
+              type: 'string',
+              maxLength: 128,
+            },
+            verifiedPublicFigure: {
+              type: 'boolean',
+            },
+            state: {
+              type: 'string',
+              maxLength: 128,
+            },
+            districtKey: {
+              type: 'string',
+              maxLength: 128,
+            },
+            cabildeoPhase: {
+              type: 'string',
+              maxLength: 64,
+            },
           },
         },
         output: {

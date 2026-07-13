@@ -53,11 +53,7 @@ export function asAtprotoProxy<T extends string>(input: T) {
  * Used by the PersistSessionHandler to indicate what change occurred
  */
 export type AtpSessionEvent =
-  | 'create'
-  | 'create-failed'
-  | 'update'
-  | 'expired'
-  | 'network-error'
+  'create' | 'create-failed' | 'update' | 'expired' | 'network-error'
 
 /**
  * Used by AtpAgent to store active sessions
@@ -155,6 +151,7 @@ export interface BskyPreferences {
     queuedNudges: string[]
     activeProgressGuide: AppBskyActorDefs.BskyAppProgressGuide | undefined
     nuxs: AppBskyActorDefs.Nux[]
+    isBetaUser?: boolean
   }
   postInteractionSettings: AppBskyActorDefs.PostInteractionSettingsPref
   verificationPrefs: AppBskyActorDefs.VerificationPrefs

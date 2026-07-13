@@ -40,10 +40,7 @@ export interface HandlerError {
   status: number
   message?: string
   error?:
-    | 'InvalidConvo'
-    | 'InsufficientRole'
-    | 'NoJoinLink'
-    | 'LinkAlreadyEnabled'
+    'InvalidConvo' | 'InsufficientRole' | 'NoJoinLink' | 'LinkAlreadyEnabled'
 }
 
 export type HandlerOutput = HandlerError | HandlerSuccess

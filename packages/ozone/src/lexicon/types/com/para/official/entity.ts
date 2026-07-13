@@ -17,12 +17,7 @@ const id = 'com.para.official.entity'
 export interface Main {
   $type: 'com.para.official.entity'
   kind:
-    | 'representative'
-    | 'office'
-    | 'community'
-    | 'party'
-    | 'ngo'
-    | (string & {})
+    'representative' | 'office' | 'community' | 'party' | 'ngo' | (string & {})
   status: 'unclaimed' | 'verified' | 'retired' | (string & {})
   name: string
   handle?: string

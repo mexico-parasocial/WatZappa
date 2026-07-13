@@ -63,6 +63,7 @@ export interface ServerConfigValues {
   rolodexIgnoreBadTls?: boolean
   searchUrl?: string
   searchTagsHide: Set<string>
+  searchTagsHideAll: Set<string>
   suggestionsUrl?: string
   suggestionsApiKey?: string
   topicsUrl?: string
@@ -172,6 +173,9 @@ export class ServerConfig {
       process.env.BSKY_SEARCH_ENDPOINT ||
       undefined
     const searchTagsHide = new Set(envList(process.env.BSKY_SEARCH_TAGS_HIDE))
+    const searchTagsHideAll = new Set(
+      envList(process.env.BSKY_SEARCH_TAGS_HIDE_ALL),
+    )
     const suggestionsUrl = process.env.BSKY_SUGGESTIONS_URL || undefined
     const suggestionsApiKey = process.env.BSKY_SUGGESTIONS_API_KEY || undefined
     const topicsUrl = process.env.BSKY_TOPICS_URL || undefined
@@ -375,6 +379,7 @@ export class ServerConfig {
       dataplaneIgnoreBadTls,
       searchUrl,
       searchTagsHide,
+      searchTagsHideAll,
       suggestionsUrl,
       suggestionsApiKey,
       topicsUrl,
@@ -546,6 +551,10 @@ export class ServerConfig {
 
   get searchTagsHide() {
     return this.cfg.searchTagsHide
+  }
+
+  get searchTagsHideAll() {
+    return this.cfg.searchTagsHideAll
   }
 
   get suggestionsUrl() {

@@ -48,7 +48,7 @@
     "prettier": "^3.2.5"
   },
   "scripts": {
-    "codegen:lex": "lex gen-api --yes ./src/client ../../lexicons/com/atproto/*/* ../../lexicons/app/bsky/*/* ../../lexicons/chat/bsky/*/* ../../lexicons/tools/ozone/*/* ../../lexicons/com/germnetwork/*",
+    "codegen:lex": "lex gen-api --yes ./src/client ../../lexicons/com/atproto/*/* ../../lexicons/app/bsky/*/* ../../lexicons/chat/bsky/*/* ../../lexicons/tools/ozone/*/* ../../lexicons/com/germnetwork/* ../../lexicons/com/para/*.json ../../lexicons/com/para/*/*",
     "codegen:code": "node ./scripts/generate-code.mjs",
     "prebuild": "pnpm run codegen:code && if [ ! -f ./src/client/index.ts ] || [ -n \"$(find ../../lexicons -name '*.json' -newer ./src/client/index.ts -type f -print -quit)\" ]; then pnpm run codegen:lex; fi",
     "build": "tsgo --build tsconfig.build.json",

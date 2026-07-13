@@ -182,6 +182,13 @@ export class Sequencer extends (EventEmitter as new () => SequencerEmitter) {
     await this.sequenceEvts([await formatSeqSyncEvt(did, data)])
   }
 
+  public async sequenceSyncEvt(
+    did: DidString,
+    data: SyncEvtData,
+  ): Promise<void> {
+    return this.sequenceSync(did, data)
+  }
+
   public async sequenceIdentity(
     did: DidString,
     handle?: HandleString,
@@ -189,11 +196,25 @@ export class Sequencer extends (EventEmitter as new () => SequencerEmitter) {
     await this.sequenceEvts([await formatSeqIdentityEvt(did, handle)])
   }
 
+  public async sequenceIdentityEvt(
+    did: DidString,
+    handle?: HandleString,
+  ): Promise<void> {
+    return this.sequenceIdentity(did, handle)
+  }
+
   public async sequenceAccount(
     did: DidString,
     status: AccountStatus,
   ): Promise<void> {
     await this.sequenceEvts([await formatSeqAccountEvt(did, status)])
+  }
+
+  public async sequenceAccountEvt(
+    did: DidString,
+    status: AccountStatus,
+  ): Promise<void> {
+    return this.sequenceAccount(did, status)
   }
 
   public async sequenceAccountCreation(

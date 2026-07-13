@@ -22,8 +22,8 @@ import { schemas } from './client/lexicons.js'
 import { MutedWord, Nux } from './client/types/app/bsky/actor/defs.js'
 import { $Typed, Un$Typed } from './client/util.js'
 import { BSKY_LABELER_DID } from './const.js'
-import { interpretLabelValueDefinitions } from './moderation/index.js'
 import { DEFAULT_LABEL_SETTINGS } from './moderation/const/labels.js'
+import { interpretLabelValueDefinitions } from './moderation/index.js'
 import {
   InterpretedLabelValueDefinition,
   LabelPreference,
@@ -656,6 +656,9 @@ export class Agent extends XrpcClient {
         prefs.bskyAppState.queuedNudges = pref.queuedNudges || []
         prefs.bskyAppState.activeProgressGuide = pref.activeProgressGuide
         prefs.bskyAppState.nuxs = pref.nuxs || []
+        if (pref.isBetaUser !== undefined) {
+          prefs.bskyAppState.isBetaUser = pref.isBetaUser
+        }
       } else if (predicate.isValidPostInteractionSettingsPref(pref)) {
         prefs.postInteractionSettings.threadgateAllowRules =
           pref.threadgateAllowRules
@@ -1268,6 +1271,23 @@ export class Agent extends XrpcClient {
       }
 
       pref.activeProgressGuide = guide
+
+      return prefs
+        .filter((p) => !AppBskyActorDefs.isBskyAppStatePref(p))
+        .concat(pref)
+    })
+  }
+
+  /**
+   * Set the flag for participating in the beta features program
+   */
+  async setIsBetaUser(isBetaUser: boolean) {
+    await this.updatePreferences((prefs) => {
+      const pref = prefs.findLast(predicate.isValidBskyAppStatePref) || {
+        $type: 'app.bsky.actor.defs#bskyAppStatePref',
+      }
+
+      pref.isBetaUser = isBetaUser
 
       return prefs
         .filter((p) => !AppBskyActorDefs.isBskyAppStatePref(p))

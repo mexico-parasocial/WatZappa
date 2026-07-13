@@ -28,6 +28,7 @@ export function validateRecordDeleted<V>(v: V) {
   return validate<RecordDeleted & V>(v, id, hashRecordDeleted)
 }
 
+/** Deprecated: use chat.bsky.notification preferences instead. This will only return a default value. */
 export interface ChatPreference {
   $type?: 'app.bsky.notification.defs#chatPreference'
   include: 'all' | 'accepted' | (string & {})

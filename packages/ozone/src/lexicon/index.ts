@@ -53,6 +53,7 @@ import * as AppBskyFeedGetRepostedBy from './types/app/bsky/feed/getRepostedBy.j
 import * as AppBskyFeedGetSuggestedFeeds from './types/app/bsky/feed/getSuggestedFeeds.js'
 import * as AppBskyFeedGetTimeline from './types/app/bsky/feed/getTimeline.js'
 import * as AppBskyFeedSearchPosts from './types/app/bsky/feed/searchPosts.js'
+import * as AppBskyFeedSearchPostsV2 from './types/app/bsky/feed/searchPostsV2.js'
 import * as AppBskyFeedSendInteractions from './types/app/bsky/feed/sendInteractions.js'
 import * as AppBskyGraphGetActorStarterPacks from './types/app/bsky/graph/getActorStarterPacks.js'
 import * as AppBskyGraphGetBlocks from './types/app/bsky/graph/getBlocks.js'
@@ -168,6 +169,8 @@ import * as ChatBskyModerationGetConvos from './types/chat/bsky/moderation/getCo
 import * as ChatBskyModerationGetMessageContext from './types/chat/bsky/moderation/getMessageContext.js'
 import * as ChatBskyModerationSubscribeModEvents from './types/chat/bsky/moderation/subscribeModEvents.js'
 import * as ChatBskyModerationUpdateActorAccess from './types/chat/bsky/moderation/updateActorAccess.js'
+import * as ChatBskyNotificationGetPreferences from './types/chat/bsky/notification/getPreferences.js'
+import * as ChatBskyNotificationPutPreferences from './types/chat/bsky/notification/putPreferences.js'
 import * as ComAtprotoAdminDeleteAccount from './types/com/atproto/admin/deleteAccount.js'
 import * as ComAtprotoAdminDisableAccountInvites from './types/com/atproto/admin/disableAccountInvites.js'
 import * as ComAtprotoAdminDisableInviteCodes from './types/com/atproto/admin/disableInviteCodes.js'
@@ -1131,6 +1134,18 @@ export class AppBskyFeedNS {
     return this._server.xrpc.method(nsid, cfg)
   }
 
+  searchPostsV2<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      AppBskyFeedSearchPostsV2.QueryParams,
+      AppBskyFeedSearchPostsV2.HandlerInput,
+      AppBskyFeedSearchPostsV2.HandlerOutput
+    >,
+  ) {
+    const nsid = 'app.bsky.feed.searchPostsV2' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
   sendInteractions<A extends Auth = void>(
     cfg: MethodConfigOrHandler<
       A,
@@ -2013,6 +2028,7 @@ export class ChatBskyNS {
   embed: ChatBskyEmbedNS
   group: ChatBskyGroupNS
   moderation: ChatBskyModerationNS
+  notification: ChatBskyNotificationNS
 
   constructor(server: Server) {
     this._server = server
@@ -2021,6 +2037,7 @@ export class ChatBskyNS {
     this.embed = new ChatBskyEmbedNS(server)
     this.group = new ChatBskyGroupNS(server)
     this.moderation = new ChatBskyModerationNS(server)
+    this.notification = new ChatBskyNotificationNS(server)
   }
 }
 
@@ -2623,6 +2640,38 @@ export class ChatBskyModerationNS {
     >,
   ) {
     const nsid = 'chat.bsky.moderation.updateActorAccess' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+}
+
+export class ChatBskyNotificationNS {
+  _server: Server
+
+  constructor(server: Server) {
+    this._server = server
+  }
+
+  getPreferences<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ChatBskyNotificationGetPreferences.QueryParams,
+      ChatBskyNotificationGetPreferences.HandlerInput,
+      ChatBskyNotificationGetPreferences.HandlerOutput
+    >,
+  ) {
+    const nsid = 'chat.bsky.notification.getPreferences' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  putPreferences<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ChatBskyNotificationPutPreferences.QueryParams,
+      ChatBskyNotificationPutPreferences.HandlerInput,
+      ChatBskyNotificationPutPreferences.HandlerOutput
+    >,
+  ) {
+    const nsid = 'chat.bsky.notification.putPreferences' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
 }

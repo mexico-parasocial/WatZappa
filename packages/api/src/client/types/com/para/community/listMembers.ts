@@ -18,12 +18,7 @@ const id = 'com.para.community.listMembers'
 export type QueryParams = {
   communityId: string
   membershipState?:
-    | 'pending'
-    | 'active'
-    | 'left'
-    | 'removed'
-    | 'blocked'
-    | (string & {})
+    'pending' | 'active' | 'left' | 'removed' | 'blocked' | (string & {})
   role?: string
   sort?: 'joined' | 'participation' | (string & {})
   limit?: number
@@ -54,12 +49,7 @@ export interface MemberView {
   displayName?: string
   avatar?: string
   membershipState:
-    | 'pending'
-    | 'active'
-    | 'left'
-    | 'removed'
-    | 'blocked'
-    | (string & {})
+    'pending' | 'active' | 'left' | 'removed' | 'blocked' | (string & {})
   roles: string[]
   joinedAt: string
   votesCast: number

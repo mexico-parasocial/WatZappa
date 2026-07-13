@@ -69,7 +69,7 @@
     "jest": "^30.0.0"
   },
   "scripts": {
-    "codegen:lex": "lex gen-server --yes ./src/lexicon ../../lexicons/com/atproto/*/* ../../lexicons/app/bsky/*/* ../../lexicons/chat/bsky/*/* ../../lexicons/tools/ozone/*/*",
+    "codegen:lex": "lex gen-server --yes ./src/lexicon ../../lexicons/com/atproto/*/* ../../lexicons/app/bsky/*/* ../../lexicons/chat/bsky/*/* ../../lexicons/tools/ozone/*/* ../../lexicons/com/para/*.json ../../lexicons/com/para/*/*",
     "prebuild": "[ -f ./src/lexicon/index.ts ] && [ -z \"$(find ../../lexicons -newer ./src/lexicon/index.ts -type f -print -quit)\" ] || pnpm run codegen:lex",
     "build": "tsgo --build tsconfig.build.json",
     "start": "node --enable-source-maps dist/bin.js",

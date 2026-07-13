@@ -94,8 +94,8 @@ msgstr ""
 msgid "Access specific parts of your Bluesky account and read your private preferences"
 msgstr ""
 
-#: src/pages/account/(authenticated)/route.tsx:56
 #: src/components/utils/scope-description.tsx:266
+#: src/pages/account/(authenticated)/route.tsx:56
 msgid "Account"
 msgstr "계정"
 
@@ -144,9 +144,9 @@ msgstr ""
 msgid "alice.com"
 msgstr ""
 
-#: src/components/verify-email-dialog.tsx:74
-#: src/components/update-password-dialog.tsx:77
 #: src/components/reset-password-view.tsx:61
+#: src/components/update-password-dialog.tsx:77
+#: src/components/verify-email-dialog.tsx:74
 msgid "Already have a code?"
 msgstr "이미 코드가 있나요?"
 
@@ -154,8 +154,8 @@ msgstr "이미 코드가 있나요?"
 msgid "An application on your device"
 msgstr "기기에 설치된 애플리케이션"
 
-#: src/contexts/notifications.tsx:123
 #: src/components/error-view.tsx:25
+#: src/contexts/notifications.tsx:123
 msgid "An error occurred"
 msgstr "오류가 발생했습니다"
 
@@ -206,8 +206,8 @@ msgctxt "OAuthScope"
 msgid "Authenticate"
 msgstr "인증"
 
-#: src/components/consent-view.tsx:39
 #: src/components/consent-form.tsx:84
+#: src/components/consent-view.tsx:39
 msgctxt "OAuthConsent"
 msgid "Authorize"
 msgstr "승인"
@@ -218,9 +218,9 @@ msgctxt "OAuthApp"
 msgid "Authorized on {0}"
 msgstr "{0}에 승인됨"
 
-#: src/components/sign-in-picker.tsx:90
-#: src/components/forms/wizard-card.tsx:116
 #: src/components/forms/form-card.tsx:57
+#: src/components/forms/wizard-card.tsx:116
+#: src/components/sign-in-picker.tsx:90
 msgid "Back"
 msgstr "뒤로"
 
@@ -259,12 +259,12 @@ msgctxt "RPC lxm"
 msgid "Call"
 msgstr "호출"
 
-#: src/contexts/authentication.tsx:190
-#: src/components/reactivate-account-view.tsx:44
+#: src/components/authenticate-welcome-view.tsx:57
 #: src/components/delete-account-dialog.tsx:120
 #: src/components/delete-account-dialog.tsx:203
-#: src/components/authenticate-welcome-view.tsx:57
 #: src/components/forms/form-card.tsx:54
+#: src/components/reactivate-account-view.tsx:44
+#: src/contexts/authentication.tsx:190
 msgid "Cancel"
 msgstr "취소"
 
@@ -305,8 +305,8 @@ msgstr ""
 msgid "Check your inbox for the verification code."
 msgstr ""
 
-#: src/data/password.ts:22
 #: src/data/email.ts:23
+#: src/data/password.ts:22
 msgid "Check your inbox."
 msgstr "받은 편지함을 확인하세요."
 
@@ -353,8 +353,8 @@ msgstr "확인"
 msgid "Confirm your password to continue"
 msgstr "계속하려면 비밀번호를 다시 한번 입력하세요"
 
-#: src/components/sign-in-form.tsx:248
 #: src/components/delete-account-confirm-form.tsx:51
+#: src/components/sign-in-form.tsx:248
 msgid "Confirmation code"
 msgstr "인증 코드"
 
@@ -399,8 +399,8 @@ msgstr ""
 msgid "Data"
 msgstr "데이터"
 
-#: src/pages/account/(authenticated)/manage/page.tsx:199
 #: src/components/deactivate-account-dialog.tsx:22
+#: src/pages/account/(authenticated)/manage/page.tsx:199
 msgid "Deactivate account"
 msgstr ""
 
@@ -412,8 +412,8 @@ msgstr ""
 msgid "Delete"
 msgstr "삭제"
 
-#: src/pages/account/(authenticated)/manage/page.tsx:226
 #: src/components/delete-account-dialog.tsx:76
+#: src/pages/account/(authenticated)/manage/page.tsx:226
 msgid "Delete account"
 msgstr ""
 
@@ -460,10 +460,10 @@ msgstr ""
 msgid "Email"
 msgstr "이메일"
 
-#: src/pages/account/(authenticated)/manage/page.tsx:135
+#: src/components/forms/input-email-address.tsx:34
 #: src/components/reset-password-request-form.tsx:28
 #: src/components/reset-password-request-form.tsx:32
-#: src/components/forms/input-email-address.tsx:34
+#: src/pages/account/(authenticated)/manage/page.tsx:135
 msgid "Email address"
 msgstr "이메일 주소"
 
@@ -548,8 +548,8 @@ msgstr ""
 msgid "Failed to delete account"
 msgstr ""
 
-#: src/pages/account/(authenticated)/devices/page.tsx:36
 #: src/pages/account/(authenticated)/apps/page.tsx:34
+#: src/pages/account/(authenticated)/devices/page.tsx:36
 msgid "Failed to load connected apps"
 msgstr "연결된 앱을 불러오지 못했습니다"
 
@@ -644,8 +644,8 @@ msgstr ""
 msgid "Hide"
 msgstr "숨기기"
 
-#: src/pages/account/(authenticated)/route.tsx:50
 #: src/components/utils/link-title.tsx:16
+#: src/pages/account/(authenticated)/route.tsx:50
 msgid "Home"
 msgstr "홈"
 
@@ -812,8 +812,8 @@ msgctxt "Error"
 msgid "Name"
 msgstr ""
 
-#: src/components/update-email-form.tsx:54
 #: src/components/update-email-dialog.tsx:181
+#: src/components/update-email-form.tsx:54
 msgid "New email address"
 msgstr ""
 
@@ -821,9 +821,9 @@ msgstr ""
 msgid "New password"
 msgstr "새 비밀번호"
 
+#: src/components/forms/wizard-card.tsx:119
 #: src/components/reset-password-view.tsx:50
 #: src/components/reset-password-view.tsx:85
-#: src/components/forms/wizard-card.tsx:119
 msgid "Next"
 msgstr "다음"
 
@@ -835,11 +835,11 @@ msgstr "확인"
 msgid "Only letters, numbers, and hyphens"
 msgstr "영문자, 숫자, 하이픈만 사용할 수 있습니다"
 
-#: src/pages/account/(authenticated)/manage/page.tsx:167
-#: src/components/sign-up-credentials-form.tsx:68
-#: src/components/sign-in-form.tsx:190
 #: src/components/delete-account-confirm-form.tsx:66
 #: src/components/forms/input-password.tsx:46
+#: src/components/sign-in-form.tsx:190
+#: src/components/sign-up-credentials-form.tsx:68
+#: src/pages/account/(authenticated)/manage/page.tsx:167
 msgid "Password"
 msgstr "비밀번호"
 
@@ -888,8 +888,8 @@ msgstr "귀하를 대신하여 <0>모든 서비스</0>에 대해 인증된 작�
 msgid "Please authenticate to continue"
 msgstr "계속하려면 인증하세요"
 
-#: src/data/password.ts:28
 #: src/data/email.ts:29
+#: src/data/password.ts:28
 msgid "Please check the email address and try again."
 msgstr "이메일 주소를 확인하고 다시 시도해 주세요."
 
@@ -901,8 +901,8 @@ msgstr ""
 msgid "Please check your code and password, then try again."
 msgstr ""
 
-#: src/data/password.ts:51
 #: src/data/email.ts:52
+#: src/data/password.ts:51
 msgid "Please check your reset code and try again."
 msgstr "재설정 코드를 확인하고 다시 시도해 주세요."
 
@@ -914,10 +914,10 @@ msgstr ""
 msgid "Please enter the security code that was sent to your email address."
 msgstr ""
 
-#: src/data/email.ts:75
 #: src/data/account.ts:30
 #: src/data/account.ts:53
 #: src/data/account.ts:76
+#: src/data/email.ts:75
 msgid "Please try again in a moment."
 msgstr ""
 
@@ -939,8 +939,8 @@ msgstr "변경 사항 게시"
 msgid "Reactivate"
 msgstr ""
 
-#: src/pages/account/(authenticated)/manage/page.tsx:186
 #: src/components/reactivate-account-dialog.tsx:22
+#: src/pages/account/(authenticated)/manage/page.tsx:186
 msgid "Reactivate account"
 msgstr ""
 
@@ -982,9 +982,9 @@ msgstr "비밀번호 재설정"
 msgid "Reset your password"
 msgstr "비밀번호 재설정"
 
-#: src/pages/account/(authenticated)/devices/page.tsx:32
-#: src/pages/account/(authenticated)/apps/page.tsx:30
 #: src/components/utils/error-card.tsx:77
+#: src/pages/account/(authenticated)/apps/page.tsx:30
+#: src/pages/account/(authenticated)/devices/page.tsx:32
 msgid "Retry"
 msgstr "다시 시도"
 
@@ -1030,8 +1030,8 @@ msgctxt "AuthenticationPage"
 msgid "Sign in"
 msgstr "로그인"
 
-#: src/components/sign-in-form.tsx:88
 #: src/components/authenticate-welcome-view.tsx:48
+#: src/components/sign-in-form.tsx:88
 msgctxt "verb"
 msgid "Sign in"
 msgstr "로그인"
@@ -1045,18 +1045,18 @@ msgstr "{0}(으)로 로그인"
 msgid "Sign in as..."
 msgstr "로그인"
 
+#: src/components/utils/account-selector.tsx:55
+msgid "Sign out"
+msgstr "로그아웃"
+
 #: src/pages/account/(authenticated)/devices/page.tsx:111
 msgctxt "device list"
 msgid "Sign out"
 msgstr "로그아웃"
 
-#: src/components/utils/account-selector.tsx:55
-msgid "Sign out"
-msgstr "로그아웃"
-
+#: src/components/sign-in-picker.tsx:85
 #: src/components/sign-up-view.tsx:51
 #: src/components/sign-up-view.tsx:56
-#: src/components/sign-in-picker.tsx:85
 msgid "Sign up"
 msgstr "가입"
 
@@ -1286,8 +1286,8 @@ msgstr "사용 가능"
 msgid "Value"
 msgstr ""
 
-#: src/components/verify-email-confirm-form.tsx:24
 #: src/components/update-email-dialog.tsx:86
+#: src/components/verify-email-confirm-form.tsx:24
 msgid "Verification code"
 msgstr ""
 
@@ -1307,8 +1307,8 @@ msgstr ""
 msgid "Verify and Save"
 msgstr ""
 
-#: src/pages/account/(authenticated)/manage/page.tsx:86
 #: src/components/update-email-dialog.tsx:76
+#: src/pages/account/(authenticated)/manage/page.tsx:86
 msgctxt "verify email"
 msgid "Verify now"
 msgstr ""
@@ -1401,8 +1401,8 @@ msgstr ""
 msgid "You can now sign in with your new email."
 msgstr ""
 
-#: src/data/password.ts:45
 #: src/components/reset-password-view.tsx:107
+#: src/data/password.ts:45
 msgid "You can now sign in with your new password."
 msgstr "이제 새로운 비밀번호로 로그인할 수 있습니다."
 

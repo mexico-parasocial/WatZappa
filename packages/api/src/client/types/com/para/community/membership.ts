@@ -19,12 +19,7 @@ export interface Main {
   /** Reference to the community board record. */
   community: string
   membershipState:
-    | 'pending'
-    | 'active'
-    | 'left'
-    | 'removed'
-    | 'blocked'
-    | (string & {})
+    'pending' | 'active' | 'left' | 'removed' | 'blocked' | (string & {})
   roles?: string[]
   /** Structured role assignments with expiration and ratification for horizontal governance. */
   roleAssignments?: RoleAssignment[]

@@ -33,32 +33,6 @@ proto3.util.setEnumType(NotificationInclude, "bsky.NotificationInclude", [
 ]);
 
 /**
- * @generated from enum bsky.ChatNotificationInclude
- */
-export enum ChatNotificationInclude {
-  /**
-   * @generated from enum value: CHAT_NOTIFICATION_INCLUDE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * @generated from enum value: CHAT_NOTIFICATION_INCLUDE_ALL = 1;
-   */
-  ALL = 1,
-
-  /**
-   * @generated from enum value: CHAT_NOTIFICATION_INCLUDE_ACCEPTED = 2;
-   */
-  ACCEPTED = 2,
-}
-// Retrieve enum metadata with: proto3.getEnumType(ChatNotificationInclude)
-proto3.util.setEnumType(ChatNotificationInclude, "bsky.ChatNotificationInclude", [
-  { no: 0, name: "CHAT_NOTIFICATION_INCLUDE_UNSPECIFIED" },
-  { no: 1, name: "CHAT_NOTIFICATION_INCLUDE_ALL" },
-  { no: 2, name: "CHAT_NOTIFICATION_INCLUDE_ACCEPTED" },
-]);
-
-/**
  * @generated from enum bsky.FeedType
  */
 export enum FeedType {
@@ -158,6 +132,13 @@ export enum SearchQueryLanguage {
    * @generated from enum value: SEARCH_QUERY_LANGUAGE_TH = 4;
    */
   TH = 4,
+
+  /**
+   * Arabic
+   *
+   * @generated from enum value: SEARCH_QUERY_LANGUAGE_AR = 5;
+   */
+  AR = 5,
 }
 // Retrieve enum metadata with: proto3.getEnumType(SearchQueryLanguage)
 proto3.util.setEnumType(SearchQueryLanguage, "bsky.SearchQueryLanguage", [
@@ -166,6 +147,7 @@ proto3.util.setEnumType(SearchQueryLanguage, "bsky.SearchQueryLanguage", [
   { no: 2, name: "SEARCH_QUERY_LANGUAGE_ZH" },
   { no: 3, name: "SEARCH_QUERY_LANGUAGE_KO" },
   { no: 4, name: "SEARCH_QUERY_LANGUAGE_TH" },
+  { no: 5, name: "SEARCH_QUERY_LANGUAGE_AR" },
 ]);
 
 /**
@@ -6105,49 +6087,6 @@ export class NotificationPreference extends Message<NotificationPreference> {
 }
 
 /**
- * @generated from message bsky.ChatNotificationPreference
- */
-export class ChatNotificationPreference extends Message<ChatNotificationPreference> {
-  /**
-   * @generated from field: bsky.ChatNotificationInclude include = 1;
-   */
-  include = ChatNotificationInclude.UNSPECIFIED;
-
-  /**
-   * @generated from field: bsky.NotificationChannelPush push = 2;
-   */
-  push?: NotificationChannelPush;
-
-  constructor(data?: PartialMessage<ChatNotificationPreference>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "bsky.ChatNotificationPreference";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "include", kind: "enum", T: proto3.getEnumType(ChatNotificationInclude) },
-    { no: 2, name: "push", kind: "message", T: NotificationChannelPush },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ChatNotificationPreference {
-    return new ChatNotificationPreference().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ChatNotificationPreference {
-    return new ChatNotificationPreference().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ChatNotificationPreference {
-    return new ChatNotificationPreference().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: ChatNotificationPreference | PlainMessage<ChatNotificationPreference> | undefined, b: ChatNotificationPreference | PlainMessage<ChatNotificationPreference> | undefined): boolean {
-    return proto3.util.equals(ChatNotificationPreference, a, b);
-  }
-}
-
-/**
  * @generated from message bsky.NotificationPreferences
  */
 export class NotificationPreferences extends Message<NotificationPreferences> {
@@ -6155,11 +6094,6 @@ export class NotificationPreferences extends Message<NotificationPreferences> {
    * @generated from field: bytes entry = 1;
    */
   entry = new Uint8Array(0);
-
-  /**
-   * @generated from field: bsky.ChatNotificationPreference chat = 2;
-   */
-  chat?: ChatNotificationPreference;
 
   /**
    * @generated from field: bsky.FilterableNotificationPreference follow = 3;
@@ -6230,7 +6164,6 @@ export class NotificationPreferences extends Message<NotificationPreferences> {
   static readonly typeName = "bsky.NotificationPreferences";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "entry", kind: "scalar", T: 12 /* ScalarType.BYTES */ },
-    { no: 2, name: "chat", kind: "message", T: ChatNotificationPreference },
     { no: 3, name: "follow", kind: "message", T: FilterableNotificationPreference },
     { no: 4, name: "like", kind: "message", T: FilterableNotificationPreference },
     { no: 5, name: "like_via_repost", kind: "message", T: FilterableNotificationPreference },
@@ -8081,6 +8014,78 @@ export class SearchPostsRequest extends Message<SearchPostsRequest> {
    */
   tags: string[] = [];
 
+  /**
+   * @generated from field: string post_type = 5;
+   */
+  postType = "";
+
+  /**
+   * @generated from field: repeated string flairs = 6;
+   */
+  flairs: string[] = [];
+
+  /**
+   * @generated from field: string party = 7;
+   */
+  party = "";
+
+  /**
+   * @generated from field: optional bool verified_public_figure = 8;
+   */
+  verifiedPublicFigure?: boolean;
+
+  /**
+   * @generated from field: string state = 9;
+   */
+  state = "";
+
+  /**
+   * @generated from field: string district_key = 10;
+   */
+  districtKey = "";
+
+  /**
+   * @generated from field: string cabildeo_phase = 11;
+   */
+  cabildeoPhase = "";
+
+  /**
+   * Upstream V2-style filters forwarded by the PARA search endpoint.
+   *
+   * @generated from field: repeated string authors = 12;
+   */
+  authors: string[] = [];
+
+  /**
+   * @generated from field: repeated string mentions = 13;
+   */
+  mentions: string[] = [];
+
+  /**
+   * @generated from field: repeated string domains = 14;
+   */
+  domains: string[] = [];
+
+  /**
+   * @generated from field: repeated string urls = 15;
+   */
+  urls: string[] = [];
+
+  /**
+   * @generated from field: optional google.protobuf.Timestamp since = 16;
+   */
+  since?: Timestamp;
+
+  /**
+   * @generated from field: optional google.protobuf.Timestamp until = 17;
+   */
+  until?: Timestamp;
+
+  /**
+   * @generated from field: optional string language = 18;
+   */
+  language?: string;
+
   constructor(data?: PartialMessage<SearchPostsRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -8093,6 +8098,20 @@ export class SearchPostsRequest extends Message<SearchPostsRequest> {
     { no: 2, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
     { no: 3, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 4, name: "tags", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 5, name: "post_type", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 6, name: "flairs", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 7, name: "party", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 8, name: "verified_public_figure", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 9, name: "state", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 10, name: "district_key", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 11, name: "cabildeo_phase", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 12, name: "authors", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 13, name: "mentions", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 14, name: "domains", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 15, name: "urls", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 16, name: "since", kind: "message", T: Timestamp, opt: true },
+    { no: 17, name: "until", kind: "message", T: Timestamp, opt: true },
+    { no: 18, name: "language", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchPostsRequest {
@@ -8479,9 +8498,11 @@ export class PostsFilters extends Message<PostsFilters> {
   urls: string[] = [];
 
   /**
-   * @generated from field: repeated string embed_uris = 5;
+   * Canonical request field for posts embedding these AT-URI records.
+   *
+   * @generated from field: repeated string embedded_at_uris = 5;
    */
-  embedUris: string[] = [];
+  embeddedAtUris: string[] = [];
 
   /**
    * @generated from field: repeated string hashtags = 6;
@@ -8517,7 +8538,7 @@ export class PostsFilters extends Message<PostsFilters> {
     { no: 2, name: "mentions", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
     { no: 3, name: "domains", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
     { no: 4, name: "urls", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
-    { no: 5, name: "embed_uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 5, name: "embedded_at_uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
     { no: 6, name: "hashtags", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
     { no: 7, name: "community_uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
     { no: 8, name: "cabildeo_uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
@@ -8711,6 +8732,11 @@ export class SearchPostsV2Response extends Message<SearchPostsV2Response> {
    */
   pageInfo?: PageInfo;
 
+  /**
+   * @generated from field: repeated string detected_query_languages = 3;
+   */
+  detectedQueryLanguages: string[] = [];
+
   constructor(data?: PartialMessage<SearchPostsV2Response>) {
     super();
     proto3.util.initPartial(data, this);
@@ -8721,6 +8747,7 @@ export class SearchPostsV2Response extends Message<SearchPostsV2Response> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "posts", kind: "message", T: SearchRecordResult, repeated: true },
     { no: 2, name: "page_info", kind: "message", T: PageInfo },
+    { no: 3, name: "detected_query_languages", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchPostsV2Response {

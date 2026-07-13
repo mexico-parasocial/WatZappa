@@ -18,11 +18,7 @@ const id = 'app.bsky.ageassurance.defs'
 export type Access = 'unknown' | 'none' | 'safe' | 'full' | (string & {})
 /** The status of the Age Assurance process. */
 export type Status =
-  | 'unknown'
-  | 'pending'
-  | 'assured'
-  | 'blocked'
-  | (string & {})
+  'unknown' | 'pending' | 'assured' | 'blocked' | (string & {})
 
 /** The user's computed Age Assurance state. */
 export interface State {
@@ -85,6 +81,8 @@ export interface ConfigRegion {
   regionCode?: string
   /** The minimum age (as a whole integer) required to use Bluesky in this region. */
   minAccessAge: number
+  /** Verification methods permitted in this region in addition to the third-party (KWS) flow, which is always supported. `device` permits using the native on-device age APIs (e.g. Apple Declared Age Range, Google Play Age Signals). */
+  additionalVerificationMethods?: ('device' | (string & {}))[]
   /** The ordered list of Age Assurance rules that apply to this region. Rules should be applied in order, and the first matching rule determines the access level granted. The rules array should always include a default rule as the last item. */
   rules: (
     | $Typed<ConfigRegionRuleDefault>

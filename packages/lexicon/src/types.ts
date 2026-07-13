@@ -278,6 +278,11 @@ export const lexXrpcQuery = z.object({
   parameters: lexXrpcParameters.optional(),
   output: lexXrpcBody.optional(),
   errors: lexXrpcError.array().optional(),
+  auth: z
+    .object({
+      type: z.string(),
+    })
+    .optional(),
 })
 export type LexXrpcQuery = z.infer<typeof lexXrpcQuery>
 
@@ -288,6 +293,11 @@ export const lexXrpcProcedure = z.object({
   input: lexXrpcBody.optional(),
   output: lexXrpcBody.optional(),
   errors: lexXrpcError.array().optional(),
+  auth: z
+    .object({
+      type: z.string(),
+    })
+    .optional(),
 })
 export type LexXrpcProcedure = z.infer<typeof lexXrpcProcedure>
 
@@ -300,6 +310,11 @@ export const lexXrpcSubscription = z.object({
     schema: lexRefUnion,
   }),
   errors: lexXrpcError.array().optional(),
+  auth: z
+    .object({
+      type: z.string(),
+    })
+    .optional(),
 })
 export type LexXrpcSubscription = z.infer<typeof lexXrpcSubscription>
 

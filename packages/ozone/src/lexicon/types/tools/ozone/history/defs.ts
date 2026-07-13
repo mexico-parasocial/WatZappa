@@ -20,12 +20,7 @@ export interface ReportedSubjectView {
   comment?: string
   createdAt: string
   status:
-    | 'open'
-    | 'closed'
-    | 'escalated'
-    | 'queued'
-    | 'assigned'
-    | (string & {})
+    'open' | 'closed' | 'escalated' | 'queued' | 'assigned' | (string & {})
   actions?: EventView[]
 }
 

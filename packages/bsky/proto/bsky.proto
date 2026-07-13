@@ -1103,6 +1103,22 @@ message SearchPostsRequest {
   int32 limit = 2;
   string cursor = 3;
   repeated string tags = 4;
+  string post_type = 5;
+  repeated string flairs = 6;
+  string party = 7;
+  optional bool verified_public_figure = 8;
+  string state = 9;
+  string district_key = 10;
+  string cabildeo_phase = 11;
+
+  // Upstream V2-style filters forwarded by the PARA search endpoint.
+  repeated string authors = 12;
+  repeated string mentions = 13;
+  repeated string domains = 14;
+  repeated string urls = 15;
+  optional google.protobuf.Timestamp since = 16;
+  optional google.protobuf.Timestamp until = 17;
+  optional string language = 18;
 }
 
 message SearchPostsResponse {
@@ -1139,6 +1155,7 @@ enum SearchQueryLanguage {
   SEARCH_QUERY_LANGUAGE_ZH = 2; // Chinese (smartcn)
   SEARCH_QUERY_LANGUAGE_KO = 3; // Korean (nori)
   SEARCH_QUERY_LANGUAGE_TH = 4; // Thai
+  SEARCH_QUERY_LANGUAGE_AR = 5; // Arabic
 }
 
 // Shared request params
@@ -1247,6 +1264,7 @@ message SearchPostsV2Request {
 message SearchPostsV2Response {
   repeated SearchRecordResult posts = 1;
   PageInfo page_info = 2;
+  repeated string detected_query_languages = 3;
 }
 
 message SearchActorsV2Request {

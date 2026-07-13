@@ -89,5 +89,5 @@ export const Service = {
       kind: MethodKind.Unary,
     },
   }
-} as const satisfies import('@bufbuild/protobuf').ServiceType;
+} as const;
 

@@ -3,10 +3,13 @@ import { Insertable, Selectable, sql } from 'kysely'
 import { CID } from 'multiformats/cid'
 import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
 import { BackgroundQueue } from '../../background.js'
-import { Database } from '../../db/index.js'
 import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
+import { Database } from '../../db/index.js'
 import { Notification } from '../../db/tables/notification.js'
-import { deletePostDiscourse, indexPostDiscourse } from '../discourse-indexing.js'
+import {
+  deletePostDiscourse,
+  indexPostDiscourse,
+} from '../discourse-indexing.js'
 import { RecordProcessor } from '../processor.js'
 import { recomputeParaProfileStats } from './para-profile-stats.js'
 
@@ -25,6 +28,10 @@ interface ParaPostRecord {
   postType?: string
   party?: string
   community?: string
+  verifiedPublicFigure?: boolean
+  state?: string
+  districtKey?: string
+  cabildeoPhase?: string
 }
 
 type Notif = Insertable<Notification>
@@ -63,6 +70,10 @@ const insertFn = async (
     postType: obj.postType || null,
     party: obj.party || null,
     community: obj.community || null,
+    verifiedPublicFigure: obj.verifiedPublicFigure ?? null,
+    state: obj.state || null,
+    districtKey: obj.districtKey || null,
+    cabildeoPhase: obj.cabildeoPhase || null,
     indexedAt: timestamp,
   }
 

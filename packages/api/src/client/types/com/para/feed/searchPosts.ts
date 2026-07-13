@@ -32,6 +32,13 @@ export type QueryParams = {
   communityUris?: string[]
   cabildeoUris?: string[]
   politicalCompassPositions?: string[]
+  postType?: string
+  flairs?: string[]
+  party?: string
+  verifiedPublicFigure?: boolean
+  state?: string
+  districtKey?: string
+  cabildeoPhase?: string
 }
 export type InputSchema = undefined
 

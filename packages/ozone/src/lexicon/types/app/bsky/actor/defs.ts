@@ -445,12 +445,7 @@ export interface ThreadViewPref {
   $type?: 'app.bsky.actor.defs#threadViewPref'
   /** Sorting mode for threads. */
   sort?:
-    | 'oldest'
-    | 'newest'
-    | 'most-likes'
-    | 'random'
-    | 'hotness'
-    | (string & {})
+    'oldest' | 'newest' | 'most-likes' | 'random' | 'hotness' | (string & {})
 }
 
 const hashThreadViewPref = 'threadViewPref'
@@ -571,6 +566,8 @@ export function validateLabelerPrefItem<V>(v: V) {
 export interface BskyAppStatePref {
   $type?: 'app.bsky.actor.defs#bskyAppStatePref'
   activeProgressGuide?: BskyAppProgressGuide
+  /** Indicates if the user is participating in the beta features program. */
+  isBetaUser?: boolean
   /** An array of tokens which identify nudges (modals, popups, tours, highlight dots) that should be shown to the user. */
   queuedNudges?: string[]
   /** Storage for NUXs the user has encountered. */
@@ -673,8 +670,7 @@ export interface PostInteractionSettingsPref {
   )[]
   /** Matches postgate record. List of rules defining who can embed this users posts. If value is an empty array or is undefined, no particular rules apply and anyone can embed. */
   postgateEmbeddingRules?: (
-    | $Typed<AppBskyFeedPostgate.DisableRule>
-    | { $type: string }
+    $Typed<AppBskyFeedPostgate.DisableRule> | { $type: string }
   )[]
 }
 
