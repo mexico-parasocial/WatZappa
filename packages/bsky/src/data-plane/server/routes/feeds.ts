@@ -50,6 +50,55 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     }
   },
 
+  async getParaMemes(req) {
+    const { limit, cursor } = req
+    const { ref } = db.db.dynamic
+
+    const keyset = new TimeCidKeyset(
+      ref('para_post.sortAt'),
+      ref('para_post.cid'),
+    )
+
+    let builder = db.db
+      .selectFrom('para_post')
+      .selectAll('para_post')
+      .where(paraPostTypeMatches('meme'))
+
+    if (req.party) {
+      builder = builder.where(paraMetaMatches('party', req.party))
+    }
+    if (req.community) {
+      builder = builder.where(paraMetaMatches('community', req.community))
+    }
+    if (req.state) {
+      builder = builder.where(
+        sql<boolean>`lower(coalesce("para_post"."state", '')) = ${req.state.trim().toLowerCase()}`,
+      )
+    }
+    if (req.category) {
+      builder = builder.where(
+        sql<boolean>`lower(coalesce("para_post"."category", '')) = ${req.category.trim().toLowerCase()}`,
+      )
+    }
+    if (req.flairTag) {
+      builder = builder.where(paraFlairMatches(req.flairTag))
+    }
+
+    builder = paginate(builder, {
+      limit,
+      cursor,
+      keyset,
+      tryIndex: true,
+    })
+
+    const posts = await builder.execute()
+
+    return {
+      items: posts.map(paraFeedItemFromRow),
+      cursor: keyset.packFromResult(posts),
+    }
+  },
+
   async getParaTimeline(req) {
     const { actorDid, limit, cursor } = req
     const { ref } = db.db.dynamic

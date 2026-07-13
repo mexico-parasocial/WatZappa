@@ -19,20 +19,7 @@ export type QueryParams = {
   post: string
 }
 export type InputSchema = undefined
-
-export interface OutputSchema {
-  uri: string
-  postType?: 'policy' | 'matter' | 'meme'
-  official?: boolean
-  party?: string
-  community?: string
-  category?: string
-  tags?: string[]
-  flairs?: string[]
-  voteScore: number
-  interactionMode: 'policy_ballot' | 'reddit_votes'
-  createdAt?: string
-}
+export type OutputSchema = PostMeta
 
 export interface CallOptions {
   signal?: AbortSignal
@@ -57,4 +44,29 @@ export function toKnownErr(e: any) {
   }
 
   return e
+}
+
+export interface PostMeta {
+  $type?: 'com.para.social.getPostMeta#postMeta'
+  uri: string
+  postType?: 'policy' | 'matter' | 'meme'
+  official?: boolean
+  party?: string
+  community?: string
+  category?: string
+  tags?: string[]
+  flairs?: string[]
+  voteScore: number
+  interactionMode: 'policy_ballot' | 'reddit_votes'
+  createdAt?: string
+}
+
+const hashPostMeta = 'postMeta'
+
+export function isPostMeta<V>(v: V) {
+  return is$typed(v, id, hashPostMeta)
+}
+
+export function validatePostMeta<V>(v: V) {
+  return validate<PostMeta & V>(v, id, hashPostMeta)
 }

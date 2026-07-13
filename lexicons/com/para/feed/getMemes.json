@@ -1,0 +1,53 @@
+{
+  "lexicon": 1,
+  "id": "com.para.feed.getMemes",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get a paginated feed of Para memes with fully hydrated media embeds.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          },
+          "cursor": { "type": "string" },
+          "party": { "type": "string", "maxLength": 128 },
+          "community": { "type": "string", "maxLength": 128 },
+          "state": { "type": "string", "maxLength": 128 },
+          "category": { "type": "string", "maxLength": 128 },
+          "flairTag": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Filter by an exact Para flair tag."
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["feed"],
+          "properties": {
+            "cursor": { "type": "string" },
+            "feed": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "#memeView" }
+            }
+          }
+        }
+      }
+    },
+    "memeView": {
+      "type": "object",
+      "required": ["post"],
+      "properties": {
+        "post": { "type": "ref", "ref": "app.bsky.feed.defs#postView" },
+        "meta": { "type": "ref", "ref": "com.para.social.getPostMeta#postMeta" }
+      }
+    }
+  }
+}

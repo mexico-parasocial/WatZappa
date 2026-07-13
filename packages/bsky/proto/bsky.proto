@@ -1787,6 +1787,16 @@ message GetParaTimelineRequest {
   string flair_tag = 6;
   string post_type = 7;
 }
+message GetParaMemesRequest {
+  int32 limit = 1;
+  string cursor = 2;
+  string viewer_did = 3;
+  string party = 4;
+  string community = 5;
+  string state = 6;
+  string category = 7;
+  string flair_tag = 8;
+}
 message GetParaPostsRequest {
   repeated string uris = 1;
 }
@@ -2514,6 +2524,7 @@ service Service {
   rpc GetParaProposals(GetParaProposalsRequest) returns (GetParaProposalsResponse);
   rpc GetParaAuthorFeed(GetParaAuthorFeedRequest) returns (ParaFeedPageResponse);
   rpc GetParaTimeline(GetParaTimelineRequest) returns (ParaFeedPageResponse);
+  rpc GetParaMemes(GetParaMemesRequest) returns (ParaFeedPageResponse);
   rpc GetParaPosts(GetParaPostsRequest) returns (GetParaPostsResponse);
   rpc GetParaThread(GetParaThreadRequest) returns (GetParaThreadResponse);
   rpc GetParaOpenQuestionThread(GetParaOpenQuestionThreadRequest) returns (GetParaOpenQuestionThreadResponse);

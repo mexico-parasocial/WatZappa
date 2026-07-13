@@ -11,14 +11,23 @@ import { Keypair } from '@atproto/crypto'
 import { IdResolver } from '@atproto/identity'
 import { Client } from '@atproto/lex'
 import { createServer } from '@atproto/xrpc-server'
-import API, { blobResolver, external, health, sitemap, wellKnown } from './api/index.js'
 import { createBlobDispatcher } from './api/blob-dispatcher.js'
+import API, {
+  blobResolver,
+  external,
+  health,
+  sitemap,
+  wellKnown,
+} from './api/index.js'
 import { AuthVerifier, createPublicKeyObject } from './auth-verifier.js'
 import { authWithApiKey as bsyncAuth, createBsyncClient } from './bsync.js'
 import { ParaCacheService } from './cache/para-cache.js'
 import { ServerConfig } from './config.js'
 import { AppContext } from './context.js'
-import { authWithApiKey as courierAuth, createCourierClient } from './courier.js'
+import {
+  authWithApiKey as courierAuth,
+  createCourierClient,
+} from './courier.js'
 import {
   BasicHostList,
   EtcdHostList,
@@ -33,7 +42,10 @@ import { createKwsClient } from './kws.js'
 import { loggerMiddleware } from './logger.js'
 import { OpenAIClient } from './openai.js'
 import { Redis } from './redis.js'
-import { authWithApiKey as rolodexAuth, createRolodexClient } from './rolodex.js'
+import {
+  authWithApiKey as rolodexAuth,
+  createRolodexClient,
+} from './rolodex.js'
 import { createStashClient } from './stash.js'
 import { Views } from './views/index.js'
 import { VideoUriBuilder } from './views/util.js'
@@ -126,6 +138,19 @@ export class BskyAppView {
             headers: config.topicsApiKey
               ? { authorization: `Bearer ${config.topicsApiKey}` }
               : undefined,
+          },
+          {
+            // Trust internal services to send us well-formed responses
+            strictResponseProcessing: false,
+            validateResponse: config.debugMode,
+          },
+        )
+      : undefined
+
+    const irisClient = config.irisUrl
+      ? new Client(
+          {
+            service: config.irisUrl,
           },
           {
             // Trust internal services to send us well-formed responses
@@ -240,6 +265,7 @@ export class BskyAppView {
       searchClient,
       suggestionsClient,
       topicsClient,
+      irisClient,
       hydrator,
       views,
       signingKey,

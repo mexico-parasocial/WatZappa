@@ -390,6 +390,7 @@ import * as ComParaDiscourseGetSnapshot from './types/com/para/discourse/getSnap
 import * as ComParaDiscourseGetTopics from './types/com/para/discourse/getTopics.js'
 import * as ComParaDiscourseGetTopology from './types/com/para/discourse/getTopology.js'
 import * as ComParaFeedGetAuthorFeed from './types/com/para/feed/getAuthorFeed.js'
+import * as ComParaFeedGetMemes from './types/com/para/feed/getMemes.js'
 import * as ComParaFeedGetPostThread from './types/com/para/feed/getPostThread.js'
 import * as ComParaFeedGetPosts from './types/com/para/feed/getPosts.js'
 import * as ComParaFeedGetTimeline from './types/com/para/feed/getTimeline.js'
@@ -879,6 +880,7 @@ export * as ComParaDiscourseGetSnapshot from './types/com/para/discourse/getSnap
 export * as ComParaDiscourseGetTopics from './types/com/para/discourse/getTopics.js'
 export * as ComParaDiscourseGetTopology from './types/com/para/discourse/getTopology.js'
 export * as ComParaFeedGetAuthorFeed from './types/com/para/feed/getAuthorFeed.js'
+export * as ComParaFeedGetMemes from './types/com/para/feed/getMemes.js'
 export * as ComParaFeedGetPostThread from './types/com/para/feed/getPostThread.js'
 export * as ComParaFeedGetPosts from './types/com/para/feed/getPosts.js'
 export * as ComParaFeedGetTimeline from './types/com/para/feed/getTimeline.js'
@@ -8655,6 +8657,13 @@ export class ComParaFeedNS {
       .catch((e) => {
         throw ComParaFeedGetAuthorFeed.toKnownErr(e)
       })
+  }
+
+  getMemes(
+    params?: ComParaFeedGetMemes.QueryParams,
+    opts?: ComParaFeedGetMemes.CallOptions,
+  ): Promise<ComParaFeedGetMemes.Response> {
+    return this._client.call('com.para.feed.getMemes', params, undefined, opts)
   }
 
   getPostThread(

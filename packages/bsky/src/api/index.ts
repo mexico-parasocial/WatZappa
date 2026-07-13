@@ -139,6 +139,7 @@ import listParaVotes from './com/para/community/listVotes.js'
 import getParaDiscourseSnapshot from './com/para/discourse/getSnapshot.js'
 import getParaDiscourseTopics from './com/para/discourse/getTopics.js'
 import getParaAuthorFeed from './com/para/feed/getAuthorFeed.js'
+import getParaMemes from './com/para/feed/getMemes.js'
 import getParaPostThread from './com/para/feed/getPostThread.js'
 import getParaPosts from './com/para/feed/getPosts.js'
 import getParaTimeline from './com/para/feed/getTimeline.js'
@@ -312,6 +313,7 @@ export default function (server: Server, ctx: AppContext) {
   getParaPostSubscription(paraServer, ctx)
   putParaPostSubscription(paraServer, ctx)
   getParaAuthorFeed(paraServer, ctx)
+  getParaMemes(server, ctx)
   getParaPostThread(paraServer, ctx)
   getParaPosts(paraServer, ctx)
   searchParaPosts(paraServer, ctx)

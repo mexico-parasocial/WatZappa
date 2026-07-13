@@ -14,37 +14,38 @@
       },
       "output": {
         "encoding": "application/json",
-        "schema": {
-          "type": "object",
-          "required": ["uri", "interactionMode", "voteScore"],
-          "properties": {
-            "uri": { "type": "string", "format": "at-uri" },
-            "postType": {
-              "type": "string",
-              "enum": ["policy", "matter", "meme"]
-            },
-            "official": { "type": "boolean" },
-            "party": { "type": "string" },
-            "community": { "type": "string" },
-            "category": { "type": "string" },
-            "tags": {
-              "type": "array",
-              "items": { "type": "string" }
-            },
-            "flairs": {
-              "type": "array",
-              "items": { "type": "string" }
-            },
-            "voteScore": { "type": "integer" },
-            "interactionMode": {
-              "type": "string",
-              "enum": ["policy_ballot", "reddit_votes"]
-            },
-            "createdAt": { "type": "string", "format": "datetime" }
-          }
-        }
+        "schema": { "type": "ref", "ref": "#postMeta" }
       },
       "errors": [{ "name": "NotFound" }]
+    },
+    "postMeta": {
+      "type": "object",
+      "required": ["uri", "interactionMode", "voteScore"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "postType": {
+          "type": "string",
+          "enum": ["policy", "matter", "meme"]
+        },
+        "official": { "type": "boolean" },
+        "party": { "type": "string" },
+        "community": { "type": "string" },
+        "category": { "type": "string" },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "flairs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "voteScore": { "type": "integer" },
+        "interactionMode": {
+          "type": "string",
+          "enum": ["policy_ballot", "reddit_votes"]
+        },
+        "createdAt": { "type": "string", "format": "datetime" }
+      }
     }
   }
 }

@@ -12731,6 +12731,85 @@ export class GetParaTimelineRequest extends Message<GetParaTimelineRequest> {
 }
 
 /**
+ * @generated from message bsky.GetParaMemesRequest
+ */
+export class GetParaMemesRequest extends Message<GetParaMemesRequest> {
+  /**
+   * @generated from field: int32 limit = 1;
+   */
+  limit = 0;
+
+  /**
+   * @generated from field: string cursor = 2;
+   */
+  cursor = "";
+
+  /**
+   * @generated from field: string viewer_did = 3;
+   */
+  viewerDid = "";
+
+  /**
+   * @generated from field: string party = 4;
+   */
+  party = "";
+
+  /**
+   * @generated from field: string community = 5;
+   */
+  community = "";
+
+  /**
+   * @generated from field: string state = 6;
+   */
+  state = "";
+
+  /**
+   * @generated from field: string category = 7;
+   */
+  category = "";
+
+  /**
+   * @generated from field: string flair_tag = 8;
+   */
+  flairTag = "";
+
+  constructor(data?: PartialMessage<GetParaMemesRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaMemesRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 2, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "viewer_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "party", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "community", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 6, name: "state", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 7, name: "category", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 8, name: "flair_tag", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaMemesRequest {
+    return new GetParaMemesRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaMemesRequest {
+    return new GetParaMemesRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaMemesRequest {
+    return new GetParaMemesRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaMemesRequest | PlainMessage<GetParaMemesRequest> | undefined, b: GetParaMemesRequest | PlainMessage<GetParaMemesRequest> | undefined): boolean {
+    return proto3.util.equals(GetParaMemesRequest, a, b);
+  }
+}
+
+/**
  * @generated from message bsky.GetParaPostsRequest
  */
 export class GetParaPostsRequest extends Message<GetParaPostsRequest> {

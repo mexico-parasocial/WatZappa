@@ -27324,6 +27324,85 @@ export const schemaDict = {
       },
     },
   },
+  ComParaFeedGetMemes: {
+    lexicon: 1,
+    id: 'com.para.feed.getMemes',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Get a paginated feed of Para memes with fully hydrated media embeds.',
+        parameters: {
+          type: 'params',
+          properties: {
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+            },
+            party: {
+              type: 'string',
+              maxLength: 128,
+            },
+            community: {
+              type: 'string',
+              maxLength: 128,
+            },
+            state: {
+              type: 'string',
+              maxLength: 128,
+            },
+            category: {
+              type: 'string',
+              maxLength: 128,
+            },
+            flairTag: {
+              type: 'string',
+              maxLength: 128,
+              description: 'Filter by an exact Para flair tag.',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['feed'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              feed: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.feed.getMemes#memeView',
+                },
+              },
+            },
+          },
+        },
+      },
+      memeView: {
+        type: 'object',
+        required: ['post'],
+        properties: {
+          post: {
+            type: 'ref',
+            ref: 'lex:app.bsky.feed.defs#postView',
+          },
+          meta: {
+            type: 'ref',
+            ref: 'lex:com.para.social.getPostMeta#postMeta',
+          },
+        },
+      },
+    },
+  },
   ComParaFeedGetPostThread: {
     lexicon: 1,
     id: 'com.para.feed.getPostThread',
@@ -29058,53 +29137,8 @@ export const schemaDict = {
         output: {
           encoding: 'application/json',
           schema: {
-            type: 'object',
-            required: ['uri', 'interactionMode', 'voteScore'],
-            properties: {
-              uri: {
-                type: 'string',
-                format: 'at-uri',
-              },
-              postType: {
-                type: 'string',
-                enum: ['policy', 'matter', 'meme'],
-              },
-              official: {
-                type: 'boolean',
-              },
-              party: {
-                type: 'string',
-              },
-              community: {
-                type: 'string',
-              },
-              category: {
-                type: 'string',
-              },
-              tags: {
-                type: 'array',
-                items: {
-                  type: 'string',
-                },
-              },
-              flairs: {
-                type: 'array',
-                items: {
-                  type: 'string',
-                },
-              },
-              voteScore: {
-                type: 'integer',
-              },
-              interactionMode: {
-                type: 'string',
-                enum: ['policy_ballot', 'reddit_votes'],
-              },
-              createdAt: {
-                type: 'string',
-                format: 'datetime',
-              },
-            },
+            type: 'ref',
+            ref: 'lex:com.para.social.getPostMeta#postMeta',
           },
         },
         errors: [
@@ -29112,6 +29146,55 @@ export const schemaDict = {
             name: 'NotFound',
           },
         ],
+      },
+      postMeta: {
+        type: 'object',
+        required: ['uri', 'interactionMode', 'voteScore'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          postType: {
+            type: 'string',
+            enum: ['policy', 'matter', 'meme'],
+          },
+          official: {
+            type: 'boolean',
+          },
+          party: {
+            type: 'string',
+          },
+          community: {
+            type: 'string',
+          },
+          category: {
+            type: 'string',
+          },
+          tags: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+          flairs: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+          voteScore: {
+            type: 'integer',
+          },
+          interactionMode: {
+            type: 'string',
+            enum: ['policy_ballot', 'reddit_votes'],
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
       },
     },
   },
@@ -36993,6 +37076,7 @@ export const ids = {
   ComParaDiscourseGetTopics: 'com.para.discourse.getTopics',
   ComParaDiscourseGetTopology: 'com.para.discourse.getTopology',
   ComParaFeedGetAuthorFeed: 'com.para.feed.getAuthorFeed',
+  ComParaFeedGetMemes: 'com.para.feed.getMemes',
   ComParaFeedGetPostThread: 'com.para.feed.getPostThread',
   ComParaFeedGetPosts: 'com.para.feed.getPosts',
   ComParaFeedGetTimeline: 'com.para.feed.getTimeline',

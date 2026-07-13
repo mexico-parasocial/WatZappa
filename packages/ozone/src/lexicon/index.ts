@@ -309,6 +309,7 @@ import * as ComParaDiscourseGetSnapshot from './types/com/para/discourse/getSnap
 import * as ComParaDiscourseGetTopics from './types/com/para/discourse/getTopics.js'
 import * as ComParaDiscourseGetTopology from './types/com/para/discourse/getTopology.js'
 import * as ComParaFeedGetAuthorFeed from './types/com/para/feed/getAuthorFeed.js'
+import * as ComParaFeedGetMemes from './types/com/para/feed/getMemes.js'
 import * as ComParaFeedGetPostThread from './types/com/para/feed/getPostThread.js'
 import * as ComParaFeedGetPosts from './types/com/para/feed/getPosts.js'
 import * as ComParaFeedGetTimeline from './types/com/para/feed/getTimeline.js'
@@ -4536,6 +4537,18 @@ export class ComParaFeedNS {
     >,
   ) {
     const nsid = 'com.para.feed.getAuthorFeed' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  getMemes<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ComParaFeedGetMemes.QueryParams,
+      ComParaFeedGetMemes.HandlerInput,
+      ComParaFeedGetMemes.HandlerOutput
+    >,
+  ) {
+    const nsid = 'com.para.feed.getMemes' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
 
