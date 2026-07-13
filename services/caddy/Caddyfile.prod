@@ -13,7 +13,18 @@
 # PDS — Personal Data Server (auth, repos, writes)
 # ---------------------------------------------------------------------------
 pds.para-g0v.app {
-	reverse_proxy pds:2583
+	encode gzip
+
+	# Blob reads are immutable once written; allow clients/CDN to cache them.
+	handle /xrpc/com.atproto.sync.getBlob* {
+		reverse_proxy pds:2583 {
+			header_down Cache-Control "public, max-age=31536000, immutable"
+		}
+	}
+
+	handle {
+		reverse_proxy pds:2583
+	}
 
 	header {
 		# Security headers
@@ -28,7 +39,18 @@ pds.para-g0v.app {
 # AppView — Feeds, search, hydration, Civic Map
 # ---------------------------------------------------------------------------
 appview.para-g0v.app {
-	reverse_proxy bsky:2584
+	encode gzip
+
+	# Image server thumbnails are expensive to generate; cache aggressively.
+	handle /img/* {
+		reverse_proxy bsky:2584 {
+			header_down Cache-Control "public, max-age=86400"
+		}
+	}
+
+	handle {
+		reverse_proxy bsky:2584
+	}
 
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
@@ -42,6 +64,7 @@ appview.para-g0v.app {
 # Ozone — Moderation (staff-only)
 # ---------------------------------------------------------------------------
 ozone.para-g0v.app {
+	encode gzip
 	reverse_proxy ozone:3000
 
 	header {
@@ -57,6 +80,8 @@ ozone.para-g0v.app {
 # These MUST be available at the domain root for federation.
 # ---------------------------------------------------------------------------
 para-g0v.app {
+	encode gzip
+
 	# Serve .well-known/atproto-did for handle resolution
 	handle /.well-known/* {
 		reverse_proxy pds:2583
