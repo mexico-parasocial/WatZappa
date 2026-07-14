@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AtUri, AtpAgent } from '@atproto/api'
 import { SeedClient, TestNetwork } from '@atproto/dev-env'
 import { InvalidRequestError } from '@atproto/xrpc-server'

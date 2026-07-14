@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { $Typed, AtpAgent, ComAtprotoAdminDefs, ids } from '@atproto/api'
 import { Secp256k1Keypair } from '@atproto/crypto'

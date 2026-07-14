@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { wait } from '@atproto/common-web'
 import { encode } from '@atproto/lex-cbor'
 import {

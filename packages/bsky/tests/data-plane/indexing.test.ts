@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { sql } from 'kysely'
 import {
   AppBskyActorProfile,

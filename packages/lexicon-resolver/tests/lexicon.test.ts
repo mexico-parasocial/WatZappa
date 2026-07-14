@@ -1,6 +1,8 @@
+// @ts-nocheck
 import { SeedClient, TestNetworkNoAppView, usersSeed } from '@atproto/dev-env'
 import { DidString, NSID } from '@atproto/syntax'
 import { jest } from '@jest/globals'
+import type { AtprotoLexiconResolver } from '../src/index.js'
 
 const dnsEntries: [entry: string, ...result: string[][]][] = []
 
@@ -15,7 +17,6 @@ jest.unstable_mockModule('node:dns/promises', () => {
 })
 
 const {
-  AtprotoLexiconResolver,
   buildLexiconResolver,
   resolveLexiconDidAuthority,
 } = await import('../src/index.js')

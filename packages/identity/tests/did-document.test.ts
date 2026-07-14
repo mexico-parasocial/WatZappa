@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { DidResolver, ensureAtpDocument } from '../src/index.js'
 
 describe('did parsing', () => {

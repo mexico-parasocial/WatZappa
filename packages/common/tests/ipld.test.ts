@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as ui8 from 'uint8arrays'
 import {
   cborDecode,

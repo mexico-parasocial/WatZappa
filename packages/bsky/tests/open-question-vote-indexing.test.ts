@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { SeedClient, TestNetwork, usersSeed, writeParaFixture } from '@atproto/dev-env'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 

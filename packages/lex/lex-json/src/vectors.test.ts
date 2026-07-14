@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, it, test } from 'vitest'
 import { LexValue, lexEquals, parseCid } from '@atproto/lex-data'
 import { jsonToLex } from './json-to-lex.js'

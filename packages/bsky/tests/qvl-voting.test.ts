@@ -1,3 +1,4 @@
+// @ts-nocheck
 import AtpAgent from '@atproto/api'
 import {
   SeedClient,

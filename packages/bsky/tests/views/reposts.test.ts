@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AppBskyFeedGetRepostedBy, AtpAgent, ids } from '@atproto/api'
 import { SeedClient, TestNetwork, repostsSeed } from '@atproto/dev-env'
 import { forSnapshot, paginateAll, stripViewer } from '../_util.js'

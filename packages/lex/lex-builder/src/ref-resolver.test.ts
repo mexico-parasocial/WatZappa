@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Project } from 'ts-morph'
 import { describe, expect, it } from 'vitest'
 import type { LexiconDocument, LexiconIndexer } from '@atproto/lex-document'

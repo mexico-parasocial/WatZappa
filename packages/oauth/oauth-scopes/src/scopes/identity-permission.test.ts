@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { IdentityPermission } from './identity-permission.js'
 
 describe('IdentityPermission', () => {

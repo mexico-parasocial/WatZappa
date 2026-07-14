@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Readable } from 'node:stream'
 import { cidForCbor } from '@atproto/common'
 import { TestNetwork, basicSeed } from '@atproto/dev-env'

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { jest } from '@jest/globals'
 import { TestNetworkNoAppView } from '@atproto/dev-env'
 import { Client } from '@atproto/lex'

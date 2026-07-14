@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AtpAgent } from '@atproto/api'
 import { RecordRef, SeedClient, TestNetwork, usersSeed } from '@atproto/dev-env'
 

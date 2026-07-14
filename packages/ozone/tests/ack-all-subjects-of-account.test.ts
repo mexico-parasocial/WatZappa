@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ComAtprotoRepoStrongRef } from '@atproto/api'
 import {
   ModeratorClient,

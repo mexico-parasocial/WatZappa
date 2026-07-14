@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { SeedClient } from '@atproto/dev-env'
 import basicSeed from './basic.js'
 

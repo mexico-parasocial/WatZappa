@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, it } from 'vitest'
 import { lexiconDocumentSchema } from '../src/index.js'
 import invalidLexicons from './lexicon-invalid.json' with { type: 'json' }

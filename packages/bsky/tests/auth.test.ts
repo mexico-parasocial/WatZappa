@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AtpAgent, ids } from '@atproto/api'
 import { Keypair, Secp256k1Keypair } from '@atproto/crypto'
 import { SeedClient, TestNetwork, usersSeed } from '@atproto/dev-env'

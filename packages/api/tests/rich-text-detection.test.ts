@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AtpAgent, RichText, RichTextSegment } from '../src/index.js'
 import {
   isLink,

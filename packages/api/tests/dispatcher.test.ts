@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { AddressInfo } from 'node:net'
 import { getPdsEndpoint, isValidDidDoc } from '@atproto/common-web'

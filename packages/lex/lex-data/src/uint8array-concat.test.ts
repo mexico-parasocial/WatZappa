@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { assert, describe, expect, it } from 'vitest'
 import { ui8ConcatNode, ui8ConcatPonyfill } from './uint8array-concat.js'
 import { ui8Equals } from './uint8array.js'

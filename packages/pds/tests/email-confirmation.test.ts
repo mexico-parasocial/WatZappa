@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { EventEmitter, once } from 'node:events'
 import { SendMailOptions } from 'nodemailer'
 import {

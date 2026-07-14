@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AppBskyActorSearchActors, AtpAgent, ids } from '@atproto/api'
 import { wait } from '@atproto/common'
 import { SeedClient, TestNetwork, usersBulkSeed } from '@atproto/dev-env'

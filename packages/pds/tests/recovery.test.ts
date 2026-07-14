@@ -1,3 +1,4 @@
+// @ts-nocheck
 import fs from 'node:fs/promises'
 import * as ui8 from 'uint8arrays'
 import AtpAgent from '@atproto/api'

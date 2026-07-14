@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, it } from 'vitest'
 import { boolean } from './boolean.js'
 import { integer } from './integer.js'

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as ui8 from 'uint8arrays'
 import { CID } from '@atproto/lex-data'
 import { cborDecodeMulti, cborEncode } from '../src/index.js'

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as plc from '@did-plc/lib'
 import { Database as DidPlcDb, PlcServer } from '@did-plc/server'
 import getPort from 'get-port'

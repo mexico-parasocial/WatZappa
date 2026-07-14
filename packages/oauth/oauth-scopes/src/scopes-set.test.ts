@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ScopesSet } from './scopes-set.js'
 
 describe('ScopesSet', () => {

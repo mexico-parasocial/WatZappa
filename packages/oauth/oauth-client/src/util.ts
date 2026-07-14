@@ -42,6 +42,15 @@ function timeoutError(ms: number): unknown {
   return new Error(message)
 }
 
+declare global {
+  interface SymbolConstructor {
+    readonly dispose: unique symbol
+  }
+  interface Disposable {
+    [Symbol.dispose](): void
+  }
+}
+
 export function combineSignals(
   signals: readonly (AbortSignal | undefined)[],
 ): AbortController & Disposable {

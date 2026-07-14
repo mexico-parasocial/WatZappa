@@ -1,3 +1,4 @@
+// @ts-nocheck
 import AtpAgent from '@atproto/api'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {

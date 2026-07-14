@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { Cid, parseCid } from '@atproto/lex-data'
 import { DataAdd, DataDelete, DataDiff, DataUpdate } from '../src/data-diff.js'

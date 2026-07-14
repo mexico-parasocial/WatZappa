@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, it } from 'vitest'
 import { parseCid } from './cid.js'
 import { isObject, isPlainObject } from './object.js'

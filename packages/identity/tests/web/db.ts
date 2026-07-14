@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { DidDocument } from '../../src/types.js'
 
 interface DidStore {

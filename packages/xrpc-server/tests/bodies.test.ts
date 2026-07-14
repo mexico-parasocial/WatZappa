@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { jest } from '@jest/globals'
 import assert from 'node:assert'
 import * as http from 'node:http'

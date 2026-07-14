@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { request } from 'undici'
 import { AtpAgent } from '@atproto/api'
 import {

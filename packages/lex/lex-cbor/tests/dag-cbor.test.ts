@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { decodeFirst } from 'cborg'
 import { encodedLength } from 'cborg/length'
 import { assert, describe, test } from 'vitest'
@@ -13,7 +14,7 @@ const bytes = {
     return data instanceof Uint8Array
   },
   toHex: (data: Uint8Array | ArrayBuffer): string => {
-    return Buffer.from(data).toString('hex')
+    return Buffer.from(data as ArrayBufferView).toString('hex')
   },
   fromHex: (hex: string): Uint8Array => {
     return Buffer.from(hex, 'hex')

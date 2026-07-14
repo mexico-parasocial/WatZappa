@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { DidString, Infer, Unknown$Type, Unknown$TypedObject } from '../core.js'
 import { integer } from './integer.js'

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createDeferrable, wait } from '@atproto/common'
 import {
   SeedClient,

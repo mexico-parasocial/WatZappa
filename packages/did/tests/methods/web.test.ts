@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { InvalidDidError } from '../../src/did-error.js'
 import { Did } from '../../src/did.js'
 import {

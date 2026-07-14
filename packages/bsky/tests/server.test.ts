@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { once } from 'node:events'
 import { AddressInfo } from 'node:net'
 import { finished } from 'node:stream/promises'

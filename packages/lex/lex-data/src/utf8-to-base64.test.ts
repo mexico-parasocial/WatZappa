@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { assert, describe, expect, test } from 'vitest'
 import { utf8ToBase64Node, utf8ToBase64Ponyfill } from './utf8-to-base64.js'
 

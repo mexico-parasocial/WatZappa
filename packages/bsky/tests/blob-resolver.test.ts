@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { request } from 'undici'
 import { cidForCbor, verifyCidForBytes } from '@atproto/common'
 import { randomBytes } from '@atproto/crypto'

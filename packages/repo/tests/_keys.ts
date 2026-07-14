@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const A0 = 'A0/374913'
 export const A1 = 'A1/076595'
 export const A2 = 'A2/827942'

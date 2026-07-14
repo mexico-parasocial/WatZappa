@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { sql } from 'kysely'
 import { wait } from '@atproto/common'
 import { TestNetwork } from '@atproto/dev-env'

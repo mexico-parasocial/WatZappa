@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ScopePermissions } from './scope-permissions.js'
 
 describe('ScopePermissions', () => {

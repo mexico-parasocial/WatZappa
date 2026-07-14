@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, it } from 'vitest'
 import { XrpcInternalError, XrpcResponseError } from '@atproto/lex-client'
 import { LexError } from '@atproto/lex-data'

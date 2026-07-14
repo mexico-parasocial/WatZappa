@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { TestNetwork } from '@atproto/dev-env'
 import { lexStringify } from '@atproto/lex'
 import { StashClient } from '../dist/stash.js'

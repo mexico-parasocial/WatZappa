@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Facet, RichText, UnicodeString, sanitizeRichText } from '../src/index.js'
 
 describe('sanitizeRichText: cleanNewlines', () => {

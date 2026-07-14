@@ -181,7 +181,7 @@ export class RequestManager {
     // the fact that the AS does not know how to properly display those scopes
     // to the user, so it cannot properly ask for consent.
     const scope =
-      Array.from(scopes).filter(isAtprotoOauthScope).join(' ') || undefined
+      [...scopes].filter(isAtprotoOauthScope).join(' ') || undefined
     parameters = { ...parameters, scope }
 
     if (parameters.code_challenge) {

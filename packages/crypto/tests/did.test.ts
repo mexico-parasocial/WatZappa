@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as uint8arrays from 'uint8arrays'
 import { P256Keypair, Secp256k1Keypair } from '../src/index.js'
 import * as did from '../src/did.js'

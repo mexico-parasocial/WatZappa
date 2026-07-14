@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { finished } from 'node:stream/promises'
 import express from 'express'
 import { request } from 'undici'

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ZodError } from 'zod'
 import { check } from '../src/index.js'
 

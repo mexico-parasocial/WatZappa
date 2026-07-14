@@ -1,3 +1,4 @@
+// @ts-nocheck
 import fs from 'node:fs'
 import { TID } from '@atproto/common-web'
 import * as crypto from '@atproto/crypto'

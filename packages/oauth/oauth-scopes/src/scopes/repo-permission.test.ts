@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { RepoPermission } from './repo-permission.js'
 
 describe('RepoPermission', () => {

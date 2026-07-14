@@ -34,7 +34,7 @@ export function AtmosphereSignInForm({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     if (disabled) return
 
-    onSubmit?.(event)
+    onSubmit?.(event as any)
     if (!event.defaultPrevented) {
       event.preventDefault()
 

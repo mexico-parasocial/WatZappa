@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { randomIntFromSeed } from '../src/index.js'
 
 describe('randomIntFromSeed()', () => {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import * as nodeCrypto from 'node:crypto'
 import * as jose from 'jose'

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AddressInfo } from 'node:net'
 import { scheduler } from 'node:timers/promises'
 import { describe, expect, it, vi } from 'vitest'

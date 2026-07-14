@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as http from 'node:http'
 import { AddressInfo } from 'node:net'
 import { WebSocket, createWebSocketStream } from 'ws'

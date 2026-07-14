@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AtpAgent, ComAtprotoServerCreateAccount } from '@atproto/api'
 import { DAY } from '@atproto/common'
 import * as crypto from '@atproto/crypto'

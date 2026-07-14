@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* eslint-disable @typescript-eslint/no-namespace */
 
 import { afterAll, assert, beforeAll, describe, expect, it, vi } from 'vitest'

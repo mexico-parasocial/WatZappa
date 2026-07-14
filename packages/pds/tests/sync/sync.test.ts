@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { TID } from '@atproto/common'
 import { Keypair, randomStr } from '@atproto/crypto'

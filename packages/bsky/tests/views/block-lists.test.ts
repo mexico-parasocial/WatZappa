@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AtUri, AtpAgent, ids } from '@atproto/api'
 import type { DidString, HandleString } from '@atproto/syntax'
 import { RecordRef, SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'

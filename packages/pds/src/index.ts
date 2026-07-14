@@ -119,7 +119,7 @@ export class PDS {
               ) {
                 return true
               }
-              if (bypassIps && bypassIps.includes(req.ip)) {
+              if (bypassIps && req.ip && bypassIps.includes(req.ip)) {
                 return true
               }
               return false

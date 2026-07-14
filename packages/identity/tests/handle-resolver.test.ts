@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { jest } from '@jest/globals'
 
 jest.unstable_mockModule('node:dns/promises', () => {

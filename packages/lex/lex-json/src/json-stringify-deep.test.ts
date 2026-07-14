@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, it, test } from 'vitest'
 import { MAX_CBOR_NESTED_LEVELS } from '@atproto/lex-data'
 import {

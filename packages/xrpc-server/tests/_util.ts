@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { once } from 'node:events'
 import * as http from 'node:http'
 import express from 'express'

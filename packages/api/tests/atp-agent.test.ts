@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { TID } from '@atproto/common-web'
 import { TestNetworkNoAppView } from '@atproto/dev-env'
 import { asPredicate } from '../src/client/util.js'

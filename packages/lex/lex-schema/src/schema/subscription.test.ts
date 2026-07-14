@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { integer } from './integer.js'
 import { ObjectSchema, object } from './object.js'

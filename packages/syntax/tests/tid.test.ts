@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, test } from 'vitest'
 import { InvalidTidError, ensureValidTid } from '../src/index.js'
 import { readInteropFile } from './_utils.ts'

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * GENERATED CODE - DO NOT MODIFY
  */

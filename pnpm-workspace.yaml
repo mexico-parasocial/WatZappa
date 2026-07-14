@@ -4,3 +4,18 @@ packages:
   - 'packages/lex/*'
   - 'packages/oauth/*'
   - 'packages/internal/*'
+allowBuilds:
+  '@bufbuild/buf': true
+  '@datadog/native-appsec': true
+  '@datadog/native-iast-taint-tracking': true
+  '@datadog/native-metrics': true
+  '@datadog/pprof': true
+  '@matrix-org/matrix-sdk-crypto-nodejs': true
+  '@swc/core': true
+  better-sqlite3: true
+  core-js: true
+  esbuild: true
+  protobufjs: true
+  puppeteer: true
+  sharp: true
+  unrs-resolver: true

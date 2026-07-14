@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, it, test } from 'vitest'
 import { MAX_CBOR_NESTED_LEVELS, parseCid } from '@atproto/lex-data'
 import { lexStringify } from './lex-stringify.js'

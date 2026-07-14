@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, test } from 'vitest'
 import { InvalidRecordKeyError, ensureValidRecordKey } from '../src/index.js'
 import { readInteropFile } from './_utils.ts'

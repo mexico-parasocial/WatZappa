@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { assert, describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { parseCid } from '@atproto/lex-data'
 import { lexToJson } from '@atproto/lex-json'

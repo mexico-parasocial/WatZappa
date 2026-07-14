@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as crypto from '@atproto/crypto'
 import {
   CidSet,

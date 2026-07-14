@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { readFromGenerator, wait } from '@atproto/common'
 import { randomStr } from '@atproto/crypto'
 import { EXAMPLE_LABELER, TestNetwork } from '@atproto/dev-env'

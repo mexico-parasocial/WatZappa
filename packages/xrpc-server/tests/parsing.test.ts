@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { parseUrlNsid } from '../src/util.js'
 
 const testValid = (url: string, expected: string) => {

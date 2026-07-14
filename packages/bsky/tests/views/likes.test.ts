@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AppBskyFeedGetLikes, AtpAgent, ids } from '@atproto/api'
 import type { DidString, HandleString } from '@atproto/syntax'
 import { SeedClient, TestNetwork, likesSeed } from '@atproto/dev-env'

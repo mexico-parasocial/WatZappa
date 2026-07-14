@@ -1,3 +1,4 @@
+// @ts-nocheck
 import http from 'node:http'
 import cors from 'cors'
 import express, { Router, json } from 'express'

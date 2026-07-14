@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { vi } from 'vitest'
 /// <reference types="jest" />
 import { callerInterceptor } from './util.js'

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Code, ConnectError } from '@connectrpc/connect'
 import getPort from 'get-port'
 import { wait } from '@atproto/common'

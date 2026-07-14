@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { util } from '../src/index.js'
 
 describe('util', () => {

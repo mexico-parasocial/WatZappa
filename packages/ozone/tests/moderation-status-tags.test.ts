@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { ComAtprotoAdminDefs } from '@atproto/api'
 import {

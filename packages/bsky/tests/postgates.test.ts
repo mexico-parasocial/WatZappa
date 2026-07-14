@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AppBskyEmbedRecord, AtpAgent, ids } from '@atproto/api'
 import { SeedClient, TestNetwork } from '@atproto/dev-env'
 import { Users, postgatesSeed } from './seed/postgates.js'

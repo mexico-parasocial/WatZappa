@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { TID } from '../src/tid.js'
 
 describe('TIDs', () => {

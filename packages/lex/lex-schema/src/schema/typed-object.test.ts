@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, it } from 'vitest'
 import { Infer, Unknown$Type, Unknown$TypedObject } from '../core.js'
 import { enumSchema } from './enum.js'

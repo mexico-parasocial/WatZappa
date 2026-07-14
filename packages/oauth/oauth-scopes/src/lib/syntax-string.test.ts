@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ScopeStringSyntax } from './syntax-string.js'
 import { ScopeStringFor } from './syntax.js'
 

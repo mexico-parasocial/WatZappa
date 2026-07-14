@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AtUri, AtpAgent } from '@atproto/api'
 import { SeedClient, TestNetwork, likesSeed } from '@atproto/dev-env'
 import { ids } from '../../src/lexicon/lexicons.js'

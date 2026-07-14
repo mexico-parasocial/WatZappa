@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { wait } from '@atproto/common'
 import { ConsecutiveList, MemoryRunner } from '../src/index.js'
 

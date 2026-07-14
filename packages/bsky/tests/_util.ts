@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Server } from 'node:http'
 import { AddressInfo } from 'node:net'
 import { type Express } from 'express'

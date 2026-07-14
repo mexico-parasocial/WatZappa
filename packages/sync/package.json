@@ -1,6 +1,6 @@
 {
   "name": "@atproto/sync",
-  "version": "0.3.8",
+  "version": "0.3.10",
   "license": "MIT",
   "description": "atproto sync library",
   "keywords": [
@@ -34,7 +34,9 @@
     "@atproto/common": "workspace:^",
     "@atproto/identity": "workspace:^",
     "@atproto/lex": "workspace:^",
+    "@atproto/lexicon": "workspace:^",
     "@atproto/repo": "workspace:^",
+    "multiformats": "^13.0.0",
     "@atproto/syntax": "workspace:^",
     "@atproto/xrpc-server": "workspace:^",
     "p-queue": "^8.0.0",

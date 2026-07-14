@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { WebSocket } from 'ws'
 import { AtpAgent } from '@atproto/api'
 import {

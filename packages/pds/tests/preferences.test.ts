@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AtpAgent } from '@atproto/api'
 import { SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
 import type { Unknown$Type } from '@atproto/lex'

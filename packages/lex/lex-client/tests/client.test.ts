@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { assert, describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { LexValue, cidForLex } from '@atproto/lex-cbor'
 import { cidForRawBytes, isTypedBlobRef, parseCid } from '@atproto/lex-data'

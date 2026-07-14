@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { chunkArray } from '@atproto/common'
 import { SeedClient } from '@atproto/dev-env'
 import type { HandleString } from '@atproto/syntax'

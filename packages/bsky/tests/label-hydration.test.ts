@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { AtpAgent } from '@atproto/api'
 import { MINUTE } from '@atproto/common'

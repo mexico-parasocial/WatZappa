@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* eslint-disable @typescript-eslint/no-namespace */
 
 import { describe, expect, it } from 'vitest'

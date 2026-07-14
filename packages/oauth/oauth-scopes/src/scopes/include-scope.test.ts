@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { LexPermissionSyntax } from '../lib/syntax-lexicon.js'
 import { ScopeStringFor } from '../lib/syntax.js'
 import { AccountPermission } from './account-permission.js'

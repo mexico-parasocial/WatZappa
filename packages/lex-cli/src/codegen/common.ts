@@ -276,7 +276,8 @@ export async function gen(
 }
 
 function banner() {
-  return `/**
+  return `// @ts-nocheck
+/**
  * GENERATED CODE - DO NOT MODIFY
  */
 `

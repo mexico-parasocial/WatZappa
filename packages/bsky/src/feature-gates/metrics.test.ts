@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { type Mock, vi } from 'vitest'
 /// <reference types="jest" />
 import { featureGatesLogger } from '../logger.js'

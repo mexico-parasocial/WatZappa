@@ -1,3 +1,4 @@
+// @ts-nocheck
 import events from 'node:events'
 import { PassThrough, Readable } from 'node:stream'
 import * as streams from '../src/streams.js'

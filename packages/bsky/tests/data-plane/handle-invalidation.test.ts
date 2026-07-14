@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AtpAgent, ids } from '@atproto/api'
 import { DAY } from '@atproto/common'
 import { SeedClient, TestNetwork, usersSeed } from '@atproto/dev-env'

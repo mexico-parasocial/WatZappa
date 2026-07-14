@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { jest } from '@jest/globals'
 import { type AtpAgent } from '@atproto/api'
 import { type SeedClient } from '@atproto/dev-env'

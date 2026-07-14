@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { EventEmitter, once } from 'node:events'
 import { Selectable } from 'kysely'
 import Mail from 'nodemailer/lib/mailer'

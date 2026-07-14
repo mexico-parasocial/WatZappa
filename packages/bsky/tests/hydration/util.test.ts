@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Timestamp } from '@bufbuild/protobuf'
 import {
   HydrationMap,

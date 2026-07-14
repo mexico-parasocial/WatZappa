@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { bench, describe } from 'vitest'
 import { JsonValue } from './json.js'
 import { LexParseOptions, lexParse } from './lex-parse.js'

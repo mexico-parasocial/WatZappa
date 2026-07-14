@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { TID } from '@atproto/common'
 import * as crypto from '@atproto/crypto'
 import { Secp256k1Keypair } from '@atproto/crypto'

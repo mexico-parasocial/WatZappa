@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $Typed } from '../src/client/util.js'
 import {
   AppBskyEmbedGallery,

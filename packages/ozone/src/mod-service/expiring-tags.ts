@@ -18,6 +18,7 @@ export async function insertExpiringTags(
     eventId: number
     did: string
     recordPath: string
+    convoId: string
     tags: string[]
     expiresAt: string
     createdBy: string
@@ -30,6 +31,7 @@ export async function insertExpiringTags(
         eventId: params.eventId,
         did: params.did,
         recordPath: params.recordPath,
+        convoId: params.convoId,
         tag,
         expiresAt: params.expiresAt,
         createdBy: params.createdBy,
@@ -43,6 +45,7 @@ export async function removeExpiringTags(
   params: {
     did: string
     recordPath: string
+    convoId: string
     tags: string[]
   },
 ): Promise<void> {
@@ -50,6 +53,7 @@ export async function removeExpiringTags(
     .deleteFrom('expiring_tag')
     .where('did', '=', params.did)
     .where('recordPath', '=', params.recordPath)
+    .where('convoId', '=', params.convoId)
     .where('tag', 'in', params.tags)
     .execute()
 }

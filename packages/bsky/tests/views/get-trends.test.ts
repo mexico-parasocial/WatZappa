@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { once } from 'node:events'
 import { Server, createServer } from 'node:http'

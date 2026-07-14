@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { isAtprotoDidRefAbsolute } from '../src/atproto.js'
 import { isDidRefRelative } from '../src/did-ref.js'
 

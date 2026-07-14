@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { RecordRef, SeedClient } from '@atproto/dev-env'
 
 export default async (sc: SeedClient, did, threads: Item[]) => {

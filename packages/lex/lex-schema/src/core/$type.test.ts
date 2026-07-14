@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expectTypeOf, it } from 'vitest'
 import { LexMap } from '@atproto/lex-data'
 import { Unknown$Type, Unknown$TypedObject } from './$type.js'

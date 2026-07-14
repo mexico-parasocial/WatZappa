@@ -13,7 +13,7 @@ WatZappa is the backend for PARA social app, it's an AT Protocol fork. This repo
 ## Requirements
 
 - Node.js 22 or newer
-- pnpm 8.15.9
+- pnpm 11.11.0
 - Docker, for local infrastructure and containerized services
 
 ## Getting Started

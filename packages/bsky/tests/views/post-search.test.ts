@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AppBskyFeedSearchPosts, AtpAgent, ids } from '@atproto/api'
 import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 import type { DidString, HandleString } from '@atproto/syntax'

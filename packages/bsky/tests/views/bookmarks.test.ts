@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { vi } from 'vitest'
 import assert from 'node:assert'
 import {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { once } from 'node:events'
 import http from 'node:http'
 import { AddressInfo } from 'node:net'

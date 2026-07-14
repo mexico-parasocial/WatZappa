@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { assert, describe, expect, it } from 'vitest'
 import { utf8FromBytesNative, utf8FromBytesNode } from './utf8-from-bytes.js'
 

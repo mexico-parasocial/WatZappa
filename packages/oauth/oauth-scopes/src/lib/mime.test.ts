@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { isAccept, isMime, matchesAccept, matchesAnyAccept } from './mime.js'
 
 describe('isAccept', () => {

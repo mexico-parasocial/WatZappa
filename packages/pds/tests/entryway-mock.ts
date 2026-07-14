@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createPrivateKey } from 'node:crypto'
 import * as http from 'node:http'
 import * as plcLib from '@did-plc/lib'

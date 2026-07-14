@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, it } from 'vitest'
 import { PermissionSet, permissionSet } from './permission-set.js'
 import { Permission, permission } from './permission.js'

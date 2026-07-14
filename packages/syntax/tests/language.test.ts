@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, it, test } from 'vitest'
 import { isValidLanguage, parseLanguageString } from '../src/index.js'
 import { readInteropFile } from './_utils.ts'

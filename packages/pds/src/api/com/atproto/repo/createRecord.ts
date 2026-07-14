@@ -1,4 +1,4 @@
-import { MAX_CBOR_NESTED_LEVELS, parseCid } from '@atproto/lex-data'
+import { parseCid } from '@atproto/lex-data'
 import { InvalidRecordKeyError } from '@atproto/syntax'
 import {
   AuthRequiredError,
@@ -7,6 +7,10 @@ import {
 } from '@atproto/xrpc-server'
 import { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
+import {
+  $OutputBody as CreateRecordOutputBody,
+  $Params as CreateRecordParams,
+} from '../../../../lexicons/com/atproto/repo/createRecord.defs.js'
 import { dbLogger } from '../../../../logger.js'
 import {
   BadCommitSwapError,
@@ -18,7 +22,7 @@ import {
 
 export default function (server: Server, ctx: AppContext) {
   server.add(com.atproto.repo.createRecord, {
-    auth: ctx.authVerifier.authorization({
+    auth: ctx.authVerifier.authorization<CreateRecordParams>({
       // @NOTE the "checkTakedown" and "checkDeactivated" checks are typically
       // performed during auth. However, since this method's "repo" parameter
       // can be a handle, we will need to fetch the account again to ensure that
@@ -45,12 +49,6 @@ export default function (server: Server, ctx: AppContext) {
       },
     ],
     opts: {
-      inputProcessingOptions: {
-        strict: true,
-        // @NOTE We add 1 here because the top-level body counts as a level.
-        maxNestedLevels: MAX_CBOR_NESTED_LEVELS + 1,
-        // Other limits will be derived from strict mode.
-      },
       jsonLimit: 1_000_000,
     },
     handler: async ({ input, auth }) => {
@@ -142,7 +140,7 @@ export default function (server: Server, ctx: AppContext) {
             rev: commit.rev,
           },
           validationStatus: write.validationStatus,
-        },
+        } satisfies CreateRecordOutputBody,
       }
     },
   })

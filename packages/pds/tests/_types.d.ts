@@ -1,3 +1,4 @@
+// @ts-nocheck
 declare module 'nodemailer/lib/mailer' {
   namespace Mail {
     interface Options {

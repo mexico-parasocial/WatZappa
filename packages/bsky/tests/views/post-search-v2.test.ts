@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
 

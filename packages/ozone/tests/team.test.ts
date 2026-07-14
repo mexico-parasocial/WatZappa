@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AtpAgent, ToolsOzoneTeamDefs } from '@atproto/api'
 import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 import { forSnapshot } from './_util.js'

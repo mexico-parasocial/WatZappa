@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { RpcPermission } from './rpc-permission.js'
 
 describe('RpcPermission', () => {

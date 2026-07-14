@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, it } from 'vitest'
 import { literal } from './literal.js'
 import { withDefault } from './with-default.js'

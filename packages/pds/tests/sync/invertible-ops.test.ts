@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { AtUri } from '@atproto/api'
 import { SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'

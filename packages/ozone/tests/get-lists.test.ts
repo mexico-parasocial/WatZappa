@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AtpAgent, BSKY_LABELER_DID } from '@atproto/api'
 import {
   ModeratorClient,

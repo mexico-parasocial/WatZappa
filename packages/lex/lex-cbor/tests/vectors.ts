@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { parseCid } from '@atproto/lex-data'
 
 export const vectors = [

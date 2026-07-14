@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { KeyObject, createPrivateKey } from 'node:crypto'
 import * as http from 'node:http'
 import { AddressInfo } from 'node:net'

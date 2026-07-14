@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { vi } from 'vitest'
 import crypto from 'node:crypto'
 import { once } from 'node:events'

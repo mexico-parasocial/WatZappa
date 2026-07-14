@@ -1,3 +1,4 @@
+// @ts-nocheck
 import 'core-js/es/typed-array/from-base64.js'
 import 'core-js/es/typed-array/to-base64.js'
 

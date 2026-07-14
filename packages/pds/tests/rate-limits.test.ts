@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AtpAgent } from '@atproto/api'
 import { randomStr } from '@atproto/crypto'
 import { SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'

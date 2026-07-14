@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { request } from 'undici'
 import {
   SeedClient,

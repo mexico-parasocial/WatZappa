@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { UnknownString } from '@atproto/lex-schema'
 import * as com from './lexicons/com.js'

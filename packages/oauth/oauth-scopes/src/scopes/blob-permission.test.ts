@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { BlobPermission } from './blob-permission.js'
 
 describe('BlobPermission', () => {

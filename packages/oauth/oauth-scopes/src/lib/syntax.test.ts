@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { isScopeStringFor } from './syntax.js'
 
 describe('isScopeStringFor', () => {

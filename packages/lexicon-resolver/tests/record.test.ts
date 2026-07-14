@@ -1,8 +1,10 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { SeedClient, TestNetworkNoAppView, usersSeed } from '@atproto/dev-env'
 import { AtUriString, l } from '@atproto/lex'
 import { encode } from '@atproto/lex-cbor'
-import { AtprotoRecordResolver, buildRecordResolver } from '../src/index.js'
+import { buildRecordResolver } from '../src/index.js'
+import type { AtprotoRecordResolver } from '../src/index.js'
 
 describe('Record resolution', () => {
   let network: TestNetworkNoAppView

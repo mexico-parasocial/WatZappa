@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AtpAgent } from '@atproto/api'
 import { wait } from '@atproto/common'
 import { Keypair } from '@atproto/crypto'

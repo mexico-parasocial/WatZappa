@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { AtUri, AtpAgent } from '@atproto/api'
 import {

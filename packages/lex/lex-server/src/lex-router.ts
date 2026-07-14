@@ -881,6 +881,7 @@ export class LexRouter {
 
               const data = encodeMessageFrame(method, result.value)
 
+              // @ts-expect-error WebSocket binary send typing
               socket.send(data)
 
               // Apply backpressure by waiting for the buffered data to drain
@@ -903,11 +904,13 @@ export class LexRouter {
                   : 1011 // Internal Error for unexpected errors
 
               if (isLexError) {
+                // @ts-expect-error WebSocket binary send typing
                 socket.send(encodeErrorFrame(error.toJSON()))
                 socket.close(code, error.error)
               } else {
                 const error = 'InternalServerError'
                 const message = 'An internal error occurred'
+                // @ts-expect-error WebSocket binary send typing
                 socket.send(encodeErrorFrame({ error, message }))
                 socket.close(code, error)
               }
@@ -1107,6 +1110,7 @@ async function getQueryInput<M extends Query>(
 function onMessage(this: WebSocket, _event: unknown) {
   const error = 'InvalidRequest'
   const message = 'XRPC subscriptions do not accept messages'
+  // @ts-expect-error WebSocket binary send typing
   this.send(encodeErrorFrame({ error, message }))
   // 1003 indicates that an endpoint is terminating the connection
   // because it has received a type of data it cannot accept (e.g., an

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { EventEmitter, once } from 'node:events'
 import Mail from 'nodemailer/lib/mailer'

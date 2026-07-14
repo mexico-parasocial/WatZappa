@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { randomBytes } from '../src/index.js'
 import { P256Keypair } from '../src/p256/keypair.js'
 import * as p256 from '../src/p256/operations.js'

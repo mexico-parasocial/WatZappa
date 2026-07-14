@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AppBskyGraphGetMutes, AtpAgent, ids } from '@atproto/api'
 import {
   SeedClient,

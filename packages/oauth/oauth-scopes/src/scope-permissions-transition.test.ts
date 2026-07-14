@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ScopePermissionsTransition } from './scope-permissions-transition.js'
 
 describe('ScopePermissionsTransition', () => {

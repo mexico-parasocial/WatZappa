@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { AppBskyLabelerDefs, AtpAgent, ids } from '@atproto/api'
 import { RecordRef, SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'

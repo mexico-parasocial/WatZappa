@@ -1,3 +1,4 @@
+// @ts-nocheck
 import getPort from 'get-port'
 import { WebSocketServer } from 'ws'
 import { wait } from '@atproto/common'

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {

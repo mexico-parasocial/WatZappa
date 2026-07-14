@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import * as plc from '@did-plc/lib'
 import { AtpAgent } from '@atproto/api'

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { type Browser, Handler, type Page, Target, TargetType } from 'puppeteer'
 

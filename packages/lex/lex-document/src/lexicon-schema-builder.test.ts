@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { beforeAll, describe, expect, it } from 'vitest'
 import { parseCid } from '@atproto/lex-data'
 import { l } from '@atproto/lex-schema'

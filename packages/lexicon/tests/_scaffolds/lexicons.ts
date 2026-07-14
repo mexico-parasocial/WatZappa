@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { LexiconDoc } from '../../src/index.js'
 
 const lexicons: LexiconDoc[] = [

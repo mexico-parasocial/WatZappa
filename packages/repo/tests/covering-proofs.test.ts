@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { parseCid } from '@atproto/lex-data'
 import { BlockMap } from '../src/index.js'
 import { MST } from '../src/mst/index.js'

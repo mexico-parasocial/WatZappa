@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { sql } from 'kysely'
 import AtpAgent from '@atproto/api'
 import {

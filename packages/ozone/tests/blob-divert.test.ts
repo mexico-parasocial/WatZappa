@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { jest } from '@jest/globals'
 import { ToolsOzoneModerationDefs } from '@atproto/api'

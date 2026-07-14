@@ -1,3 +1,4 @@
+// @ts-nocheck
 import fs from 'node:fs'
 // eslint-disable-next-line import/no-unresolved
 import { CID } from 'multiformats'

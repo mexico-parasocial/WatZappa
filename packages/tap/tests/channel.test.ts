@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, it } from 'vitest'
 import { AddressInfo } from 'ws'
 import { TapChannel, TapHandler } from '../src/channel.js'

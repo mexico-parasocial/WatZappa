@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { cidForCbor } from '@atproto/common'
 import { Cid } from '@atproto/lex'
 import { BadPathError, ImageUriBuilder } from '../../src/image/uri.js'

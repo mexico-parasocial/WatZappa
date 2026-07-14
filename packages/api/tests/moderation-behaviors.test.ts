@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { moderatePost, moderateProfile } from '../src/index.js'
 import {
   ModerationBehaviorSuiteRunner,

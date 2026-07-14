@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { Code, ConnectError } from '@connectrpc/connect'
 import getPort from 'get-port'

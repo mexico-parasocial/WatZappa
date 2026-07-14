@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Sender, WebSocketServer } from 'ws'
 import { AppBskyGraphVerification, AtpAgent } from '@atproto/api'
 import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'

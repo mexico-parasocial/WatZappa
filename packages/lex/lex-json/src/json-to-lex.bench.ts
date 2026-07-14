@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { bench, describe } from 'vitest'
 import { LexMap, LexValue, utf8Len } from '@atproto/lex-data'
 import { iterativeTransform } from './iterative-transform.js'

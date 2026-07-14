@@ -12,6 +12,7 @@ import {
   REVIEWNONE,
   REVIEWOPEN,
 } from '../lexicon/types/tools/ozone/moderation/defs.js'
+import { ModSubject } from './subject.js'
 import { ModerationEventRow, ModerationSubjectStatusRow } from './types.js'
 
 const getSubjectStatusForModerationEvent = ({
@@ -505,13 +506,22 @@ export const adjustModerationSubjectStatus = async (
 }
 
 export const getStatusIdentifierFromSubject = (
-  subject: string | AtUri,
-): { did: string; recordPath: string } => {
+  subject: string | AtUri | ModSubject,
+): { did: string; recordPath: string; convoId: string } => {
+  if (typeof subject === 'object' && 'isRepo' in subject) {
+    return {
+      did: subject.did,
+      recordPath: subject.recordPath ?? '',
+      convoId: subject.convoId ?? '',
+    }
+  }
+
   const isSubjectString = typeof subject === 'string'
   if (isSubjectString && subject.startsWith('did:')) {
     return {
       did: subject,
       recordPath: '',
+      convoId: '',
     }
   }
 
@@ -523,5 +533,6 @@ export const getStatusIdentifierFromSubject = (
   return {
     did: uri.host,
     recordPath: `${uri.collection}/${uri.rkey}`,
+    convoId: '',
   }
 }

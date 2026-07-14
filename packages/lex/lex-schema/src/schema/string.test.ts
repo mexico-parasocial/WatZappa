@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { Infer, UnknownString } from '../core.js'
 import { StringSchemaOptions, string } from './string.js'

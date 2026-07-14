@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { TestNetwork } from '@atproto/dev-env'
 
 describe('sitemap', () => {

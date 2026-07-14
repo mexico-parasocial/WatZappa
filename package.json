@@ -7,20 +7,21 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=24.18.0"
   },
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": ">=22",
+      "version": ">=24.18.0",
       "onFail": "error"
     },
     "packageManager": {
       "name": "pnpm",
-      "version": "10.33.2",
+      "version": "11.11.0",
       "onFail": "error"
     }
   },
+  "packageManager": "pnpm@11.11.0",
   "scripts": {
     "lint:fix": "pnpm lint --fix",
     "lint": "NODE_OPTIONS=--max_old_space_size=4096 eslint . --ext .ts,.js,.tsx,.jsx",

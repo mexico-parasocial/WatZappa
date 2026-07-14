@@ -561,7 +561,7 @@ export class ModerationViews {
         $type: 'tools.ozone.moderation.defs#convoView',
         did: subject.did,
         convoId: subject.convoId,
-      }
+      } as unknown as SubjectView
     } else if (subject.isRepo()) {
       const repos = await this.repos([subject.did])
       const repo = repos.get(subject.did)

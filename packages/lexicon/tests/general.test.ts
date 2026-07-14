@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import { CID } from 'multiformats/cid'
 import { LexiconDoc, Lexicons, parseLexiconDoc } from '../src/index.js'

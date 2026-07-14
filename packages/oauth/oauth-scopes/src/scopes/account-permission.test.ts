@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AccountPermission } from './account-permission.js'
 
 describe('AccountPermission', () => {

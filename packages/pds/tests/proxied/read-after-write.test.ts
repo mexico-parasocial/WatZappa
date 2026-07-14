@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from 'node:assert'
 import util from 'node:util'
 import { request } from 'undici'

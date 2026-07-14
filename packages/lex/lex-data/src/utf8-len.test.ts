@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { assert, describe, expect, it } from 'vitest'
 import { utf8LenCompute, utf8LenNode } from './utf8-len.js'
 

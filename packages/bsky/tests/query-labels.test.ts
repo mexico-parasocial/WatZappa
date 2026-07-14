@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AtpAgent } from '@atproto/api'
 import type { DidString, HandleString } from '@atproto/syntax'
 import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'

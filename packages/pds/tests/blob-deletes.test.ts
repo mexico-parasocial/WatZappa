@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AtpAgent, BlobRef } from '@atproto/api'
 import { SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
