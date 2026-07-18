@@ -67,7 +67,7 @@ fmt: ## Run syntax re-formatting
 
 .PHONY: fmt-lexicons
 fmt-lexicons: ## Run syntax re-formatting, just on .json files
-	pnpm exec eslint ./lexicons/ --ext .json --fix
+	npx prettier --write "./lexicons/**/*.json"
 
 .PHONY: deps
 deps: ## Installs dependent libs using 'pnpm install'

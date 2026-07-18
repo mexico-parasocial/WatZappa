@@ -1,9 +1,12 @@
+maxima-sandman-black-canary.md
 packages:
   - 'services/*'
   - 'packages/*'
   - 'packages/lex/*'
   - 'packages/oauth/*'
   - 'packages/internal/*'
+overrides:
+  '@smithy/core': ^3.29.5
 allowBuilds:
   '@bufbuild/buf': true
   '@datadog/native-appsec': true

@@ -7072,6 +7072,61 @@ export const schemaDict = {
       },
     },
   },
+  AppBskyGraphSearchStarterPacksV2: {
+    lexicon: 1,
+    id: 'app.bsky.graph.searchStarterPacksV2',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Find starter packs matching search criteria. Does not require auth.',
+        parameters: {
+          type: 'params',
+          required: ['q'],
+          properties: {
+            q: {
+              type: 'string',
+              description:
+                'Search query string. Syntax, phrase, boolean, and faceting is unspecified, but Lucene query syntax is recommended.',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 25,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['starterPacks'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              hitsTotal: {
+                type: 'integer',
+                description:
+                  'Estimated total number of matching hits. May be rounded or truncated.',
+              },
+              starterPacks: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:app.bsky.graph.defs#starterPackView',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   AppBskyGraphStarterpack: {
     lexicon: 1,
     id: 'app.bsky.graph.starterpack',
@@ -36747,6 +36802,7 @@ export const ids = {
   AppBskyGraphMuteActorList: 'app.bsky.graph.muteActorList',
   AppBskyGraphMuteThread: 'app.bsky.graph.muteThread',
   AppBskyGraphSearchStarterPacks: 'app.bsky.graph.searchStarterPacks',
+  AppBskyGraphSearchStarterPacksV2: 'app.bsky.graph.searchStarterPacksV2',
   AppBskyGraphStarterpack: 'app.bsky.graph.starterpack',
   AppBskyGraphUnmuteActor: 'app.bsky.graph.unmuteActor',
   AppBskyGraphUnmuteActorList: 'app.bsky.graph.unmuteActorList',

@@ -76,6 +76,7 @@ import * as AppBskyGraphMuteActor from './types/app/bsky/graph/muteActor.js'
 import * as AppBskyGraphMuteActorList from './types/app/bsky/graph/muteActorList.js'
 import * as AppBskyGraphMuteThread from './types/app/bsky/graph/muteThread.js'
 import * as AppBskyGraphSearchStarterPacks from './types/app/bsky/graph/searchStarterPacks.js'
+import * as AppBskyGraphSearchStarterPacksV2 from './types/app/bsky/graph/searchStarterPacksV2.js'
 import * as AppBskyGraphUnmuteActor from './types/app/bsky/graph/unmuteActor.js'
 import * as AppBskyGraphUnmuteActorList from './types/app/bsky/graph/unmuteActorList.js'
 import * as AppBskyGraphUnmuteThread from './types/app/bsky/graph/unmuteThread.js'
@@ -1405,6 +1406,18 @@ export class AppBskyGraphNS {
     >,
   ) {
     const nsid = 'app.bsky.graph.searchStarterPacks' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  searchStarterPacksV2<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      AppBskyGraphSearchStarterPacksV2.QueryParams,
+      AppBskyGraphSearchStarterPacksV2.HandlerInput,
+      AppBskyGraphSearchStarterPacksV2.HandlerOutput
+    >,
+  ) {
+    const nsid = 'app.bsky.graph.searchStarterPacksV2' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
 

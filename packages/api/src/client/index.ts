@@ -102,6 +102,7 @@ import * as AppBskyGraphMuteActor from './types/app/bsky/graph/muteActor.js'
 import * as AppBskyGraphMuteActorList from './types/app/bsky/graph/muteActorList.js'
 import * as AppBskyGraphMuteThread from './types/app/bsky/graph/muteThread.js'
 import * as AppBskyGraphSearchStarterPacks from './types/app/bsky/graph/searchStarterPacks.js'
+import * as AppBskyGraphSearchStarterPacksV2 from './types/app/bsky/graph/searchStarterPacksV2.js'
 import * as AppBskyGraphStarterpack from './types/app/bsky/graph/starterpack.js'
 import * as AppBskyGraphUnmuteActor from './types/app/bsky/graph/unmuteActor.js'
 import * as AppBskyGraphUnmuteActorList from './types/app/bsky/graph/unmuteActorList.js'
@@ -592,6 +593,7 @@ export * as AppBskyGraphMuteActor from './types/app/bsky/graph/muteActor.js'
 export * as AppBskyGraphMuteActorList from './types/app/bsky/graph/muteActorList.js'
 export * as AppBskyGraphMuteThread from './types/app/bsky/graph/muteThread.js'
 export * as AppBskyGraphSearchStarterPacks from './types/app/bsky/graph/searchStarterPacks.js'
+export * as AppBskyGraphSearchStarterPacksV2 from './types/app/bsky/graph/searchStarterPacksV2.js'
 export * as AppBskyGraphStarterpack from './types/app/bsky/graph/starterpack.js'
 export * as AppBskyGraphUnmuteActor from './types/app/bsky/graph/unmuteActor.js'
 export * as AppBskyGraphUnmuteActorList from './types/app/bsky/graph/unmuteActorList.js'
@@ -2605,6 +2607,18 @@ export class AppBskyGraphNS {
   ): Promise<AppBskyGraphSearchStarterPacks.Response> {
     return this._client.call(
       'app.bsky.graph.searchStarterPacks',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  searchStarterPacksV2(
+    params?: AppBskyGraphSearchStarterPacksV2.QueryParams,
+    opts?: AppBskyGraphSearchStarterPacksV2.CallOptions,
+  ): Promise<AppBskyGraphSearchStarterPacksV2.Response> {
+    return this._client.call(
+      'app.bsky.graph.searchStarterPacksV2',
       params,
       undefined,
       opts,
