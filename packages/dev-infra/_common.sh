@@ -44,7 +44,8 @@ export_redis_env() {
   if [[ "${SERVICES}" == *"redis_test"* ]]; then
     export REDIS_HOST="127.0.0.1:6380"
   else
-    export REDIS_HOST="127.0.0.1:6379"
+    # Host port 6381: 6379 is taken by the apice-redis container.
+    export REDIS_HOST="127.0.0.1:6381"
   fi
 }
 

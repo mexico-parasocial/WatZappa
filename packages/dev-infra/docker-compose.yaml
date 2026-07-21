@@ -48,7 +48,8 @@ services:
     <<: *redis_test
     command: redis-server --save 60 1 --loglevel warning
     ports:
-      - '6379:6379'
+      # Host port moved to 6381: 6379 is taken by the apice-redis container.
+      - '6381:6379'
     volumes:
       - atp_redis:/data
 volumes:
