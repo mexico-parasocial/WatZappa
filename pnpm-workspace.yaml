@@ -1,4 +1,3 @@
-maxima-sandman-black-canary.md
 packages:
   - 'services/*'
   - 'packages/*'
