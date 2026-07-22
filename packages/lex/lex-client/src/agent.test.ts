@@ -132,7 +132,7 @@ describe(buildAgent, () => {
       expect(agent.did).toBe('did:plc:test123')
     })
 
-    it('reflects did changes on the config object', () => {
+    it('ignores changes on the config object', () => {
       const config: AgentConfig = {
         did: 'did:plc:original',
         service: 'https://example.com',
@@ -141,7 +141,7 @@ describe(buildAgent, () => {
       expect(agent.did).toBe('did:plc:original')
 
       config.did = 'did:plc:updated'
-      expect(agent.did).toBe('did:plc:updated')
+      expect(agent.did).toBe('did:plc:original')
     })
 
     it('throws TypeError when fetch is not available', () => {

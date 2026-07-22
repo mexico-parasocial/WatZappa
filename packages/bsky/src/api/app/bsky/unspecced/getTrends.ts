@@ -1,22 +1,21 @@
 import { mapDefined, noUndefinedVals } from '@atproto/common'
-import { Client, DidString } from '@atproto/lex'
-import { Server } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { DataPlaneClient } from '../../../../data-plane/client/index.js'
+import type { Client, DidString } from '@atproto/lex'
+import { MethodNotImplementedError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import {
-  HydrateCtx,
-  Hydrator,
+  type HydrateCtx,
+  type Hydrator,
   mergeManyStates,
 } from '../../../../hydration/hydrator.js'
 import { app } from '../../../../lexicons/index.js'
 import {
-  HydrationFn,
-  PresentationFn,
-  RulesFn,
-  SkeletonFn,
+  type HydrationFn,
+  type PresentationFn,
+  type RulesFn,
+  type SkeletonFn,
   createPipeline,
 } from '../../../../pipeline.js'
-import { Views } from '../../../../views/index.js'
+import type { Views } from '../../../../views/index.js'
 
 export default function (server: Server, ctx: AppContext) {
   const getTrends = createPipeline(skeleton, hydration, noBlocks, presentation)
@@ -67,45 +66,26 @@ const skeleton: SkeletonFn<Context, Params, SkeletonState> = async (input) => {
   )
   const topicsClient = (useIris && ctx.irisClient) || ctx.topicsClient
 
-  if (topicsClient) {
-    const skeleton = await topicsClient.call(
-      app.bsky.unspecced.getTrendsSkeleton,
-      {
-        limit: params.limit,
-        viewer: params.hydrateCtx.viewer ?? undefined,
-      },
-      {
-        headers: params.headers,
-      },
-    )
-
-    // @TODO Make sure upstream always provides this
-    for (const trend of skeleton.trends) trend.dids ??= []
-
-    return skeleton
+  if (!topicsClient) {
+    // Use 501 instead of 500 as these are not considered retry-able by clients
+    throw new MethodNotImplementedError('Topics agent not available')
   }
 
-  // PARA-native fallback: reuse trending topics data
-  const res = await ctx.dataplane.getParaTrendingTopics({
-    limit: params.limit ?? 5,
-    timeframe: '24h',
-  })
+  const skeleton = await topicsClient.call(
+    app.bsky.unspecced.getTrendsSkeleton,
+    {
+      limit: params.limit,
+      viewer: params.hydrateCtx.viewer ?? undefined,
+    },
+    {
+      headers: params.headers,
+    },
+  )
 
-  const parsed = JSON.parse(res.topicsJson)
-  const topics = parsed.topics ?? []
+  // @TODO Make sure upstream always provides this
+  for (const trend of skeleton.trends) trend.dids ??= []
 
-  return {
-    trends: topics.map((t: any) => ({
-      topic: t.topic,
-      displayName: t.displayName,
-      link: t.link,
-      startedAt: new Date().toISOString(),
-      postCount: t.postCount ?? 0,
-      status: t.status,
-      category: t.category,
-      dids: [],
-    })),
-  }
+  return skeleton
 }
 
 const hydration: HydrationFn<Context, Params, SkeletonState> = async (
@@ -135,6 +115,7 @@ const noBlocks: RulesFn<Context, Params, SkeletonState> = (input) => {
   const blocks = hydration.bidirectionalBlocks?.get(viewer)
 
   return {
+    recIdStr: skeleton.recIdStr,
     trends: skeleton.trends.map((t) => ({
       ...t,
       dids: t.dids.filter((did) => !blocks?.get(did)),
@@ -151,9 +132,11 @@ const presentation: PresentationFn<
   const { ctx, skeleton, hydration } = input
 
   return {
+    recIdStr: skeleton.recIdStr,
     trends: skeleton.trends.map((t) => ({
       topic: t.topic,
       displayName: t.displayName,
+      description: t.description,
       link: t.link,
       startedAt: t.startedAt,
       postCount: t.postCount,
@@ -171,7 +154,6 @@ type Context = {
   views: Views
   topicsClient: Client | undefined
   irisClient: Client | undefined
-  dataplane: DataPlaneClient
 }
 
 type Params = app.bsky.unspecced.getTrendingTopics.$Params & {

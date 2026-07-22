@@ -50,6 +50,16 @@ const posts = await client.list(app.bsky.feed.post, { limit: 10 })
   - [Type definitions](#type-definitions)
   - [Building data](#building-data)
   - [Validation Helpers](#validation-helpers)
+    - [Record / typed-object helpers](#record--typed-object-helpers)
+      - [`$type` - Type Identifier](#type---type-identifier)
+      - [`$build(data)` - Build with Defaults](#builddata---build-with-defaults)
+      - [`$isTypeOf(data)` - Type Discriminator](#istypeofdata---type-discriminator)
+    - [Universal validation helpers](#universal-validation-helpers)
+      - [`$matches(data)` - Type Guard](#matchesdata---type-guard)
+      - [`$assert(data)` - Type-Narrowing Assertion](#assertdata---type-narrowing-assertion)
+      - [`$parse(data)` - Parse and Validate](#parsedata---parse-and-validate)
+      - [`$validate(data)` - Validate a value against the schema](#validatedata---validate-a-value-against-the-schema)
+      - [`$safeParse(data, options?)` - Parse a value against a schema and get the resulting value](#safeparsedata-options---parse-a-value-against-a-schema-and-get-the-resulting-value)
 - [Data Model](#data-model)
   - [Types](#types)
   - [JSON Encoding](#json-encoding)
@@ -57,21 +67,58 @@ const posts = await client.list(app.bsky.feed.post, { limit: 10 })
 - [Making simple XRPC Requests](#making-simple-xrpc-requests)
 - [Client API](#client-api)
   - [Creating a Client](#creating-a-client)
+    - [Unauthenticated Client](#unauthenticated-client)
+    - [Authenticated Client with OAuth](#authenticated-client-with-oauth)
+    - [Authenticated Client with Password](#authenticated-client-with-password)
+    - [Client with Service Proxy (authenticated only)](#client-with-service-proxy-authenticated-only)
+    - [Validation and Strictness Options](#validation-and-strictness-options)
   - [Core Methods](#core-methods)
+    - [`client.call()`](#clientcall)
+    - [`client.create()`](#clientcreate)
+    - [`client.get()`](#clientget)
+    - [`client.put()`](#clientput)
+    - [`client.delete()`](#clientdelete)
+    - [`client.list()`](#clientlist)
+    - [`client.applyWrites()`](#clientapplywrites)
   - [Error Handling](#error-handling)
+    - [Safe Methods](#safe-methods)
+    - [XrpcFailure Type](#xrpcfailure-type)
   - [Authentication Methods](#authentication-methods)
+    - [`client.did`](#clientdid)
+    - [`client.assertAuthenticated()`](#clientassertauthenticated)
+    - [`client.assertDid`](#clientassertdid)
   - [Labeler Configuration](#labeler-configuration)
   - [Low-Level XRPC](#low-level-xrpc)
 - [Utilities](#utilities)
   - [Datetime Strings](#datetime-strings)
 - [Advanced Usage](#advanced-usage)
   - [Workflow Integration](#workflow-integration)
+    - [Development Workflow](#development-workflow)
   - [Tree-Shaking](#tree-shaking)
+    - [Namespace notation](#namespace-notation)
+    - [Explicit `.main` reference](#explicit-main-reference)
+    - [Direct named import from the schema file](#direct-named-import-from-the-schema-file)
+    - [Default import (recommended)](#default-import-recommended)
+    - [Drawbacks of the default export](#drawbacks-of-the-default-export)
+    - [Summary](#summary)
   - [Blob references](#blob-references)
+    - [TypedBlobRef: The Current Standard](#typedblobref-the-current-standard)
+    - [LegacyBlobRef: Historical Format](#legacyblobref-historical-format)
+    - [Working with Both Formats](#working-with-both-formats)
   - [Actions](#actions)
-  - [Creating a Client from Another Client](#creating-a-client-from-another-client)
+    - [What are Actions?](#what-are-actions)
+    - [Using Actions](#using-actions)
+    - [Composing Multiple Operations](#composing-multiple-operations)
+    - [Higher-Order Actions](#higher-order-actions)
+  - [Using a Single Client for Multiple Services](#using-a-single-client-for-multiple-services)
   - [Building Library-Style APIs with Actions](#building-library-style-apis-with-actions)
+    - [Creating Posts](#creating-posts)
+    - [Following Users](#following-users)
+    - [Updating Profile with Retry Logic](#updating-profile-with-retry-logic)
+    - [Packaging Actions as a Library](#packaging-actions-as-a-library)
+    - [Best Practices for Actions](#best-practices-for-actions)
   - [Standard Schema Compatibility](#standard-schema-compatibility)
+  - [Validating Generic Schemas with `$check`](#validating-generic-schemas-with-check)
 - [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -185,14 +232,16 @@ Options:
 - `--clear` - Clear output directory before generating
 - `--override` - Override existing files (has no effect with --clear)
 - `--no-pretty` - Don't run prettier on generated files (prettier is enabled by default)
-- `--ignore-errors` - How to handle errors when processing input files
-- `--pure-annotations` - Add `/*#__PURE__*/` annotations for tree-shaking tools. Set this to true if you are using generated lexicons in a library
+- `--ignore-errors` - Skip files that fail to parse or compile instead of aborting the build
+- `--ignore-invalid-lexicons` - Skip lexicon files that fail validation instead of exiting with an error
 - `--exclude <patterns...>` - List of strings or regex patterns to exclude lexicon documents by their IDs
 - `--include <patterns...>` - List of strings or regex patterns to include lexicon documents by their IDs
 - `--lib <package>` - Package name of the library to import the lex schema utility "l" from (default: `@atproto/lex`)
-- `--importExt <ext>` - File extension to use for import statements in generated files (default: `.js`). Use `--importExt ""` to generate extension-less imports
-- `--fileExt <ext>` - File extension to use for generated files (default: `.ts`)
-- `--indexFile` - Generate an "index" file that re-exports all root-level namespaces (disabled by default)
+- `--import-ext <ext>` - File extension to use for import statements in generated files (default: `.js`). Use `--import-ext ""` to generate extension-less imports
+- `--file-ext <ext>` - File extension to use for generated files (default: `.ts`)
+- `--index-file` - Generate an "index" file that re-exports all root-level namespaces (disabled by default)
+- `--defs-export` - When some definitions conflict with child namespaces, export lexicon definitions under a separate `$defs` namespace (e.g. `com.example.foo.$defs`)
+- `--no-default-export` - Disable generation of a `default` export of the `main` schema in each schema's namespace file (default exports are enabled by default; see [Tree-Shaking](#tree-shaking))
 
 ### Generated Schema Structure
 
@@ -227,7 +276,7 @@ import * as app from './lexicons/app.js'
 const post = app.bsky.feed.post.$build({
   // No need to specify $type when using $build
   text: 'Hello, world!',
-  createdAt: l.toDatetimeString(new Date()),
+  createdAt: l.currentDatetimeString(),
 })
 
 // For runtime validation, use $parse()/$validate() instead
@@ -237,11 +286,12 @@ app.bsky.feed.post.$validate(post)
 
 ### Validation Helpers
 
-Each schema provides multiple validation methods:
+Generated namespaces expose a handful of `$`-prefixed helpers bound to the namespace's `main` schema. They come in two groups:
 
-#### `$nsid` - Namespace Identifier
+- [**Universal validation helpers**](#universal-validation-helpers) are available on every schema's `main`: `$matches`, `$assert`, `$check`, `$parse`, `$safeParse`, `$validate`, `$safeValidate` (and `$cast` / `$ifMatches`). These work for records, typed objects, queries, procedures, and subscriptions.
+- [**Record / typed-object helpers**](#record--typed-object-helpers) are only emitted for record and typed-object schemas: `$type`, `$build`, `$isTypeOf`.
 
-Returns the NSID of the schema:
+In addition, every generated namespace file exports a top-level `$nsid` constant containing the NSID of the lexicon document:
 
 ```typescript
 import * as app from './lexicons/app.js'
@@ -249,9 +299,13 @@ import * as app from './lexicons/app.js'
 console.log(app.bsky.feed.defs.$nsid) // 'app.bsky.feed.defs'
 ```
 
-#### `$type` - Type Identifier
+The Schema instance itself (for example `app.bsky.feed.post.main`) also exposes the underlying methods both with and without the `$` prefix (e.g. `main.parse()` and `main.$parse()`).
 
-Returns the `$type` string of the schema (for record and object schemas):
+#### Record / typed-object helpers
+
+##### `$type` - Type Identifier
+
+Returns the `$type` string of the schema (only available on record and typed-object schemas):
 
 ```typescript
 import * as app from './lexicons/app.js'
@@ -260,7 +314,50 @@ console.log(app.bsky.feed.post.$type) // 'app.bsky.feed.post'
 console.log(app.bsky.actor.defs.profileViewBasic.$type) // 'app.bsky.actor.defs#profileViewBasic'
 ```
 
-#### `$check(data)` - Type Guard
+Prefer `$type` over hard-coding the equivalent string literal in your code. The constant is emitted exactly once per schema in the generated namespace file, so every reference reuses the same string instance. Inlining `'app.bsky.feed.post'` everywhere instead leaks the same string into every call site, increases bundle size, and creates a typo-prone source of drift between your code and the schema.
+
+##### `$build(data)` - Build with Defaults
+
+Builds data by adding the `$type` property and properly types the result. This also allows to declare a variable with the correct type without having to explicitly specify it.
+
+```typescript
+import { l } from '@atproto/lex'
+import * as app from './lexicons/app.js'
+
+// The type of the "like" variable will be "app.bsky.feed.like.Main" (no need to explicitly specify the type)
+const like = app.bsky.feed.like.$build({
+  subject: {
+    uri: 'at://did:plc:abc/app.bsky.feed.post/123',
+    cid: 'bafyrei...',
+  },
+  createdAt: l.currentDatetimeString(),
+})
+```
+
+> [!NOTE]
+>
+> `$build()` does not perform validation, and expects properly typed input data - use `$parse()` if you need validation.
+
+##### `$isTypeOf(data)` - Type Discriminator
+
+Discriminates (pre-validated) data based on its `$type` property, without re-validating. This is especially useful when working with union types:
+
+```typescript
+import { l } from '@atproto/lex'
+import * as app from './lexicons/app.js'
+
+declare const data:
+  app.bsky.feed.post.Main | app.bsky.feed.like.Main | l.Unknown$TypedObject
+
+// Discriminate by $type without re-validating
+if (app.bsky.feed.post.$isTypeOf(data)) {
+  // data is a post
+}
+```
+
+#### Universal validation helpers
+
+##### `$matches(data)` - Type Guard
 
 Returns `true` if data matches the schema, `false` otherwise. Acts as a TypeScript type guard:
 
@@ -268,19 +365,45 @@ Returns `true` if data matches the schema, `false` otherwise. Acts as a TypeScri
 import { l } from '@atproto/lex'
 import * as app from './lexicons/app.js'
 
-const data = {
+const data: unknown = {
   $type: 'app.bsky.feed.post',
   text: 'Hello!',
-  createdAt: l.toDatetimeString(new Date()),
+  createdAt: l.currentDatetimeString(),
 }
 
-if (app.bsky.feed.post.$check(data)) {
+if (app.bsky.feed.post.$matches(data)) {
   // TypeScript knows data is a Post here
   console.log(data.text)
 }
 ```
 
-#### `$parse(data)` - Parse and Validate
+> [!NOTE]
+>
+> Performs validation so [`$isTypeOf`](#istypeofdata---type-discriminator) is preferred for pre-validated & properly typed data.
+
+##### `$assert(data)` - Type-Narrowing Assertion
+
+Throws if `data` does not match the schema. When the schema is statically known (e.g. `app.bsky.feed.post`), TypeScript narrows the type of `data` after the call:
+
+```typescript
+import { l } from '@atproto/lex'
+import * as app from './lexicons/app.js'
+
+const data: unknown = {
+  $type: 'app.bsky.feed.post',
+  text: 'Hello!',
+  createdAt: l.currentDatetimeString(),
+}
+
+app.bsky.feed.post.$assert(data)
+
+// TypeScript now knows data is app.bsky.feed.post.Main
+console.log(data.text)
+```
+
+For library code that operates on a schema parameter whose type cannot be fully expressed, see [Validating Generic Schemas with `$check`](#validating-generic-schemas-with-check).
+
+##### `$parse(data)` - Parse and Validate
 
 Validates and returns typed data, throwing an error if validation fails:
 
@@ -289,11 +412,12 @@ import { l } from '@atproto/lex'
 import * as app from './lexicons/app.js'
 
 try {
-  const post = app.bsky.feed.post.$main.$parse({
+  const post = app.bsky.feed.post.$parse({
     $type: 'app.bsky.feed.post',
     text: 'Hello!',
-    createdAt: l.toDatetimeString(new Date()),
+    createdAt: l.currentDatetimeString(),
   })
+
   // post is now typed and validated
   console.log(post.text)
 } catch (error) {
@@ -305,7 +429,7 @@ try {
 >
 > The `$parse` method will apply defaults defined in the schema for optional fields, as well as data coercion (e.g., CID strings to Cid types). This means that the returned value might be different from the input data if defaults were applied. Use `$validate()` for value validation.
 
-#### `$validate(data)` - Validate a value against the schema
+##### `$validate(data)` - Validate a value against the schema
 
 Validates an existing value against a schema, returning the value itself if, and only if, it already matches the schema (ie. without applying defaults or coercion).
 
@@ -316,7 +440,7 @@ import * as app from './lexicons/app.js'
 const value = {
   $type: 'app.bsky.feed.post',
   text: 'Hello!',
-  createdAt: l.toDatetimeString(new Date()),
+  createdAt: l.currentDatetimeString(),
 }
 
 // Throws if no valid
@@ -325,7 +449,7 @@ const result = app.bsky.feed.post.$validate(value)
 value === result // true
 ```
 
-#### `$safeParse(data, options?)` - Parse a value against a schema and get the resulting value
+##### `$safeParse(data, options?)` - Parse a value against a schema and get the resulting value
 
 Returns a detailed validation result object without throwing:
 
@@ -336,7 +460,7 @@ import * as app from './lexicons/app.js'
 const result = app.bsky.feed.post.$safeParse({
   $type: 'app.bsky.feed.post',
   text: 'Hello!',
-  createdAt: l.toDatetimeString(new Date()),
+  createdAt: l.currentDatetimeString(),
 })
 
 if (result.success) {
@@ -354,43 +478,6 @@ app.bsky.feed.post.$safeParse(data) // { strict: true } is the default
 
 // Non-strict mode - accepts more lenient data
 app.bsky.feed.post.$safeParse(data, { strict: false })
-```
-
-#### `$build(data)` - Build with Defaults
-
-Builds data by adding the `$type` property and properly types the result. Note that `$build()` does not perform validation - use `$parse()` if you need validation:
-
-```typescript
-import { l } from '@atproto/lex'
-import * as app from './lexicons/app.js'
-
-// The type of the "like" variable will be "app.bsky.feed.like.Main"
-const like = app.bsky.feed.like.$build({
-  subject: {
-    uri: 'at://did:plc:abc/app.bsky.feed.post/123',
-    cid: 'bafyrei...',
-  },
-  createdAt: l.toDatetimeString(new Date()),
-})
-```
-
-#### `$isTypeOf(data)` - Type Discriminator
-
-Discriminates (pre-validated) data based on its `$type` property, without re-validating. This is especially useful when working with union types:
-
-```typescript
-import { l } from '@atproto/lex'
-import * as app from './lexicons/app.js'
-
-declare const data:
-  | app.bsky.feed.post.Main
-  | app.bsky.feed.like.Main
-  | l.Unknown$TypedObject
-
-// Discriminate by $type without re-validating
-if (app.bsky.feed.post.$isTypeOf(data)) {
-  // data is a post
-}
 ```
 
 ## Data Model
@@ -521,7 +608,7 @@ Both `xrpc()` and `xrpcSafe()` accept `validateRequest`, `validateResponse`, and
 
 The `Client` class provides high-level helpers for common AT Protocol "repo" operations: `create()`, `get()`, `put()`, `delete()`, `list()`, `uploadBlob()`, and more. A `Client` instance is typically useful for making requests in the context of an authenticated user session, as it automatically handles headers and provides default values based on the authenticated user's DID.
 
-A `Client` instance is also useful to encapsulate configuration for a specific service, by specifying the `service` option (for proxying) and `labelers` option (for content labeling). Additionally, a `Client` can be used as an `Agent` for another `Client`, allowing you to compose headers and configuration across multiple services.
+A `Client` instance is also useful to encapsulate configuration for a specific service, by specifying the `service` option (for proxying) and `labelers` option (for content labeling). These act as _defaults_ for the client's requests and can be overridden — or disabled with `null` — on a per-request basis, allowing a single client to talk both to a proxied service (e.g. an AppView) and directly to the user's PDS.
 
 ### Creating a Client
 
@@ -542,9 +629,7 @@ import { Client } from '@atproto/lex'
 import { OAuthClient } from '@atproto/oauth-client-node'
 
 // Setup OAuth client (see @atproto/oauth-client documentation)
-const oauthClient = new OAuthClient({
-  /* ... */
-})
+const oauthClient = new OAuthClient({/* ... */})
 const session = await oauthClient.restore(userDid)
 
 // Create authenticated client
@@ -624,9 +709,7 @@ const profile = await client.call(app.bsky.actor.getProfile, {
 
 // Procedure (POST request)
 const result = await client.call(app.bsky.feed.sendInteractions, {
-  interactions: [
-    /* ... */
-  ],
+  interactions: [/* ... */],
 })
 
 // With options
@@ -651,7 +734,7 @@ import * as app from './lexicons/app.js'
 
 const result = await client.create(app.bsky.feed.post, {
   text: 'Hello, world!',
-  createdAt: l.toDatetimeString(new Date()),
+  createdAt: l.currentDatetimeString(),
 })
 
 console.log(result.uri) // at://did:plc:...
@@ -661,7 +744,7 @@ console.log(result.cid)
 Options:
 
 - `rkey` - Custom record key (auto-generated if not provided)
-- `validate` - Asks the PDS to validate the record against schema when processing the request
+- `validate` - Tri-state instruction to the PDS. `true` forces server-side schema validation, `false` explicitly disables it, and `undefined` (default) lets the PDS decide (it validates only collections whose schemas it knows)
 - `validateRequest` - Validate the record locally against schema before submitting the request
 - `swapCommit` - CID for optimistic concurrency control
 
@@ -703,8 +786,8 @@ await client.put(app.bsky.actor.profile, {
 Options:
 
 - `rkey` - Record key (required for non-literal keys)
-- `validate` - Validate record against schema before updating (falls back to `validateRequest` option if not specified)
-- `validateRequest` - Alternative way to enable validation (used if `validate` is not specified)
+- `validate` - Tri-state instruction to the PDS. `true` forces server-side schema validation, `false` explicitly disables it, and `undefined` (default) lets the PDS decide (it validates only collections whose schemas it knows)
+- `validateRequest` - Validate the record locally against schema before submitting the request
 - `swapCommit` - Expected repo commit CID
 - `swapRecord` - Expected record CID
 
@@ -736,6 +819,11 @@ for (const record of result.records) {
   console.log(record.uri, record.value.text)
 }
 
+// Records that failed local schema validation are returned separately
+for (const invalid of result.invalid) {
+  console.warn('Invalid record:', invalid)
+}
+
 // Pagination
 if (result.cursor) {
   const nextPage = await client.list(app.bsky.feed.post, {
@@ -744,6 +832,55 @@ if (result.cursor) {
   })
 }
 ```
+
+The result includes:
+
+- `records` - Records that successfully validated against the schema
+- `invalid` - Records returned by the server that failed local schema validation (raw `LexMap` values)
+- `cursor` - Pagination cursor (if more results are available)
+
+#### `client.applyWrites()`
+
+Perform an atomic batch of create, update, and delete operations in a single request.
+
+```typescript
+import { l } from '@atproto/lex'
+import * as app from './lexicons/app.js'
+
+const response = await client.applyWrites((op) => [
+  // Create a new post
+  op.create(app.bsky.feed.post, {
+    text: 'Hello, world!',
+    createdAt: l.currentDatetimeString(),
+  }),
+
+  // Update profile
+  op.update(app.bsky.actor.profile, {
+    displayName: 'Alice',
+    description: 'Updated bio',
+  }),
+
+  // Delete an existing post by rkey
+  op.delete(app.bsky.feed.post, {
+    rkey: '3jxf7z2k3q2',
+  }),
+])
+
+// Check results
+for (const result of response.body.results) {
+  console.log(result.uri, result.cid)
+}
+```
+
+Options:
+
+- `repo` - Repository identifier (defaults to authenticated user's DID)
+- `validate` - Tri-state instruction to the PDS. `true` forces server-side schema validation, `false` explicitly disables it, and `undefined` (default) lets the PDS decide (it validates only collections whose schemas it knows)
+- `swapCommit` - CID for optimistic concurrency control
+
+> [!NOTE]
+>
+> All operations in an `applyWrites()` call are atomic - they either all succeed or all fail together. This is useful for maintaining consistency when making multiple related changes.
 
 ### Error Handling
 
@@ -777,13 +914,23 @@ if (result.success) {
   // Handle success
   console.log(result.body)
 } else {
-  // Handle failure - result is an XrpcFailure
+  // Handle failure - result is an XrpcFailure.
+  //
+  // All XrpcFailure subclasses inherit from XrpcError and share these members:
+  result.error // string error code (e.g. "HandleNotFound", "UpstreamFailure")
+  result.message // string
+  result.shouldRetry() // boolean - whether the error is transient
+
+  if (result.matchesSchemaErrors()) {
+    // Check if the error matches a declared error in the schema.
+    // TypeScript narrows `result.error` to one of the method's declared error codes.
+    result.error // "HandleNotFound"
+  }
+
+  // Branch on the specific error class to access additional members:
   if (result instanceof XrpcResponseError) {
     // The server responded with an error status code (4xx or 5xx).
     // This is used for all error responses, whether or not they have a valid XRPC error payload.
-
-    result.error // string (e.g. "HandleNotFound", "AuthenticationRequired", "UpstreamFailure", etc.)
-    result.message // string
     result.response.status // number
     result.response.headers // Headers
     result.payload // undefined | { body: unknown; encoding: string }
@@ -793,25 +940,11 @@ if (result.success) {
   } else if (result instanceof XrpcInvalidResponseError) {
     // The response was truly invalid (3xx redirect, malformed JSON, schema mismatch, etc.).
     // This is a more specific error for responses that are not processable.
-
-    result.error // "UpstreamFailure"
-    result.message // string
     result.response.status // number
     result.response.headers // Headers
     result.payload // undefined | { body: unknown; encoding: string }
   } else if (result instanceof XrpcInternalError) {
     // Something went wrong on the client side (network error, etc.)
-    result.error // "InternalServerError"
-    result.message // string
-  }
-
-  // All XrpcFailure types have these properties:
-  result.shouldRetry() // boolean - whether the error is transient
-
-  if (result.matchesSchemaErrors()) {
-    // Check if the error matches a declared error in the schema.
-    // TypeScript knows this is a declared error for the method.
-    result.error // "HandleNotFound"
   }
 }
 ```
@@ -881,6 +1014,30 @@ client.setLabelers(['did:plc:labeler5'])
 client.clearLabelers()
 ```
 
+The client's `labelers` act as a default for its requests. A per-request `labelers` option replaces that default for that request, and `labelers: null` disables the `atproto-accept-labelers` header entirely:
+
+```typescript
+// Uses the client's labelers
+await client.call(app.bsky.actor.getProfile, { actor })
+
+// Uses only 'did:plc:other' for this request
+await client.xrpc(app.bsky.actor.getProfile, {
+  params: { actor },
+  labelers: ['did:plc:other'],
+})
+
+// No atproto-accept-labelers header for this request (except appLabelers,
+// which are applied unless explicitly disabled)
+await client.xrpc(app.bsky.actor.getProfile, {
+  params: { actor },
+  labelers: null,
+})
+```
+
+App-level labelers (`appLabelers`) are always added to the `atproto-accept-labelers` header with the `;redact` param. They default to the static `Client.appLabelers` (set via `Client.configure()`), and can be overridden through the client's or a request's `appLabelers` option (`appLabelers: null` disables them for that client or request).
+
+The same defaulting logic applies to the `service` option (`atproto-proxy` header): a per-request `service` replaces the client's default, and `service: null` disables proxying for that request.
+
 ### Low-Level XRPC
 
 For advanced use cases, use `client.xrpc()` to get the full response (headers, status, body):
@@ -949,9 +1106,9 @@ import {
   isLanguageString, // Validate language tags (e.g., 'en', 'pt-BR')
 
   // Low-level JSON encoding helpers
-  parseLexLink, // { $link: string } → Cid
+  parseLexLink, // { $link: string } → Cid | undefined
   encodeLexLink, // Cid → { $link: string }
-  parseLexBytes, // { $bytes: string } → Uint8Array
+  parseLexBytes, // { $bytes: string } → Uint8Array | undefined
   encodeLexBytes, // Uint8Array → { $bytes: string }
 } from '@atproto/lex'
 
@@ -1017,24 +1174,94 @@ This ensures that:
 
 ### Tree-Shaking
 
-The generated TypeScript is optimized for tree-shaking. Import only what you need:
+The generated TypeScript code is structured to be tree-shakeable, but the way you reference schemas has a meaningful impact on the final bundle size. There are several ways to refer to a generated schema, and each comes with different trade-offs.
+
+#### Namespace notation
+
+The most ergonomic style is to use a namespace import and reference schemas through dotted paths:
 
 ```typescript
-// Import specific methods
-import { post } from './lexicons/app/bsky/feed/post.js'
-import { getProfile } from './lexicons/app/bsky/actor/getProfile.js'
+import * as com from './lexicons/com.js'
 
-// Or use namespace imports (still tree-shakeable)
-import * as app from './lexicons/app.js'
+await client.call(com.atproto.repo.getRecord, {/* ... */})
 ```
 
-For library authors, use `--pure-annotations` when building:
+This style is convenient and reads naturally as it mirrors the NSID of the schema. However, it produces the largest bundles. From the bundler's point of view, `com.atproto.repo.getRecord` is the whole schema namespace (which contains the `main` schema as well as helpers, and any other definitions). The bundler cannot know that `client.call()` only consumes the `main` schema, so it has to keep the rest of the namespace alive in the bundle.
+
+#### Explicit `.main` reference
+
+You can mitigate the bundle-size cost by explicitly naming the `main` definition:
+
+```typescript
+import * as com from './lexicons/com.js'
+
+await client.call(com.atproto.repo.getRecord.main, {/* ... */})
+```
+
+This lets the bundler drop the sibling definitions inside `getRecord` that aren't referenced. The drawback is that it leaks an implementation detail: the `main` segment of the path. In Lexicon, `main` is typically implicit:
+
+- Records use a `$type` of `app.bsky.feed.post` (no `#main`)
+- XRPC endpoints are exposed as `/xrpc/com.atproto.repo.getRecord` (no `main`)
+
+So writing `.main` in application code feels verbose compared to how Lexicons are normally referred to.
+
+#### Direct named import from the schema file
+
+You can also import the `main` schema directly from the file that defines it:
+
+```typescript
+import { main as getRecord } from './lexicons/com/atproto/repo/getRecord.js'
+
+await client.call(getRecord, {/* ... */})
+```
+
+This produces equally small bundles as the explicit `.main` reference, but it still surfaces the `main` identifier: you have to know to import `main` and likely rename it.
+
+#### Default import (recommended)
+
+To make the small-bundle path also the ergonomic path, every namespace file generated by `lex build` re-exports the `main` schema as its `default` export:
+
+```typescript
+// generated file: ./lexicons/com/atproto/repo/getRecord.js
+export * from './getRecord.defs.js'
+export { main as default } from './getRecord.defs.js'
+```
+
+This means you can write:
+
+```typescript
+import getRecord from './lexicons/com/atproto/repo/getRecord.js'
+import post from './lexicons/app/bsky/feed/post.js'
+
+await client.call(getRecord, {/* ... */})
+await client.create(post, {/* ... */})
+```
+
+This is the most bundle-friendly style: the bundler only pulls in the `main` schema, and the import name doesn't have to mention `main` at all. This helps keeping application code aligned with how Lexicons are usually identified.
+
+#### Drawbacks of the default export
+
+The `default` re-export is enabled by default but has two minor drawbacks:
+
+1. It is one additional property on the namespace module, which can very slightly increase bundle size if you also use the namespace in some places.
+2. Any Lexicon document whose path segment is literally `default` (for example a hypothetical `com.example.records.default`) would conflict with the generated `default` export.
+
+If either of these matters for your use case, you can disable the generation of `default` exports with the `--no-defaultExport` flag:
 
 ```bash
-lex build --pure-annotations
+lex build --no-defaultExport
 ```
 
-This will make the generated code more easily tree-shakeable from places that import your library.
+#### Summary
+
+| Style                                                  | Bundle size | Ergonomics                   |
+| ------------------------------------------------------ | ----------- | ---------------------------- |
+| `com.atproto.repo.getRecord` (namespace)               | Largest     | Best: matches the NSID       |
+| `com.atproto.repo.getRecord.main`                      | Small       | Leaks the `main` identifier  |
+| `import { main as getRecord } from '.../getRecord.js'` | Small       | Verbose, leaks `main`        |
+| `import getRecord from '.../getRecord.js'`             | Small       | Concise, no `main` in source |
+
+For libraries and applications where bundle size matters (typically anything shipped to a browser), prefer the default-import style. For scripts, tests, and server-side code where the bundle size of generated schemas is not a concern, the namespace style is perfectly fine.
 
 ### Blob references
 
@@ -1141,7 +1368,7 @@ An `Action` is a function with this signature:
 type Action<Input, Output> = (
   client: Client,
   input: Input,
-  options: CallOptions,
+  options: ActionOptions,
 ) => Output | Promise<Output>
 ```
 
@@ -1149,7 +1376,7 @@ Actions receive:
 
 - `client` - The Client instance (to make XRPC calls)
 - `input` - The input data for the action
-- `options` - Call options (signal)
+- `options` - `ActionOptions` (currently just `{ signal?: AbortSignal }`)
 
 #### Using Actions
 
@@ -1170,7 +1397,7 @@ export const likePost: Action<
     app.bsky.feed.like,
     {
       subject: { uri, cid },
-      createdAt: l.toDatetimeString(new Date()),
+      createdAt: l.currentDatetimeString(),
     },
     options,
   )
@@ -1293,76 +1520,56 @@ const enableAdultContent: Action<void, Preference[]> = async (
 await client.call(enableAdultContent)
 ```
 
-### Creating a Client from Another Client
+### Using a Single Client for Multiple Services
 
-You can create a new `Client` instance from an existing client. The new client will share the same underlying configuration (authentication, headers, labelers, service proxy), with the ability to override specific settings.
-
-> [!NOTE]
->
-> When you create a client from another client, the child client inherits the base client's configuration. On every request, the child client merges its own configuration with the base client's current configuration, with the child's settings taking precedence. Changes to the base client's configuration (like `baseClient.setLabelers()`) will be reflected in child client requests, but changes to child clients do not affect the base client.
-
-```typescript
-import { Client } from '@atproto/lex'
-
-// Base client with authentication
-const baseClient = new Client(session)
-
-baseClient.setLabelers(['did:plc:labelerA', 'did:plc:labelerB'])
-baseClient.headers.set('x-app-version', '1.0.0')
-
-// Create a new client with additional configuration that will get merged with
-// baseClient's settings on every request.
-const configuredClient = new Client(baseClient, {
-  labelers: ['did:plc:labelerC'],
-  headers: { 'x-trace-id': 'abc123' },
-})
-```
-
-This pattern is particularly useful when you need to:
-
-- Configure labelers after authentication
-- Add application-specific headers
-- Create multiple clients with different configurations from the same session
-
-**Example: Configuring labelers after sign-in**
+Because the client's `service` and `labelers` options are just _defaults_, a single `Client` instance can be used to talk to multiple services. This is the recommended pattern for SDK-style code: configure the client to talk to an AppView by default, and override `service` on a per-request basis when a request must reach another service — or the user's PDS directly (`service: null`).
 
 ```typescript
 import { Client } from '@atproto/lex'
 import * as app from './lexicons/app.js'
+import * as com from './lexicons/com.js'
 
-async function createBaseClient(session: OAuthSession) {
-  // Create base client
-  const client = new Client(session, {
-    service: 'did:web:api.bsky.app#bsky_appview',
-  })
-
-  // Fetch user preferences
-  const { preferences } = await client.call(app.bsky.actor.getPreferences)
-
-  // Extract labeler preferences
-  const labelerPref = preferences.findLast((p) =>
-    app.bsky.actor.defs.labelersPref.check(p),
-  )
-  const labelers = labelerPref?.labelers.map((l) => l.did) ?? []
-
-  // Configure the client with the user's preferred labelers
-  client.setLabelers(labelers)
-
-  return client
-}
-
-// Usage
-const baseClient = await createBaseClient(session)
-
-// Create a new client with a different service, but reusing the labelers
-// from the base client.
-const otherClient = new Client(baseClient, {
-  service: 'did:web:com.example.other#other_service',
+const client = new Client(session, {
+  // All requests are proxied to the AppView by default
+  service: 'did:web:api.bsky.app#bsky_appview',
 })
 
-// Whenever you update labelers on the base client, the other client will automatically
-// receive the same updates, since they share the same labeler set.
+// Proxied to the AppView (client default)
+const { feed } = await client.call(app.bsky.feed.getTimeline)
+
+// Sent directly to the user's PDS (no atproto-proxy header)
+const { body } = await client.xrpc(com.atproto.repo.getRecord, {
+  service: null,
+  params: {
+    repo: client.assertDid,
+    collection: 'app.bsky.actor.profile',
+    rkey: 'self',
+  },
+})
+
+// Proxied to a different service, just for this request
+await client.xrpc(app.bsky.actor.getProfile, {
+  service: 'did:web:com.example.other#other_service',
+  params: { actor: client.assertDid },
+})
 ```
+
+> [!NOTE]
+>
+> The record helpers (`create()`, `get()`, `put()`, `delete()`, `list()`, `createRecord()`, `getRecord()`, `putRecord()`, `deleteRecord()`, `listRecords()`, `applyWrites()`, `uploadBlob()`, `getBlob()`) always target the user's PDS: they default to `service: null` and `labelers: null`, ignoring the client's instance-wide defaults (unless explicitly overridden in their options).
+
+If you need clients with different configurations sharing the same authentication, create them from the same session (or reuse an existing client's `agent`):
+
+```typescript
+const pdsClient = new Client(session)
+const bskyClient = new Client(pdsClient.agent, {
+  service: 'did:web:api.bsky.app#bsky_appview',
+})
+```
+
+> [!NOTE]
+>
+> In previous version of this library, `Client` implemented the `Agent` interface, and its `fetchHandler` method could be used as the agent of another `Client`. This lead to confusing bugs ([#5110](https://github.com/bluesky-social/atproto/issues/5110)) where the inner agent (client) would set `atproto-proxy` and `atproto-accept-labelers` headers on requests where the outer client explicitly set `service: null` and `labelers: null`. This is no longer the case: a `Client` can no longer be used as the agent of another `Client`. To share authentication between differently-configured clients, build them from the same session.
 
 ### Building Library-Style APIs with Actions
 
@@ -1464,10 +1671,10 @@ export const updateProfile: Action<ProfileUpdate, void> = async (
         },
       })
 
-      const current = app.bsky.actor.profile.main.validate(res.body.record)
+      const current = app.bsky.actor.profile.$safeValidate(res.body.record)
 
       // Merge updates with current profile (if valid)
-      const updated = app.bsky.actor.profile.main.build({
+      const updated = app.bsky.actor.profile.$build({
         ...(current.success ? current.value : undefined),
         ...updates,
       })
@@ -1571,6 +1778,26 @@ if ('value' in result) {
 ```
 
 When validated through the Standard Schema interface, schemas operate in "parse" mode, meaning transformations like defaults and coercions are applied to the output.
+
+### Validating Generic Schemas with `$check`
+
+`$check(data)` is the non-narrowing counterpart to [`$assert(data)`](#assertdata---type-narrowing-assertion): both throw when `data` does not match the schema, but `$check` does not refine the static type of its argument.
+
+`$check` is rarely needed in application code — prefer `$assert`. It is intended for library-style code that takes a schema as a generic parameter, where TypeScript cannot satisfy the assertion-signature requirement and `$assert` produces the following error:
+
+> 'schema' needs an explicit type annotation.
+> Assertions require every name in the call target to be declared with an explicit type annotation. `ts(2775)`
+
+In that situation, switch to `$check`:
+
+```typescript
+import type { Schema } from '@atproto/lex'
+
+function ensureMatches<S extends Schema>(schema: S, data: unknown) {
+  // schema.$assert(data) // ❌ ts(2775): needs an explicit type annotation
+  schema.$check(data) // ✅ throws on invalid, no type narrowing
+}
+```
 
 ## License
 

@@ -16,10 +16,10 @@ export function BskyClientProvider({
 }: {
   children?: React.ReactNode
 }) {
-  // @NOTE We prefer using an AuthenticationContext "client" instead of the
-  // OAuthProvider "session" as agent to ensure that any configuration (e.g.
-  // labelers, etc.) on the client is preserved and applied to the BskyClient
-  // context value as well.
+  // @NOTE The OAuthProvider "session" is used as agent for the Bsky client.
+  // The client's own configuration (service, labelers, headers) is scoped to
+  // this client instance and does not affect other clients built from the
+  // same session (e.g. the PdsClientProvider's client).
   const agent = useAuthenticationContext().client
 
   const value = useMemo(() => {
