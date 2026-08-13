@@ -260,6 +260,15 @@ type RowProps = Override<
   }
 >
 
+/**
+ * A settings row, built on the shadcn `item` primitive — the canonical pattern
+ * for this kind of list.
+ *
+ * @NOTE `render={<button/>}` makes the row keyboard focusable, which `Item`'s
+ * default `<div>` is not. `itemVariants` has no destructive variant
+ * (default/outline/muted only), so destructive rows tint the icon and label
+ * rather than filling the row.
+ */
 function Row({
   icon: Icon,
   value,
@@ -278,9 +287,14 @@ function Row({
       className={clsx('gap-2', className)}
     >
       <Icon aria-hidden className="size-5 shrink-0 grow-0" />
-      <span className="grow-1 truncate text-left font-medium">{children}</span>
+      <span className="min-w-0 grow-1 truncate text-left font-medium">
+        {children}
+      </span>
       {value != null && (
-        <span className="hidden min-w-0 flex-1 truncate text-right text-sm sm:inline">
+        <span
+          title={typeof value === 'string' ? value : undefined}
+          className="min-w-0 flex-1 truncate text-right text-sm text-muted-foreground"
+        >
           {value}
         </span>
       )}
