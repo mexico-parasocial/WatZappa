@@ -22,7 +22,11 @@ export default function (server: Server, ctx: AppContext) {
     )
     // this should be in our DB & we couldn't find it, so fail
     if (supportedHandle) {
-      throw new InvalidRequestError('Unable to resolve handle')
+      throw new InvalidRequestError(
+        'Unable to resolve handle',
+        'HandleNotFound',
+      )
+    }
     }
 
     const did: DidString = ctx.bskyAppView
