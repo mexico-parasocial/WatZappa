@@ -97,21 +97,15 @@ export function ResetPasswordView({
     return (
       <LayoutTitle
         title={msg`Password Updated`}
-        subtitle={<Trans>Your password has been updated!</Trans>}
+        subtitle={<Trans>You can now sign in with your new password.</Trans>}
       >
-        <center>
-          <h2 className="pb-2 text-xl font-bold">
-            <Trans>Password updated!</Trans>
-          </h2>
-          <p className="pb-4">
-            <Trans>You can now sign in with your new password.</Trans>
-          </p>
+        <div className="text-center">
           {onBack && (
             <Button color="primary" onClick={() => onBack()}>
               <Trans>Okay</Trans>
             </Button>
           )}
-        </center>
+        </div>
       </LayoutTitle>
     )
   }
