@@ -9,8 +9,8 @@ import {
 } from '@connectrpc/connect'
 import { createGrpcTransport } from '@connectrpc/connect-node'
 import { Service } from '../../proto/bsky_connect.js'
-import { HostList } from './hosts.js'
-import { callerInterceptor } from './util.js'
+import type { HostList } from './hosts.js'
+import { callerInterceptor, otelInterceptor } from './util.js'
 
 export * from './hosts.js'
 export * from './util.js'
@@ -106,7 +106,7 @@ const createBaseClient = (
     httpVersion,
     acceptCompression: [],
     nodeOptions: { rejectUnauthorized },
-    interceptors: [callerInterceptor('appview')],
+    interceptors: [otelInterceptor, callerInterceptor('appview')],
   })
   return createPromiseClient(Service, transport)
 }
