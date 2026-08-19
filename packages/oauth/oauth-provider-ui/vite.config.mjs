@@ -2,11 +2,26 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { lingui } from '@lingui/vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
+import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react-swc'
 import { defineConfig } from 'vite'
 import { bundleManifest } from '@atproto-labs/rollup-plugin-bundle-manifest'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+
+const mockAccountPaths = () => ({
+  name: 'mock-account-paths',
+  apply: 'serve',
+  configureServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      const [pathname] = (req.url ?? '').split('?')
+      if (pathname === '/account' || pathname.startsWith('/account/')) {
+        req.url = '/account-page.html'
+      }
+      next()
+    })
+  },
+})
 
 export default defineConfig({
   resolve: {
@@ -16,11 +31,18 @@ export default defineConfig({
     conditions: ['browser', 'import', 'module', 'default'],
   },
   plugins: [
+    tanstackRouter({
+      target: 'react',
+      autoCodeSplitting: true,
+      routesDirectory: './src/routes',
+      generatedRouteTree: './src/routeTree.gen.ts',
+    }),
     react({
       plugins: [['@lingui/swc-plugin', {}]],
     }),
     lingui({ cwd: __dirname }),
     tailwindcss(),
+    mockAccountPaths(),
   ],
   build: {
     emptyOutDir: false,

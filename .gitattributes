@@ -4,3 +4,6 @@ packages/ozone/src/lexicon/** linguist-generated=true
 
 # i18n
 packages/oauth/oauth-provider-ui/src/locales/**/messages.po linguist-generated=true
+
+# TanStack Router generated route tree
+packages/oauth/oauth-provider-ui/src/routeTree.gen.ts linguist-generated=true

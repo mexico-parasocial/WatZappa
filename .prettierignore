@@ -18,6 +18,9 @@ packages/ozone/src/lexicon
 # @atproto/lex
 packages/lexicon-resolver/src/lexicons
 packages/lex/*/src/lexicons
+
+# TanStack Router generated route tree
+packages/oauth/oauth-provider-ui/src/routeTree.gen.ts
 packages/lex/*/tests/lexicons
 packages/oauth/oauth-client-browser-example/src/lexicons
 packages/pds/src/lexicon

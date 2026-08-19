@@ -5,7 +5,7 @@ import {
   Link,
   RegisteredRouter,
   ToPathOption,
-  useRouterState,
+  useMatchRoute,
 } from '@tanstack/react-router'
 import { clsx } from 'clsx'
 import { FunctionComponent, ReactNode } from 'react'
@@ -28,6 +28,18 @@ export type LayoutPageProps = {
   prepend?: ReactNode
 }
 
+/**
+ * Tests whether a navigation target is the page currently being shown.
+ *
+ * @NOTE `to` is a path *template* (`/account/u/$accountId/manage`), so it never
+ * equals the resolved pathname — the comparison has to go through the router.
+ */
+function useIsCurrentTarget() {
+  const matchRoute = useMatchRoute()
+  return ({ to }: { to: ToPathOption<RegisteredRouter, '/', undefined> }) =>
+    to != null && matchRoute({ to, exact: true }) !== false
+}
+
 export function LayoutPage({
   children,
   basePath,
@@ -36,11 +48,11 @@ export function LayoutPage({
   prepend,
 }: LayoutPageProps) {
   const { _ } = useLingui()
-  const { pathname } = useRouterState().location
+  const isCurrent = useIsCurrentTarget()
 
-  const atBase = pathname === basePath
+  const atBase = isCurrent({ to: basePath })
 
-  const currentLink = links.find((link) => link.to === pathname)
+  const currentLink = links.find(isCurrent)
   const pageTitle = currentLink?.title
   const pageTitleStr = typeof pageTitle === 'object' ? _(pageTitle) : pageTitle
 
@@ -58,7 +70,7 @@ export function LayoutPage({
         >
           <nav className="flex flex-col gap-2">
             {links
-              .filter(({ hidden, to }) => !hidden || pathname === to)
+              .filter(({ hidden, to }) => !hidden || isCurrent({ to }))
               .map(({ to, title, description, icon: Icon }) => (
                 <Link
                   key={to}
@@ -73,7 +85,7 @@ export function LayoutPage({
                     'md:text-text-light md:[&.active]:text-text-default',
                     'hover:bg-slate-100 dark:hover:bg-slate-800',
                     '[&.active]:bg-slate-100 dark:[&.active]:bg-slate-800',
-                    atBase && to === basePath && 'hidden md:flex',
+                    atBase && isCurrent({ to }) && 'hidden md:flex',
                   )}
                   activeOptions={{ exact: true, includeSearch: false }}
                   activeProps={{
