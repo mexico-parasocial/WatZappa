@@ -11,6 +11,7 @@ import {
   type OmitKey,
 } from '../../../../util.js'
 import type * as AppBskyActorDefs from '../actor/defs.js'
+import type * as AppBskyGraphDefs from '../graph/defs.js'
 import type * as ComAtprotoLabelDefs from '../../../com/atproto/label/defs.js'
 
 const is$typed = _is$typed,
@@ -72,6 +73,7 @@ export interface Notification {
     | (string & {})
   reasonSubject?: string
   record: { [_ in string]: unknown }
+  starterPack?: AppBskyGraphDefs.StarterPackViewBasic
   isRead: boolean
   indexedAt: string
   labels?: ComAtprotoLabelDefs.Label[]

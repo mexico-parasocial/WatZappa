@@ -76,6 +76,8 @@ export function validateConfig<V>(v: V) {
 /** The Age Assurance configuration for a specific region. */
 export interface ConfigRegion {
   $type?: 'app.bsky.ageassurance.defs#configRegion'
+  /** The platforms this configuration applies to. If omitted, the configuration applies to all platforms. */
+  platforms?: ('web' | 'ios' | 'android' | (string & {}))[]
   /** The ISO 3166-1 alpha-2 country code this configuration applies to. */
   countryCode: string
   /** The ISO 3166-2 region code this configuration applies to. If omitted, the configuration applies to the entire country. */

@@ -1428,6 +1428,15 @@ export const schemaDict = {
         description: 'The Age Assurance configuration for a specific region.',
         required: ['countryCode', 'minAccessAge', 'rules'],
         properties: {
+          platforms: {
+            type: 'array',
+            description:
+              'The platforms this configuration applies to. If omitted, the configuration applies to all platforms.',
+            items: {
+              type: 'string',
+              knownValues: ['web', 'ios', 'android'],
+            },
+          },
           countryCode: {
             type: 'string',
             description:
@@ -3353,8 +3362,6 @@ export const schemaDict = {
             type: 'string',
             description:
               'Alt text description of the video, for accessibility.',
-            maxGraphemes: 1000,
-            maxLength: 10000,
           },
           aspectRatio: {
             type: 'ref',
@@ -3400,8 +3407,6 @@ export const schemaDict = {
           },
           alt: {
             type: 'string',
-            maxGraphemes: 1000,
-            maxLength: 10000,
           },
           aspectRatio: {
             type: 'ref',
@@ -7954,6 +7959,12 @@ export const schemaDict = {
           },
           record: {
             type: 'unknown',
+          },
+          starterPack: {
+            description:
+              'The starter pack associated with this notification. Present when the notification is for a follow originating from a starter pack.',
+            type: 'ref',
+            ref: 'lex:app.bsky.graph.defs#starterPackViewBasic',
           },
           isRead: {
             type: 'boolean',
