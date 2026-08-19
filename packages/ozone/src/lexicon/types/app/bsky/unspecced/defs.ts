@@ -88,6 +88,7 @@ export interface SkeletonTrend {
   $type?: 'app.bsky.unspecced.defs#skeletonTrend'
   topic: string
   displayName: string
+  description?: string
   link: string
   startedAt: string
   postCount: number
@@ -110,6 +111,7 @@ export interface TrendView {
   $type?: 'app.bsky.unspecced.defs#trendView'
   topic: string
   displayName: string
+  description?: string
   link: string
   startedAt: string
   postCount: number

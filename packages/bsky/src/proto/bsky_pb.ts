@@ -1851,6 +1851,11 @@ export class GetFollowersRequest extends Message<GetFollowersRequest> {
    */
   cursor = "";
 
+  /**
+   * @generated from field: string sort = 4;
+   */
+  sort = "";
+
   constructor(data?: PartialMessage<GetFollowersRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -1862,6 +1867,7 @@ export class GetFollowersRequest extends Message<GetFollowersRequest> {
     { no: 1, name: "actor_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
     { no: 3, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "sort", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetFollowersRequest {
@@ -1900,6 +1906,11 @@ export class FollowInfo extends Message<FollowInfo> {
    */
   subjectDid = "";
 
+  /**
+   * @generated from field: string sort = 4;
+   */
+  sort = "";
+
   constructor(data?: PartialMessage<FollowInfo>) {
     super();
     proto3.util.initPartial(data, this);
@@ -1911,6 +1922,7 @@ export class FollowInfo extends Message<FollowInfo> {
     { no: 1, name: "uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "actor_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "subject_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "sort", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): FollowInfo {

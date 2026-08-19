@@ -15,7 +15,7 @@ import {
   NODE_ENV,
   PAR_EXPIRES_IN,
   TOKEN_MAX_AGE,
-} from '../constants.js'
+} from '../oauth-constants.ts'
 import { DeviceId } from '../device/device-id.js'
 import { AccessDeniedError } from '../errors/access-denied-error.js'
 import { AuthorizationError } from '../errors/authorization-error.js'
@@ -254,15 +254,13 @@ export class RequestManager {
       )
     }
 
-    // atproto extension: if the client is not trusted, and not authenticated,
+    // atproto extension: if the client is not trusted, and not confidential,
     // force users to consent to authorization requests. We do this to avoid
     // unauthenticated clients from being able to silently re-authenticate
     // users.
-    if (
-      !client.info.isTrusted &&
-      !client.info.isFirstParty &&
-      client.metadata.token_endpoint_auth_method === 'none'
-    ) {
+    // @NOTE First party clients are trusted by default, but they can
+    // also be explicitly marked as un-trusted.
+    if (!client.isConfidential && !client.isTrusted) {
       if (parameters.prompt === 'none') {
         throw new ConsentRequiredError(
           parameters,

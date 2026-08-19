@@ -12,7 +12,11 @@ import {
 import { AccessTokenMode } from '../access-token/access-token-mode.js'
 import { ClientAuth } from '../client/client-auth.js'
 import { Client } from '../client/client.js'
-import { TOKEN_MAX_AGE } from '../constants.js'
+import {
+  REFRESH_LIFETIME_EXTENDED,
+  SESSION_LIFETIME_EXTENDED,
+  TOKEN_MAX_AGE,
+} from '../oauth-constants.js'
 import { DeviceId } from '../device/device-id.js'
 import { InvalidGrantError } from '../errors/invalid-grant-error.js'
 import { InvalidRequestError } from '../errors/invalid-request-error.js'
@@ -46,8 +50,24 @@ export class TokenManager {
     protected readonly tokenMaxAge = TOKEN_MAX_AGE,
   ) {}
 
-  protected createTokenExpiry(now = new Date()) {
-    return new Date(now.getTime() + this.tokenMaxAge)
+  protected createTokenExpiry(
+    client: Client,
+    now: Date,
+    sessionCreationDate: Date = now,
+  ): Date {
+    const lifetime = Math.min(
+      this.tokenMaxAge,
+      // Make sure the token does not stay valid beyond the session lifetime.
+      sessionCreationDate.getTime() + client.sessionLifetime - now.getTime(),
+    )
+
+    // We account for a small buffer to avoid the token being valid for a few
+    // milliseconds
+    if (lifetime <= 250) {
+      throw new InvalidGrantError(`Session expired`)
+    }
+
+    return new Date(now.getTime() + lifetime)
   }
 
   protected async createAccessToken(
@@ -107,7 +127,7 @@ export class TokenManager {
       : undefined
 
     const now = new Date()
-    const expiresAt = this.createTokenExpiry(now)
+    const expiresAt = this.createTokenExpiry(client, now)
 
     const scope = await this.lexiconManager
       .buildTokenScope(parameters.scope!)
@@ -218,6 +238,7 @@ export class TokenManager {
     clientAuth: ClientAuth,
     clientMetadata: RequestMetadata,
     tokenInfo: TokenInfo,
+    now = new Date(),
   ): Promise<OAuthTokenResponse> {
     const { account, data } = tokenInfo
     const { parameters } = data
@@ -227,8 +248,11 @@ export class TokenManager {
     const nextTokenId = await generateTokenId()
     const nextRefreshToken = await generateRefreshToken()
 
-    const now = new Date()
-    const expiresAt = this.createTokenExpiry(now)
+    const expiresAt = this.createTokenExpiry(
+      client,
+      now,
+      tokenInfo.data.createdAt,
+    )
 
     // @NOTE since the permission sets are stored in a persistent store,
     // it's fine to propagate a 500 (server_error) here as the values should
@@ -409,7 +433,16 @@ export class TokenManager {
     const results = await this.store.listAccountTokens(did)
     return results
       .filter((tokenInfo) => tokenInfo.account.did === did) // Fool proof
-      .filter((tokenInfo) => !isCurrentTokenExpired(tokenInfo))
+      .filter(
+        // The session are still active if they are within the session lifetime
+        // and refresh lifetime. We pre-filter here, based on the maximum
+        // possible lifetime of a session, to avoid loading the client metadata
+        // for sessions that are for sure expired. The client metadata is needed
+        // to determine the actual session and refresh lifetimes.
+        ({ data }) =>
+          Date.now() - data.createdAt.getTime() < SESSION_LIFETIME_EXTENDED &&
+          Date.now() - data.updatedAt.getTime() < REFRESH_LIFETIME_EXTENDED,
+      )
   }
 }
 

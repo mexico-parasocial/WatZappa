@@ -36,5 +36,10 @@ services/matrix-bridge/dist
 # Generated SeaweedFS S3 gateway config (from .env credentials)
 .seaweedfs/
 
+# Generated Synapse config (from deploy/matrix/setup.sh). Contains the
+# homeserver signing key, macaroon/form secrets and the DB password.
+# The tracked hardening overlay is deploy/matrix/hardening.yaml, not this.
+deploy/matrix/synapse/
+
 # Generated lexicon schema outputs (from `lex build`)
 packages/*/src/lexicons/

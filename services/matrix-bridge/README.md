@@ -15,17 +15,49 @@ The bridge uses [`matrix-bot-sdk`](https://github.com/turt2live/matrix-bot-sdk) 
 
 ## Security Model (PARA-Only)
 
-- **Federation is disabled** in Synapse (`federation_domain_whitelist: []`)
-- **No public room directory** — rooms are not discoverable
+> Several claims in this section were inaccurate before the Matrix v2 Phase 1
+> pass. They have been corrected against the source. See
+> [docs/MATRIX_V2.md](../../docs/MATRIX_V2.md) §2 for the findings, and §3 for
+> what is a hard guarantee versus a best-effort control.
+
+- **Federation is disabled** in Synapse (`federation_domain_whitelist: []`),
+  set in `deploy/matrix/hardening.yaml`. **If you deployed before that file
+  existed, verify this on your running server** — the v1 setup wrote the
+  setting to a file Synapse never read, so federation was open (MATRIX_V2 F1).
+- **No public room directory** — rooms are not discoverable. Same caveat as above.
 - **Registration is closed** — accounts are provisioned only by the bridge via Admin API
 - **No guest access** — all users must be authenticated PARA members
-- **Client API endpoints require M8 JWTs** — callers cannot submit arbitrary DIDs
-- **E2EE is disabled by default** (`MATRIX_ENABLE_ENCRYPTION=false`). Rooms are transport-encrypted via HTTPS and run on a PARA-only homeserver with federation disabled. Full Matrix E2EE requires a Rust/WASM crypto stack; this is not supported inside a React Native WebView (see [matrix-js-sdk#4150](https://github.com/matrix-org/matrix-js-sdk/issues/4150)). Do not enable `MATRIX_ENABLE_ENCRYPTION` until the app uses a native Matrix client or a WebView engine with working WASM crypto and key backup.
-- **Synapse is the only chat history store** — the bridge persists event metadata only, never raw message content
-- **Push notifications are generic** — no plaintext message previews leave Matrix clients
+- **Most client API endpoints require M8 JWTs.** Not all: `/api/proposals`,
+  `/api/constitution` and `/api/votes` are unauthenticated GETs, and
+  `/api/votes` discloses `voter_did` per card vote. The port is published on
+  `127.0.0.1` only. Tracked as MATRIX_V2 F6.
+- **E2EE is disabled** (`MATRIX_ENABLE_ENCRYPTION=false`). Rooms are
+  transport-encrypted via HTTPS and run on a PARA-only homeserver with
+  federation disabled, **so the homeserver operator can read message content.**
+  Full Matrix E2EE requires a Rust/WASM crypto stack, which is not supported
+  inside a React Native WebView (see
+  [matrix-js-sdk#4150](https://github.com/matrix-org/matrix-js-sdk/issues/4150)).
+  Do not enable `MATRIX_ENABLE_ENCRYPTION` until the app uses a native Matrix
+  client or a WebView engine with working WASM crypto and key backup.
+- **Synapse is the only chat *history* store** — the timeline sync persists
+  event metadata only (`content: ''`). Two other paths do store user text in
+  the bridge database: moderation report previews (200 chars) and
+  user-submitted deliberation cards (MATRIX_V2 F4).
+- **Push notifications are generic** — enforced server-side by
+  `push.include_content: false`; no message body or sender leaves the homeserver.
+- **`/api/summarize` sends deliberation text to OpenAI** when `OPENAI_API_KEY`
+  is set (card titles plus 150 chars of content, up to 100 cards). Deploy
+  without that key unless the decision in MATRIX_V2 OD-3 says otherwise.
 - Firehose commits are consumed unauthenticated (acceptable for own PDS; enable sig verification if consuming from public relay)
 
 ## DIDs ↔ MXIDs
+
+> **Being replaced in Matrix v2.** This scheme makes the MXID a reversible
+> encoding of the DID, so any room's member list is a DID↔identity linkage
+> table without needing access to this database at all. v2 derives the
+> localpart from the identity public key instead, so no mapping exists to
+> leak — see [docs/MATRIX_V2.md](../../docs/MATRIX_V2.md) §4 and CD-M1, with the
+> reference implementation in `iM8/src/services/matrixIdentity.ts`.
 
 - `did:plc:abc123` → `@did-plc-abc123:matrix.para.social`
 - Users are auto-created via Synapse Admin API if they don't exist

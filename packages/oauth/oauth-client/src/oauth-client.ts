@@ -43,7 +43,7 @@ import { RuntimeImplementation } from './runtime-implementation.js'
 import { Runtime } from './runtime.js'
 import {
   SessionGetter,
-  SessionHooks,
+  SessionGetterOptions,
   SessionStore,
   isExpectedSessionError,
 } from './session-getter.js'
@@ -66,7 +66,7 @@ export type {
   OAuthResponseMode,
   ProtectedResourceMetadataCache,
   RuntimeImplementation,
-  SessionHooks,
+  SessionGetterOptions,
   SessionStore,
   StateStore,
 }
@@ -105,7 +105,7 @@ export type OAuthClientOptions = {
   runtimeImplementation: RuntimeImplementation
   fetch?: Fetch
 } & CreateIdentityResolverOptions &
-  SessionHooks
+  SessionGetterOptions
 
 export type OAuthClientFetchMetadataOptions = {
   clientId: OAuthClientIdDiscoverable

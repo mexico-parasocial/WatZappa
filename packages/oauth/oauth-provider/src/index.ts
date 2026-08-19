@@ -5,7 +5,7 @@ export * from '@atproto/jwk'
 export * from '@atproto/jwk-jose'
 export * from '@atproto/oauth-types'
 
-export * from './constants.js'
+export * from './oauth-constants.ts'
 export * from './oauth-client.js'
 export * from './oauth-dpop.js'
 export * from './oauth-errors.js'

@@ -277,14 +277,12 @@ export class GraphHydrator {
     did: DidString
     cursor?: string
     limit?: number
-    sort?: string
   }): Promise<{ follows: FollowInfo[]; cursor: string }> {
-    const { did, cursor, limit, sort } = input
+    const { did, cursor, limit } = input
     const res = await this.dataplane.getFollows({
       actorDid: did,
       cursor,
       limit,
-      sort,
     })
     return { follows: res.follows, cursor: res.cursor }
   }

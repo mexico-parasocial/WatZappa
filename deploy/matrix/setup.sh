@@ -32,6 +32,7 @@ export $(grep -E '^POSTGRES_' "$ENV_FILE" | xargs) || true
 
 MATRIX_SERVER_NAME="${MATRIX_SERVER_NAME:-matrix.para.social}"
 MATRIX_DOMAIN="${MATRIX_DOMAIN:-chat.para.social}"
+MATRIX_DB_NAME="${MATRIX_DB_NAME:-matrix}"
 POSTGRES_USER="${POSTGRES_USER:-pg}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-changeme}"
 
@@ -48,36 +49,31 @@ if [ ! -d "${SCRIPT_DIR}/synapse" ]; then
     echo "🔧 Generating Synapse configuration..."
     mkdir -p "${SCRIPT_DIR}/synapse"
 
+    # Generate with CONFIG_DIR=/config so that signing_key_path lands in this
+    # directory (mounted read-only at /config at runtime), while media and other
+    # state stay under /data in the named volume.
+    #
+    # POSTGRES_* are the variable names the image's config template reads. The
+    # SYNAPSE_DB_* names in docker-compose.matrix.yaml are not recognised by it,
+    # so omitting these here silently generates a SQLite config and the
+    # synapse-db container goes unused.
     docker run --rm \
         -e SYNAPSE_SERVER_NAME="$MATRIX_SERVER_NAME" \
         -e SYNAPSE_REPORT_STATS=no \
-        -e SYNAPSE_CONFIG_DIR=/data \
+        -e SYNAPSE_CONFIG_DIR=/config \
         -e SYNAPSE_DATA_DIR=/data \
-        -v "${SCRIPT_DIR}/synapse:/data" \
+        -e POSTGRES_HOST=synapse-db \
+        -e POSTGRES_PORT=5432 \
+        -e POSTGRES_DB="$MATRIX_DB_NAME" \
+        -e POSTGRES_USER="$POSTGRES_USER" \
+        -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+        -v "${SCRIPT_DIR}/synapse:/config" \
         matrixdotorg/synapse:v1.134.0 generate
 
-    # Tune the generated config for PARA's bare-metal setup
     SYNAPSE_CFG="${SCRIPT_DIR}/synapse/homeserver.yaml"
 
-    # Disable open registration (invite-only via bridge admin API)
-    sed -i 's/enable_registration: true/enable_registration: false/' "$SYNAPSE_CFG" || true
-
-    # Disable federation — PARA-only mode for security
-    if ! grep -q "federation_domain_whitelist:" "$SYNAPSE_CFG"; then
-        echo "" >> "$SYNAPSE_CFG"
-        echo "# PARA security: disable federation entirely" >> "$SYNAPSE_CFG"
-        echo "federation_domain_whitelist: []" >> "$SYNAPSE_CFG"
-    fi
-
-    # Disable public room directory publishing
-    if ! grep -q "allow_public_rooms_over_federation:" "$SYNAPSE_CFG"; then
-        echo "allow_public_rooms_over_federation: false" >> "$SYNAPSE_CFG"
-    fi
-    if ! grep -q "allow_public_rooms_without_auth:" "$SYNAPSE_CFG"; then
-        echo "allow_public_rooms_without_auth: false" >> "$SYNAPSE_CFG"
-    fi
-
-    # Bind to all interfaces inside the container
+    # Bind to all interfaces inside the container (the port is published only
+    # on 127.0.0.1 by docker-compose.matrix.yaml).
     sed -i 's/bind_addresses: \['"'"'::1'"'"', \['"'"'127.0.0.1'"'"'\]/bind_addresses: ['"'"'0.0.0.0'"'"']/' "$SYNAPSE_CFG" || true
 
     # Use existing Redis if available (optional perf boost)
@@ -89,7 +85,15 @@ if [ ! -d "${SCRIPT_DIR}/synapse" ]; then
         echo "  port: 6379" >> "$SYNAPSE_CFG"
     fi
 
+    # Security settings are NOT edited into this file. They live in
+    # deploy/matrix/hardening.yaml, which is mounted as
+    # /config/zz-para-hardening.yaml and merged after this file. Editing them
+    # here as well would create two sources of truth that drift.
+
     echo "✅ Synapse config generated at ${SCRIPT_DIR}/synapse/"
+    echo "   Hardening overlay: ${SCRIPT_DIR}/hardening.yaml (merged at runtime)"
+    echo "   ⚠️  This directory now contains the signing key and secrets."
+    echo "      It is gitignored — keep it that way, and back it up separately."
 else
     echo "⚠️  Synapse config already exists. Skipping generation."
     echo "   Delete ${SCRIPT_DIR}/synapse/ to regenerate."

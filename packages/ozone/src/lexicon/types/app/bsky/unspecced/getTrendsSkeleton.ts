@@ -25,6 +25,8 @@ export type InputSchema = undefined
 
 export interface OutputSchema {
   trends: AppBskyUnspeccedDefs.SkeletonTrend[]
+  /** Snowflake for this recommendation, use when submitting recommendation events. */
+  recIdStr?: string
 }
 
 export type HandlerInput = void

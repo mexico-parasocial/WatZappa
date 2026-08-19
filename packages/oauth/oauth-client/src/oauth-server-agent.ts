@@ -27,7 +27,7 @@ import { Runtime } from './runtime.js'
 import { ClientMetadata } from './types.js'
 import { timeoutSignal } from './util.js'
 
-export type { AtprotoOAuthScope, AtprotoOAuthTokenResponse }
+export type { AtprotoDid, AtprotoOAuthScope, AtprotoOAuthTokenResponse }
 
 export type TokenSet = {
   iss: string

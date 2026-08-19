@@ -6127,6 +6127,10 @@ export const schemaDict = {
             cursor: {
               type: 'string',
             },
+            sort: {
+              type: 'string',
+              knownValues: ['latest', 'top'],
+            },
           },
         },
         output: {
@@ -6179,6 +6183,10 @@ export const schemaDict = {
             },
             cursor: {
               type: 'string',
+            },
+            sort: {
+              type: 'string',
+              knownValues: ['latest', 'top'],
             },
           },
         },
@@ -8365,6 +8373,9 @@ export const schemaDict = {
           displayName: {
             type: 'string',
           },
+          description: {
+            type: 'string',
+          },
           link: {
             type: 'string',
           },
@@ -8406,6 +8417,9 @@ export const schemaDict = {
             type: 'string',
           },
           displayName: {
+            type: 'string',
+          },
+          description: {
             type: 'string',
           },
           link: {
@@ -9771,6 +9785,11 @@ export const schemaDict = {
                   type: 'ref',
                   ref: 'lex:app.bsky.unspecced.defs#trendView',
                 },
+                recIdStr: {
+                  type: 'string',
+                  description:
+                    'Snowflake for this recommendation, use when submitting recommendation events.',
+                },
               },
             },
           },
@@ -9815,6 +9834,11 @@ export const schemaDict = {
                   type: 'ref',
                   ref: 'lex:app.bsky.unspecced.defs#skeletonTrend',
                 },
+              },
+              recIdStr: {
+                type: 'string',
+                description:
+                  'Snowflake for this recommendation, use when submitting recommendation events.',
               },
             },
           },

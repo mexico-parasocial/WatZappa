@@ -2,7 +2,7 @@ import { z } from 'zod'
 import {
   REFRESH_TOKEN_BYTES_LENGTH,
   REFRESH_TOKEN_PREFIX,
-} from '../constants.js'
+} from '../oauth-constants.ts'
 import { randomHexId } from '../lib/util/crypto.js'
 
 export const REFRESH_TOKEN_LENGTH =

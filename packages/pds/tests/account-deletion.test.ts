@@ -215,7 +215,7 @@ describe('account deletion', () => {
 
 
     await agent.api.com.atproto.server.deleteAccount({
-      token: params,
+      token: params.token,
       did: eve.did,
       password: eve.password,
     })

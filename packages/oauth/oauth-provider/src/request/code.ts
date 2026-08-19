@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { CODE_BYTES_LENGTH, CODE_PREFIX } from '../constants.js'
+import { CODE_BYTES_LENGTH, CODE_PREFIX } from '../oauth-constants.ts'
 import { randomHexId } from '../lib/util/crypto.js'
 
 export const CODE_LENGTH = CODE_PREFIX.length + CODE_BYTES_LENGTH * 2 // hex encoding

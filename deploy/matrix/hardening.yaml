@@ -1,0 +1,210 @@
+# PARA Matrix v2 — homeserver hardening overlay
+#
+# Mounted into the Synapse config directory as `zz-para-hardening.yaml`.
+# Synapse reads every *.yaml in a config directory in lexicographic order and
+# merges them, so the `zz-` prefix makes this file win over the generated
+# `homeserver.yaml` on any key it sets. Do not rename it to sort earlier.
+#
+# Every setting here is a metadata-minimisation or containment control with its
+# reason stated, per MATRIX_V2.md §2 ("minimized by configuration, not by
+# promise"). If you remove one, say why in the decision log — several of these
+# are the only thing standing behind a privacy claim we make in public.
+#
+# Settings that belong to a later phase are present but commented out, with the
+# reason they are not on yet. Do not uncomment them ahead of their phase: two of
+# them will lock users out of their own rooms if the client is not ready.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Federation — closed by default
+# ─────────────────────────────────────────────────────────────────────────────
+
+# An empty allowlist means this server federates with nobody. A community that
+# wants to federate with a named partner homeserver gets that domain added here
+# (MATRIX_V2.md §3.8); federating with the open network is not a v2 goal.
+federation_domain_whitelist: []
+
+# Even with federation closed, do not advertise the room directory outward.
+allow_public_rooms_over_federation: false
+
+# The room directory must never be readable without authentication. Room names
+# alone leak what a community is organising about.
+allow_public_rooms_without_auth: false
+
+# Do not answer device-list queries from other servers. Device counts are a
+# usable side channel for "is this person active right now".
+allow_device_name_lookup_over_federation: false
+
+# Synapse ships pointing at matrix.org's key server. With federation closed
+# there is nothing to verify, and leaving it set means the homeserver contacts
+# a third party we do not operate. Empty it, and silence the resulting warning.
+trusted_key_servers: []
+suppress_key_server_warning: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Discovery and profile exposure
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Nothing is published to the room directory. Rooms are reached by invitation
+# or through PARA, never by browsing.
+room_list_publication_rules: []
+
+user_directory:
+  enabled: true
+  # Restrict search to users who share a room with the searcher. Without this a
+  # member can enumerate the whole server, which defeats having separate
+  # identities in the first place.
+  search_all_users: false
+  prefer_local_users: true
+
+# Same reasoning applied to profile lookups.
+limit_profile_requests_to_users_who_share_rooms: true
+
+# Invites carry no display name or avatar. An invite to a community room should
+# not disclose who else is in it before the invitee accepts.
+include_profile_data_on_invite: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ambient metadata
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Presence is the highest-volume metadata a homeserver produces: an
+# always-on record of when each person is at their device. It is off.
+presence:
+  enabled: false
+
+# URL previews make the homeserver fetch every link a user posts, which turns
+# the server into a confirmation oracle for what is being discussed and leaks
+# to the linked site that someone here read it.
+url_preview_enabled: false
+
+# How long raw client IP + user agent rows are kept in `user_ips`. Synapse
+# needs them briefly for device management; keeping them longer builds exactly
+# the location history the threat model says an admin should not have.
+user_ips_max_age: 1d
+
+# Drop the pre-redaction content once redactions have propagated.
+redaction_retention_period: 7d
+
+# When a user leaves a room, stop associating them with it.
+forget_rooms_on_leave: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Push — content-free (MATRIX_V2.md §3.5)
+# ─────────────────────────────────────────────────────────────────────────────
+
+push:
+  # Push payloads carry an event id and nothing else: no message body, no
+  # sender. This is the server-side half of the guarantee; the client and the
+  # push gateway must also be configured for event_id_only.
+  include_content: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Registration and account surface
+# ─────────────────────────────────────────────────────────────────────────────
+
+enable_registration: false
+allow_guest_access: false
+
+# No email or phone number is ever attached to an account. Third-party
+# identifiers are the classic way a pseudonymous account gets deanonymised.
+enable_3pid_changes: false
+registration_requires_token: true
+
+# Do not phone home with usage statistics.
+report_stats: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Media
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Media requires an access token to fetch. Without this, a media URL is a
+# bearer capability that works for anyone who ever sees it, forever.
+enable_authenticated_media: true
+
+media_retention:
+  # Media outlives the message that carried it unless it is expired directly.
+  local_media_lifetime: 90d
+  remote_media_lifetime: 14d
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Message retention (MATRIX_V2.md §3.1)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# BEST-EFFORT, NOT A GUARANTEE. Synapse's retention support is still marked
+# experimental upstream: it purges events from this server's database, but it
+# does not reliably purge associated media, and it cannot reach copies already
+# synced to a client device. Do not describe this to users as "messages are
+# deleted after 90 days" — it means "this server stops serving them".
+#
+# Per-room overrides (30d for DMs) are set by the provisioner as m.room.retention
+# state events in Phase 3; this block is only the default.
+retention:
+  enabled: true
+  default_policy:
+    max_lifetime: 90d
+  allowed_lifetime_min: 1d
+  allowed_lifetime_max: 365d
+  purge_jobs:
+    - longest_max_lifetime: 30d
+      interval: 12h
+    - shortest_max_lifetime: 30d
+      interval: 1d
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Rate limiting
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Containment, not prevention: these blunt scripted enumeration and spam. They
+# do not stop a distributed attacker.
+
+rc_message:
+  per_second: 0.5
+  burst_count: 10
+
+rc_login:
+  address:
+    per_second: 0.15
+    burst_count: 5
+  account:
+    per_second: 0.15
+    burst_count: 5
+  failed_attempts:
+    per_second: 0.15
+    burst_count: 3
+
+rc_joins:
+  local:
+    per_second: 0.1
+    burst_count: 5
+
+rc_invites:
+  per_room:
+    per_second: 0.3
+    burst_count: 10
+  per_user:
+    per_second: 0.003
+    burst_count: 5
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Deferred to later phases — DO NOT UNCOMMENT EARLY
+# ─────────────────────────────────────────────────────────────────────────────
+
+# PHASE 2 (after the client crypto spike, plan §5).
+# Turning this on makes every new room end-to-end encrypted. The current PARA
+# chat client is a React Native WebView running matrix-js-sdk without a working
+# Rust/WASM crypto stack (services/matrix-bridge/README.md), so enabling this
+# before the client can decrypt would leave members unable to read rooms they
+# are sitting in. This line is the switch that delivers "E2EE always" — it is
+# blocked on the client, not on the server.
+#
+# encryption_enabled_by_default_for_room_type: all
+
+# PHASE 1 EXIT (after MAS + para-idp are live, plan §3.2).
+# Local password login must be off once authentication is delegated, otherwise
+# the password database remains a parallel way in and the derived-MXID property
+# is not actually enforced. Enabling this while the bridge still issues
+# passwords (services/matrix-bridge/src/db.ts `user_matrix_map.password`) would
+# lock every existing user out.
+#
+# password_config:
+#   enabled: false

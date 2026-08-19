@@ -86,6 +86,7 @@ import {
   HydrationMap,
   ItemRef,
   RecordInfo,
+  getStarterPackUriFromFollow,
   mergeManyMaps,
   mergeMaps,
   mergeNestedMaps,
@@ -334,29 +335,31 @@ export class Hydrator {
   async hydrateProfilesDetailed(
     dids: DidString[],
     ctx: HydrateCtx,
+    opts?: {
+      // when set, restricts known followers hydration to this subset of dids
+      knownFollowersDids?: DidString[]
+    },
   ): Promise<HydrationState> {
-    let knownFollowers: KnownFollowersStates = new HydrationMap()
-    try {
-      knownFollowers = await this.actor.getKnownFollowers(dids, ctx.viewer)
-    } catch (err) {
-      hydrationLogger.error(
-        { err },
-        'Failed to get known followers for profiles',
-      )
-    }
-
-    let activitySubscriptions: ActivitySubscriptionStates = new HydrationMap()
-    try {
-      activitySubscriptions = await this.actor.getActivitySubscriptions(
-        dids,
-        ctx.viewer,
-      )
-    } catch (err) {
-      hydrationLogger.error(
-        { err },
-        'Failed to get activity subscriptions state for profiles',
-      )
-    }
+    const [knownFollowers, activitySubscriptions] = await Promise.all([
+      this.actor
+        .getKnownFollowers(opts?.knownFollowersDids ?? dids, ctx.viewer)
+        .catch((err): KnownFollowersStates => {
+          hydrationLogger.error(
+            { err },
+            'Failed to get known followers for profiles',
+          )
+          return new HydrationMap()
+        }),
+      this.actor
+        .getActivitySubscriptions(dids, ctx.viewer)
+        .catch((err): ActivitySubscriptionStates => {
+          hydrationLogger.error(
+            { err },
+            'Failed to get activity subscriptions state for profiles',
+          )
+          return new HydrationMap()
+        }),
+    ])
 
     const subjectsToKnownFollowersMap = new Map<DidString, DidString[]>()
 
@@ -1184,11 +1187,20 @@ export class Hydrator {
         }
       }
     }
-    const threadgates = await this.feed.getThreadgatesForPosts([
-      ...viewerRootPostUris.values(),
+    const starterPackUris = new Set<AtUriString>()
+    follows.forEach((follow) => {
+      if (!follow) return
+      const starterPackUri = getStarterPackUriFromFollow(follow.record)
+      if (starterPackUri) starterPackUris.add(starterPackUri)
+    })
+    const [threadgates, starterPackState] = await Promise.all([
+      this.feed.getThreadgatesForPosts([...viewerRootPostUris.values()]),
+      starterPackUris.size
+        ? this.hydrateStarterPacksBasic([...starterPackUris], ctx)
+        : {},
     ])
     actionTakedownLabels(postUris, posts, labels)
-    return mergeStates(profileState, {
+    return mergeManyStates(profileState, starterPackState, {
       posts,
       likes,
       reposts,

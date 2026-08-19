@@ -21,6 +21,7 @@ export type QueryParams = {
   actor: string
   limit?: number
   cursor?: string
+  sort?: 'latest' | 'top' | (string & {})
 }
 export type InputSchema = undefined
 

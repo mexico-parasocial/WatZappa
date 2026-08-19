@@ -60,7 +60,6 @@ const skeleton = async (
     did: subjectDid,
     cursor: params.cursor,
     limit: params.limit,
-    sort: params.sort,
   })
   return {
     subjectDid,

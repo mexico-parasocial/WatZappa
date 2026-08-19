@@ -1,4 +1,5 @@
 import type { DidString } from '@atproto/lex-schema'
+import { mergeHeaders } from './util.js'
 
 /**
  * A function that performs HTTP requests towards a service endpoint.
@@ -94,6 +95,11 @@ export type AgentConfig = {
    * function.
    */
   fetch?: typeof globalThis.fetch
+
+  // Because this type get unioned with `Agent`, we need to prevent TypeScript
+  // from accepting `headers` when `fetchHandler` is provided, since `headers`
+  // would not be used (while the user might expect it to be).
+  fetchHandler?: never
 }
 
 /**
