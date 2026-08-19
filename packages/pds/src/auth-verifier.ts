@@ -1,7 +1,7 @@
 import { KeyObject, createPublicKey, createSecretKey } from 'node:crypto'
 import { IncomingMessage, ServerResponse } from 'node:http'
+import { secp256k1 } from '@noble/curves/secp256k1'
 import * as jose from 'jose'
-import KeyEncoderModule from 'key-encoder'
 import { getVerificationMaterial } from '@atproto/common'
 import { IdResolver, getDidKeyFromMultibase } from '@atproto/identity'
 import {
@@ -42,14 +42,6 @@ import { ACCESS_STANDARD, AuthScope, isAuthScope } from './auth-scope.js'
 import { softDeleted } from './db/index.js'
 import { appendVary } from './util/http.js'
 import { WithRequired } from './util/types.js'
-
-// key-encoder is CJS with exports.default; Node ESM interop wraps it as { default: Class }
-const KeyEncoder =
-  (
-    KeyEncoderModule as typeof KeyEncoderModule & {
-      default?: typeof KeyEncoderModule
-    }
-  ).default ?? KeyEncoderModule
 
 export type VerifiedOptions = {
   checkTakedown?: boolean
@@ -674,10 +666,19 @@ export const createSecretKeyObject = (secret: string): KeyObject => {
   return createSecretKey(Buffer.from(secret))
 }
 
-const keyEncoder = new KeyEncoder('secp256k1')
 export const createPublicKeyObject = (publicKeyHex: string): KeyObject => {
-  const key = keyEncoder.encodePublic(publicKeyHex, 'raw', 'pem')
-  return createPublicKey({ format: 'pem', key })
+  // accepts compressed or uncompressed keys; validates the point is on-curve
+  const point =
+    secp256k1.ProjectivePoint.fromHex(publicKeyHex).toRawBytes(false)
+  return createPublicKey({
+    format: 'jwk',
+    key: {
+      kty: 'EC',
+      crv: 'secp256k1',
+      x: Buffer.from(point.subarray(1, 33)).toString('base64url'),
+      y: Buffer.from(point.subarray(33, 65)).toString('base64url'),
+    },
+  })
 }
 
 function setAuthHeaders(res: ServerResponse) {
