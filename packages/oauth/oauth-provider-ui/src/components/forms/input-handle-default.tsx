@@ -1,8 +1,9 @@
+import { plural } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
-import { AtIcon, CheckIcon, XIcon } from '@phosphor-icons/react'
+import { AtIcon } from '@phosphor-icons/react'
 import { composeRefs } from '@radix-ui/react-compose-refs'
 import { clsx } from 'clsx'
-import { JSX, useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { HandleString, isValidHandle } from '@atproto/syntax'
 import { useStableCallback } from '#/hooks/use-stable-callback.ts'
 import {
@@ -102,99 +103,136 @@ export function InputHandleDefault({
     if (domainIdx >= domains.length) update(segment, 0)
   }, [update, segment, domains.length, domainIdx])
 
+  // Stand in for the segment before anything is typed, so the preview can
+  // show a whole handle from the start rather than a gap or a grey bar.
+  const exampleSegment = t`yourname`
+
+  const valid =
+    validity.validLength && validity.validCharset
+
+  // @NOTE The conditional below is placeholder {0} of this Trans block, and
+  // the msgid it produces is the one the catalogs already carry. Do not add or
+  // reorder elements inside it.
+  const preview = (
+    <Trans>
+      Your full username will be:{' '}
+      {segment ? (
+        <span className="text-text-default block break-all font-medium">
+          @{segment}
+          {domain}
+        </span>
+      ) : (
+        <span className="block break-all">
+          @{exampleSegment}
+          {domain}
+        </span>
+      )}
+    </Trans>
+  )
+
   return (
-    <>
-      <div>
-        <ValidationMessage hasValue={!!segment} valid={validity.validLength}>
-          <Trans>
-            Between {minLength} and {maxLength} characters
-          </Trans>
-        </ValidationMessage>
-        <ValidationMessage hasValue={!!segment} valid={validity.validCharset}>
-          <Trans>Only letters, numbers, and hyphens</Trans>
-        </ValidationMessage>
+    <div className="flex flex-col gap-2">
+      <div className="relative flex items-center">
+        <span
+          aria-hidden
+          className="text-text-light absolute left-3 flex items-center justify-center"
+        >
+          {icon}
+        </span>
+
+        <InputText
+          {...props}
+          ref={composeRefs(ref, inputRef)}
+          title={title ?? t`Type your username`}
+          placeholder={exampleSegment}
+          type="text"
+          pattern="[a-z0-9][a-z0-9\-]+[a-z0-9]"
+          minLength={minLength}
+          maxLength={maxLength}
+          autoCapitalize={autoCapitalize}
+          autoComplete={autoComplete}
+          autoCorrect={autoCorrect}
+          dir={dir}
+          value={segment}
+          onChange={(event) => {
+            const value = event.target.value.toLowerCase()
+
+            // Ensure the input is always lowercase
+            const selectionStart = event.target.selectionStart
+            const selectionEnd = event.target.selectionEnd
+            event.target.value = value
+            event.target.setSelectionRange(selectionStart, selectionEnd)
+
+            update(value, domainIdx)
+          }}
+          className="pl-10"
+        />
       </div>
 
-      <InputText
-        {...props}
-        ref={composeRefs(ref, inputRef)}
-        title={title ?? t`Type your username`}
-        type="text"
-        pattern="[a-z0-9][a-z0-9\-]+[a-z0-9]"
-        minLength={minLength}
-        maxLength={maxLength}
-        autoCapitalize={autoCapitalize}
-        autoComplete={autoComplete}
-        autoCorrect={autoCorrect}
-        dir={dir}
-        icon={icon}
-        value={segment}
-        onChange={(event) => {
-          const value = event.target.value.toLowerCase()
-
-          // Ensure the input is always lowercase
-          const selectionStart = event.target.selectionStart
-          const selectionEnd = event.target.selectionEnd
-          event.target.value = value
-          event.target.setSelectionRange(selectionStart, selectionEnd)
-
-          update(value, domainIdx)
-        }}
-        append={
-          // @TODO refactor this to a separate component
-          domains.length > 1 && (
-            <select
-              onClick={(event) => event.stopPropagation()}
-              onMouseDown={(event) => event.stopPropagation()}
-              value={domainIdx}
-              aria-label={t`Select domain`}
-              onChange={(event) => {
-                update(segment, Number(event.target.value))
-                inputRef.current?.focus()
-              }}
-              className={clsx(
-                // Layout
-                'block w-full',
-                'rounded-lg',
-                'p-2 pr-1',
-                'text-sm',
-                'cursor-pointer',
-                // Transitions
-                'transition duration-300 ease-in-out',
-                // Border
-                'outline-none',
-                'focus:ring-primary focus:ring-2 focus:ring-offset-1 focus:ring-offset-white dark:focus:ring-offset-black',
-                // Color
-                'accent-primary',
-                'text-text-light',
-                'hover:bg-gray-300 dark:hover:bg-gray-600',
-                'bg-gray-200 dark:bg-gray-700',
-              )}
-            >
-              {domains.map((d, idx) => (
-                <option key={d} value={idx}>
-                  {d}
-                </option>
-              ))}
-            </select>
-          )
-        }
+      {/* @NOTE One line stating both rules, always rendered, so the row height
+        never changes under the cursor mid-click — only its colour does. */}
+      <p
+        className={clsx(
+          'text-xs',
+          !segment || valid ? 'text-text-light' : 'text-error',
+        )}
       >
-        <span className="truncate">
-          <Trans>
-            Your full username will be:{' '}
-            {handle ? (
-              <Handle className="text-text-default" handle={handle} />
-            ) : (
-              <span
-                aria-hidden
-                className="bg-text-light inline-block h-[1em] w-24 rounded-md align-middle"
-              />
-            )}
-          </Trans>
-        </span>
-      </InputText>
-    </>
+        {/* @NOTE The noun agrees with the end of the range, so the plural is
+          driven by `maxLength`. Locales with more than two plural categories
+          need the form even though the count is never one here. */}
+        {t`Use ${minLength}–${plural(maxLength, {
+          one: '# letter, number or hyphen',
+          other: '# letters, numbers or hyphens',
+        })}`}
+      </p>
+
+      {domains.length > 1 ? (
+        <>
+          <div className="flex flex-col gap-2" role="radiogroup" aria-label={t`Select domain`}>
+            {domains.map((d) => (
+              <label
+                key={d}
+                htmlFor={`domain-${d}`}
+                className={clsx(
+                  'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors',
+                  'focus-within:ring-primary focus-within:ring-2',
+                  d === domain
+                    ? 'border-primary bg-primary/5'
+                    : 'border-contrast-50 hover:bg-contrast-0',
+                )}
+              >
+                <input
+                  type="radio"
+                  id={`domain-${d}`}
+                  name="domain"
+                  value={d}
+                  checked={d === domain}
+                  onChange={() => {
+                    const idx = domains.indexOf(d)
+                    if (idx !== -1) update(segment, idx)
+                  }}
+                  className="accent-primary size-4"
+                />
+                <span className="text-sm font-medium">{d}</span>
+              </label>
+            ))}
+          </div>
+
+          <p className="text-text-light mt-1 text-sm">{preview}</p>
+        </>
+      ) : (
+        <>
+          <input type="hidden" name="domain" value={domain ?? ''} />
+
+          {/* @NOTE With no choice to make, the preview is the only thing
+            showing the domain at all, so it gets a surface of its own rather
+            than sitting as one more line of grey copy. */}
+          <p className="bg-contrast-0 text-text-light mt-1 rounded-lg px-3 py-2.5 text-sm">
+            {preview}
+          </p>
+        </>
+      )}
+    </div>
   )
 }
 
@@ -219,48 +257,4 @@ function useSegmentValidator(domain: ValidDomain | null) {
     maxLength: maxLen,
     validateSegment,
   }
-}
-
-type ValidationMessageProps = JSX.IntrinsicElements['div'] & {
-  valid: boolean
-  hasValue: boolean
-}
-
-function ValidationMessage({
-  valid,
-  hasValue,
-
-  // div
-  children,
-  className,
-  ...props
-}: ValidationMessageProps) {
-  const { t } = useLingui()
-  return (
-    <div
-      {...props}
-      className={clsx('flex flex-row items-center gap-2', className)}
-    >
-      {hasValue ? (
-        <>
-          {valid ? (
-            <CheckIcon
-              className="text-success inline-block h-4 w-4"
-              aria-label={t`Valid`}
-            />
-          ) : (
-            <XIcon
-              className="text-error inline-block h-4 w-4"
-              aria-label={t`Invalid`}
-            />
-          )}
-        </>
-      ) : (
-        <div aria-hidden className="flex h-4 w-4 items-center justify-center">
-          <div className="h-2 w-2 rounded-full bg-gray-300 dark:bg-slate-600" />
-        </div>
-      )}
-      <div className="text-sm">{children}</div>
-    </div>
-  )
 }
