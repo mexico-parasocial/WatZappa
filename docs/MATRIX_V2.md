@@ -752,7 +752,7 @@ regain the linkage it has spent this quarter removing.
 | MXID derivation formula locked | Done — §4, CD-M1 |
 | iM8 `getMatrixIdentity` with tests | Done — `matrixIdentity.ts`, 18 tests |
 | Identity-boundary CI suite (Matrix) | Partial — the "voting key has no Matrix account" half is covered. The "no DID↔MXID table exists" half cannot pass until the v1 table is removed (Phase 2). |
-| `para-idp` + MAS prototype | Not started — **unblocked**, OD-2 closed by CD-M4 |
+| `para-idp` + MAS prototype | **Done and verified 2026-08-20** — a PARA seed creates `@k4o2lmcmitomgymtdb7y3htsthoofobo:matrix.para.social`; zero DID columns in either database |
 | Tuwunel spike | Not started |
 | Homeserver decision recorded | Open — OD-1 (deferred out of this quarter) |
 | Proof of possession | Done — CD-M4, `identitySignature.ts`, 16 tests |
