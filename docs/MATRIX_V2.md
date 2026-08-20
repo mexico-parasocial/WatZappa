@@ -49,12 +49,47 @@ merges every `*.yaml` it finds there) and adding the tracked overlay in §5.
 Anyone who already ran the v1 setup must treat their homeserver as having been
 federation-open and re-check it.
 
-**F2 — Synapse was generating a SQLite config.** *(fixed)*
+**Verified on a running server, 2026-08-20** — not by reading the file, which is
+the whole lesson of this finding. Against a live local stack:
+
+```
+GET /_matrix/client/v3/publicRooms  (no auth)  →  401 M_MISSING_TOKEN
+federation_domain_whitelist  {}         presence_enabled            False
+url_preview_enabled          False      trusted_key_servers         []
+enable_authenticated_media   True       push_include_content        False
+user_ips_max_age             1 day      retention_enabled           True
+enable_registration          False      user_directory search_all   False
+limit_profile_requests       True       media local lifetime        90 days
+```
+
+Two deployment defects had to be fixed before the overlay would load at all,
+both consequences of moving the config path:
+
+- Synapse only chowns `SYNAPSE_DATA_DIR` when it generates its own config. With
+  an explicit `SYNAPSE_CONFIG_PATH` it assumes permissions are handled, and
+  Synapse (uid 991) cannot create `/data/media_store` in a root-owned volume.
+  A `synapse-init` service in the compose file now prepares the volume.
+- The overlay file cannot be mounted *inside* a read-only bind mount — Docker
+  cannot create the mountpoint. The `/config` directory mount dropped `:ro`;
+  the overlay itself stays read-only.
+
+**F2 — Synapse was generating a SQLite config.** *(fixed and verified)*
 The compose file passes `SYNAPSE_DB_HOST` / `SYNAPSE_DB_USER` / …, which the
-image's config template does not read; it reads `POSTGRES_*`. The generate step
-in `setup.sh` passed neither, so the generated config used SQLite while the
-`synapse-db` Postgres container ran unused. Retention purge jobs (§5) are not
-viable on SQLite at any size. Fixed in `setup.sh`.
+image's config template does not read; it reads `POSTGRES_*`. So the generated
+config used SQLite while the `synapse-db` Postgres container ran unused.
+Retention purge jobs (§5) are not viable on SQLite at any size.
+
+*Correction:* the first fix — passing `POSTGRES_*` to the generate step — **did
+not work**, and the claim that it did was wrong. The `generate` subcommand emits
+a stock default config and never consults `POSTGRES_*`; those are read only by
+the image's start-up template, on the path where it generates config for itself.
+Standing the stack up is what exposed this.
+
+Actually fixed by having `setup.sh` write a generated `zz-para-database.yaml`
+overlay into the config directory, which merges over the SQLite block. It holds
+credentials, so it lives in the gitignored generated directory rather than the
+tracked overlay. Verified: the running server reports `database engine:
+psycopg2`.
 
 **F3 — the generated config directory was not gitignored.** *(fixed)*
 It holds the homeserver signing key, `macaroon_secret_key`, `form_secret`,
@@ -194,6 +229,31 @@ membership — and is the pattern the others should follow.
 Not urgent in the current single-community pilot; blocking before multiple
 communities share a homeserver, because it makes cross-community enumeration
 trivial for anyone with an account.
+
+**F10 — `setup.sh` appended Redis config onto a comment line.** *(fixed)*
+The generated `homeserver.yaml` ends with `# vim:ft=yaml` and **no trailing
+newline**, so `echo "redis:" >> "$SYNAPSE_CFG"` produced `# vim:ft=yamlredis:` —
+the `redis:` key swallowed into a comment, its children left as bogus top-level
+config. The block was appended whenever `.env` contained a `REDIS_HOST`, which
+it does.
+
+Redis is not merely misconfigured here, it is wrong: it is only needed for a
+worker deployment, and `docker-compose.matrix.yaml` defines no redis service, so
+this pointed Synapse at a host that does not exist in the stack. The append is
+removed and nothing is written into `homeserver.yaml` any more — generated
+settings go to the overlay, which cannot corrupt a hand-written file.
+
+**F11 — Postgres must be initialised with `C` collation.** *(fixed)*
+Synapse refuses to start against any other collation:
+`IncorrectDatabaseSetup: Database has incorrect collation of 'en_US.utf8'`. The
+`synapse-db` service never set `POSTGRES_INITDB_ARGS`, so the volume was created
+wrong. This was latent for as long as F2 hid it — nobody could hit a Postgres
+collation error while Synapse was silently running on SQLite.
+
+`POSTGRES_INITDB_ARGS: '--encoding=UTF8 --lc-collate=C --lc-ctype=C'` is now set.
+**initdb args apply only at volume creation**: an existing Postgres volume must
+be destroyed and recreated, or dumped and restored, since changing the compose
+file alone does nothing.
 
 ## 3. Hard guarantees vs best-effort
 
@@ -640,7 +700,7 @@ the fallback if this dependency ever becomes untenable.
 | Plan item | Status |
 |---|---|
 | Confirm v1 assumptions; inventory what the bridge stores | Done — §1, §2 |
-| Metadata hardening applied and documented | Done — §5. **Applied to the compose stack; not yet verified on staging.** |
+| Metadata hardening applied and documented | Done — §5, **verified on a running server 2026-08-20** (F1) |
 | MXID derivation formula locked | Done — §4, CD-M1 |
 | iM8 `getMatrixIdentity` with tests | Done — `matrixIdentity.ts`, 18 tests |
 | Identity-boundary CI suite (Matrix) | Partial — the "voting key has no Matrix account" half is covered. The "no DID↔MXID table exists" half cannot pass until the v1 table is removed (Phase 2). |
