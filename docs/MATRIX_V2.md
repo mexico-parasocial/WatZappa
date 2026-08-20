@@ -140,6 +140,61 @@ bridge". The governance side is already portable (CD-M2). It is the
 *provisioner* that has to change shape: it can no longer push users into rooms,
 because it cannot name them.
 
+**F8 — fifteen more GET endpoints are still unauthenticated.** *(fixed)*
+F6 closed the three endpoints that had been spot-checked. A full pass over all
+41 `/api` branches shows the pattern is broader: every `POST` handler calls
+`authenticateM8`, and fifteen `GET` handlers still do not.
+
+`/api/sortition/runs`, `/api/sortition-proofs`, `/api/sortition-proof`,
+`/api/sortition-proof-as-record`, `/api/decisions`, `/api/chat-badges`,
+`/api/chat-member-list`, `/api/moderation-dashboard`,
+`/api/user-chat-preferences`, `/api/cards`,
+`/api/community-map/contributions`, `/api/graph`, `/api/suggestions`,
+`/api/summarize`, `/api/community-pulse`.
+
+Ranked by what they disclose:
+
+1. **`/api/chat-member-list?community=<uri>`** — the worst of the set. It
+   returns `{ did, matrixUserId, badges, participation }` per member
+   (`chat-moderation.ts` `getMemberList`, backed by a join against
+   `user_matrix_map`). That is **the DID↔MXID linkage table itself, served over
+   HTTP without a token** — the exact artefact this upgrade exists to remove.
+2. `/api/sortition-proofs`, `/api/sortition-proof-as-record` — DID-linked
+   selection proofs for an entire community.
+3. `/api/moderation-dashboard` — reports and sanctions for a community.
+4. `/api/summarize` — lets an unauthenticated caller trigger third-party LLM
+   calls, i.e. spend and data egress (F5).
+5. The remainder disclose deliberation content and per-DID preferences.
+
+Fixed by adding `await authenticateM8(req, config)` as the first statement of
+all fifteen GET handlers, matching the pattern F6 established. The PARA client
+already sends `Authorization: Bearer` on every bridge call and already handles
+401 by refreshing (`PARA/src/lib/matrix/bridge.ts`), so no client change was
+needed. Every `/api` branch in `index.ts` now authenticates.
+
+Residual, deliberately not addressed here: this is authentication, not
+authorization. `/api/chat-member-list?community=` still returns any community's
+member list to any authenticated user, and `/api/user-chat-preferences?did=`
+still accepts an arbitrary DID. Membership and self-only checks are a separate
+change — tracked as F9.
+
+Verified by two independent parses of `index.ts` plus direct reads of the
+handlers. The port is published on `127.0.0.1` only, so this is a finding and
+not an incident — confirm the Caddy/nginx front end does not proxy `/api`
+before relying on that.
+
+**F9 — the bridge authenticates but does not authorize.** *(open)*
+With F6 and F8 closed, every `/api` endpoint requires a valid M8 session. Almost
+none of them check that the caller is *entitled to the specific resource*: any
+authenticated user can read any community's member list, moderation dashboard,
+sortition proofs or another user's chat preferences by passing the right query
+parameter. `/api/space-for-community` is the exception — it checks active
+membership — and is the pattern the others should follow.
+
+Not urgent in the current single-community pilot; blocking before multiple
+communities share a homeserver, because it makes cross-community enumeration
+trivial for anyone with an account.
+
 ## 3. Hard guarantees vs best-effort
 
 The distinction matters more here than in most components, because Matrix
@@ -326,14 +381,12 @@ application-service support; note that `docker-compose.matrix.yaml` still
 carries a commented Continuwuity block from v1, which should be deleted once
 OD-1 is closed so it cannot be mistaken for a supported option.
 
-**OD-2 — proof of possession for `para-idp`.** The client must prove it holds
-`identity_priv_i` when asserting its public key to MAS. mubEZ's registration
-contract already calls for "a signature over the registration challenge with
-`identity_priv_i`", but no signature scheme is implemented anywhere in iM8 or
-mubEZ today, and ristretto255 has no off-the-shelf Ed25519-style signature.
-Choosing one is a cryptographic design decision for the security reviewer, not
-something to improvise. Until it is closed, `getMatrixIdentity` deliberately
-returns no private key material and cannot sign.
+**OD-2 — proof of possession for `para-idp`.** *(CLOSED 2026-08-20 — see
+CD-M4 below and [OD-2-PROOF-OF-POSSESSION.md](OD-2-PROOF-OF-POSSESSION.md))*
+Gate G0 passed: `@scure/sr25519` accepts a PARA identity scalar and reproduces
+`identity_pub_i` exactly. No novel cryptography is required, and the external
+audit that a hand-rolled scheme would have needed is no longer on the critical
+path. Implemented in `iM8/src/services/identitySignature.ts`.
 
 **OD-3 — third-party LLM processing (F5).** Whether community deliberation text
 may be sent to OpenAI at all; if yes, under what consent surface, with what
@@ -529,6 +582,59 @@ guidance holds: deploy without `OPENAI_API_KEY`. A consent checkbox is not a
 substitute for that decision — shipping the checkbox and treating the question
 as closed would be the failure mode to avoid.
 
+### CD-M4 — Proof of possession is sr25519, with the scalar injected
+
+**Decision.** PARA identity keys prove possession with `@scure/sr25519` —
+sr25519 *is* Schnorr over ristretto255 — by constructing the 64-byte secret as
+`(encodeSecretScalar(identity_priv_i) ‖ nonceSeed)` and letting the library
+sign. `identity_pub_i` is then the sr25519 public key, verified against all
+three shared seed vectors for both signing identities.
+
+**Problem.** CD-M1 makes the MXID a function of a *public* value, so presenting
+the key proves nothing. A signature scheme over PARA identity keys did not
+exist: governance votes sign with the atproto DID key (which is the linkage v2
+removes) and mubEZ's registration contract promised a scheme it never shipped.
+
+**Rejected alternatives.**
+
+- *Transposing Monero's `generate_signature` to ristretto255.* Sound, and it was
+  the recommendation until the spike. Rejected because it needs cryptographic
+  review this project has nobody to perform — the "part-time security reviewer"
+  in the v2 plan does not exist. Retained as the documented fallback.
+- *A separate Ed25519 signing key per identity.* Nothing would bind it to
+  `identity_pub_i`; every fix leads back to signing with the identity key or to
+  a server-side mapping table.
+- *Signal's poksho/zkgroup.* Right family — ristretto255 Schnorr with labelled
+  domain separation — but Rust-only, no React Native binding, and it solves
+  zero-knowledge proofs of arbitrary statements where we need one discrete log.
+  Read for discipline, not imported.
+
+**Consequences.**
+
+- **The scalar must be cofactor-shifted.** sr25519 stores the key half as
+  `scalar << 3` (schnorrkel's Ed25519-compatible format) and divides by 8 on
+  read. Injecting a raw scalar silently yields the *wrong* public key — no
+  error, just a different account. This is the load-bearing detail of the
+  module and is pinned by tests. Lossless for every scalar below the group
+  order, verified over 20,000 random values.
+- **The library's `verify()` throws** on a malformed point rather than returning
+  false, and a null body throws before any field is read. Both are wrapped: on
+  a public endpoint they would have turned garbage input into a 500 instead of
+  an auth failure. Pinned by a 160-case hostile-input test.
+- **Nonces are synthetic**, satisfying the concern that drove us away from
+  Monero's `random_scalar`: the stored nonce seed is derived from the identity
+  key, and `sign()` mixes fresh randomness on top. A dead RNG cannot repeat a
+  nonce on its own.
+- **Purpose is inside the signed bytes.** `matrix-login` and
+  `mubez-registration` share one key; a signature for one cannot verify as the
+  other.
+- `@scure/sr25519` becomes a production dependency of iM8. It is from the same
+  author as `@noble/curves` and `@scure/bip39`, already relied on, and was
+  audited by Oak Security in Aug 2025.
+
+**Supersedes.** The Option A recommendation in the OD-2 memo, which remains as
+the fallback if this dependency ever becomes untenable.
+
 ## 8. Phase status
 
 | Plan item | Status |
@@ -538,8 +644,9 @@ as closed would be the failure mode to avoid.
 | MXID derivation formula locked | Done — §4, CD-M1 |
 | iM8 `getMatrixIdentity` with tests | Done — `matrixIdentity.ts`, 18 tests |
 | Identity-boundary CI suite (Matrix) | Partial — the "voting key has no Matrix account" half is covered. The "no DID↔MXID table exists" half cannot pass until the v1 table is removed (Phase 2). |
-| `para-idp` + MAS prototype | Not started — blocked on OD-2 |
+| `para-idp` + MAS prototype | Not started — **unblocked**, OD-2 closed by CD-M4 |
 | Tuwunel spike | Not started |
-| Homeserver decision recorded | Open — OD-1 |
+| Homeserver decision recorded | Open — OD-1 (deferred out of this quarter) |
+| Proof of possession | Done — CD-M4, `identitySignature.ts`, 16 tests |
 | Target for governance logic | Done — §7, CD-M2. Migration blocked on OD-2/OD-6; schema split and the `firehose.ts` interface extraction are unblocked. |
 | LLM processing consent surface | Done — §7, CD-M3, 11 tests. Policy half of OD-3 still open; client-side prompt not built. |

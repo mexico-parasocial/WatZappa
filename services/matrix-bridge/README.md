@@ -27,10 +27,11 @@ The bridge uses [`matrix-bot-sdk`](https://github.com/turt2live/matrix-bot-sdk) 
 - **No public room directory** — rooms are not discoverable. Same caveat as above.
 - **Registration is closed** — accounts are provisioned only by the bridge via Admin API
 - **No guest access** — all users must be authenticated PARA members
-- **Most client API endpoints require M8 JWTs.** Not all: `/api/proposals`,
-  `/api/constitution` and `/api/votes` are unauthenticated GETs, and
-  `/api/votes` discloses `voter_did` per card vote. The port is published on
-  `127.0.0.1` only. Tracked as MATRIX_V2 F6.
+- **All client API endpoints require M8 JWTs.** Every `/api` handler calls
+  `authenticateM8` (closed by MATRIX_V2 F6 and F8). Note this is
+  authentication, not authorization: except for `/api/space-for-community`,
+  endpoints do not check that the caller belongs to the community they are
+  asking about — see MATRIX_V2 F9.
 - **E2EE is disabled** (`MATRIX_ENABLE_ENCRYPTION=false`). Rooms are
   transport-encrypted via HTTPS and run on a PARA-only homeserver with
   federation disabled, **so the homeserver operator can read message content.**
