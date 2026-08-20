@@ -25,6 +25,7 @@ export $(grep -E '^MATRIX_' "$ENV_FILE" | xargs) || true
 export $(grep -E '^POSTGRES_' "$ENV_FILE" | xargs) || true
 export $(grep -E '^PDS_FIREHOSE_URL' "$ENV_FILE" | xargs) || true
 export $(grep -E '^BRIDGE_' "$ENV_FILE" | xargs) || true
+MATRIX_DB_NAME="${MATRIX_DB_NAME:-matrix}"
 
 # ─── Step 1: Generate Synapse config (if missing) ───
 if [ ! -d "${SCRIPT_DIR}/synapse" ]; then
@@ -73,12 +74,19 @@ done
 
 # ─── Step 5: Create admin user (if first deploy) ───
 echo ""
-if ! docker compose -f "$COMPOSE_FILE" exec -T synapse sqlite3 /data/homeserver.db \
-    "SELECT name FROM users WHERE name='@admin:${MATRIX_SERVER_NAME:-matrix.para.social}'" 2>/dev/null | grep -q admin; then
+# Admin existence is checked against Postgres, not SQLite. The old check ran
+# `sqlite3 /data/homeserver.db`, which cannot work: sqlite3 is not installed in
+# the Synapse image, and since the database moved to Postgres that file does not
+# exist. The check silently failed every time, so this step always claimed the
+# admin was missing and paused the deploy.
+if ! docker compose -f "$COMPOSE_FILE" exec -T synapse-db \
+    psql -U "${POSTGRES_USER:-pg}" -d "${MATRIX_DB_NAME:-matrix}" -tAc \
+    "SELECT 1 FROM users WHERE name='@admin:${MATRIX_SERVER_NAME:-matrix.para.social}'" 2>/dev/null | grep -q 1; then
     echo "👤 Creating Synapse admin user..."
     echo "⚠️  You will be prompted for a password"
+    # Config lives in /config, not /data — see MATRIX_V2.md F1.
     docker compose -f "$COMPOSE_FILE" exec synapse register_new_matrix_user \
-        -c /data/homeserver.yaml \
+        -c /config/homeserver.yaml \
         -a -u admin
     echo ""
     echo "📝 Now get the access token:"
