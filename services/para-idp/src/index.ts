@@ -7,7 +7,7 @@ import { createIdpServer } from './server.js'
 const config = loadConfig()
 const log = pino({ level: config.logLevel })
 
-const signer = await Signer.load(config.privateKeyPem)
+const signer = await Signer.load(config.privateKeyPem, config.alg)
 if (!config.privateKeyPem) {
   log.warn(
     'PARA_IDP_PRIVATE_KEY is not set — using an ephemeral signing key. ' +

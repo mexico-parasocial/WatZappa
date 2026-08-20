@@ -15,7 +15,17 @@ import { SignJWT, exportJWK, generateKeyPair, importPKCS8, type JWK } from 'jose
  * no consent screen. Every feature omitted is one that cannot be misconfigured.
  */
 
-export const ALG = 'EdDSA'
+/**
+ * ID token signing algorithm.
+ *
+ * RS256 by default, not because it is the better algorithm — EdDSA is smaller
+ * and faster — but because it is the one every relying party can verify.
+ * Matrix Authentication Service rejected EdDSA tokens with "none of the keys
+ * worked", and an IdP that a relying party cannot verify is not an IdP.
+ * Override with PARA_IDP_ALG once the consumer is known to support it.
+ */
+export type SigningAlg = 'RS256' | 'EdDSA'
+export const DEFAULT_ALG: SigningAlg = 'RS256'
 
 export interface OidcClient {
   clientId: string
@@ -26,6 +36,8 @@ export interface OidcClient {
 export interface IdpConfig {
   issuer: string
   clients: OidcClient[]
+  /** Custom URL scheme for the PARA app deep link. */
+  appScheme: string
 }
 
 export class Signer {
@@ -33,6 +45,7 @@ export class Signer {
     private readonly privateKey: CryptoKey,
     readonly publicJwk: JWK,
     readonly kid: string,
+    readonly alg: SigningAlg,
   ) {}
 
   /**
@@ -43,27 +56,33 @@ export class Signer {
    * production PARA_IDP_PRIVATE_KEY must be set, or MAS will intermittently
    * reject tokens it cannot verify.
    */
-  static async load(pkcs8Pem?: string): Promise<Signer> {
+  static async load(pkcs8Pem?: string, alg: SigningAlg = DEFAULT_ALG): Promise<Signer> {
     const { privateKey, publicKey } = pkcs8Pem
       ? {
-          privateKey: await importPKCS8(pkcs8Pem, ALG, { extractable: true }),
+          privateKey: await importPKCS8(pkcs8Pem, alg, { extractable: true }),
           publicKey: undefined as unknown as CryptoKey,
         }
-      : await generateKeyPair(ALG, { extractable: true })
+      : await generateKeyPair(alg, { extractable: true })
 
     // Derive the public JWK from whichever half we have.
-    const jwk = publicKey
-      ? await exportJWK(publicKey)
-      : await exportJWK(privateKey)
-    delete (jwk as Record<string, unknown>).d
-    jwk.alg = ALG
+    const jwk = publicKey ? await exportJWK(publicKey) : await exportJWK(privateKey)
+    // Strip every private field before this is ever published as JWKS. RSA
+    // private keys carry more than `d` — leaving any of these in would publish
+    // the signing key itself.
+    // `as unknown as` because jose's JWK type does not index-signature; the
+    // newer jose in the container build rejects the direct cast.
+    const mutable = jwk as unknown as Record<string, unknown>
+    for (const field of ['d', 'p', 'q', 'dp', 'dq', 'qi']) {
+      delete mutable[field]
+    }
+    jwk.alg = alg
     jwk.use = 'sig'
     const kid = createHash('sha256')
-      .update(JSON.stringify({ crv: jwk.crv, kty: jwk.kty, x: jwk.x }))
+      .update(JSON.stringify({ crv: jwk.crv, kty: jwk.kty, x: jwk.x, n: jwk.n, e: jwk.e }))
       .digest('base64url')
       .slice(0, 16)
     jwk.kid = kid
-    return new Signer(privateKey as CryptoKey, jwk, kid)
+    return new Signer(privateKey as CryptoKey, jwk, kid, alg)
   }
 
   async issueIdToken(input: {
@@ -74,7 +93,7 @@ export class Signer {
     expiresInSeconds?: number
   }): Promise<string> {
     return new SignJWT({ nonce: input.nonce })
-      .setProtectedHeader({ alg: ALG, kid: this.kid, typ: 'JWT' })
+      .setProtectedHeader({ alg: this.alg, kid: this.kid, typ: 'JWT' })
       .setIssuer(input.issuer)
       .setAudience(input.audience)
       .setSubject(input.subject)
@@ -88,7 +107,10 @@ export class Signer {
   }
 }
 
-export function discoveryDocument(issuer: string): Record<string, unknown> {
+export function discoveryDocument(
+  issuer: string,
+  alg: SigningAlg = DEFAULT_ALG,
+): Record<string, unknown> {
   return {
     issuer,
     authorization_endpoint: `${issuer}/authorize`,
@@ -97,7 +119,7 @@ export function discoveryDocument(issuer: string): Record<string, unknown> {
     response_types_supported: ['code'],
     grant_types_supported: ['authorization_code'],
     subject_types_supported: ['public'],
-    id_token_signing_alg_values_supported: [ALG],
+    id_token_signing_alg_values_supported: [alg],
     token_endpoint_auth_methods_supported: ['client_secret_post'],
     // PKCE is required, not merely supported. See verifyPkce.
     code_challenge_methods_supported: ['S256'],

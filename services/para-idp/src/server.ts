@@ -34,6 +34,77 @@ import { subjectFor, verifyIdentityAssertion, type SignedAssertion } from './ide
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
 
+function html(res: ServerResponse, status: number, body: string): void {
+  res.writeHead(status, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'no-store',
+    // This page carries a login challenge: never let it be framed or sniffed.
+    'X-Frame-Options': 'DENY',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'no-referrer',
+    'Content-Security-Policy':
+      "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'",
+  })
+  res.end(body)
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
+  )
+}
+
+/**
+ * The page MAS's browser redirect lands on.
+ *
+ * There is no password field here because there is no password: the user's
+ * key lives on their phone. The page hands the challenge to the PARA app over
+ * a deep link, then waits for the app to finish signing.
+ *
+ * Deliberately dependency-free and inline — a login page that pulls in remote
+ * scripts is a login page whose behaviour someone else controls.
+ */
+function loginPage(deepLink: string, sessionId: string, appName: string): string {
+  return `<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in with PARA</title>
+<style>
+  :root{color-scheme:light dark}
+  body{font:16px/1.5 system-ui,sans-serif;margin:0;min-height:100vh;display:grid;place-items:center;
+       background:Canvas;color:CanvasText}
+  main{max-width:26rem;padding:2rem;text-align:center}
+  h1{font-size:1.375rem;margin:0 0 .5rem}
+  p{margin:0 0 1.5rem;opacity:.75}
+  a.btn{display:inline-block;padding:.75rem 1.5rem;border:1px solid currentColor;
+        border-radius:.5rem;text-decoration:none;color:inherit;font-weight:600}
+  .status{margin-top:1.5rem;font-size:.875rem;opacity:.6}
+</style>
+<main>
+  <h1>Sign in with PARA</h1>
+  <p>Approve this sign-in on your phone. ${escapeHtml(appName)} never sees your keys.</p>
+  <a class="btn" href="${escapeHtml(deepLink)}">Open PARA</a>
+  <div class="status" id="s">Waiting for approval\u2026</div>
+</main>
+<script>
+(function(){
+  var s = document.getElementById('s');
+  var tries = 0;
+  function poll(){
+    if (++tries > 150) { s.textContent = 'This sign-in expired. Start again.'; return; }
+    fetch('/authorize/status?session=' + encodeURIComponent(${JSON.stringify(sessionId)}), {cache:'no-store'})
+      .then(function(r){ return r.json() })
+      .then(function(d){
+        if (d.redirect_uri) { s.textContent = 'Approved. Redirecting\u2026'; location.href = d.redirect_uri }
+        else setTimeout(poll, 2000)
+      })
+      .catch(function(){ setTimeout(poll, 2000) });
+  }
+  setTimeout(poll, 1500);
+})();
+</script>`
+}
+
 function json(res: ServerResponse, status: number, body: unknown): void {
   res.writeHead(status, JSON_HEADERS)
   res.end(JSON.stringify(body))
@@ -91,7 +162,7 @@ export function createHandler(deps: ServerDeps) {
       if (path === '/healthz') return json(res, 200, { ok: true })
 
       if (path === '/.well-known/openid-configuration' && req.method === 'GET') {
-        return json(res, 200, discoveryDocument(config.issuer))
+        return json(res, 200, discoveryDocument(config.issuer, signer.alg))
       }
 
       if (path === '/jwks.json' && req.method === 'GET') {
@@ -125,7 +196,7 @@ export function createHandler(deps: ServerDeps) {
           return oauthError(res, 400, 'invalid_request', 'code_challenge and nonce are required')
         }
 
-        const challenge = store.createChallenge({
+        const { challenge, sessionId } = store.createChallenge({
           clientId,
           redirectUri: resolved,
           state,
@@ -134,10 +205,21 @@ export function createHandler(deps: ServerDeps) {
           codeChallengeMethod: 'S256',
         })
 
-        // The app signs this. `audience` is echoed so the client signs the
-        // value this issuer will check, rather than guessing it.
+        // MAS sends a *browser* here, so the default response is a page. The
+        // JSON form exists for the app driving the flow itself and for tests.
+        const accept = String(req.headers.accept ?? '')
+        if (accept.includes('text/html')) {
+          const deepLink = `${config.appScheme}://idp-login?challenge=${encodeURIComponent(
+            challenge,
+          )}&issuer=${encodeURIComponent(config.issuer)}`
+          return html(res, 200, loginPage(deepLink, sessionId, 'Matrix'))
+        }
+
+        // `audience` is echoed so the client signs the value this issuer will
+        // check, rather than guessing it.
         return json(res, 200, {
           challenge,
+          session_id: sessionId,
           audience: 'para-idp',
           purpose: 'matrix-login',
           expires_in: 300,
@@ -188,7 +270,21 @@ export function createHandler(deps: ServerDeps) {
         const redirect = new URL(pending.redirectUri)
         redirect.searchParams.set('code', code)
         if (pending.state) redirect.searchParams.set('state', pending.state)
+
+        // Release the browser that is waiting on this session.
+        store.completeSession(pending.sessionId, redirect.toString())
         return json(res, 200, { redirect_uri: redirect.toString() })
+      }
+
+      // ─── 2b. The waiting browser asks whether the phone is done ─────────
+      if (path === '/authorize/status' && req.method === 'GET') {
+        const sessionId = url.searchParams.get('session') ?? ''
+        const redirectUri = store.takeCompletion(sessionId)
+        res.writeHead(200, { ...JSON_HEADERS, 'Cache-Control': 'no-store' })
+        // Always 200: a polling page must not be able to distinguish "no such
+        // session" from "not finished yet", or it becomes a session oracle.
+        res.end(JSON.stringify(redirectUri ? { redirect_uri: redirectUri } : { pending: true }))
+        return
       }
 
       // ─── 3. MAS redeems the code ────────────────────────────────────────

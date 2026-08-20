@@ -28,6 +28,8 @@ export interface LoginRequest {
   nonce: string
   codeChallenge: string
   codeChallengeMethod: 'S256'
+  /** Opaque handle the waiting browser polls with. */
+  sessionId: string
   createdAt: number
 }
 
@@ -49,13 +51,44 @@ function constantTimeEquals(a: string, b: string): boolean {
 export class LoginStore {
   private challenges = new Map<string, LoginRequest>()
   private codes = new Map<string, AuthorizationCode>()
+  /** sessionId -> the redirect the waiting browser should follow. */
+  private completions = new Map<string, { redirectUri: string; createdAt: number }>()
 
-  /** Issues a fresh single-use challenge bound to one OIDC request. */
-  createChallenge(request: Omit<LoginRequest, 'createdAt'>): string {
+  /**
+   * Issues a challenge bound to one OIDC request, plus the session handle the
+   * browser polls with.
+   *
+   * Two separate values on purpose: the challenge travels to the phone through
+   * a deep link the user can see, the session id stays in the browser. Neither
+   * is useful without the other.
+   */
+  createChallenge(request: Omit<LoginRequest, 'createdAt' | 'sessionId'>): {
+    challenge: string
+    sessionId: string
+  } {
     this.sweep()
     const challenge = randomBytes(32).toString('base64url')
-    this.challenges.set(challenge, { ...request, createdAt: Date.now() })
-    return challenge
+    const sessionId = randomBytes(32).toString('base64url')
+    this.challenges.set(challenge, { ...request, sessionId, createdAt: Date.now() })
+    return { challenge, sessionId }
+  }
+
+  /** Records where the waiting browser should go once the phone has signed. */
+  completeSession(sessionId: string, redirectUri: string): void {
+    this.completions.set(sessionId, { redirectUri, createdAt: Date.now() })
+  }
+
+  /** Single-use, like everything else here. */
+  takeCompletion(sessionId: string): string | undefined {
+    this.sweep()
+    if (typeof sessionId !== 'string' || sessionId.length === 0) return undefined
+    for (const [key, value] of this.completions) {
+      if (constantTimeEquals(key, sessionId)) {
+        this.completions.delete(key)
+        return Date.now() - value.createdAt > CHALLENGE_TTL_MS ? undefined : value.redirectUri
+      }
+    }
+    return undefined
   }
 
   /**
@@ -104,10 +137,17 @@ export class LoginStore {
     for (const [key, value] of this.codes) {
       if (now - value.createdAt > CODE_TTL_MS) this.codes.delete(key)
     }
+    for (const [key, value] of this.completions) {
+      if (now - value.createdAt > CHALLENGE_TTL_MS) this.completions.delete(key)
+    }
   }
 
   /** Test/metrics only. */
-  size(): { challenges: number; codes: number } {
-    return { challenges: this.challenges.size, codes: this.codes.size }
+  size(): { challenges: number; codes: number; completions: number } {
+    return {
+      challenges: this.challenges.size,
+      codes: this.codes.size,
+      completions: this.completions.size,
+    }
   }
 }

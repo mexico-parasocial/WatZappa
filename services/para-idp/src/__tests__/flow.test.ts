@@ -32,7 +32,7 @@ const CLIENT: IdpConfig['clients'][number] = {
   clientSecret: 'a'.repeat(48),
   redirectUris: ['https://mas.test/callback'],
 }
-const CONFIG: IdpConfig = { issuer: ISSUER, clients: [CLIENT] }
+const CONFIG: IdpConfig = { issuer: ISSUER, clients: [CLIENT], appScheme: 'para' }
 
 // ── client-side signing, mirroring iM8 ──────────────────────────────────────
 const CURVE_ORDER = 2n ** 252n + 27742317777372353535851937790883648493n
@@ -207,6 +207,58 @@ describe('full authorization-code flow', () => {
     // The whole point: the subject is a hash of the identity public key.
     expect(payload.sub).toBe(matrixLocalpart(hexToBytes(identity.pub)))
     expect(payload.nonce).toBe('nonce-abc')
+  })
+})
+
+describe('browser flow (how MAS actually arrives)', () => {
+  it('serves a login page to a browser instead of raw JSON', async () => {
+    const { challenge } = pkce()
+    const { res, done } = makeRes()
+    const req = makeReq('GET', authorizeUrl(baseParams(challenge)))
+    ;(req as unknown as { headers: Record<string, string> }).headers = {
+      accept: 'text/html,application/xhtml+xml',
+    }
+    await handler(req, res)
+    const r = await done
+    expect(r.status).toBe(200)
+    expect(r.headers['Content-Type']).toMatch(/text\/html/)
+    // A login page must not be framable, and must not pull in remote scripts.
+    expect(r.headers['X-Frame-Options']).toBe('DENY')
+    expect(r.headers['Content-Security-Policy']).toContain("default-src 'none'")
+    expect(String(r.body)).toContain('para://idp-login?challenge=')
+  })
+
+  it('releases the waiting browser once the phone has signed', async () => {
+    const { challenge } = pkce()
+    const authorize = await call('GET', authorizeUrl(baseParams(challenge)))
+    const sessionId = authorize.body.session_id as string
+    expect(sessionId).toBeTruthy()
+
+    // Nothing to report before the app signs.
+    const before = await call('GET', `/authorize/status?session=${encodeURIComponent(sessionId)}`)
+    expect(before.body).toEqual({ pending: true })
+
+    const signed = signAssertion(authorize.body.challenge)
+    await call(
+      'POST',
+      '/authorize/verify',
+      JSON.stringify({ challenge: authorize.body.challenge, ...signed }),
+    )
+
+    const after = await call('GET', `/authorize/status?session=${encodeURIComponent(sessionId)}`)
+    expect(after.body.redirect_uri).toContain('https://mas.test/callback?code=')
+
+    // Single-use: a second poll must not replay the redirect.
+    const again = await call('GET', `/authorize/status?session=${encodeURIComponent(sessionId)}`)
+    expect(again.body).toEqual({ pending: true })
+  })
+
+  it('does not reveal whether a session exists', async () => {
+    // "pending" for an unknown session too — otherwise the endpoint is an
+    // oracle for guessing valid session ids.
+    const r = await call('GET', '/authorize/status?session=not-a-real-session')
+    expect(r.status).toBe(200)
+    expect(r.body).toEqual({ pending: true })
   })
 })
 

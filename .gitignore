@@ -44,6 +44,11 @@ deploy/matrix/synapse/
 # Generated lexicon schema outputs (from `lex build`)
 packages/*/src/lexicons/
 
+# Generated MAS config (from deploy/matrix/setup-mas.sh). Contains the OIDC
+# signing key, the MAS encryption key, and the client secrets shared with
+# Synapse and para-idp.
+deploy/matrix/mas/
+
 # Matrix backups. Each archive contains the homeserver signing key and every
 # message in plaintext — as sensitive as the server itself. Never commit one,
 # and encrypt before copying anywhere off the host (deploy/matrix/backup.sh).

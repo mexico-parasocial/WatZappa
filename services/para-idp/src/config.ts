@@ -2,6 +2,9 @@ import type { IdpConfig, OidcClient } from './oidc.js'
 
 export interface Config extends IdpConfig {
   port: number
+  /** Custom URL scheme the PARA app registers, used for the login deep link. */
+  appScheme: string
+  alg: 'RS256' | 'EdDSA'
   privateKeyPem?: string
   logLevel: string
 }
@@ -45,6 +48,8 @@ export function loadConfig(): Config {
     issuer,
     clients: parseClients(env('PARA_IDP_CLIENTS')),
     port: Number.parseInt(env('PORT', '8090'), 10),
+    appScheme: env('PARA_IDP_APP_SCHEME', 'para'),
+    alg: (process.env.PARA_IDP_ALG as 'RS256' | 'EdDSA') || 'RS256',
     privateKeyPem: process.env.PARA_IDP_PRIVATE_KEY,
     logLevel: env('PARA_IDP_LOG_LEVEL', 'info'),
   }
