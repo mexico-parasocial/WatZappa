@@ -553,6 +553,7 @@ async function main() {
         req.url?.startsWith('/api/sortition/runs') &&
         req.method === 'GET'
       ) {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const cabildeoUri = url.searchParams.get('cabildeo')
         const viewerDid = url.searchParams.get('viewerDid')
@@ -618,6 +619,7 @@ async function main() {
         req.url?.startsWith('/api/sortition-proofs') &&
         req.method === 'GET'
       ) {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const communityUri = url.searchParams.get('community')
         if (!communityUri) {
@@ -632,6 +634,7 @@ async function main() {
         req.url?.startsWith('/api/sortition-proof') &&
         req.method === 'GET'
       ) {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const did = url.searchParams.get('did')
         const communityUri = url.searchParams.get('community')
@@ -694,6 +697,7 @@ async function main() {
         req.url?.startsWith('/api/sortition-proof-as-record') &&
         req.method === 'GET'
       ) {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const did = url.searchParams.get('did')
         const communityUri = url.searchParams.get('community')
@@ -775,6 +779,7 @@ async function main() {
         req.url?.startsWith('/api/decisions') &&
         req.method === 'GET'
       ) {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const communityUri = url.searchParams.get('community')
         if (!communityUri) {
@@ -789,6 +794,7 @@ async function main() {
         req.url?.startsWith('/api/chat-badges') &&
         req.method === 'GET'
       ) {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const did = url.searchParams.get('did')
         const communityUri = url.searchParams.get('community')
@@ -820,6 +826,7 @@ async function main() {
         req.url?.startsWith('/api/chat-member-list') &&
         req.method === 'GET'
       ) {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const communityUri = url.searchParams.get('community')
         if (!communityUri) {
@@ -977,6 +984,7 @@ async function main() {
         req.url?.startsWith('/api/moderation-dashboard') &&
         req.method === 'GET'
       ) {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const communityUri = url.searchParams.get('community')
         const modDid = url.searchParams.get('modDid')
@@ -1030,6 +1038,7 @@ async function main() {
         req.url?.startsWith('/api/user-chat-preferences') &&
         req.method === 'GET'
       ) {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const did = url.searchParams.get('did')
         if (!did) {
@@ -1160,6 +1169,7 @@ async function main() {
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ id }))
       } else if (req.url?.startsWith('/api/cards') && req.method === 'GET') {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const communityUri = url.searchParams.get('community')
         if (!communityUri) {
@@ -1223,6 +1233,7 @@ async function main() {
           req.url?.startsWith('/api/community-map/contributions')) &&
         req.method === 'GET'
       ) {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const communityUri = url.searchParams.get('community')
         const status = url.searchParams.get('status') || 'pending'
@@ -1326,6 +1337,7 @@ async function main() {
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ id }))
       } else if (req.url?.startsWith('/api/graph') && req.method === 'GET') {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const communityUri = url.searchParams.get('community')
         if (!communityUri) {
@@ -1340,6 +1352,7 @@ async function main() {
         req.url?.startsWith('/api/suggestions') &&
         req.method === 'GET'
       ) {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const communityUri = url.searchParams.get('community')
         const status = url.searchParams.get('status') || 'pending'
@@ -1397,6 +1410,7 @@ async function main() {
         req.url?.startsWith('/api/summarize') &&
         req.method === 'GET'
       ) {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const communityUri = url.searchParams.get('community')
         if (!communityUri) {
@@ -1495,6 +1509,7 @@ async function main() {
         req.url?.startsWith('/api/community-pulse') &&
         req.method === 'GET'
       ) {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const communityUri = url.searchParams.get('community')
         const voterDid = url.searchParams.get('voter') || undefined
