@@ -43,3 +43,9 @@ deploy/matrix/synapse/
 
 # Generated lexicon schema outputs (from `lex build`)
 packages/*/src/lexicons/
+
+# Matrix backups. Each archive contains the homeserver signing key and every
+# message in plaintext — as sensitive as the server itself. Never commit one,
+# and encrypt before copying anywhere off the host (deploy/matrix/backup.sh).
+backups/
+*.tar.gz.age
