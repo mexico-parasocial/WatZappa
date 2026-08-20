@@ -175,7 +175,10 @@ production down**, because production is already live on a known-good stack.
 
 | # | Risk | L | I | Mitigation / trigger |
 |---|---|---|---|---|
-| R1 | sr25519 cannot take our scalar → novel crypto with no reviewer | Med | **High** | G0 on day 1. Trigger: fund an audit or descope. Never ship unreviewed crypto behind a privacy claim. |
+| ~~R1~~ | ~~sr25519 cannot take our scalar~~ | — | — | **Retired Aug 20.** G0 passed; no audit on the critical path. |
+| **R8** | **Production without E2EE is read by users as "private"** | **High** | **High** | **Gate D.** The disclosure ships before the first pilot user, in the interface, not buried in docs. |
+| R9 | Signing key lost, or a backup that never restores | Low | **Terminal** | Restore drill passed Aug 20; nightly encrypted off-host copies from S1; quarterly drills logged |
+| R10 | F9 (authorization) reaches production with >1 community | Med | **High** | The pilot stays ONE community until F9 lands in S5. A hard constraint, not a preference. |
 | R2 | Solo bus factor | — | **High** | Every decision written as CD-M/OD in-repo. The docs are the redundancy. |
 | R3 | OD-6 join seam has no clean answer | Med | High | Timebox to S4; fallback is manual invite for the pilot community only |
 | R4 | MAS/MSC3861 integration friction | Med | Med | Keep JWT login behind a flag as temporary fallback (per original plan §8) |
@@ -183,30 +186,39 @@ production down**, because production is already live on a known-good stack.
 | R6 | E2EE spike overruns and eats the quarter | Med | High | Hard 3-day stop. It is a spike, not a project. |
 | R7 | Scope creep into ballots | Low | High | Layer-boundary table is merge-blocking |
 
-**R5 is the one to watch.** It is the most likely way this plan fails, and it is
-entirely self-inflicted.
+**R5 is still the most likely way this plan fails**, and it is entirely
+self-inflicted. **R8 is the one that would do lasting damage** — a schedule slip
+is recoverable; users trusting a privacy claim the system does not deliver is
+the failure this whole exercise started from.
 
 ## 7. Decisions needed from you
 
 | # | Decision | Needed by | Default if silent |
 |---|---|---|---|
-| 1 | Accept "identity this quarter, E2EE next" (§2) | Before S1 | Proceed as written |
+| 1 | Accept the two-stage shape: v1 to production ~Sep 18, v2 identity by Nov 20 (§2) | Before S1 | Proceed as written |
 | 2 | OD-4 — confirm `civic` = ballot identity | S1 | Assume yes (fail-safe direction already taken) |
 | 3 | OD-3 policy — LLM processing allowed at all? | S1 | Deploy without `OPENAI_API_KEY` |
-| 4 | If G0 fails: fund an audit, or descope? | Contingent | Descope |
+| ~~4~~ | ~~If G0 fails: audit or descope?~~ | — | Moot — G0 passed |
+| 6 | Media: build SeaweedFS now, or amend MATRIX_V2 §3.6 and accept local disk + backups? | S1 | Amend the doc |
+| 7 | Pilot stays a single community until F9 lands (R10)? | Before S2 | Yes |
 | 5 | Cap on upstream-sync time per sprint (R5) | Before S1 | 1 day/sprint |
 
 ## 8. What done looks like
 
-At 2026-11-20, a demo that runs end to end on staging:
+**Stage 1, ~Sep 18 — production.** The hardened homeserver serves the pilot
+community. Federation closed and verified against the running server, nightly
+encrypted backups shipping off-host with a rehearsed restore, monitoring that
+pages before a user does, and in-app copy stating plainly what is and is not
+encrypted.
 
-1. A new member joins the pilot community from the PARA app.
-2. They land in a Matrix room as `@<32 base32 chars>:matrix.para.social`.
-3. `grep -r` across the bridge database and the homeserver database finds **no
-   row relating their DID to that MXID** — because none is written.
-4. The CI suite proves the ballot identity has no Matrix account and no table
-   exists, and fails the build if either regresses.
-5. The migration runbook exists and has been rehearsed once.
+**Stage 2, Nov 20 — the identity boundary, in production.**
 
-Not in that demo: encrypted messages. That is next quarter, and saying so now is
-what makes the rest of it true.
+1. A member joins from the PARA app and lands in a room as
+   `@<32 base32 chars>:matrix.para.social`.
+2. No row anywhere relates their DID to that MXID, because none is written.
+3. CI fails the build if the ballot identity ever gains a Matrix account, or if
+   a linkage table reappears.
+4. The v1 mappings and tokens are destroyed, witnessed, and recorded.
+
+Not in either: encrypted messages. That is next quarter — and Gate D exists so
+users are told, rather than left to assume.
