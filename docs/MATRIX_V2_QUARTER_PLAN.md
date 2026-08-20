@@ -1,6 +1,7 @@
 # Matrix v2 — Quarter Plan
 
 **Quarter:** Mon 2026-08-24 → Fri 2026-11-20 (13 weeks, 6 sprints + 1 buffer week)
+**Goal (revised 2026-08-20):** production this quarter, in two stages — see §2
 **Owner:** solo (1 FTE)
 **Supersedes:** the resourcing and phasing in `para-matrix-v2-plan.md`. That plan's
 findings still hold; its schedule does not — see §1.
@@ -26,42 +27,42 @@ Three things have also changed since the plan was written:
 **The plan is therefore not "12 weeks, compressed". It is a different plan: one
 track, taken to done.**
 
-## 2. The central call: identity this quarter, encryption next
+## 2. The central call: production early, in two stages
 
-v2 rests on two hard guarantees. **One person cannot land both in 13 weeks.**
+**Revised 2026-08-20** after the goal changed to *production ready this
+quarter*. The original plan put cutover in the next quarter. That is no longer
+the target, and the right response is not to move the same big-bang cutover into
+the final week — it is to go to production **sooner**, in two stages.
 
-| | No server-held identity linkage | E2EE always |
-|---|---|---|
-| Progress | ~40% (CD-M1, `getMatrixIdentity`, OD-2 memo) | 0% |
-| Blocked by | OD-2 — resolvable, see §3 | matrix-js-sdk#4150, unsolved **upstream** |
-| Risk | Medium, bounded | High, open-ended, not ours to fix |
-| Differentiator | Yes — nobody else does this | No — table stakes, everyone has it |
+### Stage 1 — the hardened v1, live in ~3 weeks
 
-Attempting both means finishing neither. **Recommendation: the quarter is the
-identity boundary.** E2EE gets a 3-day timeboxed spike in S5 — enough to plan
-next quarter honestly, not enough to sink this one.
+What is running today is already materially better than what was there a week
+ago: federation is actually closed (it was not), the config Synapse loads is
+actually the hardened one (it was not), the database is Postgres (it was
+silently SQLite), every API endpoint authenticates, and there is a verified
+backup. None of that requires v2.
 
-This is the difference between "we removed the linkage table" (a claim nobody
-else can make) and "we half-did two things".
+Going to production with this now, rather than at the end of the quarter, means
+the v2 migration is later rehearsed *against a real system with real data and a
+real rollback*, instead of being the first time anything is exercised in anger.
 
-### Quarter goal
+### Stage 2 — v2 identity migrated in place, by end of quarter
 
-> A pilot-community member logs into Matrix with an MXID derived from their
-> identity key, on staging, with **no table anywhere relating their DID to that
-> account** — and the identity-boundary CI suite proves it, both halves.
+`para-idp` + MAS + derived MXIDs + removing the linkage table, deployed onto a
+production system that has been running for two months. This is the sequence
+that lets "production this quarter" mean something other than "a cutover with no
+slack behind it".
 
-### Explicit non-goals
+### What will NOT be true at production, and must be said out loud
 
-Not in this quarter. Each is a deliberate cut, not an oversight:
+**End-to-end encryption will not be on.** The homeserver operator can read every
+message. This is unchanged from the original plan — the blocker is upstream
+(matrix-js-sdk#4150) and is not ours to fix this quarter.
 
-- **E2EE rollout** — spike only (§2).
-- **Tuwunel migration (OD-1)** — Synapse stays. Revisit only if it blocks MAS.
-- **Draupnir / Ozone moderation bridge** — v1 moderation keeps running.
-- **Federation ACLs beyond "closed"** — closed is already correct.
-- **Production cutover and v1 decommission** — staging + rehearsed migration
-  only. Cutover is next quarter's first act, from a rehearsed runbook.
-- **Full governance extraction (CD-M2)** — only the seam needed to remove the
-  linkage table. The monolith survives this quarter.
+For a product that sells itself on privacy, shipping without stating this
+plainly, in the interface, would be exactly the failure this whole exercise has
+been about: F1 was a privacy claim the deployment did not deliver. **Gate D
+below makes the disclosure a merge blocker, not a footnote.**
 
 ## 3. The critical path
 
@@ -103,71 +104,72 @@ the audit becomes a funded external dependency.
 
 ## 4. Sprints
 
-Each sprint ends with a demo of something a user could do, and a written
-decision-log entry. Ceremonies are 30 min plan / 30 min review — solo does not
-mean unstructured, it means short.
+### S1 · Aug 24 – Sep 04 · Decide, de-risk, and prepare for production
+- ~~sr25519 spike~~ **done Aug 20, passed.** CD-M4 recorded, OD-2 closed.
+- ~~`signIdentityChallenge()`~~ **done** — 16 tests, purpose binding, ballot
+  identity refused at the signing layer.
+- ~~Backup and restore~~ **done, verified by a full destroy-and-rebuild.**
+- ~~Verify hardening on a live server~~ **done** — `publicRooms` returns 401.
+- Remaining, all production prerequisites:
+  - **Monitoring.** Nothing scrapes the bridge's Prometheus metrics and Synapse
+    metrics are off. Today an outage reaches you via a user.
+  - **Media decision.** MATRIX_V2 §3.6 says SeaweedFS with encryption at rest;
+    reality is a local unencrypted Docker volume. Implement it or amend the doc
+    — do not leave the doc claiming what the deployment does not do.
+  - **TLS and `.well-known`** verified against the real domain.
+  - Close OD-3 (LLM policy) and OD-4 (identity labels).
 
-### S1 · Aug 24 – Sep 04 · Decide and de-risk
-- **D1: sr25519 spike** (§3). Outcome recorded as CD-M4 either way.
-- Close OD-4 (identity labels — a one-line confirmation) and OD-3 policy half.
-- **Verify hardening on live staging** — F1 is only closed when a running server
-  refuses `publicRooms`, not when a file exists.
-- Implement the identity signature behind `signIdentityChallenge(seed, label,
-  payload)`, refusing the ballot identity by the same allowlist as
-  `getMatrixIdentity`. Test vectors generated and mirrored into iM8.
-- **Exit:** OD-2 closed; signing works in a test; staging hardening verified.
+### S2 · Sep 07 – Sep 18 · Ship stage 1, start para-idp
+- **Production cutover of the hardened v1.** Nightly encrypted backups shipping
+  off-host; monitoring live; rollback rehearsed.
+- **Gate D — the disclosure.** In-app copy states plainly that messages are not
+  end-to-end encrypted and the server operator can read them. No pilot user
+  joins before this ships.
+- Begin `para-idp`: verify the signed assertion, issue an OIDC ID token with
+  `sub` = the CD-M1 localpart. Reuse mubEZ's `issuanceChallenge`.
 
-### S2 · Sep 07 – Sep 18 · para-idp
-- `para-idp` OIDC shim: verifies the signed payload, issues an ID token with
-  `sub` = the CD-M1 localpart. Reuse mubEZ's `issuanceChallenge` for replay
-  protection rather than building a second one.
-- Challenge single-use + purpose-binding tests.
-- **Exit:** `para-idp` issues a valid ID token for a signed identity assertion.
+### S3 · Sep 21 – Oct 02 · MAS on staging
+- MAS with `para-idp` upstream; Synapse delegated auth (MSC3861).
+- Production runs stage 1 throughout; this is staging work.
 
-### S3 · Sep 21 – Oct 02 · MAS
-- MAS on staging, upstream OIDC = `para-idp`. Synapse delegated auth (MSC3861).
-- **Exit (G2):** a real login through MAS produces a derived MXID. No password
-  is minted anywhere in the flow.
+### S4 · Oct 05 – Oct 16 · Cut the linkage, on staging
+- **OD-6, the join seam** — the server can no longer derive a member's MXID, so
+  membership-driven invitation must change.
+- Delete `user_matrix_map`, remove `didToMxid`, retire password issuance,
+  `password_config.enabled: false`.
 
-### S4 · Oct 05 – Oct 16 · Cut the linkage
-- **OD-6 join seam** — the hard one. The server can no longer derive a member's
-  MXID from their DID, so membership-driven invitation must change. Decide and
-  build: client-presents-MXID on join, or invite-by-capability.
-- Delete `user_matrix_map`; remove `didToMxid`; retire `/api/matrix-token`
-  password issuance.
-- Turn on `password_config.enabled: false`.
-- **Exit (G3):** the linkage table is gone and the second half of the
-  identity-boundary CI suite ("no DID↔MXID table exists") passes.
+### S5 · Oct 19 – Oct 30 · Prove it, and prepare the migration
+- Identity-boundary CI complete, both halves.
+- **F9 — authorization.** Now blocking: a production system with more than one
+  community cannot ship without it.
+- Migration rehearsal on a copy of **production** data, restored from a real
+  backup. This is what stage 1 bought.
+- **Three-day E2EE spike, hard stop.** Sizes next quarter; ships nothing.
 
-### S5 · Oct 19 – Oct 30 · Prove it, and look ahead
-- Identity-boundary CI complete; F9 authorization checks; F4 content paths.
-- **3-day E2EE spike (timeboxed, hard stop):** does matrix-rust-sdk crypto work
-  under Hermes, or is a native module required? Output is a go/no-go and an
-  estimate for next quarter — not an implementation.
-- Retention verified actually purging on staging.
-- **Exit (G4):** both CI halves green; E2EE path chosen for next quarter.
-
-### S6 · Nov 02 – Nov 13 · Rehearse
-- Migration rehearsal on staging per MATRIX_V2 §5: existing users through the
-  new login, old rooms pointed at new ones, v1 tokens destroyed.
-- Write the cutover runbook. Threat-model chapter updated with everything
-  learned (including the `memwipe` gap and the drand dependency).
-- **Exit (G5):** rehearsed migration, runbook written, go/no-go for cutover.
+### S6 · Nov 02 – Nov 13 · Stage 2 to production
+- Migrate production to derived MXIDs. Dual-run; old accounts deactivated only
+  after it holds.
+- v1 tokens and mappings destroyed with the witnessed procedure (§6 of
+  MATRIX_V2), recorded in the decision log.
 
 ### Buffer · Nov 16 – Nov 20
-Unallocated on purpose. Solo projects have no one to absorb overrun. If S1–S6
-ran clean, this is where the cutover go/no-go is executed.
+Stabilisation, not new work. If stage 2 slipped, this is where it lands; if it
+did not, this is where you watch it and write the post-mortem.
 
 ## 5. Gates
 
 | Gate | When | Test | If it fails |
 |---|---|---|---|
-| **G0** | End S1 D1 | sr25519 accepts our scalar | Fall back to Monero transposition; **budget an external audit** or descope to next quarter |
-| **G1** | End S1 | Signature works; staging hardening verified | Slip S2; do not start para-idp on an unverified base |
-| **G2** | End S3 | Login via MAS yields a derived MXID | Stop. Everything downstream is blocked; re-plan the quarter |
-| **G3** | End S4 | `user_matrix_map` deleted, CI green | Ship the quarter as "derived MXIDs live, table removal next" — still a real win |
-| **G4** | End S5 | Both CI halves green | Quarter goal missed; state it plainly |
-| **G5** | End S6 | Migration rehearsed | Cutover moves to next quarter (it was never promised this one) |
+| ~~**G0**~~ | ~~S1~~ | **PASSED Aug 20** — sr25519 accepts our scalar | — |
+| **G1** | End S1 | Backups verified ✓, monitoring live, media decided, TLS verified | Do not go to production. Stage 1 slips to S3. |
+| **D** | Before any pilot user | In-app copy states messages are not end-to-end encrypted | **Merge blocker.** No user joins without it. |
+| **G2** | End S2 | Hardened v1 serving real users, backups shipping off-host, rollback rehearsed | Stay on staging; stage 2 is unaffected |
+| **G3** | End S3 | Login via MAS yields a derived MXID on staging | Stage 2 moves to next quarter. Stage 1 still stands. |
+| **G4** | End S4 | `user_matrix_map` deleted, both CI halves green | Ship stage 2 as derived-MXIDs-only, table removal after |
+| **G5** | End S6 | Production on derived MXIDs, v1 mappings destroyed | Roll back to stage 1 — which is a working production system, not an outage |
+
+The point of the two-stage shape: **every gate after G2 can fail without taking
+production down**, because production is already live on a known-good stack.
 
 ## 6. Risks
 
