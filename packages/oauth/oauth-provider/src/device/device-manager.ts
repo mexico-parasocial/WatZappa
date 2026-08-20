@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { z } from 'zod'
-import { SESSION_FIXATION_MAX_AGE } from '../oauth-constants.ts'
+import { SESSION_FIXATION_MAX_AGE } from '../oauth-constants.js'
 import { parseHttpCookies } from '../lib/http/index.js'
 import {
   RequestMetadata,

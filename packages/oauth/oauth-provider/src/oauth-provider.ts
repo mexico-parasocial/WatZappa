@@ -43,10 +43,10 @@ import {
 } from './client/client-manager.js'
 import { type ClientStore, ifClientStore } from './client/client-store.js'
 import type { Client } from './client/client.js'
-import type { Branding, BrandingConfig } from './customization/branding.js'
+import type { Branding, BrandingInput } from './customization/branding.js'
 import {
   type Customization,
-  type CustomizationConfig,
+  type CustomizationInput,
   customizationSchema,
 } from './customization/customization.js'
 import type { DeviceId } from './device/device-id.js'
@@ -116,10 +116,10 @@ export type {
   AuthorizationResultAuthorizePage as AuthorizationResultAuthorize,
   AuthorizationResultRedirect,
   Branding,
-  BrandingConfig,
+  BrandingInput,
   CustomMetadata,
   Customization,
-  CustomizationConfig,
+  CustomizationInput,
   ErrorHandler,
   HcaptchaConfig,
   LoopbackMetadataGetter,
@@ -239,7 +239,7 @@ export type OAuthProviderOptions = OAuthProviderConfig &
   OAuthVerifierOptions &
   OAuthHooks &
   DeviceManagerOptions &
-  CustomizationConfig
+  CustomizationInput
 
 export class OAuthProvider extends OAuthVerifier {
   protected readonly accessTokenMode: AccessTokenMode
@@ -1119,4 +1119,5 @@ function matchesHint(
 }
 
 function hasActiveAccount({ account }: { account: Account }): boolean {
-  ret
+  return !account.deactivated
+}

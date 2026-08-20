@@ -42,7 +42,7 @@
     "vitest": "^4.0.16"
   },
   "scripts": {
-    "codegen:lex": "node ./scripts/lex-build.mjs",
+    "codegen:lex": "node ./scripts/lex-build.js",
     "prebuild": "pnpm run '/^(codegen:.+)$/'",
     "build": "tsgo --build tsconfig.build.json",
     "test": "vitest run"

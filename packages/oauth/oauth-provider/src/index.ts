@@ -5,7 +5,12 @@ export * from '@atproto/jwk'
 export * from '@atproto/jwk-jose'
 export * from '@atproto/oauth-types'
 
-export * from './oauth-constants.ts'
+// `Awaitable` reaches this barrel through both ./oauth-hooks.js and
+// ./oauth-store.js. They are the same type from ./lib/util/type.js, but a
+// star-export cannot disambiguate that, so name it explicitly.
+export type { Awaitable } from './lib/util/type.js'
+
+export * from './oauth-constants.js'
 export * from './oauth-client.js'
 export * from './oauth-dpop.js'
 export * from './oauth-errors.js'

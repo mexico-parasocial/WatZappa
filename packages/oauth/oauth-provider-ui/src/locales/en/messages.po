@@ -74,7 +74,7 @@ msgstr "2FA Confirmation"
 msgid "A local app"
 msgstr "A local app"
 
-#: src/lib/api.ts:467
+#: src/lib/api.ts:468
 msgid "A second authentication factor is required ({hint})"
 msgstr "A second authentication factor is required ({hint})"
 
@@ -83,6 +83,7 @@ msgid "A service controlled by <0>{domain}</0>"
 msgstr "A service controlled by <0>{domain}</0>"
 
 #: src/pages/account/(authenticated)/route.tsx:77
+#: src/routes/account/u/$accountId/route.tsx:78
 msgid "About"
 msgstr "About"
 
@@ -96,6 +97,7 @@ msgstr "Access specific parts of your Bluesky account and read your private pref
 
 #: src/components/utils/scope-description.tsx:266
 #: src/pages/account/(authenticated)/route.tsx:56
+#: src/routes/account/u/$accountId/route.tsx:60
 msgid "Account"
 msgstr "Account"
 
@@ -159,7 +161,7 @@ msgstr "An application on your device"
 msgid "An error occurred"
 msgstr "An error occurred"
 
-#: src/lib/api.ts:355
+#: src/lib/api.ts:356
 msgid "An unexpected error occurred. Please try again."
 msgstr "An unexpected error occurred. Please try again."
 
@@ -184,6 +186,7 @@ msgid "Any service"
 msgstr "Any service"
 
 #: src/pages/account/(authenticated)/route.tsx:70
+#: src/routes/account/u/$accountId/route.tsx:72
 msgid "Apps"
 msgstr "Apps"
 
@@ -219,14 +222,11 @@ msgid "Authorized on {0}"
 msgstr "Authorized on {0}"
 
 #: src/components/forms/form-card.tsx:57
-#: src/components/forms/wizard-card.tsx:116
+#: src/components/forms/wizard-card.tsx:125
 #: src/components/sign-in-picker.tsx:90
+#: src/routes/__root.tsx:35
 msgid "Back"
 msgstr "Back"
-
-#: src/components/forms/input-handle-default.tsx:109
-msgid "Between {minLength} and {maxLength} characters"
-msgstr "Between {minLength} and {maxLength} characters"
 
 #: src/components/utils/scope-description.tsx:757
 msgid "Blob storage"
@@ -318,7 +318,7 @@ msgstr "Choose a new default username."
 msgid "Choose a new email address to associate with your account."
 msgstr "Choose a new email address to associate with your account."
 
-#: src/components/sign-up-view.tsx:74
+#: src/components/sign-up-view.tsx:79
 msgid "Choose a username"
 msgstr "Choose a username"
 
@@ -391,7 +391,7 @@ msgstr "Create a new account"
 msgid "Create, update, and delete any public data linked to your account"
 msgstr "Create, update, and delete any public data linked to your account"
 
-#: src/lib/api.ts:436
+#: src/lib/api.ts:437
 msgid "Custom domains are not supported"
 msgstr "Custom domains are not supported"
 
@@ -436,6 +436,7 @@ msgid "Details"
 msgstr "Details"
 
 #: src/pages/account/(authenticated)/route.tsx:63
+#: src/routes/account/u/$accountId/route.tsx:66
 msgid "Devices"
 msgstr "Devices"
 
@@ -551,8 +552,13 @@ msgstr "Failed to delete account"
 
 #: src/pages/account/(authenticated)/apps/page.tsx:35
 #: src/pages/account/(authenticated)/devices/page.tsx:36
+#: src/routes/account/u/$accountId/apps.tsx:30
 msgid "Failed to load connected apps"
 msgstr "Failed to load connected apps"
+
+#: src/routes/account/u/$accountId/devices.tsx:30
+msgid "Failed to load your devices"
+msgstr "Failed to load your devices"
 
 #: src/data/account.ts:52
 msgid "Failed to reactivate account"
@@ -657,6 +663,7 @@ msgstr "Hide"
 
 #: src/components/utils/link-title.tsx:16
 #: src/pages/account/(authenticated)/route.tsx:50
+#: src/routes/account/u/$accountId/route.tsx:55
 msgid "Home"
 msgstr "Home"
 
@@ -699,10 +706,6 @@ msgstr "If you're trying to change your handle or email, do so before you deacti
 #: src/locales/locale-selector.tsx:47
 msgid "Interface language selector"
 msgstr "Interface language selector"
-
-#: src/components/forms/input-handle-default.tsx:254
-msgid "Invalid"
-msgstr "Invalid"
 
 #: src/components/utils/handle.tsx:56
 msgid "Invalid Handle"
@@ -766,6 +769,7 @@ msgid "Make visible"
 msgstr "Make visible"
 
 #: src/pages/account/(authenticated)/route.tsx:71
+#: src/routes/account/u/$accountId/route.tsx:73
 msgid "Manage applications that have access to your account"
 msgstr "Manage applications that have access to your account"
 
@@ -774,10 +778,12 @@ msgid "Manage your <0>full identity</0> including your <1>@handle</1>"
 msgstr "Manage your <0>full identity</0> including your <1>@handle</1>"
 
 #: src/pages/account/(authenticated)/route.tsx:57
+#: src/routes/account/u/$accountId/route.tsx:61
 msgid "Manage your account"
 msgstr "Manage your account"
 
 #: src/pages/account/(authenticated)/route.tsx:64
+#: src/routes/account/u/$accountId/route.tsx:67
 msgid "Manage your active sessions"
 msgstr "Manage your active sessions"
 
@@ -803,6 +809,7 @@ msgid "Moderate"
 msgstr "Moderate"
 
 #: src/pages/account/(authenticated)/route.tsx:141
+#: src/routes/account/u/$accountId/route.tsx:118
 msgid "My Atmosphere Account"
 msgstr "My Atmosphere Account"
 
@@ -820,7 +827,7 @@ msgstr "New email address"
 msgid "New password"
 msgstr "New password"
 
-#: src/components/forms/wizard-card.tsx:119
+#: src/components/forms/wizard-card.tsx:128
 #: src/components/reset-password-view.tsx:50
 #: src/components/reset-password-view.tsx:85
 msgid "Next"
@@ -830,9 +837,9 @@ msgstr "Next"
 msgid "Okay"
 msgstr "Okay"
 
-#: src/components/forms/input-handle-default.tsx:114
-msgid "Only letters, numbers, and hyphens"
-msgstr "Only letters, numbers, and hyphens"
+#: src/routes/__root.tsx:33
+msgid "Page not found"
+msgstr "Page not found"
 
 #: src/components/delete-account-confirm-form.tsx:66
 #: src/components/forms/input-password.tsx:46
@@ -980,6 +987,8 @@ msgstr "Reset your password"
 #: src/components/utils/error-card.tsx:77
 #: src/pages/account/(authenticated)/apps/page.tsx:31
 #: src/pages/account/(authenticated)/devices/page.tsx:32
+#: src/routes/account/u/$accountId/apps.tsx:26
+#: src/routes/account/u/$accountId/devices.tsx:26
 msgid "Retry"
 msgstr "Retry"
 
@@ -1004,7 +1013,7 @@ msgstr "Security step required"
 msgid "Select another account"
 msgstr "Select another account"
 
-#: src/components/forms/input-handle-default.tsx:150
+#: src/components/forms/input-handle-default.tsx:191
 msgid "Select domain"
 msgstr "Select domain"
 
@@ -1054,8 +1063,8 @@ msgid "Sign out"
 msgstr "Sign out"
 
 #: src/components/sign-in-picker.tsx:85
-#: src/components/sign-up-view.tsx:51
 #: src/components/sign-up-view.tsx:56
+#: src/components/sign-up-view.tsx:61
 msgid "Sign up"
 msgstr "Sign up"
 
@@ -1072,7 +1081,7 @@ msgctxt "Error"
 msgid "Stack"
 msgstr "Stack"
 
-#: src/components/forms/wizard-card.tsx:152
+#: src/components/forms/wizard-card.tsx:161
 msgid "Step {currentPosition} of {count}"
 msgstr "Step {currentPosition} of {count}"
 
@@ -1126,35 +1135,35 @@ msgstr "The application requests the permissions necessary to perform the follow
 msgid "The AT Protocol network uses an authentication mechanism that allows to uniquely identify users when communicating with external services. This is typically used to retrieve or update data linked to your account, such as chat messages, feeds or moderation content. The application requests the permissions necessary to perform the following authenticated actions on your behalf:"
 msgstr "The AT Protocol network uses an authentication mechanism that allows to uniquely identify users when communicating with external services. This is typically used to retrieve or update data linked to your account, such as chat messages, feeds or moderation content. The application requests the permissions necessary to perform the following authenticated actions on your behalf:"
 
-#: src/lib/api.ts:394
+#: src/lib/api.ts:395
 msgid "The data you submitted is invalid. Please check the form and try again."
 msgstr "The data you submitted is invalid. Please check the form and try again."
 
-#: src/lib/api.ts:424
+#: src/lib/api.ts:425
 msgid "The domain name is not allowed"
 msgstr "The domain name is not allowed"
 
-#: src/lib/api.ts:494
+#: src/lib/api.ts:495
 msgid "The invite code is not valid"
 msgstr "The invite code is not valid"
 
-#: src/lib/api.ts:353
+#: src/lib/api.ts:354
 msgid "The server encountered an unexpected error. Please try again."
 msgstr "The server encountered an unexpected error. Please try again."
 
-#: src/lib/api.ts:426
+#: src/lib/api.ts:427
 msgid "The username contains inappropriate language"
 msgstr "The username contains inappropriate language"
 
-#: src/lib/api.ts:432
+#: src/lib/api.ts:433
 msgid "The username could not be resolved"
 msgstr "The username could not be resolved"
 
-#: src/lib/api.ts:430
+#: src/lib/api.ts:431
 msgid "The username is already in use"
 msgstr "The username is already in use"
 
-#: src/lib/api.ts:422
+#: src/lib/api.ts:423
 msgid "The username is invalid"
 msgstr "The username is invalid"
 
@@ -1178,21 +1187,21 @@ msgstr "This app has access to your account with the following permissions:"
 msgid "This application is requesting the following permissions (scopes) to access your account:"
 msgstr "This application is requesting the following permissions (scopes) to access your account:"
 
-#: src/lib/api.ts:379
+#: src/lib/api.ts:380
 msgid "This authorization request has been denied. Please try again."
 msgstr "This authorization request has been denied. Please try again."
 
-#: src/lib/api.ts:558
+#: src/lib/api.ts:559
 msgid "This email is already used"
 msgstr "This email is already used"
 
-#: src/lib/api.ts:364
-#: src/lib/api.ts:515
-#: src/lib/api.ts:546
+#: src/lib/api.ts:365
+#: src/lib/api.ts:516
+#: src/lib/api.ts:547
 msgid "This sign-in session has expired"
 msgstr "This sign-in session has expired"
 
-#: src/lib/api.ts:428
+#: src/lib/api.ts:429
 msgid "This username is reserved"
 msgstr "This username is reserved"
 
@@ -1229,15 +1238,15 @@ msgstr "Type"
 msgid "Type your domain"
 msgstr "Type your domain"
 
-#: src/components/forms/input-handle-default.tsx:121
+#: src/components/forms/input-handle-default.tsx:146
 msgid "Type your username"
 msgstr "Type your username"
 
-#: src/contexts/session.tsx:148
+#: src/contexts/session.tsx:202
 msgid "Unauthorized"
 msgstr "Unauthorized"
 
-#: src/lib/json-client.ts:140
+#: src/lib/json-client.ts:141
 msgid "Unexpected server response"
 msgstr "Unexpected server response"
 
@@ -1273,6 +1282,10 @@ msgstr "Upload files"
 msgid "URL"
 msgstr "URL"
 
+#: src/components/forms/input-handle-default.tsx:183
+msgid "Use {minLength}–{maxLength, plural, one {# letter, number or hyphen} other {# letters, numbers or hyphens}}"
+msgstr "Use {minLength}–{maxLength, plural, one {# letter, number or hyphen} other {# letters, numbers or hyphens}}"
+
 #: src/components/update-handle-dialog.tsx:130
 msgid "Use a default username"
 msgstr "Use a default username"
@@ -1292,10 +1305,6 @@ msgstr "Username or email address"
 #: src/data/handle.ts:17
 msgid "Username updated"
 msgstr "Username updated"
-
-#: src/components/forms/input-handle-default.tsx:249
-msgid "Valid"
-msgstr "Valid"
 
 #: src/components/forms/input-handle-custom-instructions.tsx:58
 msgid "Value"
@@ -1332,7 +1341,7 @@ msgstr "Verify now"
 msgid "Verify the website address before entering your password. Only sign in on sites you recognize and trust."
 msgstr "Verify the website address before entering your password. Only sign in on sites you recognize and trust."
 
-#: src/components/sign-up-view.tsx:111
+#: src/components/sign-up-view.tsx:116
 msgid "Verify you are human"
 msgstr "Verify you are human"
 
@@ -1352,7 +1361,7 @@ msgstr "wants to uniquely identify you through your <0/> account"
 msgid "Warning"
 msgstr "Warning"
 
-#: src/components/sign-up-view.tsx:52
+#: src/components/sign-up-view.tsx:57
 msgid "We're so excited to have you join us!"
 msgstr "We're so excited to have you join us!"
 
@@ -1373,10 +1382,11 @@ msgid "What does this mean?"
 msgstr "What does this mean?"
 
 #: src/pages/account/(authenticated)/route.tsx:79
+#: src/routes/account/u/$accountId/route.tsx:79
 msgid "What is an Atmosphere Account?"
 msgstr "What is an Atmosphere Account?"
 
-#: src/lib/api.ts:530
+#: src/lib/api.ts:531
 msgid "Wrong identifier or password"
 msgstr "Wrong identifier or password"
 
@@ -1404,7 +1414,7 @@ msgstr "You are being redirected..."
 msgid "You can also temporarily deactivate your account instead. Your profile, posts, feeds, and lists will no longer be visible to other Bluesky users. You can reactivate your account at any time by logging in."
 msgstr "You can also temporarily deactivate your account instead. Your profile, posts, feeds, and lists will no longer be visible to other Bluesky users. You can reactivate your account at any time by logging in."
 
-#: src/components/sign-up-handle-form.tsx:41
+#: src/components/sign-up-handle-form.tsx:44
 msgid "You can change this username to any domain name you control after your account is set up."
 msgstr "You can change this username to any domain name you control after your account is set up."
 
@@ -1429,7 +1439,7 @@ msgstr "You previously deactivated <0/>. You can reactivate your account to cont
 msgid "You will receive an email with a \"reset code\". Enter that code here then enter your new password."
 msgstr "You will receive an email with a \"reset code\". Enter that code here then enter your new password."
 
-#: src/components/sign-up-view.tsx:94
+#: src/components/sign-up-view.tsx:99
 msgid "Your account"
 msgstr "Your account"
 
@@ -1481,8 +1491,8 @@ msgstr "Your email address has been verified."
 msgid "Your email address needs to be verified."
 msgstr "Your email address needs to be verified."
 
-#. placeholder {0}: handle ? ( <Handle className="text-text-default" handle={handle} /> ) : ( <span aria-hidden className="bg-text-light inline-block h-[1em] w-24 rounded-md align-middle" /> )
-#: src/components/forms/input-handle-default.tsx:184
+#. placeholder {0}: segment ? ( <span className="text-text-default block break-all font-medium"> @{segment} {domain} </span> ) : ( <span className="block break-all"> @{exampleSegment} {domain} </span> )
+#: src/components/forms/input-handle-default.tsx:117
 msgid "Your full username will be: {0}"
 msgstr "Your full username will be: {0}"
 
@@ -1494,10 +1504,14 @@ msgstr "Your profile, posts, feeds, and lists will become visible again across t
 msgid "Your repository contains all the data publicly available on the AT Protocol network, such as Bluesky posts, likes, and follows. It also contains data created through other apps you've signed into using this account. The application requests the permissions necessary to publish the following changes to your repository:"
 msgstr "Your repository contains all the data publicly available on the AT Protocol network, such as Bluesky posts, likes, and follows. It also contains data created through other apps you've signed into using this account. The application requests the permissions necessary to publish the following changes to your repository:"
 
-#: src/contexts/session.tsx:149
+#: src/contexts/session.tsx:203
 msgid "Your session has expired. Please sign in again."
 msgstr "Your session has expired. Please sign in again."
 
 #: src/data/handle.ts:18
 msgid "Your username has been updated."
 msgstr "Your username has been updated."
+
+#: src/components/forms/input-handle-default.tsx:108
+msgid "yourname"
+msgstr "yourname"

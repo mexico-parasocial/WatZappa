@@ -10,7 +10,7 @@ module.exports = {
   extensionsToTreatAsEsm: ['.ts'],
   transformIgnorePatterns: [],
   testTimeout: 60000,
-  setupFiles: ['<rootDir>/../../test.setup.ts'],
+
   moduleNameMapper: {
     '^\\./templates/(.+\\.js)$': '<rootDir>/dist/mailer/templates/$1',
     '^varint$': '<rootDir>/../../jest.varint-shim.cjs',

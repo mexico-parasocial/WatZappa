@@ -1,21 +1,13 @@
-/* eslint-env node */
-
-'use strict'
-const {
-  AppContext,
-  envToCfg,
-  envToSecrets,
-  readEnv,
-  scripts,
-} = require('@atproto/pds')
+import { AppContext, scripts } from '@atproto/pds'
 
 const main = async () => {
-  const env = readEnv()
-  const cfg = envToCfg(env)
-  const secrets = envToSecrets(env)
-  const ctx = await AppContext.fromConfig(cfg, secrets)
+  const ctx = await AppContext.fromEnv()
   const scriptName = process.argv[2]
-  const script = scripts[scriptName ?? '']
+  const script:
+    undefined | ((ctx: AppContext, args: string[]) => Promise<void>) =
+    Object.hasOwn(scripts, scriptName)
+      ? scripts[scriptName as keyof typeof scripts]
+      : undefined
   if (!script) {
     throw new Error(`could not find script: ${scriptName}`)
   }

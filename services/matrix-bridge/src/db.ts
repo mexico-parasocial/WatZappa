@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import Database from 'better-sqlite3'
 import type { Config } from './config.js'
+import type { AiConsentRecord } from './db/pg.js'
 
 export interface CommunitySpaceMap {
   communityUri: string
@@ -303,6 +304,19 @@ export class BridgeDatabase {
       CREATE TABLE IF NOT EXISTS user_chat_preferences (
         did TEXT PRIMARY KEY,
         show_chat_badges INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      -- Per-user consent to send this user's deliberation text to a
+      -- third-party LLM provider (OD-3 / F5 in docs/MATRIX_V2.md).
+      -- A missing row means NOT consented: absence of a record must never be
+      -- read as permission.
+      CREATE TABLE IF NOT EXISTS ai_processing_consent (
+        did TEXT PRIMARY KEY,
+        granted INTEGER NOT NULL DEFAULT 0,
+        policy_version INTEGER NOT NULL DEFAULT 0,
+        granted_at TEXT,
+        revoked_at TEXT,
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
@@ -773,8 +787,7 @@ export class BridgeDatabase {
         `SELECT community_uri, slug FROM community_space_map WHERE space_id = ? OR chamber_a_room_id = ? OR chamber_b_room_id = ? OR observer_room_id = ?`,
       )
       .get(roomId, roomId, roomId, roomId) as
-      | { community_uri: string; slug: string }
-      | undefined
+      { community_uri: string; slug: string } | undefined
     return row ? { communityUri: row.community_uri, slug: row.slug } : undefined
   }
 
@@ -1441,6 +1454,66 @@ export class BridgeDatabase {
         "INSERT OR REPLACE INTO user_chat_preferences (did, show_chat_badges, updated_at) VALUES (?, ?, datetime('now'))",
       )
       .run(did, showChatBadges ? 1 : 0)
+  }
+
+  // Third-party LLM processing consent (OD-3)
+  getAiConsent(did: string): AiConsentRecord {
+    const row = this.db
+      .prepare(
+        'SELECT granted, policy_version, granted_at, revoked_at FROM ai_processing_consent WHERE did = ?',
+      )
+      .get(did) as
+      | {
+          granted: number
+          policy_version: number
+          granted_at: string | null
+          revoked_at: string | null
+        }
+      | undefined
+    // No row means never asked, which is not consent.
+    if (!row) {
+      return {
+        did,
+        granted: false,
+        policyVersion: 0,
+        grantedAt: null,
+        revokedAt: null,
+      }
+    }
+    return {
+      did,
+      granted: row.granted === 1,
+      policyVersion: row.policy_version,
+      grantedAt: row.granted_at,
+      revokedAt: row.revoked_at,
+    }
+  }
+
+  setAiConsent(did: string, granted: boolean, policyVersion: number): void {
+    const existing = this.getAiConsent(did)
+    const now = new Date().toISOString()
+    const grantedAt = granted ? (existing.grantedAt ?? now) : existing.grantedAt
+    const revokedAt = granted ? null : now
+    this.db
+      .prepare(
+        `INSERT OR REPLACE INTO ai_processing_consent
+           (did, granted, policy_version, granted_at, revoked_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+      )
+      .run(did, granted ? 1 : 0, policyVersion, grantedAt, revokedAt)
+  }
+
+  getConsentingDids(dids: string[], policyVersion: number): Set<string> {
+    if (dids.length === 0) return new Set()
+    const unique = [...new Set(dids)]
+    const placeholders = unique.map(() => '?').join(',')
+    const rows = this.db
+      .prepare(
+        `SELECT did FROM ai_processing_consent
+         WHERE did IN (${placeholders}) AND granted = 1 AND policy_version >= ?`,
+      )
+      .all(...unique, policyVersion) as Array<{ did: string }>
+    return new Set(rows.map((r) => r.did))
   }
 
   // Matrix event ingestion

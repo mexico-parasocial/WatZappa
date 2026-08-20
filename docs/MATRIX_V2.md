@@ -70,7 +70,8 @@ The README's "never raw message content" holds for timeline sync but not for:
 authenticated endpoint, not scraped from rooms — but it is still message-derived
 content sitting outside Synapse, outside room retention, and outside E2EE.
 
-**F5 — deliberation text is sent to OpenAI.** *(open, needs a decision)*
+**F5 — deliberation text is sent to OpenAI.** *(consent surface implemented;
+disclosure text and OD-3 policy questions still open)*
 `/api/summarize` sends card titles and up to 150 characters of each card's
 content to OpenAI (`gpt-4o-mini` by default) for up to 100 cards. The path is
 gated on `OPENAI_API_KEY` being set, so it is off unless deployed with a key —
@@ -79,14 +80,65 @@ third-party processor, with no consent surface and no mention in the README,
 the threat model, or the v2 plan. For a product that sells itself on privacy
 this needs an explicit decision, not a config default. Tracked as OD-3.
 
-**F6 — three API endpoints are unauthenticated reads.** *(open)*
-`/api/proposals`, `/api/constitution` and `/api/votes` perform no M8
+The finding understated the surface. There are **three** provider-bound paths,
+not one:
+
+| Path | What it sends | Live? |
+|---|---|---|
+| `summarize.ts` | up to 100 cards, all authors, title + 150 chars | yes — `/api/summarize` |
+| `llm-extraction.ts` `enrichCardWithLLM` | one card's own text | no caller |
+| `llm-extraction.ts` `inferRelationshipsWithLLM` | the new card + up to **20 other members'** cards as context | no caller |
+
+`llm-extraction.ts` is currently unreferenced outside itself — dead code, but
+loaded: the relationship path exports other people's text as context, so wiring
+it up later would have leaked without anyone revisiting this finding.
+
+Implemented (CD-M3): per-author consent, enforced at one chokepoint, applied to
+all three paths including the dead ones. What remains open under OD-3 is policy,
+not mechanism — the disclosure wording, the retention commitment to demand from
+the processor, and whether a self-hosted model is required regardless.
+
+**F6 — three API endpoints are unauthenticated reads.** *(fixed)*
+`/api/proposals`, `/api/constitution` and `/api/votes` performed no M8
 authentication, contradicting the README's "Client API endpoints require M8
 JWTs". `/api/votes?card=<id>` returns every vote on a card **including
 `voter_did` and influence weight** — a per-DID voting record to any caller who
-can reach the port. The port is published on `127.0.0.1` only, so this is not
-currently internet-exposed, which is why it is a finding and not an incident.
+can reach the port. The port is published on `127.0.0.1` only, so this was not
+currently internet-exposed, which is why it was a finding and not an incident.
 These are deliberation-card votes, not ballots; ballots are not in this service.
+
+Fixed by adding `authenticateM8(req, config)` to all three GET handlers
+(`services/matrix-bridge/src/index.ts`), matching the pattern already used on
+the POST endpoints. This requires a valid M8 session, closing the gap with the
+README's claim; it does not add a community-membership check beyond that —
+same authorization level the POST endpoints on these resources already use.
+
+**F7 — push-based membership projection cannot survive CD-M1.** *(open,
+structural — this is what OD-5 is really about)*
+When the firehose sees a `com.para.community.membership` record it invites that
+member to the community's rooms. To do that it needs an MXID, and it gets one
+from `ensureMxid` (`firehose.ts`): read `user_matrix_map`, and on a miss derive
+it with `didToMxid(did)`. `ensureUserExists` then mints a random password and
+stores it via `setMxidForDid`.
+
+All three of those mechanisms are things v2 removes:
+
+| Mechanism | Removed by |
+|---|---|
+| `user_matrix_map` DID→MXID table | §3, "no server-held identity mapping" |
+| `didToMxid` reversible derivation | CD-M1 |
+| server-minted account passwords | §5, `password_config.enabled: false` |
+
+After CD-M1 the MXID is `H(identity_pub_i)`. The server never sees
+`identity_pub_i` — the membership lexicon carries only the repo DID, no MXID and
+no key material (`lexicons/com/para/community/membership.json`) — so **the
+server cannot compute the MXID of a member it wants to invite.** This is not a
+porting difficulty; the operation is unimplementable as written.
+
+The consequence is that OD-5 is not only "move governance logic out of the
+bridge". The governance side is already portable (CD-M2). It is the
+*provisioner* that has to change shape: it can no longer push users into rooms,
+because it cannot name them.
 
 ## 3. Hard guarantees vs best-effort
 
@@ -288,14 +340,196 @@ may be sent to OpenAI at all; if yes, under what consent surface, with what
 retention commitment from the processor, and whether a self-hosted model is
 required instead. Until this is closed, deploy without `OPENAI_API_KEY`.
 
+*Partially addressed.* The consent surface is built and enforced — CD-M3, §7,
+per-author and fail-closed. The rest of OD-3 is untouched and still needs a
+human decision: (a) the disclosure wording members are agreeing to, which
+`AI_CONSENT_POLICY_VERSION = 1` currently stands in for without any text behind
+it; (b) the retention and training commitment to require from the processor;
+(c) whether a self-hosted model is required regardless of consent. Until those
+are settled the deploy guidance above is unchanged — consent machinery existing
+is not a reason to set `OPENAI_API_KEY`.
+
 **OD-4 — identity label mapping.** Confirm `civic` = ballot identity and
 `anonymous` = community identity as reasoned in §4.
 
-**OD-5 — where governance logic goes.** The provisioner cannot be thin while
-proposals, sortition and moderation live in the bridge. Needs a target before
-Phase 2 starts.
+**OD-5 — where governance logic goes.** *(closed by CD-M2, §7.)* Target is a
+two-service split: `para-governance` owns the firehose and all governance state
+and speaks DIDs only; `para-matrix-provisioner` owns rooms and never names a
+user. Investigating this surfaced F7 — the current push-based membership
+projection is unimplementable after CD-M1 — which is why the residual question
+below is filed separately rather than treated as an implementation detail.
 
-## 7. Phase status
+**OD-6 — the join seam (from F7 / CD-M2).** If the server can no longer invite a
+member because it cannot compute their MXID, how does a member join a community
+room? The client can derive its own MXID and holds `identity_priv_i`, so the
+shape is a join authorized by proof rather than an invite. Undecided: whether
+the proof is a short-lived capability token issued by `para-governance`, a
+Synapse module validating it at join time, or MAS-mediated. **Blocked on OD-2** —
+all three need the same signature primitive.
+
+## 7. Service decomposition
+
+### CD-M2 — split by plane; governance owns the firehose, the provisioner owns rooms
+
+**Decision.** The bridge becomes two services over two schemas:
+
+- **`para-governance`** — owns the ATProto firehose cursor and all governance
+  state and logic: constitution, proposals, sortition (incl. drand), moderation
+  and badges, deliberation cards, extraction and relationships. Speaks **DIDs
+  only** and never resolves, stores, or derives an MXID.
+- **`para-matrix-provisioner`** — thin. Creates a space and its rooms for a
+  community, maintains join rules and power levels, relays bot announcements,
+  proxies the push gateway. Operates on **rooms**, not on users.
+
+The two communicate one-way, governance → provisioner, over a small port. No
+call goes the other direction.
+
+**Problem.** The plan calls for a thin provisioner, and §6 recorded that it
+"cannot be thin while proposals, sortition and moderation live in the bridge."
+Reading the source, that framing overstates the entanglement in one direction
+and understates it in another.
+
+*Overstated:* the governance core is already Matrix-free. `constitution.ts` has
+no imports at all; `drand.ts` imports only `node:crypto`; `sortition.ts` only
+`drand`; `chat-moderation.ts`, `extraction.ts`, `summarize.ts` and
+`llm-extraction.ts` reach only the database (and OpenAI, per OD-3). That is
+1,842 lines that move with no rewrite. Only two modules touch Matrix at all:
+
+- `proposals.ts` — a single fire-and-forget `announceInMatrix`, already
+  try/caught at both call sites and already a documented no-op when a community
+  has no space. This is an outbound notification, not coupling.
+- `firehose.ts` — the real tangle: it consumes ATProto records and in the same
+  pass both decides governance outcomes *and* projects them onto Matrix
+  (`createSpace`, `createRoom`, `inviteUser`, `kickUser`, `setPowerLevel`).
+
+So the seam is not between "governance" and "the bridge". It is inside
+`firehose.ts`, which is doing two jobs.
+
+*Understated:* F7. The projection half of that job stops being implementable
+once CD-M1 lands, because the server can no longer name a member.
+
+The table split falls out along the same line — 6 Matrix-plane tables
+(`community_space_map`, `matrix_events`, `room_read_markers`,
+`user_push_tokens`, `user_chat_preferences`, and `user_matrix_map`) against ~22
+governance tables. The only table that genuinely straddles the planes is
+`user_matrix_map`, which v2 deletes anyway. `chamber_assignment` is a governance
+output that provisioning consumes, and is therefore exactly where the port
+belongs.
+
+**Rejected alternatives.**
+
+- *Keep one service, split internally by module.* Cheapest, and the module
+  boundaries are already good enough to make it look tidy. Rejected because it
+  leaves governance state and Matrix credentials in one process and one
+  database, so "the homeserver operator cannot link a DID to an MXID" stays a
+  code-review claim rather than a deployment property. The point of the split is
+  that the provisioner should not be *able* to learn what it must not store.
+- *Provisioner owns the firehose and calls governance.* Inverts the dependency:
+  the component that must know least would parse every governance record to
+  decide what to forward. It also puts the cursor in the wrong service — replay
+  is a governance concern.
+- *Governance calls the Matrix admin API directly, no provisioner.* This is v1
+  with extra steps, and it hands Synapse admin credentials to the service that
+  holds voting records.
+- *Three services (governance / provisioner / deliberation-and-LLM).* Splitting
+  deliberation out is attractive while OD-3 is open, since it isolates the one
+  component that talks to a third-party processor. Deferred, not rejected: it is
+  a sub-split of `para-governance` and can be done later without disturbing this
+  boundary. Doing it now would mean designing two ports before either is
+  exercised.
+
+**Consequences.**
+
+The provisioner's port is small — the operations `firehose.ts` actually uses
+today are `createSpace`, `createRoom`, `addChildSpace`, `inviteUser`,
+`kickUser`, `setPowerLevel`, `getRoomMembers`, `sendEvent`, plus
+`userExists`/`createUser`. The last two disappear with §5's
+`password_config.enabled: false`, and per F7 every operation naming a *user*
+disappears with CD-M1. What remains is genuinely thin: create rooms, set rules,
+send bot messages.
+
+Membership therefore inverts from push to **pull**. The server stops inviting
+members; a member joins, presenting proof that they hold the identity key behind
+their MXID and that they are an active member of the community. The client can
+do this — it holds `identity_priv_i` and derives its own MXID — and the server
+can verify it without storing a mapping.
+
+That makes **OD-5 dependent on OD-2**: both need the client to prove possession
+of `identity_priv_i`, and neither can be built until a signature scheme over
+ristretto255 is chosen. Closing OD-2 unblocks both. The exact join mechanism —
+capability token from governance, a Synapse module, or MAS-mediated — is left
+open as OD-6 rather than guessed at here.
+
+Until OD-2 closes, this decision is a target, not a migration order. The safe
+work it authorizes now is the part that does not depend on the join seam:
+separating the schemas, and lifting the governance modules out of `firehose.ts`
+so that projection sits behind a named interface instead of inline calls.
+
+### CD-M3 — LLM processing consent belongs to the author of each piece of text
+
+**Decision.** Text may be sent to a third-party LLM provider only for members who
+have granted consent at the current disclosure version. Consent is a property of
+the **author of the text**, checked per-card at the moment a payload is
+assembled — not a property of the user who triggered the request, and not a
+deployment flag. Absence of a record is not consent.
+
+Enforced in one place, `services/matrix-bridge/src/ai-consent.ts`
+(`filterConsentedCards` / `hasAiConsent`), which every provider-bound path is
+required to call. Stored in `ai_processing_consent`, read and written through
+`/api/ai-consent`. Pinned by
+`services/matrix-bridge/src/__tests__/ai-consent.test.ts` (11 tests).
+
+**Problem.** The obvious implementation — a per-user setting checked when the
+user calls `/api/summarize` — is wrong, and wrong in a way that looks correct.
+A summary spans up to 100 cards written by many different members, and
+relationship inference sends up to 20 *other* members' cards as context. Gating
+on the caller would mean one member's opt-in exports everyone else's words. The
+consenting user is rarely the person whose privacy is at stake.
+
+**Rejected alternatives.**
+
+- *Deploy-time flag only (the status quo, `OPENAI_API_KEY`).* All-or-nothing for
+  a whole instance, and the people whose text is sent never see the question.
+- *Consent checked against the requesting user.* The trap above. Rejected on the
+  grounds that it silently exports non-consenting members' text.
+- *A boolean column on `user_chat_preferences`.* Cheapest, but consent needs an
+  audit trail — when granted, under which disclosure, when revoked — and a
+  cosmetic chat preference is the wrong neighbourhood for it. Decisive practical
+  point: this codebase has no `ALTER TABLE` anywhere, so a new column on an
+  existing table would silently not apply to deployed instances, while a new
+  table is created by the existing `CREATE TABLE IF NOT EXISTS` path.
+- *Consent as a single timeless boolean.* Consent to one disclosure is not
+  consent to a later one. `policy_version` is stored alongside the grant, and
+  `AI_CONSENT_POLICY_VERSION` is compared with `>=` at check time, so bumping it
+  invalidates prior grants and re-prompts rather than silently broadening what
+  people agreed to.
+- *Redaction/anonymisation instead of consent.* Deliberation cards are written in
+  the author's own words; stripping the DID does not stop the text identifying
+  them. Would trade a real control for the appearance of one.
+
+**Consequences.**
+
+Summaries become partial by default — nobody has consented yet, so
+`/api/summarize` returns "not enough claims" on a fresh deployment until members
+opt in. That is the intended fail-closed direction, but it means the feature
+looks broken until the client ships the consent prompt. `DeliberationSummary`
+carries `cardsWithheldForConsent` so the UI can say the summary covers part of
+the discussion rather than presenting it as the whole.
+
+`GET /api/ai-consent` deliberately takes no `did` parameter and reports only the
+authenticated user's own state: whether a given member consented to AI
+processing is itself personal, and a lookup by DID would make it enumerable —
+the same mistake as F6.
+
+This is mechanism, not policy. It gives each member a real choice and makes the
+choice enforceable, but it does not answer whether we should be sending
+deliberation text to OpenAI at all, what the disclosure says, or what retention
+terms to require. Those stay open under OD-3, and until they are settled the §6
+guidance holds: deploy without `OPENAI_API_KEY`. A consent checkbox is not a
+substitute for that decision — shipping the checkbox and treating the question
+as closed would be the failure mode to avoid.
+
+## 8. Phase status
 
 | Plan item | Status |
 |---|---|
@@ -307,3 +541,5 @@ Phase 2 starts.
 | `para-idp` + MAS prototype | Not started — blocked on OD-2 |
 | Tuwunel spike | Not started |
 | Homeserver decision recorded | Open — OD-1 |
+| Target for governance logic | Done — §7, CD-M2. Migration blocked on OD-2/OD-6; schema split and the `firehose.ts` interface extraction are unblocked. |
+| LLM processing consent surface | Done — §7, CD-M3, 11 tests. Policy half of OD-3 still open; client-side prompt not built. |

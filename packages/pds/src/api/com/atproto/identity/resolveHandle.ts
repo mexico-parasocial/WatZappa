@@ -27,7 +27,6 @@ export default function (server: Server, ctx: AppContext) {
         'HandleNotFound',
       )
     }
-    }
 
     const did: DidString = ctx.bskyAppView
       ? await ctx.bskyAppView.client

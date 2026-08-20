@@ -1,6 +1,6 @@
 {
   "name": "@atproto/lex-resolver",
-  "version": "0.2.2",
+  "version": "0.2.8",
   "license": "MIT",
   "description": "Lexicon document resolver utility for AT Lexicons",
   "keywords": [
@@ -46,7 +46,7 @@
     "vitest": "^4.0.16"
   },
   "scripts": {
-    "codegen:lex": "node ./scripts/lex-build.mjs",
+    "codegen:lex": "node ./scripts/lex-build.js",
     "prebuild": "pnpm run '/^(codegen:.+)$/'",
     "build": "tsgo --build tsconfig.build.json",
     "test": "vitest run"

@@ -1,6 +1,6 @@
 
 > @atproto/api@0.19.11 prebuild /Users/mlv/Desktop/MASTER/watx/packages/api
-> node ./scripts/generate-code.mjs && ([ -f ./src/client/index.ts ] || pnpm run codegen)
+> node ./scripts/generate-code.js && ([ -f ./src/client/index.ts ] || pnpm run codegen)
 
 
 > @atproto/api@0.19.11 build /Users/mlv/Desktop/MASTER/watx/packages/api

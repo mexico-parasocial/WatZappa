@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { createServer } from 'node:http'
 import pino from 'pino'
+import { AI_CONSENT_POLICY_VERSION } from './ai-consent.js'
 import { ChatModerationEngine } from './chat-moderation.js'
 import { loadConfig } from './config.js'
 import { type IBridgeDatabase, createDatabase } from './db/index.js'
@@ -561,8 +562,7 @@ async function main() {
           return
         }
         const run = (await db.getSortitionRunByCabildeo(cabildeoUri)) as
-          | SortitionRunRow
-          | undefined
+          SortitionRunRow | undefined
         if (!run) {
           res.writeHead(404, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'Sortition run not found' }))
@@ -732,6 +732,7 @@ async function main() {
         req.url?.startsWith('/api/constitution') &&
         req.method === 'GET'
       ) {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const communityUri = url.searchParams.get('uri')
         if (!communityUri) {
@@ -758,6 +759,7 @@ async function main() {
         req.url?.startsWith('/api/proposals') &&
         req.method === 'GET'
       ) {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const communityUri = url.searchParams.get('community')
         const state = url.searchParams.get('state') || undefined
@@ -1058,6 +1060,56 @@ async function main() {
         await db.setChatPreferences(did, showChatBadges)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true }))
+
+        // ── Third-party LLM processing consent (OD-3) ──
+        // Read and write are scoped to the authenticated user and take no `did`
+        // parameter: whether someone consented to AI processing is their own
+        // business, and a lookup by DID would make it enumerable.
+      } else if (req.url === '/api/ai-consent' && req.method === 'GET') {
+        const auth = await authenticateM8(req, config)
+        const record = await db.getAiConsent(auth.did)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(
+          JSON.stringify({
+            granted: record.granted,
+            policyVersion: record.policyVersion,
+            grantedAt: record.grantedAt,
+            revokedAt: record.revokedAt,
+            // Consent recorded against an older disclosure does not carry over;
+            // the client should re-ask when this is true.
+            needsRenewal:
+              record.granted &&
+              record.policyVersion < AI_CONSENT_POLICY_VERSION,
+            currentPolicyVersion: AI_CONSENT_POLICY_VERSION,
+          }),
+        )
+      } else if (req.url === '/api/ai-consent' && req.method === 'POST') {
+        const auth = await authenticateM8(req, config)
+        const body = await readBody(req)
+        const { granted, did } = JSON.parse(body)
+        if (typeof granted !== 'boolean') {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'granted must be a boolean' }))
+          return
+        }
+        if (did !== undefined && did !== auth.did) {
+          res.writeHead(403, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'did must match authenticated DID' }))
+          return
+        }
+        await db.setAiConsent(auth.did, granted, AI_CONSENT_POLICY_VERSION)
+        log.info(
+          { did: auth.did, granted, policyVersion: AI_CONSENT_POLICY_VERSION },
+          'AI processing consent updated',
+        )
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(
+          JSON.stringify({
+            ok: true,
+            granted,
+            policyVersion: AI_CONSENT_POLICY_VERSION,
+          }),
+        )
 
         // ── Deliberation / Knowledge Graph API ──
       } else if (req.url === '/api/cards' && req.method === 'POST') {
@@ -1415,6 +1467,7 @@ async function main() {
           }),
         )
       } else if (req.url?.startsWith('/api/votes') && req.method === 'GET') {
+        await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const cardId = url.searchParams.get('card')
         if (!cardId) {

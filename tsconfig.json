@@ -58,6 +58,10 @@
     { "path": "./packages/tap" },
     { "path": "./packages/ws-client" },
     { "path": "./packages/xrpc" },
-    { "path": "./packages/xrpc-server" }
+    { "path": "./packages/xrpc-server" },
+    { "path": "./services/bsky" },
+    { "path": "./services/bsync" },
+    { "path": "./services/ozone" },
+    { "path": "./services/pds" },
   ]
 }

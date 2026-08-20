@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { REQUEST_ID_BYTES_LENGTH, REQUEST_ID_PREFIX } from '../oauth-constants.ts'
+import { REQUEST_ID_BYTES_LENGTH, REQUEST_ID_PREFIX } from '../oauth-constants.js'
 import { randomHexId } from '../lib/util/crypto.js'
 
 export const REQUEST_ID_LENGTH =

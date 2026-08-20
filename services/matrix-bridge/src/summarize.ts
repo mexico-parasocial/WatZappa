@@ -1,3 +1,4 @@
+import { filterConsentedCards } from './ai-consent.js'
 import type { IBridgeDatabase } from './db/index.js'
 import type { OpenAIClient } from './openai-client.js'
 
@@ -26,6 +27,12 @@ export interface DeliberationSummary {
   totalClaims: number
   totalRelationships: number
   generatedAt: string
+  /**
+   * Cards excluded because their author has not consented to third-party LLM
+   * processing (OD-3). Surfaced so the UI can say the summary is partial rather
+   * than presenting it as a view of the whole discussion.
+   */
+  cardsWithheldForConsent: number
 }
 
 const SUMMARIZE_PROMPT = `You are a civic deliberation analyst. Given a list of claims from a community discussion, produce a structured summary.
@@ -83,7 +90,13 @@ export async function summarizeCommunityDeliberation(
   db: IBridgeDatabase,
   communityUri: string,
 ): Promise<DeliberationSummary | null> {
-  const cards = await db.getCardsForCommunity(communityUri, { limit: 100 })
+  const fetched = await db.getCardsForCommunity(communityUri, { limit: 100 })
+  if (fetched.length === 0) return null
+
+  // OD-3: only text whose author consented may leave for the LLM provider.
+  // Everything downstream — including the local fallbacks — works from this
+  // subset, so the returned summary describes exactly what was analysed.
+  const { allowed: cards, withheld } = await filterConsentedCards(db, fetched)
   if (cards.length === 0) return null
 
   const claimsText = cards
@@ -178,8 +191,7 @@ export async function summarizeCommunityDeliberation(
       ? parsed.bridgeStatements.map(String).slice(0, 3)
       : []
     const stanceDist = parsed.stanceDistribution as
-      | Record<string, unknown>
-      | undefined
+      Record<string, unknown> | undefined
 
     return {
       normalizedClaims,
@@ -196,6 +208,7 @@ export async function summarizeCommunityDeliberation(
       totalClaims: cards.length,
       totalRelationships: rels.edges.length,
       generatedAt: new Date().toISOString(),
+      cardsWithheldForConsent: withheld,
     }
   } catch (err) {
     return null

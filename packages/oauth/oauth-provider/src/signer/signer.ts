@@ -9,7 +9,7 @@ import {
   VerifyOptions,
   VerifyResult,
 } from '@atproto/jwk'
-import { EPHEMERAL_SESSION_MAX_AGE } from '../oauth-constants.ts'
+import { EPHEMERAL_SESSION_MAX_AGE } from '../oauth-constants.js'
 import { dateToEpoch } from '../lib/util/date.js'
 import { OmitKey, RequiredKey } from '../lib/util/type.js'
 import {

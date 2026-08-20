@@ -74,7 +74,7 @@ msgstr "2要素認証の確認"
 msgid "A local app"
 msgstr "ローカルアプリ"
 
-#: src/lib/api.ts:467
+#: src/lib/api.ts:468
 msgid "A second authentication factor is required ({hint})"
 msgstr "2番目の認証要素が必要です ({hint})"
 
@@ -83,6 +83,7 @@ msgid "A service controlled by <0>{domain}</0>"
 msgstr "<0>{domain}</0> によって管理されているサービス"
 
 #: src/pages/account/(authenticated)/route.tsx:77
+#: src/routes/account/u/$accountId/route.tsx:78
 msgid "About"
 msgstr "アカウントについて"
 
@@ -96,6 +97,7 @@ msgstr "Blueskyアカウントの特定の部分にアクセスし、プライ�
 
 #: src/components/utils/scope-description.tsx:266
 #: src/pages/account/(authenticated)/route.tsx:56
+#: src/routes/account/u/$accountId/route.tsx:60
 msgid "Account"
 msgstr "アカウント"
 
@@ -159,7 +161,7 @@ msgstr "デバイス上のアプリ"
 msgid "An error occurred"
 msgstr "エラーが発生しました"
 
-#: src/lib/api.ts:355
+#: src/lib/api.ts:356
 msgid "An unexpected error occurred. Please try again."
 msgstr "予期しないエラーが発生しました。もう一度お試しください。"
 
@@ -184,6 +186,7 @@ msgid "Any service"
 msgstr "すべてのサービス"
 
 #: src/pages/account/(authenticated)/route.tsx:70
+#: src/routes/account/u/$accountId/route.tsx:72
 msgid "Apps"
 msgstr "アプリ"
 
@@ -219,14 +222,11 @@ msgid "Authorized on {0}"
 msgstr ""
 
 #: src/components/forms/form-card.tsx:57
-#: src/components/forms/wizard-card.tsx:116
+#: src/components/forms/wizard-card.tsx:125
 #: src/components/sign-in-picker.tsx:90
+#: src/routes/__root.tsx:35
 msgid "Back"
 msgstr "戻る"
-
-#: src/components/forms/input-handle-default.tsx:109
-msgid "Between {minLength} and {maxLength} characters"
-msgstr ""
 
 #: src/components/utils/scope-description.tsx:757
 msgid "Blob storage"
@@ -318,7 +318,7 @@ msgstr "新しいデフォルトのユーザー名を選択してください。
 msgid "Choose a new email address to associate with your account."
 msgstr "アカウントに関連付ける新しいメールアドレスを選択してください。"
 
-#: src/components/sign-up-view.tsx:74
+#: src/components/sign-up-view.tsx:79
 msgid "Choose a username"
 msgstr "ユーザー名を選んでください"
 
@@ -391,7 +391,7 @@ msgstr "新規アカウントの作成"
 msgid "Create, update, and delete any public data linked to your account"
 msgstr "あなたのアカウントにリンクされたすべての公開データを作成、更新、および削除"
 
-#: src/lib/api.ts:436
+#: src/lib/api.ts:437
 msgid "Custom domains are not supported"
 msgstr "カスタムドメインはサポートされていません"
 
@@ -436,6 +436,7 @@ msgid "Details"
 msgstr "詳細"
 
 #: src/pages/account/(authenticated)/route.tsx:63
+#: src/routes/account/u/$accountId/route.tsx:66
 msgid "Devices"
 msgstr "デバイス"
 
@@ -551,8 +552,13 @@ msgstr "アカウントの削除に失敗しました"
 
 #: src/pages/account/(authenticated)/apps/page.tsx:35
 #: src/pages/account/(authenticated)/devices/page.tsx:36
+#: src/routes/account/u/$accountId/apps.tsx:30
 msgid "Failed to load connected apps"
 msgstr "接続されたアプリの読み込みに失敗しました"
+
+#: src/routes/account/u/$accountId/devices.tsx:30
+msgid "Failed to load your devices"
+msgstr ""
 
 #: src/data/account.ts:52
 msgid "Failed to reactivate account"
@@ -657,6 +663,7 @@ msgstr "隠す"
 
 #: src/components/utils/link-title.tsx:16
 #: src/pages/account/(authenticated)/route.tsx:50
+#: src/routes/account/u/$accountId/route.tsx:55
 msgid "Home"
 msgstr "ホーム"
 
@@ -698,10 +705,6 @@ msgstr "ハンドルやメールアドレスを変えるのであれば、無効
 
 #: src/locales/locale-selector.tsx:47
 msgid "Interface language selector"
-msgstr ""
-
-#: src/components/forms/input-handle-default.tsx:254
-msgid "Invalid"
 msgstr ""
 
 #: src/components/utils/handle.tsx:56
@@ -766,6 +769,7 @@ msgid "Make visible"
 msgstr "表示する"
 
 #: src/pages/account/(authenticated)/route.tsx:71
+#: src/routes/account/u/$accountId/route.tsx:73
 msgid "Manage applications that have access to your account"
 msgstr "あなたのアカウントにアクセスできるアプリケーションを管理する"
 
@@ -774,10 +778,12 @@ msgid "Manage your <0>full identity</0> including your <1>@handle</1>"
 msgstr "あなたの <1>@handle</1> を含む <0>すべての識別情報</0> を管理する"
 
 #: src/pages/account/(authenticated)/route.tsx:57
+#: src/routes/account/u/$accountId/route.tsx:61
 msgid "Manage your account"
 msgstr "アカウントを管理"
 
 #: src/pages/account/(authenticated)/route.tsx:64
+#: src/routes/account/u/$accountId/route.tsx:67
 msgid "Manage your active sessions"
 msgstr "アクティブなセッションを管理"
 
@@ -803,6 +809,7 @@ msgid "Moderate"
 msgstr "中程度"
 
 #: src/pages/account/(authenticated)/route.tsx:141
+#: src/routes/account/u/$accountId/route.tsx:118
 msgid "My Atmosphere Account"
 msgstr "私のAtmosphereアカウント"
 
@@ -820,7 +827,7 @@ msgstr "新しいメールアドレス"
 msgid "New password"
 msgstr "新しいパスワード"
 
-#: src/components/forms/wizard-card.tsx:119
+#: src/components/forms/wizard-card.tsx:128
 #: src/components/reset-password-view.tsx:50
 #: src/components/reset-password-view.tsx:85
 msgid "Next"
@@ -830,8 +837,8 @@ msgstr "次へ"
 msgid "Okay"
 msgstr "OK"
 
-#: src/components/forms/input-handle-default.tsx:114
-msgid "Only letters, numbers, and hyphens"
+#: src/routes/__root.tsx:33
+msgid "Page not found"
 msgstr ""
 
 #: src/components/delete-account-confirm-form.tsx:66
@@ -980,6 +987,8 @@ msgstr "パスワードをリセット"
 #: src/components/utils/error-card.tsx:77
 #: src/pages/account/(authenticated)/apps/page.tsx:31
 #: src/pages/account/(authenticated)/devices/page.tsx:32
+#: src/routes/account/u/$accountId/apps.tsx:26
+#: src/routes/account/u/$accountId/devices.tsx:26
 msgid "Retry"
 msgstr "再試行"
 
@@ -1004,7 +1013,7 @@ msgstr "セキュリティステップが必要です"
 msgid "Select another account"
 msgstr "別のアカウントを選択"
 
-#: src/components/forms/input-handle-default.tsx:150
+#: src/components/forms/input-handle-default.tsx:191
 msgid "Select domain"
 msgstr "ドメインを選択"
 
@@ -1054,8 +1063,8 @@ msgid "Sign out"
 msgstr "サインアウト"
 
 #: src/components/sign-in-picker.tsx:85
-#: src/components/sign-up-view.tsx:51
 #: src/components/sign-up-view.tsx:56
+#: src/components/sign-up-view.tsx:61
 msgid "Sign up"
 msgstr "サインアップ"
 
@@ -1072,7 +1081,7 @@ msgctxt "Error"
 msgid "Stack"
 msgstr "スタック"
 
-#: src/components/forms/wizard-card.tsx:152
+#: src/components/forms/wizard-card.tsx:161
 msgid "Step {currentPosition} of {count}"
 msgstr "ステップ {currentPosition} / {count}"
 
@@ -1126,35 +1135,35 @@ msgstr "アプリは、あなたのBlueskyアカウントに対して次のア�
 msgid "The AT Protocol network uses an authentication mechanism that allows to uniquely identify users when communicating with external services. This is typically used to retrieve or update data linked to your account, such as chat messages, feeds or moderation content. The application requests the permissions necessary to perform the following authenticated actions on your behalf:"
 msgstr "ATプロトコルネットワークは、外部サービスと通信する際にユーザーを一意に識別できる認証メカニズムを使用しています。これは通常、チャットメッセージ、フィード、モデレーションコンテンツなどのアカウントにリンクされたデータを取得または更新するために使用されます。アプリは、あなたに代わって次の認証されたアクションを実行するために必要な権限を要求しています："
 
-#: src/lib/api.ts:394
+#: src/lib/api.ts:395
 msgid "The data you submitted is invalid. Please check the form and try again."
 msgstr "送信されたデータが無効です。フォームを確認して、もう一度お試しください。"
 
-#: src/lib/api.ts:424
+#: src/lib/api.ts:425
 msgid "The domain name is not allowed"
 msgstr "そのドメイン名は許可されていません"
 
-#: src/lib/api.ts:494
+#: src/lib/api.ts:495
 msgid "The invite code is not valid"
 msgstr "招待コードが有効ではありません"
 
-#: src/lib/api.ts:353
+#: src/lib/api.ts:354
 msgid "The server encountered an unexpected error. Please try again."
 msgstr "サーバーで予期しないエラーが発生しました。もう一度お試しください。"
 
-#: src/lib/api.ts:426
+#: src/lib/api.ts:427
 msgid "The username contains inappropriate language"
 msgstr "ユーザー名に不適切な言葉が含まれています"
 
-#: src/lib/api.ts:432
+#: src/lib/api.ts:433
 msgid "The username could not be resolved"
 msgstr "ユーザー名が見つかりません"
 
-#: src/lib/api.ts:430
+#: src/lib/api.ts:431
 msgid "The username is already in use"
 msgstr "そのユーザー名は既に使用されています"
 
-#: src/lib/api.ts:422
+#: src/lib/api.ts:423
 msgid "The username is invalid"
 msgstr "ユーザー名が無効です"
 
@@ -1178,21 +1187,21 @@ msgstr "このアプリは、あなたのアカウントに次の権限でアク
 msgid "This application is requesting the following permissions (scopes) to access your account:"
 msgstr "このアプリケーションは、あなたのアカウントにアクセスするために次の権限（スコープ）を要求しています："
 
-#: src/lib/api.ts:379
+#: src/lib/api.ts:380
 msgid "This authorization request has been denied. Please try again."
 msgstr "この承認リクエストは拒否されました。もう一度お試しください。"
 
-#: src/lib/api.ts:558
+#: src/lib/api.ts:559
 msgid "This email is already used"
 msgstr "このメールアドレスはすでに使用されています"
 
-#: src/lib/api.ts:364
-#: src/lib/api.ts:515
-#: src/lib/api.ts:546
+#: src/lib/api.ts:365
+#: src/lib/api.ts:516
+#: src/lib/api.ts:547
 msgid "This sign-in session has expired"
 msgstr "このサインインセッションの有効期限が切れました"
 
-#: src/lib/api.ts:428
+#: src/lib/api.ts:429
 msgid "This username is reserved"
 msgstr "このユーザー名は予約されています"
 
@@ -1229,15 +1238,15 @@ msgstr "タイプ"
 msgid "Type your domain"
 msgstr "ドメイン名を入力"
 
-#: src/components/forms/input-handle-default.tsx:121
+#: src/components/forms/input-handle-default.tsx:146
 msgid "Type your username"
 msgstr "ユーザー名を入力"
 
-#: src/contexts/session.tsx:148
+#: src/contexts/session.tsx:202
 msgid "Unauthorized"
 msgstr "未承認"
 
-#: src/lib/json-client.ts:140
+#: src/lib/json-client.ts:141
 msgid "Unexpected server response"
 msgstr "予期しないサーバー応答"
 
@@ -1273,6 +1282,10 @@ msgstr "ファイルのアップロード"
 msgid "URL"
 msgstr "URL"
 
+#: src/components/forms/input-handle-default.tsx:183
+msgid "Use {minLength}–{maxLength, plural, one {# letter, number or hyphen} other {# letters, numbers or hyphens}}"
+msgstr ""
+
 #: src/components/update-handle-dialog.tsx:130
 msgid "Use a default username"
 msgstr "デフォルトのユーザー名を使用"
@@ -1292,10 +1305,6 @@ msgstr "ユーザー名またはメールアドレス"
 #: src/data/handle.ts:17
 msgid "Username updated"
 msgstr "ユーザー名更新"
-
-#: src/components/forms/input-handle-default.tsx:249
-msgid "Valid"
-msgstr ""
 
 #: src/components/forms/input-handle-custom-instructions.tsx:58
 msgid "Value"
@@ -1332,7 +1341,7 @@ msgstr "確認する"
 msgid "Verify the website address before entering your password. Only sign in on sites you recognize and trust."
 msgstr "パスワードを入力する前に、ウェブサイトのアドレスを確認してください。信頼できるサイトでのみサインインしてください。"
 
-#: src/components/sign-up-view.tsx:111
+#: src/components/sign-up-view.tsx:116
 msgid "Verify you are human"
 msgstr "あなたが人間であることを確認"
 
@@ -1352,7 +1361,7 @@ msgstr "あなたの <0/> アカウントを通じてあなたを一意に識別
 msgid "Warning"
 msgstr "警告"
 
-#: src/components/sign-up-view.tsx:52
+#: src/components/sign-up-view.tsx:57
 msgid "We're so excited to have you join us!"
 msgstr "私たちはあなたが参加してくれることをとても楽しみにしています！"
 
@@ -1373,10 +1382,11 @@ msgid "What does this mean?"
 msgstr "これは何を意味しますか？"
 
 #: src/pages/account/(authenticated)/route.tsx:79
+#: src/routes/account/u/$accountId/route.tsx:79
 msgid "What is an Atmosphere Account?"
 msgstr "Atmosphereアカウントとは何ですか？"
 
-#: src/lib/api.ts:530
+#: src/lib/api.ts:531
 msgid "Wrong identifier or password"
 msgstr "識別子またはパスワードが間違っています"
 
@@ -1404,7 +1414,7 @@ msgstr "リダイレクトしています…"
 msgid "You can also temporarily deactivate your account instead. Your profile, posts, feeds, and lists will no longer be visible to other Bluesky users. You can reactivate your account at any time by logging in."
 msgstr "代わりに、一時的にアカウントを無効にすることもできます。 プロフィール、投稿、フィード、リストは他のBlueskyユーザーには表示されなくなります。 ログインするといつでもアカウントを再開できます。"
 
-#: src/components/sign-up-handle-form.tsx:41
+#: src/components/sign-up-handle-form.tsx:44
 msgid "You can change this username to any domain name you control after your account is set up."
 msgstr "アカウントのセットアップ後にユーザー名をあなたが管理しているドメイン名に変更することができます。"
 
@@ -1429,7 +1439,7 @@ msgstr "以前に <0/> を無効化しました。アカウントを再有効化
 msgid "You will receive an email with a \"reset code\". Enter that code here then enter your new password."
 msgstr "「リセットコード」が記載されたメールが届きます。ここにコードを入力し、新しいパスワードを入力します。"
 
-#: src/components/sign-up-view.tsx:94
+#: src/components/sign-up-view.tsx:99
 msgid "Your account"
 msgstr "あなたのアカウント"
 
@@ -1481,8 +1491,8 @@ msgstr "メールアドレスが確認されました。"
 msgid "Your email address needs to be verified."
 msgstr "メールアドレスを確認する必要があります。"
 
-#. placeholder {0}: handle ? ( <Handle className="text-text-default" handle={handle} /> ) : ( <span aria-hidden className="bg-text-light inline-block h-[1em] w-24 rounded-md align-middle" /> )
-#: src/components/forms/input-handle-default.tsx:184
+#. placeholder {0}: segment ? ( <span className="text-text-default block break-all font-medium"> @{segment} {domain} </span> ) : ( <span className="block break-all"> @{exampleSegment} {domain} </span> )
+#: src/components/forms/input-handle-default.tsx:117
 msgid "Your full username will be: {0}"
 msgstr "あなたのフルユーザー名： {0}"
 
@@ -1494,10 +1504,14 @@ msgstr "あなたのプロフィール、投稿、フィード、リストは、
 msgid "Your repository contains all the data publicly available on the AT Protocol network, such as Bluesky posts, likes, and follows. It also contains data created through other apps you've signed into using this account. The application requests the permissions necessary to publish the following changes to your repository:"
 msgstr "あなたのリポジトリには、Blueskyの投稿、いいね、フォローなど、ATプロトコルネットワークで公開されているすべてのデータが含まれています。また、このアカウントを使用してサインインした他のアプリを通じて作成されたデータも含まれています。アプリは、あなたのリポジトリに次の変更を公開するために必要な権限を要求しています："
 
-#: src/contexts/session.tsx:149
+#: src/contexts/session.tsx:203
 msgid "Your session has expired. Please sign in again."
 msgstr "セッションの有効期限が切れました。もう一度サインインしてください。"
 
 #: src/data/handle.ts:18
 msgid "Your username has been updated."
 msgstr "ユーザー名が更新されました。"
+
+#: src/components/forms/input-handle-default.tsx:108
+msgid "yourname"
+msgstr ""

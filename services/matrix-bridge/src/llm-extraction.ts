@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { filterConsentedCards, hasAiConsent } from './ai-consent.js'
 import type { IBridgeDatabase } from './db/index.js'
 import type { OpenAIClient } from './openai-client.js'
 
@@ -191,8 +192,12 @@ export async function processCardWithLLM(
     content: string
     cardType: string
     communityUri: string
+    authorDid: string
   },
 ): Promise<void> {
+  // OD-3: the card's own text may only be sent if its author consented.
+  if (!(await hasAiConsent(db, card.authorDid))) return
+
   // Enrich the card
   const enrichment = await enrichCardWithLLM(client, card)
   if (enrichment) {
@@ -205,16 +210,23 @@ export async function processCardWithLLM(
     }
   }
 
-  // Get existing cards in same community for relationship inference
-  const existingCards = (
+  // Get existing cards in same community for relationship inference.
+  // OD-3: these belong to *other* members and are sent to the provider as
+  // context, so each one needs its own author's consent — filter before the
+  // author_did is dropped by the mapping below.
+  const candidates = (
     await db.getCardsForCommunity(card.communityUri, { limit: 20 })
-  )
-    .filter((c: { id: string }) => c.id !== card.id)
-    .map((c: { id: string; title: string; content: string }) => ({
+  ).filter((c: { id: string }) => c.id !== card.id)
+
+  const { allowed } = await filterConsentedCards(db, candidates)
+
+  const existingCards = allowed.map(
+    (c: { id: string; title: string; content: string }) => ({
       id: c.id,
       title: c.title,
       content: c.content ?? '',
-    }))
+    }),
+  )
 
   if (existingCards.length === 0) return
 

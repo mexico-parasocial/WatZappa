@@ -37,6 +37,14 @@ export interface SyncLogEntry {
   createdAt: string
 }
 
+export interface AiConsentRecord {
+  did: string
+  granted: boolean
+  policyVersion: number
+  grantedAt: string | null
+  revokedAt: string | null
+}
+
 export interface IBridgeDatabase {
   getSpaceForCommunity(
     communityUri: string,
@@ -246,6 +254,18 @@ export interface IBridgeDatabase {
   expireBadges(): Promise<{ did: string; communityUri: string }[]>
   getChatPreferences(did: string): Promise<{ showChatBadges: boolean }>
   setChatPreferences(did: string, showChatBadges: boolean): Promise<void>
+  getAiConsent(did: string): Promise<AiConsentRecord>
+  setAiConsent(
+    did: string,
+    granted: boolean,
+    policyVersion: number,
+  ): Promise<void>
+  /**
+   * Subset of `dids` that have live consent at `policyVersion`. Used to filter
+   * text before it leaves for a third-party processor; returns an empty set for
+   * an empty input rather than querying.
+   */
+  getConsentingDids(dids: string[], policyVersion: number): Promise<Set<string>>
   insertMatrixEvent(event: {
     roomId: string
     eventId: string
@@ -689,6 +709,22 @@ export class PgBridgeDatabase implements IBridgeDatabase {
       CREATE TABLE IF NOT EXISTS user_chat_preferences (
         did TEXT PRIMARY KEY,
         show_chat_badges INTEGER NOT NULL DEFAULT 0,
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+      );
+
+      -- Per-user consent to send this user's deliberation text to a
+      -- third-party LLM provider (OD-3 / F5 in docs/MATRIX_V2.md).
+      -- A missing row means NOT consented: absence of a record must never be
+      -- read as permission. Kept in its own table rather than as a column on
+      -- user_chat_preferences because consent needs an audit trail
+      -- (when granted, under which disclosure version, when revoked) and
+      -- because this codebase has no ALTER TABLE migration path.
+      CREATE TABLE IF NOT EXISTS ai_processing_consent (
+        did TEXT PRIMARY KEY,
+        granted INTEGER NOT NULL DEFAULT 0,
+        policy_version INTEGER NOT NULL DEFAULT 0,
+        granted_at TIMESTAMP WITH TIME ZONE,
+        revoked_at TIMESTAMP WITH TIME ZONE,
         updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       );
 
@@ -2048,6 +2084,72 @@ export class PgBridgeDatabase implements IBridgeDatabase {
        ON CONFLICT (did) DO UPDATE SET show_chat_badges = EXCLUDED.show_chat_badges, updated_at = NOW()`,
       [did, showChatBadges ? 1 : 0],
     )
+  }
+
+  // Third-party LLM processing consent (OD-3)
+  async getAiConsent(did: string): Promise<AiConsentRecord> {
+    const row = await this.queryOne<{
+      granted: number
+      policy_version: number
+      granted_at: string | null
+      revoked_at: string | null
+    }>(
+      'SELECT granted, policy_version, granted_at, revoked_at FROM ai_processing_consent WHERE did = $1',
+      [did],
+    )
+    // No row means never asked, which is not consent.
+    if (!row) {
+      return {
+        did,
+        granted: false,
+        policyVersion: 0,
+        grantedAt: null,
+        revokedAt: null,
+      }
+    }
+    return {
+      did,
+      granted: row.granted === 1,
+      policyVersion: row.policy_version,
+      grantedAt: row.granted_at,
+      revokedAt: row.revoked_at,
+    }
+  }
+
+  async setAiConsent(
+    did: string,
+    granted: boolean,
+    policyVersion: number,
+  ): Promise<void> {
+    await this.run(
+      `INSERT INTO ai_processing_consent
+         (did, granted, policy_version, granted_at, revoked_at, updated_at)
+       VALUES ($1, $2, $3, CASE WHEN $2 = 1 THEN NOW() ELSE NULL END,
+                           CASE WHEN $2 = 0 THEN NOW() ELSE NULL END, NOW())
+       ON CONFLICT (did) DO UPDATE SET
+         granted = EXCLUDED.granted,
+         policy_version = EXCLUDED.policy_version,
+         granted_at = CASE WHEN EXCLUDED.granted = 1
+           THEN COALESCE(ai_processing_consent.granted_at, NOW()) ELSE ai_processing_consent.granted_at END,
+         revoked_at = CASE WHEN EXCLUDED.granted = 0 THEN NOW() ELSE NULL END,
+         updated_at = NOW()`,
+      [did, granted ? 1 : 0, policyVersion],
+    )
+  }
+
+  async getConsentingDids(
+    dids: string[],
+    policyVersion: number,
+  ): Promise<Set<string>> {
+    if (dids.length === 0) return new Set()
+    const unique = [...new Set(dids)]
+    const placeholders = unique.map((_, i) => `$${i + 1}`).join(',')
+    const rows = await this.queryAll<{ did: string }>(
+      `SELECT did FROM ai_processing_consent
+       WHERE did IN (${placeholders}) AND granted = 1 AND policy_version >= $${unique.length + 1}`,
+      [...unique, policyVersion],
+    )
+    return new Set(rows.map((r) => r.did))
   }
 
   // Matrix event ingestion

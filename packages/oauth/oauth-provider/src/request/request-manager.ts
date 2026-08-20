@@ -15,7 +15,7 @@ import {
   NODE_ENV,
   PAR_EXPIRES_IN,
   TOKEN_MAX_AGE,
-} from '../oauth-constants.ts'
+} from '../oauth-constants.js'
 import { DeviceId } from '../device/device-id.js'
 import { AccessDeniedError } from '../errors/access-denied-error.js'
 import { AuthorizationError } from '../errors/authorization-error.js'

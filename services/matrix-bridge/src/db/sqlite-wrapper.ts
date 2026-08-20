@@ -1,6 +1,7 @@
 import type { Config } from '../config.js'
 import { BridgeDatabase } from '../db.js'
 import type {
+  AiConsentRecord,
   CommunitySpaceMap,
   IBridgeDatabase,
   SyncLogEntry,
@@ -536,6 +537,25 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
 
   setChatPreferences(did: string, showChatBadges: boolean): Promise<void> {
     return this.wrap(() => this.inner.setChatPreferences(did, showChatBadges))
+  }
+
+  getAiConsent(did: string): Promise<AiConsentRecord> {
+    return this.wrap(() => this.inner.getAiConsent(did))
+  }
+
+  setAiConsent(
+    did: string,
+    granted: boolean,
+    policyVersion: number,
+  ): Promise<void> {
+    return this.wrap(() => this.inner.setAiConsent(did, granted, policyVersion))
+  }
+
+  getConsentingDids(
+    dids: string[],
+    policyVersion: number,
+  ): Promise<Set<string>> {
+    return this.wrap(() => this.inner.getConsentingDids(dids, policyVersion))
   }
 
   // ── Matrix Events ──
