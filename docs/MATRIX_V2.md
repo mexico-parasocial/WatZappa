@@ -695,6 +695,54 @@ removes) and mubEZ's registration contract promised a scheme it never shipped.
 **Supersedes.** The Option A recommendation in the OD-2 memo, which remains as
 the fallback if this dependency ever becomes untenable.
 
+### CD-M5 — atproto Spaces is the permissioned-space layer, not a Matrix replacement
+
+**Decision.** Adopt atproto Spaces, when it stabilises, as the implementation of
+the "Permissioned space" column that already exists in the layer-boundary table
+(§4) — durable deliberation artifacts. It does **not** replace Matrix, and it
+must never carry the community identity's content. Not this quarter.
+
+**What it actually is** (evaluated against
+`https://atproto.com/blog/atproto-spaces-alpha`, 2026-08-20): a space is "a
+miniature atproto network that can be gated so that only certain people and
+applications are able to access the data published in it". Data lives in
+per-space permissioned repos on the author's PDS. There are facilities for
+real-time sync. Access is controlled by a space authority, "which is just a DID
+like any other account". Alpha — protocol design, SDKs and schema are not final.
+
+**Why it cannot take Matrix's place.** Two disqualifying properties, both by
+design rather than by immaturity:
+
+1. **It gives access control, not confidentiality.** In its own words, data in a
+   space "is readable by any user or application with access to that space, it's
+   not encrypted". §2 of this plan requires E2EE always, client-side only. A
+   layer with no confidentiality cannot hold private conversation, and the fact
+   that it is *permissioned* is easy to mistake for *private*.
+2. **Identity is the atproto DID.** Everything in a space is authored by a DID,
+   in that DID's repo. CD-M1 exists to stop a DID being relatable to a chat
+   account; routing community conversation through Spaces would reinstate the
+   linkage at the storage layer, where it is far harder to remove than a bridge
+   table. There is no pseudonymous or unlinkable participant in the Spaces
+   model.
+
+**Consequences.**
+
+- The layer-boundary table gains a real implementation for its third column:
+  proposal drafts, amendments, evidence, and delegate ↔ delegator durable notes
+  — content whose authorship is *meant* to be attributable to a public identity.
+- **Hard boundary: the `anonymous` (community) identity must never author into a
+  Space**, because doing so binds its content to a DID. Only the public identity
+  may. This belongs in the layer-boundary table as a merge-blocking rule
+  alongside the ballot rule.
+- Nothing about CD-M1, CD-M4 or the quarter plan changes. Spaces is additive and
+  arrives after; adopting an alpha protocol whose schema is not final, during a
+  quarter already committed to production, would be the wrong trade.
+
+**Rejected alternative.** *Replacing the Matrix homeserver with Spaces.*
+Tempting — it would delete a whole service and its operational burden. It fails
+on both properties above: PARA would lose encryption it has planned for, and
+regain the linkage it has spent this quarter removing.
+
 ## 8. Phase status
 
 | Plan item | Status |
