@@ -1,0 +1,74 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.civicTree.card",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "communityUri",
+          "authorDid",
+          "title",
+          "cardType",
+          "createdAt"
+        ],
+        "properties": {
+          "communityUri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "authorDid": {
+            "type": "string",
+            "format": "did"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "cardType": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "stance": {
+            "type": "string",
+            "knownValues": [
+              "pro",
+              "con",
+              "neutral"
+            ]
+          },
+          "compassQuadrant": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "sourceUri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "sourceUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "metadata": {
+            "type": "string",
+            "maxLength": 20000
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

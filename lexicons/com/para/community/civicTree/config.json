@@ -1,0 +1,51 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.civicTree.config",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "literal:self",
+      "record": {
+        "type": "object",
+        "required": [
+          "communityUri",
+          "governanceMode",
+          "approvalsRequired",
+          "approvalMarginRequired",
+          "updatedAt"
+        ],
+        "properties": {
+          "communityUri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "governanceMode": {
+            "type": "string",
+            "knownValues": [
+              "votes_sortition",
+              "moderator_gate"
+            ]
+          },
+          "approvalsRequired": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "approvalMarginRequired": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "moderatorGateEnabled": {
+            "type": "boolean"
+          },
+          "sortitionEnabled": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

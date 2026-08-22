@@ -409,7 +409,6 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     reporterDid?: string | null
     reportReason?: string | null
     reportedEventId?: string | null
-    reportedMessagePreview?: string | null
     sanctionType?: string | null
     sanctionDurationMinutes?: number | null
     sanctionedByDid?: string | null
@@ -435,6 +434,10 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     return this.wrap(() =>
       this.inner.getRecentReportsForCommunity(communityUri, days),
     )
+  }
+
+  purgeReportedMessagePreviews(): Promise<number> {
+    return this.wrap(() => this.inner.purgeReportedMessagePreviews())
   }
 
   getActiveSanctions(did: string, communityUri: string): Promise<any[]> {

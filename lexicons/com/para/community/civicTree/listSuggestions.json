@@ -1,0 +1,41 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.civicTree.listSuggestions",
+  "defs": {
+    "main": {
+      "type": "query",
+      "parameters": {
+        "type": "params",
+        "required": [
+          "community"
+        ],
+        "properties": {
+          "community": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "suggestions"
+          ],
+          "properties": {
+            "suggestions": {
+              "type": "array",
+              "items": {
+                "type": "unknown"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

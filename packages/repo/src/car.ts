@@ -6,25 +6,51 @@ import { BlockMap } from './block-map.js'
 import { CarBlock, schema } from './types.js'
 import { concatBytesAsync } from './util.js'
 
-export async function* writeCarStream(
-  root: Cid | null,
-  blocks: AsyncIterable<CarBlock>,
-): AsyncIterable<Uint8Array> {
+export const encodeCarHeader = (
+  roots: Cid | readonly Cid[] | null,
+): Uint8Array => {
   const header = new Uint8Array(
     cbor.encode({
       version: 1,
-      roots: root ? [root] : [],
+      roots: roots == null ? [] : Array.isArray(roots) ? roots : [roots],
     }),
   )
-  yield new Uint8Array(varint.encode(header.byteLength))
-  yield header
-  for await (const block of blocks) {
-    yield new Uint8Array(
+  return concatBytes(new Uint8Array(varint.encode(header.byteLength)), header)
+}
+
+export const encodeCarBlock = (block: CarBlock): Uint8Array =>
+  concatBytes(
+    new Uint8Array(
       varint.encode(block.cid.bytes.byteLength + block.bytes.byteLength),
-    )
-    yield block.cid.bytes
-    yield block.bytes
+    ),
+    block.cid.bytes,
+    block.bytes,
+  )
+
+/**
+ * Write a CAR v1 stream. Most callers have a single root; permissioned repos
+ * (atproto spaces) declare two - a commit and an index - so roots is a list.
+ */
+export async function* writeCarStream(
+  roots: Cid | readonly Cid[] | null,
+  blocks: AsyncIterable<CarBlock> | Iterable<CarBlock>,
+): AsyncIterable<Uint8Array> {
+  yield encodeCarHeader(roots)
+  for await (const block of blocks) {
+    yield encodeCarBlock(block)
   }
+}
+
+const concatBytes = (...parts: Uint8Array[]): Uint8Array => {
+  let size = 0
+  for (const part of parts) size += part.byteLength
+  const out = new Uint8Array(size)
+  let offset = 0
+  for (const part of parts) {
+    out.set(part, offset)
+    offset += part.byteLength
+  }
+  return out
 }
 
 export async function blocksToCarFile(

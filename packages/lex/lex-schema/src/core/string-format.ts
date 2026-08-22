@@ -7,12 +7,14 @@ import {
   type HandleString,
   type NsidString,
   type RecordKeyString,
+  type SpaceRefString,
   type TidString,
   type UriString,
   isAtIdentifierString,
   isAtUriString,
   isDatetimeString,
   isDatetimeStringLenient,
+  isSpaceRefString,
   isValidDid,
   isValidHandle,
   isValidLanguage,
@@ -64,6 +66,8 @@ export {
   isAtUriString,
 } from '@atproto/syntax'
 
+export { type SpaceRefString, isSpaceRefString } from '@atproto/syntax'
+
 /**
  * Lenient version of {@link isAtUriString} that does not enforce the validity
  * of the record key (rkey) path component (if present).
@@ -80,7 +84,8 @@ export function isAtUriStringLenient<I>(input: I): input is I & AtUriString {
  * @param value - The value to check
  * @returns `true` if the value is a valid CID string
  */
-export const isCidString = ((v) => validateCidString(v)) as CheckFn<CidString>
+export const isCidString = ((input) =>
+  typeof input === 'string' && validateCidString(input)) as CheckFn<CidString>
 /**
  * A Content Identifier (CID) string.
  *
@@ -134,8 +139,9 @@ export type {
  * @param value - The value to check
  * @returns `true` if the value is a valid language string
  */
-export const isLanguageString = ((v) =>
-  parseLanguageString(v) !== null) as CheckFn<LanguageString>
+export const isLanguageString = ((input) =>
+  typeof input === 'string' &&
+  parseLanguageString(input) !== null) as CheckFn<LanguageString>
 
 /**
  * Lenient version of {@link isLanguageString} that only checks well-formed
@@ -235,6 +241,7 @@ type StringFormats = {
   language: LanguageString
   nsid: NsidString
   'record-key': RecordKeyString
+  'space-ref': SpaceRefString
   tid: TidString
   uri: UriString
 }
@@ -261,6 +268,7 @@ const stringFormatVerifiers: {
   language: [isLanguageString, isLanguageStringLenient],
   nsid: [isNsidString],
   'record-key': [isRecordKeyString],
+  'space-ref': [isSpaceRefString],
   tid: [isTidString],
   uri: [isUriString],
 })

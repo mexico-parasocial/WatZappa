@@ -97,13 +97,54 @@ It holds the homeserver signing key, `macaroon_secret_key`, `form_secret`,
 If that directory was ever committed, those secrets are burned and the signing
 key must be rotated.
 
-**F4 — user text is stored in the bridge database on two paths.** *(open)*
+**F4 — user text is stored in the bridge database on two paths.**
+*(moderation half fixed; deliberation cards open, deferred to CD-M5)*
 The README's "never raw message content" holds for timeline sync but not for:
 `chat-moderation.ts` stores a 200-character preview of every reported message
 (`reported_message_preview`), and deliberation cards store user-submitted text
 (`deliberation_cards.content`). Card text is user-submitted through an
 authenticated endpoint, not scraped from rooms — but it is still message-derived
 content sitting outside Synapse, outside room retention, and outside E2EE.
+
+The sharper statement of the moderation half: **the bridge database has no
+deletion path at all.** There is no `DELETE` against `chat_moderation_events` or
+`deliberation_cards` anywhere — no purge job, no TTL. Set that beside
+`hardening.yaml`, which sets 90-day message retention,
+`redaction_retention_period: 7d` and `forget_rooms_on_leave: true`, and the
+report path is a **retention bypass**: a reported message was purged from
+Synapse at 90 days while a 200-character excerpt of it survived here forever,
+attached to the reported member's DID. Redacting the message propagated through
+Synapse in 7 days and never touched the excerpt. The reported member did not
+consent to that copy, was not told it existed, and could not see or contest it.
+
+*Fixed for the moderation path* by dropping the excerpt entirely rather than
+expiring it, which makes the evidence inherit Synapse's retention and redaction
+rules instead of racing them:
+
+- `ingestReport` no longer takes a `context` parameter and
+  `insertModerationEvent` no longer has a `reportedMessagePreview` field, in the
+  interface or either implementation. An excerpt that cannot be passed in cannot
+  be persisted by a later caller who has not read this. The typechecker found
+  the one remaining call site.
+- Reports keep `reported_event_id` and `matrix_room_id`; moderators resolve the
+  content live from Synapse at review time.
+- `purgeReportedMessagePreviews()` runs at start-up and clears excerpts captured
+  by earlier versions. Stopping new writes while leaving existing rows would
+  have fixed the finding only going forward.
+- `getRecentReportsForCommunity` selects explicit columns instead of `SELECT *`
+  — the `SELECT *` is how the excerpt reached the dashboard response, and it
+  would have leaked the next column someone added.
+- Pinned by `src/__tests__/report-retention.test.ts`, written against a stub
+  database so it runs without the native `better-sqlite3` build.
+
+**Accepted cost.** Reports about a message that has already been purged or
+redacted become unreviewable, and once Phase 2 enables E2EE the server cannot
+resolve the event at all — moderation review has to move client-side. Both are
+consequences of the guarantee, not oversights: evidence that outlives the
+message is exactly what this finding is about.
+
+The deliberation-card half is untouched and stays open. CD-M5 names cards as the
+first candidate to move once Spaces stabilises.
 
 **F5 — deliberation text is sent to OpenAI.** *(consent surface implemented;
 disclosure text and OD-3 policy questions still open)*
@@ -229,6 +270,24 @@ membership — and is the pattern the others should follow.
 Not urgent in the current single-community pilot; blocking before multiple
 communities share a homeserver, because it makes cross-community enumeration
 trivial for anyone with an account.
+
+*One instance fixed: `/api/moderation-dashboard`.* It called `authenticateM8`
+and **discarded the result**, then authorised entirely against the
+client-supplied `modDid` query parameter — so any authenticated member could
+name someone else's moderator DID and read the dashboard. `is_moderator` is
+returned by `/api/chat-member-list` (`SELECT ps.*`), so finding a moderator DID
+took one call. Now `modDid` must equal the authenticated DID and the entitlement
+check runs against `auth.did`; `/api/moderation-recompute` twenty lines below
+already did it this way, so this was a slip rather than the general pattern.
+
+Singled out because this endpoint is where F9 and F4 compounded, and there the
+"not urgent in a single-community pilot" reasoning did not hold: the dashboard
+returned `reported_message_preview` and `reporter_did` for every report in the
+community, so *within* one community any member could read the reported content
+and learn who reported whom. With F4's excerpt now dropped the remaining
+disclosure is reporter identity — still real, since it means **reporting is not
+anonymous to anyone who can call the endpoint**, and worth checking against what
+the client UI implies. The rest of F9 stands as written.
 
 **F10 — `setup.sh` appended Redis config onto a comment line.** *(fixed)*
 The generated `homeserver.yaml` ends with `# vim:ft=yaml` and **no trailing

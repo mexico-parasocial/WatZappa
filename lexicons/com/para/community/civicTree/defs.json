@@ -1,0 +1,623 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.civicTree.defs",
+  "defs": {
+    "cardView": {
+      "type": "object",
+      "required": [
+        "id",
+        "community_uri",
+        "author_did",
+        "title",
+        "card_type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "cid": {
+          "type": "string",
+          "format": "cid"
+        },
+        "community_uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "author_did": {
+          "type": "string",
+          "format": "did"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "content": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "card_type": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "source_uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "source_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "metadata": {
+          "type": "string",
+          "maxLength": 20000
+        },
+        "influence": {
+          "type": "integer"
+        },
+        "vote_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "stance": {
+          "type": "string",
+          "knownValues": [
+            "pro",
+            "con",
+            "neutral"
+          ]
+        },
+        "compass_quadrant": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "created_at": {
+          "type": "string",
+          "format": "datetime"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    },
+    "relationshipView": {
+      "type": "object",
+      "required": [
+        "id",
+        "source_card_id",
+        "target_card_id",
+        "relationship_type",
+        "author_did",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "cid": {
+          "type": "string",
+          "format": "cid"
+        },
+        "community_uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "source_card_id": {
+          "type": "string"
+        },
+        "target_card_id": {
+          "type": "string"
+        },
+        "relationship_type": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "author_did": {
+          "type": "string",
+          "format": "did"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    },
+    "contributionView": {
+      "type": "object",
+      "required": [
+        "id",
+        "community_uri",
+        "author_did",
+        "title",
+        "source_type",
+        "status",
+        "created_at",
+        "approve_count",
+        "reject_count"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "cid": {
+          "type": "string",
+          "format": "cid"
+        },
+        "community_uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "author_did": {
+          "type": "string",
+          "format": "did"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "content": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "source_uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "source_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "source_type": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "metadata": {
+          "type": "string",
+          "maxLength": 20000
+        },
+        "status": {
+          "type": "string",
+          "knownValues": [
+            "pending",
+            "approved",
+            "rejected"
+          ]
+        },
+        "approved_card_id": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "datetime"
+        },
+        "decided_at": {
+          "type": "string",
+          "format": "datetime"
+        },
+        "approve_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reject_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "viewer_vote": {
+          "type": "string",
+          "knownValues": [
+            "approve",
+            "reject"
+          ]
+        }
+      }
+    },
+    "graphView": {
+      "type": "object",
+      "required": [
+        "nodes",
+        "edges"
+      ],
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "com.para.community.civicTree.defs#cardView"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "com.para.community.civicTree.defs#relationshipView"
+          }
+        }
+      }
+    },
+    "configView": {
+      "type": "object",
+      "required": [
+        "community_uri",
+        "governance_mode",
+        "approvals_required",
+        "approval_margin_required"
+      ],
+      "properties": {
+        "community_uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "governance_mode": {
+          "type": "string",
+          "knownValues": [
+            "votes_sortition",
+            "moderator_gate"
+          ]
+        },
+        "approvals_required": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "approval_margin_required": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "moderator_gate_enabled": {
+          "type": "boolean"
+        },
+        "sortition_enabled": {
+          "type": "boolean"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    },
+    "cardVoteView": {
+      "type": "object",
+      "description": "A viewer's own influence vote on a card.",
+      "required": [
+        "influence"
+      ],
+      "properties": {
+        "influence": {
+          "type": "integer",
+          "minimum": -3,
+          "maximum": 3
+        }
+      }
+    },
+    "stanceDistribution": {
+      "type": "object",
+      "required": [
+        "pro",
+        "con",
+        "neutral"
+      ],
+      "properties": {
+        "pro": {
+          "type": "integer"
+        },
+        "con": {
+          "type": "integer"
+        },
+        "neutral": {
+          "type": "integer"
+        }
+      }
+    },
+    "normalizedClaim": {
+      "type": "object",
+      "required": [
+        "claim",
+        "stance",
+        "sourceType"
+      ],
+      "properties": {
+        "claim": {
+          "type": "string"
+        },
+        "stance": {
+          "type": "string",
+          "knownValues": [
+            "support",
+            "oppose",
+            "unsure",
+            "amendment",
+            "needs_evidence"
+          ]
+        },
+        "sourceType": {
+          "type": "string"
+        },
+        "sourceId": {
+          "type": "string"
+        }
+      }
+    },
+    "tensionLine": {
+      "type": "object",
+      "required": [
+        "axis",
+        "summary",
+        "sides"
+      ],
+      "properties": {
+        "axis": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "sides": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "relatedClaimIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "openQuestion": {
+      "type": "object",
+      "required": [
+        "question",
+        "whyItMatters"
+      ],
+      "properties": {
+        "question": {
+          "type": "string"
+        },
+        "whyItMatters": {
+          "type": "string"
+        },
+        "relatedClaimIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "consensusArea": {
+      "type": "object",
+      "required": [
+        "topic",
+        "claims"
+      ],
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "unresolvedConflict": {
+      "type": "object",
+      "required": [
+        "topic",
+        "opposingClaims"
+      ],
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "opposingClaims": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "summaryView": {
+      "type": "object",
+      "description": "Derived reading of a community civic tree: what is claimed, where it conflicts, and what remains open.",
+      "required": [
+        "normalizedClaims",
+        "tensionLines",
+        "openQuestions",
+        "consensusAreas",
+        "unresolvedConflicts",
+        "bridgeStatements",
+        "stanceDistribution",
+        "totalClaims",
+        "totalRelationships",
+        "generatedAt"
+      ],
+      "properties": {
+        "normalizedClaims": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "com.para.community.civicTree.defs#normalizedClaim"
+          }
+        },
+        "tensionLines": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "com.para.community.civicTree.defs#tensionLine"
+          }
+        },
+        "openQuestions": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "com.para.community.civicTree.defs#openQuestion"
+          }
+        },
+        "consensusAreas": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "com.para.community.civicTree.defs#consensusArea"
+          }
+        },
+        "unresolvedConflicts": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "com.para.community.civicTree.defs#unresolvedConflict"
+          }
+        },
+        "bridgeStatements": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stanceDistribution": {
+          "type": "ref",
+          "ref": "com.para.community.civicTree.defs#stanceDistribution"
+        },
+        "totalClaims": {
+          "type": "integer"
+        },
+        "totalRelationships": {
+          "type": "integer"
+        },
+        "generatedAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    },
+    "topEntity": {
+      "type": "object",
+      "required": [
+        "value",
+        "type",
+        "count"
+      ],
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer"
+        }
+      }
+    },
+    "pulseClaim": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "influence",
+        "voteCount",
+        "cardType"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "stance": {
+          "type": "string"
+        },
+        "influence": {
+          "type": "integer"
+        },
+        "voteCount": {
+          "type": "integer"
+        },
+        "cardType": {
+          "type": "string"
+        }
+      }
+    },
+    "pulseUserStats": {
+      "type": "object",
+      "required": [
+        "votesCast",
+        "proVotes",
+        "conVotes",
+        "neutralVotes"
+      ],
+      "properties": {
+        "votesCast": {
+          "type": "integer"
+        },
+        "proVotes": {
+          "type": "integer"
+        },
+        "conVotes": {
+          "type": "integer"
+        },
+        "neutralVotes": {
+          "type": "integer"
+        }
+      }
+    },
+    "pulseView": {
+      "type": "object",
+      "description": "Live activity signals for a community civic tree.",
+      "required": [
+        "stanceDistribution",
+        "topEntities",
+        "trendingClaims",
+        "controversialClaims"
+      ],
+      "properties": {
+        "stanceDistribution": {
+          "type": "ref",
+          "ref": "com.para.community.civicTree.defs#stanceDistribution"
+        },
+        "topEntities": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "com.para.community.civicTree.defs#topEntity"
+          }
+        },
+        "trendingClaims": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "com.para.community.civicTree.defs#pulseClaim"
+          }
+        },
+        "controversialClaims": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "com.para.community.civicTree.defs#pulseClaim"
+          }
+        },
+        "userStats": {
+          "type": "ref",
+          "ref": "com.para.community.civicTree.defs#pulseUserStats"
+        }
+      }
+    }
+  }
+}

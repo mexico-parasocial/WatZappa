@@ -2715,6 +2715,141 @@ export class GetLikesBySubjectSortedResponse extends Message<GetLikesBySubjectSo
 }
 
 /**
+ * @generated from message bsky.GetKnownLikersRequest
+ */
+export class GetKnownLikersRequest extends Message<GetKnownLikersRequest> {
+  /**
+   * @generated from field: string actor_did = 1;
+   */
+  actorDid = "";
+
+  /**
+   * @generated from field: repeated string subject_uris = 2;
+   */
+  subjectUris: string[] = [];
+
+  /**
+   * @generated from field: int32 limit = 3;
+   */
+  limit = 0;
+
+  constructor(data?: PartialMessage<GetKnownLikersRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetKnownLikersRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "actor_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "subject_uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 3, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetKnownLikersRequest {
+    return new GetKnownLikersRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetKnownLikersRequest {
+    return new GetKnownLikersRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetKnownLikersRequest {
+    return new GetKnownLikersRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetKnownLikersRequest | PlainMessage<GetKnownLikersRequest> | undefined, b: GetKnownLikersRequest | PlainMessage<GetKnownLikersRequest> | undefined): boolean {
+    return proto3.util.equals(GetKnownLikersRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.KnownLikersResult
+ */
+export class KnownLikersResult extends Message<KnownLikersResult> {
+  /**
+   * @generated from field: string subject_uri = 1;
+   */
+  subjectUri = "";
+
+  /**
+   * @generated from field: int32 count = 2;
+   */
+  count = 0;
+
+  /**
+   * @generated from field: repeated string dids = 3;
+   */
+  dids: string[] = [];
+
+  constructor(data?: PartialMessage<KnownLikersResult>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.KnownLikersResult";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "subject_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 3, name: "dids", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): KnownLikersResult {
+    return new KnownLikersResult().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): KnownLikersResult {
+    return new KnownLikersResult().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): KnownLikersResult {
+    return new KnownLikersResult().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: KnownLikersResult | PlainMessage<KnownLikersResult> | undefined, b: KnownLikersResult | PlainMessage<KnownLikersResult> | undefined): boolean {
+    return proto3.util.equals(KnownLikersResult, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetKnownLikersResponse
+ */
+export class GetKnownLikersResponse extends Message<GetKnownLikersResponse> {
+  /**
+   * @generated from field: repeated bsky.KnownLikersResult results = 1;
+   */
+  results: KnownLikersResult[] = [];
+
+  constructor(data?: PartialMessage<GetKnownLikersResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetKnownLikersResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "results", kind: "message", T: KnownLikersResult, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetKnownLikersResponse {
+    return new GetKnownLikersResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetKnownLikersResponse {
+    return new GetKnownLikersResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetKnownLikersResponse {
+    return new GetKnownLikersResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetKnownLikersResponse | PlainMessage<GetKnownLikersResponse> | undefined, b: GetKnownLikersResponse | PlainMessage<GetKnownLikersResponse> | undefined): boolean {
+    return proto3.util.equals(GetKnownLikersResponse, a, b);
+  }
+}
+
+/**
  * @generated from message bsky.GetQuotesBySubjectSortedRequest
  */
 export class GetQuotesBySubjectSortedRequest extends Message<GetQuotesBySubjectSortedRequest> {
@@ -14672,6 +14807,321 @@ export class GetParaCivicTreeClustersResponse extends Message<GetParaCivicTreeCl
 
   static equals(a: GetParaCivicTreeClustersResponse | PlainMessage<GetParaCivicTreeClustersResponse> | undefined, b: GetParaCivicTreeClustersResponse | PlainMessage<GetParaCivicTreeClustersResponse> | undefined): boolean {
     return proto3.util.equals(GetParaCivicTreeClustersResponse, a, b);
+  }
+}
+
+/**
+ * Community civic tree: cards and edges live in the appview, and new cards
+ * arrive through a review queue rather than directly.
+ *
+ * @generated from message bsky.GetParaCommunityCivicTreeGraphRequest
+ */
+export class GetParaCommunityCivicTreeGraphRequest extends Message<GetParaCommunityCivicTreeGraphRequest> {
+  /**
+   * @generated from field: string community_uri = 1;
+   */
+  communityUri = "";
+
+  /**
+   * @generated from field: string viewer_did = 2;
+   */
+  viewerDid = "";
+
+  constructor(data?: PartialMessage<GetParaCommunityCivicTreeGraphRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaCommunityCivicTreeGraphRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "community_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "viewer_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaCommunityCivicTreeGraphRequest {
+    return new GetParaCommunityCivicTreeGraphRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaCommunityCivicTreeGraphRequest {
+    return new GetParaCommunityCivicTreeGraphRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaCommunityCivicTreeGraphRequest {
+    return new GetParaCommunityCivicTreeGraphRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaCommunityCivicTreeGraphRequest | PlainMessage<GetParaCommunityCivicTreeGraphRequest> | undefined, b: GetParaCommunityCivicTreeGraphRequest | PlainMessage<GetParaCommunityCivicTreeGraphRequest> | undefined): boolean {
+    return proto3.util.equals(GetParaCommunityCivicTreeGraphRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetParaCommunityCivicTreeGraphResponse
+ */
+export class GetParaCommunityCivicTreeGraphResponse extends Message<GetParaCommunityCivicTreeGraphResponse> {
+  /**
+   * @generated from field: string nodes_json = 1;
+   */
+  nodesJson = "";
+
+  /**
+   * @generated from field: string edges_json = 2;
+   */
+  edgesJson = "";
+
+  constructor(data?: PartialMessage<GetParaCommunityCivicTreeGraphResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaCommunityCivicTreeGraphResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "nodes_json", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "edges_json", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaCommunityCivicTreeGraphResponse {
+    return new GetParaCommunityCivicTreeGraphResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaCommunityCivicTreeGraphResponse {
+    return new GetParaCommunityCivicTreeGraphResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaCommunityCivicTreeGraphResponse {
+    return new GetParaCommunityCivicTreeGraphResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaCommunityCivicTreeGraphResponse | PlainMessage<GetParaCommunityCivicTreeGraphResponse> | undefined, b: GetParaCommunityCivicTreeGraphResponse | PlainMessage<GetParaCommunityCivicTreeGraphResponse> | undefined): boolean {
+    return proto3.util.equals(GetParaCommunityCivicTreeGraphResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.SubmitParaCommunityCivicTreeContributionRequest
+ */
+export class SubmitParaCommunityCivicTreeContributionRequest extends Message<SubmitParaCommunityCivicTreeContributionRequest> {
+  /**
+   * @generated from field: string community_uri = 1;
+   */
+  communityUri = "";
+
+  /**
+   * @generated from field: string author_did = 2;
+   */
+  authorDid = "";
+
+  /**
+   * @generated from field: string title = 3;
+   */
+  title = "";
+
+  /**
+   * @generated from field: string content = 4;
+   */
+  content = "";
+
+  /**
+   * @generated from field: string source_uri = 5;
+   */
+  sourceUri = "";
+
+  /**
+   * @generated from field: string source_url = 6;
+   */
+  sourceUrl = "";
+
+  /**
+   * @generated from field: string source_type = 7;
+   */
+  sourceType = "";
+
+  /**
+   * @generated from field: string metadata = 8;
+   */
+  metadata = "";
+
+  constructor(data?: PartialMessage<SubmitParaCommunityCivicTreeContributionRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SubmitParaCommunityCivicTreeContributionRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "community_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "author_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "title", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "content", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "source_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 6, name: "source_url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 7, name: "source_type", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 8, name: "metadata", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SubmitParaCommunityCivicTreeContributionRequest {
+    return new SubmitParaCommunityCivicTreeContributionRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SubmitParaCommunityCivicTreeContributionRequest {
+    return new SubmitParaCommunityCivicTreeContributionRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SubmitParaCommunityCivicTreeContributionRequest {
+    return new SubmitParaCommunityCivicTreeContributionRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SubmitParaCommunityCivicTreeContributionRequest | PlainMessage<SubmitParaCommunityCivicTreeContributionRequest> | undefined, b: SubmitParaCommunityCivicTreeContributionRequest | PlainMessage<SubmitParaCommunityCivicTreeContributionRequest> | undefined): boolean {
+    return proto3.util.equals(SubmitParaCommunityCivicTreeContributionRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetParaCommunityCivicTreeContributionsRequest
+ */
+export class GetParaCommunityCivicTreeContributionsRequest extends Message<GetParaCommunityCivicTreeContributionsRequest> {
+  /**
+   * @generated from field: string community_uri = 1;
+   */
+  communityUri = "";
+
+  /**
+   * @generated from field: string status = 2;
+   */
+  status = "";
+
+  /**
+   * @generated from field: string viewer_did = 3;
+   */
+  viewerDid = "";
+
+  /**
+   * @generated from field: int32 limit = 4;
+   */
+  limit = 0;
+
+  /**
+   * @generated from field: string cursor = 5;
+   */
+  cursor = "";
+
+  constructor(data?: PartialMessage<GetParaCommunityCivicTreeContributionsRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaCommunityCivicTreeContributionsRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "community_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "status", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "viewer_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 5, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaCommunityCivicTreeContributionsRequest {
+    return new GetParaCommunityCivicTreeContributionsRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaCommunityCivicTreeContributionsRequest {
+    return new GetParaCommunityCivicTreeContributionsRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaCommunityCivicTreeContributionsRequest {
+    return new GetParaCommunityCivicTreeContributionsRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaCommunityCivicTreeContributionsRequest | PlainMessage<GetParaCommunityCivicTreeContributionsRequest> | undefined, b: GetParaCommunityCivicTreeContributionsRequest | PlainMessage<GetParaCommunityCivicTreeContributionsRequest> | undefined): boolean {
+    return proto3.util.equals(GetParaCommunityCivicTreeContributionsRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.VoteParaCommunityCivicTreeContributionRequest
+ */
+export class VoteParaCommunityCivicTreeContributionRequest extends Message<VoteParaCommunityCivicTreeContributionRequest> {
+  /**
+   * @generated from field: string contribution_id = 1;
+   */
+  contributionId = "";
+
+  /**
+   * @generated from field: string voter_did = 2;
+   */
+  voterDid = "";
+
+  /**
+   * @generated from field: string vote = 3;
+   */
+  vote = "";
+
+  constructor(data?: PartialMessage<VoteParaCommunityCivicTreeContributionRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.VoteParaCommunityCivicTreeContributionRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "contribution_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "voter_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "vote", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): VoteParaCommunityCivicTreeContributionRequest {
+    return new VoteParaCommunityCivicTreeContributionRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): VoteParaCommunityCivicTreeContributionRequest {
+    return new VoteParaCommunityCivicTreeContributionRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): VoteParaCommunityCivicTreeContributionRequest {
+    return new VoteParaCommunityCivicTreeContributionRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: VoteParaCommunityCivicTreeContributionRequest | PlainMessage<VoteParaCommunityCivicTreeContributionRequest> | undefined, b: VoteParaCommunityCivicTreeContributionRequest | PlainMessage<VoteParaCommunityCivicTreeContributionRequest> | undefined): boolean {
+    return proto3.util.equals(VoteParaCommunityCivicTreeContributionRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.ParaCommunityCivicTreeContributionResponse
+ */
+export class ParaCommunityCivicTreeContributionResponse extends Message<ParaCommunityCivicTreeContributionResponse> {
+  /**
+   * @generated from field: string contribution_json = 1;
+   */
+  contributionJson = "";
+
+  constructor(data?: PartialMessage<ParaCommunityCivicTreeContributionResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.ParaCommunityCivicTreeContributionResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "contribution_json", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ParaCommunityCivicTreeContributionResponse {
+    return new ParaCommunityCivicTreeContributionResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ParaCommunityCivicTreeContributionResponse {
+    return new ParaCommunityCivicTreeContributionResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ParaCommunityCivicTreeContributionResponse {
+    return new ParaCommunityCivicTreeContributionResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ParaCommunityCivicTreeContributionResponse | PlainMessage<ParaCommunityCivicTreeContributionResponse> | undefined, b: ParaCommunityCivicTreeContributionResponse | PlainMessage<ParaCommunityCivicTreeContributionResponse> | undefined): boolean {
+    return proto3.util.equals(ParaCommunityCivicTreeContributionResponse, a, b);
   }
 }
 

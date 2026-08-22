@@ -146,6 +146,17 @@ async function main() {
   log.info('Matrix↔PARA Community Bridge starting...')
 
   const db = createDatabase(config)
+
+  // F4: reports no longer capture an excerpt of the reported message. Clear any
+  // captured by earlier versions before serving a request that could read them.
+  const purged = await db.purgeReportedMessagePreviews()
+  if (purged > 0) {
+    log.warn(
+      { rows: purged },
+      'Purged stored message excerpts from moderation reports (F4)',
+    )
+  }
+
   const matrix = new MatrixAdminClient(config)
   const metrics = new BridgeMetrics()
   const firehose = new FirehoseConsumer(config, db, matrix, metrics, log)
@@ -850,7 +861,6 @@ async function main() {
           reporterDid,
           communityUri,
           reason,
-          context,
           matrixEventId,
           matrixRoomId,
         } = JSON.parse(body)
@@ -880,12 +890,14 @@ async function main() {
           )
           return
         }
+        // `context` is accepted in the body for compatibility with clients that
+        // still send it, and deliberately dropped: F4. The reported message is
+        // resolved live from Synapse via matrixEventId at review time.
         await chatMod.ingestReport({
           reportedDid,
           reporterDid,
           communityUri,
           reason,
-          context,
           matrixEventId,
           matrixRoomId,
         })
@@ -984,7 +996,7 @@ async function main() {
         req.url?.startsWith('/api/moderation-dashboard') &&
         req.method === 'GET'
       ) {
-        await authenticateM8(req, config)
+        const auth = await authenticateM8(req, config)
         const url = new URL(req.url, `http://localhost:${config.port}`)
         const communityUri = url.searchParams.get('community')
         const modDid = url.searchParams.get('modDid')
@@ -995,7 +1007,18 @@ async function main() {
           )
           return
         }
-        const modStats = await db.getParticipationStats(modDid, communityUri)
+        // The moderator being checked must be the caller. Authorising on the
+        // client-supplied modDid alone let any authenticated member read the
+        // dashboard by naming someone else's moderator DID, which
+        // /api/chat-member-list hands out.
+        if (auth.did !== modDid) {
+          res.writeHead(403, { 'Content-Type': 'application/json' })
+          res.end(
+            JSON.stringify({ error: 'modDid must match authenticated DID' }),
+          )
+          return
+        }
+        const modStats = await db.getParticipationStats(auth.did, communityUri)
         if (!modStats || !modStats.is_moderator) {
           res.writeHead(403, { 'Content-Type': 'application/json' })
           res.end(

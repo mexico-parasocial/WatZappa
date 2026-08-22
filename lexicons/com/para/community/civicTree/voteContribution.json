@@ -1,0 +1,51 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.civicTree.voteContribution",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "contribution",
+            "voterDid",
+            "vote"
+          ],
+          "properties": {
+            "contribution": {
+              "type": "string"
+            },
+            "voterDid": {
+              "type": "string",
+              "format": "did"
+            },
+            "vote": {
+              "type": "string",
+              "knownValues": [
+                "approve",
+                "reject"
+              ]
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "contribution"
+          ],
+          "properties": {
+            "contribution": {
+              "type": "ref",
+              "ref": "com.para.community.civicTree.defs#contributionView"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -4,52 +4,142 @@
   "defs": {
     "collection": {
       "type": "object",
-      "required": ["id", "name", "items"],
+      "required": [
+        "id",
+        "name",
+        "items"
+      ],
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string", "maxLength": 200 },
-        "description": { "type": "string", "maxLength": 2000 },
-        "color": { "type": "string", "maxLength": 7 },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "color": {
+          "type": "string",
+          "maxLength": 7
+        },
         "items": {
           "type": "array",
-          "items": { "type": "ref", "ref": "#civicTreeItem" }
+          "items": {
+            "type": "ref",
+            "ref": "#civicTreeItem"
+          }
         },
         "relations": {
           "type": "array",
-          "items": { "type": "ref", "ref": "#civicTreeRelation" }
+          "items": {
+            "type": "ref",
+            "ref": "#civicTreeRelation"
+          }
         }
       }
     },
     "civicTreeItem": {
       "type": "object",
-      "required": ["addedAt"],
+      "required": [
+        "addedAt"
+      ],
       "properties": {
-        "itemId": { "type": "string", "maxLength": 200 },
+        "itemId": {
+          "type": "string",
+          "maxLength": 200
+        },
         "kind": {
           "type": "string",
-          "knownValues": ["policy", "post", "link", "note", "evidence"]
+          "knownValues": [
+            "policy",
+            "post",
+            "link",
+            "note",
+            "evidence",
+            "topic"
+          ],
+          "description": "What the item is. All kinds except `topic` reference an artifact with a URI or URL; a `topic` is a subject the artifacts are about, and carries no target of its own."
         },
-        "title": { "type": "string", "maxLength": 500 },
-        "description": { "type": "string", "maxLength": 2000 },
-        "url": { "type": "string", "format": "uri", "maxLength": 2000 },
-        "sourceUri": { "type": "string", "format": "at-uri" },
-        "sourceLabel": { "type": "string", "maxLength": 500 },
-        "policyUri": { "type": "string", "format": "at-uri" },
-        "policyCid": { "type": "string", "format": "cid" },
-        "policyTitle": { "type": "string", "maxLength": 500 },
-        "policyCategory": { "type": "string", "maxLength": 200 },
-        "policyColor": { "type": "string", "maxLength": 7 },
-        "note": { "type": "string", "maxLength": 1000 },
-        "addedAt": { "type": "string", "format": "datetime" }
+        "title": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2000
+        },
+        "sourceUri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "sourceLabel": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "policyUri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "policyCid": {
+          "type": "string",
+          "format": "cid"
+        },
+        "policyTitle": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "policyCategory": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "policyColor": {
+          "type": "string",
+          "maxLength": 7
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "addedAt": {
+          "type": "string",
+          "format": "datetime"
+        },
+        "flairId": {
+          "type": "string",
+          "description": "For a topic drawn from PARA's shared flair vocabulary, the flair id. Absent on a free-text topic."
+        }
       }
     },
     "civicTreeRelation": {
       "type": "object",
-      "required": ["id", "fromItemId", "toItemId", "kind", "createdAt"],
+      "required": [
+        "id",
+        "fromItemId",
+        "toItemId",
+        "kind",
+        "createdAt"
+      ],
       "properties": {
-        "id": { "type": "string", "maxLength": 200 },
-        "fromItemId": { "type": "string", "maxLength": 200 },
-        "toItemId": { "type": "string", "maxLength": 200 },
+        "id": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "fromItemId": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "toItemId": {
+          "type": "string",
+          "maxLength": 200
+        },
         "kind": {
           "type": "string",
           "knownValues": [
@@ -62,28 +152,60 @@
             "related_to"
           ]
         },
-        "note": { "type": "string", "maxLength": 1000 },
-        "createdAt": { "type": "string", "format": "datetime" }
+        "note": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        }
       }
     },
     "collectionView": {
       "type": "object",
-      "required": ["id", "name", "items", "createdAt", "updatedAt"],
+      "required": [
+        "id",
+        "name",
+        "items",
+        "createdAt",
+        "updatedAt"
+      ],
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "description": { "type": "string" },
-        "color": { "type": "string" },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
         "items": {
           "type": "array",
-          "items": { "type": "ref", "ref": "#civicTreeItem" }
+          "items": {
+            "type": "ref",
+            "ref": "#civicTreeItem"
+          }
         },
         "relations": {
           "type": "array",
-          "items": { "type": "ref", "ref": "#civicTreeRelation" }
+          "items": {
+            "type": "ref",
+            "ref": "#civicTreeRelation"
+          }
         },
-        "createdAt": { "type": "string", "format": "datetime" },
-        "updatedAt": { "type": "string", "format": "datetime" }
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "datetime"
+        }
       }
     }
   }

@@ -1,0 +1,57 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.civicTree.createRelationship",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "communityUri",
+            "sourceCardId",
+            "targetCardId",
+            "relationshipType",
+            "authorDid"
+          ],
+          "properties": {
+            "communityUri": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "sourceCardId": {
+              "type": "string"
+            },
+            "targetCardId": {
+              "type": "string"
+            },
+            "relationshipType": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "authorDid": {
+              "type": "string",
+              "format": "did"
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "relationship"
+          ],
+          "properties": {
+            "relationship": {
+              "type": "ref",
+              "ref": "com.para.community.civicTree.defs#relationshipView"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -67,13 +67,22 @@ export class ChatModerationEngine {
 
   /**
    * Ingest a user report from the app.
+   *
+   * F4: this deliberately stores no copy of the reported message. It keeps
+   * `matrixEventId`, and moderators resolve the content live from Synapse at
+   * review time. That way the evidence inherits Synapse's retention and
+   * redaction rules instead of outliving them — a reported message used to
+   * leave a 200-character excerpt here that survived both the 90-day purge and
+   * any redaction, in a store with no deletion path at all.
+   *
+   * There is deliberately no `context` parameter: an excerpt that cannot be
+   * passed in cannot be persisted by a later caller who has not read this.
    */
   async ingestReport(params: {
     reportedDid: string
     reporterDid: string
     communityUri: string
     reason: string
-    context?: string
     matrixEventId?: string
     matrixRoomId?: string
   }): Promise<void> {
@@ -84,7 +93,6 @@ export class ChatModerationEngine {
       reporterDid: params.reporterDid,
       reportReason: params.reason,
       reportedEventId: params.matrixEventId,
-      reportedMessagePreview: params.context?.slice(0, 200) ?? null,
       matrixRoomId: params.matrixRoomId ?? null,
     })
     this.log.debug(

@@ -1218,7 +1218,6 @@ export class BridgeDatabase {
     reporterDid?: string | null
     reportReason?: string | null
     reportedEventId?: string | null
-    reportedMessagePreview?: string | null
     sanctionType?: string | null
     sanctionDurationMinutes?: number | null
     sanctionedByDid?: string | null
@@ -1226,7 +1225,7 @@ export class BridgeDatabase {
   }): void {
     this.db
       .prepare(
-        'INSERT INTO chat_moderation_events (did, community_uri, event_type, reporter_did, report_reason, reported_event_id, reported_message_preview, sanction_type, sanction_duration_minutes, sanctioned_by_did, matrix_room_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO chat_moderation_events (did, community_uri, event_type, reporter_did, report_reason, reported_event_id, sanction_type, sanction_duration_minutes, sanctioned_by_did, matrix_room_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       )
       .run(
         event.did,
@@ -1235,7 +1234,6 @@ export class BridgeDatabase {
         event.reporterDid ?? null,
         event.reportReason ?? null,
         event.reportedEventId ?? null,
-        event.reportedMessagePreview ?? null,
         event.sanctionType ?? null,
         event.sanctionDurationMinutes ?? null,
         event.sanctionedByDid ?? null,
@@ -1258,9 +1256,23 @@ export class BridgeDatabase {
   getRecentReportsForCommunity(communityUri: string, days = 30): any[] {
     return this.db
       .prepare(
-        "SELECT * FROM chat_moderation_events WHERE community_uri = ? AND event_type = 'report_received' AND created_at >= datetime('now', '-' || ? || ' days') ORDER BY created_at DESC",
+        "SELECT id, did, community_uri, event_type, reporter_did, report_reason, reported_event_id, sanction_type, sanction_duration_minutes, sanctioned_by_did, matrix_room_id, created_at FROM chat_moderation_events WHERE community_uri = ? AND event_type = 'report_received' AND created_at >= datetime('now', '-' || ? || ' days') ORDER BY created_at DESC",
       )
       .all(communityUri, days) as any[]
+  }
+
+  /**
+   * F4: clear message excerpts captured by earlier versions. Idempotent, runs
+   * at start-up. Stopping new writes while leaving the existing rows in place
+   * would only fix the finding going forward.
+   */
+  purgeReportedMessagePreviews(): number {
+    const info = this.db
+      .prepare(
+        'UPDATE chat_moderation_events SET reported_message_preview = NULL WHERE reported_message_preview IS NOT NULL',
+      )
+      .run()
+    return info.changes
   }
 
   getActiveSanctions(did: string, communityUri: string): any[] {

@@ -1,0 +1,32 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.civicTree.acceptSuggestion",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "id",
+            "authorDid"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "communityUri": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "authorDid": {
+              "type": "string",
+              "format": "did"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,39 +1,40 @@
 import { HOUR, MINUTE, dedupeStrs, mapDefined } from '@atproto/common'
 import {
-  $Typed,
-  Un$Typed,
-  Unknown$TypedObject,
-  UriString,
+  type $Typed,
+  type Un$Typed,
+  type Unknown$TypedObject,
+  type UriString,
   atUri,
   getBlobCidString,
 } from '@atproto/lex'
 import {
   AtUri,
-  AtUriString,
-  DatetimeString,
-  DidString,
+  type AtUriString,
+  type DatetimeString,
+  type DidString,
   INVALID_HANDLE,
   normalizeDatetimeAlways,
 } from '@atproto/syntax'
-import { Actor, ProfileViewerState } from '../hydration/actor.js'
+import type { Actor, ProfileViewerState } from '../hydration/actor.js'
 import {
-  SiteStandardDocument,
-  SiteStandardPublication,
-  siteStandardRecordKey,
+  type AssociatedSiteStandardRecord,
+  type SiteStandardDocument,
+  type SiteStandardPublication,
+  getSiteStandardRecordsFromHydrationMapsByRefs,
 } from '../hydration/external.js'
-import { FeedItem, Like, Post, Repost } from '../hydration/feed.js'
-import { Follow, Verification } from '../hydration/graph.js'
-import { HydrationState } from '../hydration/hydrator.js'
-import { Label } from '../hydration/label.js'
+import type { FeedItem, Like, Post, Repost } from '../hydration/feed.js'
+import type { Follow, Verification } from '../hydration/graph.js'
+import type { HydrationState } from '../hydration/hydrator.js'
+import type { Label } from '../hydration/label.js'
 import {
   type RecordInfo,
   getStarterPackUriFromFollow,
   parseString,
 } from '../hydration/util.js'
-import { ImageUriBuilder } from '../image/uri.js'
+import type { ImageUriBuilder } from '../image/uri.js'
 import { app, site } from '../lexicons/index.js'
 import { viewsLogger } from '../logger.js'
-import { Notification } from '../proto/bsky_pb.js'
+import type { Notification } from '../proto/bsky_pb.js'
 import {
   estimateReadingTimeMinutes,
   validateStandardSiteForUrl,
@@ -46,83 +47,83 @@ import {
   uriToDid as creatorFromUri,
 } from '../util/uris.js'
 import {
-  ThreadItemValueBlocked,
-  ThreadItemValueNoUnauthenticated,
-  ThreadItemValueNotFound,
-  ThreadItemValuePost,
-  ThreadOtherAnchorPostNode,
-  ThreadOtherItemValuePost,
-  ThreadOtherPostNode,
-  ThreadTree,
-  ThreadTreeVisible,
+  type ThreadItemValueBlocked,
+  type ThreadItemValueNoUnauthenticated,
+  type ThreadItemValueNotFound,
+  type ThreadItemValuePost,
+  type ThreadOtherAnchorPostNode,
+  type ThreadOtherItemValuePost,
+  type ThreadOtherPostNode,
+  type ThreadTree,
+  type ThreadTreeVisible,
   sortTrimFlattenThreadTree,
 } from './threads-v2.js'
 import {
-  ActivitySubscription,
-  BlockedPost,
-  BookmarkView,
-  Embed,
-  EmbedView,
-  ExternalEmbed,
-  ExternalEmbedColorRgb,
-  ExternalEmbedSourceThemeView,
-  ExternalEmbedSourceView,
-  ExternalEmbedView,
-  FeedViewPost,
-  FollowRecord,
-  GalleryEmbed,
-  GalleryEmbedView,
-  GalleryImageEmbed,
-  GalleryImageEmbedView,
-  GeneratorView,
-  GetPostThreadV2QueryParams,
-  ImagesEmbed,
-  ImagesEmbedView,
-  KnownFollowers,
-  LabelerRecord,
-  LabelerView,
-  LabelerViewDetailed,
-  LikeRecord,
-  ListItemView,
-  ListView,
-  ListViewBasic,
-  MaybePostView,
-  NotFoundPost,
-  NotificationRecordDeleted,
-  NotificationView,
-  PostEmbedView,
-  PostRecord,
-  PostView,
-  ProfileAssociatedActivitySubscription,
-  ProfileAssociatedChat,
-  ProfileRecord,
-  ProfileView,
-  ProfileViewBasic,
-  ProfileViewDetailed,
-  ProfileViewer,
-  ReasonPin,
-  ReasonRepost,
-  RecordEmbed,
-  RecordEmbedView,
-  RecordEmbedViewInternal,
-  RecordWithMedia,
-  RecordWithMediaView,
-  ReplyRef,
-  RepostRecord,
-  SiteStandardDocumentRecord,
-  SiteStandardPublicationRecord,
-  StarterPackView,
-  StarterPackViewBasic,
-  StatusView,
-  ThreadItem,
-  ThreadOtherItem,
-  ThreadViewPost,
-  ThreadgateView,
-  VerificationRecord,
-  VerificationState,
-  VerificationView,
-  VideoEmbed,
-  VideoEmbedView,
+  type ActivitySubscription,
+  type BlockedPost,
+  type BookmarkView,
+  type Embed,
+  type EmbedView,
+  type ExternalEmbed,
+  type ExternalEmbedColorRgb,
+  type ExternalEmbedSourceThemeView,
+  type ExternalEmbedSourceView,
+  type ExternalEmbedView,
+  type FeedViewPost,
+  type FollowRecord,
+  type GalleryEmbed,
+  type GalleryEmbedView,
+  type GalleryImageEmbed,
+  type GalleryImageEmbedView,
+  type GeneratorView,
+  type GetPostThreadV2QueryParams,
+  type ImagesEmbed,
+  type ImagesEmbedView,
+  type KnownFollowers,
+  type KnownLikers,
+  type LabelerRecord,
+  type LabelerView,
+  type LabelerViewDetailed,
+  type LikeRecord,
+  type ListItemView,
+  type ListView,
+  type ListViewBasic,
+  type MaybePostView,
+  type NotFoundPost,
+  type NotificationRecordDeleted,
+  type NotificationView,
+  type PostEmbedView,
+  type PostRecord,
+  type PostView,
+  type ProfileAssociatedActivitySubscription,
+  type ProfileAssociatedChat,
+  type ProfileRecord,
+  type ProfileView,
+  type ProfileViewBasic,
+  type ProfileViewDetailed,
+  type ProfileViewer,
+  type ReasonPin,
+  type ReasonRepost,
+  type RecordEmbed,
+  type RecordEmbedView,
+  type RecordEmbedViewInternal,
+  type RecordWithMedia,
+  type RecordWithMediaView,
+  type ReplyRef,
+  type RepostRecord,
+  type SiteStandardPublicationRecord,
+  type StarterPackView,
+  type StarterPackViewBasic,
+  type StatusView,
+  type ThreadItem,
+  type ThreadOtherItem,
+  type ThreadViewPost,
+  type ThreadgateView,
+  type VerificationRecord,
+  type VerificationState,
+  type VerificationView,
+  type VideoEmbed,
+  type VideoEmbedView,
   isExternalEmbedType,
   isGalleryEmbedType,
   isGalleryImageEmbedType,
@@ -137,7 +138,7 @@ import {
   isSelfLabelsType,
   isVideoEmbedType,
 } from './types.js'
-import { VideoUriBuilder, parsePostgate, parseThreadGate } from './util.js'
+import { type VideoUriBuilder, parsePostgate, parseThreadGate } from './util.js'
 
 const notificationDeletedRecord =
   app.bsky.notification.defs.recordDeleted.$build({})
@@ -217,6 +218,18 @@ export class Views {
     const viewer = state.profileViewers?.get(did)
     if (!viewer) return false
     return !!(viewer.muted || this.mutedByList(viewer, state))
+  }
+
+  viewerRepostMuteExists(did: DidString, state: HydrationState): boolean {
+    const viewer = state.profileViewers?.get(did)
+    if (!viewer) return false
+    return !!viewer.mutedOnlyReposts
+  }
+
+  viewerQuotepostMuteExists(did: DidString, state: HydrationState): boolean {
+    const viewer = state.profileViewers?.get(did)
+    if (!viewer) return false
+    return !!viewer.mutedOnlyQuoteposts
   }
 
   blockingByList(
@@ -374,7 +387,7 @@ export class Views {
         record: actor.profile,
       }),
     ]
-    const view: Un$Typed<ProfileViewBasic> & { cabildeoLive?: unknown } = {
+    return {
       did,
       handle: actor.handle ?? INVALID_HANDLE,
       displayName: actor.profile?.displayName,
@@ -407,32 +420,6 @@ export class Views {
       verification: this.verification(did, state),
       status: this.status(did, state),
       debug: state.ctx?.includeDebugField ? actor.debug : undefined,
-    }
-    const cabildeoLive = this.cabildeoLive(actor)
-    if (cabildeoLive) {
-      view.cabildeoLive = cabildeoLive
-    }
-    return view
-  }
-
-  cabildeoLive(actor: Actor) {
-    const live = actor.cabildeoLive
-    if (!live) return undefined
-
-    const status = actor.status?.record
-    const external =
-      status?.embed && isExternalEmbedType(status.embed)
-        ? status.embed.external
-        : undefined
-    if (external?.uri && external.uri !== live.liveUri) {
-      return undefined
-    }
-
-    return {
-      cabildeoUri: live.cabildeoUri,
-      community: live.community,
-      phase: live.phase,
-      expiresAt: live.expiresAt,
     }
   }
 
@@ -482,8 +469,16 @@ export class Views {
     const blockingUri = viewer.blocking || blockingByList
     const block = !!blockedByUri || !!blockingUri
     const mutedByList = this.mutedByList(viewer, state)
+    // scoped mute flags are exclusive with muted: when the account is fully
+    // muted (directly or via a mutelist), suppress them so a scoped direct
+    // mute underneath a list mute doesn't surface both as true.
+    const muted = !!(viewer.muted || mutedByList)
     return {
-      muted: !!(viewer.muted || mutedByList),
+      muted,
+      // when muted is true, these are suppressed to avoid confusion
+      mutedOnlyReposts: !muted && !!viewer.mutedOnlyReposts,
+      // when muted is true, these are suppressed to avoid confusion
+      mutedOnlyQuoteposts: !muted && !!viewer.mutedOnlyQuoteposts,
       mutedByList: mutedByList ? this.listBasic(mutedByList, state) : undefined,
       blockedBy: !!blockedByUri,
       blocking: blockingUri,
@@ -539,21 +534,54 @@ export class Views {
   ): KnownFollowers | undefined {
     const knownFollowers = state.knownFollowers?.get(did)
     if (!knownFollowers) return
+    return this.knownSubjects(
+      did,
+      knownFollowers.count,
+      knownFollowers.followers,
+      'followers',
+      state,
+    )
+  }
+
+  knownLikers(
+    uri: AtUriString,
+    state: HydrationState,
+  ): KnownLikers | undefined {
+    const knownLikers = state.knownLikers?.get(uri)
+    if (!knownLikers) return
+    return this.knownSubjects(
+      new AtUri(uri).did,
+      knownLikers.count,
+      knownLikers.actors,
+      'actors',
+      state,
+    )
+  }
+
+  private knownSubjects<Key extends 'followers' | 'actors'>(
+    did: DidString,
+    count: number,
+    subjectDids: DidString[],
+    key: Key,
+    state: HydrationState,
+  ): { count: number } & Record<Key, ProfileViewBasic[]> {
     const blocks = state.bidirectionalBlocks?.get(did)
-    const followers = mapDefined(knownFollowers.followers, (followerDid) => {
-      if (this.viewerBlockExists(followerDid, state)) {
+    const subjects = mapDefined(subjectDids, (subjectDid) => {
+      if (this.viewerBlockExists(subjectDid, state)) {
         return undefined
       }
-      if (blocks?.get(followerDid)) {
+      if (blocks?.get(subjectDid)) {
         return undefined
       }
-      if (this.actorIsNoHosted(followerDid, state)) {
-        // @TODO only needed right now to work around getProfile's { includeTakedowns: true }
+      if (this.actorIsNoHosted(subjectDid, state)) {
         return undefined
       }
-      return this.profileBasic(followerDid, state)
+      return this.profileBasic(subjectDid, state)
     })
-    return { count: knownFollowers.count, followers }
+    return { count, [key]: subjects } as { count: number } & Record<
+      Key,
+      ProfileViewBasic[]
+    >
   }
 
   verification(
@@ -927,8 +955,10 @@ export class Views {
     state: HydrationState,
   ): {
     originatorMuted: boolean
+    originatorRepostMuted: boolean
     originatorBlocked: boolean
     authorMuted: boolean
+    authorQuotepostMuted: boolean
     authorBlocked: boolean
     ancestorAuthorBlocked: boolean
   } {
@@ -945,8 +975,13 @@ export class Views {
       grandparentUri && creatorFromUri(grandparentUri)
     return {
       originatorMuted: this.viewerMuteExists(originatorDid, state),
+      originatorRepostMuted:
+        !!item.repost && this.viewerRepostMuteExists(originatorDid, state),
       originatorBlocked: this.viewerBlockExists(originatorDid, state),
       authorMuted: this.viewerMuteExists(authorDid, state),
+      authorQuotepostMuted:
+        postIsQuotepost(post?.record) &&
+        this.viewerQuotepostMuteExists(authorDid, state),
       authorBlocked: this.viewerBlockExists(authorDid, state),
       ancestorAuthorBlocked:
         (!!parentAuthorDid && this.viewerBlockExists(parentAuthorDid, state)) ||
@@ -1026,6 +1061,7 @@ export class Views {
     if (!author) return
     const aggs = state.postAggs?.get(uri)
     const viewer = state.postViewers?.get(uri)
+    const knownLikers = this.knownLikers(uri, state)
     const threadgateUri = postUriToThreadgateUri(uri)
     const labels = [
       ...(state.labels?.getBySubject(uri) ?? []),
@@ -1059,6 +1095,7 @@ export class Views {
             replyDisabled: this.userReplyDisabled(uri, state),
             embeddingDisabled: this.userPostEmbeddingDisabled(uri, state),
             pinned: this.viewerPinned(uri, state, authorDid),
+            knownLikers,
           }
         : undefined,
       labels,
@@ -1095,6 +1132,8 @@ export class Views {
       post,
       reason,
       reply,
+      opThreadPostIndex: postInfo?.opThreadPostIndex,
+      opThreadPostCount: postInfo?.opThreadPostCount,
     }
   }
 
@@ -1359,7 +1398,13 @@ export class Views {
   // ------------
 
   threadV2(
-    skeleton: { anchor: AtUriString; uris: AtUriString[] },
+    skeleton: {
+      anchor: AtUriString
+      uris: AtUriString[]
+      // The complete OP thread (root first, in chain order), untrimmed by
+      // above/below limits. See GetThreadResponse.op_thread.
+      opThread?: AtUriString[]
+    },
     state: HydrationState,
     {
       above,
@@ -1490,6 +1535,7 @@ export class Views {
       anchorTree,
       {
         opDid,
+        opThreadUris: skeleton.opThread && new Set(skeleton.opThread),
         branchingFactor,
         sort,
         viewer: state.ctx?.viewer ?? null,
@@ -1501,6 +1547,27 @@ export class Views {
         state.ctx.features.Gate.ThreadsReplyRankingExplorationEnable,
       ),
     )
+
+    if (skeleton.opThread) {
+      const indexByUri = new Map(
+        skeleton.opThread.map((uri, i) => [uri, i + 1]),
+      )
+      const postCount = skeleton.opThread.length
+      for (const item of thread) {
+        if (!app.bsky.unspecced.defs.threadItemPost.$isTypeOf(item.value)) {
+          continue
+        }
+        const index = indexByUri.get(item.uri as AtUriString)
+        item.value.opThread = index !== undefined
+        if (index !== undefined) {
+          item.value.opThreadPostIndex = index
+          item.value.opThreadPostCount = postCount
+        } else {
+          delete item.value.opThreadPostIndex
+          delete item.value.opThreadPostCount
+        }
+      }
+    }
 
     return {
       hasOtherReplies,
@@ -2177,7 +2244,7 @@ export class Views {
       const view = this.galleryItemView(did, item)
       return view ? [view] : []
     })
-    return app.bsky.embed.gallery.view.$build({ media: items })
+    return app.bsky.embed.gallery.view.$build({ items })
   }
 
   private galleryItemView(
@@ -2215,12 +2282,17 @@ export class Views {
     embed: ExternalEmbed,
     state: HydrationState,
   ): $Typed<ExternalEmbedView> {
-    const { uri, title, description, thumb, associatedRefs } = embed.external
-    const ssView = this.externalEmbedFromStandardSite(
-      embed.external.associatedRefs,
+    // Start from the post-author-supplied embed values, then spread the
+    // SS-derived view on top so any field the hydrated doc/publication
+    // supplies wins (title, description, thumb, source, etc). When no SS
+    // records were hydrated `ssView` is `undefined` and the spread is a
+    // no-op, leaving the base values in place. `associatedRefs` is set
+    // last because the post is authoritative about what was pinned.
+    const ssView = this.externalEmbedFromStandardSite({
+      associatedRefs: embed.external.associatedRefs,
       state,
-      embed.external.uri,
-    )
+      assumedUrl: embed.external.uri,
+    })
     // The author-supplied (scraped) thumbnail always wins when present —
     // it's the per-article OG image. Only when the embed has no thumb do
     // we fall back to whatever the SS overlay provides (the document's
@@ -2235,38 +2307,101 @@ export class Views {
       : undefined
     return app.bsky.embed.external.view.$build({
       external: {
-        title: ssView?.title ?? title,
-        description: ssView?.description ?? description,
+        uri: embed.external.uri,
+        title: embed.external.title,
+        description: embed.external.description,
         ...ssView,
         thumb: embeddedThumb ?? ssView?.thumb,
-        uri: embed.external.uri,
         associatedRefs: embed.external.associatedRefs,
       },
     })
   }
 
   /**
-   * Returns a partial `viewExternal` overlay derived from `site.standard.*`
-   * records hydrated into `state`, or `undefined` when no SS records were
-   * hydrated for these refs. Only fields the SS records can supply are set;
-   * callers should layer this on top of a base view (typically built from
-   * the post's embed) so hydrated fields override author-supplied ones and
-   * un-hydratable fields fall through to the base.
+   * Read-path entry point: caller has the post's `external.associatedRefs[]`
+   * and the global hydration state, and we resolve the matching SS records
+   * by ref. Used by `externalEmbed`.
    *
-   * The `uri` field is intentionally not included here since we want to
-   * respect the embed's supplied URI (which might include tracking params, for
-   * example) rather than forcing it to be the canonical URI from the SS
-   * record.
+   * Returns a fully-populated `viewExternal['external']` shape (including
+   * the required `uri`/`title`/`description`), or `undefined` if the
+   * records didn't hydrate, didn't pass URL validation, or couldn't
+   * supply the required fields. Callers spread the result over a base
+   * view to layer SS-derived fields on top of post-author-supplied ones.
+   *
+   * `assumedUrl` is the canonical web URL the embed claims to represent
+   * (the post's `external.uri` on the read path, the request's `url` on
+   * compose). Validation logic uses it to confirm the SS records actually
+   * back that URL, and the same value is echoed back as `uri` on the
+   * returned overlay.
    */
-  externalEmbedFromStandardSite(
-    associatedRefs: ExternalEmbed['external']['associatedRefs'],
-    state: HydrationState,
-    assumedUrl: string,
-  ): Partial<Omit<ExternalEmbedView['external'], 'uri'>> | undefined {
-    const { document, publication } = lookupAssociatedSiteStandardRecords(
-      associatedRefs,
+  externalEmbedFromStandardSite({
+    associatedRefs,
+    state,
+    assumedUrl,
+  }: {
+    associatedRefs: ExternalEmbed['external']['associatedRefs']
+    state: HydrationState
+    assumedUrl: string
+  }): ExternalEmbedView['external'] | undefined {
+    const { document, publication } =
+      getSiteStandardRecordsFromHydrationMapsByRefs(
+        associatedRefs,
+        state.siteStandardDocuments,
+        state.siteStandardPublications,
+      )
+    return this.externalEmbedFromStandardSiteRecords({
+      document,
+      publication,
       state,
-    )
+      assumedUrl,
+    })
+  }
+
+  /**
+   * Compose-path entry point: caller already knows which document and
+   * publication backed the request and has them in hand (e.g. from
+   * iterating the SS hydration maps directly). Skips the by-ref lookup
+   * that `externalEmbedFromStandardSite` does. Used by
+   * `getEmbedExternalView`.
+   *
+   * Returns a fully-populated `viewExternal['external']` shape (including
+   * the required `uri`/`title`/`description`), or `undefined` if any of
+   * the validation gates rejected the pair or the records couldn't
+   * supply the required fields.
+   *
+   * `state` is still needed for label hydration. `assumedUrl` is the
+   * canonical web URL the embed claims to represent (the post's
+   * `external.uri` on the read path, the request's `url` on compose);
+   * validation logic uses it to confirm the SS records actually back that
+   * URL, and the same value is echoed back as `uri` on the returned
+   * overlay.
+   */
+  externalEmbedFromStandardSiteRecords({
+    document,
+    publication,
+    state,
+    assumedUrl,
+  }: {
+    document: AssociatedSiteStandardRecord<SiteStandardDocument> | undefined
+    publication:
+      AssociatedSiteStandardRecord<SiteStandardPublication> | undefined
+    state: HydrationState
+    assumedUrl: string
+  }): ExternalEmbedView['external'] | undefined {
+    // Three layers of validation gate this overlay:
+    //
+    //  1. Hydrator nulls taken-down records and mirrors the null across
+    //     doc/pub pairs (see `actionSiteStandardTakedownLabels` in
+    //     `hydration/hydrator.ts`).
+    //  2. The lookups guarantee structural agreement between doc and pub
+    //     — matching `site`/`uri`, no orphan doc claiming a missing
+    //     publication (see `getSiteStandardRecordsFromHydrationMapsByRefs`
+    //     and `…ByDocumentUri` in `hydration/external.ts`).
+    //  3. `validateStandardSiteForUrl` below checks that the records back
+    //     the URL the embed claims (see `util/standard-site.ts`).
+    //
+    // If any layer rejected, callers see `undefined` and fall back to the
+    // bare embed rather than render partial / disagreeing enrichment.
     if (!document && !publication) return undefined
     if (!validateStandardSiteForUrl(document, publication, assumedUrl)) {
       viewsLogger.warn(
@@ -2279,14 +2414,34 @@ export class Views {
       return undefined
     }
 
-    const overlay: Partial<Omit<ExternalEmbedView['external'], 'uri'>> = {}
+    // viewExternal requires `title` and `description`. If neither side of
+    // the pair supplies usable values for both, there's no enrichment to
+    // render — return undefined and let the caller fall back.
+    let title: string
+    let description: string
+    if (document?.info.record) {
+      // Treat the document as authoritative for both fields as a unit, so
+      // we never blend a doc's title with a publication's description.
+      title = document.info.record.title
+      description = document.info.record.description ?? ''
+    } else if (publication) {
+      title = publication.info.record.name
+      description = publication.info.record.description ?? ''
+    } else {
+      return undefined
+    }
 
-    const title = document?.info.record.title ?? publication?.info.record.name
-    if (title) overlay.title = title
+    // if we don't have a title at this point, something is wrong with the SS
+    // record (it's a required field) and therefore the enrichment isn't worth
+    // showing
+    if (!title) return undefined
 
-    const description =
-      document?.info.record.description ?? publication?.info.record.description
-    if (description) overlay.description = description
+    const overlay: ExternalEmbedView['external'] = {
+      // @ts-ignore this is mis-typed
+      uri: assumedUrl,
+      title,
+      description,
+    }
 
     const docCover = document?.info.record.coverImage
     if (docCover) {
@@ -2313,9 +2468,9 @@ export class Views {
     // unit, so doc-scoped and publication-scoped labels end up in the same
     // bucket.
     const labels = [
-      ...(document ? state.labels?.getBySubject(document.ref.uri) ?? [] : []),
+      ...(document ? (state.labels?.getBySubject(document.ref.uri) ?? []) : []),
       ...(publication
-        ? state.labels?.getBySubject(publication.ref.uri) ?? []
+        ? (state.labels?.getBySubject(publication.ref.uri) ?? [])
         : []),
     ]
     if (labels.length) overlay.labels = labels
@@ -2338,6 +2493,7 @@ export class Views {
     ) as ProfileViewBasic[]
     if (associatedProfiles.length)
       overlay.associatedProfiles = associatedProfiles
+
     return overlay
   }
 
@@ -2358,7 +2514,7 @@ export class Views {
       title: record.name,
       description: record.description,
       theme: record.basicTheme
-        ? buildExternalEmbedSourceTheme(record.basicTheme)
+        ? externalEmbedSourceTheme(record.basicTheme)
         : undefined,
     })
   }
@@ -2701,60 +2857,29 @@ const getRootUri = (uri: AtUriString, post: Post): AtUriString => {
   return post.record.reply?.root.uri ?? uri
 }
 
-type AssociatedSiteStandardRecord<T> = {
-  ref: { uri: AtUriString; cid: string }
-  info: T
+const postIsQuotepost = (record: PostRecord | undefined): boolean => {
+  const embed = record?.embed
+  if (!embed) return false
+  const recordEmbed = isRecordEmbedType(embed)
+    ? embed
+    : isRecordWithMediaType(embed)
+      ? embed.record
+      : undefined
+  if (!recordEmbed) return false
+  return (
+    new AtUri(recordEmbed.record.uri).collection === app.bsky.feed.post.$type
+  )
 }
 
-/**
- * Walks `external.associatedRefs` and returns the first hydrated
- * `site.standard.document` and the first hydrated `site.standard.publication`
- * found in `HydrationState`. The hydration maps are keyed by `uri@cid` so a
- * single batch can carry multiple versions of the same URI (different posts
- * pinning different cids); the lookup is version-exact via that composite key.
- *
- * Each slot also carries the matching `ref` so callers can recover the owner
- * DID for blob-cdn URL building, etc.
- *
- * Returns `undefined` for either slot when no matching ref is present or the
- * record wasn't hydrated. Refs of other collections are ignored.
- */
-const lookupAssociatedSiteStandardRecords = (
-  associatedRefs: ExternalEmbed['external']['associatedRefs'],
-  state: HydrationState,
-): {
-  document: AssociatedSiteStandardRecord<SiteStandardDocument> | undefined
-  publication: AssociatedSiteStandardRecord<SiteStandardPublication> | undefined
-} => {
-  let document: AssociatedSiteStandardRecord<SiteStandardDocument> | undefined
-  let publication:
-    | AssociatedSiteStandardRecord<SiteStandardPublication>
-    | undefined
-  if (!associatedRefs?.length) return { document, publication }
-  for (const ref of associatedRefs) {
-    const key = siteStandardRecordKey(ref.uri, ref.cid)
-    if (!document) {
-      const hit = state.siteStandardDocuments?.get(key)
-      if (hit) document = { ref, info: hit }
-    }
-    if (!publication) {
-      const hit = state.siteStandardPublications?.get(key)
-      if (hit) publication = { ref, info: hit }
-    }
-    if (document && publication) break
-  }
-  return { document, publication }
-}
-
-const buildExternalEmbedSourceTheme = (
+const externalEmbedSourceTheme = (
   theme: SiteStandardPublicationRecord['basicTheme'],
 ): ExternalEmbedSourceThemeView | undefined => {
   if (!theme) return undefined
   const view: ExternalEmbedSourceThemeView = {}
-  const background = toColorRgb(theme.background)
-  const foreground = toColorRgb(theme.foreground)
-  const accent = toColorRgb(theme.accent)
-  const accentForeground = toColorRgb(theme.accentForeground)
+  const background = colorRGB(theme.background)
+  const foreground = colorRGB(theme.foreground)
+  const accent = colorRGB(theme.accent)
+  const accentForeground = colorRGB(theme.accentForeground)
   if (background) view.backgroundRGB = background
   if (foreground) view.foregroundRGB = foreground
   if (accent) view.accentRGB = accent
@@ -2763,7 +2888,7 @@ const buildExternalEmbedSourceTheme = (
   return Object.keys(view).length === 0 ? undefined : view
 }
 
-const toColorRgb = (
+const colorRGB = (
   color: { $type?: unknown } | undefined,
 ): ExternalEmbedColorRgb | undefined => {
   if (!color || !site.standard.theme.color.rgb.isTypeOf(color)) return undefined

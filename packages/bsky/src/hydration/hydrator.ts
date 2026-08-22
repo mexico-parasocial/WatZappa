@@ -33,6 +33,7 @@ import {
   ActorHydrator,
   Actors,
   KnownFollowersStates,
+  type KnownLikersStates,
   ProfileAggs,
   ProfileViewerState,
   ProfileViewerStates,
@@ -159,12 +160,25 @@ export type HydrationState = {
   labelerViewers?: LabelerViewerStates
   labelerAggs?: LabelerAggs
   knownFollowers?: KnownFollowersStates
+  knownLikers?: KnownLikersStates
   activitySubscriptions?: ActivitySubscriptionStates
   bidirectionalBlocks?: BidirectionalBlocks
   verifications?: Verifications
   bookmarks?: Bookmarks
   siteStandardDocuments?: SiteStandardDocuments
   siteStandardPublications?: SiteStandardPublications
+}
+
+type HydrateKnownLikersOptions = {
+  subjectUris: AtUriString[]
+  limit: number
+}
+
+type HydratePostsOptions = Pick<
+  GetPostsHydrationOptions,
+  'processDynamicTagsForView'
+> & {
+  knownLikers?: HydrateKnownLikersOptions
 }
 
 export type PostBlock = { embed: boolean; parent: boolean; root: boolean }
@@ -517,9 +531,13 @@ export class Hydrator {
     refs: { uri: AtUriString }[],
     ctx: HydrateCtx,
     state: HydrationState = {},
-    options: Pick<GetPostsHydrationOptions, 'processDynamicTagsForView'> = {},
+    options: HydratePostsOptions = {},
   ): Promise<HydrationState> {
     const uris = refs.map((ref) => ref.uri)
+
+    const knownLikersPromise = options.knownLikers
+      ? this.hydrateKnownLikers(options.knownLikers, ctx)
+      : undefined
 
     state.posts ??= new HydrationMap()
     const addPostsToHydrationState = (posts: Posts) => {
@@ -645,16 +663,35 @@ export class Hydrator {
     // post-author profile fetch below; any DIDs surfaced later by the
     // dataplane are picked up by the top-up after the parallel batch.
     const ssRefDids = siteStandardRefs.map((ref) => uriToDid(ref.uri))
+
+    // Collect known-liker profiles and author-liker block relationships.
+    const knownLikers = await knownLikersPromise
+    const knownLikerDids: DidString[] = []
+    const authorsAndKnownLikersRelationships: RelationshipPair[] = []
+    knownLikers?.forEach((knownLiker, uri) => {
+      if (!knownLiker) return
+      knownLikerDids.push(...knownLiker.actors)
+      const authorDid = uriToDid(uri)
+      for (const likerDid of knownLiker.actors) {
+        authorsAndKnownLikersRelationships.push([authorDid, likerDid])
+      }
+    })
+
     const knownProfileDids = dedupeStrs([
       ...allPostUris.map(didFromUri),
       ...ssRefDids,
+      ...knownLikerDids,
     ])
 
     const [
       postAggs,
       postViewers,
       labels,
-      postBlocks,
+      {
+        postBlocks,
+        additionalRelationshipsBidirectionalBlocks:
+          authorsAndKnownLikersBidirectionalBlocks,
+      },
       profileState,
       listState,
       feedGenState,
@@ -674,7 +711,7 @@ export class Hydrator {
         [...allPostUris, ...siteStandardLabelSubjects],
         ctx.labelers,
       ),
-      this.hydratePostBlocks(posts, ctx),
+      this.hydratePostBlocks(posts, ctx, authorsAndKnownLikersRelationships),
       this.hydrateProfiles(knownProfileDids, ctx),
       this.hydrateLists([...nestedListUris, ...threadgateListUris], ctx),
       this.hydrateFeedGens(nestedFeedGenUris, ctx),
@@ -725,6 +762,8 @@ export class Hydrator {
         postAggs,
         postViewers,
         postBlocks,
+        knownLikers,
+        bidirectionalBlocks: authorsAndKnownLikersBidirectionalBlocks,
         labels,
         threadgates,
         postgates,
@@ -738,7 +777,11 @@ export class Hydrator {
   private async hydratePostBlocks(
     posts: Posts,
     ctx: HydrateCtx,
-  ): Promise<PostBlocks> {
+    additionalRelationships: RelationshipPair[] = [],
+  ): Promise<{
+    postBlocks: PostBlocks
+    additionalRelationshipsBidirectionalBlocks: BidirectionalBlocks
+  }> {
     const postBlocks: PostBlocks = new HydrationMap()
     const postBlocksPairs = new Map<AtUriString, PostBlockPairs>()
     const relationships: RelationshipPair[] = []
@@ -770,6 +813,7 @@ export class Hydrator {
         postBlockPairs.embed = pair
       }
     }
+    relationships.push(...additionalRelationships)
     // replace embed/parent/root pairs with block state
     const blocks = await this.hydrateBidirectionalBlocks(
       pairsToMap(relationships),
@@ -782,7 +826,20 @@ export class Hydrator {
         root: !!root && !!isBlocked(blocks, root),
       })
     }
-    return postBlocks
+
+    const additionalRelationshipsBidirectionalBlocks: BidirectionalBlocks =
+      new HydrationMap()
+    for (const [source, targets] of pairsToMap(additionalRelationships)) {
+      const didBlocks = new HydrationMap<DidString, boolean>()
+      for (const target of targets) {
+        didBlocks.set(target, blocks.get(source)?.get(target) ?? false)
+      }
+      additionalRelationshipsBidirectionalBlocks.set(source, didBlocks)
+    }
+    return {
+      postBlocks,
+      additionalRelationshipsBidirectionalBlocks,
+    }
   }
 
   // app.bsky.feed.defs#feedViewPost
@@ -915,6 +972,7 @@ export class Hydrator {
   async hydrateThreadPosts(
     refs: ItemRef[],
     ctx: HydrateCtx,
+    options: Pick<HydratePostsOptions, 'knownLikers'> = {},
   ): Promise<HydrationState> {
     const postsState = await this.hydratePosts(refs, ctx, undefined, {
       processDynamicTagsForView: ctx.features.checkGate(
@@ -922,6 +980,7 @@ export class Hydrator {
       )
         ? 'thread'
         : undefined,
+      knownLikers: options.knownLikers,
     })
 
     const threadRefs: ThreadRef[] = []
@@ -941,6 +1000,41 @@ export class Hydrator {
     const threadContexts = await this.feed.getThreadContexts(threadRefs)
 
     return mergeStates(postsState, { threadContexts })
+  }
+
+  private async hydrateKnownLikers(
+    options: HydrateKnownLikersOptions,
+    ctx: HydrateCtx,
+  ): Promise<KnownLikersStates | undefined> {
+    const { subjectUris, limit } = options
+    if (!ctx.viewer || subjectUris.length === 0) return undefined
+
+    // Fail open.
+    try {
+      const { results } = await this.dataplane.getKnownLikers(
+        {
+          actorDid: ctx.viewer,
+          subjectUris,
+          limit,
+        },
+        { signal: AbortSignal.timeout(100) },
+      )
+      const knownLikers: KnownLikersStates = new HydrationMap()
+      for (const result of results) {
+        const subjectUri = result.subjectUri as AtUriString
+        const dids = result.dids as DidString[]
+        if (result.count > 0) {
+          knownLikers.set(subjectUri, {
+            count: result.count,
+            actors: dids,
+          })
+        }
+      }
+      return knownLikers
+    } catch (err) {
+      hydrationLogger.error({ err }, 'Failed to hydrate known likers')
+      return undefined
+    }
   }
 
   // app.bsky.feed.defs#generatorView
@@ -1753,6 +1847,7 @@ export const mergeStates = (
     labelerAggs: mergeMaps(stateA.labelerAggs, stateB.labelerAggs),
     labelerViewers: mergeMaps(stateA.labelerViewers, stateB.labelerViewers),
     knownFollowers: mergeMaps(stateA.knownFollowers, stateB.knownFollowers),
+    knownLikers: mergeMaps(stateA.knownLikers, stateB.knownLikers),
     activitySubscriptions: mergeMaps(
       stateA.activitySubscriptions,
       stateB.activitySubscriptions,

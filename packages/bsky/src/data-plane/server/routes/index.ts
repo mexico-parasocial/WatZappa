@@ -10,6 +10,7 @@ import cabildeo from './cabildeo.js'
 import collections from './collections.js'
 import community from './community.js'
 import civicTree from './civic-tree.js'
+import communityCivicTree from './community-civic-tree.js'
 import discourse from './discourse.js'
 import drafts from './drafts.js'
 import feedGens from './feed-gens.js'
@@ -55,6 +56,7 @@ export default (db: Database, idResolver: IdResolver) =>
       ...collections(db),
       ...community(db),
       ...civicTree(db),
+      ...communityCivicTree(db),
       ...discourse(db),
       ...qvlAudit(db),
       ...qvlSimulation(db),

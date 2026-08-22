@@ -10,22 +10,33 @@ import { resHeaders } from '../../../util.js'
  */
 export default function (server: Server, ctx: AppContext) {
   server.com.para.actor.exportCivicTree({
-    auth: ctx.authVerifier.optionalStandardOrRole,
+    auth: ctx.authVerifier.standard,
     handler: async ({ params, auth, req }) => {
-      const { viewer } = ctx.authVerifier.parseCreds(auth)
+      const viewer = auth.credentials.iss
       const labelers = ctx.reqLabelers(req)
 
-      const targetActor = params.actor ?? viewer
-      if (!targetActor) {
-        throw new InvalidRequestError('Authentication or actor param required')
-      }
-
-      // Resolve DID
-      const [did] = await ctx.hydrator.actor.getDids([
-        targetActor as AtIdentifierString,
-      ])
-      if (!did) {
-        throw new InvalidRequestError('Actor not found')
+      /*
+       * This export aggregates the viewer's votes, delegations and highlights
+       * into one document. It is only ever exportable by its subject: the
+       * `actor` param exists so a client can pass its own handle, not so one
+       * account can read another's. Anything else here is an account takeover
+       * of the civic record.
+       */
+      let did = viewer
+      if (params.actor) {
+        const [resolved] = await ctx.hydrator.actor.getDids([
+          params.actor as AtIdentifierString,
+        ])
+        if (!resolved) {
+          throw new InvalidRequestError('Actor not found')
+        }
+        if (resolved !== viewer) {
+          throw new InvalidRequestError(
+            'A civic tree may only be exported by its owner',
+            'Forbidden',
+          )
+        }
+        did = resolved
       }
 
       const files: Array<{ path: string; content: string }> = []

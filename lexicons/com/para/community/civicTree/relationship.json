@@ -1,0 +1,47 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.civicTree.relationship",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "communityUri",
+          "sourceCard",
+          "targetCard",
+          "relationshipType",
+          "authorDid",
+          "createdAt"
+        ],
+        "properties": {
+          "communityUri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "sourceCard": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "targetCard": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "relationshipType": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "authorDid": {
+            "type": "string",
+            "format": "did"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

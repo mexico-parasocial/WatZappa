@@ -5,32 +5,33 @@ import {
   xrpcSafe,
 } from '@atproto/lex'
 import {
-  Headers as HeadersMap,
+  type Headers as HeadersMap,
   InvalidRequestError,
-  Server,
+  type Server,
   ServerTimer,
   UpstreamFailureError,
   XRPCError,
   serverTimingHeader,
 } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import type { ServerConfig } from '../../../../config.js'
+import type { AppContext } from '../../../../context.js'
 import {
   Code,
   getServiceEndpoint,
   isDataplaneError,
   unpackIdentityServices,
 } from '../../../../data-plane/index.js'
-import { FeedItem } from '../../../../hydration/feed.js'
-import { HydrateCtx } from '../../../../hydration/hydrator.js'
+import type { FeedItem } from '../../../../hydration/feed.js'
+import type { HydrateCtx } from '../../../../hydration/hydrator.js'
 import { app } from '../../../../lexicons/index.js'
 import {
-  HydrationFnInput,
-  PresentationFnInput,
-  RulesFnInput,
-  SkeletonFnInput,
+  type HydrationFnInput,
+  type PresentationFnInput,
+  type RulesFnInput,
+  type SkeletonFnInput,
   createPipeline,
 } from '../../../../pipeline.js'
-import { GetIdentityByDidResponse } from '../../../../proto/bsky_pb.js'
+import type { GetIdentityByDidResponse } from '../../../../proto/bsky_pb.js'
 import { BSKY_USER_AGENT, resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
@@ -53,7 +54,13 @@ export default function (server: Server, ctx: AppContext) {
     handler: async ({ params, auth, req }) => {
       const viewer = auth.credentials.iss
       const labelers = ctx.reqLabelers(req)
-      const hydrateCtx = await ctx.hydrator.createContext({ labelers, viewer })
+      const hydrateCtx = await ctx.hydrator.createContext({
+        labelers,
+        viewer,
+        features: ctx.featureGatesClient.scope(
+          ctx.featureGatesClient.parseUserContextFromHandler({ viewer, req }),
+        ),
+      })
       const headers = noUndefinedVals({
         'user-agent': BSKY_USER_AGENT,
         authorization: req.headers['authorization'],
@@ -63,16 +70,19 @@ export default function (server: Server, ctx: AppContext) {
           : req.headers['x-bsky-topics'],
       })
       // @NOTE feed cursors should not be affected by appview swap
+      // Do not refill filtered pages. Overfetching from algorithmic feeds can
+      // advance their state and prevent omitted items from appearing later.
+      const result = await getFeed({ ...params, hydrateCtx, headers }, ctx)
       const {
         timerSkele,
         timerHydr,
         resHeaders: feedResHeaders,
-        ...result
-      } = await getFeed({ ...params, hydrateCtx, headers }, ctx)
+        ...body
+      } = result
 
       return {
         encoding: 'application/json',
-        body: result,
+        body,
         headers: {
           ...feedResHeaders,
           ...resHeaders({ labelers: hydrateCtx.labelers }),
@@ -127,8 +137,10 @@ const noBlocksOrMutes = (inputs: RulesFnInput<Context, Params, Skeleton>) => {
     return (
       !bam.authorBlocked &&
       !bam.authorMuted &&
+      !bam.authorQuotepostMuted &&
       !bam.originatorBlocked &&
       !bam.originatorMuted &&
+      !bam.originatorRepostMuted &&
       !bam.ancestorAuthorBlocked
     )
   })
@@ -175,11 +187,55 @@ type Skeleton = {
   timerHydr: ServerTimer
 }
 
-const skeletonFromFeedGen = async (
+/**
+ * Iris' endpoint, when it should serve this request in place of the feed's
+ * registered feed generator (seeemore).
+ */
+export const irisUrlForFeed = (
+  cfg: Pick<ServerConfig, 'irisUrl' | 'irisFeedUris'>,
+  params: {
+    feed: string
+    hydrateCtx: {
+      viewer: HydrateCtx['viewer']
+      features: Pick<HydrateCtx['features'], 'Gate' | 'checkGate'>
+    }
+  },
+): string | undefined => {
+  const { irisUrl } = cfg
+  if (!irisUrl) return
+  if (!cfg.irisFeedUris?.has(params.feed)) return
+  if (!params.hydrateCtx.viewer) return
+  if (
+    !params.hydrateCtx.features.checkGate(
+      params.hydrateCtx.features.Gate.IrisFeed,
+    )
+  ) {
+    return
+  }
+  return irisUrl
+}
+
+/**
+ * Iris staging's endpoint, when it should serve this request in place of the
+ * feed's registered feed generator.
+ */
+export const irisStagingUrlForFeed = (
+  cfg: Pick<ServerConfig, 'irisStagingUrl' | 'irisStagingFeedUris'>,
+  params: { feed: string },
+): string | undefined =>
+  cfg.irisStagingFeedUris?.has(params.feed) ? cfg.irisStagingUrl : undefined
+
+const resolveSkeletonEndpoint = async (
   ctx: Context,
   params: Params,
-): Promise<AlgoResponse> => {
-  const { feed, headers } = params
+): Promise<string> => {
+  const irisUrl = irisUrlForFeed(ctx.cfg, params)
+  if (irisUrl) return irisUrl
+
+  const irisStagingUrl = irisStagingUrlForFeed(ctx.cfg, params)
+  if (irisStagingUrl) return irisStagingUrl
+
+  const { feed } = params
   const found = await ctx.hydrator.feed.getFeedGens([feed], true)
   const feedDid = found.get(feed)?.record.did
   if (!feedDid) {
@@ -207,8 +263,18 @@ const skeletonFromFeedGen = async (
     )
   }
 
+  return fgEndpoint
+}
+
+const skeletonFromFeedGen = async (
+  ctx: Context,
+  params: Params,
+): Promise<AlgoResponse> => {
+  const { headers } = params
+  const endpoint = await resolveSkeletonEndpoint(ctx, params)
+
   // @TODO currently passthrough auth headers from pds
-  const result = await xrpcSafe(fgEndpoint, app.bsky.feed.getFeedSkeleton, {
+  const result = await xrpcSafe(endpoint, app.bsky.feed.getFeedSkeleton, {
     strictResponseProcessing: false,
     signal: AbortSignal.timeout(10_000),
     headers,
@@ -265,8 +331,10 @@ const skeletonFromFeedGen = async (
     ...skele,
     resHeaders: contentLang ? { 'content-language': contentLang } : undefined,
     feedItems,
-    // Prevents loops if the custom feed echoes the input cursor back.
-    cursor: cursor === params.cursor ? undefined : cursor,
+    // An empty feed-generator page ends pagination even if it includes a cursor.
+    // Also prevent loops if the custom feed echoes the input cursor back.
+    cursor:
+      feedSkele.length === 0 || cursor === params.cursor ? undefined : cursor,
   }
 }
 

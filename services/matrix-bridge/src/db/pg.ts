@@ -195,7 +195,6 @@ export interface IBridgeDatabase {
     reporterDid?: string | null
     reportReason?: string | null
     reportedEventId?: string | null
-    reportedMessagePreview?: string | null
     sanctionType?: string | null
     sanctionDurationMinutes?: number | null
     sanctionedByDid?: string | null
@@ -206,6 +205,7 @@ export interface IBridgeDatabase {
     communityUri: string,
     sinceDays?: number,
   ): Promise<any[]>
+  purgeReportedMessagePreviews(): Promise<number>
   getRecentReportsForCommunity(
     communityUri: string,
     days?: number,
@@ -1852,14 +1852,13 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     reporterDid?: string | null
     reportReason?: string | null
     reportedEventId?: string | null
-    reportedMessagePreview?: string | null
     sanctionType?: string | null
     sanctionDurationMinutes?: number | null
     sanctionedByDid?: string | null
     matrixRoomId?: string | null
   }): Promise<void> {
     await this.run(
-      'INSERT INTO chat_moderation_events (did, community_uri, event_type, reporter_did, report_reason, reported_event_id, reported_message_preview, sanction_type, sanction_duration_minutes, sanctioned_by_did, matrix_room_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
+      'INSERT INTO chat_moderation_events (did, community_uri, event_type, reporter_did, report_reason, reported_event_id, sanction_type, sanction_duration_minutes, sanctioned_by_did, matrix_room_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
       [
         event.did,
         event.communityUri,
@@ -1867,7 +1866,6 @@ export class PgBridgeDatabase implements IBridgeDatabase {
         event.reporterDid ?? null,
         event.reportReason ?? null,
         event.reportedEventId ?? null,
-        event.reportedMessagePreview ?? null,
         event.sanctionType ?? null,
         event.sanctionDurationMinutes ?? null,
         event.sanctionedByDid ?? null,
@@ -1892,9 +1890,21 @@ export class PgBridgeDatabase implements IBridgeDatabase {
     days = 30,
   ): Promise<any[]> {
     return this.queryAll(
-      "SELECT * FROM chat_moderation_events WHERE community_uri = $1 AND event_type = 'report_received' AND created_at >= NOW() - INTERVAL '1 day' * $2 ORDER BY created_at DESC",
+      "SELECT id, did, community_uri, event_type, reporter_did, report_reason, reported_event_id, sanction_type, sanction_duration_minutes, sanctioned_by_did, matrix_room_id, created_at FROM chat_moderation_events WHERE community_uri = $1 AND event_type = 'report_received' AND created_at >= NOW() - INTERVAL '1 day' * $2 ORDER BY created_at DESC",
       [communityUri, days],
     )
+  }
+
+  /**
+   * F4: clear message excerpts captured by earlier versions. Idempotent, runs
+   * at start-up. Stopping new writes while leaving the existing rows in place
+   * would only fix the finding going forward.
+   */
+  async purgeReportedMessagePreviews(): Promise<number> {
+    const rows = await this.queryAll<{ id: number }>(
+      'UPDATE chat_moderation_events SET reported_message_preview = NULL WHERE reported_message_preview IS NOT NULL RETURNING id',
+    )
+    return rows.length
   }
 
   async getActiveSanctions(did: string, communityUri: string): Promise<any[]> {

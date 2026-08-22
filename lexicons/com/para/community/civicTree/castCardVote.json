@@ -1,0 +1,55 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.civicTree.castCardVote",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "card",
+            "voterDid",
+            "influence"
+          ],
+          "properties": {
+            "card": {
+              "type": "string"
+            },
+            "voterDid": {
+              "type": "string",
+              "format": "did"
+            },
+            "influence": {
+              "type": "integer",
+              "minimum": -3,
+              "maximum": 3
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "success"
+          ],
+          "properties": {
+            "success": {
+              "type": "boolean"
+            },
+            "totalInfluence": {
+              "type": "integer"
+            },
+            "voteCount": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    }
+  }
+}

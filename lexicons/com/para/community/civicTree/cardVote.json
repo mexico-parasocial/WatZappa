@@ -1,0 +1,38 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.civicTree.cardVote",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "card",
+          "voterDid",
+          "influence",
+          "createdAt"
+        ],
+        "properties": {
+          "card": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "voterDid": {
+            "type": "string",
+            "format": "did"
+          },
+          "influence": {
+            "type": "integer",
+            "minimum": -3,
+            "maximum": 3
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}
