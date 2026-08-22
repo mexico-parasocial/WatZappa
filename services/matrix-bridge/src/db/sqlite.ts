@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import Database from 'better-sqlite3'
-import type { Config } from './config.js'
-import type { AiConsentRecord } from './db/pg.js'
+import type { Config } from '../config.js'
+import type { AiConsentRecord } from './pg.js'
 
 export interface CommunitySpaceMap {
   communityUri: string

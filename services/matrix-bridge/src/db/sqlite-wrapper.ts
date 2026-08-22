@@ -1,5 +1,5 @@
 import type { Config } from '../config.js'
-import { BridgeDatabase } from '../db.js'
+import { BridgeDatabase } from './sqlite.js'
 import type {
   AiConsentRecord,
   CommunitySpaceMap,
