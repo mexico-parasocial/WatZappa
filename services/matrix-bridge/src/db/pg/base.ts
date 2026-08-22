@@ -1,13 +1,20 @@
 import { randomUUID } from 'node:crypto'
-import { Pool, type QueryResult } from 'pg'
+import pg from 'pg'
+import type { QueryResult } from 'pg'
 import type {
   AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
   SyncLogEntry, UserMatrixMap, UserPushToken,
 } from '../interface.js'
+
+// cjs-module-lexer cannot statically enumerate pg's named exports, so the
+// compiled ESM build crashes on `import { Pool } from 'pg'` at instantiation.
+// Take the default and destructure instead.
+const { Pool } = pg
+
 /** Lifecycle, connection handle and shared query helpers. */
 export class PgBase {
 
-  protected pool: Pool
+  protected pool: pg.Pool
 
   protected initPromise: Promise<void>
 
