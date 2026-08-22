@@ -1,6 +1,6 @@
 import type { Config } from '../config.js'
-import type { IBridgeDatabase } from './pg.js'
-import { PgBridgeDatabase } from './pg.js'
+import type { IBridgeDatabase } from './pg/index.js'
+import { PgBridgeDatabase } from './pg/index.js'
 import { SqliteBridgeDatabase } from './sqlite-wrapper.js'
 
 export type { IBridgeDatabase }

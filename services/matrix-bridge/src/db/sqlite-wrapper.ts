@@ -1,12 +1,12 @@
 import type { Config } from '../config.js'
-import { BridgeDatabase } from './sqlite.js'
+import { BridgeDatabase } from './sqlite/index.js'
 import type {
   AiConsentRecord,
   CommunitySpaceMap,
   IBridgeDatabase,
   SyncLogEntry,
   UserPushToken,
-} from './pg.js'
+} from './pg/index.js'
 
 /**
  * Async wrapper around the synchronous SQLite BridgeDatabase.
