@@ -188,7 +188,17 @@ export const cryptoVerifySignatureWithKey: VerifySignatureWithKeyFn = async (
 }
 
 const parseB64UrlToJson = (b64: string) => {
-  return JSON.parse(Buffer.from(b64, 'base64url').toString('utf8'))
+  // A token from a confused or hostile client is garbage input, not a server
+  // fault: without this guard a SyntaxError escapes as a 500 and shows up in
+  // the client as "Internal Server Error" instead of an auth rejection.
+  try {
+    return JSON.parse(Buffer.from(b64, 'base64url').toString('utf8'))
+  } catch (err) {
+    if (err instanceof SyntaxError) {
+      throw new AuthRequiredError('poorly formatted jwt', 'BadJwt')
+    }
+    throw err
+  }
 }
 
 const parseHeader = (b64: string): ServiceJwtHeaders => {

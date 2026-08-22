@@ -181,6 +181,19 @@ describe('Auth', () => {
   })
 
   describe('verifyJwt()', () => {
+    it('rejects a malformed jwt as auth error, not a crash.', async () => {
+      // payload segment is not base64url-encoded JSON
+      const tryVerify = xrpcServer.verifyJwt(
+        'eyJhbGciOiJFUzI1NksifQ.faketoken.fakesig',
+        null,
+        null,
+        async () => {
+          throw new Error('should not resolve signing key')
+        },
+      )
+      await expect(tryVerify).rejects.toThrow('poorly formatted jwt')
+    })
+
     it('fails on expired jwt.', async () => {
       const keypair = await Secp256k1Keypair.create()
       const jwt = await xrpcServer.createServiceJwt({
