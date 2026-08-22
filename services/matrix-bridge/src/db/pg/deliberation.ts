@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { decideContribution } from '../../contributions.js'
 import type {
   AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
   SyncLogEntry, UserMatrixMap, UserPushToken,
@@ -151,12 +152,9 @@ export class DeliberationArea extends MatrixEventsArea {
 
       const counts =
         await this.getCommunityContributionVoteCounts(contributionId)
-      const shouldApprove =
-        counts.approve >= 3 && counts.approve - counts.reject >= 2
-      const shouldReject =
-        counts.reject >= 3 && counts.reject - counts.approve >= 2
+      const decision = decideContribution(counts)
 
-      if (shouldApprove) {
+      if (decision === 'approve') {
         const { randomUUID } = await import('node:crypto')
         const cardId = randomUUID()
         await client.query(
@@ -169,7 +167,7 @@ export class DeliberationArea extends MatrixEventsArea {
           "UPDATE community_map_contributions SET status = 'approved', approved_card_id = $1, decided_at = NOW() WHERE id = $2",
           [cardId, contributionId],
         )
-      } else if (shouldReject) {
+      } else if (decision === 'reject') {
         await client.query(
           "UPDATE community_map_contributions SET status = 'rejected', decided_at = NOW() WHERE id = $1",
           [contributionId],
