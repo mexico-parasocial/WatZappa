@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import type { Logger } from 'pino'
 import { IdResolver } from '@atproto/identity'
 import { Firehose } from '@atproto/sync'
@@ -7,23 +6,28 @@ import { ChatModerationEngine } from './chat-moderation.js'
 import type { Config } from './config.js'
 import { parseConstitution } from './constitution.js'
 import type { IBridgeDatabase } from './db/index.js'
-import type { MatrixAdminClient } from './matrix.js'
-import { didToMxid, extractServerName } from './matrix.js'
+import type { MatrixProjectionPort } from './matrix-projection.js'
 import type { BridgeMetrics } from './metrics.js'
 import { ProposalEngine } from './proposals.js'
 import { assignChamberBalanced, assignChamberVerifiable } from './sortition.js'
 
 const CURSOR_SAVE_INTERVAL_MS = 30000
 
+/**
+ * ATProto firehose consumer — the governance half of the bridge (CD-M2).
+ * Consumes PARA community records, decides governance state (membership,
+ * chambers via verifiable sortition, constitutions, proposals, votes) and
+ * expresses room effects through MatrixProjectionPort. All MXID handling
+ * lives behind that port; this file speaks DIDs only.
+ */
 export class FirehoseConsumer {
   private firehose: Firehose
   private db: IBridgeDatabase
-  private matrix: MatrixAdminClient
+  private projection: MatrixProjectionPort
   private metrics: BridgeMetrics
   private proposals: ProposalEngine
   private chatMod: ChatModerationEngine
   private log: Logger
-  private serverName: string
   private lastSeq: number | undefined
   private initialCursor: number | undefined
   private cursorSaveTimer: NodeJS.Timeout | null = null
@@ -31,17 +35,18 @@ export class FirehoseConsumer {
   constructor(
     config: Config,
     db: IBridgeDatabase,
-    matrix: MatrixAdminClient,
+    projection: MatrixProjectionPort,
+    proposals: ProposalEngine,
+    chatMod: ChatModerationEngine,
     metrics: BridgeMetrics,
     log: Logger,
   ) {
     this.db = db
-    this.matrix = matrix
+    this.projection = projection
+    this.proposals = proposals
+    this.chatMod = chatMod
     this.metrics = metrics
-    this.chatMod = new ChatModerationEngine(db, log)
-    this.proposals = new ProposalEngine(db, matrix, log, this.chatMod)
     this.log = log
-    this.serverName = extractServerName(config.matrixHomeserverUrl)
 
     const idResolver = new IdResolver()
 
@@ -156,70 +161,51 @@ export class FirehoseConsumer {
       event_type: 'create_space',
     })
     try {
-      const spaceId = await this.matrix.createSpace(name, slug)
+      const provisioned = await this.projection.createCommunitySpace({
+        name,
+        slug,
+        chamberMode,
+      })
       await this.db.setSpaceForCommunity(
         communityUri,
-        spaceId,
+        provisioned.spaceId,
         slug,
         chamberMode,
       )
-      this.metrics.spacesCreatedTotal.inc({ status: 'success' })
-      this.log.info(
-        { communityUri, spaceId, name, chamberMode },
-        'Created Matrix space for community',
-      )
-
-      // Create chamber rooms for bicameral communities
       if (chamberMode === 'bicameral') {
-        const [chamberA, chamberB, observerRoom] = await Promise.all([
-          this.matrix.createRoom(
-            `${name} — Cámara A`,
-            `${slug}-chamber-a`,
-            spaceId,
-          ),
-          this.matrix.createRoom(
-            `${name} — Cámara B`,
-            `${slug}-chamber-b`,
-            spaceId,
-          ),
-          this.matrix.createRoom(
-            `${name} — Consejo Observador`,
-            `${slug}-observers`,
-            spaceId,
-          ),
-        ])
-
         await this.db.setChamberRooms(
           communityUri,
-          chamberA,
-          chamberB,
-          observerRoom,
+          provisioned.chamberA_RoomId,
+          provisioned.chamberB_RoomId,
+          provisioned.observerRoomId,
         )
+      }
+      this.metrics.spacesCreatedTotal.inc({ status: 'success' })
+      this.log.info(
+        { communityUri, spaceId: provisioned.spaceId, name, chamberMode },
+        'Created Matrix space for community',
+      )
+      if (chamberMode === 'bicameral') {
         this.log.info(
-          { communityUri, chamberA, chamberB, observerRoom },
+          {
+            communityUri,
+            chamberA: provisioned.chamberA_RoomId,
+            chamberB: provisioned.chamberB_RoomId,
+            observerRoom: provisioned.observerRoomId,
+          },
           'Created bicameral chamber rooms',
         )
-
-        // Link chambers as children of the main space
-        await Promise.all([
-          this.matrix.addChildSpace(spaceId, chamberA, [this.serverName]),
-          this.matrix.addChildSpace(spaceId, chamberB, [this.serverName]),
-          this.matrix.addChildSpace(spaceId, observerRoom, [this.serverName]),
-        ])
       }
 
-      const creatorMxid = await this.ensureMxid(creatorDid)
       await this.db.setCommunityMembership(creatorDid, communityUri, 'active', [
         'owner',
       ])
-      await this.ensureUserExists(creatorMxid, creatorDid)
-      await this.matrix.inviteUser(spaceId, creatorMxid)
-      await this.matrix.setPowerLevel(spaceId, creatorMxid, 100)
+      await this.projection.installOwner(provisioned.spaceId, creatorDid)
       await this.db.logSync(
         'create_space',
         communityUri,
         creatorDid,
-        spaceId,
+        provisioned.spaceId,
         true,
       )
     } catch (err: any) {
@@ -262,54 +248,30 @@ export class FirehoseConsumer {
       return
     }
 
-    const userMxid = await this.ensureMxid(userDid)
-
     const end = this.metrics.syncLatency.startTimer({
       event_type: state === 'active' ? 'invite' : 'kick',
     })
     try {
       if (state === 'active' && (action === 'create' || action === 'update')) {
-        await this.ensureUserExists(userMxid, userDid)
+        let chamberRoomId: string | null = null
+        let chamber: 'A' | 'B' | null = null
 
         if (space.chamberMode === 'bicameral' && !isObserver) {
-          await this.handleBicameralInvite(
-            communityUri,
-            space,
-            userDid,
-            userMxid,
-            roles,
-          )
-        } else if (space.chamberMode === 'bicameral' && isObserver) {
-          await this.handleObserverInvite(communityUri, space, userMxid)
-        } else {
-          // Unicameral: just invite to main space
-          const members = await this.matrix.getRoomMembers(space.spaceId)
-          const alreadyThere = members.some((m) => m.user_id === userMxid)
-          if (!alreadyThere) {
-            await this.matrix.inviteUser(space.spaceId, userMxid)
-            this.log.info(
-              { communityUri, userDid, spaceId: space.spaceId },
-              'Invited user to Matrix space',
-            )
-          }
+          chamber = await this.decideChamber(communityUri, userDid)
         }
 
-        let powerLevel = 0
-        if (roles.includes('owner')) powerLevel = 100
-        else if (roles.includes('moderator')) powerLevel = 50
+        const invited = await this.projection.inviteMember(space, userDid, {
+          roles,
+          chamber,
+          isObserver,
+        })
+        chamberRoomId = invited.chamberRoomId
 
-        await this.matrix.setPowerLevel(space.spaceId, userMxid, powerLevel)
-
-        await this.chatMod.recordMembership(
-          userDid,
-          communityUri,
-          space.spaceId,
-          {
-            isModerator: roles.includes('moderator') || roles.includes('owner'),
-            isDelegate: roles.includes('delegate'),
-            chamber: null,
-          },
-        )
+        await this.chatMod.recordMembership(userDid, communityUri, chamberRoomId ?? space.spaceId, {
+          isModerator: roles.includes('moderator') || roles.includes('owner'),
+          isDelegate: roles.includes('delegate'),
+          chamber: chamber ?? null,
+        })
 
         await this.db.logSync(
           'invite',
@@ -322,7 +284,7 @@ export class FirehoseConsumer {
         (state === 'left' || state === 'removed' || state === 'blocked') &&
         action === 'update'
       ) {
-        await this.kickFromAllRooms(space, userMxid, state)
+        await this.projection.kickMember(space, userDid, state)
         await this.db.logSync(
           'kick',
           communityUri,
@@ -361,89 +323,57 @@ export class FirehoseConsumer {
     }
   }
 
-  private async handleBicameralInvite(
+  /**
+   * Governance decision: which chamber does this member belong to? Verifiable
+   * sortition via drand, deterministic fallback if the beacon is unreachable.
+   */
+  private async decideChamber(
     communityUri: string,
-    space: any,
     userDid: string,
-    userMxid: string,
-    roles: string[],
-  ): Promise<void> {
-    // Assign to chamber via verifiable sortition (drand) with deterministic fallback
-    let chamber = await this.db.getChamberAssignment(communityUri, userDid)
-    if (!chamber) {
-      const countA = await this.db.getChamberMemberCount(communityUri, 'A')
-      const countB = await this.db.getChamberMemberCount(communityUri, 'B')
+  ): Promise<'A' | 'B'> {
+    const existing = await this.db.getChamberAssignment(communityUri, userDid)
+    if (existing === 'A' || existing === 'B') return existing
 
-      try {
-        const proof = await assignChamberVerifiable(
-          userDid,
-          communityUri,
-          countA,
-          countB,
-        )
-        chamber = proof.chamber
-        await this.db.saveSortitionProof({
-          did: proof.did,
-          communityUri: proof.communityUri,
-          chamber: proof.chamber,
-          drandRound: proof.round,
-          drandRandomness: proof.randomness,
-          hashInput: proof.hashInput,
-          hashOutput: proof.hashOutput,
-          threshold: proof.threshold,
-          timestamp: proof.timestamp,
-        })
-        this.metrics.sortitionDrandTotal.inc()
-        this.log.info(
-          { communityUri, userDid, chamber, drandRound: proof.round },
-          'Assigned user to chamber via verifiable sortition (drand)',
-        )
-      } catch (err: any) {
-        // Fallback to deterministic djb2Hash if drand is unreachable
-        chamber = assignChamberBalanced(userDid, communityUri, countA, countB)
-        this.metrics.sortitionFallbackTotal.inc()
-        this.log.warn(
-          { err: err.message, communityUri, userDid, chamber },
-          'drand failed, using fallback sortition',
-        )
-      }
+    const countA = await this.db.getChamberMemberCount(communityUri, 'A')
+    const countB = await this.db.getChamberMemberCount(communityUri, 'B')
 
-      await this.db.setChamberAssignment(communityUri, userDid, chamber)
-    }
-
-    const chamberRoomId =
-      chamber === 'A' ? space.chamberA_RoomId : space.chamberB_RoomId
-    if (!chamberRoomId) {
-      throw new Error(`Chamber ${chamber} room not found for community`)
-    }
-
-    // Invite to main space (for announcements + votes)
-    const mainMembers = await this.matrix.getRoomMembers(space.spaceId)
-    if (!mainMembers.some((m) => m.user_id === userMxid)) {
-      await this.matrix.inviteUser(space.spaceId, userMxid)
-    }
-
-    // Invite to chamber room (for deliberation)
-    const chamberMembers = await this.matrix.getRoomMembers(chamberRoomId)
-    if (!chamberMembers.some((m) => m.user_id === userMxid)) {
-      await this.matrix.inviteUser(chamberRoomId, userMxid)
+    let chamber: 'A' | 'B'
+    try {
+      const proof = await assignChamberVerifiable(
+        userDid,
+        communityUri,
+        countA,
+        countB,
+      )
+      chamber = proof.chamber
+      await this.db.saveSortitionProof({
+        did: proof.did,
+        communityUri: proof.communityUri,
+        chamber: proof.chamber,
+        drandRound: proof.round,
+        drandRandomness: proof.randomness,
+        hashInput: proof.hashInput,
+        hashOutput: proof.hashOutput,
+        threshold: proof.threshold,
+        timestamp: proof.timestamp,
+      })
+      this.metrics.sortitionDrandTotal.inc()
       this.log.info(
-        { communityUri, userDid, chamber, roomId: chamberRoomId },
-        'Invited user to chamber',
+        { communityUri, userDid, chamber, drandRound: proof.round },
+        'Assigned user to chamber via verifiable sortition (drand)',
+      )
+    } catch (err: any) {
+      // Fallback to deterministic djb2Hash if drand is unreachable
+      chamber = assignChamberBalanced(userDid, communityUri, countA, countB)
+      this.metrics.sortitionFallbackTotal.inc()
+      this.log.warn(
+        { err: err.message, communityUri, userDid, chamber },
+        'drand failed, using fallback sortition',
       )
     }
 
-    // Set power level in chamber
-    let powerLevel = 0
-    if (roles.includes('owner')) powerLevel = 100
-    else if (roles.includes('moderator')) powerLevel = 50
-    await this.matrix.setPowerLevel(chamberRoomId, userMxid, powerLevel)
-
-    await this.chatMod.recordMembership(userDid, communityUri, chamberRoomId, {
-      isModerator: roles.includes('moderator') || roles.includes('owner'),
-      isDelegate: roles.includes('delegate'),
-      chamber: chamber ?? null,
-    })
+    await this.db.setChamberAssignment(communityUri, userDid, chamber)
+    return chamber
   }
 
   private async handleConstitutionUpdate(
@@ -515,101 +445,6 @@ export class FirehoseConsumer {
       choice,
       createdAt,
     )
-  }
-
-  private async handleObserverInvite(
-    communityUri: string,
-    space: any,
-    userMxid: string,
-  ): Promise<void> {
-    // Invite to main space
-    const mainMembers = await this.matrix.getRoomMembers(space.spaceId)
-    if (!mainMembers.some((m) => m.user_id === userMxid)) {
-      await this.matrix.inviteUser(space.spaceId, userMxid)
-    }
-
-    // Invite to both chamber rooms with read-only access (PL = -1 means no posting)
-    if (space.chamberA_RoomId) {
-      const chamberAMembers = await this.matrix.getRoomMembers(
-        space.chamberA_RoomId,
-      )
-      if (!chamberAMembers.some((m) => m.user_id === userMxid)) {
-        await this.matrix.inviteUser(space.chamberA_RoomId, userMxid)
-      }
-      // Read-only: can't send messages but can see them
-      await this.matrix.setPowerLevel(space.chamberA_RoomId, userMxid, -1)
-    }
-
-    if (space.chamberB_RoomId) {
-      const chamberBMembers = await this.matrix.getRoomMembers(
-        space.chamberB_RoomId,
-      )
-      if (!chamberBMembers.some((m) => m.user_id === userMxid)) {
-        await this.matrix.inviteUser(space.chamberB_RoomId, userMxid)
-      }
-      await this.matrix.setPowerLevel(space.chamberB_RoomId, userMxid, -1)
-    }
-
-    // Invite to observer room (full participation)
-    if (space.observerRoomId) {
-      const observerMembers = await this.matrix.getRoomMembers(
-        space.observerRoomId,
-      )
-      if (!observerMembers.some((m) => m.user_id === userMxid)) {
-        await this.matrix.inviteUser(space.observerRoomId, userMxid)
-      }
-      this.log.info(
-        { communityUri, userMxid },
-        'Invited observer to observer room',
-      )
-    }
-  }
-
-  private async kickFromAllRooms(
-    space: any,
-    userMxid: string,
-    reason: string,
-  ): Promise<void> {
-    const rooms = [
-      space.spaceId,
-      space.chamberA_RoomId,
-      space.chamberB_RoomId,
-      space.observerRoomId,
-    ].filter(Boolean)
-    for (const roomId of rooms) {
-      try {
-        await this.matrix.kickUser(
-          roomId,
-          userMxid,
-          `Membership state: ${reason}`,
-        )
-      } catch (err) {
-        // User might not be in this room, ignore
-      }
-    }
-    this.log.info(
-      { userMxid, state: reason },
-      'Removed user from all community rooms',
-    )
-  }
-
-  private async ensureUserExists(mxid: string, did: string): Promise<void> {
-    const exists = await this.matrix.userExists(mxid)
-    if (!exists) {
-      const password = randomUUID()
-      await this.matrix.createUser(mxid, did, password)
-      await this.db.setMxidForDid(did, mxid, password)
-      this.log.info({ did, mxid }, 'Created Matrix user')
-    }
-  }
-
-  private async ensureMxid(did: string): Promise<string> {
-    let mxid = await this.db.getMxidForDid(did)
-    if (!mxid) {
-      mxid = didToMxid(did, this.serverName)
-      await this.db.setMxidForDid(did, mxid, '')
-    }
-    return mxid
   }
 }
 

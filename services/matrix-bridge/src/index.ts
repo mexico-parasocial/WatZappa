@@ -7,6 +7,7 @@ import { FirehoseConsumer } from './firehose.js'
 import { HttpError } from './m8-auth.js'
 import { MatrixSyncPoller } from './matrix-sync.js'
 import { MatrixAdminClient } from './matrix.js'
+import { createMatrixProjection } from './matrix-projection.js'
 import { BridgeMetrics } from './metrics.js'
 import { ProposalEngine } from './proposals.js'
 import { RetryWorker } from './retry.js'
@@ -42,9 +43,10 @@ async function main() {
 
   const matrix = new MatrixAdminClient(config)
   const metrics = new BridgeMetrics()
-  const firehose = new FirehoseConsumer(config, db, matrix, metrics, log)
+  const projection = createMatrixProjection(config, db, matrix, log)
   const chatMod = new ChatModerationEngine(db, log)
   const proposals = new ProposalEngine(db, matrix, log, chatMod)
+  const firehose = new FirehoseConsumer(config, db, projection, proposals, chatMod, metrics, log)
   const retryWorker = new RetryWorker(db, matrix, metrics, log)
   const syncPoller = new MatrixSyncPoller(config, db, matrix, chatMod, log)
   const sortition = createSortitionEngine(db, log)
