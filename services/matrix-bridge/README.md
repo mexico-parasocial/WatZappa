@@ -109,7 +109,8 @@ pnpm run backfill --pds https://pds.para.social
 ## Architecture Notes
 
 - **Database backend:** `src/db/index.ts` selects PostgreSQL when `DATABASE_URL` is set, otherwise SQLite. All bridge code uses the async `IBridgeDatabase` interface so either backend is interchangeable.
-- **Governance logic:** Proposal, sortition, and deliberation logic currently lives inside this bridge. A future refactor should split these into a dedicated governance service so the bridge focuses purely on Matrix sync.
+- **Layering (2026-08-22 decomposition):** the bridge is organized by domain. `src/db/` splits the store interface (`stores/`), SQLite and PostgreSQL implementations into nine areas; `src/routes/` holds one file per route domain behind `routes/router.ts`; `src/sortition-runs.ts` is the assembly sortition engine; `src/push.ts` owns Expo delivery; `src/matrix-projection.ts` is the `MatrixProjectionPort` through which the governance side (`src/firehose.ts`) expresses room effects in DIDs — MXIDs never leave the projection. `index.ts` is wiring only.
+- **Governance logic:** the full two-service split (para-governance / para-matrix-provisioner) remains the CD-M2 target, blocked on OD-2/OD-6; the port seam above is the migration step that was unblocked.
 - **E2EE limitation:** Full Matrix E2EE is not supported in a React Native WebView because `matrix-js-sdk`'s Rust crypto requires WASM (see [matrix-js-sdk#4150](https://github.com/matrix-org/matrix-js-sdk/issues/4150)). E2EE remains opt-in until a native Matrix client or WASM-capable runtime is adopted.
 
 ## Development

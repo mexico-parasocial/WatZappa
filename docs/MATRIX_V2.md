@@ -815,5 +815,5 @@ regain the linkage it has spent this quarter removing.
 | Tuwunel spike | Not started |
 | Homeserver decision recorded | Open — OD-1 (deferred out of this quarter) |
 | Proof of possession | Done — CD-M4, `identitySignature.ts`, 16 tests |
-| Target for governance logic | Done — §7, CD-M2. Migration blocked on OD-2/OD-6; schema split and the `firehose.ts` interface extraction are unblocked. |
+| Target for governance logic | Done — §7, CD-M2. Migration blocked on OD-2/OD-6; **the `firehose.ts` interface extraction landed 2026-08-22** (`MatrixProjectionPort` in `matrix-projection.ts`; firehose is DID-only). Physical schema split still awaits OD-2/OD-6. |
 | LLM processing consent surface | Done — §7, CD-M3, 11 tests. Policy half of OD-3 still open; client-side prompt not built. |
