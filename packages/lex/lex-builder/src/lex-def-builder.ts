@@ -1,5 +1,9 @@
-import type { JSDocStructure, OptionalKind } from 'ts-morph'
-import { SourceFile, VariableDeclarationKind } from 'ts-morph'
+import {
+  type JSDocStructure,
+  type OptionalKind,
+  type SourceFile,
+  VariableDeclarationKind,
+} from 'ts-morph'
 import type {
   LexiconArray,
   LexiconArrayItems,
@@ -33,7 +37,7 @@ import {
   type ResolvedRef,
   getPublicIdentifiers,
 } from './ref-resolver.js'
-import { asNamespaceExport } from './ts-lang.js'
+import { asNamespaceExport, isSafeLocalIdentifier } from './ts-lang.js'
 
 /**
  * Configuration options for the {@link LexDefBuilder} class.
@@ -74,17 +78,8 @@ export class LexDefBuilder {
     this.refResolver = new RefResolver(doc, file, indexer, options)
   }
 
-  async build() {
-    this.file.addVariableStatement({
-      declarationKind: VariableDeclarationKind.Const,
-      declarations: [
-        { name: '$nsid', initializer: JSON.stringify(this.doc.id) },
-      ],
-    })
-
-    this.file.addExportDeclaration({
-      namedExports: [{ name: '$nsid' }],
-    })
+  async build(): Promise<void> {
+    this.addExportedString('$nsid', JSON.stringify(this.doc.id))
 
     const defs = Object.keys(this.doc.defs)
     if (defs.length) {
@@ -97,6 +92,49 @@ export class LexDefBuilder {
         await this.addDef(hash)
       }
     }
+  }
+
+  private addExportedString(
+    name: string,
+    initializer: string,
+    {
+      docs,
+    }: {
+      docs?: (OptionalKind<JSDocStructure> | string)[]
+    } = {},
+  ) {
+    if (
+      this.file
+        .getExportDeclarations()
+        .some((exp) => exp.getNamedExports().some((e) => e.getName() === name))
+    ) {
+      throw new Error(`Duplicate export ${name}`)
+    }
+
+    const identifier = isSafeLocalIdentifier(name)
+      ? name
+      : this.refResolver.nextSafeDefinitionIdentifier(name)
+
+    this.file.addVariableStatement({
+      declarationKind: VariableDeclarationKind.Const,
+      docs,
+      declarations: [{ name: identifier, initializer }],
+    })
+
+    this.file.addTypeAlias({
+      name: identifier,
+      type: `typeof ${identifier}`,
+      docs,
+    })
+
+    this.file.addExportDeclaration({
+      namedExports: [
+        {
+          name: identifier,
+          alias: name === identifier ? undefined : asNamespaceExport(name),
+        },
+      ],
+    })
   }
 
   private addUtils(definitions: Record<string, undefined | string>) {
@@ -271,9 +309,7 @@ export class LexDefBuilder {
       ),
     })
 
-    this.addUtils({
-      $lxm: '$nsid',
-    })
+    this.addExportedString('$lxm', '$nsid')
   }
 
   private async addQuery(hash: string, def: LexiconQuery) {
@@ -297,9 +333,7 @@ export class LexDefBuilder {
       ),
     })
 
-    this.addUtils({
-      $lxm: '$nsid',
-    })
+    this.addExportedString('$lxm', '$nsid')
   }
 
   private async addSubscription(hash: string, def: LexiconSubscription) {
@@ -323,9 +357,7 @@ export class LexDefBuilder {
       ),
     })
 
-    this.addUtils({
-      $lxm: '$nsid',
-    })
+    this.addExportedString('$lxm', '$nsid')
   }
 
   private async addRecord(hash: string, def: LexiconRecord) {
@@ -368,10 +400,15 @@ export class LexDefBuilder {
   }
 
   private async addToken(hash: string, def: LexiconToken) {
-    await this.addSchema(hash, def, {
+    const ref = await this.addSchema(hash, def, {
       schema: markPure(`l.token($nsid, ${JSON.stringify(hash)})`),
-      type: JSON.stringify(l.$type(this.doc.id, hash)),
       validationUtils: true,
+    })
+
+    const pub = getPublicIdentifiers(hash)
+
+    this.addExportedString(pub.typeName, markPure(`${ref.varName}.value`), {
+      docs: compileDocs(def.description),
     })
   }
 
@@ -461,8 +498,8 @@ export class LexDefBuilder {
     }
 
     if (hash === 'main' && objectUtils) {
+      this.addExportedString('$type', '$nsid')
       this.addUtils({
-        $type: `$nsid`,
         $isTypeOf: markPure(`${ref.varName}.isTypeOf.bind(${ref.varName})`),
         $build: markPure(`${ref.varName}.build.bind(${ref.varName})`),
       })
@@ -824,8 +861,6 @@ export class LexDefBuilder {
         return 'l.LanguageString'
       case 'record-key':
         return 'l.RecordKeyString'
-      case 'space-ref':
-        return 'l.SpaceRefString'
       default:
         throw new Error(`Unknown string format: ${def.format}`)
     }

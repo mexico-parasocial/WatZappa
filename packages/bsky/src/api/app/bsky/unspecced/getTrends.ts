@@ -1,6 +1,6 @@
 import { mapDefined, noUndefinedVals } from '@atproto/common'
 import type { Client, DidString } from '@atproto/lex'
-import { MethodNotImplementedError, type Server } from '@atproto/xrpc-server'
+import { type Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import {
   type HydrateCtx,
@@ -67,8 +67,7 @@ const skeleton: SkeletonFn<Context, Params, SkeletonState> = async (input) => {
   const topicsClient = (useIris && ctx.irisClient) || ctx.topicsClient
 
   if (!topicsClient) {
-    // Use 501 instead of 500 as these are not considered retry-able by clients
-    throw new MethodNotImplementedError('Topics agent not available')
+    return { trends: [] }
   }
 
   const skeleton = await topicsClient.call(

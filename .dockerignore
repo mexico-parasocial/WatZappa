@@ -3,3 +3,24 @@ node_modules
 .DS_Store
 .git
 Dockerfile
+
+# Agent tooling, not build input. Both .agents and .claude contain a `skills`
+# entry, and the service Dockerfiles use `COPY ./*.* ./` - a glob that matches
+# dot-directories, because Docker's `*` also matches the empty string. With
+# multiple sources COPY writes each directory's *contents* into the
+# destination, so both resolve to /app/skills and the build fails with
+# "cannot replace to directory /app/skills with file".
+.agents
+.claude
+
+# Secrets. `COPY ./*.* ./` would otherwise bake these into an image layer,
+# where they survive even if a later layer deletes them. Runtime config comes
+# from compose `environment:` blocks, so nothing needs them at build time.
+.env
+.env.bak
+
+# Build-context weight and editor/CI noise with no role in the image.
+backups
+.vscode
+.github
+.changeset

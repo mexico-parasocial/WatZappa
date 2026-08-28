@@ -1,10 +1,10 @@
 import { mapDefined } from '@atproto/common'
-import { AtUriString } from '@atproto/syntax'
-import { Server } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { DataPlaneClient } from '../../../../data-plane/index.js'
-import { FeedItem } from '../../../../hydration/feed.js'
-import {
+import type { AtUriString } from '@atproto/syntax'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import type { DataPlaneClient } from '../../../../data-plane/index.js'
+import type { FeedItem } from '../../../../hydration/feed.js'
+import type {
   HydrateCtxWithViewer,
   HydrationState,
   Hydrator,
@@ -12,8 +12,8 @@ import {
 import { parseString } from '../../../../hydration/util.js'
 import { app } from '../../../../lexicons/index.js'
 import { createPipeline } from '../../../../pipeline.js'
-import { Views } from '../../../../views/index.js'
-import { clearlyBadCursor, resHeaders } from '../../../util.js'
+import type { Views } from '../../../../views/index.js'
+import { clearlyBadCursor, fillPage, resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
   const getTimeline = createPipeline(
@@ -40,7 +40,13 @@ export default function (server: Server, ctx: AppContext) {
         ),
       })
 
-      const result = await getTimeline({ ...params, hydrateCtx }, ctx)
+      const result = await fillPage({
+        cursor: params.cursor,
+        limit: params.limit,
+        fetch: ({ cursor, limit }) =>
+          getTimeline({ ...params, cursor, limit, hydrateCtx }, ctx),
+        items: (r) => r.feed,
+      })
 
       const repoRev = await ctx.hydrator.actor.getRepoRevSafe(viewer)
 
@@ -83,7 +89,13 @@ const hydration = async (inputs: {
   skeleton: Skeleton
 }): Promise<HydrationState> => {
   const { ctx, params, skeleton } = inputs
-  return ctx.hydrator.hydrateFeedItems(skeleton.items, params.hydrateCtx)
+  return ctx.hydrator.hydrateFeedItems(skeleton.items, params.hydrateCtx, {
+    knownLikers:
+      !!params.hydrateCtx.viewer &&
+      params.hydrateCtx.features.checkGate(
+        params.hydrateCtx.features.Gate.KnownLikersFeedEnable,
+      ),
+  })
 }
 
 const noBlocksOrMutes = (inputs: {
@@ -97,8 +109,10 @@ const noBlocksOrMutes = (inputs: {
     return (
       !bam.authorBlocked &&
       !bam.authorMuted &&
+      !bam.authorQuotepostMuted &&
       !bam.originatorBlocked &&
       !bam.originatorMuted &&
+      !bam.originatorRepostMuted &&
       !bam.ancestorAuthorBlocked
     )
   })

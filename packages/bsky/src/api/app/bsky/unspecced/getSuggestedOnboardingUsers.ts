@@ -1,6 +1,6 @@
 import { dedupeStrs, mapDefined, noUndefinedVals } from '@atproto/common'
 import { Client, DidString } from '@atproto/lex'
-import { MethodNotImplementedError, Server } from '@atproto/xrpc-server'
+import { Server } from '@atproto/xrpc-server'
 import { AppContext } from '../../../../context.js'
 import {
   HydrateCtx,
@@ -58,7 +58,7 @@ export default function (server: Server, ctx: AppContext) {
 const skeleton = async (input: SkeletonFnInput<Context, Params>) => {
   const { params, ctx } = input
   if (!ctx.suggestionsClient) {
-    throw new MethodNotImplementedError('Suggestions agent not available')
+    return { dids: [] }
   }
 
   return ctx.suggestionsClient.call(

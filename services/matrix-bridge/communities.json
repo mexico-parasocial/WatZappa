@@ -1,0 +1,142 @@
+[
+  {
+    "uri": "at://did:plc:lp2w4eqqg5hret3kfy2ypz3b/com.para.community.board/3mtzkyjdhqy2w",
+    "name": "Presupuesto Participativo Centro",
+    "slug": "3mtzkyjdhqy2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:lp2w4eqqg5hret3kfy2ypz3b"
+  },
+  {
+    "uri": "at://did:plc:lp2w4eqqg5hret3kfy2ypz3b/com.para.community.board/3mtzkyihzos2w",
+    "name": "Morena",
+    "slug": "3mtzkyihzos2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:lp2w4eqqg5hret3kfy2ypz3b"
+  },
+  {
+    "uri": "at://did:plc:4mgiim4l5cekhdyks355guds/com.para.community.board/3mtzkyjdoly2w",
+    "name": "Movilidad Sostenible Norte",
+    "slug": "3mtzkyjdoly2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:4mgiim4l5cekhdyks355guds"
+  },
+  {
+    "uri": "at://did:plc:4mgiim4l5cekhdyks355guds/com.para.community.board/3mtzkyiibiz2w",
+    "name": "PAN",
+    "slug": "3mtzkyiibiz2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:4mgiim4l5cekhdyks355guds"
+  },
+  {
+    "uri": "at://did:plc:4k2mwkuai5dh4n633o4lhbkv/com.para.community.board/3mtzkyjduhq2w",
+    "name": "Educaci\u00f3n y Cultura Sur",
+    "slug": "3mtzkyjduhq2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:4k2mwkuai5dh4n633o4lhbkv"
+  },
+  {
+    "uri": "at://did:plc:4k2mwkuai5dh4n633o4lhbkv/com.para.community.board/3mtzkyiijda2w",
+    "name": "PRI",
+    "slug": "3mtzkyiijda2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:4k2mwkuai5dh4n633o4lhbkv"
+  },
+  {
+    "uri": "at://did:plc:p56xblaeokk5fg7c235n7ibj/com.para.community.board/3mtzkyje3cq2w",
+    "name": "Medio Ambiente y Clima",
+    "slug": "3mtzkyje3cq2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:p56xblaeokk5fg7c235n7ibj"
+  },
+  {
+    "uri": "at://did:plc:p56xblaeokk5fg7c235n7ibj/com.para.community.board/3mtzkyiir5i2w",
+    "name": "PVEM",
+    "slug": "3mtzkyiir5i2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:p56xblaeokk5fg7c235n7ibj"
+  },
+  {
+    "uri": "at://did:plc:omapghncjowxd3zjovyh7phg/com.para.community.board/3mtzkyjed4y2w",
+    "name": "Derechos Laborales",
+    "slug": "3mtzkyjed4y2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:omapghncjowxd3zjovyh7phg"
+  },
+  {
+    "uri": "at://did:plc:omapghncjowxd3zjovyh7phg/com.para.community.board/3mtzkyiiyxq2w",
+    "name": "PT",
+    "slug": "3mtzkyiiyxq2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:omapghncjowxd3zjovyh7phg"
+  },
+  {
+    "uri": "at://did:plc:azgt75rcebkdycxkt64ht3dt/com.para.community.board/3mtzkyjemvp2w",
+    "name": "Transparencia y Anticorrupci\u00f3n",
+    "slug": "3mtzkyjemvp2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:azgt75rcebkdycxkt64ht3dt"
+  },
+  {
+    "uri": "at://did:plc:azgt75rcebkdycxkt64ht3dt/com.para.community.board/3mtzkyijbr72w",
+    "name": "MC",
+    "slug": "3mtzkyijbr72w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:azgt75rcebkdycxkt64ht3dt"
+  },
+  {
+    "uri": "at://did:plc:q4jhopkmlgwhytrku7fo3yng/com.para.community.board/3mtzkyjeymw2w",
+    "name": "Seguridad Ciudadana",
+    "slug": "3mtzkyjeymw2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:q4jhopkmlgwhytrku7fo3yng"
+  },
+  {
+    "uri": "at://did:plc:q4jhopkmlgwhytrku7fo3yng/com.para.community.board/3mtzkyijyah2w",
+    "name": "Independientes",
+    "slug": "3mtzkyijyah2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:q4jhopkmlgwhytrku7fo3yng"
+  },
+  {
+    "uri": "at://did:plc:xb3ccehf23sygzdlx6ndrvvw/com.para.community.board/3mtzkyjfee52w",
+    "name": "Econom\u00eda y Desarrollo",
+    "slug": "3mtzkyjfee52w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:xb3ccehf23sygzdlx6ndrvvw"
+  },
+  {
+    "uri": "at://did:plc:fsjzr7mckstbhx5w5sufoyzt/com.para.community.board/3mtzkyjfn5n2w",
+    "name": "Derechos Humanos",
+    "slug": "3mtzkyjfn5n2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:fsjzr7mckstbhx5w5sufoyzt"
+  },
+  {
+    "uri": "at://did:plc:aj5ldkew6sbmkit63j3e3zlv/com.para.community.board/3mtzkyjfuxu2w",
+    "name": "Innovaci\u00f3n y Tecnolog\u00eda",
+    "slug": "3mtzkyjfuxu2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:aj5ldkew6sbmkit63j3e3zlv"
+  },
+  {
+    "uri": "at://did:plc:ljybaeeforcjpngr6wpoykv2/com.para.community.board/3mtzkyjg6ql2w",
+    "name": "Cultura Ind\u00edgena",
+    "slug": "3mtzkyjg6ql2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:ljybaeeforcjpngr6wpoykv2"
+  },
+  {
+    "uri": "at://did:plc:c2owvqd4k4fhq2kdgbkqowx5/com.para.community.board/3mtzkyjgfll2w",
+    "name": "Salud P\u00fablica",
+    "slug": "3mtzkyjgfll2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:c2owvqd4k4fhq2kdgbkqowx5"
+  },
+  {
+    "uri": "at://did:plc:4ptd34hi3mj66osjxjdifxpm/com.para.community.board/3mtzkyijkkp2w",
+    "name": "PRD",
+    "slug": "3mtzkyijkkp2w",
+    "chamberMode": "unicameral",
+    "creatorDid": "did:plc:4ptd34hi3mj66osjxjdifxpm"
+  }
+]

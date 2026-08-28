@@ -1,7 +1,7 @@
 import { mapDefined, noUndefinedVals } from '@atproto/common'
 import { Client } from '@atproto/lex'
 import { AtUri, AtUriString, DidString } from '@atproto/syntax'
-import { MethodNotImplementedError, Server } from '@atproto/xrpc-server'
+import { Server } from '@atproto/xrpc-server'
 import { AppContext } from '../../../../context.js'
 import {
   HydrateCtx,
@@ -59,8 +59,7 @@ const skeleton = async (
   const { params, ctx } = input
 
   if (!ctx.topicsClient) {
-    // Use 501 instead of 500 as these are not considered retry-able by clients
-    throw new MethodNotImplementedError('Topics agent not available')
+    return { starterPacks: [] }
   }
 
   const skeleton = await ctx.topicsClient.call(

@@ -1,15 +1,20 @@
 import assert from 'node:assert'
 import { dedupeStrs, mapDefined } from '@atproto/common'
 import { atUri } from '@atproto/lex'
-import { AtUri, AtUriString, DidString, UriString } from '@atproto/syntax'
-import { DataPlaneClient } from '../data-plane/client/index.js'
 import {
+  AtUri,
+  type AtUriString,
+  type DidString,
+  type UriString,
+} from '@atproto/syntax'
+import type { DataPlaneClient } from '../data-plane/client/index.js'
+import type {
   FeatureGatesClient,
   ScopedFeatureGatesClient,
 } from '../feature-gates/index.js'
 import { app, chat, com } from '../lexicons/index.js'
 import { hydrationLogger } from '../logger.js'
-import {
+import type {
   Bookmark as BookmarkLex,
   BookmarkInfo,
   Notification,
@@ -20,73 +25,73 @@ import {
   parseSiteStandardRecordKey,
 } from '../util/standard-site.js'
 import { uriToDid, uriToDid as didFromUri } from '../util/uris.js'
-import { ParsedLabelers } from '../util.js'
+import type { ParsedLabelers } from '../util.js'
 import {
-  ProfileRecord,
+  type ProfileRecord,
   isExternalEmbedType,
   isListRuleType,
   isRecordEmbedType,
   isRecordWithMediaType,
 } from '../views/types.js'
 import {
-  ActivitySubscriptionStates,
+  type ActivitySubscriptionStates,
   ActorHydrator,
-  Actors,
-  KnownFollowersStates,
+  type Actors,
+  type KnownFollowersStates,
   type KnownLikersStates,
-  ProfileAggs,
-  ProfileViewerState,
-  ProfileViewerStates,
+  type ProfileAggs,
+  type ProfileViewerState,
+  type ProfileViewerStates,
 } from './actor.js'
 import {
   ExternalHydrator,
-  SiteStandardDocuments,
-  SiteStandardPublications,
+  type SiteStandardDocuments,
+  type SiteStandardPublications,
 } from './external.js'
 import {
-  FeedGenAggs,
-  FeedGenViewerStates,
-  FeedGens,
+  type FeedGenAggs,
+  type FeedGenViewerStates,
+  type FeedGens,
   FeedHydrator,
-  FeedItem,
+  type FeedItem,
   type GetPostsHydrationOptions,
-  Likes,
-  Post,
-  PostAggs,
-  PostViewerStates,
-  Postgates,
-  Posts,
-  Reposts,
-  ThreadContexts,
-  ThreadRef,
-  Threadgates,
+  type Likes,
+  type Post,
+  type PostAggs,
+  type PostViewerStates,
+  type Postgates,
+  type Posts,
+  type Reposts,
+  type ThreadContexts,
+  type ThreadRef,
+  type Threadgates,
 } from './feed.js'
 import {
-  BlockEntry,
-  Follows,
+  type BlockEntry,
+  type Follows,
   GraphHydrator,
-  ListAggs,
-  ListItems,
-  ListMembershipState,
-  ListMembershipStates,
-  ListViewerStates,
-  Lists,
-  RelationshipPair,
-  StarterPackAggs,
-  StarterPacks,
-  Verifications,
+  type ListAggs,
+  type ListItems,
+  type ListMembershipState,
+  type ListMembershipStates,
+  type ListViewerStates,
+  type Lists,
+  type RelationshipPair,
+  type StarterPackAggs,
+  type StarterPacks,
+  type Verifications,
 } from './graph.js'
 import {
   LabelHydrator,
-  LabelerAggs,
-  LabelerViewerStates,
-  Labelers,
+  type LabelerAggs,
+  type LabelerViewerStates,
+  type Labelers,
   Labels,
 } from './label.js'
 import {
   HydrationMap,
-  ItemRef,
-  RecordInfo,
+  type ItemRef,
+  type RecordInfo,
   getStarterPackUriFromFollow,
   mergeManyMaps,
   mergeMaps,
@@ -171,7 +176,6 @@ export type HydrationState = {
 
 type HydrateKnownLikersOptions = {
   subjectUris: AtUriString[]
-  limit: number
 }
 
 type HydratePostsOptions = Pick<
@@ -179,6 +183,16 @@ type HydratePostsOptions = Pick<
   'processDynamicTagsForView'
 > & {
   knownLikers?: HydrateKnownLikersOptions
+}
+
+type HydrateFeedItemsOptions = {
+  /**
+   * Hydrate known likers for the root post of each feed item, which is the
+   * post itself when it does not reply to anything. Feed items only carry the
+   * post URI, so the roots can only be resolved once the post records are
+   * fetched, which is why this is a flag rather than a list of subjects.
+   */
+  knownLikers?: boolean
 }
 
 export type PostBlock = { embed: boolean; parent: boolean; root: boolean }
@@ -860,15 +874,26 @@ export class Hydrator {
   async hydrateFeedItems(
     items: FeedItem[],
     ctx: HydrateCtx,
+    options: HydrateFeedItemsOptions = {},
   ): Promise<HydrationState> {
     // get posts, collect reply refs
     const posts = await this.feed.getPosts(
       items.map((item) => item.post.uri),
       ctx.includeTakedowns,
+      undefined,
+      undefined,
+      {
+        includeOpThreadMetadata: ctx.features.checkGate(
+          ctx.features.Gate.OpThreadMetadataEnable,
+        ),
+      },
     )
     const rootUris: AtUriString[] = []
     const parentUris: AtUriString[] = []
     const postAndReplyRefs: ItemRef[] = []
+    // The feed renders the root post above the feed item, so known likers are
+    // hydrated for the root rather than for the feed item itself.
+    const knownLikerSubjectUris: AtUriString[] = []
     posts.forEach((post, uri) => {
       if (!post) return
       postAndReplyRefs.push({ uri, cid: post.cid })
@@ -876,6 +901,9 @@ export class Hydrator {
         rootUris.push(post.record.reply.root.uri)
         parentUris.push(post.record.reply.parent.uri)
         postAndReplyRefs.push(post.record.reply.root, post.record.reply.parent)
+        knownLikerSubjectUris.push(post.record.reply.root.uri)
+      } else {
+        knownLikerSubjectUris.push(uri)
       }
     })
     // get replies, collect reply parent authors
@@ -892,9 +920,18 @@ export class Hydrator {
     // hydrate state for all posts, reposts, authors of reposts + reply parent authors
     const repostUris = mapDefined(items, (item) => item.repost?.uri)
     const [postState, repostProfileState, reposts] = await Promise.all([
-      this.hydratePosts(postAndReplyRefs, ctx, {
-        posts: posts.merge(replies), // avoids refetches of posts
-      }),
+      this.hydratePosts(
+        postAndReplyRefs,
+        ctx,
+        {
+          posts: replies.merge(posts), // avoids refetches while preserving feed-item metadata
+        },
+        {
+          knownLikers: options.knownLikers
+            ? { subjectUris: dedupeStrs(knownLikerSubjectUris) }
+            : undefined,
+        },
+      ),
       this.hydrateProfiles(
         [...repostUris.map(didFromUri), ...replyParentAuthors],
         ctx,
@@ -1006,7 +1043,7 @@ export class Hydrator {
     options: HydrateKnownLikersOptions,
     ctx: HydrateCtx,
   ): Promise<KnownLikersStates | undefined> {
-    const { subjectUris, limit } = options
+    const { subjectUris } = options
     if (!ctx.viewer || subjectUris.length === 0) return undefined
 
     // Fail open.
@@ -1015,7 +1052,7 @@ export class Hydrator {
         {
           actorDid: ctx.viewer,
           subjectUris,
-          limit,
+          limit: 3,
         },
         { signal: AbortSignal.timeout(100) },
       )
@@ -1143,17 +1180,17 @@ export class Hydrator {
     const listCreatorMemberPairs = [...listMembersByList.entries()].flatMap(
       ([listUri, members]) => {
         const creator = didFromUri(listUri)
-        return members.listitems.map(
-          (li): RelationshipPair => [creator, li.did as DidString],
-        )
+        return members.listitems.map((li): RelationshipPair => [
+          creator,
+          li.did as DidString,
+        ])
       },
     )
-    const blocks = await this.hydrateBidirectionalBlocks(
-      pairsToMap(listCreatorMemberPairs),
-      ctx,
-    )
-    // sample top list items per starter pack based on their follows
-    const listMemberAggs = await this.actor.getProfileAggregates(listMemberDids)
+    const [blocks, listMemberAggs] = await Promise.all([
+      this.hydrateBidirectionalBlocks(pairsToMap(listCreatorMemberPairs), ctx),
+      // sample top list items per starter pack based on their follows
+      this.actor.getProfileAggregates(listMemberDids),
+    ])
     const listItemUris: AtUriString[] = []
     uris.forEach((uri) => {
       const sp = starterPackState.starterPacks?.get(uri)

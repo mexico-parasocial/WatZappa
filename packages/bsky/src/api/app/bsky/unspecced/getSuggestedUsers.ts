@@ -1,6 +1,6 @@
 import { dedupeStrs, mapDefined, noUndefinedVals } from '@atproto/common'
 import { Client, DidString } from '@atproto/lex'
-import { MethodNotImplementedError, Server } from '@atproto/xrpc-server'
+import { Server } from '@atproto/xrpc-server'
 import { AppContext } from '../../../../context.js'
 import {
   HydrateCtx,
@@ -67,7 +67,7 @@ const skeletonFromDiscover = async (
 ): Promise<SkeletonState> => {
   const { params, ctx } = input
   if (!ctx.suggestionsClient) {
-    throw new MethodNotImplementedError('Suggestions agent not available')
+    return { dids: [] }
   }
 
   return ctx.suggestionsClient.call(
@@ -89,8 +89,7 @@ const skeletonFromTopics = async (
   const { params, ctx } = input
 
   if (!ctx.topicsClient) {
-    // Use 501 instead of 500 as these are not considered retry-able by clients
-    throw new MethodNotImplementedError('Topics agent not available')
+    return { dids: [] }
   }
 
   return ctx.topicsClient.call(
