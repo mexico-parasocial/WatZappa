@@ -67,7 +67,65 @@ const skeleton: SkeletonFn<Context, Params, SkeletonState> = async (input) => {
   const topicsClient = (useIris && ctx.irisClient) || ctx.topicsClient
 
   if (!topicsClient) {
-    return { trends: [] }
+    return {
+      trends: [
+        {
+          topic: 'para-civic-governance',
+          displayName: 'Community Civic Trees',
+          description:
+            'Structured deliberation and consensus-building through civic trees, contributions, and sortition',
+          link: 'https://para.mx',
+          startedAt: new Date().toISOString(),
+          postCount: 0,
+          category: 'para',
+          dids: [],
+        },
+        {
+          topic: 'para-delegated-democracy',
+          displayName: 'Delegated Democracy',
+          description:
+            'Civic delegation, vote delegation, and community governance via PARA',
+          link: 'https://para.mx',
+          startedAt: new Date().toISOString(),
+          postCount: 0,
+          category: 'para',
+          dids: [],
+        },
+        {
+          topic: 'para-identity',
+          displayName: 'PARA Identity',
+          description:
+            'Ristretto255 keys, derived MXIDs, and zero-knowledge identity on AT Protocol',
+          link: 'https://para.mx',
+          startedAt: new Date().toISOString(),
+          postCount: 0,
+          category: 'para',
+          dids: [],
+        },
+        {
+          topic: 'para-spaces',
+          displayName: 'AT Protocol Spaces',
+          description:
+            'Permissioned data spaces, DPoP credentials, and repo sync on AT Protocol',
+          link: 'https://para.mx',
+          startedAt: new Date().toISOString(),
+          postCount: 0,
+          category: 'para',
+          dids: [],
+        },
+        {
+          topic: 'para-bridge',
+          displayName: 'Matrix Bridge',
+          description:
+            'E2EE communication bridge between AT Protocol identity and Matrix',
+          link: 'https://para.mx',
+          startedAt: new Date().toISOString(),
+          postCount: 0,
+          category: 'para',
+          dids: [],
+        },
+      ],
+    }
   }
 
   const skeleton = await topicsClient.call(
