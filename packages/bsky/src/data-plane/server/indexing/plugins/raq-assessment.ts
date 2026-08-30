@@ -1,39 +1,21 @@
-// @ts-nocheck
 import { Selectable } from 'kysely'
-import { CID } from 'multiformats/cid'
+import { Cid } from '@atproto/lex'
 import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
+import { com } from '../../../../lexicons.js'
 import { BackgroundQueue } from '../../background.js'
 import { Database } from '../../db/index.js'
 import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
 import { RecordProcessor } from '../processor.js'
 
-interface AssessmentRecord {
-  answers?: { questionId: string; value: number }[]
-  results?: unknown
-  compass?: unknown
-  ideology?: unknown
-  secondaryIdeology?: unknown
-  partyMatches?: unknown
-  isPublic?: boolean
-  completedAt: string
-  version?: string
-  createdAt: string
-}
-
 type Assessment = Selectable<DatabaseSchemaType['raq_assessment']>
-type IndexedAssessment = {
-  record: Assessment
-}
-
-const lexId = 'com.para.raq.assessment'
 
 const insertFn = async (
   db: DatabaseSchema,
   uri: AtUri,
-  cid: CID,
-  obj: AssessmentRecord,
+  cid: Cid,
+  obj: com.para.raq.assessment.Main,
   timestamp: string,
-): Promise<IndexedAssessment | null> => {
+): Promise<Assessment | null> => {
   const inserted = await db
     .insertInto('raq_assessment')
     .values({
@@ -52,12 +34,14 @@ const insertFn = async (
         : null,
       isPublic: obj.isPublic ?? false,
       completedAt: normalizeDatetimeAlways(obj.completedAt),
+      // The assessment lexicon carries no createdAt of its own — completedAt
+      // is the record's timestamp, so it also orders the row (sortAt).
+      createdAt: normalizeDatetimeAlways(obj.completedAt),
       version: obj.version || null,
-      createdAt: normalizeDatetimeAlways(obj.createdAt),
       indexedAt: timestamp,
     })
     .onConflict((oc) =>
-      oc.doUpdateSet({
+      oc.column('uri').doUpdateSet({
         cid: cid.toString(),
         answersJson: obj.answers ? JSON.stringify(obj.answers) : null,
         resultsJson: obj.results ? JSON.stringify(obj.results) : null,
@@ -71,16 +55,15 @@ const insertFn = async (
           : null,
         isPublic: obj.isPublic ?? false,
         completedAt: normalizeDatetimeAlways(obj.completedAt),
+        createdAt: normalizeDatetimeAlways(obj.completedAt),
         version: obj.version || null,
-        createdAt: normalizeDatetimeAlways(obj.createdAt),
         indexedAt: timestamp,
       }),
     )
     .returningAll()
     .executeTakeFirst()
 
-  if (!inserted) return null
-  return { record: inserted }
+  return inserted ?? null
 }
 
 const findDuplicate = async (): Promise<AtUri | null> => {
@@ -90,35 +73,29 @@ const findDuplicate = async (): Promise<AtUri | null> => {
 const deleteFn = async (
   db: DatabaseSchema,
   uri: AtUri,
-): Promise<IndexedAssessment | null> => {
+): Promise<Assessment | null> => {
   const deleted = await db
     .deleteFrom('raq_assessment')
     .where('uri', '=', uri.toString())
     .returningAll()
     .executeTakeFirst()
 
-  return deleted ? { record: deleted } : null
+  return deleted ? deleted : null
 }
 
 const notifsForInsert = () => {
   return []
 }
 
-const notifsForDelete = (
-  deleted: IndexedAssessment,
-  _replacedBy: IndexedAssessment | null,
-) => {
-  return { notifs: [], toDelete: [deleted.record.uri] }
+const notifsForDelete = (deleted: Assessment) => {
+  return { notifs: [], toDelete: [deleted.uri] }
 }
 
-export type PluginType = RecordProcessor<AssessmentRecord, IndexedAssessment>
+export type PluginType = ReturnType<typeof makePlugin>
 
-export const makePlugin = (
-  db: Database,
-  background: BackgroundQueue,
-): PluginType => {
+export const makePlugin = (db: Database, background: BackgroundQueue) => {
   return new RecordProcessor(db, background, {
-    lexId,
+    schema: com.para.raq.assessment.main,
     insertFn,
     findDuplicate,
     deleteFn,

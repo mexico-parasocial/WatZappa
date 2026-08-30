@@ -48,14 +48,22 @@ const PARA_CIVIC_SUBTAGS: Record<string, string[]> = {
   ],
 }
 
-type Compass = {x: number; y: number; ninth?: string} | null
+type Compass = { x: number; y: number; ninth?: string } | null
 
-const parseCompass = (raw: string | null | undefined): Compass => {
+// The column is jsonb: the driver hands back an already-parsed value (a
+// string only if it was stored as a JSON string). Handle both.
+const parseCompass = (raw: unknown): Compass => {
   if (!raw) return null
   try {
-    const c = JSON.parse(raw)
-    if (c && typeof c.x === 'number' && typeof c.y === 'number') {
-      return {x: c.x, y: c.y, ninth: c.ninth}
+    const c = typeof raw === 'string' ? JSON.parse(raw) : raw
+    if (
+      c &&
+      typeof c === 'object' &&
+      typeof (c as { x?: unknown }).x === 'number' &&
+      typeof (c as { y?: unknown }).y === 'number'
+    ) {
+      const { x, y, ninth } = c as { x: number; y: number; ninth?: string }
+      return { x, y, ninth }
     }
   } catch {}
   return null
@@ -119,7 +127,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     }
 
     // 4. Topical candidate set
-    const topicalCandidates: {did: string; postCount: number}[] = []
+    const topicalCandidates: { did: string; postCount: number }[] = []
     if (subTags.length > 0) {
       const thirtyDaysAgo = new Date(
         Date.now() - 30 * 24 * 60 * 60 * 1000,
@@ -136,12 +144,12 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         .limit(200)
         .execute()
       for (const r of rows) {
-        topicalCandidates.push({did: r.did, postCount: Number(r.postCount)})
+        topicalCandidates.push({ did: r.did, postCount: Number(r.postCount) })
       }
     }
 
     // 5. Discover-by-compass candidates
-    const compassCandidates: {did: string; compassJson: string | null}[] = []
+    const compassCandidates: { did: string; compassJson: unknown }[] = []
     if (subTags.length === 0 || topicalCandidates.length < limit) {
       const rows = await db.db
         .selectFrom('raq_assessment as a')
@@ -208,41 +216,47 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     for (const did of allDids) {
       if (excludeSet.has(did)) continue
       const postCount =
-        topicalCandidates.find(c => c.did === did)?.postCount ?? 0
+        topicalCandidates.find((c) => c.did === did)?.postCount ?? 0
       const overlap = communityOverlapByDid.get(did) ?? 0
       const followers = followersByDid.get(did) ?? 0
-      const distance = compassDistance(viewerCompass, compassByDid.get(did) ?? null)
+      const distance = compassDistance(
+        viewerCompass,
+        compassByDid.get(did) ?? null,
+      )
       const compassTerm = 1 - distance
       const score =
-        3 * postCount + 2 * overlap + 1 * compassTerm + 0.5 * Math.log1p(followers)
+        3 * postCount +
+        2 * overlap +
+        1 * compassTerm +
+        0.5 * Math.log1p(followers)
       if (score <= 0 && subTags.length > 0) continue
-      scored.push({did, postCount, overlap, followers, compassTerm, score})
+      scored.push({ did, postCount, overlap, followers, compassTerm, score })
     }
 
     scored.sort((a, b) => b.score - a.score)
     const top = scored.slice(0, limit)
 
     if (top.length === 0) {
-      return {candidates: [], cursor: ''}
+      return { candidates: [], cursor: '' }
     }
 
     // 8. Fetch follower counts (single batched query)
-    const dids = top.map(c => c.did)
+    const dids = top.map((c) => c.did)
     const profileRows = await db.db
       .selectFrom('profile_agg')
       .where('did', 'in', dids)
       .select(['did', 'followersCount'])
       .execute()
     const followersByDid2 = new Map(
-      profileRows.map(r => [r.did, Number(r.followersCount)]),
+      profileRows.map((r) => [r.did, Number(r.followersCount)]),
     )
 
-    const candidates = top.map(c => ({
+    const candidates = top.map((c) => ({
       did: c.did,
       followersCount: followersByDid2.get(c.did) ?? c.followers,
       score: c.score,
     }))
 
-    return {candidates, cursor: ''}
+    return { candidates, cursor: '' }
   },
 })

@@ -14,7 +14,6 @@ export default function (server: Server, ctx: AppContext) {
       const res = await ctx.dataplane.getParaCommunityAlignment({
         community: params.community,
         limit: params.limit,
-        cursor: params.cursor ?? '',
         viewerDid: viewer ?? '',
       })
 

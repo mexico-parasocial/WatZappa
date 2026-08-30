@@ -47,8 +47,13 @@ export default function (server: Server, ctx: AppContext) {
               description: '',
               matchPercent: 0,
             },
-            secondaryIdeology: assessment.secondaryIdeology,
-            partyMatches: assessment.partyMatches,
+            // Optional refs must be omitted (not null) when absent.
+            ...(assessment.secondaryIdeology
+              ? { secondaryIdeology: assessment.secondaryIdeology }
+              : {}),
+            ...(assessment.partyMatches
+              ? { partyMatches: assessment.partyMatches }
+              : {}),
             completedAt: assessment.completedAt,
           },
         },

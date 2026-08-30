@@ -1,32 +1,21 @@
-// @ts-nocheck
 import { Selectable } from 'kysely'
-import { CID } from 'multiformats/cid'
+import { Cid } from '@atproto/lex'
 import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
+import { com } from '../../../../lexicons.js'
 import { BackgroundQueue } from '../../background.js'
 import { Database } from '../../db/index.js'
 import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
 import { RecordProcessor } from '../processor.js'
 
-interface ProposalAnswerRecord {
-  subject: string
-  value: number
-  createdAt: string
-}
-
 type ProposalAnswer = Selectable<DatabaseSchemaType['raq_proposal_answer']>
-type IndexedProposalAnswer = {
-  record: ProposalAnswer
-}
-
-const lexId = 'com.para.raq.proposalAnswer'
 
 const insertFn = async (
   db: DatabaseSchema,
   uri: AtUri,
-  cid: CID,
-  obj: ProposalAnswerRecord,
+  cid: Cid,
+  obj: com.para.raq.proposalAnswer.Main,
   timestamp: string,
-): Promise<IndexedProposalAnswer | null> => {
+): Promise<ProposalAnswer | null> => {
   const inserted = await db
     .insertInto('raq_proposal_answer')
     .values({
@@ -39,7 +28,7 @@ const insertFn = async (
       indexedAt: timestamp,
     })
     .onConflict((oc) =>
-      oc.doUpdateSet({
+      oc.column('uri').doUpdateSet({
         cid: cid.toString(),
         subject: obj.subject,
         value: obj.value,
@@ -50,8 +39,7 @@ const insertFn = async (
     .returningAll()
     .executeTakeFirst()
 
-  if (!inserted) return null
-  return { record: inserted }
+  return inserted ?? null
 }
 
 const findDuplicate = async (): Promise<AtUri | null> => {
@@ -61,38 +49,29 @@ const findDuplicate = async (): Promise<AtUri | null> => {
 const deleteFn = async (
   db: DatabaseSchema,
   uri: AtUri,
-): Promise<IndexedProposalAnswer | null> => {
+): Promise<ProposalAnswer | null> => {
   const deleted = await db
     .deleteFrom('raq_proposal_answer')
     .where('uri', '=', uri.toString())
     .returningAll()
     .executeTakeFirst()
 
-  return deleted ? { record: deleted } : null
+  return deleted ?? null
 }
 
 const notifsForInsert = () => {
   return []
 }
 
-const notifsForDelete = (
-  deleted: IndexedProposalAnswer,
-  _replacedBy: IndexedProposalAnswer | null,
-) => {
-  return { notifs: [], toDelete: [deleted.record.uri] }
+const notifsForDelete = (deleted: ProposalAnswer) => {
+  return { notifs: [], toDelete: [deleted.uri] }
 }
 
-export type PluginType = RecordProcessor<
-  ProposalAnswerRecord,
-  IndexedProposalAnswer
->
+export type PluginType = ReturnType<typeof makePlugin>
 
-export const makePlugin = (
-  db: Database,
-  background: BackgroundQueue,
-): PluginType => {
+export const makePlugin = (db: Database, background: BackgroundQueue) => {
   return new RecordProcessor(db, background, {
-    lexId,
+    schema: com.para.raq.proposalAnswer.main,
     insertFn,
     findDuplicate,
     deleteFn,

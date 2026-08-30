@@ -1,0 +1,5 @@
+---
+'@atproto/bsky': patch
+---
+
+Fix the RAQ indexing and query pipeline. `getParaProposals` crashed with a serialization error whenever a proposal had votes or answers (Postgres `sum`/`count`/`avg` return strings, which protobuf `int32` fields reject) and ignored its cursor, so pagination returned the same page forever; both are fixed and community matching now accepts the same identifier forms as `getParaCommunityAlignment`. Assessments no longer index with epoch timestamps (the lexicon has no `createdAt`; it now falls back to `completedAt`). Vote dedup no longer rewrites the shared row's primary key on a second identity's vote — which orphaned record rows and lost votes on delete — and a shared vote is handed to a surviving record instead of being deleted. The five RAQ plugins (and `openQuestionVote`) now use generated lexicon types with schema validation instead of `@ts-nocheck` and unvalidated input, which also exposed and fixed compass-based suggestions silently matching nobody (`parseCompass` JSON-parsed values the driver had already parsed).

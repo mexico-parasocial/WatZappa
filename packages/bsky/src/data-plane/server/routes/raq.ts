@@ -3,12 +3,58 @@ import { sql } from 'kysely'
 import { Service } from '../../../proto/bsky_connect.js'
 import { Database } from '../db/index.js'
 
+// Normalize a community name/identifier the way board slugs are formed:
+// lowercase, runs of non-alphanumerics collapsed to hyphens, edges trimmed.
+function normalizeCommunityId(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+/**
+ * Resolve a community board from any identifier a client might send: its uri,
+ * slug, slug-normalized form, or slug-normalized name. Shared by the
+ * community-alignment and proposals endpoints so both accept the same inputs.
+ */
+async function findCommunityBoard(
+  db: Database,
+  communityId: string,
+): Promise<
+  { uri: string; slug: string | null; name: string | null } | undefined
+> {
+  const normalized = normalizeCommunityId(communityId)
+  return db.db
+    .selectFrom('para_community_board as board')
+    .where(
+      sql<boolean>`(
+        "board"."uri" = ${communityId}
+        or "board"."slug" = ${communityId}
+        or "board"."slug" = ${normalized}
+        or regexp_replace(lower(coalesce("board"."name", '')), '[^a-z0-9]+', '-', 'g') = ${normalized}
+      )`,
+    )
+    .select(['board.uri', 'board.slug', 'board.name'])
+    .executeTakeFirst()
+}
+
+// The SQL mirror of normalizeCommunityId, for matching free-text values
+// (e.g. a proposal's targetCommunity) against normalized identifiers.
+const normalizedCommunitySql = sql`trim(both '-' from regexp_replace(lower(coalesce("p"."targetCommunity", '')), '[^a-z0-9]+', '-', 'g'))`
+
 export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   async getParaUserAlignment(req) {
-    const row = await db.db
+    // The viewer may always read their own assessment; everyone else only
+    // sees public ones.
+    const isSelf = !!req.viewerDid && req.viewerDid === req.did
+
+    let query = db.db
       .selectFrom('raq_assessment')
       .where('creator', '=', req.did)
-      .where('isPublic', '=', true)
+    if (!isSelf) {
+      query = query.where('isPublic', '=', true)
+    }
+    const row = await query
       .orderBy('completedAt', 'desc')
       .selectAll()
       .executeTakeFirst()
@@ -30,6 +76,8 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   },
 
   async getParaCommunityAlignment(req) {
+    const limit = Math.min(Math.max(req.limit || 20, 1), 100)
+
     const communityId = req.community?.trim()
     if (!communityId) {
       return {
@@ -40,23 +88,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       }
     }
 
-    const normalizedCommunity = communityId
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-
-    const board = await db.db
-      .selectFrom('para_community_board as board')
-      .where(
-        sql<boolean>`(
-          "board"."uri" = ${communityId}
-          or "board"."slug" = ${communityId}
-          or "board"."slug" = ${normalizedCommunity}
-          or regexp_replace(lower(coalesce("board"."name", '')), '[^a-z0-9]+', '-', 'g') = ${normalizedCommunity}
-        )`,
-      )
-      .select(['board.uri', 'board.slug'])
-      .executeTakeFirst()
+    const board = await findCommunityBoard(db, communityId)
 
     if (!board) {
       return {
@@ -84,7 +116,8 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       }
     }
 
-    // Use a window function to get the latest assessment per member
+    // Use a window function to get the latest assessment per member, newest
+    // first, bounded by the requested limit.
     const assessments = await db.db
       .selectFrom('raq_assessment')
       .where('creator', 'in', dids)
@@ -97,7 +130,12 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       )
       .execute()
 
-    const latestAssessments = assessments.filter((a) => a.rn === 1)
+    const latestAssessments = assessments
+      .filter((a) => a.rn === 1)
+      .sort((a, b) =>
+        String(b.completedAt ?? '').localeCompare(String(a.completedAt ?? '')),
+      )
+      .slice(0, limit)
 
     if (latestAssessments.length === 0) {
       return {
@@ -197,8 +235,9 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   },
 
   async getParaProposals(req) {
-    const limit = Math.min(req.limit || 50, 100)
+    const limit = Math.min(Math.max(req.limit || 50, 1), 100)
     const viewerDid = req.viewerDid || ''
+    const cursor = req.cursor || ''
 
     let query = db.db
       .selectFrom('raq_proposal as p')
@@ -206,10 +245,28 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       .orderBy('p.sortAt', 'desc')
       .limit(limit)
 
+    if (cursor) {
+      query = query.where('p.sortAt', '<', cursor)
+    }
+
     if (req.community) {
-      const normalizedCommunity = req.community.trim().toLowerCase()
+      const communityId = req.community.trim()
+      // Match proposals against every form the community's name takes — the
+      // raw input, its normalized form, and the board's uri/slug/name — so a
+      // proposal stored as "Jalisco, MX" is found by "jalisco" the same way
+      // findCommunityBoard resolves boards.
+      const candidates = new Set<string>([
+        communityId.toLowerCase(),
+        normalizeCommunityId(communityId),
+      ])
+      const board = await findCommunityBoard(db, communityId)
+      if (board) {
+        candidates.add(board.uri.toLowerCase())
+        if (board.slug) candidates.add(board.slug.toLowerCase())
+        if (board.name) candidates.add(board.name.toLowerCase())
+      }
       query = query.where(
-        sql<boolean>`coalesce(lower("p"."targetCommunity"), '') = ${normalizedCommunity}`,
+        sql<boolean>`${normalizedCommunitySql} = any(${[...candidates].map(normalizeCommunityId)})`,
       )
     }
 
@@ -232,10 +289,15 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       ])
       .execute()
 
+    // Postgres sum()/count()/avg() return strings; coerce before these reach
+    // the protobuf int32 fields, which reject non-numbers.
     const voteMap = new Map(
       voteRows.map((v) => [
         v.subject,
-        { upvotes: v.upvotes || 0, downvotes: v.downvotes || 0 },
+        {
+          upvotes: Number(v.upvotes) || 0,
+          downvotes: Number(v.downvotes) || 0,
+        },
       ]),
     )
 
@@ -255,8 +317,8 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       answerRows.map((a) => [
         a.subject,
         {
-          answerCount: a.answerCount || 0,
-          answerAverage: a.answerAverage || 0,
+          answerCount: Number(a.answerCount) || 0,
+          answerAverage: Number(a.answerAverage) || 0,
         },
       ]),
     )
@@ -314,10 +376,10 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       }
     })
 
-    const cursor =
+    const nextCursor =
       proposals.length === limit ? proposals[proposals.length - 1].sortAt : ''
 
-    return { proposals: views, cursor }
+    return { proposals: views, cursor: nextCursor }
   },
 })
 

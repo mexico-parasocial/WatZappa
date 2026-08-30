@@ -1,8 +1,17 @@
 // @ts-nocheck
-import { SeedClient, TestNetwork, usersSeed, writeParaFixture } from '@atproto/dev-env'
+import {
+  SeedClient,
+  TestNetwork,
+  usersSeed,
+  writeParaFixture,
+} from '@atproto/dev-env'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
+
+// The test schema persists between runs; the nullifier must be unique per run
+// or earlier runs' rows poison the dedup assertions.
+const runId = Date.now().toString(36)
 
 maybeDescribe('open question vote indexing', () => {
   let network: TestNetwork
@@ -24,8 +33,10 @@ maybeDescribe('open question vote indexing', () => {
   })
 
   it('deduplicates open question votes by m8 vote nullifier', async () => {
-    const subject = 'at://did:example:open-question/reply'
-    const voteNullifier = 'm8-open-question-shared-person'
+    // A well-formed at-uri authority is required: the indexer now validates
+    // records against the lexicon, and did:example is not a valid atproto DID.
+    const subject = `at://${sc.dids.alice}/app.bsky.feed.post/open-question-reply`
+    const voteNullifier = `m8-open-question-shared-person-${runId}`
 
     await writeParaFixture(network, async () => {
       return createOpenQuestionVoteRecord(sc, sc.dids.alice, {
