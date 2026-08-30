@@ -72,6 +72,7 @@ export interface ViewerState {
   replyDisabled?: boolean
   embeddingDisabled?: boolean
   pinned?: boolean
+  knownLikers?: KnownLikers
 }
 
 const hashViewerState = 'viewerState'
@@ -82,6 +83,23 @@ export function isViewerState<V>(v: V) {
 
 export function validateViewerState<V>(v: V) {
   return validate<ViewerState & V>(v, id, hashViewerState)
+}
+
+/** The post's likers whom you also follow */
+export interface KnownLikers {
+  $type?: 'app.bsky.feed.defs#knownLikers'
+  count: number
+  actors: AppBskyActorDefs.ProfileViewBasic[]
+}
+
+const hashKnownLikers = 'knownLikers'
+
+export function isKnownLikers<V>(v: V) {
+  return is$typed(v, id, hashKnownLikers)
+}
+
+export function validateKnownLikers<V>(v: V) {
+  return validate<KnownLikers & V>(v, id, hashKnownLikers)
 }
 
 /** Metadata about this post within the context of the thread it is in. */

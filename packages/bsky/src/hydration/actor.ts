@@ -12,6 +12,7 @@ import {
 import { DataPlaneClient } from '../data-plane/client/index.js'
 import { app, chat, com } from '../lexicons/index.js'
 import { ActivitySubscription, VerificationMeta } from '../proto/bsky_pb.js'
+import { events } from '../telemetry/events.js'
 import {
   ChatDeclarationRecord,
   GermDeclarationRecord,
@@ -61,6 +62,8 @@ export type Actor = {
   }
   germ?: RecordInfo<GermDeclarationRecord>
   allowActivitySubscriptionsFrom: AllowActivitySubscriptions
+  accountModerationTags: Set<string>
+  profileModerationTags: Set<string>
   /**
    * Debug information for internal development
    */
@@ -101,6 +104,8 @@ export type Statuses = HydrationMap<AtUriString, Status>
 export type ProfileViewerState = {
   did: DidString
   muted?: boolean
+  mutedOnlyReposts?: boolean
+  mutedOnlyQuoteposts?: boolean
   mutedByList?: AtUriString
   blockedBy?: AtUriString
   blocking?: AtUriString
@@ -328,6 +333,8 @@ export class ActorHydrator {
         allowActivitySubscriptionsFrom: allowActivitySubscriptionsFrom(
           actor.allowActivitySubscriptionsFrom,
         ),
+        accountModerationTags: new Set(actor.tags),
+        profileModerationTags: new Set(actor.profileTags),
         debug,
       })
     }
@@ -477,6 +484,8 @@ export class ActorHydrator {
       map.set(actor, {
         did,
         muted: rels.muted ?? false,
+        mutedOnlyReposts: rels.mutedOnlyReposts ?? false,
+        mutedOnlyQuoteposts: rels.mutedOnlyQuoteposts ?? false,
         mutedByList: parseString(rels.mutedByList),
         blockedBy: parseString(rels.blockedBy),
         blocking: parseString<AtUriString>(rels.blocking),
@@ -525,8 +534,9 @@ export class ActorHydrator {
             : undefined,
         )
       }
-    } catch {
-      // ignore errors and return empty map
+    } catch (err) {
+      // Fail open.
+      events.hydrationFailed({ source: 'known_followers', err })
     }
 
     return map
@@ -567,8 +577,9 @@ export class ActorHydrator {
           map.set(did, undefined)
         }
       }
-    } catch {
-      // ignore errors and return empty map
+    } catch (err) {
+      // Fail open.
+      events.hydrationFailed({ source: 'activity_subscriptions', err })
     }
 
     return map

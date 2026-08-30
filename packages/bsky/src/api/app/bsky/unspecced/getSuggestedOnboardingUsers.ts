@@ -1,21 +1,21 @@
 import { dedupeStrs, mapDefined, noUndefinedVals } from '@atproto/common'
-import { Client, DidString } from '@atproto/lex'
-import { Server } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import type { Client, DidString } from '@atproto/lex'
+import { MethodNotImplementedError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import {
-  HydrateCtx,
-  Hydrator,
+  type HydrateCtx,
+  type Hydrator,
   mergeManyStates,
 } from '../../../../hydration/hydrator.js'
-import { app } from '../../../../lexicons.js'
+import { app } from '../../../../lexicons/index.js'
 import {
-  HydrationFnInput,
-  PresentationFnInput,
-  RulesFnInput,
-  SkeletonFnInput,
+  type HydrationFnInput,
+  type PresentationFnInput,
+  type RulesFnInput,
+  type SkeletonFnInput,
   createPipeline,
 } from '../../../../pipeline.js'
-import { Views } from '../../../../views/index.js'
+import type { Views } from '../../../../views/index.js'
 
 export default function (server: Server, ctx: AppContext) {
   const getSuggestedOnboardingUsers = createPipeline(
@@ -26,7 +26,7 @@ export default function (server: Server, ctx: AppContext) {
   )
   server.add(app.bsky.unspecced.getSuggestedOnboardingUsers, {
     auth: ctx.authVerifier.standardOptional,
-    handler: async ({ auth, params, req }) => {
+    handler: async ({ auth, params, req, signal }) => {
       const viewer = auth.credentials.iss
       const labelers = ctx.reqLabelers(req)
       const hydrateCtx = await ctx.hydrator.createContext({
@@ -44,6 +44,7 @@ export default function (server: Server, ctx: AppContext) {
           ...params,
           hydrateCtx,
           headers,
+          signal,
         },
         ctx,
       )
@@ -58,7 +59,7 @@ export default function (server: Server, ctx: AppContext) {
 const skeleton = async (input: SkeletonFnInput<Context, Params>) => {
   const { params, ctx } = input
   if (!ctx.suggestionsClient) {
-    return { dids: [] }
+    throw new MethodNotImplementedError('Suggestions agent not available')
   }
 
   return ctx.suggestionsClient.call(
@@ -70,6 +71,7 @@ const skeleton = async (input: SkeletonFnInput<Context, Params>) => {
     },
     {
       headers: params.headers,
+      signal: params.signal,
     },
   )
 }
@@ -133,6 +135,7 @@ type Context = {
 type Params = app.bsky.unspecced.getSuggestedOnboardingUsers.$Params & {
   hydrateCtx: HydrateCtx & { viewer: string | null }
   headers: Record<string, string>
+  signal: AbortSignal
   category?: string
 }
 

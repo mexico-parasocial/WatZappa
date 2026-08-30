@@ -118,6 +118,7 @@ export type HandlerContext<
 > = MethodAuthContext<P> & {
   auth: A
   input: I
+  signal: AbortSignal
   resetRouteRateLimits: () => Promise<void>
 }
 

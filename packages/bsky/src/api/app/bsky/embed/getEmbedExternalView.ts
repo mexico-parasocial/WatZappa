@@ -1,22 +1,22 @@
-import { AtUriString, LexMap } from '@atproto/lex'
-import { Server } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import type { AtUriString, LexMap } from '@atproto/lex'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import {
-  SiteStandardDocuments,
-  SiteStandardPublications,
+  type SiteStandardDocuments,
+  type SiteStandardPublications,
   getSiteStandardRecordsFromHydrationMapsByDocumentUri,
 } from '../../../../hydration/external.js'
-import { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
+import type { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
 import { app, com } from '../../../../lexicons/index.js'
 import {
-  HydrationFnInput,
-  PresentationFnInput,
-  SkeletonFnInput,
+  type HydrationFnInput,
+  type PresentationFnInput,
+  type SkeletonFnInput,
   createPipeline,
   noRules,
 } from '../../../../pipeline.js'
-import { Views } from '../../../../views/index.js'
-import { ExternalEmbedView, StrongRef } from '../../../../views/types.js'
+import type { Views } from '../../../../views/index.js'
+import type { ExternalEmbedView, StrongRef } from '../../../../views/types.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
@@ -45,10 +45,7 @@ export default function (server: Server, ctx: AppContext) {
 const skeleton = async (
   inputs: SkeletonFnInput<Context, Params>,
 ): Promise<Skeleton> => {
-  const uris = inputs.params.uris as AtUriString[]
-  return {
-    uris,
-  }
+  return { uris: inputs.params.uris as AtUriString[] }
 }
 
 const hydration = async (
@@ -114,23 +111,21 @@ const standardSitePresentation = (
 
   if (!associatedRefs.length) return {}
 
-  const overlay = ctx.views.externalEmbedFromStandardSite(
-    associatedRefs,
-    hydration,
-    params.url,
-  )
+  const overlay = ctx.views.externalEmbedFromStandardSiteRecords({
+    document,
+    publication,
+    state: hydration,
+    assumedUrl: params.url,
+  })
   // The view builder rejected the records (validation failed, or the pair
   // didn't produce the title viewExternal requires). Return nothing — Cardy
   // falls back to its own card render and doesn't write strongRefs to the
   // post.
-  const title = overlay?.title
-  if (!title) return {}
+  if (!overlay) return {}
 
   const view = app.bsky.embed.external.view.$build({
     external: {
       ...overlay,
-      title,
-      description: overlay.description ?? '',
       uri: params.url,
       associatedRefs,
     },

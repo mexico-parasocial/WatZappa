@@ -5,7 +5,6 @@ import { JSX } from 'react/jsx-runtime'
 import { CustomizationName } from '#/components/customization-name.tsx'
 import { AccountOverview } from '#/components/utils/account-overview.tsx'
 import { useAuthenticatedSession } from '#/contexts/authentication.tsx'
-
 export function Page(): ReactNode {
   const { account } = useAuthenticatedSession()
 
@@ -21,13 +20,15 @@ export function Page(): ReactNode {
 }
 
 function HostedByParagraph(props: JSX.IntrinsicElements['p']): ReactNode {
+  const { account } = useAuthenticatedSession()
+
   return (
     <p {...props}>
       <Trans>
         Your Atmosphere account is hosted by <CustomizationName />.
       </Trans>{' '}
       <Link
-        to="/account/about"
+        to={`/account/u/${account.did}/about` as string}
         className="text-sm text-blue-600 hover:underline"
       >
         <Trans>What does this mean?</Trans>

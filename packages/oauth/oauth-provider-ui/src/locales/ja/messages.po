@@ -224,7 +224,7 @@ msgstr ""
 #: src/components/forms/form-card.tsx:57
 #: src/components/forms/wizard-card.tsx:125
 #: src/components/sign-in-picker.tsx:90
-#: src/routes/__root.tsx:35
+#: src/routes/__root.tsx:39
 msgid "Back"
 msgstr "戻る"
 
@@ -268,7 +268,7 @@ msgstr "呼び出し"
 msgid "Cancel"
 msgstr "キャンセル"
 
-#: src/pages/account/(authenticated)/devices/page.tsx:108
+#: src/pages/account/(authenticated)/devices/page.tsx:111
 msgid "Cannot remove current device"
 msgstr "現在のデバイスを削除できません"
 
@@ -734,7 +734,7 @@ msgctxt "OAuthApp"
 msgid "Last accessed <0/>"
 msgstr ""
 
-#: src/pages/account/(authenticated)/devices/page.tsx:94
+#: src/pages/account/(authenticated)/devices/page.tsx:97
 msgctxt "device list"
 msgid "Last seen {lastUsedAgo}"
 msgstr ""
@@ -752,7 +752,7 @@ msgstr "パスワードをリセットしましょう！"
 msgid "Logo"
 msgstr "ロゴ"
 
-#: src/pages/account/(authenticated)/devices/page.tsx:65
+#: src/pages/account/(authenticated)/devices/page.tsx:68
 msgid "Looks like you aren't logged in on any other devices."
 msgstr "他のデバイスでログインしていないようです。"
 
@@ -809,7 +809,7 @@ msgid "Moderate"
 msgstr "中程度"
 
 #: src/pages/account/(authenticated)/route.tsx:141
-#: src/routes/account/u/$accountId/route.tsx:118
+#: src/routes/account/u/$accountId/route.tsx:116
 msgid "My Atmosphere Account"
 msgstr "私のAtmosphereアカウント"
 
@@ -837,7 +837,7 @@ msgstr "次へ"
 msgid "Okay"
 msgstr "OK"
 
-#: src/routes/__root.tsx:33
+#: src/routes/__root.tsx:37
 msgid "Page not found"
 msgstr ""
 
@@ -1013,7 +1013,7 @@ msgstr "セキュリティステップが必要です"
 msgid "Select another account"
 msgstr "別のアカウントを選択"
 
-#: src/components/forms/input-handle-default.tsx:191
+#: src/components/forms/input-handle-default.tsx:192
 msgid "Select domain"
 msgstr "ドメインを選択"
 
@@ -1057,7 +1057,7 @@ msgstr "リストにないアカウントにサインイン"
 msgid "Sign out"
 msgstr "サインアウト"
 
-#: src/pages/account/(authenticated)/devices/page.tsx:111
+#: src/pages/account/(authenticated)/devices/page.tsx:114
 msgctxt "device list"
 msgid "Sign out"
 msgstr "サインアウト"
@@ -1238,11 +1238,11 @@ msgstr "タイプ"
 msgid "Type your domain"
 msgstr "ドメイン名を入力"
 
-#: src/components/forms/input-handle-default.tsx:146
+#: src/components/forms/input-handle-default.tsx:144
 msgid "Type your username"
 msgstr "ユーザー名を入力"
 
-#: src/contexts/session.tsx:202
+#: src/contexts/session.tsx:207
 msgid "Unauthorized"
 msgstr "未承認"
 
@@ -1250,7 +1250,7 @@ msgstr "未承認"
 msgid "Unexpected server response"
 msgstr "予期しないサーバー応答"
 
-#: src/pages/account/(authenticated)/devices/page.tsx:89
+#: src/pages/account/(authenticated)/devices/page.tsx:92
 msgctxt "device list"
 msgid "Unknown user agent"
 msgstr "不明なユーザーエージェント"
@@ -1282,7 +1282,7 @@ msgstr "ファイルのアップロード"
 msgid "URL"
 msgstr "URL"
 
-#: src/components/forms/input-handle-default.tsx:183
+#: src/components/forms/input-handle-default.tsx:181
 msgid "Use {minLength}–{maxLength, plural, one {# letter, number or hyphen} other {# letters, numbers or hyphens}}"
 msgstr ""
 
@@ -1377,7 +1377,7 @@ msgstr "ようこそ"
 msgid "Welcome back!"
 msgstr "おかえりなさい！"
 
-#: src/pages/account/(authenticated)/page.tsx:33
+#: src/pages/account/(authenticated)/page.tsx:34
 msgid "What does this mean?"
 msgstr "これは何を意味しますか？"
 
@@ -1471,7 +1471,7 @@ msgstr "あなたのアカウントは以下にリストされたデバイスで
 msgid "Your account is visible again."
 msgstr "アカウントが再び表示されます。"
 
-#: src/pages/account/(authenticated)/page.tsx:26
+#: src/pages/account/(authenticated)/page.tsx:27
 msgid "Your Atmosphere account is hosted by <0/>."
 msgstr "あなたのAtmosphereアカウントは <0/> にホストされています。"
 
@@ -1492,7 +1492,7 @@ msgid "Your email address needs to be verified."
 msgstr "メールアドレスを確認する必要があります。"
 
 #. placeholder {0}: segment ? ( <span className="text-text-default block break-all font-medium"> @{segment} {domain} </span> ) : ( <span className="block break-all"> @{exampleSegment} {domain} </span> )
-#: src/components/forms/input-handle-default.tsx:117
+#: src/components/forms/input-handle-default.tsx:115
 msgid "Your full username will be: {0}"
 msgstr "あなたのフルユーザー名： {0}"
 
@@ -1504,7 +1504,7 @@ msgstr "あなたのプロフィール、投稿、フィード、リストは、
 msgid "Your repository contains all the data publicly available on the AT Protocol network, such as Bluesky posts, likes, and follows. It also contains data created through other apps you've signed into using this account. The application requests the permissions necessary to publish the following changes to your repository:"
 msgstr "あなたのリポジトリには、Blueskyの投稿、いいね、フォローなど、ATプロトコルネットワークで公開されているすべてのデータが含まれています。また、このアカウントを使用してサインインした他のアプリを通じて作成されたデータも含まれています。アプリは、あなたのリポジトリに次の変更を公開するために必要な権限を要求しています："
 
-#: src/contexts/session.tsx:203
+#: src/contexts/session.tsx:208
 msgid "Your session has expired. Please sign in again."
 msgstr "セッションの有効期限が切れました。もう一度サインインしてください。"
 
@@ -1512,6 +1512,6 @@ msgstr "セッションの有効期限が切れました。もう一度サイン
 msgid "Your username has been updated."
 msgstr "ユーザー名が更新されました。"
 
-#: src/components/forms/input-handle-default.tsx:108
+#: src/components/forms/input-handle-default.tsx:107
 msgid "yourname"
 msgstr ""

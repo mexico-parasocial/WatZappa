@@ -137,8 +137,12 @@ export interface ThreadItemPost {
   moreParents: boolean
   /** This post has more replies that were not present in the response. This is a numeric value, which is best-effort and might not be accurate. */
   moreReplies: number
-  /** This post is part of a contiguous thread by the OP from the thread root. Many different OP threads can happen in the same thread. */
+  /** This post is part of a contiguous thread by the OP from the thread root. Sub-threads by OP deeper in the tree are not considered an OP thread. */
   opThread: boolean
+  /** The 1-indexed position of this post within the contiguous OP thread. Only present when this post is part of the OP thread (see `opThread`). */
+  opThreadPostIndex?: number
+  /** The total number of posts in the contiguous OP thread that this post belongs to. Only present when this post is part of the OP thread (see `opThread`). */
+  opThreadPostCount?: number
   /** The threadgate created by the author indicates this post as a reply to be hidden for everyone consuming the thread. */
   hiddenByThreadgate: boolean
   /** This is by an account muted by the viewer requesting it. */

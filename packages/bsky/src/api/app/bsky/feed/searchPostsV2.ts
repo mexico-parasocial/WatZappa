@@ -51,10 +51,14 @@ export default function (server: Server, ctx: AppContext) {
           }),
         ),
       })
+      // In dev/test, feature gates stay off because GrowthBook is not
+      // configured, so the gate is bypassed to keep the v2 endpoint usable.
       const isV2Enabled =
+        ctx.cfg.debugMode ||
         hydrateCtx.features.checkGate(
           hydrateCtx.features.Gate.SearchV2Enable,
-        ) || resolveSearchV2Override(req, ctx.cfg)
+        ) ||
+        resolveSearchV2Override(req, ctx.cfg)
       if (!isV2Enabled) {
         throw new InvalidRequestError('Search v2 is not enabled')
       }

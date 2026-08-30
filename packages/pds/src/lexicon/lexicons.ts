@@ -11662,6 +11662,40 @@ export const schemaDict = {
       },
     },
   },
+  ChatBskyConvoGetUnreadCounts: {
+    lexicon: 1,
+    id: 'chat.bsky.convo.getUnreadCounts',
+    defs: {
+      main: {
+        type: 'query',
+        description: 'Counts of convos with unread messages, split by membership status.',
+        parameters: {
+          type: 'params',
+          properties: {
+            includeGroupChats: {
+              type: 'boolean',
+              default: true,
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['unreadRequestConvos', 'unreadAcceptedConvos'],
+            properties: {
+              unreadRequestConvos: {
+                type: 'integer',
+              },
+              unreadAcceptedConvos: {
+                type: 'integer',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   ChatBskyConvoLeaveConvo: {
     lexicon: 1,
     id: 'chat.bsky.convo.leaveConvo',
@@ -36298,6 +36332,7 @@ export const ids = {
   ChatBskyConvoGetConvoMembers: 'chat.bsky.convo.getConvoMembers',
   ChatBskyConvoGetLog: 'chat.bsky.convo.getLog',
   ChatBskyConvoGetMessages: 'chat.bsky.convo.getMessages',
+  ChatBskyConvoGetUnreadCounts: 'chat.bsky.convo.getUnreadCounts',
   ChatBskyConvoLeaveConvo: 'chat.bsky.convo.leaveConvo',
   ChatBskyConvoListConvoRequests: 'chat.bsky.convo.listConvoRequests',
   ChatBskyConvoListConvos: 'chat.bsky.convo.listConvos',

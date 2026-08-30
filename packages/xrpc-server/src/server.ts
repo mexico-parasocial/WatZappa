@@ -1,21 +1,21 @@
 import assert from 'node:assert'
-import { IncomingMessage } from 'node:http'
+import type { IncomingMessage } from 'node:http'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import express, {
-  Application,
-  ErrorRequestHandler,
-  Express,
-  RequestHandler,
+  type Application,
+  type ErrorRequestHandler,
+  type Express,
+  type RequestHandler,
   Router,
 } from 'express'
-import { LexValue } from '@atproto/lex-data'
+import type { LexValue } from '@atproto/lex-data'
 import { l } from '@atproto/lex-schema'
 import {
-  LexXrpcProcedure,
-  LexXrpcQuery,
-  LexXrpcSubscription,
-  LexiconDoc,
+  type LexXrpcProcedure,
+  type LexXrpcQuery,
+  type LexXrpcSubscription,
+  type LexiconDoc,
   Lexicons,
   lexToJson,
 } from '@atproto/lexicon'
@@ -29,11 +29,11 @@ import {
 import log, { LOGGER_NAME } from './logger.js'
 import { HttpRateLimiter } from './rate-limiter-http.js'
 import {
-  CalcKeyFn,
-  CalcPointsFn,
-  RateLimiterErrorHandlerDetails,
-  RateLimiterI,
-  RateLimiterOptions,
+  type CalcKeyFn,
+  type CalcPointsFn,
+  type RateLimiterErrorHandlerDetails,
+  type RateLimiterI,
+  type RateLimiterOptions,
   WrappedRateLimiter,
 } from './rate-limiter.js'
 import {
@@ -43,42 +43,42 @@ import {
   XrpcStreamServer,
 } from './stream/index.js'
 import {
-  Auth,
-  AuthResult,
-  AuthVerifier,
-  CatchallHandler,
-  HandlerContext,
-  Input,
-  LexMethodConfig,
-  LexMethodHandler,
-  LexMethodInput,
-  LexMethodOutput,
-  LexMethodParams,
-  LexSubscriptionConfig,
-  LexSubscriptionHandler,
-  MethodAuthContext,
-  MethodConfig,
-  MethodConfigOrHandler,
-  MethodHandler,
-  Options,
-  Output,
-  Params,
-  RouteOptions,
-  ServerRateLimitDescription,
-  StreamAuthContext,
-  StreamConfig,
-  StreamConfigOrHandler,
-  StreamContext,
+  type Auth,
+  type AuthResult,
+  type AuthVerifier,
+  type CatchallHandler,
+  type HandlerContext,
+  type Input,
+  type LexMethodConfig,
+  type LexMethodHandler,
+  type LexMethodInput,
+  type LexMethodOutput,
+  type LexMethodParams,
+  type LexSubscriptionConfig,
+  type LexSubscriptionHandler,
+  type MethodAuthContext,
+  type MethodConfig,
+  type MethodConfigOrHandler,
+  type MethodHandler,
+  type Options,
+  type Output,
+  type Params,
+  type RouteOptions,
+  type ServerRateLimitDescription,
+  type StreamAuthContext,
+  type StreamConfig,
+  type StreamConfigOrHandler,
+  type StreamContext,
   isHandlerPipeThroughBuffer,
   isHandlerPipeThroughStream,
   isHandlerSuccess,
   isSharedRateLimitOpts,
 } from './types.js'
 import {
-  AuthVerifierInternal,
-  InputVerifierInternal,
-  OutputVerifierInternal,
-  ParamsVerifierInternal,
+  type AuthVerifierInternal,
+  type InputVerifierInternal,
+  type OutputVerifierInternal,
+  type ParamsVerifierInternal,
   asArray,
   createLexiconInputVerifier,
   createLexiconOutputVerifier,
@@ -378,6 +378,9 @@ export class Server {
         await this.globalRateLimiter.handle({
           req,
           res,
+          // The rate limiter does not use the signal; supply a non-aborting one
+          // to satisfy the handler context shape.
+          signal: new AbortController().signal,
           auth: undefined,
           params: {},
           input: undefined,
@@ -446,6 +449,21 @@ export class Server {
     validateResOutput: null | OutputVerifierInternal<O>,
   ): RequestHandler {
     return async function (req, res, next) {
+      const controller = new AbortController()
+      // Only queries (GET) are cancelled when the client disconnects.
+      // Procedures may modify state, so a mid-flight abort could leave it
+      // half-applied; let those run to completion.
+      const onClose =
+        req.method === 'GET'
+          ? () => {
+              if (!res.writableFinished) controller.abort()
+            }
+          : undefined
+      if (onClose) {
+        // 'close' won't replay for a late listener; if already closed, abort now.
+        if (res.destroyed) onClose()
+        else res.once('close', onClose)
+      }
       try {
         // parse & validate params
         const params = paramsVerifier(req)
@@ -464,6 +482,7 @@ export class Server {
           auth,
           req,
           res,
+          signal: controller.signal,
           resetRouteRateLimits: async () => routeLimiter?.reset(ctx),
         }
 
@@ -518,6 +537,20 @@ export class Server {
           next(XRPCError.fromError(output))
         }
       } catch (err: unknown) {
+        // Once the client has disconnected the socket is closed and no
+        // response is deliverable, so we don't forward the rejection. We key on
+        // the abort flag rather than the error's type on purpose: cancellation
+        // surfaces in different shapes (fetch AbortError, Connect-RPC "canceled"
+        // ConnectError, ...) and matching on one would miss the others. The
+        // error is still logged so a genuine error racing with a disconnect
+        // leaves a trace rather than vanishing.
+        if (controller.signal.aborted) {
+          log.info(
+            { method: req.method, url: req.url, err },
+            'request aborted after client disconnect',
+          )
+          return
+        }
         // Express will not call the next middleware (errorMiddleware in this case)
         // if the value passed to next is false-y (e.g. null, undefined, 0).
         // Hence we replace it with an InternalServerError.
@@ -526,6 +559,8 @@ export class Server {
         } else {
           next(err)
         }
+      } finally {
+        if (onClose) res.off('close', onClose)
       }
     }
   }
@@ -687,8 +722,7 @@ export class Server {
     // specific rate limiter (HandlerContext<A, P, I>).
 
     const globalRateLimiter = this.globalRateLimiter as
-      | HttpRateLimiter<HandlerContext<A, P, I>>
-      | undefined
+      HttpRateLimiter<HandlerContext<A, P, I>> | undefined
 
     // No route specific rate limiting configured, use the global rate limiter.
     if (!config.rateLimit) return globalRateLimiter
@@ -704,8 +738,7 @@ export class Server {
     const rateLimiters = asArray(config.rateLimit).map((options, i) => {
       if (isSharedRateLimitOpts(options)) {
         const rateLimiter = this.sharedRateLimiters?.get(options.name) as
-          | RateLimiterI<HandlerContext<A, P, I>>
-          | undefined
+          RateLimiterI<HandlerContext<A, P, I>> | undefined
 
         // The route config references a shared rate limiter that does not
         // exist. This is a configuration error.
@@ -839,7 +872,7 @@ const defaultPoints: CalcPointsFn = () => 1
  *
  * @see {@link https://expressjs.com/en/guide/behind-proxies.html}
  */
-const defaultKey: CalcKeyFn<HandlerContext> = ({ req }) => req.ip ?? null
+const defaultKey: CalcKeyFn<HandlerContext> = ({ req }) => req.ip
 
 async function rateLimiterLoggerErrorHandler(
   err: unknown,

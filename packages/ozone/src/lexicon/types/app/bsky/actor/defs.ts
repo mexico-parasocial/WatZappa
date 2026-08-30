@@ -190,7 +190,12 @@ export function validateProfileAssociatedActivitySubscription<V>(v: V) {
 /** Metadata about the requesting account's relationship with the subject account. Only has meaningful content for authed requests. */
 export interface ViewerState {
   $type?: 'app.bsky.actor.defs#viewerState'
+  /** Whether the account is fully muted, directly or via a mutelist. False when the mute is scoped to specific kinds; see mutedOnlyReposts and mutedOnlyQuoteposts. */
   muted?: boolean
+  /** Whether the account's reposts are muted. Scoped mutes are exclusive with muted: this can be true while muted is false. If muted is true, this will be false. */
+  mutedOnlyReposts?: boolean
+  /** Whether the account's quote posts are muted. Scoped mutes are exclusive with muted: this can be true while muted is false. If muted is true, this will be false. */
+  mutedOnlyQuoteposts?: boolean
   mutedByList?: AppBskyGraphDefs.ListViewBasic
   blockedBy?: boolean
   blocking?: string

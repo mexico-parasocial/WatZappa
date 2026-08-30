@@ -1,13 +1,13 @@
 import events from 'node:events'
-import http from 'node:http'
-import { AddressInfo } from 'node:net'
+import type http from 'node:http'
+import type { AddressInfo } from 'node:net'
 import compression from 'compression'
 import cors from 'cors'
 import { Etcd3 } from 'etcd3'
 import express from 'express'
-import { HttpTerminator, createHttpTerminator } from 'http-terminator'
+import { type HttpTerminator, createHttpTerminator } from 'http-terminator'
 import { DAY, SECOND } from '@atproto/common'
-import { Keypair } from '@atproto/crypto'
+import type { Keypair } from '@atproto/crypto'
 import { IdResolver } from '@atproto/identity'
 import { Client } from '@atproto/lex'
 import { createServer } from '@atproto/xrpc-server'
@@ -21,8 +21,7 @@ import API, {
 } from './api/index.js'
 import { AuthVerifier, createPublicKeyObject } from './auth-verifier.js'
 import { authWithApiKey as bsyncAuth, createBsyncClient } from './bsync.js'
-import { ParaCacheService } from './cache/para-cache.js'
-import { ServerConfig } from './config.js'
+import type { ServerConfig } from './config.js'
 import { AppContext } from './context.js'
 import {
   authWithApiKey as courierAuth,
@@ -40,13 +39,16 @@ import * as imageServer from './image/server.js'
 import { ImageUriBuilder } from './image/uri.js'
 import { createKwsClient } from './kws.js'
 import { loggerMiddleware } from './logger.js'
-import { OpenAIClient } from './openai.js'
-import { Redis } from './redis.js'
 import {
   authWithApiKey as rolodexAuth,
   createRolodexClient,
 } from './rolodex.js'
 import { createStashClient } from './stash.js'
+import {
+  type UndiciAgent,
+  createUndiciAgent,
+  dispatcherFetch,
+} from './undici.js'
 import { Views } from './views/index.js'
 import { VideoUriBuilder } from './views/util.js'
 
@@ -63,10 +65,16 @@ export class BskyAppView {
   public app: express.Application
   public server?: http.Server
   private terminator?: HttpTerminator
+  private dispatchers: UndiciAgent[]
 
-  constructor(opts: { ctx: AppContext; app: express.Application }) {
+  constructor(opts: {
+    ctx: AppContext
+    app: express.Application
+    dispatchers?: UndiciAgent[]
+  }) {
     this.ctx = opts.ctx
     this.app = opts.app
+    this.dispatchers = opts.dispatchers ?? []
   }
 
   static create(opts: {
@@ -75,7 +83,7 @@ export class BskyAppView {
   }): BskyAppView {
     const { config, signingKey } = opts
     const app = express()
-    app.set('trust proxy', process.env.TRUST_PROXY_HOPS ?? 1)
+    app.set('trust proxy', true)
     app.use(cors({ maxAge: DAY / SECOND }))
     app.use(loggerMiddleware)
     app.use(compression())
@@ -131,6 +139,13 @@ export class BskyAppView {
         )
       : undefined
 
+    // @NOTE These bound the connection phase (TCP + TLS) only; once connected,
+    // the request is not bounded here. They are kept for the lifetime of the
+    // service (pooling connections), and closed on `destroy()`.
+    // An unused agent holds no socket, so they can be built unconditionally.
+    const topicsDispatcher = createUndiciAgent({ connectTimeout: SECOND })
+    const irisDispatcher = createUndiciAgent({ connectTimeout: SECOND })
+
     const topicsClient = config.topicsUrl
       ? new Client(
           {
@@ -138,6 +153,7 @@ export class BskyAppView {
             headers: config.topicsApiKey
               ? { authorization: `Bearer ${config.topicsApiKey}` }
               : undefined,
+            fetch: dispatcherFetch(topicsDispatcher),
           },
           {
             // Trust internal services to send us well-formed responses
@@ -151,6 +167,7 @@ export class BskyAppView {
       ? new Client(
           {
             service: config.irisUrl,
+            fetch: dispatcherFetch(irisDispatcher),
           },
           {
             // Trust internal services to send us well-formed responses
@@ -230,20 +247,6 @@ export class BskyAppView {
 
     const kwsClient = config.kws ? createKwsClient(config.kws) : undefined
 
-    let redis: Redis | undefined
-    let paraCache: ParaCacheService | undefined
-    if (config.redis) {
-      redis = new Redis({
-        host: config.redis.host,
-        password: config.redis.password,
-      })
-      paraCache = new ParaCacheService(redis)
-    }
-
-    const openaiClient = config.openai
-      ? new OpenAIClient(config.openai.apiKey, config.openai.model)
-      : undefined
-
     const entrywayJwtPublicKey = config.entrywayJwtPublicKeyHex
       ? createPublicKeyObject(config.entrywayJwtPublicKeyHex)
       : undefined
@@ -278,9 +281,6 @@ export class BskyAppView {
       featureGatesClient,
       blobDispatcher,
       kwsClient,
-      openaiClient,
-      redis,
-      paraCache,
     })
 
     const server = createServer([], {
@@ -307,7 +307,11 @@ export class BskyAppView {
     app.use(error.handler)
     app.use('/external', external.createRouter(ctx))
 
-    return new BskyAppView({ ctx, app })
+    return new BskyAppView({
+      ctx,
+      app,
+      dispatchers: [topicsDispatcher, irisDispatcher],
+    })
   }
 
   async start(): Promise<http.Server> {
@@ -326,9 +330,23 @@ export class BskyAppView {
   }
 
   async destroy(): Promise<void> {
-    this.ctx.featureGatesClient.destroy()
-    await this.terminator?.terminate()
-    await this.ctx.etcd?.close()
+    try {
+      await this.ctx.featureGatesClient.destroy()
+    } finally {
+      try {
+        await this.terminator?.terminate()
+      } finally {
+        try {
+          await this.ctx.etcd?.close()
+        } finally {
+          await Promise.all(this.dispatchers.map((d) => d.close()))
+        }
+      }
+    }
+  }
+
+  async [Symbol.asyncDispose]() {
+    await this.destroy()
   }
 }
 

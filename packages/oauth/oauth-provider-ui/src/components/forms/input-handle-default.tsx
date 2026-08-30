@@ -14,7 +14,6 @@ import {
   isValidDomain,
 } from '#/lib/handle.ts'
 import { Override } from '#/lib/util.ts'
-import { Handle } from '../utils/handle.tsx'
 import { InputText, InputTextProps } from './input-text.tsx'
 
 export type InputHandleProvidedProps = Override<
@@ -77,7 +76,7 @@ export function InputHandleDefault({
 
   const { minLength, maxLength, validateSegment } = useSegmentValidator(domain)
 
-  const [handle, setHandle] = useState<HandleString | undefined>(handleInit)
+  const [, setHandle] = useState<HandleString | undefined>(handleInit)
   const [validity, setValidity] = useState(() => validateSegment(segment))
 
   const update = useStableCallback((segment: string, domainIdx: number) => {
@@ -107,8 +106,7 @@ export function InputHandleDefault({
   // show a whole handle from the start rather than a gap or a grey bar.
   const exampleSegment = t`yourname`
 
-  const valid =
-    validity.validLength && validity.validCharset
+  const valid = validity.validLength && validity.validCharset
 
   // @NOTE The conditional below is placeholder {0} of this Trans block, and
   // the msgid it produces is the one the catalogs already carry. Do not add or
@@ -188,7 +186,11 @@ export function InputHandleDefault({
 
       {domains.length > 1 ? (
         <>
-          <div className="flex flex-col gap-2" role="radiogroup" aria-label={t`Select domain`}>
+          <div
+            className="flex flex-col gap-2"
+            role="radiogroup"
+            aria-label={t`Select domain`}
+          >
             {domains.map((d) => (
               <label
                 key={d}

@@ -1,9 +1,9 @@
 import { mapDefined, noUndefinedVals } from '@atproto/common'
-import { Client, DidString, isDidString } from '@atproto/lex'
-import { Headers as HeadersMap, Server } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { DataPlaneClient } from '../../../../data-plane/index.js'
-import {
+import { type Client, type DidString, isDidString } from '@atproto/lex'
+import type { Headers as HeadersMap, Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import type { DataPlaneClient } from '../../../../data-plane/index.js'
+import type {
   HydrateCtx,
   HydrationState,
   Hydrator,
@@ -11,8 +11,8 @@ import {
 import { parseString } from '../../../../hydration/util.js'
 import { app } from '../../../../lexicons/index.js'
 import { createPipeline } from '../../../../pipeline.js'
-import { Views } from '../../../../views/index.js'
-import { resHeaders } from '../../../util.js'
+import type { Views } from '../../../../views/index.js'
+import { fillPage, resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
   const getSuggestions = createPipeline(
@@ -23,7 +23,7 @@ export default function (server: Server, ctx: AppContext) {
   )
   server.add(app.bsky.actor.getSuggestions, {
     auth: ctx.authVerifier.standardOptional,
-    handler: async ({ params, auth, req }) => {
+    handler: async ({ params, auth, req, signal }) => {
       const viewer = auth.credentials.iss
       const labelers = ctx.reqLabelers(req)
       const hydrateCtx = await ctx.hydrator.createContext({ viewer, labelers })
@@ -33,10 +33,16 @@ export default function (server: Server, ctx: AppContext) {
           ? req.headers['x-bsky-topics'].join(',')
           : req.headers['x-bsky-topics'],
       })
-      const { resHeaders: resultHeaders, ...result } = await getSuggestions(
-        { ...params, hydrateCtx, headers },
-        ctx,
-      )
+      const { resHeaders: resultHeaders, ...result } = await fillPage({
+        cursor: params.cursor,
+        limit: params.limit,
+        fetch: ({ cursor, limit }) =>
+          getSuggestions(
+            { ...params, cursor, limit, hydrateCtx, headers, signal },
+            ctx,
+          ),
+        items: (r) => r.actors,
+      })
       const suggestionsResHeaders = noUndefinedVals({
         'content-language': resultHeaders?.get('content-language'),
       })
@@ -64,6 +70,7 @@ const skeleton = async (input: {
       app.bsky.unspecced.getSuggestionsSkeleton,
       {
         headers: params.headers,
+        signal: params.signal,
         params: {
           relativeToDid: viewer,
           viewer: viewer ?? undefined,
@@ -152,6 +159,7 @@ type Context = {
 type Params = app.bsky.actor.getSuggestions.$Params & {
   hydrateCtx: HydrateCtx
   headers: HeadersMap
+  signal: AbortSignal
 }
 
 type Skeleton = {

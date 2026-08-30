@@ -1,7 +1,11 @@
 import { msg } from '@lingui/core/macro'
-import { Trans, useLingui } from '@lingui/react/macro'
+import { useLingui } from '@lingui/react/macro'
 import type { QueryClient } from '@tanstack/react-query'
-import { Link, Outlet, createRootRouteWithContext } from '@tanstack/react-router'
+import {
+  Link,
+  Outlet,
+  createRootRouteWithContext,
+} from '@tanstack/react-router'
 import { ErrorView } from '#/components/error-view.tsx'
 import { Button } from '#/components/forms/button.tsx'
 import type { SessionStore } from '#/contexts/session.tsx'

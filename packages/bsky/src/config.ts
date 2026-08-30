@@ -107,6 +107,7 @@ export interface ServerConfigValues {
   // http proxy agent
   disableSsrfProtection?: boolean
   proxyAllowHTTP2?: boolean
+  proxyConnectTimeout?: number
   proxyHeadersTimeout?: number
   proxyBodyTimeout?: number
   proxyMaxResponseSize?: number
@@ -282,10 +283,13 @@ export class ServerConfig {
       ? parseInt(process.env.BSKY_NOTIFICATIONS_DELAY_MS || '', 10)
       : 0
 
-    const disableSsrfProtection =
-      process.env.BSKY_DISABLE_SSRF_PROTECTION === 'true'
+    const disableSsrfProtection = process.env.BSKY_DISABLE_SSRF_PROTECTION
+      ? process.env.BSKY_DISABLE_SSRF_PROTECTION === 'true'
+      : debugMode
 
     const proxyAllowHTTP2 = process.env.BSKY_PROXY_ALLOW_HTTP2 === 'true'
+    const proxyConnectTimeout =
+      parseInt(process.env.BSKY_PROXY_CONNECT_TIMEOUT || '', 10) || undefined
     const proxyHeadersTimeout =
       parseInt(process.env.BSKY_PROXY_HEADERS_TIMEOUT || '', 10) || undefined
     const proxyBodyTimeout =
@@ -438,6 +442,7 @@ export class ServerConfig {
       notificationsDelayMs,
       disableSsrfProtection,
       proxyAllowHTTP2,
+      proxyConnectTimeout,
       proxyHeadersTimeout,
       proxyBodyTimeout,
       proxyMaxResponseSize,
@@ -591,6 +596,10 @@ export class ServerConfig {
     return this.cfg.irisUrl
   }
 
+  get irisFeedUris() {
+    return this.cfg.irisFeedUris
+  }
+
   get irisStagingUrl() {
     return this.cfg.irisStagingUrl
   }
@@ -709,6 +718,10 @@ export class ServerConfig {
 
   get proxyAllowHTTP2(): boolean {
     return this.cfg.proxyAllowHTTP2 ?? false
+  }
+
+  get proxyConnectTimeout(): number | undefined {
+    return this.cfg.proxyConnectTimeout
   }
 
   get proxyHeadersTimeout(): number {

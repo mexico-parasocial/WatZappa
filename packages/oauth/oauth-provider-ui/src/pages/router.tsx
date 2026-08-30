@@ -29,9 +29,7 @@ export const router = createRouter({
   ]),
 })
 
-// Register the router instance for type safety
-declare module '@tanstack/react-router' {
-  interface Register {
-    router: typeof router
-  }
-}
+// @NOTE This router is deliberately NOT registered on the global `Register`
+// interface: that belongs to the app router in src/router.tsx (two augmentations
+// of the same interface must have identical types). Its paths are runtime
+// strings here, not router-checked literals.

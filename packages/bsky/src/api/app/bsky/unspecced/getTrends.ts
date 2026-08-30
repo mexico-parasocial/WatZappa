@@ -1,6 +1,6 @@
 import { mapDefined, noUndefinedVals } from '@atproto/common'
 import type { Client, DidString } from '@atproto/lex'
-import { type Server } from '@atproto/xrpc-server'
+import { MethodNotImplementedError, type Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import {
   type HydrateCtx,
@@ -21,19 +21,10 @@ export default function (server: Server, ctx: AppContext) {
   const getTrends = createPipeline(skeleton, hydration, noBlocks, presentation)
   server.add(app.bsky.unspecced.getTrends, {
     auth: ctx.authVerifier.standardOptional,
-    handler: async ({ auth, params, req }) => {
+    handler: async ({ auth, params, req, signal }) => {
       const viewer = auth.credentials.iss
       const labelers = ctx.reqLabelers(req)
-      const hydrateCtx = await ctx.hydrator.createContext({
-        labelers,
-        viewer,
-        features: ctx.featureGatesClient.scope(
-          ctx.featureGatesClient.parseUserContextFromHandler({
-            viewer,
-            req,
-          }),
-        ),
-      })
+      const hydrateCtx = await ctx.hydrator.createContext({ labelers, viewer })
       const headers = noUndefinedVals({
         'accept-language': req.headers['accept-language'],
         'x-bsky-topics': Array.isArray(req.headers['x-bsky-topics'])
@@ -45,6 +36,7 @@ export default function (server: Server, ctx: AppContext) {
           ...params,
           hydrateCtx,
           headers,
+          signal,
         },
         ctx,
       )
@@ -59,76 +51,12 @@ export default function (server: Server, ctx: AppContext) {
 const skeleton: SkeletonFn<Context, Params, SkeletonState> = async (input) => {
   const { params, ctx } = input
 
-  // Route treatment users to iris (trending-topics v2), everyone else stays on
-  // the existing hot-topic service.
-  const useIris = params.hydrateCtx.features.checkGate(
-    params.hydrateCtx.features.Gate.TrendingTopicsV2,
-  )
-  const topicsClient = (useIris && ctx.irisClient) || ctx.topicsClient
-
-  if (!topicsClient) {
-    return {
-      trends: [
-        {
-          topic: 'para-civic-governance',
-          displayName: 'Community Civic Trees',
-          description:
-            'Structured deliberation and consensus-building through civic trees, contributions, and sortition',
-          link: 'https://para.mx',
-          startedAt: new Date().toISOString(),
-          postCount: 0,
-          category: 'para',
-          dids: [],
-        },
-        {
-          topic: 'para-delegated-democracy',
-          displayName: 'Delegated Democracy',
-          description:
-            'Civic delegation, vote delegation, and community governance via PARA',
-          link: 'https://para.mx',
-          startedAt: new Date().toISOString(),
-          postCount: 0,
-          category: 'para',
-          dids: [],
-        },
-        {
-          topic: 'para-identity',
-          displayName: 'PARA Identity',
-          description:
-            'Ristretto255 keys, derived MXIDs, and zero-knowledge identity on AT Protocol',
-          link: 'https://para.mx',
-          startedAt: new Date().toISOString(),
-          postCount: 0,
-          category: 'para',
-          dids: [],
-        },
-        {
-          topic: 'para-spaces',
-          displayName: 'AT Protocol Spaces',
-          description:
-            'Permissioned data spaces, DPoP credentials, and repo sync on AT Protocol',
-          link: 'https://para.mx',
-          startedAt: new Date().toISOString(),
-          postCount: 0,
-          category: 'para',
-          dids: [],
-        },
-        {
-          topic: 'para-bridge',
-          displayName: 'Matrix Bridge',
-          description:
-            'E2EE communication bridge between AT Protocol identity and Matrix',
-          link: 'https://para.mx',
-          startedAt: new Date().toISOString(),
-          postCount: 0,
-          category: 'para',
-          dids: [],
-        },
-      ],
-    }
+  if (!ctx.irisClient) {
+    // Use 501 instead of 500 as these are not considered retry-able by clients
+    throw new MethodNotImplementedError('Topics agent not available')
   }
 
-  const skeleton = await topicsClient.call(
+  const skeleton = await ctx.irisClient.call(
     app.bsky.unspecced.getTrendsSkeleton,
     {
       limit: params.limit,
@@ -136,6 +64,7 @@ const skeleton: SkeletonFn<Context, Params, SkeletonState> = async (input) => {
     },
     {
       headers: params.headers,
+      signal: params.signal,
     },
   )
 
@@ -209,13 +138,13 @@ const presentation: PresentationFn<
 type Context = {
   hydrator: Hydrator
   views: Views
-  topicsClient: Client | undefined
   irisClient: Client | undefined
 }
 
 type Params = app.bsky.unspecced.getTrendingTopics.$Params & {
   hydrateCtx: HydrateCtx & { viewer: string | null }
   headers: Record<string, string>
+  signal: AbortSignal
 }
 
 type SkeletonState = app.bsky.unspecced.getTrendsSkeleton.$OutputBody

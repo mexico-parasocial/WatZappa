@@ -224,7 +224,7 @@ msgstr ""
 #: src/components/forms/form-card.tsx:57
 #: src/components/forms/wizard-card.tsx:125
 #: src/components/sign-in-picker.tsx:90
-#: src/routes/__root.tsx:35
+#: src/routes/__root.tsx:39
 msgid "Back"
 msgstr "Volver"
 
@@ -268,7 +268,7 @@ msgstr "Llamar"
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: src/pages/account/(authenticated)/devices/page.tsx:108
+#: src/pages/account/(authenticated)/devices/page.tsx:111
 msgid "Cannot remove current device"
 msgstr ""
 
@@ -724,7 +724,7 @@ msgctxt "OAuthApp"
 msgid "Last accessed <0/>"
 msgstr ""
 
-#: src/pages/account/(authenticated)/devices/page.tsx:94
+#: src/pages/account/(authenticated)/devices/page.tsx:97
 msgctxt "device list"
 msgid "Last seen {lastUsedAgo}"
 msgstr ""
@@ -742,7 +742,7 @@ msgstr "¡Vamos a restablecer tu contraseña!"
 msgid "Logo"
 msgstr "Logo"
 
-#: src/pages/account/(authenticated)/devices/page.tsx:65
+#: src/pages/account/(authenticated)/devices/page.tsx:68
 msgid "Looks like you aren't logged in on any other devices."
 msgstr "Parece que no has iniciado sesión en otros dispositivos."
 
@@ -799,7 +799,7 @@ msgid "Moderate"
 msgstr "Moderada"
 
 #: src/pages/account/(authenticated)/route.tsx:141
-#: src/routes/account/u/$accountId/route.tsx:118
+#: src/routes/account/u/$accountId/route.tsx:116
 msgid "My Atmosphere Account"
 msgstr ""
 
@@ -827,7 +827,7 @@ msgstr "Siguiente"
 msgid "Okay"
 msgstr "Aceptar"
 
-#: src/routes/__root.tsx:33
+#: src/routes/__root.tsx:37
 msgid "Page not found"
 msgstr ""
 
@@ -1003,7 +1003,7 @@ msgstr ""
 msgid "Select another account"
 msgstr ""
 
-#: src/components/forms/input-handle-default.tsx:191
+#: src/components/forms/input-handle-default.tsx:192
 msgid "Select domain"
 msgstr "Seleccionar dominio"
 
@@ -1047,7 +1047,7 @@ msgstr ""
 msgid "Sign out"
 msgstr "Cerrar sesión"
 
-#: src/pages/account/(authenticated)/devices/page.tsx:111
+#: src/pages/account/(authenticated)/devices/page.tsx:114
 msgctxt "device list"
 msgid "Sign out"
 msgstr ""
@@ -1228,11 +1228,11 @@ msgstr ""
 msgid "Type your domain"
 msgstr ""
 
-#: src/components/forms/input-handle-default.tsx:146
+#: src/components/forms/input-handle-default.tsx:144
 msgid "Type your username"
 msgstr ""
 
-#: src/contexts/session.tsx:202
+#: src/contexts/session.tsx:207
 msgid "Unauthorized"
 msgstr ""
 
@@ -1240,7 +1240,7 @@ msgstr ""
 msgid "Unexpected server response"
 msgstr "Respuesta inesperada del servidor"
 
-#: src/pages/account/(authenticated)/devices/page.tsx:89
+#: src/pages/account/(authenticated)/devices/page.tsx:92
 msgctxt "device list"
 msgid "Unknown user agent"
 msgstr ""
@@ -1272,7 +1272,7 @@ msgstr "Subir archivos"
 msgid "URL"
 msgstr ""
 
-#: src/components/forms/input-handle-default.tsx:183
+#: src/components/forms/input-handle-default.tsx:181
 msgid "Use {minLength}–{maxLength, plural, one {# letter, number or hyphen} other {# letters, numbers or hyphens}}"
 msgstr ""
 
@@ -1367,7 +1367,7 @@ msgstr ""
 msgid "Welcome back!"
 msgstr ""
 
-#: src/pages/account/(authenticated)/page.tsx:33
+#: src/pages/account/(authenticated)/page.tsx:34
 msgid "What does this mean?"
 msgstr ""
 
@@ -1461,7 +1461,7 @@ msgstr ""
 msgid "Your account is visible again."
 msgstr ""
 
-#: src/pages/account/(authenticated)/page.tsx:26
+#: src/pages/account/(authenticated)/page.tsx:27
 msgid "Your Atmosphere account is hosted by <0/>."
 msgstr ""
 
@@ -1482,7 +1482,7 @@ msgid "Your email address needs to be verified."
 msgstr ""
 
 #. placeholder {0}: segment ? ( <span className="text-text-default block break-all font-medium"> @{segment} {domain} </span> ) : ( <span className="block break-all"> @{exampleSegment} {domain} </span> )
-#: src/components/forms/input-handle-default.tsx:117
+#: src/components/forms/input-handle-default.tsx:115
 msgid "Your full username will be: {0}"
 msgstr "Tu nombre de usuario completo será: {0}"
 
@@ -1494,7 +1494,7 @@ msgstr ""
 msgid "Your repository contains all the data publicly available on the AT Protocol network, such as Bluesky posts, likes, and follows. It also contains data created through other apps you've signed into using this account. The application requests the permissions necessary to publish the following changes to your repository:"
 msgstr ""
 
-#: src/contexts/session.tsx:203
+#: src/contexts/session.tsx:208
 msgid "Your session has expired. Please sign in again."
 msgstr ""
 
@@ -1502,6 +1502,6 @@ msgstr ""
 msgid "Your username has been updated."
 msgstr ""
 
-#: src/components/forms/input-handle-default.tsx:108
+#: src/components/forms/input-handle-default.tsx:107
 msgid "yourname"
 msgstr ""

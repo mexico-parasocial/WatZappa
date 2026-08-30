@@ -8,7 +8,7 @@ import { ErrorCard, ErrorParser } from './utils/error-card.tsx'
 export type ErrorViewProps = Override<
   LayoutAppProps,
   {
-    error: unknown
+    error?: unknown
     parser?: ErrorParser
     retry?: () => void
     retryLabel?: ReactNode

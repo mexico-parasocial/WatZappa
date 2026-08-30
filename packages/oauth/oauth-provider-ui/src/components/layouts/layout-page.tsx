@@ -1,19 +1,16 @@
 import { MessageDescriptor } from '@lingui/core'
 import { useLingui } from '@lingui/react'
 import { ArrowLeftIcon, IconProps } from '@phosphor-icons/react'
-import {
-  Link,
-  RegisteredRouter,
-  ToPathOption,
-  useMatchRoute,
-} from '@tanstack/react-router'
+import { Link, useMatchRoute } from '@tanstack/react-router'
 import { clsx } from 'clsx'
 import { FunctionComponent, ReactNode } from 'react'
 import { LayoutApp } from '#/components/layouts/layout-app.tsx'
 import { AccountSelector } from '#/components/utils/account-selector.tsx'
 
 export type LayoutPageLink = {
-  to: ToPathOption<RegisteredRouter, '/', undefined>
+  // Paths are composed at runtime (a base path + a sub path), by callers
+  // mounted under more than one router, so they cannot be literal types.
+  to: string
   title: string | MessageDescriptor
   hidden?: boolean
   description?: string | MessageDescriptor
@@ -21,7 +18,7 @@ export type LayoutPageLink = {
 }
 
 export type LayoutPageProps = {
-  basePath: ToPathOption<RegisteredRouter, '/', undefined>
+  basePath: string
   title?: string | MessageDescriptor
   links: ReadonlyArray<LayoutPageLink>
   children?: ReactNode
@@ -36,8 +33,7 @@ export type LayoutPageProps = {
  */
 function useIsCurrentTarget() {
   const matchRoute = useMatchRoute()
-  return ({ to }: { to: ToPathOption<RegisteredRouter, '/', undefined> }) =>
-    to != null && matchRoute({ to, exact: true }) !== false
+  return ({ to }: { to: string }) => to != null && matchRoute({ to }) !== false
 }
 
 export function LayoutPage({

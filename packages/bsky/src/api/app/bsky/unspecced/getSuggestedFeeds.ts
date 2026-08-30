@@ -1,23 +1,23 @@
 import { mapDefined, noUndefinedVals } from '@atproto/common'
-import { AtUriString, Client } from '@atproto/lex'
-import { Server } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
+import type { AtUriString, Client } from '@atproto/lex'
+import { MethodNotImplementedError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import type { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
 import { app } from '../../../../lexicons/index.js'
 import {
-  HydrationFnInput,
-  PresentationFnInput,
-  SkeletonFnInput,
+  type HydrationFnInput,
+  type PresentationFnInput,
+  type SkeletonFnInput,
   createPipeline,
   noRules,
 } from '../../../../pipeline.js'
-import { Views } from '../../../../views/index.js'
+import type { Views } from '../../../../views/index.js'
 
 export default function (server: Server, ctx: AppContext) {
   const getFeeds = createPipeline(skeleton, hydration, noRules, presentation)
   server.add(app.bsky.unspecced.getSuggestedFeeds, {
     auth: ctx.authVerifier.standardOptional,
-    handler: async ({ auth, params, req }) => {
+    handler: async ({ auth, params, req, signal }) => {
       const viewer = auth.credentials.iss
       const labelers = ctx.reqLabelers(req)
       const hydrateCtx = await ctx.hydrator.createContext({ labelers, viewer })
@@ -32,6 +32,7 @@ export default function (server: Server, ctx: AppContext) {
           ...params,
           hydrateCtx,
           headers,
+          signal,
         },
         ctx,
       )
@@ -49,7 +50,8 @@ const skeleton = async (
   const { params, ctx } = input
 
   if (!ctx.topicsClient) {
-    return { feeds: [] }
+    // Use 501 instead of 500 as these are not considered retry-able by clients
+    throw new MethodNotImplementedError('Topics agent not available')
   }
 
   return ctx.topicsClient.call(
@@ -60,6 +62,7 @@ const skeleton = async (
     },
     {
       headers: params.headers,
+      signal: params.signal,
     },
   )
 }
@@ -92,6 +95,7 @@ type Context = {
 type Params = app.bsky.unspecced.getSuggestedFeeds.$Params & {
   hydrateCtx: HydrateCtx
   headers: Record<string, string>
+  signal: AbortSignal
 }
 
 type SkeletonState = {

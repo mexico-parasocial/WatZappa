@@ -18,7 +18,7 @@ const is$typed = _is$typed,
 const id = 'com.para.actor.exportCivicTree'
 
 export type QueryParams = {
-  /** DID of the actor to export. Defaults to the authenticated viewer. */
+  /** DID of the actor to export. Must be the authenticated viewer; defaults to them. */
   actor?: string
   /** Include the actor's cast votes. Defaults to true. */
   includeVotes?: boolean
@@ -48,7 +48,17 @@ export interface Response {
   data: OutputSchema
 }
 
+export class ForbiddenError extends XRPCError {
+  constructor(src: XRPCError) {
+    super(src.status, src.error, src.message, src.headers, { cause: src })
+  }
+}
+
 export function toKnownErr(e: any) {
+  if (e instanceof XRPCError) {
+    if (e.error === 'Forbidden') return new ForbiddenError(e)
+  }
+
   return e
 }
 

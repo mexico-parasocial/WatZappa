@@ -289,6 +289,15 @@ export class TestChat {
       }
     })
 
+    lexServer.chat.bsky.convo.getUnreadCounts(async (args) => {
+      const auth = await chat.requireAuth(args.req)
+      const counts = await chat.getUnreadCounts(auth.did)
+      return {
+        encoding: 'application/json',
+        body: counts,
+      }
+    })
+
     lexServer.chat.bsky.convo.getMessages(async (args) => {
       const auth = await chat.requireAuth(args.req)
       const convo = chat.requireAccessibleConvo(args.params.convoId, auth.did)
@@ -1193,6 +1202,25 @@ export class TestChat {
       result.push(await this.toConvoView(convo, did))
     }
     return result
+  }
+
+  async getUnreadCounts(did: string): Promise<{
+    unreadRequestConvos: number
+    unreadAcceptedConvos: number
+  }> {
+    let unreadRequestConvos = 0
+    let unreadAcceptedConvos = 0
+    for (const convo of this.convos.values()) {
+      if (!this.isConvoVisibleTo(convo, did)) continue
+      if (this.getUnreadCount(convo, did) < 1) continue
+      const memberState = this.getMemberState(convo, did)
+      if (memberState.status === 'request') {
+        unreadRequestConvos += 1
+      } else {
+        unreadAcceptedConvos += 1
+      }
+    }
+    return {unreadRequestConvos, unreadAcceptedConvos}
   }
 
   private getVisibleMessages(

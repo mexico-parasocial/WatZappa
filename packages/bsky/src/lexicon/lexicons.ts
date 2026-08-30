@@ -25023,6 +25023,111 @@ export const schemaDict = {
       },
     },
   },
+  ComParaCommunityListDeliberations: {
+    lexicon: 1,
+    id: 'com.para.community.listDeliberations',
+    defs: {
+      main: {
+        type: 'query',
+        description: 'List deliberation statements for a proposal.',
+        parameters: {
+          type: 'params',
+          required: ['proposal'],
+          properties: {
+            proposal: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['statements'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              statements: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.community.listDeliberations#deliberationStatement',
+                },
+              },
+            },
+          },
+        },
+      },
+      deliberationStatement: {
+        type: 'object',
+        required: [
+          'uri',
+          'cid',
+          'creator',
+          'proposal',
+          'body',
+          'stance',
+          'agreeCount',
+          'disagreeCount',
+          'passCount',
+          'createdAt',
+        ],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          creator: {
+            type: 'string',
+            format: 'did',
+          },
+          proposal: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          body: {
+            type: 'string',
+            maxLength: 10000,
+          },
+          stance: {
+            type: 'string',
+            maxLength: 100,
+          },
+          agreeCount: {
+            type: 'integer',
+            minimum: 0,
+          },
+          disagreeCount: {
+            type: 'integer',
+            minimum: 0,
+          },
+          passCount: {
+            type: 'integer',
+            minimum: 0,
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+    },
+  },
   ComParaCommunityListIntensities: {
     lexicon: 1,
     id: 'com.para.community.listIntensities',
@@ -36536,6 +36641,7 @@ export const ids = {
   ComParaCommunityListCommunityRelations:
     'com.para.community.listCommunityRelations',
   ComParaCommunityListDelegations: 'com.para.community.listDelegations',
+  ComParaCommunityListDeliberations: 'com.para.community.listDeliberations',
   ComParaCommunityListIntensities: 'com.para.community.listIntensities',
   ComParaCommunityListMembers: 'com.para.community.listMembers',
   ComParaCommunityListParentCommunities:

@@ -174,6 +174,7 @@ import * as ChatBskyConvoGetConvoForMembers from './types/chat/bsky/convo/getCon
 import * as ChatBskyConvoGetConvoMembers from './types/chat/bsky/convo/getConvoMembers.js'
 import * as ChatBskyConvoGetLog from './types/chat/bsky/convo/getLog.js'
 import * as ChatBskyConvoGetMessages from './types/chat/bsky/convo/getMessages.js'
+import * as ChatBskyConvoGetUnreadCounts from './types/chat/bsky/convo/getUnreadCounts.js'
 import * as ChatBskyConvoLeaveConvo from './types/chat/bsky/convo/leaveConvo.js'
 import * as ChatBskyConvoListConvoRequests from './types/chat/bsky/convo/listConvoRequests.js'
 import * as ChatBskyConvoListConvos from './types/chat/bsky/convo/listConvos.js'
@@ -286,6 +287,35 @@ import * as ComAtprotoServerReserveSigningKey from './types/com/atproto/server/r
 import * as ComAtprotoServerResetPassword from './types/com/atproto/server/resetPassword.js'
 import * as ComAtprotoServerRevokeAppPassword from './types/com/atproto/server/revokeAppPassword.js'
 import * as ComAtprotoServerUpdateEmail from './types/com/atproto/server/updateEmail.js'
+import * as ComAtprotoSimplespaceAddMember from './types/com/atproto/simplespace/addMember.js'
+import * as ComAtprotoSimplespaceCheckUserAccess from './types/com/atproto/simplespace/checkUserAccess.js'
+import * as ComAtprotoSimplespaceCreateSpace from './types/com/atproto/simplespace/createSpace.js'
+import * as ComAtprotoSimplespaceDefs from './types/com/atproto/simplespace/defs.js'
+import * as ComAtprotoSimplespaceDeleteSpace from './types/com/atproto/simplespace/deleteSpace.js'
+import * as ComAtprotoSimplespaceGetSpace from './types/com/atproto/simplespace/getSpace.js'
+import * as ComAtprotoSimplespaceListMembers from './types/com/atproto/simplespace/listMembers.js'
+import * as ComAtprotoSimplespaceRemoveMember from './types/com/atproto/simplespace/removeMember.js'
+import * as ComAtprotoSimplespaceUpdateSpace from './types/com/atproto/simplespace/updateSpace.js'
+import * as ComAtprotoSpaceApplyWrites from './types/com/atproto/space/applyWrites.js'
+import * as ComAtprotoSpaceCreateRecord from './types/com/atproto/space/createRecord.js'
+import * as ComAtprotoSpaceDefs from './types/com/atproto/space/defs.js'
+import * as ComAtprotoSpaceDeleteRecord from './types/com/atproto/space/deleteRecord.js'
+import * as ComAtprotoSpaceGetBlob from './types/com/atproto/space/getBlob.js'
+import * as ComAtprotoSpaceGetDelegationToken from './types/com/atproto/space/getDelegationToken.js'
+import * as ComAtprotoSpaceGetLatestCommit from './types/com/atproto/space/getLatestCommit.js'
+import * as ComAtprotoSpaceGetRecord from './types/com/atproto/space/getRecord.js'
+import * as ComAtprotoSpaceGetRepo from './types/com/atproto/space/getRepo.js'
+import * as ComAtprotoSpaceGetSpaceCredential from './types/com/atproto/space/getSpaceCredential.js'
+import * as ComAtprotoSpaceListBlobs from './types/com/atproto/space/listBlobs.js'
+import * as ComAtprotoSpaceListRecords from './types/com/atproto/space/listRecords.js'
+import * as ComAtprotoSpaceListRepoOps from './types/com/atproto/space/listRepoOps.js'
+import * as ComAtprotoSpaceListRepos from './types/com/atproto/space/listRepos.js'
+import * as ComAtprotoSpaceListSpaces from './types/com/atproto/space/listSpaces.js'
+import * as ComAtprotoSpaceNotifySpaceDeleted from './types/com/atproto/space/notifySpaceDeleted.js'
+import * as ComAtprotoSpaceNotifyWrite from './types/com/atproto/space/notifyWrite.js'
+import * as ComAtprotoSpacePutRecord from './types/com/atproto/space/putRecord.js'
+import * as ComAtprotoSpaceRegisterNotify from './types/com/atproto/space/registerNotify.js'
+import * as ComAtprotoSpaceUnregisterNotify from './types/com/atproto/space/unregisterNotify.js'
 import * as ComAtprotoSyncDefs from './types/com/atproto/sync/defs.js'
 import * as ComAtprotoSyncGetBlob from './types/com/atproto/sync/getBlob.js'
 import * as ComAtprotoSyncGetBlocks from './types/com/atproto/sync/getBlocks.js'
@@ -371,6 +401,7 @@ import * as ComParaCommunityListCivicTreeVotes from './types/com/para/community/
 import * as ComParaCommunityListCivicTrees from './types/com/para/community/listCivicTrees.js'
 import * as ComParaCommunityListCommunityRelations from './types/com/para/community/listCommunityRelations.js'
 import * as ComParaCommunityListDelegations from './types/com/para/community/listDelegations.js'
+import * as ComParaCommunityListDeliberations from './types/com/para/community/listDeliberations.js'
 import * as ComParaCommunityListIntensities from './types/com/para/community/listIntensities.js'
 import * as ComParaCommunityListMembers from './types/com/para/community/listMembers.js'
 import * as ComParaCommunityListParentCommunities from './types/com/para/community/listParentCommunities.js'
@@ -665,6 +696,7 @@ export * as ChatBskyConvoGetConvoForMembers from './types/chat/bsky/convo/getCon
 export * as ChatBskyConvoGetConvoMembers from './types/chat/bsky/convo/getConvoMembers.js'
 export * as ChatBskyConvoGetLog from './types/chat/bsky/convo/getLog.js'
 export * as ChatBskyConvoGetMessages from './types/chat/bsky/convo/getMessages.js'
+export * as ChatBskyConvoGetUnreadCounts from './types/chat/bsky/convo/getUnreadCounts.js'
 export * as ChatBskyConvoLeaveConvo from './types/chat/bsky/convo/leaveConvo.js'
 export * as ChatBskyConvoListConvoRequests from './types/chat/bsky/convo/listConvoRequests.js'
 export * as ChatBskyConvoListConvos from './types/chat/bsky/convo/listConvos.js'
@@ -777,6 +809,35 @@ export * as ComAtprotoServerReserveSigningKey from './types/com/atproto/server/r
 export * as ComAtprotoServerResetPassword from './types/com/atproto/server/resetPassword.js'
 export * as ComAtprotoServerRevokeAppPassword from './types/com/atproto/server/revokeAppPassword.js'
 export * as ComAtprotoServerUpdateEmail from './types/com/atproto/server/updateEmail.js'
+export * as ComAtprotoSimplespaceAddMember from './types/com/atproto/simplespace/addMember.js'
+export * as ComAtprotoSimplespaceCheckUserAccess from './types/com/atproto/simplespace/checkUserAccess.js'
+export * as ComAtprotoSimplespaceCreateSpace from './types/com/atproto/simplespace/createSpace.js'
+export * as ComAtprotoSimplespaceDefs from './types/com/atproto/simplespace/defs.js'
+export * as ComAtprotoSimplespaceDeleteSpace from './types/com/atproto/simplespace/deleteSpace.js'
+export * as ComAtprotoSimplespaceGetSpace from './types/com/atproto/simplespace/getSpace.js'
+export * as ComAtprotoSimplespaceListMembers from './types/com/atproto/simplespace/listMembers.js'
+export * as ComAtprotoSimplespaceRemoveMember from './types/com/atproto/simplespace/removeMember.js'
+export * as ComAtprotoSimplespaceUpdateSpace from './types/com/atproto/simplespace/updateSpace.js'
+export * as ComAtprotoSpaceApplyWrites from './types/com/atproto/space/applyWrites.js'
+export * as ComAtprotoSpaceCreateRecord from './types/com/atproto/space/createRecord.js'
+export * as ComAtprotoSpaceDefs from './types/com/atproto/space/defs.js'
+export * as ComAtprotoSpaceDeleteRecord from './types/com/atproto/space/deleteRecord.js'
+export * as ComAtprotoSpaceGetBlob from './types/com/atproto/space/getBlob.js'
+export * as ComAtprotoSpaceGetDelegationToken from './types/com/atproto/space/getDelegationToken.js'
+export * as ComAtprotoSpaceGetLatestCommit from './types/com/atproto/space/getLatestCommit.js'
+export * as ComAtprotoSpaceGetRecord from './types/com/atproto/space/getRecord.js'
+export * as ComAtprotoSpaceGetRepo from './types/com/atproto/space/getRepo.js'
+export * as ComAtprotoSpaceGetSpaceCredential from './types/com/atproto/space/getSpaceCredential.js'
+export * as ComAtprotoSpaceListBlobs from './types/com/atproto/space/listBlobs.js'
+export * as ComAtprotoSpaceListRecords from './types/com/atproto/space/listRecords.js'
+export * as ComAtprotoSpaceListRepoOps from './types/com/atproto/space/listRepoOps.js'
+export * as ComAtprotoSpaceListRepos from './types/com/atproto/space/listRepos.js'
+export * as ComAtprotoSpaceListSpaces from './types/com/atproto/space/listSpaces.js'
+export * as ComAtprotoSpaceNotifySpaceDeleted from './types/com/atproto/space/notifySpaceDeleted.js'
+export * as ComAtprotoSpaceNotifyWrite from './types/com/atproto/space/notifyWrite.js'
+export * as ComAtprotoSpacePutRecord from './types/com/atproto/space/putRecord.js'
+export * as ComAtprotoSpaceRegisterNotify from './types/com/atproto/space/registerNotify.js'
+export * as ComAtprotoSpaceUnregisterNotify from './types/com/atproto/space/unregisterNotify.js'
 export * as ComAtprotoSyncDefs from './types/com/atproto/sync/defs.js'
 export * as ComAtprotoSyncGetBlob from './types/com/atproto/sync/getBlob.js'
 export * as ComAtprotoSyncGetBlocks from './types/com/atproto/sync/getBlocks.js'
@@ -862,6 +923,7 @@ export * as ComParaCommunityListCivicTreeVotes from './types/com/para/community/
 export * as ComParaCommunityListCivicTrees from './types/com/para/community/listCivicTrees.js'
 export * as ComParaCommunityListCommunityRelations from './types/com/para/community/listCommunityRelations.js'
 export * as ComParaCommunityListDelegations from './types/com/para/community/listDelegations.js'
+export * as ComParaCommunityListDeliberations from './types/com/para/community/listDeliberations.js'
 export * as ComParaCommunityListIntensities from './types/com/para/community/listIntensities.js'
 export * as ComParaCommunityListMembers from './types/com/para/community/listMembers.js'
 export * as ComParaCommunityListParentCommunities from './types/com/para/community/listParentCommunities.js'
@@ -4233,6 +4295,18 @@ export class ChatBskyConvoNS {
       })
   }
 
+  getUnreadCounts(
+    params?: ChatBskyConvoGetUnreadCounts.QueryParams,
+    opts?: ChatBskyConvoGetUnreadCounts.CallOptions,
+  ): Promise<ChatBskyConvoGetUnreadCounts.Response> {
+    return this._client.call(
+      'chat.bsky.convo.getUnreadCounts',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
   leaveConvo(
     data?: ChatBskyConvoLeaveConvo.InputSchema,
     opts?: ChatBskyConvoLeaveConvo.CallOptions,
@@ -4695,6 +4769,8 @@ export class ComAtprotoNS {
   moderation: ComAtprotoModerationNS
   repo: ComAtprotoRepoNS
   server: ComAtprotoServerNS
+  simplespace: ComAtprotoSimplespaceNS
+  space: ComAtprotoSpaceNS
   sync: ComAtprotoSyncNS
   temp: ComAtprotoTempNS
 
@@ -4707,6 +4783,8 @@ export class ComAtprotoNS {
     this.moderation = new ComAtprotoModerationNS(client)
     this.repo = new ComAtprotoRepoNS(client)
     this.server = new ComAtprotoServerNS(client)
+    this.simplespace = new ComAtprotoSimplespaceNS(client)
+    this.space = new ComAtprotoSpaceNS(client)
     this.sync = new ComAtprotoSyncNS(client)
     this.temp = new ComAtprotoTempNS(client)
   }
@@ -5575,6 +5653,324 @@ export class ComAtprotoServerNS {
   }
 }
 
+export class ComAtprotoSimplespaceNS {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  addMember(
+    data?: ComAtprotoSimplespaceAddMember.InputSchema,
+    opts?: ComAtprotoSimplespaceAddMember.CallOptions,
+  ): Promise<ComAtprotoSimplespaceAddMember.Response> {
+    return this._client
+      .call('com.atproto.simplespace.addMember', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ComAtprotoSimplespaceAddMember.toKnownErr(e)
+      })
+  }
+
+  checkUserAccess(
+    params?: ComAtprotoSimplespaceCheckUserAccess.QueryParams,
+    opts?: ComAtprotoSimplespaceCheckUserAccess.CallOptions,
+  ): Promise<ComAtprotoSimplespaceCheckUserAccess.Response> {
+    return this._client.call(
+      'com.atproto.simplespace.checkUserAccess',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  createSpace(
+    data?: ComAtprotoSimplespaceCreateSpace.InputSchema,
+    opts?: ComAtprotoSimplespaceCreateSpace.CallOptions,
+  ): Promise<ComAtprotoSimplespaceCreateSpace.Response> {
+    return this._client
+      .call('com.atproto.simplespace.createSpace', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ComAtprotoSimplespaceCreateSpace.toKnownErr(e)
+      })
+  }
+
+  deleteSpace(
+    data?: ComAtprotoSimplespaceDeleteSpace.InputSchema,
+    opts?: ComAtprotoSimplespaceDeleteSpace.CallOptions,
+  ): Promise<ComAtprotoSimplespaceDeleteSpace.Response> {
+    return this._client
+      .call('com.atproto.simplespace.deleteSpace', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ComAtprotoSimplespaceDeleteSpace.toKnownErr(e)
+      })
+  }
+
+  getSpace(
+    params?: ComAtprotoSimplespaceGetSpace.QueryParams,
+    opts?: ComAtprotoSimplespaceGetSpace.CallOptions,
+  ): Promise<ComAtprotoSimplespaceGetSpace.Response> {
+    return this._client
+      .call('com.atproto.simplespace.getSpace', params, undefined, opts)
+      .catch((e) => {
+        throw ComAtprotoSimplespaceGetSpace.toKnownErr(e)
+      })
+  }
+
+  listMembers(
+    params?: ComAtprotoSimplespaceListMembers.QueryParams,
+    opts?: ComAtprotoSimplespaceListMembers.CallOptions,
+  ): Promise<ComAtprotoSimplespaceListMembers.Response> {
+    return this._client
+      .call('com.atproto.simplespace.listMembers', params, undefined, opts)
+      .catch((e) => {
+        throw ComAtprotoSimplespaceListMembers.toKnownErr(e)
+      })
+  }
+
+  removeMember(
+    data?: ComAtprotoSimplespaceRemoveMember.InputSchema,
+    opts?: ComAtprotoSimplespaceRemoveMember.CallOptions,
+  ): Promise<ComAtprotoSimplespaceRemoveMember.Response> {
+    return this._client
+      .call('com.atproto.simplespace.removeMember', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ComAtprotoSimplespaceRemoveMember.toKnownErr(e)
+      })
+  }
+
+  updateSpace(
+    data?: ComAtprotoSimplespaceUpdateSpace.InputSchema,
+    opts?: ComAtprotoSimplespaceUpdateSpace.CallOptions,
+  ): Promise<ComAtprotoSimplespaceUpdateSpace.Response> {
+    return this._client
+      .call('com.atproto.simplespace.updateSpace', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ComAtprotoSimplespaceUpdateSpace.toKnownErr(e)
+      })
+  }
+}
+
+export class ComAtprotoSpaceNS {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  applyWrites(
+    data?: ComAtprotoSpaceApplyWrites.InputSchema,
+    opts?: ComAtprotoSpaceApplyWrites.CallOptions,
+  ): Promise<ComAtprotoSpaceApplyWrites.Response> {
+    return this._client
+      .call('com.atproto.space.applyWrites', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ComAtprotoSpaceApplyWrites.toKnownErr(e)
+      })
+  }
+
+  createRecord(
+    data?: ComAtprotoSpaceCreateRecord.InputSchema,
+    opts?: ComAtprotoSpaceCreateRecord.CallOptions,
+  ): Promise<ComAtprotoSpaceCreateRecord.Response> {
+    return this._client
+      .call('com.atproto.space.createRecord', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ComAtprotoSpaceCreateRecord.toKnownErr(e)
+      })
+  }
+
+  deleteRecord(
+    data?: ComAtprotoSpaceDeleteRecord.InputSchema,
+    opts?: ComAtprotoSpaceDeleteRecord.CallOptions,
+  ): Promise<ComAtprotoSpaceDeleteRecord.Response> {
+    return this._client
+      .call('com.atproto.space.deleteRecord', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ComAtprotoSpaceDeleteRecord.toKnownErr(e)
+      })
+  }
+
+  getBlob(
+    params?: ComAtprotoSpaceGetBlob.QueryParams,
+    opts?: ComAtprotoSpaceGetBlob.CallOptions,
+  ): Promise<ComAtprotoSpaceGetBlob.Response> {
+    return this._client
+      .call('com.atproto.space.getBlob', params, undefined, opts)
+      .catch((e) => {
+        throw ComAtprotoSpaceGetBlob.toKnownErr(e)
+      })
+  }
+
+  getDelegationToken(
+    params?: ComAtprotoSpaceGetDelegationToken.QueryParams,
+    opts?: ComAtprotoSpaceGetDelegationToken.CallOptions,
+  ): Promise<ComAtprotoSpaceGetDelegationToken.Response> {
+    return this._client.call(
+      'com.atproto.space.getDelegationToken',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  getLatestCommit(
+    params?: ComAtprotoSpaceGetLatestCommit.QueryParams,
+    opts?: ComAtprotoSpaceGetLatestCommit.CallOptions,
+  ): Promise<ComAtprotoSpaceGetLatestCommit.Response> {
+    return this._client
+      .call('com.atproto.space.getLatestCommit', params, undefined, opts)
+      .catch((e) => {
+        throw ComAtprotoSpaceGetLatestCommit.toKnownErr(e)
+      })
+  }
+
+  getRecord(
+    params?: ComAtprotoSpaceGetRecord.QueryParams,
+    opts?: ComAtprotoSpaceGetRecord.CallOptions,
+  ): Promise<ComAtprotoSpaceGetRecord.Response> {
+    return this._client
+      .call('com.atproto.space.getRecord', params, undefined, opts)
+      .catch((e) => {
+        throw ComAtprotoSpaceGetRecord.toKnownErr(e)
+      })
+  }
+
+  getRepo(
+    params?: ComAtprotoSpaceGetRepo.QueryParams,
+    opts?: ComAtprotoSpaceGetRepo.CallOptions,
+  ): Promise<ComAtprotoSpaceGetRepo.Response> {
+    return this._client
+      .call('com.atproto.space.getRepo', params, undefined, opts)
+      .catch((e) => {
+        throw ComAtprotoSpaceGetRepo.toKnownErr(e)
+      })
+  }
+
+  getSpaceCredential(
+    data?: ComAtprotoSpaceGetSpaceCredential.InputSchema,
+    opts?: ComAtprotoSpaceGetSpaceCredential.CallOptions,
+  ): Promise<ComAtprotoSpaceGetSpaceCredential.Response> {
+    return this._client
+      .call('com.atproto.space.getSpaceCredential', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ComAtprotoSpaceGetSpaceCredential.toKnownErr(e)
+      })
+  }
+
+  listBlobs(
+    params?: ComAtprotoSpaceListBlobs.QueryParams,
+    opts?: ComAtprotoSpaceListBlobs.CallOptions,
+  ): Promise<ComAtprotoSpaceListBlobs.Response> {
+    return this._client
+      .call('com.atproto.space.listBlobs', params, undefined, opts)
+      .catch((e) => {
+        throw ComAtprotoSpaceListBlobs.toKnownErr(e)
+      })
+  }
+
+  listRecords(
+    params?: ComAtprotoSpaceListRecords.QueryParams,
+    opts?: ComAtprotoSpaceListRecords.CallOptions,
+  ): Promise<ComAtprotoSpaceListRecords.Response> {
+    return this._client
+      .call('com.atproto.space.listRecords', params, undefined, opts)
+      .catch((e) => {
+        throw ComAtprotoSpaceListRecords.toKnownErr(e)
+      })
+  }
+
+  listRepoOps(
+    params?: ComAtprotoSpaceListRepoOps.QueryParams,
+    opts?: ComAtprotoSpaceListRepoOps.CallOptions,
+  ): Promise<ComAtprotoSpaceListRepoOps.Response> {
+    return this._client
+      .call('com.atproto.space.listRepoOps', params, undefined, opts)
+      .catch((e) => {
+        throw ComAtprotoSpaceListRepoOps.toKnownErr(e)
+      })
+  }
+
+  listRepos(
+    params?: ComAtprotoSpaceListRepos.QueryParams,
+    opts?: ComAtprotoSpaceListRepos.CallOptions,
+  ): Promise<ComAtprotoSpaceListRepos.Response> {
+    return this._client
+      .call('com.atproto.space.listRepos', params, undefined, opts)
+      .catch((e) => {
+        throw ComAtprotoSpaceListRepos.toKnownErr(e)
+      })
+  }
+
+  listSpaces(
+    params?: ComAtprotoSpaceListSpaces.QueryParams,
+    opts?: ComAtprotoSpaceListSpaces.CallOptions,
+  ): Promise<ComAtprotoSpaceListSpaces.Response> {
+    return this._client.call(
+      'com.atproto.space.listSpaces',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  notifySpaceDeleted(
+    data?: ComAtprotoSpaceNotifySpaceDeleted.InputSchema,
+    opts?: ComAtprotoSpaceNotifySpaceDeleted.CallOptions,
+  ): Promise<ComAtprotoSpaceNotifySpaceDeleted.Response> {
+    return this._client.call(
+      'com.atproto.space.notifySpaceDeleted',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
+
+  notifyWrite(
+    data?: ComAtprotoSpaceNotifyWrite.InputSchema,
+    opts?: ComAtprotoSpaceNotifyWrite.CallOptions,
+  ): Promise<ComAtprotoSpaceNotifyWrite.Response> {
+    return this._client.call(
+      'com.atproto.space.notifyWrite',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
+
+  putRecord(
+    data?: ComAtprotoSpacePutRecord.InputSchema,
+    opts?: ComAtprotoSpacePutRecord.CallOptions,
+  ): Promise<ComAtprotoSpacePutRecord.Response> {
+    return this._client
+      .call('com.atproto.space.putRecord', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ComAtprotoSpacePutRecord.toKnownErr(e)
+      })
+  }
+
+  registerNotify(
+    data?: ComAtprotoSpaceRegisterNotify.InputSchema,
+    opts?: ComAtprotoSpaceRegisterNotify.CallOptions,
+  ): Promise<ComAtprotoSpaceRegisterNotify.Response> {
+    return this._client
+      .call('com.atproto.space.registerNotify', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ComAtprotoSpaceRegisterNotify.toKnownErr(e)
+      })
+  }
+
+  unregisterNotify(
+    data?: ComAtprotoSpaceUnregisterNotify.InputSchema,
+    opts?: ComAtprotoSpaceUnregisterNotify.CallOptions,
+  ): Promise<ComAtprotoSpaceUnregisterNotify.Response> {
+    return this._client
+      .call('com.atproto.space.unregisterNotify', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ComAtprotoSpaceUnregisterNotify.toKnownErr(e)
+      })
+  }
+}
+
 export class ComAtprotoSyncNS {
   _client: XrpcClient
 
@@ -5945,12 +6341,11 @@ export class ComParaActorNS {
     params?: ComParaActorExportCivicTree.QueryParams,
     opts?: ComParaActorExportCivicTree.CallOptions,
   ): Promise<ComParaActorExportCivicTree.Response> {
-    return this._client.call(
-      'com.para.actor.exportCivicTree',
-      params,
-      undefined,
-      opts,
-    )
+    return this._client
+      .call('com.para.actor.exportCivicTree', params, undefined, opts)
+      .catch((e) => {
+        throw ComParaActorExportCivicTree.toKnownErr(e)
+      })
   }
 
   getProfileStats(
@@ -7063,6 +7458,18 @@ export class ComParaCommunityNS {
   ): Promise<ComParaCommunityListDelegations.Response> {
     return this._client.call(
       'com.para.community.listDelegations',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  listDeliberations(
+    params?: ComParaCommunityListDeliberations.QueryParams,
+    opts?: ComParaCommunityListDeliberations.CallOptions,
+  ): Promise<ComParaCommunityListDeliberations.Response> {
+    return this._client.call(
+      'com.para.community.listDeliberations',
       params,
       undefined,
       opts,

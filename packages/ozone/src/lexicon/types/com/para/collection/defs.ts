@@ -38,7 +38,9 @@ export function validateCollection<V>(v: V) {
 export interface CivicTreeItem {
   $type?: 'com.para.collection.defs#civicTreeItem'
   itemId?: string
-  kind?: 'policy' | 'post' | 'link' | 'note' | 'evidence' | (string & {})
+  /** What the item is. All kinds except `topic` reference an artifact with a URI or URL; a `topic` is a subject the artifacts are about, and carries no target of its own. */
+  kind?:
+    'policy' | 'post' | 'link' | 'note' | 'evidence' | 'topic' | (string & {})
   title?: string
   description?: string
   url?: string
@@ -51,6 +53,8 @@ export interface CivicTreeItem {
   policyColor?: string
   note?: string
   addedAt: string
+  /** For a topic drawn from PARA's shared flair vocabulary, the flair id. Absent on a free-text topic. */
+  flairId?: string
 }
 
 const hashCivicTreeItem = 'civicTreeItem'

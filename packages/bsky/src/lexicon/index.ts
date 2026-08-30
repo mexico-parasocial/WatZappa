@@ -292,6 +292,7 @@ import * as ComParaCommunityListCivicTreeVotes from './types/com/para/community/
 import * as ComParaCommunityListCivicTrees from './types/com/para/community/listCivicTrees.js'
 import * as ComParaCommunityListCommunityRelations from './types/com/para/community/listCommunityRelations.js'
 import * as ComParaCommunityListDelegations from './types/com/para/community/listDelegations.js'
+import * as ComParaCommunityListDeliberations from './types/com/para/community/listDeliberations.js'
 import * as ComParaCommunityListIntensities from './types/com/para/community/listIntensities.js'
 import * as ComParaCommunityListMembers from './types/com/para/community/listMembers.js'
 import * as ComParaCommunityListParentCommunities from './types/com/para/community/listParentCommunities.js'
@@ -4292,6 +4293,18 @@ export class ComParaCommunityNS {
     >,
   ) {
     const nsid = 'com.para.community.listDelegations' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  listDeliberations<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ComParaCommunityListDeliberations.QueryParams,
+      ComParaCommunityListDeliberations.HandlerInput,
+      ComParaCommunityListDeliberations.HandlerOutput
+    >,
+  ) {
+    const nsid = 'com.para.community.listDeliberations' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
 

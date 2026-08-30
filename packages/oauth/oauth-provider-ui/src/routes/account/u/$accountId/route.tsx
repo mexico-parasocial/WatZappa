@@ -7,7 +7,7 @@ import {
   UserIcon,
 } from '@phosphor-icons/react'
 import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
-import { FunctionComponent, ReactNode, useMemo } from 'react'
+import { FunctionComponent, useMemo } from 'react'
 import { IconProps } from '@phosphor-icons/react'
 import {
   LayoutPage,
@@ -96,15 +96,13 @@ function AccountLayout() {
         }
         return 0
       })
-      .map(
-        ([subPath, page]): LayoutPageLink => ({
-          to: (subPath === '/' ? basePath : `${basePath}${subPath}`) as any,
-          title: page.title,
-          description: page.description,
-          hidden: page.hidden,
-          icon: page.icon,
-        }),
-      )
+      .map(([subPath, page]): LayoutPageLink => ({
+        to: subPath === '/' ? basePath : `${basePath}${subPath}`,
+        title: page.title,
+        description: page.description,
+        hidden: page.hidden,
+        icon: page.icon,
+      }))
   }, [basePath])
 
   const value = useMemo(

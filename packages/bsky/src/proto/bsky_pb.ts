@@ -859,6 +859,15 @@ export class GetPostRecordsRequest extends Message<GetPostRecordsRequest> {
    */
   viewerDid?: string;
 
+  /**
+   * Include complete canonical OP threads used by AppView to derive position
+   * metadata. This is opt-in because resolving them is more expensive than
+   * the normal post record lookup.
+   *
+   * @generated from field: bool include_op_thread_metadata = 4;
+   */
+  includeOpThreadMetadata = false;
+
   constructor(data?: PartialMessage<GetPostRecordsRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -870,6 +879,7 @@ export class GetPostRecordsRequest extends Message<GetPostRecordsRequest> {
     { no: 1, name: "uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
     { no: 2, name: "process_dynamic_tags_for_view", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 3, name: "viewer_did", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 4, name: "include_op_thread_metadata", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetPostRecordsRequest {
@@ -903,6 +913,14 @@ export class GetPostRecordsResponse extends Message<GetPostRecordsResponse> {
    */
   meta: PostRecordMeta[] = [];
 
+  /**
+   * Complete canonical OP threads for roots represented by the requested
+   * posts. AppView derives each post's index and count from these chains.
+   *
+   * @generated from field: repeated bsky.OpThread op_threads = 3;
+   */
+  opThreads: OpThread[] = [];
+
   constructor(data?: PartialMessage<GetPostRecordsResponse>) {
     super();
     proto3.util.initPartial(data, this);
@@ -913,6 +931,7 @@ export class GetPostRecordsResponse extends Message<GetPostRecordsResponse> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "records", kind: "message", T: Record, repeated: true },
     { no: 2, name: "meta", kind: "message", T: PostRecordMeta, repeated: true },
+    { no: 3, name: "op_threads", kind: "message", T: OpThread, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetPostRecordsResponse {
@@ -929,6 +948,52 @@ export class GetPostRecordsResponse extends Message<GetPostRecordsResponse> {
 
   static equals(a: GetPostRecordsResponse | PlainMessage<GetPostRecordsResponse> | undefined, b: GetPostRecordsResponse | PlainMessage<GetPostRecordsResponse> | undefined): boolean {
     return proto3.util.equals(GetPostRecordsResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.OpThread
+ */
+export class OpThread extends Message<OpThread> {
+  /**
+   * @generated from field: string root_uri = 1;
+   */
+  rootUri = "";
+
+  /**
+   * The root post followed by its canonical chain of OP replies. Only chains
+   * containing at least one OP reply are returned.
+   *
+   * @generated from field: repeated string uris = 2;
+   */
+  uris: string[] = [];
+
+  constructor(data?: PartialMessage<OpThread>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.OpThread";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "root_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): OpThread {
+    return new OpThread().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): OpThread {
+    return new OpThread().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): OpThread {
+    return new OpThread().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: OpThread | PlainMessage<OpThread> | undefined, b: OpThread | PlainMessage<OpThread> | undefined): boolean {
+    return proto3.util.equals(OpThread, a, b);
   }
 }
 
@@ -2007,6 +2072,11 @@ export class GetFollowsRequest extends Message<GetFollowsRequest> {
    */
   cursor = "";
 
+  /**
+   * @generated from field: string sort = 4;
+   */
+  sort = "";
+
   constructor(data?: PartialMessage<GetFollowsRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -2018,6 +2088,7 @@ export class GetFollowsRequest extends Message<GetFollowsRequest> {
     { no: 1, name: "actor_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
     { no: 3, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "sort", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetFollowsRequest {
@@ -4384,6 +4455,10 @@ export class GetRelationshipsRequest extends Message<GetRelationshipsRequest> {
  */
 export class Relationships extends Message<Relationships> {
   /**
+   * whether a full (unscoped) direct mute exists. Mutually exclusive with
+   * the scoped muted_only_* fields: a reposts- or quoteposts-scoped mute reports
+   * muted=false.
+   *
    * @generated from field: bool muted = 1;
    */
   muted = false;
@@ -4423,6 +4498,16 @@ export class Relationships extends Message<Relationships> {
    */
   followedBy = "";
 
+  /**
+   * @generated from field: bool muted_only_reposts = 9;
+   */
+  mutedOnlyReposts = false;
+
+  /**
+   * @generated from field: bool muted_only_quoteposts = 10;
+   */
+  mutedOnlyQuoteposts = false;
+
   constructor(data?: PartialMessage<Relationships>) {
     super();
     proto3.util.initPartial(data, this);
@@ -4439,6 +4524,8 @@ export class Relationships extends Message<Relationships> {
     { no: 6, name: "blocking_by_list", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 7, name: "following", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 8, name: "followed_by", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 9, name: "muted_only_reposts", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 10, name: "muted_only_quoteposts", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Relationships {
@@ -5120,9 +5207,22 @@ export class GetActorMutesActorRequest extends Message<GetActorMutesActorRequest
  */
 export class GetActorMutesActorResponse extends Message<GetActorMutesActorResponse> {
   /**
+   * whether a full (unscoped) mute exists. Mutually exclusive with the
+   * scoped muted_only_* fields.
+   *
    * @generated from field: bool muted = 1;
    */
   muted = false;
+
+  /**
+   * @generated from field: bool muted_only_reposts = 2;
+   */
+  mutedOnlyReposts = false;
+
+  /**
+   * @generated from field: bool muted_only_quoteposts = 3;
+   */
+  mutedOnlyQuoteposts = false;
 
   constructor(data?: PartialMessage<GetActorMutesActorResponse>) {
     super();
@@ -5133,6 +5233,8 @@ export class GetActorMutesActorResponse extends Message<GetActorMutesActorRespon
   static readonly typeName = "bsky.GetActorMutesActorResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "muted", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 2, name: "muted_only_reposts", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 3, name: "muted_only_quoteposts", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetActorMutesActorResponse {
@@ -5149,6 +5251,58 @@ export class GetActorMutesActorResponse extends Message<GetActorMutesActorRespon
 
   static equals(a: GetActorMutesActorResponse | PlainMessage<GetActorMutesActorResponse> | undefined, b: GetActorMutesActorResponse | PlainMessage<GetActorMutesActorResponse> | undefined): boolean {
     return proto3.util.equals(GetActorMutesActorResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.MuteInfo
+ */
+export class MuteInfo extends Message<MuteInfo> {
+  /**
+   * @generated from field: string did = 1;
+   */
+  did = "";
+
+  /**
+   * scope restrictions: when any is set, just the scoped content is muted;
+   * when none are set, the subject is fully muted.
+   *
+   * @generated from field: bool only_reposts = 2;
+   */
+  onlyReposts = false;
+
+  /**
+   * @generated from field: bool only_quoteposts = 3;
+   */
+  onlyQuoteposts = false;
+
+  constructor(data?: PartialMessage<MuteInfo>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.MuteInfo";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "only_reposts", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 3, name: "only_quoteposts", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): MuteInfo {
+    return new MuteInfo().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): MuteInfo {
+    return new MuteInfo().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): MuteInfo {
+    return new MuteInfo().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: MuteInfo | PlainMessage<MuteInfo> | undefined, b: MuteInfo | PlainMessage<MuteInfo> | undefined): boolean {
+    return proto3.util.equals(MuteInfo, a, b);
   }
 }
 
@@ -5209,7 +5363,10 @@ export class GetMutesRequest extends Message<GetMutesRequest> {
  */
 export class GetMutesResponse extends Message<GetMutesResponse> {
   /**
-   * @generated from field: repeated string dids = 1;
+   * Deprecated: use mutes, which carries the scope of each mute.
+   *
+   * @generated from field: repeated string dids = 1 [deprecated = true];
+   * @deprecated
    */
   dids: string[] = [];
 
@@ -5217,6 +5374,11 @@ export class GetMutesResponse extends Message<GetMutesResponse> {
    * @generated from field: string cursor = 2;
    */
   cursor = "";
+
+  /**
+   * @generated from field: repeated bsky.MuteInfo mutes = 3;
+   */
+  mutes: MuteInfo[] = [];
 
   constructor(data?: PartialMessage<GetMutesResponse>) {
     super();
@@ -5228,6 +5390,7 @@ export class GetMutesResponse extends Message<GetMutesResponse> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "dids", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
     { no: 2, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "mutes", kind: "message", T: MuteInfo, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetMutesResponse {
@@ -8011,6 +8174,17 @@ export class GetThreadResponse extends Message<GetThreadResponse> {
    */
   uris: string[] = [];
 
+  /**
+   * The complete OP thread: the root post followed by the oldest contiguous
+   * chain of OP replies, in chain order. Never trimmed to the posts present
+   * in uris — callers derive a post's position with indexOf and the thread
+   * length with len, so completeness and ordering are load-bearing. Empty
+   * when the thread has no OP replies.
+   *
+   * @generated from field: repeated string op_thread = 2;
+   */
+  opThread: string[] = [];
+
   constructor(data?: PartialMessage<GetThreadResponse>) {
     super();
     proto3.util.initPartial(data, this);
@@ -8020,6 +8194,7 @@ export class GetThreadResponse extends Message<GetThreadResponse> {
   static readonly typeName = "bsky.GetThreadResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 2, name: "op_thread", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetThreadResponse {
@@ -8673,6 +8848,17 @@ export class PostsFilters extends Message<PostsFilters> {
    */
   politicalCompassPositions: string[] = [];
 
+  /**
+   * Filter posts in any of these languages. Field number 10 (upstream uses 7,
+   * which is taken here by community_uris).
+   * Supports 2-char ISO prefixes ("en", "ja", "fr", etc) and compares against
+   * the 2-char prefix of any `langs` field values of the post record.
+   * e.g. a post with langs=["en-US", "fr"] matches ["en"] or ["fr", "ja"] but not ["ja"].
+   *
+   * @generated from field: repeated string languages = 10;
+   */
+  languages: string[] = [];
+
   constructor(data?: PartialMessage<PostsFilters>) {
     super();
     proto3.util.initPartial(data, this);
@@ -8690,6 +8876,7 @@ export class PostsFilters extends Message<PostsFilters> {
     { no: 7, name: "community_uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
     { no: 8, name: "cabildeo_uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
     { no: 9, name: "political_compass_positions", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 10, name: "languages", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PostsFilters {
@@ -9013,6 +9200,14 @@ export class SearchActorsTypeaheadRequest extends Message<SearchActorsTypeaheadR
    */
   limit = 0;
 
+  /**
+   * Upstream replaced fields 1-3 with this nested params message. Kept
+   * additively here so the legacy flat fields stay wire-compatible.
+   *
+   * @generated from field: bsky.SearchTypeaheadParams params = 4;
+   */
+  params?: SearchTypeaheadParams;
+
   constructor(data?: PartialMessage<SearchActorsTypeaheadRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -9024,6 +9219,7 @@ export class SearchActorsTypeaheadRequest extends Message<SearchActorsTypeaheadR
     { no: 1, name: "viewer", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "query", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 4, name: "params", kind: "message", T: SearchTypeaheadParams },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchActorsTypeaheadRequest {
@@ -9040,6 +9236,55 @@ export class SearchActorsTypeaheadRequest extends Message<SearchActorsTypeaheadR
 
   static equals(a: SearchActorsTypeaheadRequest | PlainMessage<SearchActorsTypeaheadRequest> | undefined, b: SearchActorsTypeaheadRequest | PlainMessage<SearchActorsTypeaheadRequest> | undefined): boolean {
     return proto3.util.equals(SearchActorsTypeaheadRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.SearchTypeaheadParams
+ */
+export class SearchTypeaheadParams extends Message<SearchTypeaheadParams> {
+  /**
+   * @generated from field: string query = 1;
+   */
+  query = "";
+
+  /**
+   * @generated from field: string viewer = 2;
+   */
+  viewer = "";
+
+  /**
+   * @generated from field: int32 limit = 3;
+   */
+  limit = 0;
+
+  constructor(data?: PartialMessage<SearchTypeaheadParams>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SearchTypeaheadParams";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "query", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "viewer", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SearchTypeaheadParams {
+    return new SearchTypeaheadParams().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SearchTypeaheadParams {
+    return new SearchTypeaheadParams().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SearchTypeaheadParams {
+    return new SearchTypeaheadParams().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SearchTypeaheadParams | PlainMessage<SearchTypeaheadParams> | undefined, b: SearchTypeaheadParams | PlainMessage<SearchTypeaheadParams> | undefined): boolean {
+    return proto3.util.equals(SearchTypeaheadParams, a, b);
   }
 }
 

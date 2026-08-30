@@ -112,6 +112,10 @@ export class TestBsky {
       bigThreadUris: new Set(),
       maxThreadParents: cfg.maxThreadParents ?? 50,
       disableSsrfProtection: true,
+      // Dev-env is by definition a debug environment: enables response
+      // validation and feature-gate bypasses (e.g. search v2) that depend on
+      // GrowthBook, which is not configured here.
+      debugMode: true,
       searchTagsHide: new Set(),
       searchTagsHideAll: new Set(),
       threadTagsBumpDown: new Set(),

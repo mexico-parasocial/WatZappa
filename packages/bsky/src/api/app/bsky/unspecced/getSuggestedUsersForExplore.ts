@@ -1,21 +1,21 @@
 import { dedupeStrs, mapDefined, noUndefinedVals } from '@atproto/common'
-import { Client, DidString } from '@atproto/lex'
-import { Server } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import type { Client, DidString } from '@atproto/lex'
+import { MethodNotImplementedError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import {
-  HydrateCtx,
-  Hydrator,
+  type HydrateCtx,
+  type Hydrator,
   mergeManyStates,
 } from '../../../../hydration/hydrator.js'
 import { app } from '../../../../lexicons/index.js'
 import {
-  HydrationFnInput,
-  PresentationFnInput,
-  RulesFnInput,
-  SkeletonFnInput,
+  type HydrationFnInput,
+  type PresentationFnInput,
+  type RulesFnInput,
+  type SkeletonFnInput,
   createPipeline,
 } from '../../../../pipeline.js'
-import { Views } from '../../../../views/index.js'
+import type { Views } from '../../../../views/index.js'
 
 export default function (server: Server, ctx: AppContext) {
   const getSuggestedUsersForExplore = createPipeline(
@@ -26,7 +26,7 @@ export default function (server: Server, ctx: AppContext) {
   )
   server.add(app.bsky.unspecced.getSuggestedUsersForExplore, {
     auth: ctx.authVerifier.standardOptional,
-    handler: async ({ auth, params, req }) => {
+    handler: async ({ auth, params, req, signal }) => {
       const viewer = auth.credentials.iss
       const labelers = ctx.reqLabelers(req)
       const hydrateCtx = await ctx.hydrator.createContext({
@@ -47,6 +47,7 @@ export default function (server: Server, ctx: AppContext) {
           ...params,
           hydrateCtx,
           headers,
+          signal,
         },
         ctx,
       )
@@ -63,7 +64,7 @@ const skeletonFromGetSuggestedUsersSkeleton = async (
 ): Promise<SkeletonState> => {
   const { params, ctx } = input
   if (!ctx.suggestionsClient) {
-    return { dids: [] }
+    throw new MethodNotImplementedError('Suggestions agent not available')
   }
 
   return ctx.suggestionsClient.call(
@@ -75,6 +76,7 @@ const skeletonFromGetSuggestedUsersSkeleton = async (
     },
     {
       headers: params.headers,
+      signal: params.signal,
     },
   )
 }
@@ -86,7 +88,7 @@ const skeletonFromGetSuggestedUsersForExploreSkeleton = async (
   const { params, ctx } = input
 
   if (!ctx.suggestionsClient) {
-    return { dids: [] }
+    throw new MethodNotImplementedError('Suggestions agent not available')
   }
 
   return ctx.suggestionsClient.call(
@@ -98,6 +100,7 @@ const skeletonFromGetSuggestedUsersForExploreSkeleton = async (
     },
     {
       headers: params.headers,
+      signal: params.signal,
     },
   )
 }
@@ -169,6 +172,7 @@ type Context = {
 type Params = app.bsky.unspecced.getSuggestedUsersForExplore.$Params & {
   hydrateCtx: HydrateCtx & { viewer: string | null }
   headers: Record<string, string>
+  signal: AbortSignal
   category?: string
 }
 

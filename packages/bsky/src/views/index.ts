@@ -1052,6 +1052,7 @@ export class Views {
     uri: AtUriString,
     state: HydrationState,
     depth = 0,
+    options: { includeKnownLikers?: boolean } = {},
   ): Un$Typed<PostView> | undefined {
     const post = state.posts?.get(uri)
     if (!post) return
@@ -1061,7 +1062,9 @@ export class Views {
     if (!author) return
     const aggs = state.postAggs?.get(uri)
     const viewer = state.postViewers?.get(uri)
-    const knownLikers = this.knownLikers(uri, state)
+    const knownLikers = options.includeKnownLikers
+      ? this.knownLikers(uri, state)
+      : undefined
     const threadgateUri = postUriToThreadgateUri(uri)
     const labels = [
       ...(state.labels?.getBySubject(uri) ?? []),
@@ -1438,7 +1441,9 @@ export class Views {
     const { anchor: anchorUri, uris } = skeleton
 
     // Not found.
-    const postView = this.post(anchorUri, state)
+    const postView = this.post(anchorUri, state, 0, {
+      includeKnownLikers: true,
+    })
     const post = state.posts?.get(anchorUri)
     if (!post || !postView) {
       return {
@@ -2261,7 +2266,7 @@ export class Views {
       const view = this.galleryItemView(did, item)
       return view ? [view] : []
     })
-    return app.bsky.embed.gallery.view.$build({ items })
+    return app.bsky.embed.gallery.view.$build({ media: items })
   }
 
   private galleryItemView(

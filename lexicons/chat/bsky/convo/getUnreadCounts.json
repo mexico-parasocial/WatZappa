@@ -1,0 +1,30 @@
+{
+  "lexicon": 1,
+  "id": "chat.bsky.convo.getUnreadCounts",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Counts of convos with unread messages, split by membership status.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "includeGroupChats": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["unreadRequestConvos", "unreadAcceptedConvos"],
+          "properties": {
+            "unreadRequestConvos": {"type": "integer"},
+            "unreadAcceptedConvos": {"type": "integer"}
+          }
+        }
+      }
+    }
+  }
+}

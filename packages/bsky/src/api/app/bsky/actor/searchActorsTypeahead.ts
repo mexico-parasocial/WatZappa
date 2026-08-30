@@ -1,18 +1,21 @@
 import { mapDefined } from '@atproto/common'
-import { Client, DidString } from '@atproto/lex'
-import { Server } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { DataPlaneClient } from '../../../../data-plane/index.js'
-import { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
+import type { Client, DidString } from '@atproto/lex'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import {
+  type DataPlaneClient,
+  asInvalidRequest,
+} from '../../../../data-plane/index.js'
+import type { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
 import { app } from '../../../../lexicons/index.js'
 import {
-  HydrationFnInput,
-  PresentationFnInput,
-  RulesFnInput,
-  SkeletonFnInput,
+  type HydrationFnInput,
+  type PresentationFnInput,
+  type RulesFnInput,
+  type SkeletonFnInput,
   createPipeline,
 } from '../../../../pipeline.js'
-import { Views } from '../../../../views/index.js'
+import type { Views } from '../../../../views/index.js'
 import { resHeaders, resolveSearchV2Override } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
@@ -24,7 +27,7 @@ export default function (server: Server, ctx: AppContext) {
   )
   server.add(app.bsky.actor.searchActorsTypeahead, {
     auth: ctx.authVerifier.standardOptional,
-    handler: async ({ params, auth, req }) => {
+    handler: async ({ params, auth, req, signal }) => {
       const viewer = auth.credentials.iss
       const labelers = ctx.reqLabelers(req)
       const hydrateCtx = await ctx.hydrator.createContext({
@@ -41,6 +44,7 @@ export default function (server: Server, ctx: AppContext) {
         {
           ...params,
           hydrateCtx,
+          signal,
           isV2Override: resolveSearchV2Override(req, ctx.cfg),
         },
         ctx,
@@ -73,6 +77,7 @@ const skeletonV1 = async (
         limit: params.limit,
         viewer: params.hydrateCtx.viewer ?? undefined,
       },
+      { signal: params.signal },
     )
     return {
       dids: actors.map(({ did }) => did),
@@ -94,20 +99,26 @@ const skeletonV2 = async (
   const { ctx, params } = inputs
   const term = params.q ?? params.term ?? ''
 
-  const res = await ctx.dataplane.searchActorsTypeahead({
-    viewer: params.hydrateCtx.viewer ?? undefined,
-    query: term,
-    limit: params.limit,
-  })
+  // Surface dataplane InvalidArgument errors as a 400 rather than a 500.
+  const res = await ctx.dataplane
+    .searchActorsTypeahead({
+      params: {
+        query: term,
+        viewer: params.hydrateCtx.viewer ?? undefined,
+        limit: params.limit,
+      },
+    })
+    .catch(asInvalidRequest())
   return {
     dids: res.actors.map(({ did }) => did as DidString),
   }
 }
 
 const skeleton = async (input: SkeletonFnInput<Context, Params>) => {
-  const useV2 = input.params.hydrateCtx.features.checkGate(
-    input.params.hydrateCtx.features.Gate.SearchV2Enable,
-  )
+  const useV2 =
+    input.params.hydrateCtx.features.checkGate(
+      input.params.hydrateCtx.features.Gate.SearchV2Enable,
+    ) || input.params.isV2Override
   const skeletonFn = useV2 ? skeletonV2 : skeletonV1
   return skeletonFn(input)
 }
@@ -153,6 +164,7 @@ type Context = {
 
 type Params = app.bsky.actor.searchActorsTypeahead.$Params & {
   hydrateCtx: HydrateCtx
+  signal: AbortSignal
   isV2Override: boolean
 }
 

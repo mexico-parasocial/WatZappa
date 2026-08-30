@@ -186,7 +186,6 @@ describe('oauth', () => {
       'Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.',
       'p',
     )
-  })
 
     sendTemplateMock.mockRestore()
   })

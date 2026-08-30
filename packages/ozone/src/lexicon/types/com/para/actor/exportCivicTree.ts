@@ -17,7 +17,7 @@ const is$typed = _is$typed,
 const id = 'com.para.actor.exportCivicTree'
 
 export type QueryParams = {
-  /** DID of the actor to export. Defaults to the authenticated viewer. */
+  /** DID of the actor to export. Must be the authenticated viewer; defaults to them. */
   actor?: string
   /** Include the actor's cast votes. Defaults to true. */
   includeVotes?: boolean
@@ -47,6 +47,7 @@ export interface HandlerSuccess {
 export interface HandlerError {
   status: number
   message?: string
+  error?: 'Forbidden'
 }
 
 export type HandlerOutput = HandlerError | HandlerSuccess

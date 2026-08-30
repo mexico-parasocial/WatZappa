@@ -54,6 +54,11 @@ export type SessionContextType = {
 const SessionContext = createContext<null | SessionContextType>(null)
 SessionContext.displayName = 'SessionContext'
 
+type SessionState = {
+  sessions: readonly SessionWithToken[]
+  current: string | null
+}
+
 export enum InitialSelectedSession {
   First,
   Only,
@@ -88,7 +93,7 @@ export function SessionProvider({
   const { showBoundary } = useErrorBoundary<UnknownRequestUriError>()
   const { notifyError } = useNotificationsContext()
 
-  const [state, setState] = useState(() => {
+  const [state, setState] = useState<SessionState>(() => {
     const initialSession: Session | undefined = forcedIdentifier
       ? initialSessions.find(
           (s) =>
@@ -115,7 +120,7 @@ export function SessionProvider({
   const stateRef = useRef(state)
 
   const update = useCallback(
-    (fn: (state: typeof state) => typeof state) => {
+    (fn: (state: SessionState) => SessionState) => {
       const next = fn(stateRef.current)
       if (next === stateRef.current) return
       stateRef.current = next

@@ -9,6 +9,9 @@ import { bundleManifest } from '@atproto-labs/rollup-plugin-bundle-manifest'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
+/**
+ * @returns {import('vite').Plugin}
+ */
 const mockAccountPaths = () => ({
   name: 'mock-account-paths',
   apply: 'serve',

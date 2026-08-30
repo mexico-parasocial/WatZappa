@@ -224,7 +224,7 @@ msgstr "Authorized on {0}"
 #: src/components/forms/form-card.tsx:57
 #: src/components/forms/wizard-card.tsx:125
 #: src/components/sign-in-picker.tsx:90
-#: src/routes/__root.tsx:35
+#: src/routes/__root.tsx:39
 msgid "Back"
 msgstr "Back"
 
@@ -268,7 +268,7 @@ msgstr "Call"
 msgid "Cancel"
 msgstr "Cancel"
 
-#: src/pages/account/(authenticated)/devices/page.tsx:108
+#: src/pages/account/(authenticated)/devices/page.tsx:111
 msgid "Cannot remove current device"
 msgstr "Cannot remove current device"
 
@@ -734,7 +734,7 @@ msgctxt "OAuthApp"
 msgid "Last accessed <0/>"
 msgstr "Last accessed <0/>"
 
-#: src/pages/account/(authenticated)/devices/page.tsx:94
+#: src/pages/account/(authenticated)/devices/page.tsx:97
 msgctxt "device list"
 msgid "Last seen {lastUsedAgo}"
 msgstr "Last seen {lastUsedAgo}"
@@ -752,7 +752,7 @@ msgstr "Let's get your password reset!"
 msgid "Logo"
 msgstr "Logo"
 
-#: src/pages/account/(authenticated)/devices/page.tsx:65
+#: src/pages/account/(authenticated)/devices/page.tsx:68
 msgid "Looks like you aren't logged in on any other devices."
 msgstr "Looks like you aren't logged in on any other devices."
 
@@ -809,7 +809,7 @@ msgid "Moderate"
 msgstr "Moderate"
 
 #: src/pages/account/(authenticated)/route.tsx:141
-#: src/routes/account/u/$accountId/route.tsx:118
+#: src/routes/account/u/$accountId/route.tsx:116
 msgid "My Atmosphere Account"
 msgstr "My Atmosphere Account"
 
@@ -837,7 +837,7 @@ msgstr "Next"
 msgid "Okay"
 msgstr "Okay"
 
-#: src/routes/__root.tsx:33
+#: src/routes/__root.tsx:37
 msgid "Page not found"
 msgstr "Page not found"
 
@@ -1013,7 +1013,7 @@ msgstr "Security step required"
 msgid "Select another account"
 msgstr "Select another account"
 
-#: src/components/forms/input-handle-default.tsx:191
+#: src/components/forms/input-handle-default.tsx:192
 msgid "Select domain"
 msgstr "Select domain"
 
@@ -1057,7 +1057,7 @@ msgstr "Sign in to an account that is not listed"
 msgid "Sign out"
 msgstr "Sign out"
 
-#: src/pages/account/(authenticated)/devices/page.tsx:111
+#: src/pages/account/(authenticated)/devices/page.tsx:114
 msgctxt "device list"
 msgid "Sign out"
 msgstr "Sign out"
@@ -1238,11 +1238,11 @@ msgstr "Type"
 msgid "Type your domain"
 msgstr "Type your domain"
 
-#: src/components/forms/input-handle-default.tsx:146
+#: src/components/forms/input-handle-default.tsx:144
 msgid "Type your username"
 msgstr "Type your username"
 
-#: src/contexts/session.tsx:202
+#: src/contexts/session.tsx:207
 msgid "Unauthorized"
 msgstr "Unauthorized"
 
@@ -1250,7 +1250,7 @@ msgstr "Unauthorized"
 msgid "Unexpected server response"
 msgstr "Unexpected server response"
 
-#: src/pages/account/(authenticated)/devices/page.tsx:89
+#: src/pages/account/(authenticated)/devices/page.tsx:92
 msgctxt "device list"
 msgid "Unknown user agent"
 msgstr "Unknown user agent"
@@ -1282,7 +1282,7 @@ msgstr "Upload files"
 msgid "URL"
 msgstr "URL"
 
-#: src/components/forms/input-handle-default.tsx:183
+#: src/components/forms/input-handle-default.tsx:181
 msgid "Use {minLength}–{maxLength, plural, one {# letter, number or hyphen} other {# letters, numbers or hyphens}}"
 msgstr "Use {minLength}–{maxLength, plural, one {# letter, number or hyphen} other {# letters, numbers or hyphens}}"
 
@@ -1377,7 +1377,7 @@ msgstr "Welcome"
 msgid "Welcome back!"
 msgstr "Welcome back!"
 
-#: src/pages/account/(authenticated)/page.tsx:33
+#: src/pages/account/(authenticated)/page.tsx:34
 msgid "What does this mean?"
 msgstr "What does this mean?"
 
@@ -1471,7 +1471,7 @@ msgstr "Your account is signed in on the devices listed below. If your account w
 msgid "Your account is visible again."
 msgstr "Your account is visible again."
 
-#: src/pages/account/(authenticated)/page.tsx:26
+#: src/pages/account/(authenticated)/page.tsx:27
 msgid "Your Atmosphere account is hosted by <0/>."
 msgstr "Your Atmosphere account is hosted by <0/>."
 
@@ -1492,7 +1492,7 @@ msgid "Your email address needs to be verified."
 msgstr "Your email address needs to be verified."
 
 #. placeholder {0}: segment ? ( <span className="text-text-default block break-all font-medium"> @{segment} {domain} </span> ) : ( <span className="block break-all"> @{exampleSegment} {domain} </span> )
-#: src/components/forms/input-handle-default.tsx:117
+#: src/components/forms/input-handle-default.tsx:115
 msgid "Your full username will be: {0}"
 msgstr "Your full username will be: {0}"
 
@@ -1504,7 +1504,7 @@ msgstr "Your profile, posts, feeds, and lists will become visible again across t
 msgid "Your repository contains all the data publicly available on the AT Protocol network, such as Bluesky posts, likes, and follows. It also contains data created through other apps you've signed into using this account. The application requests the permissions necessary to publish the following changes to your repository:"
 msgstr "Your repository contains all the data publicly available on the AT Protocol network, such as Bluesky posts, likes, and follows. It also contains data created through other apps you've signed into using this account. The application requests the permissions necessary to publish the following changes to your repository:"
 
-#: src/contexts/session.tsx:203
+#: src/contexts/session.tsx:208
 msgid "Your session has expired. Please sign in again."
 msgstr "Your session has expired. Please sign in again."
 
@@ -1512,6 +1512,6 @@ msgstr "Your session has expired. Please sign in again."
 msgid "Your username has been updated."
 msgstr "Your username has been updated."
 
-#: src/components/forms/input-handle-default.tsx:108
+#: src/components/forms/input-handle-default.tsx:107
 msgid "yourname"
 msgstr "yourname"

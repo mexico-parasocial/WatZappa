@@ -104,6 +104,8 @@ import getParaProfileStats from './com/para/actor/getProfileStats.js'
 import getParaSuggestedUsers from './com/para/actor/getSuggestedUsers.js'
 import getParaAgentConversation from './com/para/agent/getConversation.js'
 import sendParaAgentMessage from './com/para/agent/sendMessage.js'
+import getParaAlphaAccess from './com/para/alpha/getAccess.js'
+import getParaAlphaRolloutStatus from './com/para/alpha/getRolloutStatus.js'
 import getParaCabildeo from './com/para/civic/getCabildeo.js'
 import getParaOpenQuestionThread from './com/para/civic/getOpenQuestionThread.js'
 import getParaPolicyTally from './com/para/civic/getPolicyTally.js'
@@ -135,8 +137,10 @@ import listParaCommunityMembers from './com/para/community/listMembers.js'
 import listParaParentCommunities from './com/para/community/listParentCommunities.js'
 import listParaCommunityPosts from './com/para/community/listPosts.js'
 import listParaCommunitySharedContent from './com/para/community/listSharedContent.js'
+import listParaDeliberations from './com/para/community/listDeliberations.js'
 import listParaVotes from './com/para/community/listVotes.js'
 import getParaDiscourseSnapshot from './com/para/discourse/getSnapshot.js'
+import getParaDiscourseTopology from './com/para/discourse/getTopology.js'
 import getParaDiscourseTopics from './com/para/discourse/getTopics.js'
 import getParaAuthorFeed from './com/para/feed/getAuthorFeed.js'
 import getParaMemes from './com/para/feed/getMemes.js'
@@ -307,6 +311,10 @@ export default function (server: Server, ctx: AppContext) {
   listParaParentCommunities(paraServer, ctx)
   listParaBriefingPacks(paraServer, ctx)
   getParaBriefingPack(paraServer, ctx)
+  listParaDeliberations(paraServer, ctx)
+  getParaAlphaAccess(paraServer, ctx)
+  getParaAlphaRolloutStatus(paraServer, ctx)
+  getParaDiscourseTopology(paraServer, ctx)
   exportParaObsidianVault(paraServer, ctx)
   listParaHighlights(paraServer, ctx)
   getParaHighlight(paraServer, ctx)

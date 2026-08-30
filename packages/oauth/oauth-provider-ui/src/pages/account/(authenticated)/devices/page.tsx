@@ -45,7 +45,10 @@ export function Page() {
           Your account is signed in on the devices listed below. If your account
           was compromised, sign out all devices, change your password, and check
           your connected{' '}
-          <Link to="/account/apps" className="text-blue-600 hover:underline">
+          <Link
+            to={`/account/u/${account.did}/apps` as string}
+            className="text-blue-600 hover:underline"
+          >
             apps
           </Link>
           .

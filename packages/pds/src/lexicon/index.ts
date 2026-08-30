@@ -134,6 +134,7 @@ import * as ChatBskyConvoGetConvoForMembers from './types/chat/bsky/convo/getCon
 import * as ChatBskyConvoGetConvoMembers from './types/chat/bsky/convo/getConvoMembers.js'
 import * as ChatBskyConvoGetLog from './types/chat/bsky/convo/getLog.js'
 import * as ChatBskyConvoGetMessages from './types/chat/bsky/convo/getMessages.js'
+import * as ChatBskyConvoGetUnreadCounts from './types/chat/bsky/convo/getUnreadCounts.js'
 import * as ChatBskyConvoLeaveConvo from './types/chat/bsky/convo/leaveConvo.js'
 import * as ChatBskyConvoListConvoRequests from './types/chat/bsky/convo/listConvoRequests.js'
 import * as ChatBskyConvoListConvos from './types/chat/bsky/convo/listConvos.js'
@@ -2181,6 +2182,18 @@ export class ChatBskyConvoNS {
     >,
   ) {
     const nsid = 'chat.bsky.convo.getMessages' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  getUnreadCounts<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ChatBskyConvoGetUnreadCounts.QueryParams,
+      ChatBskyConvoGetUnreadCounts.HandlerInput,
+      ChatBskyConvoGetUnreadCounts.HandlerOutput
+    >,
+  ) {
+    const nsid = 'chat.bsky.convo.getUnreadCounts' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
 
