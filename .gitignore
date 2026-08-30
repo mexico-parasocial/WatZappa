@@ -1,5 +1,9 @@
 node_modules
 dist
+
+# Runtime state for local dev services (e.g. the matrix-bridge SQLite db)
+data/
+
 tmp
 tmp_*
 lerna-debug.log

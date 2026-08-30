@@ -23,8 +23,8 @@ restart-dev-env: ## Kill any stale dev-env process, ensure db_test/redis_test ar
 	bash ./scripts/restart-dev.sh
 
 .PHONY: run-dev-env
-run-dev-env: ## Run a "development environment" shell
-	cd packages/dev-env; NODE_ENV=development pnpm run start
+run-dev-env: ## Run a "development environment" shell (incl. matrix-bridge on :3001)
+	NODE_ENV=development ./scripts/with-matrix-bridge.sh pnpm --filter @atproto/dev-env run start
 
 .PHONY: run-dev-env-logged
 run-dev-env-logged: ## Run a "development environment" shell (with logging)
