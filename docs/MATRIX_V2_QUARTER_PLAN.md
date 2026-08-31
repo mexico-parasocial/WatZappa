@@ -117,7 +117,10 @@ the audit becomes a funded external dependency.
     reality is a local unencrypted Docker volume. Implement it or amend the doc
     — do not leave the doc claiming what the deployment does not do.
   - **TLS and `.well-known`** verified against the real domain.
-  - Close OD-3 (LLM policy) and OD-4 (identity labels).
+  - Draft OD-3 (LLM policy) and OD-4 (identity labels) as founding-community
+    ballot proposals — decided democratically by the community, not by the
+    maintainer. The votes run at pilot onboarding (S6); until each closes the
+    fail-safe defaults stand (no `OPENAI_API_KEY`; existing identity mapping).
 
 ### S2 · Sep 07 – Sep 18 · Ship stage 1, start para-idp
 - **Production cutover of the hardened v1.** Nightly encrypted backups shipping

@@ -19,9 +19,13 @@ works. Single community (R10). Explicitly *not* app-store polish.
   Synapse metrics are disabled today.
 - Media decision #6: SeaweedFS with encryption, or amend the doc.
 - TLS / .well-known verification pass.
-- Close **OD-3** (LLM policy — keep `OPENAI_API_KEY` off; write disclosure
-  and retention wording) and **OD-4** (identity label mapping). Both are
-  human decisions: prepare one-page briefs, decide, record.
+- Draft **OD-3** (LLM policy) and **OD-4** (identity label mapping) as
+  founding-community ballot proposals — these are decided democratically by
+  the community, not unilaterally. S1 produces the proposal texts (disclosure
+  wording, retention/training commitment, self-hosted-model question; the
+  `civic`/`anonymous` mapping); the votes run in S6 once the pilot community
+  exists. Until each vote closes, the coded fail-safes stand: no
+  `OPENAI_API_KEY`, default identity mapping.
 - PARA hygiene: restore the missing `lint-rules/` directory (the pre-commit
   gate is broken on every commit) and replace the hardcoded PDS LAN IP in
   `src/lib/constants.ts` with env config.
@@ -69,6 +73,9 @@ works. Single community (R10). Explicitly *not* app-store polish.
 ### S6 (Nov 10–21) — Stage-2 cutover + pilot
 - Derived-MXID login live in production (stage 2).
 - Onboard the pilot community (single community per R10).
+- Run the **OD-3 and OD-4 founding-community ballots** drafted in S1, through
+  the platform's own proposal/vote flow — the community decides these
+  democratically. Fail-safe defaults remain in force until each vote closes.
 - Soak-and-fix week. Run PARA's `docs/civic-read-smoke-checklist.md` against
   every release candidate — mitigates regression risk from the app's
   mid-flight SDK migration and auto-merge recovery.

@@ -513,16 +513,21 @@ retention commitment from the processor, and whether a self-hosted model is
 required instead. Until this is closed, deploy without `OPENAI_API_KEY`.
 
 *Partially addressed.* The consent surface is built and enforced — CD-M3, §7,
-per-author and fail-closed. The rest of OD-3 is untouched and still needs a
-human decision: (a) the disclosure wording members are agreeing to, which
-`AI_CONSENT_POLICY_VERSION = 1` currently stands in for without any text behind
-it; (b) the retention and training commitment to require from the processor;
-(c) whether a self-hosted model is required regardless of consent. Until those
-are settled the deploy guidance above is unchanged — consent machinery existing
-is not a reason to set `OPENAI_API_KEY`.
+per-author and fail-closed. **Decision authority: the founding community, by
+ballot — this is not a unilateral maintainer decision.** What remains is to
+draft the ballot proposal: (a) the disclosure wording members are agreeing to,
+which `AI_CONSENT_POLICY_VERSION = 1` currently stands in for without any text
+behind it; (b) the retention and training commitment to require from the
+processor; (c) whether a self-hosted model is required regardless of consent.
+Until the vote closes the deploy guidance above is unchanged — consent
+machinery existing is not a reason to set `OPENAI_API_KEY`. The ballot is
+scheduled with the pilot onboarding (QUARTER_PLAN_2026Q4, S6).
 
 **OD-4 — identity label mapping.** Confirm `civic` = ballot identity and
-`anonymous` = community identity as reasoned in §4.
+`anonymous` = community identity as reasoned in §4. **Decision authority: the
+founding community, by ballot.** The fail-safe default mapping stands until
+the vote closes; if the community overturns it, the mapping change is code
+follow-up, not a re-architecture.
 
 **OD-5 — where governance logic goes.** *(closed by CD-M2, §7.)* Target is a
 two-service split: `para-governance` owns the firehose and all governance state
