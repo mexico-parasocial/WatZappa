@@ -30,6 +30,10 @@ import {
 } from '../src/lexicon/types/tools/ozone/moderation/defs.js'
 import { TAKEDOWN_LABEL } from '../src/mod-service/index.js'
 import { forSnapshot, identity } from './_util.js'
+const runId = Math.random()
+  .toString(36)
+  .slice(2, 8)
+  .replace(/[^a-z]/g, 'x')
 
 describe('moderation', () => {
   let network: TestNetwork
@@ -65,7 +69,7 @@ describe('moderation', () => {
   beforeAll(async () => {
     mockInvalidator = new MockInvalidator()
     network = await TestNetwork.create({
-      dbPostgresSchema: 'ozone_moderation',
+      dbPostgresSchema: 'ozone_moderation_' + runId,
       ozone: {
         imgInvalidator: mockInvalidator,
         cdnPaths: ['/path1/%s/%s', '/path2/%s/%s'],

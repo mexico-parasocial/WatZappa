@@ -35065,12 +35065,12 @@ export const schemaDict = {
       main: {
         type: 'procedure',
         description:
-          'Create a new moderation queue. Will fail if the queue configuration conflicts with an existing queue.',
+          "Create a new moderation queue. A queue can have optional matching criteria that ozone's queue router will use to match reports. A queue with no criteria must have reports assigned to it manually via (1) `modTool.meta.queueId` in `tools.ozone.moderation.emitEvent` or (2) `tools.ozone.report.reassignQueue`.",
         input: {
           encoding: 'application/json',
           schema: {
             type: 'object',
-            required: ['name', 'subjectTypes', 'reportTypes'],
+            required: ['name'],
             properties: {
               name: {
                 type: 'string',
@@ -35078,10 +35078,9 @@ export const schemaDict = {
               },
               subjectTypes: {
                 type: 'array',
-                minLength: 1,
                 items: {
                   type: 'string',
-                  knownValues: ['account', 'record', 'message'],
+                  knownValues: ['account', 'record', 'message', 'conversation'],
                 },
                 description: 'Subject types this queue accepts',
               },
@@ -35096,7 +35095,6 @@ export const schemaDict = {
                 items: {
                   type: 'string',
                 },
-                minLength: 1,
                 maxLength: 25,
                 description: 'Report reason types (fully qualified NSIDs)',
               },
@@ -35139,8 +35137,6 @@ export const schemaDict = {
         required: [
           'id',
           'name',
-          'subjectTypes',
-          'reportTypes',
           'createdBy',
           'createdAt',
           'updatedAt',
@@ -35158,10 +35154,9 @@ export const schemaDict = {
           },
           subjectTypes: {
             type: 'array',
-            minLength: 1,
             items: {
               type: 'string',
-              knownValues: ['account', 'record', 'message'],
+              knownValues: ['account', 'record', 'message', 'conversation'],
             },
             description: 'Subject types this queue accepts.',
           },
@@ -35176,7 +35171,6 @@ export const schemaDict = {
             items: {
               type: 'string',
             },
-            minLength: 1,
             description:
               'Report reason types this queue accepts (fully qualified NSIDs)',
           },
@@ -35412,7 +35406,7 @@ export const schemaDict = {
             subjectType: {
               type: 'string',
               description:
-                "Filter queues that handle this subject type ('account' or 'record').",
+                "Filter queues that handle this subject type ('account', 'record', 'message', or 'conversation').",
             },
             collection: {
               type: 'string',
@@ -36081,6 +36075,12 @@ export const schemaDict = {
             type: 'boolean',
             description:
               'Whether this report is muted. A report is muted if the reporter was muted or the subject was muted at the time the report was created.',
+          },
+          isAutomated: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Whether this report was emitted by automated tooling.',
           },
         },
       },
@@ -36765,8 +36765,8 @@ export const schemaDict = {
             subjectType: {
               type: 'string',
               description:
-                'If specified, reports of the given type (account or record) will be returned.',
-              knownValues: ['account', 'record'],
+                'If specified, reports of the given subject type will be returned.',
+              knownValues: ['account', 'record', 'message', 'conversation'],
             },
             collections: {
               type: 'array',

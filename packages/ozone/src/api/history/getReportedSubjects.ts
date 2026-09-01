@@ -1,6 +1,9 @@
 import { InvalidRequestError } from '@atproto/xrpc-server'
 import { AppContext } from '../../context.js'
-import { modEventToEventView, publishableEventTypes } from '../../history/views.js'
+import {
+  modEventToEventView,
+  publishableEventTypes,
+} from '../../history/views.js'
 import { Server } from '../../lexicon/index.js'
 
 export default function (server: Server, ctx: AppContext) {

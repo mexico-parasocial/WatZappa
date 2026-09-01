@@ -8,6 +8,10 @@ import {
 } from '@atproto/dev-env'
 import { ids } from '../src/lexicon/lexicons.js'
 import { REASONSPAM } from '../src/lexicon/types/com/atproto/moderation/defs.js'
+const runId = Math.random()
+  .toString(36)
+  .slice(2, 8)
+  .replace(/[^a-z]/g, 'x')
 
 describe('ozone-get-report', () => {
   let network: TestNetwork
@@ -20,7 +24,7 @@ describe('ozone-get-report', () => {
 
   beforeAll(async () => {
     network = await TestNetwork.create({
-      dbPostgresSchema: 'ozone_get_report',
+      dbPostgresSchema: 'ozone_get_report_' + runId,
     })
     agent = network.ozone.getAgent()
     sc = network.getSeedClient()
@@ -64,6 +68,70 @@ describe('ozone-get-report', () => {
     expect(report.subject.subject).toBe(sc.dids.alice)
     expect(report.reportType).toBe('com.atproto.moderation.defs#reasonSpam')
     expect(report.status).toBe('open')
+  })
+
+  it('returns a conversation report with a chat subject view', async () => {
+    const convoId = 'get-report-convo-1'
+    const convoUri = `at://${sc.dids.carol}/chat.bsky.convo/${convoId}`
+    await sc.createReport({
+      reasonType: REASONSPAM,
+      subject: {
+        $type: 'chat.bsky.convo.defs#convoRef',
+        did: sc.dids.carol,
+        convoId,
+      },
+      reportedBy: sc.dids.alice,
+    })
+    await network.processAll()
+
+    const { data: list } = await agent.tools.ozone.report.queryReports(
+      { status: 'open', subject: convoUri },
+      { headers: await modHeaders(ids.ToolsOzoneReportQueryReports) },
+    )
+    expect(list.reports.length).toBe(1)
+
+    const { data: report } = await agent.tools.ozone.report.getReport(
+      { id: list.reports[0].id },
+      { headers: await modHeaders(ids.ToolsOzoneReportGetReport) },
+    )
+
+    expect(report.subject.type).toBe('chat')
+    expect(report.subject.subject).toBe(convoUri)
+    // The conversation owner's account info is still hydrated for context
+    expect(report.subject.repo).toBeDefined()
+  })
+
+  it('returns a message report with a chat subject view', async () => {
+    const convoId = 'get-report-convo-2'
+    const messageId = 'get-report-message-1'
+    const messageUri = `at://${sc.dids.carol}/chat.bsky.convo.message/${messageId}`
+    await sc.createReport({
+      reasonType: REASONSPAM,
+      subject: {
+        $type: 'chat.bsky.convo.defs#messageRef',
+        did: sc.dids.carol,
+        convoId,
+        messageId,
+      },
+      reportedBy: sc.dids.alice,
+    })
+    await network.processAll()
+
+    const { data: list } = await agent.tools.ozone.report.queryReports(
+      { status: 'open', subject: messageUri },
+      { headers: await modHeaders(ids.ToolsOzoneReportQueryReports) },
+    )
+    expect(list.reports.length).toBe(1)
+
+    const { data: report } = await agent.tools.ozone.report.getReport(
+      { id: list.reports[0].id },
+      { headers: await modHeaders(ids.ToolsOzoneReportGetReport) },
+    )
+
+    expect(report.subject.type).toBe('chat')
+    expect(report.subject.subject).toBe(messageUri)
+    // The message author's account info is still hydrated for context
+    expect(report.subject.repo).toBeDefined()
   })
 
   it('hydrates actions for reports that have been actioned', async () => {

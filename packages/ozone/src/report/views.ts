@@ -14,6 +14,11 @@ import {
 } from '../lexicon/types/tools/ozone/moderation/defs.js'
 import { Member as TeamMember } from '../lexicon/types/tools/ozone/team/defs.js'
 import { ReportWithEvent } from '../mod-service/report.js'
+import {
+  CHAT_CONVO_COLLECTION,
+  CHAT_MESSAGE_COLLECTION,
+} from '../mod-service/subject.js'
+import type { ModerationSubjectStatusRowWithHandle } from '../mod-service/types.js'
 import { ParsedLabelers } from '../util.js'
 
 type ReportViews = {
@@ -28,6 +33,12 @@ type ReportViews = {
   getProfiles(
     dids: string[],
   ): Promise<Map<string, AppBskyActorDefs.ProfileViewDetailed>>
+  getSubjectStatus(
+    subjects: string[],
+  ): Promise<Map<string, ModerationSubjectStatusRowWithHandle>>
+  formatSubjectStatus(
+    status: ModerationSubjectStatusRowWithHandle,
+  ): ToolsOzoneModerationDefs.SubjectStatusView
 }
 
 export type HydratedReport = {
@@ -37,6 +48,7 @@ export type HydratedReport = {
   profiles: Map<string, AppBskyActorDefs.ProfileViewDetailed>
   queues: Map<number, ToolsOzoneQueueDefs.QueueView>
   memberViews: Map<string, TeamMember>
+  convoStatuses: Map<string, ToolsOzoneModerationDefs.SubjectStatusView>
 }
 
 export async function hydrateReportInfo(
@@ -51,13 +63,18 @@ export async function hydrateReportInfo(
 ): Promise<HydratedReport> {
   const dids = new Set<string>()
   const uris = new Set<string>()
+  const convoUris = new Set<string>()
   const queueIds = new Set<number>()
   const assignmentDids: string[] = []
-
   for (const report of reports) {
     dids.add(report.subjectDid)
     dids.add(report.reportedBy)
     if (report.subjectUri) uris.add(report.subjectUri)
+    if (report.subjectConvoId && !report.subjectMessageId) {
+      convoUris.add(
+        `at://${report.subjectDid}/${CHAT_CONVO_COLLECTION}/${report.subjectConvoId}`,
+      )
+    }
     if (report.queueId && report.queueId > 0) queueIds.add(report.queueId)
     if (report.assignedTo) {
       dids.add(report.assignedTo)
@@ -66,18 +83,40 @@ export async function hydrateReportInfo(
   }
 
   const didsArray = Array.from(dids)
-  const [partialRepos, accountInfo, recordInfo, profiles, queues, memberViews] =
-    await Promise.all([
-      views.repoDetails(didsArray, labelers),
-      getAccountInfos(didsArray),
-      views.recordDetails(
-        Array.from(uris).map((uri) => ({ uri })),
-        labelers,
-      ),
-      views.getProfiles(didsArray),
-      getQueues(Array.from(queueIds)),
-      getTeamMembers(assignmentDids),
-    ])
+
+  // Convos have their own subject status, keyed by the synthetic at-uri used
+  // to address them.
+  const getConvoStatuses = async () => {
+    const rows = await views.getSubjectStatus(Array.from(convoUris))
+    const statuses = new Map<
+      string,
+      ToolsOzoneModerationDefs.SubjectStatusView
+    >()
+    for (const [subject, row] of rows) {
+      statuses.set(subject, views.formatSubjectStatus(row))
+    }
+    return statuses
+  }
+  const [
+    partialRepos,
+    accountInfo,
+    recordInfo,
+    profiles,
+    queues,
+    memberViews,
+    convoStatuses,
+  ] = await Promise.all([
+    views.repoDetails(didsArray, labelers),
+    getAccountInfos(didsArray),
+    views.recordDetails(
+      Array.from(uris).map((uri) => ({ uri })),
+      labelers,
+    ),
+    views.getProfiles(didsArray),
+    getQueues(Array.from(queueIds)),
+    getTeamMembers(assignmentDids),
+    getConvoStatuses(),
+  ])
 
   return {
     partialRepos,
@@ -86,6 +125,7 @@ export async function hydrateReportInfo(
     profiles,
     queues,
     memberViews,
+    convoStatuses,
   }
 }
 
@@ -102,8 +142,12 @@ export function buildReportView(
     profiles,
     queues,
     memberViews,
+    convoStatuses,
   } = hydrated
   const isRecord = !!report.subjectUri
+  const isMessage = !!report.subjectMessageId
+  const isConvo = !!report.subjectConvoId && !report.subjectMessageId
+  const isChat = isMessage || isConvo
   const did = report.subjectDid
   const partialRepo = partialRepos.get(did)
   const repo = partialRepo
@@ -115,15 +159,26 @@ export function buildReportView(
     : undefined
   const profile = profiles.get(did)
   const record = isRecord ? recordInfo.get(report.subjectUri!) : undefined
-  const status = isRecord
+  // subject
+  const subject = isRecord
+    ? report.subjectUri!
+    : isMessage
+      ? `at://${report.subjectDid}/${CHAT_MESSAGE_COLLECTION}/${report.subjectMessageId}`
+      : isConvo
+        ? `at://${report.subjectDid}/${CHAT_CONVO_COLLECTION}/${report.subjectConvoId}`
+        : report.subjectDid
+  // Convos have their own subject status, keyed by synthetic at-uri. Messages
+  // don't have one of their own and map to the account's subject status.
+  const subjectStatus = isRecord
     ? record?.moderation.subjectStatus
-    : repo?.moderation.subjectStatus
+    : isConvo
+      ? convoStatuses.get(subject)
+      : repo?.moderation.subjectStatus
 
   const reportType = report.meta?.reportType as string
 
-  const subject = isRecord ? report.subjectUri! : report.subjectDid
   const subjectView = {
-    type: isRecord ? 'record' : 'account',
+    type: isRecord ? 'record' : isChat ? 'chat' : 'account',
     subject,
     repo,
     record,
@@ -133,7 +188,7 @@ export function buildReportView(
           ...profile,
         }
       : undefined,
-    status,
+    status: subjectStatus,
   }
 
   const reporterDid = report.reportedBy
@@ -194,6 +249,7 @@ export function buildReportView(
         ? queues.get(report.queueId)
         : undefined,
     isMuted: report.isMuted,
+    isAutomated: report.isAutomated,
   }
 }
 

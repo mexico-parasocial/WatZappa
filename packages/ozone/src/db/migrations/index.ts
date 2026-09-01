@@ -42,3 +42,4 @@ export * as _20260428T040000000Z from './20260428T040000000Z-add-report-activity
 export * as _20260428T050000000Z from './20260428T050000000Z-add-report-stat.js'
 export * as _20260513T202941104Z from './20260513T202941104Z-add-subject-convo-id.js'
 export * as _20260602T120000000Z from './20260602T120000000Z-add-report-activity-created-index.js'
+export * as _20260617T210022765Z from './20260617T210022765Z-add-report-isautomated.js'

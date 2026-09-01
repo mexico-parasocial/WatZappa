@@ -148,6 +148,12 @@ export interface SequencerEmitter extends EventEmitter {
     event: E,
     ...args: Parameters<SequencerEvents[E]>
   ): boolean
-  on<E extends keyof SequencerEvents>(event: E, listener: SequencerEvents[E]): this
-  off<E extends keyof SequencerEvents>(event: E, listener: SequencerEvents[E]): this
+  on<E extends keyof SequencerEvents>(
+    event: E,
+    listener: SequencerEvents[E],
+  ): this
+  off<E extends keyof SequencerEvents>(
+    event: E,
+    listener: SequencerEvents[E],
+  ): this
 }

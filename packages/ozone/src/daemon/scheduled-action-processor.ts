@@ -11,7 +11,10 @@ import {
   ModTool,
 } from '../lexicon/types/tools/ozone/moderation/defs.js'
 import { dbLogger } from '../logger.js'
-import { ModerationService, ModerationServiceCreator } from '../mod-service/index.js'
+import {
+  ModerationService,
+  ModerationServiceCreator,
+} from '../mod-service/index.js'
 import { RepoSubject } from '../mod-service/subject.js'
 import { ModEventType } from '../mod-service/types.js'
 import { ScheduledActionServiceCreator } from '../scheduled-action/service.js'

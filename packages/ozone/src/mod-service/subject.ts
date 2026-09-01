@@ -1,14 +1,23 @@
 import { AtUri } from '@atproto/syntax'
 import { InvalidRequestError } from '@atproto/xrpc-server'
 import * as ChatBskyConvoDefs from '../lexicon/types/chat/bsky/convo/defs.js'
-import { RepoRef, isRepoRef } from '../lexicon/types/com/atproto/admin/defs.js'
-import { InputSchema as ReportInput } from '../lexicon/types/com/atproto/moderation/createReport.js'
+import {
+  type RepoRef,
+  isRepoRef,
+} from '../lexicon/types/com/atproto/admin/defs.js'
+import type { InputSchema as ReportInput } from '../lexicon/types/com/atproto/moderation/createReport.js'
 import * as ComAtprotoRepoStrongRef from '../lexicon/types/com/atproto/repo/strongRef.js'
-import { InputSchema as ActionInput } from '../lexicon/types/tools/ozone/moderation/emitEvent.js'
-import { $Typed, asPredicate } from '../lexicon/util.js'
-import { ModerationEventRow, ModerationSubjectStatusRow } from './types.js'
+import type { InputSchema as ActionInput } from '../lexicon/types/tools/ozone/moderation/emitEvent.js'
+import { type $Typed, asPredicate } from '../lexicon/util.js'
+import type { ModerationEventRow, ModerationSubjectStatusRow } from './types.js'
 
 type SubjectInput = ReportInput['subject'] | ActionInput['subject']
+
+// Chat subjects are not records, but are addressed by synthetic at-uris so
+// they can round-trip through string-subject APIs (queryEvents, queryReports,
+// subject statuses). The rkey is the convoId / messageId respectively.
+export const CHAT_CONVO_COLLECTION = 'chat.bsky.convo'
+export const CHAT_MESSAGE_COLLECTION = 'chat.bsky.convo.message'
 
 type StrongRef = ComAtprotoRepoStrongRef.Main
 const isStrongRef = asPredicate(ComAtprotoRepoStrongRef.validateMain)
@@ -26,6 +35,11 @@ const isMessageRefWithoutConvoId = (
   typeof subject === 'object' &&
   isValidMessageRef({ convoId: '', ...subject })
 
+/**
+ * Cast subject input into ModSubject.
+ * @description Represents the subject types that can appear in the moderation event stream.
+ * NOTE: Downstream services should be updated to handle new subject types including appview.
+ */
 export const subjectFromInput = (
   subject: SubjectInput,
   blobs?: string[],
@@ -44,6 +58,8 @@ export const subjectFromInput = (
   if (isValidMessageRef(subject)) {
     return new MessageSubject(subject.did, subject.convoId, subject.messageId)
   }
+  // @NOTE #convoRef is a new type for reporting entire conversations.
+  // Similar to messageRef, we take advantage of the open union to support this.
   if (isValidConvoRef(subject)) {
     return new ConvoSubject(subject.did, subject.convoId)
   }
@@ -98,6 +114,7 @@ export const subjectFromStatusRow = (
     const uri = AtUri.make(row.did, ...row.recordPath.split('/')).toString()
     return new RecordSubject(uri.toString(), row.recordCid, row.blobCids ?? [])
   } else if (row.convoId) {
+    // Conversation subject - restore from subject status row
     return new ConvoSubject(row.did, row.convoId)
   } else {
     return new RepoSubject(row.did)
@@ -130,10 +147,7 @@ export interface ModSubject {
   isConvo(): this is ConvoSubject
   info(): SubjectInfo
   lex():
-    | $Typed<RepoRef>
-    | $Typed<StrongRef>
-    | $Typed<MessageRef>
-    | $Typed<ConvoRef>
+    $Typed<RepoRef> | $Typed<StrongRef> | $Typed<MessageRef> | $Typed<ConvoRef>
 }
 
 export class RepoSubject implements ModSubject {

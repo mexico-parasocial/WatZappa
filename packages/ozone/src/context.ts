@@ -17,14 +17,20 @@ import { EventPusher } from './daemon/index.js'
 import { BlobDiverter } from './daemon/blob-diverter.js'
 import { Database } from './db/index.js'
 import { ImageInvalidator } from './image-invalidator.js'
-import { ModerationService, ModerationServiceCreator } from './mod-service/index.js'
+import {
+  ModerationService,
+  ModerationServiceCreator,
+} from './mod-service/index.js'
 import {
   ModerationServiceProfile,
   ModerationServiceProfileCreator,
 } from './mod-service/profile.js'
 import { StrikeService, StrikeServiceCreator } from './mod-service/strike.js'
 import { QueueService, QueueServiceCreator } from './queue/service.js'
-import { ReportStatsService, ReportStatsServiceCreator } from './report/stats.js'
+import {
+  ReportStatsService,
+  ReportStatsServiceCreator,
+} from './report/stats.js'
 import {
   SafelinkRuleService,
   SafelinkRuleServiceCreator,

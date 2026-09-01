@@ -90,7 +90,7 @@ type StatusKeysetParam = {
 export class StatusKeyset extends GenericKeyset<StatusKeysetParam, Cursor> {
   labelResult(result: StatusKeysetParam): Cursor
   labelResult(result: StatusKeysetParam) {
-      const primaryField = (
+    const primaryField = (
       this.primary as ReturnType<DynamicModule<unknown>['ref']>
     ).dynamicReference.includes('lastReviewedAt')
       ? 'lastReviewedAt'

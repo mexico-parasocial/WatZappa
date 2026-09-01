@@ -20,7 +20,7 @@ const id = 'tools.ozone.queue.listQueues'
 export type QueryParams = {
   /** Filter by enabled status. If not specified, returns all queues. */
   enabled?: boolean
-  /** Filter queues that handle this subject type ('account' or 'record'). */
+  /** Filter queues that handle this subject type ('account', 'record', 'message', or 'conversation'). */
   subjectType?: string
   /** Filter queues by collection name (e.g. 'app.bsky.feed.post'). */
   collection?: string

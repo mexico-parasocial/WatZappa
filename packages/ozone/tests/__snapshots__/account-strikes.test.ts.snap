@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`account-strikes tracks strikes and exposes them through queryStatuses and queryEvents 1`] = `
 Object {

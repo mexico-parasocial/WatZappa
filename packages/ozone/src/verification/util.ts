@@ -1,5 +1,8 @@
 import { $Typed, ToolsOzoneModerationDefs } from '@atproto/api'
-import { addAccountInfoToRepoViewDetail, getPdsAccountInfos } from '../api/util.js'
+import {
+  addAccountInfoToRepoViewDetail,
+  getPdsAccountInfos,
+} from '../api/util.js'
 import { AppContext } from '../context.js'
 import { ModerationService } from '../mod-service/index.js'
 import { ParsedLabelers } from '../util.js'

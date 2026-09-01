@@ -4,6 +4,7 @@ import { createDevEnvManifest } from './manifest.js'
 import { generateMinimalMockSetup } from './mock/minimal.js'
 import { TestNetwork } from './network.js'
 import { createParaFeedGens, paraDemoSeed } from './seed/index.js'
+import { SuggestionsAgentStub } from './suggestions-stub.js'
 import { mockMailer } from './util.js'
 
 const run = async () => {
@@ -18,7 +19,19 @@ const run = async () => {
 [ created by Bluesky ]`)
 
   const runtimeConfig = buildDevEnvRuntimeConfig()
-  const network = await TestNetwork.create(runtimeConfig.networkParams)
+  // Local stand-in for the private IRIS/suggestions/topics agents so the
+  // unspecced suggestion & trending endpoints return seeded data instead of 501
+  const suggestionsStub = await SuggestionsAgentStub.start()
+  const network = await TestNetwork.create({
+    ...runtimeConfig.networkParams,
+    bsky: {
+      ...runtimeConfig.networkParams.bsky,
+      suggestionsUrl: suggestionsStub.url,
+      topicsUrl: suggestionsStub.url,
+      irisUrl: suggestionsStub.url,
+      topicsEnabled: true,
+    },
+  })
   network.manifest = createDevEnvManifest(network, runtimeConfig)
   mockMailer(network.pds)
 
@@ -39,6 +52,7 @@ const run = async () => {
   console.log(`💬 Chat service DID ${network.chat.did}`)
   console.log(`🌅 Bsky Appview http://localhost:${network.bsky.port}`)
   console.log(`🌅 Bsky Appview DID ${network.bsky.serverDid}`)
+  console.log(`🧑‍🔬 Suggestions agent stub ${suggestionsStub.url}`)
   for (const fg of network.feedGens) {
     console.log(`🤖 Feed Generator (${fg.did}) http://localhost:${fg.port}`)
   }
@@ -51,6 +65,9 @@ const run = async () => {
     const sc = network.getSeedClient()
     const seedData = await paraDemoSeed(sc)
     await createParaFeedGens(network, seedData)
+    suggestionsStub.setUsers(
+      seedData.users.map(({did, name, party}) => ({did, name, party})),
+    )
   }
 
   console.log('✅ Dev environment is ready')

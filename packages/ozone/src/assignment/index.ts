@@ -530,7 +530,10 @@ export class AssignmentService {
           .selectAll()
           .where('reportId', '=', reportId)
           .where((eb) =>
-            eb.or([eb('endAt', '>', now.toISOString()), eb('endAt', 'is', null)]),
+            eb.or([
+              eb('endAt', '>', now.toISOString()),
+              eb('endAt', 'is', null),
+            ]),
           )
           .executeTakeFirst()
 

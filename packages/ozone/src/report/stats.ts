@@ -8,6 +8,8 @@ import { dbLogger } from '../logger.js'
 
 /**
  * Grouped report types. Stats are computed per group rather than per individual report type.
+ * Frontend should match for proper stat lookup.
+ * https://github.com/bluesky-social/ozone/blob/main/components/reports/helpers/getType.ts
  */
 export const REPORT_TYPE_GROUPS: Record<string, string[]> = {
   Legacy: [
@@ -630,10 +632,10 @@ export class ReportStatsService {
     stats: ReportStatistics,
   ): UpsertRow {
     const pendingCount =
-      'pendingCount' in stats ? stats.pendingCount ?? null : null
+      'pendingCount' in stats ? (stats.pendingCount ?? null) : null
     const escalatedCount =
-      'escalatedCount' in stats ? stats.escalatedCount ?? null : null
-    const actionRate = 'actionRate' in stats ? stats.actionRate ?? null : null
+      'escalatedCount' in stats ? (stats.escalatedCount ?? null) : null
+    const actionRate = 'actionRate' in stats ? (stats.actionRate ?? null) : null
 
     return {
       date,
@@ -786,7 +788,9 @@ export class ReportStatsService {
       qb = qb.where('moderatorDid', 'is', null)
     }
     if (reportTypes !== null) {
-      qb = qb.where(sql<boolean>`"reportTypes"::jsonb = ${jsonb(reportTypes)}::jsonb`)
+      qb = qb.where(
+        sql<boolean>`"reportTypes"::jsonb = ${jsonb(reportTypes)}::jsonb`,
+      )
     } else {
       qb = qb.where('reportTypes', 'is', null)
     }

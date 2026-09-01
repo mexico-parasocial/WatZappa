@@ -198,6 +198,8 @@ export interface ReportView {
   queue?: ToolsOzoneQueueDefs.QueueView
   /** Whether this report is muted. A report is muted if the reporter was muted or the subject was muted at the time the report was created. */
   isMuted?: boolean
+  /** Whether this report was emitted by automated tooling. */
+  isAutomated: boolean
 }
 
 const hashReportView = 'reportView'

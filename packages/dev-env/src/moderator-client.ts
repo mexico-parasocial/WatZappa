@@ -5,6 +5,7 @@ import {
   ToolsOzoneModerationGetReporterStats as GetReporterStats,
   ToolsOzoneModerationQueryEvents as QueryModerationEvents,
   ToolsOzoneModerationQueryStatuses as QueryModerationStatuses,
+  ToolsOzoneReportQueryReports,
   ToolsOzoneSettingRemoveOptions,
   ToolsOzoneSettingUpsertOption,
 } from '@atproto/api'
@@ -47,6 +48,34 @@ export class ModeratorClient {
     return result.data
   }
 
+  async queryReports(
+    input: ToolsOzoneReportQueryReports.QueryParams,
+    role?: ModLevel,
+  ) {
+    const result = await this.agent.tools.ozone.report.queryReports(input, {
+      headers: await this.ozone.modHeaders(
+        'tools.ozone.report.queryReports',
+        role,
+      ),
+    })
+    return result.data
+  }
+
+  /** Recompute the report_stat materialization for today, so queue views
+   * reflect the reports created by the test so far. */
+  async computeStats(role?: ModLevel) {
+    const today = new Date().toISOString().slice(0, 10)
+    await this.agent.tools.ozone.report.refreshStats(
+      { startDate: today, endDate: today },
+      {
+        headers: await this.ozone.modHeaders(
+          'tools.ozone.report.refreshStats',
+          role,
+        ),
+      },
+    )
+  }
+
   async getReporterStats(
     dids: string[],
   ): Promise<GetReporterStats.OutputSchema> {
@@ -82,6 +111,7 @@ export class ModeratorClient {
       meta?: unknown
       modTool?: ToolsOzoneModerationDefs.ModTool
       externalId?: string
+      reportAction?: TakeActionInput['reportAction']
     },
     role?: ModLevel,
   ) {
@@ -92,6 +122,7 @@ export class ModeratorClient {
       createdBy = 'did:example:admin',
       modTool,
       externalId,
+      reportAction,
     } = opts
     const result = await this.agent.tools.ozone.moderation.emitEvent(
       {
@@ -101,6 +132,7 @@ export class ModeratorClient {
         createdBy,
         modTool,
         externalId,
+        reportAction,
       },
       {
         encoding: 'application/json',

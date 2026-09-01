@@ -1,12 +1,19 @@
 import { MINUTE } from '@atproto/common'
 import { Database } from '../db/index.js'
 import { dbLogger } from '../logger.js'
-import { ModerationServiceCreator, ReversalSubject } from '../mod-service/index.js'
+import {
+  ModerationServiceCreator,
+  ReversalSubject,
+} from '../mod-service/index.js'
 import {
   deleteExpiringTagsByIds,
   getExpiredTags,
 } from '../mod-service/expiring-tags.js'
-import { ModSubject, RecordSubject, RepoSubject } from '../mod-service/subject.js'
+import {
+  ModSubject,
+  RecordSubject,
+  RepoSubject,
+} from '../mod-service/subject.js'
 
 export class EventReverser {
   destroyed = false

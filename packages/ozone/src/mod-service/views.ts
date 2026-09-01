@@ -50,8 +50,12 @@ import {
 import { Un$Typed, asPredicate } from '../lexicon/util.js'
 import { dbLogger, httpLogger } from '../logger.js'
 import { ParsedLabelers } from '../util.js'
-import { moderationSubjectStatusQueryBuilder } from './status.js'
 import {
+  getStatusIdentifierFromSubject,
+  moderationSubjectStatusQueryBuilder,
+} from './status.js'
+import {
+  CHAT_CONVO_COLLECTION,
   ModSubject,
   subjectFromEventRow,
   subjectFromStatusRow,
@@ -153,8 +157,7 @@ export class ModerationViews {
         ? {
             name: row.modTool.name,
             meta: sanitizeUnsafeIntegers(row.modTool.meta) as
-              | Record<string, unknown>
-              | undefined,
+              Record<string, unknown> | undefined,
           }
         : undefined,
     }
@@ -684,7 +687,9 @@ export class ModerationViews {
   ): Promise<Map<string, ModerationSubjectStatusRowWithHandle>> {
     if (!subjects.length) return new Map()
 
-    const parsedSubjects = subjects.map(parseSubjectId)
+    const parsedSubjects = subjects.map((subject) =>
+      getStatusIdentifierFromSubject(subject),
+    )
 
     const builder = moderationSubjectStatusQueryBuilder(this.db.db)
       //
@@ -698,7 +703,7 @@ export class ModerationViews {
                 '=',
                 sub.recordPath ?? '',
               ),
-              eb('moderation_subject_status.convoId', '=', ''),
+              eb('moderation_subject_status.convoId', '=', sub.convoId),
             ]),
           ),
         ),
@@ -711,7 +716,11 @@ export class ModerationViews {
 
     return new Map(
       statusRes.map((row): [string, ModerationSubjectStatusRowWithHandle] => {
-        const subjectId = formatSubjectId(row.did, row.recordPath)
+        const subjectId = formatSubjectId(
+          row.did,
+          row.recordPath,
+          row.convoId ?? undefined,
+        )
         const handle = accountsByDid.get(row.did)?.handle ?? INVALID_HANDLE
         return [subjectId, { ...row, handle }]
       }),
@@ -849,16 +858,10 @@ type RecordInfo = {
   indexedAt: string
 }
 
-function parseSubjectId(subject: string): { did: string; recordPath?: string } {
-  if (subject.startsWith('did:')) {
-    return { did: subject }
-  }
-  const uri = new AtUri(subject)
-  return { did: uri.hostname, recordPath: `${uri.collection}/${uri.rkey}` }
-}
-
-function formatSubjectId(did: string, recordPath?: string) {
-  return recordPath ? `at://${did}/${recordPath}` : did
+function formatSubjectId(did: string, recordPath?: string, convoId?: string) {
+  if (recordPath) return `at://${did}/${recordPath}`
+  if (convoId) return `at://${did}/${CHAT_CONVO_COLLECTION}/${convoId}`
+  return did
 }
 
 function findBlobRefs(value: unknown, refs: BlobRef[] = []) {

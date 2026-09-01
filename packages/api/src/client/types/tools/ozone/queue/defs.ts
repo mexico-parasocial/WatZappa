@@ -23,11 +23,13 @@ export interface QueueView {
   /** Display name of the queue */
   name: string
   /** Subject types this queue accepts. */
-  subjectTypes: ('account' | 'record' | 'message' | (string & {}))[]
+  subjectTypes?: (
+    'account' | 'record' | 'message' | 'conversation' | (string & {})
+  )[]
   /** Collection name for record subjects (e.g., 'app.bsky.feed.post') */
   collection?: string
   /** Report reason types this queue accepts (fully qualified NSIDs) */
-  reportTypes: string[]
+  reportTypes?: string[]
   /** Optional description of the queue */
   description?: string
   /** DID of moderator who created this queue */

@@ -832,6 +832,9 @@ importers:
       ipaddr.js:
         specifier: ^2.1.0
         version: 2.1.0
+      undici:
+        specifier: ^8.5.0
+        version: 8.5.0
       undici_v6:
         specifier: npm:undici@^6.x
         version: undici@6.19.8
@@ -860,6 +863,10 @@ importers:
       zod:
         specifier: ^3.23.8
         version: 3.24.2
+    devDependencies:
+      vitest:
+        specifier: ^4.0.16
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(@vitest/coverage-v8@4.1.10)(vite@8.2.0(@types/node@22.20.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.44.0)(tsx@4.23.12)(yaml@2.8.1))
 
   packages/internal/handle-resolver-node:
     dependencies:

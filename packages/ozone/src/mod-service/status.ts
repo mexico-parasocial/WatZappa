@@ -3,8 +3,8 @@
 import { HOUR } from '@atproto/common'
 import { AtUri } from '@atproto/syntax'
 import { isAppealReport } from '../api/util.js'
-import { Database } from '../db/index.js'
-import { DatabaseSchema } from '../db/schema/index.js'
+import type { Database } from '../db/index.js'
+import type { DatabaseSchema } from '../db/schema/index.js'
 import { jsonb } from '../db/types.js'
 import {
   REVIEWCLOSED,
@@ -12,8 +12,8 @@ import {
   REVIEWNONE,
   REVIEWOPEN,
 } from '../lexicon/types/tools/ozone/moderation/defs.js'
-import { ModSubject } from './subject.js'
-import { ModerationEventRow, ModerationSubjectStatusRow } from './types.js'
+import { CHAT_CONVO_COLLECTION } from './subject.js'
+import type { ModerationEventRow, ModerationSubjectStatusRow } from './types.js'
 
 const getSubjectStatusForModerationEvent = ({
   currentStatus,
@@ -284,6 +284,7 @@ export const adjustModerationSubjectStatus = async (
     subjectDid,
     subjectUri,
     subjectCid,
+    subjectConvoId,
     createdBy,
     meta,
     addedTags,
@@ -293,7 +294,10 @@ export const adjustModerationSubjectStatus = async (
   } = moderationEvent
 
   // If subjectUri exists, it's not a repoRef so pass along the uri to get identifier back
-  const identifier = getStatusIdentifierFromSubject(subjectUri || subjectDid)
+  const identifier = getStatusIdentifierFromSubject(
+    subjectUri || subjectDid,
+    subjectConvoId,
+  )
 
   db.assertTransaction()
 
@@ -302,6 +306,7 @@ export const adjustModerationSubjectStatus = async (
     .selectFrom('moderation_subject_status')
     .where('did', '=', identifier.did)
     .where('recordPath', '=', identifier.recordPath)
+    .where('convoId', '=', identifier.convoId)
     // Make sure we respect other updates that may be happening at the same time
     .forUpdate()
     .selectAll()
@@ -505,23 +510,20 @@ export const adjustModerationSubjectStatus = async (
   return status || null
 }
 
+/**
+ * Get moderation_subject_status identifier (did, recordPath, convoId).
+ * @note Supports addressing conversations explicitly (via convoId) and implicitly (via properly formed at-uri)
+ */
 export const getStatusIdentifierFromSubject = (
-  subject: string | AtUri | ModSubject,
+  subject: string | AtUri,
+  convoId?: string | null,
 ): { did: string; recordPath: string; convoId: string } => {
-  if (typeof subject === 'object' && 'isRepo' in subject) {
-    return {
-      did: subject.did,
-      recordPath: subject.recordPath ?? '',
-      convoId: subject.convoId ?? '',
-    }
-  }
-
   const isSubjectString = typeof subject === 'string'
   if (isSubjectString && subject.startsWith('did:')) {
     return {
       did: subject,
       recordPath: '',
-      convoId: '',
+      convoId: convoId || '',
     }
   }
 
@@ -530,6 +532,16 @@ export const getStatusIdentifierFromSubject = (
   }
 
   const uri = isSubjectString ? new AtUri(subject) : subject
+
+  // Handle conversation URIs
+  if (uri.collection === CHAT_CONVO_COLLECTION) {
+    return {
+      did: uri.host,
+      recordPath: '',
+      convoId: uri.rkey,
+    }
+  }
+
   return {
     did: uri.host,
     recordPath: `${uri.collection}/${uri.rkey}`,
