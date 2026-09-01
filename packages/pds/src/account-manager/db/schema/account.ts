@@ -7,6 +7,7 @@ export interface Account {
   passwordScrypt: string
   emailConfirmedAt: DatetimeString | null
   invitesDisabled: Generated<0 | 1>
+  authFactorType: 'email' | 'im8' | null
 }
 
 export type AccountEntry = Selectable<Account>

@@ -114,6 +114,9 @@ export function readEnv() {
     bskyAppViewCdnUrlPattern: envStr('PDS_BSKY_APP_VIEW_CDN_URL_PATTERN'),
     paraCommunityCreatorDids: envList('PDS_PARA_COMMUNITY_CREATOR_DIDS'),
 
+    // m8 identity broker
+    m8BaseUrl: envStr('PDS_M8_BASE_URL'),
+
     // mod service
     modServiceUrl: envStr('PDS_MOD_SERVICE_URL'),
     modServiceDid: envStr('PDS_MOD_SERVICE_DID'),

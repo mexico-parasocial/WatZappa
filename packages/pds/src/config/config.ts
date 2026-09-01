@@ -369,6 +369,7 @@ export const envToCfg = (env: ServerEnvironment): ServerConfig => {
     subscription: subscriptionCfg,
     bskyAppView: bskyAppViewCfg,
     communityCreatorDids: env.paraCommunityCreatorDids ?? [],
+    m8BaseUrl: env.m8BaseUrl ?? null,
     modService: modServiceCfg,
     reportService: reportServiceCfg,
     redis: redisCfg,
@@ -395,6 +396,7 @@ export type ServerConfig = {
   subscription: SubscriptionConfig
   bskyAppView: BksyAppViewConfig | null
   communityCreatorDids: string[]
+  m8BaseUrl: string | null
   modService: ModServiceConfig | null
   reportService: ReportServiceConfig | null
   redis: RedisScratchConfig | null
