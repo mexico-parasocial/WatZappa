@@ -1,15 +1,14 @@
-// @ts-nocheck
-import { AtpAgent } from '@atproto/api'
+import { ids } from '@atproto/api'
+import type { AtpAgent } from '@atproto/api'
 import { Secp256k1Keypair } from '@atproto/crypto'
 import {
-  ModeratorClient,
-  SeedClient,
+  type ModeratorClient,
+  type SeedClient,
   TestNetwork,
   TestOzone,
   basicSeed,
   createOzoneDid,
 } from '@atproto/dev-env'
-import { ids } from '../src/lexicon/lexicons.js'
 import { LABELER_HEADER_NAME } from '../src/util.js'
 
 describe('labels from 3p labelers', () => {
@@ -54,8 +53,8 @@ describe('labels from 3p labelers', () => {
   })
 
   afterAll(async () => {
-    await network.close()
-    await thirdPartyLabeler.close()
+    await network?.close()
+    await thirdPartyLabeler?.close()
   })
 
   const getPostSubject = () => ({

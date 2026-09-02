@@ -1,26 +1,35 @@
-node_modules
+**/*.log
+**/.gitignore
+**/.DS_Store
+**/Dockerfile
+**/node_modules
 **/dist
-.DS_Store
+**/*.tsbuildinfo
+**/tests
+**/*.test.ts
+
 .git
-Dockerfile
 
-# Agent tooling, not build input. Both .agents and .claude contain a `skills`
-# entry, and the service Dockerfiles use `COPY ./*.* ./` - a glob that matches
-# dot-directories, because Docker's `*` also matches the empty string. With
-# multiple sources COPY writes each directory's *contents* into the
-# destination, so both resolve to /app/skills and the build fails with
-# "cannot replace to directory /app/skills with file".
-.agents
-.claude
+# services dev
+services/*/tsconfig.json
 
-# Secrets. `COPY ./*.* ./` would otherwise bake these into an image layer,
-# where they survive even if a later layer deletes them. Runtime config comes
-# from compose `environment:` blocks, so nothing needs them at build time.
-.env
-.env.bak
+# buf
+packages/bsky/src/proto
+packages/bsync/src/proto
 
-# Build-context weight and editor/CI noise with no role in the image.
-backups
-.vscode
-.github
-.changeset
+# codegen
+packages/api/src/client
+
+# @atproto/lex
+packages/lexicon-resolver/src/lexicons
+packages/lex/*/src/lexicons
+packages/lex/*/tests/lexicons
+packages/oauth/oauth-client-browser-example/src/lexicons
+packages/pds/src/lexicons
+packages/bsky/src/lexicons
+packages/sync/src/lexicons
+
+# others
+packages/api/src/moderation/const/labels.ts
+packages/oauth/*/src/locales/*/messages.ts
+packages/oauth/oauth-client-expo/android/build

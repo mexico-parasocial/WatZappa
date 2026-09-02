@@ -1,5 +1,6 @@
-import { GeneratedAlways } from 'kysely'
-import {
+import type { GeneratedAlways } from 'kysely'
+import type { DatetimeString, DidString } from '@atproto/lex'
+import type {
   SafelinkActionType,
   SafelinkEventType,
   SafelinkPatternType,
@@ -15,9 +16,9 @@ export interface SafelinkRule {
   pattern: SafelinkPatternType
   action: SafelinkActionType
   reason: SafelinkReasonType
-  createdBy: string
-  createdAt: string
-  updatedAt: string
+  createdBy: DidString
+  createdAt: DatetimeString
+  updatedAt: DatetimeString
   comment: string | null
 }
 
@@ -28,8 +29,8 @@ export interface SafelinkEvent {
   pattern: SafelinkPatternType
   action: SafelinkActionType
   reason: SafelinkReasonType
-  createdBy: string
-  createdAt: string
+  createdBy: DidString
+  createdAt: DatetimeString
   comment: string | null
 }
 

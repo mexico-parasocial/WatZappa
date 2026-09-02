@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import * as com from './lexicons/com.js'
 

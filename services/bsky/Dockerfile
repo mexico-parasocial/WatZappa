@@ -13,6 +13,9 @@ COPY ./pnpm-lock.yaml ./
 COPY ./pnpm-workspace.yaml ./
 COPY ./tsconfig ./tsconfig
 COPY ./lexicons ./lexicons
+# bsync is not a runtime dep but bsky's "codegen:buf" script reads ../bsync/proto at build time
+COPY ./packages/bsync/proto ./packages/bsync/proto
+
 COPY ./packages/internal ./packages/internal
 COPY ./packages/lex ./packages/lex
 

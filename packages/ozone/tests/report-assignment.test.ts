@@ -1,13 +1,12 @@
-// @ts-nocheck
-import AtpAgent, {
-  ComAtprotoModerationDefs,
+import { ComAtprotoModerationDefs, ids } from '@atproto/api'
+import type {
   ToolsOzoneReportAssignModerator,
   ToolsOzoneReportGetAssignments,
   ToolsOzoneReportListActivities,
   ToolsOzoneReportUnassignModerator,
 } from '@atproto/api'
-import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
-import { ids } from '../src/lexicon/lexicons.js'
+import type AtpAgent from '@atproto/api'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 
 describe('report-assignment', () => {
   let network: TestNetwork
@@ -133,7 +132,7 @@ describe('report-assignment', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   it('can get assignment history', async () => {

@@ -1,11 +1,11 @@
-// @ts-nocheck
-import AtpAgent, {
+import { ids } from '@atproto/api'
+import type {
   ToolsOzoneQueueAssignModerator,
   ToolsOzoneQueueGetAssignments,
   ToolsOzoneQueueUnassignModerator,
 } from '@atproto/api'
-import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
-import { ids } from '../src/lexicon/lexicons.js'
+import type AtpAgent from '@atproto/api'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 
 describe('queue', () => {
   let network: TestNetwork
@@ -107,7 +107,7 @@ describe('queue', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   it('get active assignments', async () => {

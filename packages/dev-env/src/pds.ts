@@ -5,7 +5,7 @@ import getPort from 'get-port'
 import * as ui8 from 'uint8arrays'
 import { AtpAgent } from '@atproto/api'
 import { Secp256k1Keypair, randomStr } from '@atproto/crypto'
-import { Client } from '@atproto/lex'
+import { Client, UriString } from '@atproto/lex'
 import * as pds from '@atproto/pds'
 import { createSecretKeyObject } from '@atproto/pds'
 import { ADMIN_PASSWORD, EXAMPLE_LABELER, JWT_SECRET } from './const.js'
@@ -13,7 +13,7 @@ import { PdsConfig } from './types.js'
 
 export class TestPds {
   constructor(
-    public url: string,
+    public url: UriString,
     public port: number,
     public server: pds.PDS,
   ) {}
@@ -29,7 +29,7 @@ export class TestPds {
     const recoveryKey = (await Secp256k1Keypair.create()).did()
 
     const port = config.port || (await getPort())
-    const url = `http://localhost:${port}`
+    const url: UriString = `http://localhost:${port}`
 
     const blobstoreLoc = path.join(os.tmpdir(), randomStr(8, 'base32'))
     const dataDirectory = path.join(os.tmpdir(), randomStr(8, 'base32'))

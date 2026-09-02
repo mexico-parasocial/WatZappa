@@ -1,24 +1,25 @@
-import { Selectable } from 'kysely'
+import type { Selectable } from 'kysely'
 import { MINUTE, SECOND } from '@atproto/common'
+import type { DidString } from '@atproto/lex'
 import {
   assertProtectedTagAction,
   getProtectedTags,
 } from '../api/moderation/util.js'
-import { Database } from '../db/index.js'
-import { ScheduledAction } from '../db/schema/scheduled-action.js'
-import {
-  ModEventTakedown,
-  ModTool,
-} from '../lexicon/types/tools/ozone/moderation/defs.js'
+import type { Database } from '../db/index.js'
+import type { ScheduledAction } from '../db/schema/scheduled-action.js'
+import { tools } from '../lexicons/index.js'
 import { dbLogger } from '../logger.js'
-import {
+import type {
   ModerationService,
   ModerationServiceCreator,
 } from '../mod-service/index.js'
 import { RepoSubject } from '../mod-service/subject.js'
-import { ModEventType } from '../mod-service/types.js'
-import { ScheduledActionServiceCreator } from '../scheduled-action/service.js'
-import { SettingService, SettingServiceCreator } from '../setting/service.js'
+import type { ModEventType } from '../mod-service/types.js'
+import type { ScheduledActionServiceCreator } from '../scheduled-action/service.js'
+import type {
+  SettingService,
+  SettingServiceCreator,
+} from '../setting/service.js'
 import { retryHttp } from '../util.js'
 
 export class ScheduledActionProcessor {
@@ -28,7 +29,7 @@ export class ScheduledActionProcessor {
 
   constructor(
     private db: Database,
-    private serviceDid: string,
+    private serviceDid: DidString,
     private settingService: SettingServiceCreator,
     private modService: ModerationServiceCreator,
     private scheduledActionService: ScheduledActionServiceCreator,
@@ -83,20 +84,20 @@ export class ScheduledActionProcessor {
           subject: '',
           content: '',
         }
-        let modTool: ModTool | undefined
+        let modTool: tools.ozone.moderation.defs.ModTool | undefined
 
         // Create the appropriate moderation action based on the scheduled action type
         switch (action.action) {
           case 'takedown':
             {
-              const eventData = action.eventData as ModEventTakedown & {
-                modTool?: ModTool
-                emailSubject?: string
-                emailContent?: string
-              }
+              const eventData =
+                action.eventData as tools.ozone.moderation.defs.ModEventTakedown & {
+                  modTool?: tools.ozone.moderation.defs.ModTool
+                  emailSubject?: string
+                  emailContent?: string
+                }
               modTool = eventData.modTool
-              event = {
-                $type: 'tools.ozone.moderation.defs#modEventTakedown',
+              event = tools.ozone.moderation.defs.modEventTakedown.$build({
                 comment: `[SCHEDULED_ACTION] ${eventData.comment || 'Scheduled takedown executed'}`,
                 durationInHours: eventData.durationInHours,
                 acknowledgeAccountSubjects:
@@ -104,7 +105,7 @@ export class ScheduledActionProcessor {
                 policies: eventData.policies,
                 severityLevel: eventData.severityLevel,
                 strikeCount: eventData.strikeCount,
-              }
+              })
 
               if (eventData.emailSubject && eventData.emailContent) {
                 email.subject = eventData.emailSubject
@@ -170,7 +171,7 @@ export class ScheduledActionProcessor {
     email: { subject: string; content: string }
     action: Selectable<ScheduledAction>
     event: ModEventType
-    modTool: ModTool | undefined
+    modTool: tools.ozone.moderation.defs.ModTool | undefined
 
     moderationTxn: ModerationService
     settingService: SettingService
@@ -237,16 +238,15 @@ export class ScheduledActionProcessor {
         )
       }
       await moderationTxn.logEvent({
-        event: {
+        event: tools.ozone.moderation.defs.modEventEmail.$build({
           content: email.content,
           subjectLine: email.subject,
-          $type: 'tools.ozone.moderation.defs#modEventEmail',
           comment: [
             'Communication attached to scheduled action',
             isDelivered ? '' : 'Email delivery failed',
           ].join('.'),
           isDelivered,
-        },
+        }),
         subject,
         modTool,
         createdBy: action.createdBy,

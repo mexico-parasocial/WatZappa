@@ -1,39 +1,26 @@
-// @ts-nocheck
 import {
-  AtpAgent,
+  type AtpAgent,
   ChatBskyConvoDefs,
-  ToolsOzoneModerationEmitEvent,
+  ComAtprotoModerationDefs,
+  ToolsOzoneModerationDefs,
+  type ToolsOzoneModerationEmitEvent,
+  ids,
 } from '@atproto/api'
 import { HOUR } from '@atproto/common'
 import {
-  ImageRef,
-  ModeratorClient,
-  RecordRef,
-  SeedClient,
+  type ImageRef,
+  type ModeratorClient,
+  type RecordRef,
+  type SeedClient,
   TestNetwork,
-  TestOzone,
+  type TestOzone,
   basicSeed,
 } from '@atproto/dev-env'
-import { AtUri } from '@atproto/syntax'
-import { ImageInvalidator } from '../src/image-invalidator.js'
+import { AtUri, type UriString } from '@atproto/syntax'
+import type { ImageInvalidator } from '../src/image-invalidator.js'
 import { EventReverser } from '../src/index.js'
-import { ids } from '../src/lexicon/lexicons.js'
-import {
-  REASONMISLEADING,
-  REASONOTHER,
-  REASONSPAM,
-} from '../src/lexicon/types/com/atproto/moderation/defs.js'
-import {
-  ModEventLabel,
-  REVIEWCLOSED,
-  REVIEWESCALATED,
-} from '../src/lexicon/types/tools/ozone/moderation/defs.js'
 import { TAKEDOWN_LABEL } from '../src/mod-service/index.js'
 import { forSnapshot, identity } from './_util.js'
-const runId = Math.random()
-  .toString(36)
-  .slice(2, 8)
-  .replace(/[^a-z]/g, 'x')
 
 describe('moderation', () => {
   let network: TestNetwork
@@ -56,7 +43,7 @@ describe('moderation', () => {
     cid: ref.cidStr,
   })
 
-  const getLabel = async (uri: string, val: string, neg = false) => {
+  const getLabel = async (uri: UriString, val: string, neg = false) => {
     return ozone.ctx.db.db
       .selectFrom('label')
       .selectAll()
@@ -69,7 +56,7 @@ describe('moderation', () => {
   beforeAll(async () => {
     mockInvalidator = new MockInvalidator()
     network = await TestNetwork.create({
-      dbPostgresSchema: 'ozone_moderation_' + runId,
+      dbPostgresSchema: 'ozone_moderation',
       ozone: {
         imgInvalidator: mockInvalidator,
         cdnPaths: ['/path1/%s/%s', '/path2/%s/%s'],
@@ -92,12 +79,12 @@ describe('moderation', () => {
   describe('reporting', () => {
     it('creates reports of a repo.', async () => {
       const reportA = await sc.createReport({
-        reasonType: REASONSPAM,
+        reasonType: ComAtprotoModerationDefs.REASONSPAM,
         subject: repoSubject(sc.dids.bob),
         reportedBy: sc.dids.alice,
       })
       const reportB = await sc.createReport({
-        reasonType: REASONOTHER,
+        reasonType: ComAtprotoModerationDefs.REASONOTHER,
         reason: 'impersonation',
         subject: repoSubject(sc.dids.bob),
         reportedBy: sc.dids.carol,
@@ -107,7 +94,7 @@ describe('moderation', () => {
 
     it("allows reporting a repo that doesn't exist.", async () => {
       const promise = sc.createReport({
-        reasonType: REASONSPAM,
+        reasonType: ComAtprotoModerationDefs.REASONSPAM,
         subject: repoSubject('did:plc:unknown'),
         reportedBy: sc.dids.alice,
       })
@@ -119,11 +106,11 @@ describe('moderation', () => {
       const postB = sc.posts[sc.dids.bob][1].ref
       const reportA = await sc.createReport({
         reportedBy: sc.dids.alice,
-        reasonType: REASONSPAM,
+        reasonType: ComAtprotoModerationDefs.REASONSPAM,
         subject: recordSubject(postA),
       })
       const reportB = await sc.createReport({
-        reasonType: REASONOTHER,
+        reasonType: ComAtprotoModerationDefs.REASONOTHER,
         reason: 'defamation',
         subject: recordSubject(postB),
         reportedBy: sc.dids.carol,
@@ -138,7 +125,7 @@ describe('moderation', () => {
       postUriBad.rkey = 'badrkey'
 
       const promiseA = sc.createReport({
-        reasonType: REASONSPAM,
+        reasonType: ComAtprotoModerationDefs.REASONSPAM,
         subject: {
           $type: 'com.atproto.repo.strongRef',
           uri: postUriBad.toString(),
@@ -149,7 +136,7 @@ describe('moderation', () => {
       await expect(promiseA).resolves.toBeDefined()
 
       const promiseB = sc.createReport({
-        reasonType: REASONOTHER,
+        reasonType: ComAtprotoModerationDefs.REASONOTHER,
         reason: 'defamation',
         subject: {
           $type: 'com.atproto.repo.strongRef',
@@ -166,7 +153,7 @@ describe('moderation', () => {
       const messageId2 = 'testmessageid2'
       const reportA = await sc.createReport({
         reportedBy: sc.dids.alice,
-        reasonType: REASONSPAM,
+        reasonType: ComAtprotoModerationDefs.REASONSPAM,
         // @ts-expect-error "chat.bsky.convo.defs#messageRef" is not spec'd as subject
         subject: identity<ChatBskyConvoDefs.MessageRef>({
           $type: 'chat.bsky.convo.defs#messageRef',
@@ -177,7 +164,7 @@ describe('moderation', () => {
       })
       const reportB = await sc.createReport({
         reportedBy: sc.dids.carol,
-        reasonType: REASONOTHER,
+        reasonType: ComAtprotoModerationDefs.REASONOTHER,
         reason: 'defamation',
         // @ts-expect-error "chat.bsky.convo.defs#messageRef" is not spec'd as subject
         subject: identity<ChatBskyConvoDefs.MessageRef>({
@@ -208,7 +195,7 @@ describe('moderation', () => {
       const convoId2 = 'convoId2'
       const reportA = await sc.createReport({
         reportedBy: sc.dids.alice,
-        reasonType: REASONSPAM,
+        reasonType: ComAtprotoModerationDefs.REASONSPAM,
         subject: {
           $type: 'chat.bsky.convo.defs#convoRef',
           did: sc.dids.carol,
@@ -217,7 +204,7 @@ describe('moderation', () => {
       })
       const reportB = await sc.createReport({
         reportedBy: sc.dids.carol,
-        reasonType: REASONOTHER,
+        reasonType: ComAtprotoModerationDefs.REASONOTHER,
         reason: 'defamation',
         subject: {
           $type: 'chat.bsky.convo.defs#convoRef',
@@ -233,7 +220,7 @@ describe('moderation', () => {
         expect(reportA.subject.convoId).toBe(convoId1)
         expect(reportA.subject.did).toBe(sc.dids.carol)
       }
-      expect(reportA.reasonType).toBe(REASONSPAM)
+      expect(reportA.reasonType).toBe(ComAtprotoModerationDefs.REASONSPAM)
       expect(reportA.reportedBy).toBe(sc.dids.alice)
       expect(reportA.id).toBeGreaterThan(0)
 
@@ -244,7 +231,7 @@ describe('moderation', () => {
         expect(reportB.subject.convoId).toBe(convoId2)
         expect(reportB.subject.did).toBe(sc.dids.carol)
       }
-      expect(reportB.reasonType).toBe(REASONOTHER)
+      expect(reportB.reasonType).toBe(ComAtprotoModerationDefs.REASONOTHER)
       expect(reportB.reason).toBe('defamation')
       expect(reportB.reportedBy).toBe(sc.dids.carol)
       expect(reportB.id).toBeGreaterThan(reportA.id)
@@ -257,12 +244,12 @@ describe('moderation', () => {
 
       await Promise.all([
         sc.createReport({
-          reasonType: REASONSPAM,
+          reasonType: ComAtprotoModerationDefs.REASONSPAM,
           subject: repoSubject(sc.dids.bob),
           reportedBy: sc.dids.alice,
         }),
         sc.createReport({
-          reasonType: REASONOTHER,
+          reasonType: ComAtprotoModerationDefs.REASONOTHER,
           reason: 'defamation',
           subject: recordSubject(post),
           reportedBy: sc.dids.carol,
@@ -279,7 +266,7 @@ describe('moderation', () => {
 
       // Validate that subject status is set to review closed and takendown flag is on
       expect(moderationStatusOnBobsAccount.subjectStatuses[0]).toMatchObject({
-        reviewState: REVIEWCLOSED,
+        reviewState: ToolsOzoneModerationDefs.REVIEWCLOSED,
         takendown: true,
         subject: {
           $type: 'com.atproto.admin.defs#repoRef',
@@ -317,7 +304,7 @@ describe('moderation', () => {
       })
 
       expect(alicesPostStatus.subjectStatuses[0]).toMatchObject({
-        reviewState: REVIEWESCALATED,
+        reviewState: ToolsOzoneModerationDefs.REVIEWESCALATED,
         takendown: false,
         subject: alicesPostSubject,
       })
@@ -375,11 +362,11 @@ describe('moderation', () => {
       // Validate that subject status is marked as escalated
       await emitModEvent({
         $type: 'tools.ozone.moderation.defs#modEventReport',
-        reportType: REASONSPAM,
+        reportType: ComAtprotoModerationDefs.REASONSPAM,
       })
       await emitModEvent({
         $type: 'tools.ozone.moderation.defs#modEventReport',
-        reportType: REASONMISLEADING,
+        reportType: ComAtprotoModerationDefs.REASONMISLEADING,
       })
       await emitModEvent({
         $type: 'tools.ozone.moderation.defs#modEventEscalate',
@@ -389,7 +376,7 @@ describe('moderation', () => {
       })
       expect(
         alicesPostStatusAfterEscalation.subjectStatuses[0].reviewState,
-      ).toEqual(REVIEWESCALATED)
+      ).toEqual(ToolsOzoneModerationDefs.REVIEWESCALATED)
 
       // Validate that subject status is marked as takendown
 
@@ -406,7 +393,7 @@ describe('moderation', () => {
         subject: alicesPostRef.uriStr,
       })
       expect(alicesPostStatusAfterTakedown.subjectStatuses[0]).toMatchObject({
-        reviewState: REVIEWCLOSED,
+        reviewState: ToolsOzoneModerationDefs.REVIEWCLOSED,
         takendown: true,
       })
 
@@ -418,7 +405,7 @@ describe('moderation', () => {
       })
       // Validate that after reverting, the status of the subject is reverted to the last status changing event
       expect(alicesPostStatusAfterRevert.subjectStatuses[0]).toMatchObject({
-        reviewState: REVIEWCLOSED,
+        reviewState: ToolsOzoneModerationDefs.REVIEWCLOSED,
         takendown: false,
       })
       // Validate that after reverting, the last review date of the subject
@@ -730,7 +717,7 @@ describe('moderation', () => {
 
     it('automatically reverses actions marked with duration', async () => {
       await sc.createReport({
-        reasonType: REASONSPAM,
+        reasonType: ComAtprotoModerationDefs.REASONSPAM,
         subject: repoSubject(sc.dids.bob),
         reportedBy: sc.dids.alice,
       })
@@ -766,7 +753,7 @@ describe('moderation', () => {
 
       expect(statuses.subjectStatuses[0]).toMatchObject({
         takendown: false,
-        reviewState: REVIEWCLOSED,
+        reviewState: ToolsOzoneModerationDefs.REVIEWCLOSED,
       })
       // Verify that the automatic reversal is attributed to the original moderator of the temporary action
       // and that the reason is set to indicate that the action was automatically reversed.
@@ -803,15 +790,17 @@ describe('moderation', () => {
         .where('convoId', '=', subject.convoId)
         .executeTakeFirst()
 
-      expect(status?.reviewState).toEqual(REVIEWESCALATED)
+      expect(status?.reviewState).toEqual(
+        ToolsOzoneModerationDefs.REVIEWESCALATED,
+      )
     })
 
     async function emitLabelEvent(
       opts: Partial<ToolsOzoneModerationEmitEvent.InputSchema> & {
         subject: ToolsOzoneModerationEmitEvent.InputSchema['subject']
-        createLabelVals: ModEventLabel['createLabelVals']
-        negateLabelVals: ModEventLabel['negateLabelVals']
-        durationInHours?: ModEventLabel['durationInHours']
+        createLabelVals: ToolsOzoneModerationDefs.ModEventLabel['createLabelVals']
+        negateLabelVals: ToolsOzoneModerationDefs.ModEventLabel['negateLabelVals']
+        durationInHours?: ToolsOzoneModerationDefs.ModEventLabel['durationInHours']
       },
     ) {
       const { createLabelVals, negateLabelVals, durationInHours } = opts

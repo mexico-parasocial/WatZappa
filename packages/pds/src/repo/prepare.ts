@@ -1,76 +1,44 @@
 import { TID } from '@atproto/common'
+import { RecordSchema, walk } from '@atproto/lex'
 import { encode } from '@atproto/lex-cbor'
 import {
-  Cid,
-  LexMap,
-  TypedBlobRef,
-  TypedLexMap,
+  type Cid,
+  type LexMap,
+  type TypedBlobRef,
+  type TypedLexMap,
   cidForCbor,
   enumBlobRefs,
   isLegacyBlobRef,
 } from '@atproto/lex-data'
-import { RecordSchema } from '@atproto/lex-schema'
 import {
-  RecordCreateOp,
-  RecordDeleteOp,
-  RecordUpdateOp,
-  RecordWriteOp,
+  type RecordCreateOp,
+  type RecordDeleteOp,
+  type RecordUpdateOp,
+  type RecordWriteOp,
   WriteOpAction,
 } from '@atproto/repo'
 import {
   AtUri,
-  DidString,
-  NsidString,
-  RecordKeyString,
+  type DidString,
+  type NsidString,
+  type RecordKeyString,
   isValidRecordKey,
 } from '@atproto/syntax'
 import { hasExplicitSlur } from '../handle/explicit-slurs.js'
-import { app, chat, com } from '../lexicons/index.js'
+import * as lexicons from '../lexicons/index.js'
 import {
   InvalidRecordError,
-  PreparedCreate,
-  PreparedDelete,
-  PreparedUpdate,
-  PreparedWrite,
-  ValidationStatus,
+  type PreparedCreate,
+  type PreparedDelete,
+  type PreparedUpdate,
+  type PreparedWrite,
+  type ValidationStatus,
 } from './types.js'
 
-// @TODO replace this with automatically fetched (& built) schemas
 const knownSchemas = new Map<string, RecordSchema>(
-  [
-    app.bsky.actor.profile.main,
-    app.bsky.actor.status.main,
-    app.bsky.feed.generator.main,
-    app.bsky.feed.like.main,
-    app.bsky.feed.post.main,
-    app.bsky.feed.postgate.main,
-    app.bsky.feed.repost.main,
-    app.bsky.feed.threadgate.main,
-    app.bsky.graph.block.main,
-    app.bsky.graph.follow.main,
-    app.bsky.graph.list.main,
-    app.bsky.graph.listblock.main,
-    app.bsky.graph.listitem.main,
-    app.bsky.graph.starterpack.main,
-    app.bsky.graph.verification.main,
-    app.bsky.labeler.service.main,
-    app.bsky.notification.declaration.main,
-    chat.bsky.actor.declaration.main,
-    com.atproto.lexicon.schema.main,
-    com.germnetwork.declaration.main,
-    com.para.post.main,
-    com.para.status.main,
-    com.para.social.postMeta.main,
-    com.para.civic.position.main,
-    com.para.civic.delegation.main,
-    com.para.civic.vote.main,
-    com.para.civic.cabildeo.main,
-    com.para.community.board.main,
-    com.para.community.briefingPack.main,
-    com.para.community.membership.main,
-    com.para.community.governance.main,
-    com.para.highlight.annotation.main,
-  ].map((schema: RecordSchema) => [schema.$type, schema]),
+  walk(lexicons)
+    .filter((s) => s instanceof RecordSchema)
+    .map((s) => [s.$type, s]),
 )
 
 const validateRecord = (
@@ -200,15 +168,7 @@ async function prepareWrite(opts: {
   }
 
   const nextRkey = TID.next()
-  const rkey =
-    assertCollectionConstraint({
-      did: opts.did,
-      collection: opts.collection,
-      rkey: opts.rkey,
-      record,
-    }) ||
-    opts.rkey ||
-    nextRkey.toString()
+  const rkey = opts.rkey || nextRkey.toString()
 
   return {
     record,
@@ -236,68 +196,6 @@ async function prepareWrite(opts: {
     uri: AtUri.make(opts.did, opts.collection, rkey),
     cid: await cidForCbor(encode(record)),
   }
-}
-
-const assertCollectionConstraint = (opts: {
-  did: string
-  collection: string
-  rkey?: string
-  record: TypedLexMap
-}): string | undefined => {
-  const { did, collection, rkey, record } = opts
-  if (collection === 'com.para.status') {
-    if (rkey && rkey !== 'self') {
-      throw new InvalidRecordError(
-        'Invalid com.para.status record key: must be "self"',
-      )
-    }
-    return 'self'
-  }
-
-  if (collection === 'com.para.social.postMeta') {
-    return assertParaPostMetaRkey({ did, rkey, record })
-  }
-}
-
-const assertParaPostMetaRkey = (opts: {
-  did: string
-  rkey?: string
-  record: TypedLexMap
-}): string => {
-  const post = opts.record.post
-  if (typeof post !== 'string') {
-    throw new InvalidRecordError(
-      'Invalid com.para.social.postMeta record: post must be an at-uri',
-    )
-  }
-
-  let postUri: AtUri
-  try {
-    postUri = new AtUri(post)
-  } catch {
-    throw new InvalidRecordError(
-      'Invalid com.para.social.postMeta record: post must be an at-uri',
-    )
-  }
-
-  if (postUri.collection !== 'com.para.post') {
-    throw new InvalidRecordError(
-      'Invalid com.para.social.postMeta record: post must reference a com.para.post uri',
-    )
-  }
-  if (postUri.hostname !== opts.did) {
-    throw new InvalidRecordError(
-      'Invalid com.para.social.postMeta record: post must reference a post in the same repo',
-    )
-  }
-
-  if (opts.rkey && opts.rkey !== postUri.rkey) {
-    throw new InvalidRecordError(
-      'Invalid com.para.social.postMeta record key: must use the rkey of its referenced com.para.post',
-    )
-  }
-
-  return postUri.rkey
 }
 
 export const prepareDelete = (opts: {

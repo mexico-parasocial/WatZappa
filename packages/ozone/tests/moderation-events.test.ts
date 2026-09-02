@@ -1,20 +1,17 @@
-// @ts-nocheck
 import assert from 'node:assert'
 import EventEmitter, { once } from 'node:events'
-import { ToolsOzoneModerationDefs } from '@atproto/api'
 import {
-  ModeratorClient,
-  SeedClient,
+  ComAtprotoAdminDefs,
+  ComAtprotoModerationDefs,
+  ComAtprotoRepoStrongRef,
+  ToolsOzoneModerationDefs,
+} from '@atproto/api'
+import {
+  type ModeratorClient,
+  type SeedClient,
   TestNetwork,
   basicSeed,
 } from '@atproto/dev-env'
-import { isRepoRef } from '../src/lexicon/types/com/atproto/admin/defs.js'
-import {
-  REASONAPPEAL,
-  REASONMISLEADING,
-  REASONSPAM,
-} from '../src/lexicon/types/com/atproto/moderation/defs.js'
-import { isMain as isStrongRef } from '../src/lexicon/types/com/atproto/repo/strongRef.js'
 import { forSnapshot } from './_util.js'
 
 describe('moderation-events', () => {
@@ -44,14 +41,17 @@ describe('moderation-events', () => {
 
     for (let i = 0; i < 4; i++) {
       await sc.createReport({
-        reasonType: i % 2 ? REASONSPAM : REASONMISLEADING,
+        reasonType:
+          i % 2
+            ? ComAtprotoModerationDefs.REASONSPAM
+            : ComAtprotoModerationDefs.REASONMISLEADING,
         reason: 'X',
         //   Report bob's account by alice and vice versa
         subject: i % 2 ? bobsAccount : alicesAccount,
         reportedBy: i % 2 ? sc.dids.alice : sc.dids.bob,
       })
       await sc.createReport({
-        reasonType: REASONSPAM,
+        reasonType: ComAtprotoModerationDefs.REASONSPAM,
         reason: 'X',
         //   Report bob's post by alice and vice versa
         subject: i % 2 ? bobsPost : alicesPost,
@@ -76,7 +76,7 @@ describe('moderation-events', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   describe('query events', () => {
@@ -201,15 +201,38 @@ describe('moderation-events', () => {
     it('returns report events matching reportType filters', async () => {
       const [spamEvents, misleadingEvents] = await Promise.all([
         modClient.queryEvents({
-          reportTypes: [REASONSPAM],
+          reportTypes: [ComAtprotoModerationDefs.REASONSPAM],
         }),
         modClient.queryEvents({
-          reportTypes: [REASONMISLEADING, REASONAPPEAL],
+          reportTypes: [
+            ComAtprotoModerationDefs.REASONMISLEADING,
+            ComAtprotoModerationDefs.REASONAPPEAL,
+          ],
         }),
       ])
 
-      expect(misleadingEvents.events.length).toEqual(2)
+      // Verify all spam events have the correct report type
       expect(spamEvents.events.length).toEqual(6)
+      spamEvents.events.forEach((event) => {
+        expect(event.event.$type).toEqual(
+          'tools.ozone.moderation.defs#modEventReport',
+        )
+        expect((event.event as any).reportType).toEqual(
+          ComAtprotoModerationDefs.REASONSPAM,
+        )
+      })
+
+      // Verify all misleading events have one of the correct report types
+      expect(misleadingEvents.events.length).toEqual(2)
+      misleadingEvents.events.forEach((event) => {
+        expect(event.event.$type).toEqual(
+          'tools.ozone.moderation.defs#modEventReport',
+        )
+        expect([
+          ComAtprotoModerationDefs.REASONMISLEADING,
+          ComAtprotoModerationDefs.REASONAPPEAL,
+        ]).toContain((event.event as any).reportType)
+      })
     })
 
     it('returns events matching keyword in comment', async () => {
@@ -233,7 +256,7 @@ describe('moderation-events', () => {
 
     it('returns events matching multiple keywords in comment', async () => {
       await sc.createReport({
-        reasonType: REASONSPAM,
+        reasonType: ComAtprotoModerationDefs.REASONSPAM,
         reason: 'november rain',
         subject: {
           $type: 'com.atproto.admin.defs#repoRef',
@@ -242,7 +265,7 @@ describe('moderation-events', () => {
         reportedBy: sc.dids.bob,
       })
       await sc.createReport({
-        reasonType: REASONSPAM,
+        reasonType: ComAtprotoModerationDefs.REASONSPAM,
         reason: 'rainy days feel lazy',
         subject: {
           $type: 'com.atproto.admin.defs#repoRef',
@@ -377,7 +400,7 @@ describe('moderation-events', () => {
         [],
       )
       await sc.createReport({
-        reasonType: REASONSPAM,
+        reasonType: ComAtprotoModerationDefs.REASONSPAM,
         reason: 'X',
         subject: {
           $type: 'com.atproto.repo.strongRef',
@@ -415,13 +438,21 @@ describe('moderation-events', () => {
       ])
 
       expect(onlyStarterPackReports.events.length).toEqual(1)
-      assert(isStrongRef(onlyStarterPackReports.events[0].subject))
+      assert(
+        ComAtprotoRepoStrongRef.isMain(
+          onlyStarterPackReports.events[0].subject,
+        ),
+      )
       expect(onlyStarterPackReports.events[0].subject.uri).toContain(
         'app.bsky.graph.starterpack',
       )
 
       expect(onlyAlicesStarterPackReports.events.length).toEqual(1)
-      assert(isStrongRef(onlyAlicesStarterPackReports.events[0].subject))
+      assert(
+        ComAtprotoRepoStrongRef.isMain(
+          onlyAlicesStarterPackReports.events[0].subject,
+        ),
+      )
       expect(onlyAlicesStarterPackReports.events[0].subject.uri).toContain(
         sp.uriStr,
       )
@@ -448,20 +479,24 @@ describe('moderation-events', () => {
         ])
 
       assert(
-        onlyAccountReports.events.every((e) => !isStrongRef(e.subject)),
+        onlyAccountReports.events.every(
+          (e) => !ComAtprotoRepoStrongRef.isMain(e.subject),
+        ),
         'only account reports are returned, no event has a uri',
       )
 
       assert(
         onlyRecordReports.events.every(
-          (e) => isStrongRef(e.subject) && e.subject.uri,
+          (e) => ComAtprotoRepoStrongRef.isMain(e.subject) && e.subject.uri,
         ),
         'only record reports are returned, all events have a uri',
       )
 
       assert(
         onlyReportsOnBobsAccount.events.every(
-          (e) => isRepoRef(e.subject) && e.subject.did === sc.dids.bob,
+          (e) =>
+            ComAtprotoAdminDefs.isRepoRef(e.subject) &&
+            e.subject.did === sc.dids.bob,
         ),
         "only bob's account reports are returned, no events have a URI even though the subjectType is record",
       )
@@ -501,6 +536,96 @@ describe('moderation-events', () => {
       events.events.forEach((event) => {
         expect(event.createdBy).toEqual(network.ozone.moderatorAccnt.did)
       })
+    })
+
+    it('queries events by conversation', async () => {
+      const convoId1 = 'conversation-123'
+      const convoId2 = 'conversation-456'
+
+      // create reports
+      await sc.createReport({
+        reasonType: ComAtprotoModerationDefs.REASONSPAM,
+        reason: 'spam in convo 1',
+        subject: {
+          $type: 'chat.bsky.convo.defs#convoRef',
+          did: sc.dids.carol,
+          convoId: convoId1,
+        },
+        reportedBy: sc.dids.alice,
+      })
+      await sc.createReport({
+        reasonType: ComAtprotoModerationDefs.REASONMISLEADING,
+        reason: 'misleading in convo 1',
+        subject: {
+          $type: 'chat.bsky.convo.defs#convoRef',
+          did: sc.dids.carol,
+          convoId: convoId1,
+        },
+        reportedBy: sc.dids.bob,
+      })
+      await sc.createReport({
+        reasonType: ComAtprotoModerationDefs.REASONSPAM,
+        reason: 'spam in convo 2',
+        subject: {
+          $type: 'chat.bsky.convo.defs#convoRef',
+          did: sc.dids.carol,
+          convoId: convoId2,
+        },
+        reportedBy: sc.dids.alice,
+      })
+
+      // Query events (filter by report type since auto-tagging creates extra events)
+      const convo1Events = await modClient.queryEvents({
+        subject: `at://${sc.dids.carol}/chat.bsky.convo/${convoId1}`,
+        includeAllUserRecords: false,
+        types: ['tools.ozone.moderation.defs#modEventReport'],
+      })
+      const convo2Events = await modClient.queryEvents({
+        subject: `at://${sc.dids.carol}/chat.bsky.convo/${convoId2}`,
+        includeAllUserRecords: false,
+        types: ['tools.ozone.moderation.defs#modEventReport'],
+      })
+
+      // Verify conversation 1 events are correct
+      expect(convo1Events.events.length).toBeGreaterThan(0)
+      convo1Events.events.forEach((e) => {
+        // All events should be conversation refs
+        expect(e.subject.$type).toEqual('chat.bsky.convo.defs#convoRef')
+        // All events should be for conversation 1
+        const subject = e.subject as any
+        expect(subject.convoId).toEqual(convoId1)
+        expect(subject.did).toEqual(sc.dids.carol)
+        // All events should be reports
+        expect(e.event.$type).toEqual(
+          'tools.ozone.moderation.defs#modEventReport',
+        )
+      })
+      // Verify we got both reports we created
+      const convo1Comments = convo1Events.events.map(
+        (e) => (e.event as any).comment,
+      )
+      expect(convo1Comments).toContain('spam in convo 1')
+      expect(convo1Comments).toContain('misleading in convo 1')
+
+      // Verify conversation 2 events are correct
+      expect(convo2Events.events.length).toBeGreaterThan(0)
+      convo2Events.events.forEach((e) => {
+        // All events should be conversation refs
+        expect(e.subject.$type).toEqual('chat.bsky.convo.defs#convoRef')
+        // All events should be for conversation 2
+        const subject = e.subject as any
+        expect(subject.convoId).toEqual(convoId2)
+        expect(subject.did).toEqual(sc.dids.carol)
+        // All events should be reports
+        expect(e.event.$type).toEqual(
+          'tools.ozone.moderation.defs#modEventReport',
+        )
+      })
+      // Verify we got the report we created
+      const convo2Comments = convo2Events.events.map(
+        (e) => (e.event as any).comment,
+      )
+      expect(convo2Comments).toContain('spam in convo 2')
     })
   })
 

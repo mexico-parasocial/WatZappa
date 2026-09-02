@@ -1,71 +1,71 @@
-import { Selectable } from 'kysely'
+import type { Selectable } from 'kysely'
 import {
-  AppBskyActorDefs,
-  ToolsOzoneModerationDefs,
-  ToolsOzoneQueueDefs,
-  ToolsOzoneReportDefs,
-} from '@atproto/api'
+  type AtUriString,
+  type DidString,
+  type UriString,
+  asUnknown$TypedObject,
+} from '@atproto/lex'
 import { addAccountInfoToRepoViewDetail } from '../api/util.js'
-import { ReportStat } from '../db/schema/report_stat.js'
-import { AccountView } from '../lexicon/types/com/atproto/admin/defs.js'
-import {
-  RecordViewDetail,
-  RepoView,
-} from '../lexicon/types/tools/ozone/moderation/defs.js'
-import { Member as TeamMember } from '../lexicon/types/tools/ozone/team/defs.js'
-import { ReportWithEvent } from '../mod-service/report.js'
+import type { ReportStat } from '../db/schema/report_stat.js'
+import { app, type com, type tools } from '../lexicons/index.js'
+import type { ReportWithEvent } from '../mod-service/report.js'
 import {
   CHAT_CONVO_COLLECTION,
   CHAT_MESSAGE_COLLECTION,
 } from '../mod-service/subject.js'
 import type { ModerationSubjectStatusRowWithHandle } from '../mod-service/types.js'
-import { ParsedLabelers } from '../util.js'
+import type { ParsedLabelers } from '../util.js'
 
 type ReportViews = {
   repoDetails(
-    dids: string[],
+    dids: DidString[],
     labelers?: ParsedLabelers,
-  ): Promise<Map<string, RepoView>>
+  ): Promise<Map<string, tools.ozone.moderation.defs.RepoView>>
   recordDetails(
-    subjects: { uri: string }[],
+    subjects: { uri: AtUriString }[],
     labelers?: ParsedLabelers,
-  ): Promise<Map<string, RecordViewDetail>>
+  ): Promise<Map<string, tools.ozone.moderation.defs.RecordViewDetail>>
   getProfiles(
-    dids: string[],
-  ): Promise<Map<string, AppBskyActorDefs.ProfileViewDetailed>>
+    dids: DidString[],
+  ): Promise<Map<string, app.bsky.actor.defs.ProfileViewDetailed>>
   getSubjectStatus(
-    subjects: string[],
+    subjects: (UriString | DidString)[],
   ): Promise<Map<string, ModerationSubjectStatusRowWithHandle>>
   formatSubjectStatus(
     status: ModerationSubjectStatusRowWithHandle,
-  ): ToolsOzoneModerationDefs.SubjectStatusView
+  ): tools.ozone.moderation.defs.SubjectStatusView
 }
 
 export type HydratedReport = {
-  partialRepos: Map<string, RepoView>
-  accountInfo: Map<string, AccountView | null>
-  recordInfo: Map<string, RecordViewDetail>
-  profiles: Map<string, AppBskyActorDefs.ProfileViewDetailed>
-  queues: Map<number, ToolsOzoneQueueDefs.QueueView>
-  memberViews: Map<string, TeamMember>
-  convoStatuses: Map<string, ToolsOzoneModerationDefs.SubjectStatusView>
+  partialRepos: Map<string, tools.ozone.moderation.defs.RepoView>
+  accountInfo: Map<string, com.atproto.admin.defs.AccountView | null>
+  recordInfo: Map<string, tools.ozone.moderation.defs.RecordViewDetail>
+  profiles: Map<string, app.bsky.actor.defs.ProfileViewDetailed>
+  queues: Map<number, tools.ozone.queue.defs.QueueView>
+  memberViews: Map<string, tools.ozone.team.defs.Member>
+  convoStatuses: Map<string, tools.ozone.moderation.defs.SubjectStatusView>
 }
 
 export async function hydrateReportInfo(
   reports: ReportWithEvent[],
   views: ReportViews,
-  getAccountInfos: (dids: string[]) => Promise<Map<string, AccountView | null>>,
+  getAccountInfos: (
+    dids: DidString[],
+  ) => Promise<Map<string, com.atproto.admin.defs.AccountView | null>>,
   getQueues: (
     queueIds: number[],
-  ) => Promise<Map<number, ToolsOzoneQueueDefs.QueueView>>,
-  getTeamMembers: (dids: string[]) => Promise<Map<string, TeamMember>>,
+  ) => Promise<Map<number, tools.ozone.queue.defs.QueueView>>,
+  getTeamMembers: (
+    dids: DidString[],
+  ) => Promise<Map<string, tools.ozone.team.defs.Member>>,
   labelers: ParsedLabelers,
 ): Promise<HydratedReport> {
-  const dids = new Set<string>()
+  // populate data to fetch
+  const dids = new Set<DidString>()
   const uris = new Set<string>()
-  const convoUris = new Set<string>()
+  const convoUris = new Set<AtUriString>()
   const queueIds = new Set<number>()
-  const assignmentDids: string[] = []
+  const assignmentDids: DidString[] = []
   for (const report of reports) {
     dids.add(report.subjectDid)
     dids.add(report.reportedBy)
@@ -81,16 +81,14 @@ export async function hydrateReportInfo(
       assignmentDids.push(report.assignedTo)
     }
   }
-
   const didsArray = Array.from(dids)
 
-  // Convos have their own subject status, keyed by the synthetic at-uri used
-  // to address them.
+  // fetch data
   const getConvoStatuses = async () => {
     const rows = await views.getSubjectStatus(Array.from(convoUris))
     const statuses = new Map<
       string,
-      ToolsOzoneModerationDefs.SubjectStatusView
+      tools.ozone.moderation.defs.SubjectStatusView
     >()
     for (const [subject, row] of rows) {
       statuses.set(subject, views.formatSubjectStatus(row))
@@ -109,7 +107,7 @@ export async function hydrateReportInfo(
     views.repoDetails(didsArray, labelers),
     getAccountInfos(didsArray),
     views.recordDetails(
-      Array.from(uris).map((uri) => ({ uri })),
+      Array.from(uris).map((uri) => ({ uri: uri as AtUriString })),
       labelers,
     ),
     views.getProfiles(didsArray),
@@ -133,8 +131,8 @@ export function buildReportView(
   report: ReportWithEvent,
   hydrated: HydratedReport,
   isModerator: boolean,
-  actions?: ToolsOzoneModerationDefs.ModEventView[],
-): ToolsOzoneReportDefs.ReportView {
+  actions?: tools.ozone.moderation.defs.ModEventView[],
+): tools.ozone.report.defs.ReportView {
   const {
     partialRepos,
     accountInfo,
@@ -144,11 +142,15 @@ export function buildReportView(
     memberViews,
     convoStatuses,
   } = hydrated
+
+  // flags
   const isRecord = !!report.subjectUri
   const isMessage = !!report.subjectMessageId
   const isConvo = !!report.subjectConvoId && !report.subjectMessageId
   const isChat = isMessage || isConvo
   const did = report.subjectDid
+
+  // enrich
   const partialRepo = partialRepos.get(did)
   const repo = partialRepo
     ? addAccountInfoToRepoViewDetail(
@@ -159,8 +161,9 @@ export function buildReportView(
     : undefined
   const profile = profiles.get(did)
   const record = isRecord ? recordInfo.get(report.subjectUri!) : undefined
+
   // subject
-  const subject = isRecord
+  const subject: UriString | DidString = isRecord
     ? report.subjectUri!
     : isMessage
       ? `at://${report.subjectDid}/${CHAT_MESSAGE_COLLECTION}/${report.subjectMessageId}`
@@ -175,22 +178,8 @@ export function buildReportView(
       ? convoStatuses.get(subject)
       : repo?.moderation.subjectStatus
 
+  // report
   const reportType = report.meta?.reportType as string
-
-  const subjectView = {
-    type: isRecord ? 'record' : isChat ? 'chat' : 'account',
-    subject,
-    repo,
-    record,
-    profile: profile
-      ? {
-          $type: 'app.bsky.actor.defs#profileViewDetailed' as const,
-          ...profile,
-        }
-      : undefined,
-    status: subjectStatus,
-  }
-
   const reporterDid = report.reportedBy
   const reporterPartialRepo = partialRepos.get(reporterDid)
   const reporterRepo = reporterPartialRepo
@@ -203,19 +192,7 @@ export function buildReportView(
   const reporterProfile = profiles.get(reporterDid)
   const reporterStatus = reporterRepo?.moderation.subjectStatus
 
-  const reporterView = {
-    type: 'account',
-    subject: reporterDid,
-    repo: reporterRepo,
-    profile: reporterProfile
-      ? {
-          $type: 'app.bsky.actor.defs#profileViewDetailed' as const,
-          ...reporterProfile,
-        }
-      : undefined,
-    status: reporterStatus,
-  }
-
+  // assignment
   const assignmentView =
     report.assignedTo && report.assignedAt
       ? {
@@ -229,10 +206,35 @@ export function buildReportView(
     id: report.id,
     eventId: report.eventId,
     status: report.status,
-    subject: subjectView,
+    subject: {
+      type: isRecord
+        ? ('record' as const)
+        : isChat
+          ? ('chat' as const)
+          : ('account' as const),
+      subject,
+      repo,
+      record,
+      profile: profile
+        ? asUnknown$TypedObject(
+            app.bsky.actor.defs.profileViewDetailed.$build(profile),
+          )
+        : undefined,
+      status: subjectStatus,
+    },
     reportType,
     reportedBy: report.reportedBy,
-    reporter: reporterView,
+    reporter: {
+      type: 'account' as const,
+      subject: reporterDid,
+      repo: reporterRepo,
+      profile: reporterProfile
+        ? asUnknown$TypedObject(
+            app.bsky.actor.defs.profileViewDetailed.$build(reporterProfile),
+          )
+        : undefined,
+      status: reporterStatus,
+    },
     comment: report.comment ?? undefined,
     createdAt: report.createdAt,
     updatedAt: report.updatedAt,
@@ -255,7 +257,7 @@ export function buildReportView(
 
 export function viewQueueStats(
   row?: Selectable<ReportStat>,
-): ToolsOzoneQueueDefs.QueueStats {
+): tools.ozone.queue.defs.QueueStats {
   return {
     pendingCount: row?.pendingCount ?? undefined,
     actionedCount: row?.actionedCount ?? undefined,
@@ -269,7 +271,7 @@ export function viewQueueStats(
 
 export function viewLiveStats(
   row?: Selectable<ReportStat>,
-): ToolsOzoneReportDefs.LiveStats {
+): tools.ozone.report.defs.LiveStats {
   return {
     pendingCount: row?.pendingCount ?? undefined,
     actionedCount: row?.actionedCount ?? undefined,
@@ -283,7 +285,7 @@ export function viewLiveStats(
 
 export function viewHistoricalStats(
   row: Selectable<ReportStat>,
-): ToolsOzoneReportDefs.HistoricalStats {
+): tools.ozone.report.defs.HistoricalStats {
   return {
     date: row.date,
     computedAt: row.computedAt,

@@ -1,13 +1,12 @@
-// @ts-nocheck
 import assert from 'node:assert'
 import {
-  AtpAgent,
+  type AtpAgent,
   ComAtprotoAdminDefs,
   ToolsOzoneModerationDefs,
 } from '@atproto/api'
 import {
-  ModeratorClient,
-  SeedClient,
+  type ModeratorClient,
+  type SeedClient,
   TestNetwork,
   basicSeed,
 } from '@atproto/dev-env'
@@ -38,7 +37,7 @@ describe('moderation', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   it('allows specifying policy for takedown actions.', async () => {
@@ -47,7 +46,7 @@ describe('moderation', () => {
       policies: ['trolling'],
     })
 
-    // Verify that the takedown even exposes the policy specified for it
+    // Verify that that the takedown even exposes the policy specified for it
     const { events: eventViews } = await modClient.queryEvents({
       subject: sc.dids.bob,
       types: ['tools.ozone.moderation.defs#modEventTakedown'],

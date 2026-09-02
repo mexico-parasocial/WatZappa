@@ -1,7 +1,6 @@
-// @ts-nocheck
 import {
-  ModeratorClient,
-  SeedClient,
+  type ModeratorClient,
+  type SeedClient,
   TestNetwork,
   basicSeed,
 } from '@atproto/dev-env'
@@ -22,7 +21,7 @@ describe('mod-tool tracking', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   it('stores and returns modTool with name and meta metadata', async () => {

@@ -1,4 +1,4 @@
-// @ts-nocheck
+import { ids } from '@atproto/api'
 import type AtpAgent from '@atproto/api'
 import {
   type ModeratorClient,
@@ -6,11 +6,6 @@ import {
   TestNetwork,
   basicSeed,
 } from '@atproto/dev-env'
-import { ids } from '../src/lexicon/lexicons.js'
-const runId = Math.random()
-  .toString(36)
-  .slice(2, 8)
-  .replace(/[^a-z]/g, 'x')
 
 const REASON_SPAM = 'com.atproto.moderation.defs#reasonSpam'
 const REASON_THREAT = 'tools.ozone.report.defs#reasonViolenceThreats'
@@ -122,7 +117,7 @@ describe('queue-router', () => {
 
   beforeAll(async () => {
     network = await TestNetwork.create({
-      dbPostgresSchema: 'ozone_queue_router_' + runId,
+      dbPostgresSchema: 'ozone_queue_router',
     })
     agent = network.ozone.getAgent()
     sc = network.getSeedClient()

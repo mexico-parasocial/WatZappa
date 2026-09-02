@@ -2,4 +2,4 @@
 '@atproto/pds': patch
 ---
 
-Remove a stray `})` at the end of `tests/oauth.test.ts` that made the file fail to parse.
+Fix a stray closing brace in tests/oauth.test.ts that broke compilation.

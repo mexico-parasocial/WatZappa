@@ -1,9 +1,9 @@
-import { AuthRequiredError } from '@atproto/xrpc-server'
-import { AppContext } from '../../context.js'
-import { Server } from '../../lexicon/index.js'
+import { AuthRequiredError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../context.js'
+import { tools } from '../../lexicons/index.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.tools.ozone.communication.listTemplates({
+  server.add(tools.ozone.communication.listTemplates, {
     auth: ctx.authVerifier.modOrAdminToken,
     handler: async ({ auth }) => {
       const access = auth.credentials

@@ -1,4 +1,4 @@
-import { Kysely } from 'kysely'
+import type { Kysely } from 'kysely'
 
 export async function up(db: Kysely<unknown>): Promise<void> {
   await db.schema
@@ -12,12 +12,14 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn('createdBy', 'varchar', (col) => col.notNull())
     .execute()
 
+  // Daemon polls for expired tags
   await db.schema
     .createIndex('idx_expiring_tag_expires_at')
     .on('expiring_tag')
     .column('expiresAt')
     .execute()
 
+  // Cleanup queries when tags are manually removed
   await db.schema
     .createIndex('idx_expiring_tag_did_record_path')
     .on('expiring_tag')

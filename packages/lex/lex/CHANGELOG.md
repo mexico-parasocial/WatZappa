@@ -1,5 +1,135 @@
 # @atproto/lex
 
+## 0.3.8
+
+### Patch Changes
+
+- Updated dependencies [[`ec29fcd`](https://github.com/bluesky-social/atproto/commit/ec29fcdb4e0ce098fb1473feebe876a94b1c8e33)]:
+  - @atproto/lex-client@0.3.5
+  - @atproto/lex-installer@0.1.17
+
+## 0.3.7
+
+### Patch Changes
+
+- [#5439](https://github.com/bluesky-social/atproto/pull/5439) [`79d911f`](https://github.com/bluesky-social/atproto/commit/79d911fc2bd7c6d9b1a6810e00e81d964b72a4ab) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Generate "token" as string values (in addition to the type)
+
+- Updated dependencies [[`79d911f`](https://github.com/bluesky-social/atproto/commit/79d911fc2bd7c6d9b1a6810e00e81d964b72a4ab), [`79d911f`](https://github.com/bluesky-social/atproto/commit/79d911fc2bd7c6d9b1a6810e00e81d964b72a4ab)]:
+  - @atproto/lex-builder@0.1.13
+  - @atproto/lex-client@0.3.4
+  - @atproto/lex-installer@0.1.16
+  - @atproto/lex-schema@0.2.6
+
+## 0.3.6
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/lex-installer@0.1.15
+
+## 0.3.5
+
+### Patch Changes
+
+- Updated dependencies [[`b66870d`](https://github.com/bluesky-social/atproto/commit/b66870d5a1efbcfa0cc07498c7cfcf3f0f243e86)]:
+  - @atproto/lex-builder@0.1.12
+  - @atproto/lex-installer@0.1.14
+
+## 0.3.4
+
+### Patch Changes
+
+- Updated dependencies [[`8b55a4a`](https://github.com/bluesky-social/atproto/commit/8b55a4ab69c24e5038f67c479b3b9953666ea0c2)]:
+  - @atproto/lex-schema@0.2.5
+  - @atproto/lex-installer@0.1.13
+  - @atproto/lex-builder@0.1.11
+  - @atproto/lex-client@0.3.3
+
+## 0.3.3
+
+### Patch Changes
+
+- [#5295](https://github.com/bluesky-social/atproto/pull/5295) [`6a3d607`](https://github.com/bluesky-social/atproto/commit/6a3d6073cb66c527b5b109242049c85c36b9658c) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Update vitest dependencies
+
+- Updated dependencies [[`6a3d607`](https://github.com/bluesky-social/atproto/commit/6a3d6073cb66c527b5b109242049c85c36b9658c)]:
+  - @atproto/lex-installer@0.1.12
+  - @atproto/lex-builder@0.1.10
+  - @atproto/lex-client@0.3.2
+  - @atproto/lex-schema@0.2.4
+  - @atproto/lex-data@0.1.7
+  - @atproto/lex-json@0.1.6
+
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [[`95aa1d6`](https://github.com/bluesky-social/atproto/commit/95aa1d6dfea71316d5f30dd8bd4ed48afac31c81)]:
+  - @atproto/lex-installer@0.1.11
+  - @atproto/lex-builder@0.1.9
+  - @atproto/lex-client@0.3.1
+  - @atproto/lex-schema@0.2.3
+  - @atproto/lex-data@0.1.6
+  - @atproto/lex-json@0.1.5
+
+## 0.3.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/lex-installer@0.1.10
+
+## 0.3.0
+
+### Minor Changes
+
+- [#5185](https://github.com/bluesky-social/atproto/pull/5185) [`f8267c3`](https://github.com/bluesky-social/atproto/commit/f8267c3ada1645a2472c81c1ba95157466108b6e) Thanks [@matthieusieben](https://github.com/matthieusieben)! - **Breaking:** Rework the `Client` class and its `service` / `labelers` options to give callers full control over the `atproto-proxy` and `atproto-accept-labelers` request headers.
+
+  A single `Client` can now be configured to talk to a proxied service (e.g. an AppView) by default, while still being able to reach other services — including the user's PDS directly — on a per-request basis. This is the foundation for SDK-style `Action`s that compose AppView and PDS calls through a single client instance.
+
+  - The `service` and `labelers` options set on a `Client` now act as _defaults_ for that client's requests. Per-request options merge with those defaults using conventional option-merging semantics: `undefined` (or omitted) inherits the client's default, while a defined value replaces it (**breaking:** previously, per-request `labelers` were appended to the client's, and a per-request `service` could not unset the client's).
+  - `service: null` and `labelers: null` can now be passed on a per-request basis to opt out of the client's defaults, sending the request without the `atproto-proxy` or `atproto-accept-labelers` header.
+  - **Breaking:** The record helper methods (`create()`, `get()`, `put()`, `delete()`, `list()`, `listAll()`, `createRecord()`, `getRecord()`, `putRecord()`, `deleteRecord()`, `listRecords()`, `applyWrites()`, `uploadBlob()`, `getBlob()`) now always target the user's PDS: they default to `service: null` and `labelers: null`, ignoring the client's instance-wide defaults (unless explicitly overridden through their options).
+  - **Breaking:** `Client` no longer implements the `Agent` interface (its `fetchHandler` method was removed), meaning that a `Client` can no longer be used as the agent of another `Client`. To share authentication between differently-configured clients, build them from the same session, or reuse an existing client's `agent` (`new Client(otherClient.agent, { ... })`).
+  - Static app labelers (`Client.appLabelers`, configured via `Client.configure()`) are still always applied — with the `;redact` param — and can now be overridden per client instance or per request through the new `appLabelers` option (`appLabelers: null` disables them).
+  - An `atproto-proxy` header provided through the `Client` constructor's `headers` option is now used as a fallback for the `service` option, making the two equivalent at the client level. A per-request `service` value (including `null`) always takes precedence. Per-request `atproto-proxy` headers are ignored by `Client` methods (use the `service` option instead), while `atproto-accept-labelers` headers are merged with the labelers from the `labelers` and `appLabelers` options (unless `labelers: null` is used).
+
+### Patch Changes
+
+- Updated dependencies [[`f8267c3`](https://github.com/bluesky-social/atproto/commit/f8267c3ada1645a2472c81c1ba95157466108b6e)]:
+  - @atproto/lex-client@0.3.0
+  - @atproto/lex-installer@0.1.9
+
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies [[`ee20f01`](https://github.com/bluesky-social/atproto/commit/ee20f01d4582cd6afff1b42dde50aec95212a38b)]:
+  - @atproto/lex-installer@0.1.8
+
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [[`1570e44`](https://github.com/bluesky-social/atproto/commit/1570e4471bffb1f3e5e6907f031d025db9ef3198)]:
+  - @atproto/lex-schema@0.2.2
+  - @atproto/lex-installer@0.1.7
+  - @atproto/lex-builder@0.1.8
+  - @atproto/lex-client@0.2.4
+
+## 0.2.1
+
+### Patch Changes
+
+- [#5197](https://github.com/bluesky-social/atproto/pull/5197) [`a0c49d9`](https://github.com/bluesky-social/atproto/commit/a0c49d9e8bc685c5a747a8d3b2775c73c63fdb6f) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Rewrite import statements to be compatible with TypeScript's `verbatimModuleSyntax` config.
+
+- Updated dependencies [[`a0c49d9`](https://github.com/bluesky-social/atproto/commit/a0c49d9e8bc685c5a747a8d3b2775c73c63fdb6f), [`cc6b901`](https://github.com/bluesky-social/atproto/commit/cc6b901496f607c0b477e48a23c94e6f727396c9), [`cc6b901`](https://github.com/bluesky-social/atproto/commit/cc6b901496f607c0b477e48a23c94e6f727396c9), [`cc6b901`](https://github.com/bluesky-social/atproto/commit/cc6b901496f607c0b477e48a23c94e6f727396c9), [`cc6b901`](https://github.com/bluesky-social/atproto/commit/cc6b901496f607c0b477e48a23c94e6f727396c9)]:
+  - @atproto/lex-installer@0.1.6
+  - @atproto/lex-builder@0.1.7
+  - @atproto/lex-client@0.2.3
+  - @atproto/lex-schema@0.2.1
+  - @atproto/lex-data@0.1.5
+  - @atproto/lex-json@0.1.4
+
 ## 0.2.0
 
 ### Minor Changes

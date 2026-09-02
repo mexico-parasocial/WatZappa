@@ -1,6 +1,7 @@
 import assert from 'node:assert'
 import { DAY, HOUR, MINUTE } from '@atproto/common'
-import { OzoneEnvironment } from './env.js'
+import type { DidString, UriString } from '@atproto/lex'
+import type { OzoneEnvironment } from './env.js'
 
 // off-config but still from env:
 // logging: LOG_LEVEL, LOG_SYSTEMS, LOG_ENABLED, LOG_DESTINATION
@@ -11,6 +12,12 @@ export const envToCfg = (env: OzoneEnvironment): OzoneConfig => {
   assert(env.serverDid, 'serverDid is required')
   const serviceCfg: OzoneConfig['service'] = {
     port,
+    // Intentionally has no default: metrics are opt-in. When unset, the metrics
+    // server is never started (off by default for 3p labelers/self-hosters).
+    metricsPort: env.metricsPort,
+    // Separate opt-in metrics port for the daemon process (runs in its own
+    // container, so it needs its own scrape target). No default for the same reason.
+    daemonMetricsPort: env.daemonMetricsPort,
     publicUrl: env.publicUrl,
     did: env.serverDid,
     version: env.version,
@@ -26,6 +33,7 @@ export const envToCfg = (env: OzoneEnvironment): OzoneConfig => {
     poolMaxUses: env.dbPoolMaxUses,
     poolIdleTimeoutMs: env.dbPoolIdleTimeoutMs,
     materializedViewRefreshIntervalMs: env.dbMaterializedViewRefreshIntervalMs,
+    materializedViewRefreshTimeoutMs: env.dbMaterializedViewRefreshTimeoutMs,
     teamProfileRefreshIntervalMs: env.dbTeamProfileRefreshIntervalMs,
   }
 
@@ -143,15 +151,22 @@ export type StatsConfig = {
 
 export type ServiceConfig = {
   port: number
+  // Port for the separate, pull-based Prometheus /metrics server. Optional and
+  // off by default: when undefined, no metrics server is started and no metrics
+  // are collected. Bluesky's first-party deploy sets OZONE_METRICS_PORT to opt in.
+  metricsPort?: number
+  // Metrics port for the daemon process (separate container/scrape target).
+  // Optional and off by default; set via OZONE_DAEMON_METRICS_PORT.
+  daemonMetricsPort?: number
   publicUrl: string
-  did: string
+  did: DidString
   version?: string
   devMode?: boolean
   serviceRecordCacheTTL: number // in ms, default 5 mins
 }
 
 export type BlobDivertConfig = {
-  url: string
+  url: UriString
   adminPassword: string
 }
 
@@ -162,23 +177,24 @@ export type DatabaseConfig = {
   poolMaxUses?: number
   poolIdleTimeoutMs?: number
   materializedViewRefreshIntervalMs?: number
+  materializedViewRefreshTimeoutMs?: number
   teamProfileRefreshIntervalMs?: number
 }
 
 export type AppviewConfig = {
-  url: string
-  did: string
+  url: UriString
+  did: DidString
   pushEvents: boolean
 }
 
 export type PdsConfig = {
-  url: string
-  did: string
+  url: UriString
+  did: DidString
 }
 
 export type ChatConfig = {
-  url: string
-  did: string
+  url: UriString
+  did: DidString
 }
 
 export type CdnConfig = {
@@ -192,14 +208,14 @@ export type IdentityConfig = {
 }
 
 export type AccessConfig = {
-  admins: string[]
-  moderators: string[]
-  triage: string[]
+  admins: DidString[]
+  moderators: DidString[]
+  triage: DidString[]
 }
 
 export type VerifierConfig = {
-  url: string
-  did: string
+  url: UriString
+  did: DidString
   password: string
   jetstreamUrl?: string
   issuersToIndex?: string[]

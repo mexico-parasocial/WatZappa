@@ -1,3 +1,4 @@
+import { ids } from '@atproto/api'
 import type AtpAgent from '@atproto/api'
 import {
   type ModeratorClient,
@@ -5,11 +6,6 @@ import {
   TestNetwork,
   basicSeed,
 } from '@atproto/dev-env'
-import { ids } from '../src/lexicon/lexicons.js'
-const runId = Math.random()
-  .toString(36)
-  .slice(2, 8)
-  .replace(/[^a-z]/g, 'x')
 
 describe('ozone-queues', () => {
   let network: TestNetwork
@@ -30,6 +26,7 @@ describe('ozone-queues', () => {
       reportTypes: string[]
       collection?: string
       description?: string
+      recommendedPolicies?: string[]
     },
     role: 'admin' | 'triage' = 'admin',
   ) => {
@@ -84,6 +81,7 @@ describe('ozone-queues', () => {
       name?: string
       enabled?: boolean
       description?: string
+      recommendedPolicies?: string[]
     },
     role: 'admin' | 'triage' = 'admin',
   ) => {
@@ -103,7 +101,7 @@ describe('ozone-queues', () => {
 
   beforeAll(async () => {
     network = await TestNetwork.create({
-      dbPostgresSchema: 'ozone_queues_' + runId,
+      dbPostgresSchema: 'ozone_queues',
     })
     agent = network.ozone.getAgent()
     sc = network.getSeedClient()
@@ -142,6 +140,27 @@ describe('ozone-queues', () => {
       expect(data.queue.createdAt).toBeDefined()
       expect(data.queue.updatedAt).toBeDefined()
       expect(data.queue.stats).toBeDefined()
+      expect(data.queue.recommendedPolicies).toEqual([])
+    })
+
+    it('stores valid recommended policies and rejects unknown policies', async () => {
+      const { data } = await createQueue({
+        name: 'CQ: Recommended Policies',
+        subjectTypes: ['account'],
+        reportTypes: ['com.atproto.moderation.defs#reasonOther'],
+        recommendedPolicies: ['policy-one'],
+      })
+      createdIds.push(data.queue.id)
+      expect(data.queue.recommendedPolicies).toEqual(['policy-one'])
+
+      await expect(
+        createQueue({
+          name: 'CQ: Unknown Policy',
+          subjectTypes: ['account'],
+          reportTypes: ['com.atproto.moderation.defs#reasonOther'],
+          recommendedPolicies: ['Not A Policy'],
+        }),
+      ).rejects.toMatchObject({ error: 'InvalidRecommendedPolicies' })
     })
 
     it('creates a queue with description', async () => {
@@ -526,6 +545,21 @@ describe('ozone-queues', () => {
         description: 'Updated description',
       })
       expect(data.queue.description).toBe('Updated description')
+    })
+
+    it('updates recommended policies and rejects unknown policies', async () => {
+      const { data } = await updateQueue({
+        queueId: testQueueId,
+        recommendedPolicies: ['policy-two'],
+      })
+      expect(data.queue.recommendedPolicies).toEqual(['policy-two'])
+
+      await expect(
+        updateQueue({
+          queueId: testQueueId,
+          recommendedPolicies: ['Not A Policy'],
+        }),
+      ).rejects.toMatchObject({ error: 'InvalidRecommendedPolicies' })
     })
 
     it('updates both name and enabled status', async () => {

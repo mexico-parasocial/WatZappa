@@ -1,12 +1,14 @@
+import type { DidString } from '@atproto/lex'
+import { currentDatetimeString } from '@atproto/lex'
 import { InvalidRequestError } from '@atproto/xrpc-server'
-import { Database } from '../db/index.js'
-import { QueueService } from '../queue/service.js'
+import type { Database } from '../db/index.js'
+import type { QueueService } from '../queue/service.js'
 
 export type ReassignReportQueueParams = {
   reportId: number
   toQueueId: number
   comment?: string
-  createdBy: string
+  createdBy: DidString
 }
 
 export async function reassignReportQueue(
@@ -71,7 +73,7 @@ export async function reassignReportQueue(
       nextStatus = 'open'
     }
 
-    const now = new Date().toISOString()
+    const now = currentDatetimeString()
 
     const reportUpdate: Record<string, string | number | null> = {
       queueId: toQueueId,

@@ -1,8 +1,15 @@
 import { sql } from 'kysely'
+import type {
+  AtUriString,
+  DatetimeString,
+  DidString,
+  UriString,
+} from '@atproto/lex'
+import { currentDatetimeString, isDidString } from '@atproto/lex'
 import { AtUri } from '@atproto/syntax'
-import { Database } from '../db/index.js'
-import { Report } from '../db/schema/report.js'
-import { QueryParams } from '../lexicon/types/tools/ozone/report/queryReports.js'
+import type { Database } from '../db/index.js'
+import type { Report } from '../db/schema/report.js'
+import { tools } from '../lexicons/index.js'
 import {
   AlreadyInTargetState,
   InvalidStateTransition,
@@ -12,10 +19,10 @@ import { CHAT_CONVO_COLLECTION, CHAT_MESSAGE_COLLECTION } from './subject.js'
 
 export type ReportWithEvent = Omit<Report, 'id'> & {
   id: number
-  subjectDid: string
-  subjectUri: string | null
+  subjectDid: DidString
+  subjectUri: UriString | null
   subjectCid: string | null
-  reportedBy: string
+  reportedBy: DidString
   comment: string | null
   meta: Record<string, string | boolean | number> | null
 }
@@ -28,12 +35,12 @@ function reportQuery(db: Database) {
   return db.db
     .selectFrom('report as r')
     .innerJoin('moderation_event as me', 'me.id', 'r.eventId')
-    .where('me.action', '=', 'tools.ozone.moderation.defs#modEventReport')
+    .where('me.action', '=', tools.ozone.moderation.defs.modEventReport.$type)
 }
 
 export async function queryReports(
   db: Database,
-  params: QueryParams,
+  params: tools.ozone.report.queryReports.$Params,
 ): Promise<QueryReportsResult> {
   let builder = reportQuery(db)
 
@@ -49,24 +56,26 @@ export async function queryReports(
       const uri = new AtUri(params.subject)
       if (uri.collection === CHAT_MESSAGE_COLLECTION) {
         builder = builder
-          .where('r.did', '=', uri.host)
+          .where('r.did', '=', uri.did)
           .where('r.subjectMessageId', '=', uri.rkey)
       } else if (uri.collection === CHAT_CONVO_COLLECTION) {
         builder = builder
-          .where('r.did', '=', uri.host)
+          .where('r.did', '=', uri.did)
           .where('r.subjectConvoId', '=', uri.rkey)
           .where('r.subjectMessageId', 'is', null)
       } else {
         builder = builder
-          .where('r.did', '=', uri.host)
+          .where('r.did', '=', uri.did)
           .where('r.recordPath', '=', `${uri.collection}/${uri.rkey}`)
       }
-    } else {
+    } else if (isDidString(params.subject)) {
       builder = builder
         .where('r.did', '=', params.subject)
         .where('r.recordPath', '=', '')
         .where('r.subjectMessageId', 'is', null)
         .where('r.subjectConvoId', 'is', null)
+    } else {
+      throw new Error('Subject must be a DID or an AT-URI')
     }
   }
 
@@ -127,7 +136,8 @@ export async function queryReports(
       sortField === 'updatedAt' ? 'r.updatedAt' : 'r.createdAt',
       sortDirection,
     )
-    .orderBy('r.id', 'desc')
+    // Keep the tie-breaker aligned with the primary sort for consistent keyset pagination and index scans.
+    .orderBy('r.id', sortDirection)
 
   const limit = params.limit ?? 50
   if (params.cursor) {
@@ -135,12 +145,12 @@ export async function queryReports(
     const sortCol = sortField === 'updatedAt' ? 'r.updatedAt' : 'r.createdAt'
     if (sortDirection === 'desc') {
       builder = builder.where(sql<boolean>`(
-      ${sql.ref(sortCol)} < ${sortValue}
+        ${sql.ref(sortCol)} < ${sortValue}
         OR (${sql.ref(sortCol)} = ${sortValue} AND r.id < ${Number(id)})
       )`)
     } else {
       builder = builder.where(sql<boolean>`(
-      ${sql.ref(sortCol)} > ${sortValue}
+        ${sql.ref(sortCol)} > ${sortValue}
         OR (${sql.ref(sortCol)} = ${sortValue} AND r.id > ${Number(id)})
       )`)
     }
@@ -233,24 +243,25 @@ export async function getLatestReport(
 }
 
 export type FindReportsForSubjectParams = {
-  subjectDid: string
-  subjectUri?: string | null
+  subjectDid: DidString
+  subjectUri?: AtUriString | null
   reportIds?: number[]
   reportTypes?: string[]
   targetAll?: boolean
+  lockForUpdate?: boolean
 }
 
 export type ReportResult = {
   id: number
   eventId: number
   queueId: number | null
-  queuedAt: string | null
+  queuedAt: DatetimeString | null
   actionEventIds: number[] | null
   actionNote: string | null
   isMuted: boolean
   status: string
-  createdAt: string
-  updatedAt: string
+  createdAt: DatetimeString
+  updatedAt: DatetimeString
 }
 
 export async function findReportsForSubject(
@@ -259,16 +270,28 @@ export async function findReportsForSubject(
 ): Promise<ReportResult[]> {
   let builder = reportQuery(db).where('r.did', '=', params.subjectDid)
 
-  // Filter by subject URI (if provided, match exactly; if null/undefined, match repo-level)
+  // Filter by subject URI (if provided, match exactly; if null/undefined,
+  // match repo-level and exclude chat subjects owned by the same DID).
   if (params.subjectUri) {
     const uri = new AtUri(params.subjectUri)
-    builder = builder.where(
-      'r.recordPath',
-      '=',
-      `${uri.collection}/${uri.rkey}`,
-    )
+    if (uri.collection === CHAT_MESSAGE_COLLECTION) {
+      builder = builder.where('r.subjectMessageId', '=', uri.rkey)
+    } else if (uri.collection === CHAT_CONVO_COLLECTION) {
+      builder = builder
+        .where('r.subjectConvoId', '=', uri.rkey)
+        .where('r.subjectMessageId', 'is', null)
+    } else {
+      builder = builder.where(
+        'r.recordPath',
+        '=',
+        `${uri.collection}/${uri.rkey}`,
+      )
+    }
   } else {
-    builder = builder.where('r.recordPath', '=', '')
+    builder = builder
+      .where('r.recordPath', '=', '')
+      .where('r.subjectMessageId', 'is', null)
+      .where('r.subjectConvoId', 'is', null)
   }
 
   if (params.targetAll) {
@@ -289,9 +312,115 @@ export async function findReportsForSubject(
     return []
   }
 
-  const reports = await builder.selectAll('r').execute()
+  let query = builder.selectAll('r')
+  if (params.lockForUpdate) {
+    query = query.forUpdate('r')
+  }
+
+  const reports = await query.execute()
 
   return reports
+}
+
+export type CloseReportsForSubjectParams = {
+  db: Database
+  subjectDid: DidString
+  subjectUri: string | null
+  reportTypes?: string[]
+  internalNote?: string
+  isAutomated: boolean
+  createdBy: DidString
+}
+
+export type CloseReportsResult = {
+  closedCount: number
+  reportIds: number[]
+}
+
+/**
+ * Closes all non-closed reports on a subject, optionally filtered by report
+ * type. Reports whose current status doesn't permit a transition to closed
+ * are skipped silently. Unlike `processReportAction` there is no moderation
+ * event involved — reports are closed directly via close activities.
+ */
+export async function closeReportsForSubject(
+  params: CloseReportsForSubjectParams,
+): Promise<CloseReportsResult> {
+  const {
+    db,
+    subjectDid,
+    subjectUri,
+    reportTypes,
+    internalNote,
+    isAutomated,
+    createdBy,
+  } = params
+
+  return db.transaction(async (dbTxn) => {
+    const matchingReports = await findReportsForSubject(dbTxn, {
+      subjectDid,
+      subjectUri: subjectUri as AtUriString,
+      reportTypes: reportTypes?.length ? reportTypes : undefined,
+      targetAll: !reportTypes?.length,
+      lockForUpdate: true,
+    })
+
+    const validUpdates: { id: number; previousStatus: string }[] = []
+    for (const report of matchingReports) {
+      try {
+        const result = handleReportUpdate(report.status, {
+          type: 'activity',
+          activityType: 'closeActivity',
+        })
+        if (result.nextStatus && result.activity) {
+          validUpdates.push({
+            id: report.id,
+            previousStatus: result.activity.previousStatus,
+          })
+        }
+      } catch (err) {
+        if (
+          err instanceof AlreadyInTargetState ||
+          err instanceof InvalidStateTransition
+        ) {
+          continue
+        }
+        throw err
+      }
+    }
+
+    if (!validUpdates.length) {
+      return { closedCount: 0, reportIds: [] }
+    }
+
+    const now = currentDatetimeString()
+    const updateIds = validUpdates.map((u) => u.id)
+
+    await dbTxn.db
+      .updateTable('report')
+      .set({ status: 'closed', updatedAt: now, closedAt: now })
+      .where('id', 'in', updateIds)
+      .execute()
+
+    await dbTxn.db
+      .insertInto('report_activity')
+      .values(
+        validUpdates.map((u) => ({
+          reportId: u.id,
+          activityType: 'closeActivity',
+          previousStatus: u.previousStatus,
+          internalNote: internalNote ?? null,
+          publicNote: null,
+          meta: null,
+          isAutomated,
+          createdBy,
+          createdAt: now,
+        })),
+      )
+      .execute()
+
+    return { closedCount: validUpdates.length, reportIds: updateIds }
+  })
 }
 
 export type ProcessReportActionParams = {
@@ -302,11 +431,11 @@ export type ProcessReportActionParams = {
     all?: boolean
     note?: string
   }
-  subjectDid: string
+  subjectDid: DidString
   subjectUri: string | null
   eventId: number
   eventType: string
-  createdBy: string
+  createdBy: DidString
 }
 
 /**
@@ -334,7 +463,7 @@ export async function processReportAction(
   // Find reports matching the criteria
   const matchingReports = await findReportsForSubject(db, {
     subjectDid,
-    subjectUri,
+    subjectUri: subjectUri as AtUriString,
     reportIds: reportAction.ids,
     reportTypes: reportAction.types,
     targetAll: reportAction.all,
@@ -407,7 +536,7 @@ export async function processReportAction(
     return 0
   }
 
-  const now = new Date().toISOString()
+  const now = currentDatetimeString()
   const updateIds = validUpdates.map((u) => u.id)
 
   // Bulk UPDATE reports that passed validation

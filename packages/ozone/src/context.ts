@@ -1,62 +1,69 @@
 import assert from 'node:assert'
 import * as plc from '@did-plc/lib'
-import express from 'express'
-import { AtpAgent } from '@atproto/api'
-import { Keypair, Secp256k1Keypair } from '@atproto/crypto'
-import { DidCache, IdResolver, MemoryCache } from '@atproto/identity'
+import type express from 'express'
+import { type Keypair, Secp256k1Keypair } from '@atproto/crypto'
+import { type DidCache, IdResolver, MemoryCache } from '@atproto/identity'
+import { Client } from '@atproto/lex'
 import { createServiceAuthHeaders } from '@atproto/xrpc-server'
 import { AssignmentService } from './assignment/index.js'
 import { AuthVerifier } from './auth-verifier.js'
 import { BackgroundQueue } from './background.js'
 import {
   CommunicationTemplateService,
-  CommunicationTemplateServiceCreator,
+  type CommunicationTemplateServiceCreator,
 } from './communication-service/template.js'
-import { OzoneConfig, OzoneSecrets } from './config/index.js'
-import { EventPusher } from './daemon/index.js'
+import type { OzoneConfig, OzoneSecrets } from './config/index.js'
 import { BlobDiverter } from './daemon/blob-diverter.js'
+import { EventPusher } from './daemon/index.js'
 import { Database } from './db/index.js'
-import { ImageInvalidator } from './image-invalidator.js'
+import type { ImageInvalidator } from './image-invalidator.js'
 import {
   ModerationService,
-  ModerationServiceCreator,
+  type ModerationServiceCreator,
 } from './mod-service/index.js'
 import {
   ModerationServiceProfile,
-  ModerationServiceProfileCreator,
+  type ModerationServiceProfileCreator,
 } from './mod-service/profile.js'
-import { StrikeService, StrikeServiceCreator } from './mod-service/strike.js'
-import { QueueService, QueueServiceCreator } from './queue/service.js'
+import {
+  StrikeService,
+  type StrikeServiceCreator,
+} from './mod-service/strike.js'
+import { QueueService, type QueueServiceCreator } from './queue/service.js'
 import {
   ReportStatsService,
-  ReportStatsServiceCreator,
+  type ReportStatsServiceCreator,
 } from './report/stats.js'
+import { SafeDidResolver } from './safe-fetch.js'
 import {
   SafelinkRuleService,
-  SafelinkRuleServiceCreator,
+  type SafelinkRuleServiceCreator,
 } from './safelink/service.js'
 import {
   ScheduledActionService,
-  ScheduledActionServiceCreator,
+  type ScheduledActionServiceCreator,
 } from './scheduled-action/service.js'
 import { Sequencer } from './sequencer/sequencer.js'
-import { SetService, SetServiceCreator } from './set/service.js'
-import { SettingService, SettingServiceCreator } from './setting/service.js'
-import { TeamService, TeamServiceCreator } from './team/index.js'
+import { SetService, type SetServiceCreator } from './set/service.js'
+import {
+  SettingService,
+  type SettingServiceCreator,
+} from './setting/service.js'
+import { TeamService, type TeamServiceCreator } from './team/index.js'
 import {
   LABELER_HEADER_NAME,
-  ParsedLabelers,
+  type ParsedLabelers,
   defaultLabelerHeader,
   getSigningKeyId,
   parseLabelerHeader,
 } from './util.js'
 import {
   VerificationIssuer,
-  VerificationIssuerCreator,
+  type VerificationIssuerCreator,
 } from './verification/issuer.js'
 import {
   VerificationService,
-  VerificationServiceCreator,
+  type VerificationServiceCreator,
 } from './verification/service.js'
 
 export type AppContextOptions = {
@@ -73,9 +80,9 @@ export type AppContextOptions = {
   settingService: SettingServiceCreator
   strikeService: StrikeServiceCreator
   teamService: TeamServiceCreator
-  appviewAgent: AtpAgent
-  pdsAgent: AtpAgent | undefined
-  chatAgent: AtpAgent | undefined
+  appviewClient: Client
+  pdsClient: Client | undefined
+  chatClient: Client | undefined
   blobDiverter?: BlobDiverter
   signingKey: Keypair
   signingKeyId: number
@@ -91,10 +98,7 @@ export type AppContextOptions = {
 }
 
 export class AppContext {
-  constructor(
-    private opts: AppContextOptions,
-    private secrets: OzoneSecrets,
-  ) {}
+  constructor(private opts: AppContextOptions) {}
 
   static async fromConfig(
     cfg: OzoneConfig,
@@ -110,12 +114,18 @@ export class AppContext {
     })
     const signingKey = await Secp256k1Keypair.import(secrets.signingKeyHex)
     const signingKeyId = await getSigningKeyId(db, signingKey.did())
-    const appviewAgent = new AtpAgent({ service: cfg.appview.url })
-    const pdsAgent = cfg.pds
-      ? new AtpAgent({ service: cfg.pds.url })
+    // Trust internal services to send us well-formed responses
+    const clientOpts = { strictResponseProcessing: false }
+    const appviewClient = new Client({ service: cfg.appview.url }, clientOpts)
+    // OZONE_PDS_HEADERS is applied only to the operator-configured PDS.
+    const pdsClient = cfg.pds
+      ? new Client(
+          { service: cfg.pds.url },
+          { ...clientOpts, headers: secrets.pdsHeaders },
+        )
       : undefined
-    const chatAgent = cfg.chat
-      ? new AtpAgent({ service: cfg.chat.url })
+    const chatClient = cfg.chat
+      ? new Client({ service: cfg.chat.url }, clientOpts)
       : undefined
 
     const didCache = new MemoryCache(
@@ -126,6 +136,12 @@ export class AppContext {
       plcUrl: cfg.identity.plcUrl,
       didCache,
     })
+    if (!cfg.service.devMode) {
+      idResolver.did = new SafeDidResolver({
+        plcUrl: cfg.identity.plcUrl,
+        didCache,
+      })
+    }
 
     const createAuthHeaders = (aud: string, lxm: string) =>
       createServiceAuthHeaders({
@@ -135,23 +151,24 @@ export class AppContext {
         keypair: signingKey,
       })
 
-    const backgroundQueue = new BackgroundQueue(db)
+    const backgroundQueue = new BackgroundQueue(db, { concurrency: 20 })
     const blobDiverter = cfg.blobDivert
       ? new BlobDiverter(db, {
           idResolver,
           serviceConfig: cfg.blobDivert,
+          devMode: cfg.service.devMode,
         })
       : undefined
     const eventPusher = new EventPusher(db, createAuthHeaders, {
       appview: cfg.appview.pushEvents ? cfg.appview : undefined,
-      pds: cfg.pds ?? undefined,
+      pds: cfg.pds ? { ...cfg.pds, headers: secrets.pdsHeaders } : undefined,
     })
 
     const communicationTemplateService = CommunicationTemplateService.creator()
     const safelinkRuleService = SafelinkRuleService.creator()
     const scheduledActionService = ScheduledActionService.creator()
     const teamService = TeamService.creator(
-      appviewAgent,
+      appviewClient,
       cfg.appview.did,
       createAuthHeaders,
     )
@@ -164,7 +181,7 @@ export class AppContext {
     const verificationIssuer = VerificationIssuer.creator()
     const moderationServiceProfile = ModerationServiceProfile.creator(
       cfg,
-      appviewAgent,
+      appviewClient,
     )
     const modService = ModerationService.creator(
       signingKey,
@@ -173,7 +190,7 @@ export class AppContext {
       backgroundQueue,
       idResolver,
       eventPusher,
-      appviewAgent,
+      appviewClient,
       createAuthHeaders,
       strikeService,
       overrides?.imgInvalidator,
@@ -195,39 +212,36 @@ export class AppContext {
       teamService: teamService(db),
     })
 
-    return new AppContext(
-      {
-        db,
-        cfg,
-        modService,
-        moderationServiceProfile,
-        communicationTemplateService,
-        safelinkRuleService,
-        scheduledActionService,
-        teamService,
-        queueService,
-        reportStatsService,
-        setService,
-        settingService,
-        strikeService,
-        appviewAgent,
-        pdsAgent,
-        chatAgent,
-        signingKey,
-        signingKeyId,
-        didCache,
-        idResolver,
-        backgroundQueue,
-        sequencer,
-        assignmentService,
-        authVerifier,
-        blobDiverter,
-        verificationService,
-        verificationIssuer,
-        ...(overrides ?? {}),
-      },
-      secrets,
-    )
+    return new AppContext({
+      db,
+      cfg,
+      modService,
+      moderationServiceProfile,
+      communicationTemplateService,
+      safelinkRuleService,
+      scheduledActionService,
+      teamService,
+      queueService,
+      reportStatsService,
+      setService,
+      settingService,
+      strikeService,
+      appviewClient,
+      pdsClient,
+      chatClient,
+      signingKey,
+      signingKeyId,
+      didCache,
+      idResolver,
+      backgroundQueue,
+      sequencer,
+      assignmentService,
+      authVerifier,
+      blobDiverter,
+      verificationService,
+      verificationIssuer,
+      ...(overrides ?? {}),
+    })
   }
 
   assignPort(port: number) {
@@ -302,16 +316,16 @@ export class AppContext {
     return this.opts.moderationServiceProfile
   }
 
-  get appviewAgent(): AtpAgent {
-    return this.opts.appviewAgent
+  get appviewClient(): Client {
+    return this.opts.appviewClient
   }
 
-  get pdsAgent(): AtpAgent | undefined {
-    return this.opts.pdsAgent
+  get pdsClient(): Client | undefined {
+    return this.opts.pdsClient
   }
 
-  get chatAgent(): AtpAgent | undefined {
-    return this.opts.chatAgent
+  get chatClient(): Client | undefined {
+    return this.opts.chatClient
   }
 
   get signingKey(): Keypair {

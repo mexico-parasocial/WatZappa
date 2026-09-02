@@ -1,15 +1,15 @@
-import { ForbiddenError } from '@atproto/xrpc-server'
-import { AppContext } from '../../context.js'
-import { Server } from '../../lexicon/index.js'
-import { ReasonType } from '../../lexicon/types/com/atproto/moderation/defs.js'
-import { ModerationService } from '../../mod-service/index.js'
-import { subjectFromInput } from '../../mod-service/subject.js'
+import type { DidString } from '@atproto/lex'
+import { ForbiddenError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../context.js'
+import { com } from '../../lexicons/index.js'
+import type { ModerationService } from '../../mod-service/index.js'
+import { RepoSubject, subjectFromInput } from '../../mod-service/subject.js'
 import { TagService } from '../../tag-service/index.js'
 import { getTagForReport } from '../../tag-service/util.js'
 import { isAppealReport } from '../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.atproto.moderation.createReport({
+  server.add(com.atproto.moderation.createReport, {
     auth: ctx.authVerifier.standard,
     handler: async ({ input, auth }) => {
       const requester =
@@ -60,19 +60,21 @@ export default function (server: Server, ctx: AppContext) {
 
 const assertValidReporter = async (
   modService: ModerationService,
-  reasonType: ReasonType,
-  did: string,
+  reasonType: com.atproto.moderation.defs.ReasonType,
+  did: DidString,
 ) => {
-  const reporterStatus = await modService.getCurrentStatus({ did })
+  // Only the account-level status matters here: a takedown or appeal on one of
+  // the reporter's records must not block them from reporting
+  const reporterStatus = await modService.getStatus(new RepoSubject(did))
 
   // If we don't have a mod status for the reporter, no need to do further checks
-  if (!reporterStatus.length) {
+  if (!reporterStatus) {
     return
   }
 
   // For appeals, we just need to make sure that the account does not have pending appeal
   if (isAppealReport(reasonType)) {
-    if (reporterStatus[0]?.appealed) {
+    if (reporterStatus.appealed) {
       throw new ForbiddenError(
         'Awaiting decision on previous appeal',
         'AlreadyAppealed',
@@ -84,7 +86,7 @@ const assertValidReporter = async (
   // For non appeals, we need to make sure the reporter account is not already in takendown status
   // This is necessary because we allow takendown accounts call createReport but that's only meant for appeals
   // and we need to make sure takendown accounts don't abuse this endpoint
-  if (reporterStatus[0]?.takendown) {
+  if (reporterStatus.takendown) {
     throw new ForbiddenError(
       'Report not accepted from takendown account',
       'AccountTakedown',

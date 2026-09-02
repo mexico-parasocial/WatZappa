@@ -1,18 +1,13 @@
-// @ts-nocheck
-import { AtpAgent } from '@atproto/api'
+import { ComAtprotoModerationDefs, ids } from '@atproto/api'
+import type { AtpAgent } from '@atproto/api'
 import {
-  ModeratorClient,
-  SeedClient,
+  type ModeratorClient,
+  type SeedClient,
   TestNetwork,
-  TestOzone,
+  type TestOzone,
   basicSeed,
 } from '@atproto/dev-env'
 import { AtUri } from '@atproto/syntax'
-import { ids } from '../src/lexicon/lexicons.js'
-import {
-  REASONOTHER,
-  REASONSPAM,
-} from '../src/lexicon/types/com/atproto/moderation/defs.js'
 import { forSnapshot } from './_util.js'
 
 describe('admin get record view', () => {
@@ -39,13 +34,13 @@ describe('admin get record view', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   beforeAll(async () => {
     await sc.createReport({
       reportedBy: sc.dids.bob,
-      reasonType: REASONSPAM,
+      reasonType: ComAtprotoModerationDefs.REASONSPAM,
       subject: {
         $type: 'com.atproto.repo.strongRef',
         uri: sc.posts[sc.dids.alice][0].ref.uriStr,
@@ -54,7 +49,7 @@ describe('admin get record view', () => {
     })
     await sc.createReport({
       reportedBy: sc.dids.carol,
-      reasonType: REASONOTHER,
+      reasonType: ComAtprotoModerationDefs.REASONOTHER,
       reason: 'defamation',
       subject: {
         $type: 'com.atproto.repo.strongRef',

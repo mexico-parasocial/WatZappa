@@ -1,7 +1,9 @@
 import { HOUR } from '@atproto/common'
-import { Database } from '../db/index.js'
+import { type DatetimeString, toDatetimeString } from '@atproto/lex'
+import type { Database } from '../db/index.js'
 import { dbLogger } from '../logger.js'
-import { StrikeServiceCreator } from '../mod-service/strike.js'
+import type { StrikeServiceCreator } from '../mod-service/strike.js'
+import { getJobCursor, initJobCursor, updateJobCursor } from './job-cursor.js'
 
 const JOB_NAME = 'strike_expiry'
 
@@ -40,32 +42,15 @@ export class StrikeExpiryProcessor {
   }
 
   async initializeCursor() {
-    await this.db.db
-      .insertInto('job_cursor')
-      .values({
-        job: JOB_NAME,
-        cursor: null,
-      })
-      .onConflict((oc) => oc.doNothing())
-      .execute()
+    await initJobCursor(this.db, JOB_NAME)
   }
 
-  async getCursor(): Promise<string | null> {
-    const entry = await this.db.db
-      .selectFrom('job_cursor')
-      .select('cursor')
-      .where('job', '=', JOB_NAME)
-      .executeTakeFirst()
-
-    return entry?.cursor || null
+  async getCursor(): Promise<DatetimeString | null> {
+    return (await getJobCursor(this.db, JOB_NAME)) as DatetimeString | null
   }
 
   async updateCursor(cursor: string): Promise<void> {
-    await this.db.db
-      .updateTable('job_cursor')
-      .set({ cursor })
-      .where('job', '=', JOB_NAME)
-      .execute()
+    await updateJobCursor(this.db, JOB_NAME, cursor)
   }
 
   async processExpiredStrikes() {
@@ -78,7 +63,7 @@ export class StrikeExpiryProcessor {
 
     if (!affectedSubjects.length) {
       dbLogger.info('no expired strikes to process')
-      await this.updateCursor(now.toISOString())
+      await this.updateCursor(toDatetimeString(now))
       return
     }
 
@@ -93,7 +78,7 @@ export class StrikeExpiryProcessor {
       }),
     )
 
-    await this.updateCursor(now.toISOString())
+    await this.updateCursor(toDatetimeString(now))
 
     dbLogger.info(
       { processed: affectedSubjects.length },

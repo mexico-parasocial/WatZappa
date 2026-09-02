@@ -1,14 +1,14 @@
 import * as plc from '@did-plc/lib'
-import getPort from 'get-port'
 import * as ui8 from 'uint8arrays'
 import { AtpAgent } from '@atproto/api'
-import { Keypair } from '@atproto/crypto'
+import { type Keypair, Secp256k1Keypair } from '@atproto/crypto'
+import type { DidString } from '@atproto/lex'
 import * as ozone from '@atproto/ozone'
 import { createServiceJwt } from '@atproto/xrpc-server'
 import { ADMIN_PASSWORD, EXAMPLE_LABELER } from './const.js'
-import { defaultDevIdentityProvider } from './identity.js'
+import getPort from './get-port.js'
 import { ModeratorClient } from './moderator-client.js'
-import { DidAndKey, OzoneConfig } from './types.js'
+import type { DidAndKey, OzoneConfig } from './types.js'
 import { createDidAndKey } from './util.js'
 
 export class TestOzone {
@@ -24,7 +24,7 @@ export class TestOzone {
 
   static async create(config: OzoneConfig): Promise<TestOzone> {
     const serviceKeypair =
-      config.signingKey ?? (await defaultDevIdentityProvider.keypair('ozone'))
+      config.signingKey ?? (await Secp256k1Keypair.create({ exportable: true }))
     const signingKeyHex = ui8.toString(await serviceKeypair.export(), 'hex')
     let serverDid = config.serverDid
     if (!serverDid) {
@@ -35,21 +35,18 @@ export class TestOzone {
       plcUrl: config.plcUrl,
       handle: 'admin.ozone',
       pds: 'https://pds.invalid',
-      keyHex: await defaultDevIdentityProvider.privateKeyHex('ozoneAdmin'),
     })
 
     const moderator = await createDidAndKey({
       plcUrl: config.plcUrl,
       handle: 'moderator.ozone',
       pds: 'https://pds.invalid',
-      keyHex: await defaultDevIdentityProvider.privateKeyHex('ozoneModerator'),
     })
 
     const triage = await createDidAndKey({
       plcUrl: config.plcUrl,
       handle: 'triage.ozone',
       pds: 'https://pds.invalid',
-      keyHex: await defaultDevIdentityProvider.privateKeyHex('ozoneTriage'),
     })
 
     const port = config.port || (await getPort())
@@ -117,64 +114,40 @@ export class TestOzone {
     return new ModeratorClient(this)
   }
 
-  async addAdminDid(did: string) {
-    try {
-      await this.ctx.teamService(this.ctx.db).create({
-        did,
-        disabled: false,
-        handle: null,
-        displayName: null,
-        lastUpdatedBy: this.ctx.cfg.service.did,
-        role: 'tools.ozone.team.defs#roleAdmin',
-      })
-    } catch (e: any) {
-      if (e.code !== '23505') {
-        throw e
-      }
-    }
-    if (!this.ctx.cfg.access.admins.includes(did)) {
-      this.ctx.cfg.access.admins.push(did)
-    }
+  async addAdminDid(did: DidString) {
+    await this.ctx.teamService(this.ctx.db).create({
+      did,
+      disabled: false,
+      handle: null,
+      displayName: null,
+      lastUpdatedBy: this.ctx.cfg.service.did,
+      role: 'tools.ozone.team.defs#roleAdmin',
+    })
+    this.ctx.cfg.access.admins.push(did)
   }
 
-  async addModeratorDid(did: string) {
-    try {
-      await this.ctx.teamService(this.ctx.db).create({
-        did,
-        disabled: false,
-        handle: null,
-        displayName: null,
-        lastUpdatedBy: this.ctx.cfg.service.did,
-        role: 'tools.ozone.team.defs#roleModerator',
-      })
-    } catch (e: any) {
-      if (e.code !== '23505') {
-        throw e
-      }
-    }
-    if (!this.ctx.cfg.access.moderators.includes(did)) {
-      this.ctx.cfg.access.moderators.push(did)
-    }
+  async addModeratorDid(did: DidString) {
+    await this.ctx.teamService(this.ctx.db).create({
+      did,
+      disabled: false,
+      handle: null,
+      displayName: null,
+      lastUpdatedBy: this.ctx.cfg.service.did,
+      role: 'tools.ozone.team.defs#roleModerator',
+    })
+    this.ctx.cfg.access.moderators.push(did)
   }
 
-  async addTriageDid(did: string) {
-    try {
-      await this.ctx.teamService(this.ctx.db).create({
-        did,
-        disabled: false,
-        handle: null,
-        displayName: null,
-        lastUpdatedBy: this.ctx.cfg.service.did,
-        role: 'tools.ozone.team.defs#roleTriage',
-      })
-    } catch (e: any) {
-      if (e.code !== '23505') {
-        throw e
-      }
-    }
-    if (!this.ctx.cfg.access.triage.includes(did)) {
-      this.ctx.cfg.access.triage.push(did)
-    }
+  async addTriageDid(did: DidString) {
+    await this.ctx.teamService(this.ctx.db).create({
+      did,
+      disabled: false,
+      handle: null,
+      displayName: null,
+      lastUpdatedBy: this.ctx.cfg.service.did,
+      role: 'tools.ozone.team.defs#roleTriage',
+    })
+    this.ctx.cfg.access.triage.push(did)
   }
 
   async createPolicies() {
@@ -274,15 +247,22 @@ export class TestOzone {
   }
 
   async close() {
-    await this.daemon.destroy()
-    await this.server.destroy()
+    try {
+      await this.server.destroy()
+    } finally {
+      await this.daemon.destroy()
+    }
+  }
+
+  async [Symbol.asyncDispose]() {
+    await this.close()
   }
 }
 
 export const createOzoneDid = async (
   plcUrl: string,
   keypair: Keypair,
-): Promise<string> => {
+): Promise<DidString> => {
   const plcClient = new plc.Client(plcUrl)
   const plcOp = await plc.signOperation(
     {
@@ -303,12 +283,6 @@ export const createOzoneDid = async (
     keypair,
   )
   const did = await plc.didForCreateOp(plcOp)
-  try {
-    await plcClient.getDocument(did)
-    return did
-  } catch (e) {
-    // ignore
-  }
   await plcClient.sendOperation(did, plcOp)
-  return did
+  return did as DidString
 }

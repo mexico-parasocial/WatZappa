@@ -1,5 +1,11 @@
-import { DynamicModule, RawBuilder, SelectQueryBuilder, sql } from 'kysely'
-import type { Pool as PgPool } from 'pg'
+import {
+  type DynamicModule,
+  type RawBuilder,
+  type SelectQueryBuilder,
+  sql,
+} from 'kysely'
+import type pg from 'pg'
+type PgPool = pg.Pool
 
 export type DbRef =
   RawBuilder<unknown> | ReturnType<DynamicModule<unknown>['ref']>

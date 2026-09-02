@@ -1,8 +1,6 @@
-// @ts-nocheck
-import AtpAgent from '@atproto/api'
-import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
-import { ids } from '../src/lexicon/lexicons.js'
-import { REASONSPAM } from '../src/lexicon/types/com/atproto/moderation/defs.js'
+import { ComAtprotoModerationDefs, ids } from '@atproto/api'
+import type AtpAgent from '@atproto/api'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 
 const DEFS = 'tools.ozone.report.defs'
 
@@ -23,7 +21,7 @@ describe('report-reassign-queue', () => {
 
   const createReport = async (subjectDid: string) => {
     await sc.createReport({
-      reasonType: REASONSPAM,
+      reasonType: ComAtprotoModerationDefs.REASONSPAM,
       subject: {
         $type: 'com.atproto.admin.defs#repoRef',
         did: subjectDid,
@@ -144,7 +142,7 @@ describe('report-reassign-queue', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   describe('happy path: assigning to a real queue', () => {

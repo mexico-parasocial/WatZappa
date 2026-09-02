@@ -1,6 +1,7 @@
 import * as bsky from '@atproto/bsky'
 import * as bsync from '@atproto/bsync'
 import { ExportableKeypair, Keypair } from '@atproto/crypto'
+import type { DidString } from '@atproto/lex'
 import * as ozone from '@atproto/ozone'
 import * as pds from '@atproto/pds'
 import type { TestChatConfig } from './chat.js'
@@ -57,6 +58,6 @@ export type TestServerParams = {
 }
 
 export type DidAndKey = {
-  did: string
+  did: DidString
   key: Keypair
 }

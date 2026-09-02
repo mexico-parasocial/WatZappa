@@ -1,19 +1,16 @@
-import { AppContext } from '../context.js'
-import { Server } from '../lexicon/index.js'
-import getAccountPreferences from './app/bsky/actor/getPreferences.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../context.js'
 import chat from './chat/index.js'
 import createTemplate from './communication/createTemplate.js'
 import deleteTemplate from './communication/deleteTemplate.js'
 import listTemplates from './communication/listTemplates.js'
 import updateTemplate from './communication/updateTemplate.js'
-import getAccountActions from './history/getAccountActions.js'
-import getReportedSubjects from './history/getReportedSubjects.js'
-import getSubjectHistory from './history/getSubjectHistory.js'
 import fetchLabels from './label/fetchLabels.js'
 import queryLabels from './label/queryLabels.js'
 import subscribeLabels from './label/subscribeLabels.js'
 import cancelScheduledActions from './moderation/cancelScheduledActions.js'
 import emitEvent from './moderation/emitEvent.js'
+import getAccountPreferences from './moderation/getAccountPreferences.js'
 import getAccountTimeline from './moderation/getAccountTimeline.js'
 import getEvent from './moderation/getEvent.js'
 import adminGetRecord from './moderation/getRecord.js'
@@ -37,6 +34,7 @@ import routeReports from './queue/routeReports.js'
 import unassignQueueModerator from './queue/unassignModerator.js'
 import updateQueue from './queue/updateQueue.js'
 import assignReportModerator from './report/assignModerator.js'
+import closeReports from './report/closeReports.js'
 import createActivity from './report/createActivity.js'
 import createReport from './report/createReport.js'
 import getReportAssignments from './report/getAssignments.js'
@@ -47,6 +45,7 @@ import getReport from './report/getReport.js'
 import listActivities from './report/listActivities.js'
 import queryActivities from './report/queryActivities.js'
 import queryReports from './report/queryReports.js'
+import reassignQueue from './report/reassignQueue.js'
 import refreshStats from './report/refreshStats.js'
 import unassignReportModerator from './report/unassignModerator.js'
 import addSafelinkRule from './safelink/addRule.js'
@@ -143,10 +142,9 @@ export default function (server: Server, ctx: AppContext) {
   unassignReportModerator(server, ctx)
   getReportAssignments(server, ctx)
   createActivity(server, ctx)
+  closeReports(server, ctx)
   listActivities(server, ctx)
   queryActivities(server, ctx)
-  getAccountActions(server, ctx)
-  getReportedSubjects(server, ctx)
-  getSubjectHistory(server, ctx)
+  reassignQueue(server, ctx)
   return server
 }

@@ -1,14 +1,12 @@
-// @ts-nocheck
-import { AtpAgent, BSKY_LABELER_DID } from '@atproto/api'
+import { AtpAgent, BSKY_LABELER_DID, ids } from '@atproto/api'
 import {
-  ModeratorClient,
-  RecordRef,
-  SeedClient,
+  type ModeratorClient,
+  type RecordRef,
+  type SeedClient,
   TestNetwork,
-  TestOzone,
+  type TestOzone,
   basicSeed,
 } from '@atproto/dev-env'
-import { ids } from '../src/lexicon/lexicons.js'
 import { TAKEDOWN_LABEL } from '../src/mod-service/index.js'
 
 describe('admin get lists', () => {
@@ -36,8 +34,9 @@ describe('admin get lists', () => {
   })
 
   afterAll(async () => {
+    // @TODO figure out why we even need this in afterAll ?
     AtpAgent.configure({ appLabelers: [BSKY_LABELER_DID] })
-    await network.close()
+    await network?.close()
   })
 
   const getAlicesList = async () => {

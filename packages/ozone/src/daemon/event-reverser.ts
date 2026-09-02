@@ -1,19 +1,16 @@
 import { MINUTE } from '@atproto/common'
-import { Database } from '../db/index.js'
+import type { Database } from '../db/index.js'
+import { tools } from '../lexicons/index.js'
 import { dbLogger } from '../logger.js'
-import {
-  ModerationServiceCreator,
-  ReversalSubject,
-} from '../mod-service/index.js'
 import {
   deleteExpiringTagsByIds,
   getExpiredTags,
 } from '../mod-service/expiring-tags.js'
-import {
-  ModSubject,
-  RecordSubject,
-  RepoSubject,
-} from '../mod-service/subject.js'
+import type {
+  ModerationServiceCreator,
+  ReversalSubject,
+} from '../mod-service/index.js'
+import { subjectFromStatusRow } from '../mod-service/subject.js'
 
 export class EventReverser {
   destroyed = false
@@ -67,45 +64,6 @@ export class EventReverser {
     })
   }
 
-  async revertExpiredTags() {
-    const expiredTagGroups = await getExpiredTags(this.db)
-    if (!expiredTagGroups.length) return
-
-    await Promise.all(
-      expiredTagGroups.map(async (group) => {
-        try {
-          await this.db.transaction(async (dbTxn) => {
-            const moderationTxn = this.modService(dbTxn)
-            let subject: ModSubject
-            if (group.recordPath) {
-              subject = new RecordSubject(group.recordPath, '', [])
-            } else {
-              subject = new RepoSubject(group.did)
-            }
-            await moderationTxn.logEvent({
-              event: {
-                $type: 'tools.ozone.moderation.defs#modEventTag',
-                add: [],
-                remove: group.tags,
-                comment:
-                  '[SCHEDULED_REVERSAL] Tag expired after durationInHours',
-              },
-              subject,
-              createdBy: group.createdBy,
-              createdAt: new Date(),
-            })
-            await deleteExpiringTagsByIds(dbTxn, group.ids)
-          })
-        } catch (err) {
-          dbLogger.error(
-            { err, did: group.did, tags: group.tags },
-            'Failed to revert expired tags',
-          )
-        }
-      }),
-    )
-  }
-
   async findAndRevertDueActions() {
     const moderationService = this.modService(this.db)
     const subjectsDueForReversal =
@@ -113,10 +71,51 @@ export class EventReverser {
 
     // We shouldn't have too many actions due for reversal at any given time, so running in parallel is probably fine
     // Internally, each reversal runs within its own transaction
-    await Promise.all(subjectsDueForReversal.map(this.revertState.bind(this)))
+    await Promise.all([
+      ...subjectsDueForReversal.map(this.revertState.bind(this)),
+      this.findAndRevertExpiredTags(),
+    ])
+  }
 
-    // Also revert any expired tags
-    await this.revertExpiredTags()
+  async findAndRevertExpiredTags() {
+    const groups = await getExpiredTags(this.db)
+    if (!groups.length) return
+
+    for (const group of groups) {
+      await this.db.transaction(async (dbTxn) => {
+        // Check which tags are still present on the subject
+        const status = await dbTxn.db
+          .selectFrom('moderation_subject_status')
+          .where('did', '=', group.did)
+          .where('recordPath', '=', group.recordPath)
+          .where('convoId', '=', group.convoId)
+          .selectAll()
+          .executeTakeFirst()
+
+        const currentTags: string[] = status?.tags ?? []
+        const tagsToRemove = group.tags.filter((t) => currentTags.includes(t))
+
+        // Delete the expiring_tag rows regardless
+        await deleteExpiringTagsByIds(dbTxn, group.ids)
+
+        // Only emit removal event if there are tags still present to remove
+        if (tagsToRemove.length > 0 && status) {
+          const subject = subjectFromStatusRow(status)
+          const moderationTxn = this.modService(dbTxn)
+          await moderationTxn.logEvent({
+            event: tools.ozone.moderation.defs.modEventTag.$build({
+              add: [],
+              remove: tagsToRemove,
+              comment:
+                '[SCHEDULED_REVERSAL] Reverting temporary tags as originally scheduled',
+            }),
+            createdBy: group.createdBy,
+            subject,
+            createdAt: new Date(),
+          })
+        }
+      })
+    }
   }
 }
 

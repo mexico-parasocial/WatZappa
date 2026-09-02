@@ -1,17 +1,17 @@
 import EventEmitter from 'node:events'
-import { Selectable } from 'kysely'
-import type { PoolClient } from 'pg'
-
-import { Database } from '../db/index.js'
-import { Label as LabelTable, LabelChannel } from '../db/schema/label.js'
-import { Labels as LabelsEvt } from '../lexicon/types/com/atproto/label/subscribeLabels.js'
+import type { Selectable } from 'kysely'
+import type pg from 'pg'
+type PoolClient = pg.PoolClient
+import type { Database } from '../db/index.js'
+import { type Label as LabelTable, LabelChannel } from '../db/schema/label.js'
+import type { com } from '../lexicons/index.js'
 import { seqLogger as log } from '../logger.js'
-import { ModerationService } from '../mod-service/index.js'
+import type { ModerationService } from '../mod-service/index.js'
 
-export type { Labels as LabelsEvt } from '../lexicon/types/com/atproto/label/subscribeLabels.js'
+export type LabelsEvt = com.atproto.label.subscribeLabels.Labels
 type LabelRow = Selectable<LabelTable>
 
-export class Sequencer extends (EventEmitter as new () => SequencerEmitter) {
+export class Sequencer extends EventEmitter<SequencerEvents> {
   db: Database
   destroyed = false
   pollPromise: Promise<void> | undefined
@@ -32,10 +32,9 @@ export class Sequencer extends (EventEmitter as new () => SequencerEmitter) {
     const curr = await this.curr()
     this.lastSeen = curr ?? 0
     this.poll()
-    const conn = await this.db.pool.connect()
-    this.conn = conn
-    conn.query(`listen ${LabelChannel}`) // if this errors, unhandled rejection should cause process to exit
-    conn.on('notification', (notif) => {
+    this.conn = await this.db.pool.connect()
+    this.conn.query(`listen ${LabelChannel}`) // if this errors, unhandled rejection should cause process to exit
+    this.conn.on('notification', (notif) => {
       if (notif.channel === LabelChannel) {
         this.poll()
       }
@@ -139,21 +138,8 @@ export class Sequencer extends (EventEmitter as new () => SequencerEmitter) {
 }
 
 type SequencerEvents = {
-  events: (evts: LabelsEvt[]) => void
-  close: () => void
+  events: [evts: LabelsEvt[]]
+  close: []
 }
 
-export interface SequencerEmitter extends EventEmitter {
-  emit<E extends keyof SequencerEvents>(
-    event: E,
-    ...args: Parameters<SequencerEvents[E]>
-  ): boolean
-  on<E extends keyof SequencerEvents>(
-    event: E,
-    listener: SequencerEvents[E],
-  ): this
-  off<E extends keyof SequencerEvents>(
-    event: E,
-    listener: SequencerEvents[E],
-  ): this
-}
+export type SequencerEmitter = EventEmitter<SequencerEvents>

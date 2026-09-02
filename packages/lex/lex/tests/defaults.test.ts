@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, expect, it } from 'vitest'
 import { l } from '@atproto/lex-schema'
 import * as com from './lexicons/com.js'

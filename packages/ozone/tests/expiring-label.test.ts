@@ -1,12 +1,12 @@
-// @ts-nocheck
-import AtpAgent from '@atproto/api'
+import { ids } from '@atproto/api'
+import type AtpAgent from '@atproto/api'
 import {
-  ModeratorClient,
-  SeedClient,
+  type ModeratorClient,
+  type SeedClient,
   TestNetwork,
   basicSeed,
 } from '@atproto/dev-env'
-import { ids } from '../src/lexicon/lexicons.js'
+import type { DatetimeString } from '@atproto/lex'
 
 describe('expiring label', () => {
   let network: TestNetwork
@@ -26,7 +26,7 @@ describe('expiring label', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   const emitExpiringLabel = async (did: string) =>
@@ -63,7 +63,7 @@ describe('expiring label', () => {
     // Manually expire the label in db
     await network.ozone.ctx.db.db
       .updateTable('label')
-      .set({ exp: now })
+      .set({ exp: now as DatetimeString })
       .where('uri', '=', sc.dids.carol)
       .execute()
 

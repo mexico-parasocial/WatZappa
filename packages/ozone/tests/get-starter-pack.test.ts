@@ -1,13 +1,11 @@
-// @ts-nocheck
-import { AtpAgent } from '@atproto/api'
+import { AtpAgent, ids } from '@atproto/api'
 import {
-  RecordRef,
-  SeedClient,
+  type RecordRef,
+  type SeedClient,
   TestNetwork,
-  TestOzone,
+  type TestOzone,
   basicSeed,
 } from '@atproto/dev-env'
-import { ids } from '../src/lexicon/lexicons.js'
 import { TAKEDOWN_LABEL } from '../src/mod-service/index.js'
 import { forSnapshot } from './_util.js'
 
@@ -31,7 +29,7 @@ describe('admin get starter pack view', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   beforeAll(async () => {

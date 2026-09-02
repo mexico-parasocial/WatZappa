@@ -2,4 +2,4 @@
 '@atproto/lex-builder': patch
 ---
 
-Accept the `space-ref` string format in lexicon code generation. The runtime schema validator already supported `space-ref`, but the code generator rejected it with `Unknown string format: space-ref`, so lexicons using it could not be built.
+Support the `space-ref` string format in lexicon codegen, emitting `l.SpaceRefString` instead of failing with "Unknown string format".

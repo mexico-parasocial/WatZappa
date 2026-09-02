@@ -1,11 +1,15 @@
-import { AuthRequiredError, InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../context.js'
-import { Server } from '../../lexicon/index.js'
+import {
+  AuthRequiredError,
+  InvalidRequestError,
+  type Server,
+} from '@atproto/xrpc-server'
+import type { AppContext } from '../../context.js'
+import { tools } from '../../lexicons/index.js'
 
 const VALID_SUBJECT_TYPES = ['account', 'record', 'message', 'conversation']
 
 export default function (server: Server, ctx: AppContext) {
-  server.tools.ozone.queue.createQueue({
+  server.add(tools.ozone.queue.createQueue, {
     auth: ctx.authVerifier.modOrAdminToken,
     handler: async ({ input, auth }) => {
       const access = auth.credentials
@@ -20,6 +24,7 @@ export default function (server: Server, ctx: AppContext) {
         collection,
         reportTypes = [],
         description,
+        recommendedPolicies = [],
       } = input.body
       const createdBy =
         access.type === 'admin_token' ? 'admin_token' : access.iss
@@ -43,6 +48,8 @@ export default function (server: Server, ctx: AppContext) {
 
       const queueService = ctx.queueService(ctx.db)
 
+      await queueService.assertRecommendedPolicies(recommendedPolicies)
+
       await queueService.checkConflict({
         name,
         subjectTypes,
@@ -56,6 +63,7 @@ export default function (server: Server, ctx: AppContext) {
         collection,
         reportTypes,
         description,
+        recommendedPolicies,
         createdBy,
       })
 

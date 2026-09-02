@@ -1,7 +1,6 @@
-// @ts-nocheck
 import {
-  ModeratorClient,
-  SeedClient,
+  type ModeratorClient,
+  type SeedClient,
   TestNetwork,
   basicSeed,
 } from '@atproto/dev-env'
@@ -23,7 +22,7 @@ describe('age assurance events', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   it('handles age assurance events from user', async () => {

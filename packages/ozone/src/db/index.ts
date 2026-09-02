@@ -2,32 +2,35 @@ import assert from 'node:assert'
 import { EventEmitter } from 'node:events'
 import {
   Kysely,
-  KyselyPlugin,
-  PluginTransformQueryArgs,
-  PluginTransformResultArgs,
+  type KyselyPlugin,
+  type PluginTransformQueryArgs,
+  type PluginTransformResultArgs,
   PostgresDialect,
-  QueryResult,
-  RootOperationNode,
-  UnknownRow,
+  type QueryResult,
+  type RootOperationNode,
+  type UnknownRow,
+  sql,
 } from 'kysely'
 import { Migrator } from 'kysely/migration'
-// eslint-disable-next-line import/default
 import pg from 'pg'
-// eslint-disable-next-line import/no-named-as-default-member
-const { Pool: PgPoolClass, types: pgTypes } = pg
-type PgPool = InstanceType<typeof PgPoolClass>
-
+const { Pool: PgPool, types: pgTypes } = pg
+type PgPool = InstanceType<typeof PgPool>
 import { dbLogger } from '../logger.js'
 import * as migrations from './migrations/index.js'
 import { CtxMigrationProvider } from './migrations/provider.js'
-import { DatabaseSchema, DatabaseSchemaType } from './schema/index.js'
-import { PgOptions } from './types.js'
+import type { DatabaseSchema, DatabaseSchemaType } from './schema/index.js'
+import type { PgOptions } from './types.js'
+
+export {
+  MATERIALIZED_VIEW_REFRESH_LOCK_ID,
+  STATS_COMPUTER_LOCK_ID,
+} from '../daemon/locks.js'
 
 export class Database {
   pool: PgPool
   db: DatabaseSchema
   migrator: Migrator
-  txEvt = new EventEmitter() as TxnEmitter
+  txEvt = new EventEmitter<TxnEvents>()
   destroyed = false
   isPrimary = false
 
@@ -44,7 +47,7 @@ export class Database {
       const { schema, url } = opts
       const pool =
         opts.pool ??
-        new PgPoolClass({
+        new PgPool({
           connectionString: url,
           max: opts.poolSize,
           maxUses: opts.poolMaxUses,
@@ -74,7 +77,7 @@ export class Database {
 
       this.pool = pool
       this.db = new Kysely<DatabaseSchemaType>({
-        dialect: new PostgresDialect({ pool: pool as any }),
+        dialect: new PostgresDialect({ pool }),
       })
     }
 
@@ -136,6 +139,12 @@ export class Database {
     this.destroyed = true
   }
 
+  // Lightweight connectivity check for readiness probes. Throws if the database
+  // is unreachable.
+  async ping(): Promise<void> {
+    await sql`select 1`.execute(this.db)
+  }
+
   async migrateToOrThrow(migration: string) {
     if (this.schema) {
       await this.db.schema.createSchema(this.schema).ifNotExists().execute()
@@ -194,16 +203,8 @@ class LeakyTxPlugin implements KyselyPlugin {
   }
 }
 
-interface TxnEmitter {
-  emit<E extends keyof TxnEvents>(
-    event: E,
-    ...args: Parameters<TxnEvents[E]>
-  ): boolean
-  once<E extends keyof TxnEvents>(event: E, listener: TxnEvents[E]): this
-}
-
 type TxnEvents = {
-  commit: () => void
+  commit: []
 }
 
 const noopAsync = async () => {}
