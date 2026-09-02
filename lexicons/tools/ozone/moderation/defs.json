@@ -109,7 +109,8 @@
             "#repoView",
             "#repoViewNotFound",
             "#recordView",
-            "#recordViewNotFound"
+            "#recordViewNotFound",
+            "#convoView"
           ]
         },
         "subjectBlobs": {
@@ -744,7 +745,7 @@
         },
         "durationInHours": {
           "type": "integer",
-          "description": "If set, the tags in 'add' will be removed after this many hours."
+          "description": "Indicates how long the tags being added should remain before automatically being removed. Only applies to tags being added."
         }
       }
     },
@@ -961,6 +962,14 @@
       "required": ["uri"],
       "properties": {
         "uri": { "type": "string", "format": "at-uri" }
+      }
+    },
+    "convoView": {
+      "type": "object",
+      "required": ["did", "convoId"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "convoId": { "type": "string" }
       }
     },
     "moderation": {

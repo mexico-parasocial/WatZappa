@@ -28,6 +28,8 @@ export interface InputSchema {
   enabled?: boolean
   /** Optional description of the queue */
   description?: string
+  /** Policy keys to recommend when actioning reports in this queue */
+  recommendedPolicies?: string[]
 }
 
 export interface OutputSchema {
@@ -47,6 +49,17 @@ export interface Response {
   data: OutputSchema
 }
 
+export class InvalidRecommendedPoliciesError extends XRPCError {
+  constructor(src: XRPCError) {
+    super(src.status, src.error, src.message, src.headers, { cause: src })
+  }
+}
+
 export function toKnownErr(e: any) {
+  if (e instanceof XRPCError) {
+    if (e.error === 'InvalidRecommendedPolicies')
+      return new InvalidRecommendedPoliciesError(e)
+  }
+
   return e
 }

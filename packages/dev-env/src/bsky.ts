@@ -52,7 +52,7 @@ export class TestBsky {
       },
       serviceKeypair,
     )
-    const serverDid = await plc.didForCreateOp(plcOp)
+    const serverDid = (await plc.didForCreateOp(plcOp)) as DidString
     try {
       await plcClient.getDocument(serverDid)
     } catch (e) {

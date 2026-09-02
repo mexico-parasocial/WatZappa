@@ -9,7 +9,10 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": ["reasonType", "subject"],
+          "required": [
+            "reasonType",
+            "subject"
+          ],
           "properties": {
             "reasonType": {
               "type": "ref",
@@ -26,7 +29,9 @@
               "type": "union",
               "refs": [
                 "com.atproto.admin.defs#repoRef",
-                "com.atproto.repo.strongRef"
+                "com.atproto.repo.strongRef",
+                "chat.bsky.convo.defs#convoRef",
+                "chat.bsky.convo.defs#messageRef"
               ]
             },
             "modTool": {
@@ -48,7 +53,9 @@
             "createdAt"
           ],
           "properties": {
-            "id": { "type": "integer" },
+            "id": {
+              "type": "integer"
+            },
             "reasonType": {
               "type": "ref",
               "ref": "com.atproto.moderation.defs#reasonType"
@@ -62,11 +69,19 @@
               "type": "union",
               "refs": [
                 "com.atproto.admin.defs#repoRef",
-                "com.atproto.repo.strongRef"
+                "com.atproto.repo.strongRef",
+                "chat.bsky.convo.defs#convoRef",
+                "chat.bsky.convo.defs#messageRef"
               ]
             },
-            "reportedBy": { "type": "string", "format": "did" },
-            "createdAt": { "type": "string", "format": "datetime" }
+            "reportedBy": {
+              "type": "string",
+              "format": "did"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "datetime"
+            }
           }
         }
       }
@@ -74,7 +89,9 @@
     "modTool": {
       "type": "object",
       "description": "Moderation tool information for tracing the source of the action",
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "properties": {
         "name": {
           "type": "string",

@@ -528,7 +528,7 @@ export const getStatusIdentifierFromSubject = (
   subject: UriString | AtUri,
   convoId?: string | null,
 ): { did: DidString; recordPath: string; convoId: string } => {
-  if (isDidString(subject)) {
+  if (typeof subject === 'string' && isDidString(subject)) {
     return {
       did: subject,
       recordPath: '',

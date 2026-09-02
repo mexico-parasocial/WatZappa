@@ -32,6 +32,8 @@ export interface QueueView {
   reportTypes?: string[]
   /** Optional description of the queue */
   description?: string
+  /** Policy keys recommended when actioning reports in this queue */
+  recommendedPolicies?: string[]
   /** DID of moderator who created this queue */
   createdBy: string
   createdAt: string

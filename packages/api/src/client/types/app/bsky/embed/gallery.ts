@@ -18,6 +18,7 @@ const id = 'app.bsky.embed.gallery'
 
 export interface Main {
   $type?: 'app.bsky.embed.gallery'
+  /** The schema-level maxLength of 20 is a future-proof ceiling. Clients should currently enforce a soft limit of 10 items in authoring UIs. */
   items: ($Typed<Image> | { $type: string })[]
 }
 
@@ -33,11 +34,10 @@ export function validateMain<V>(v: V) {
 
 export interface Image {
   $type?: 'app.bsky.embed.gallery#image'
-  /** The raw image file. May be up to 2 MB. */
   image: BlobRef
   /** Alt text description of the image, for accessibility. */
   alt: string
-  aspectRatio?: AppBskyEmbedDefs.AspectRatio
+  aspectRatio: AppBskyEmbedDefs.AspectRatio
 }
 
 const hashImage = 'image'
@@ -52,7 +52,7 @@ export function validateImage<V>(v: V) {
 
 export interface View {
   $type?: 'app.bsky.embed.gallery#view'
-  media: ($Typed<ViewImage> | { $type: string })[]
+  items: ($Typed<ViewImage> | { $type: string })[]
 }
 
 const hashView = 'view'
@@ -73,7 +73,7 @@ export interface ViewImage {
   fullsize: string
   /** Alt text description of the image, for accessibility. */
   alt: string
-  aspectRatio?: AppBskyEmbedDefs.AspectRatio
+  aspectRatio: AppBskyEmbedDefs.AspectRatio
 }
 
 const hashViewImage = 'viewImage'

@@ -14,6 +14,7 @@ import {
 import type * as ToolsOzoneModerationDefs from './defs.js'
 import type * as ComAtprotoAdminDefs from '../../../com/atproto/admin/defs.js'
 import type * as ComAtprotoRepoStrongRef from '../../../com/atproto/repo/strongRef.js'
+import type * as ChatBskyConvoDefs from '../../../chat/bsky/convo/defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -52,6 +53,8 @@ export interface InputSchema {
   subject:
     | $Typed<ComAtprotoAdminDefs.RepoRef>
     | $Typed<ComAtprotoRepoStrongRef.Main>
+    | $Typed<ChatBskyConvoDefs.ConvoRef>
+    | $Typed<ChatBskyConvoDefs.MessageRef>
     | { $type: string }
   subjectBlobCids?: string[]
   createdBy: string

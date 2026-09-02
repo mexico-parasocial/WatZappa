@@ -1,10 +1,11 @@
 import * as plc from '@did-plc/lib'
 import { Secp256k1Keypair } from '@atproto/crypto'
+import { type DidString } from '@atproto/lex'
 import { defaultDevIdentityProvider } from './identity.js'
 
 export class ChatServiceProfile {
   constructor(
-    readonly did: string,
+    readonly did: DidString,
     readonly key: Secp256k1Keypair,
     readonly publicUrl: string,
   ) {}
@@ -40,7 +41,7 @@ export class ChatServiceProfile {
       },
       key,
     )
-    const did = await plc.didForCreateOp(plcOp)
+    const did = (await plc.didForCreateOp(plcOp)) as DidString
 
     try {
       await plcClient.getDocument(did)

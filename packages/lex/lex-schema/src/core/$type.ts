@@ -197,3 +197,13 @@ export type Unknown$Type = string & { [unknown$TypeSymbol]: true }
  * ```
  */
 export type Unknown$TypedObject = { $type: Unknown$Type }
+
+/**
+ * Casts a built lexicon object into an {@link Unknown$TypedObject}, allowing it
+ * to be stored in fields typed with open unions.
+ */
+export function asUnknown$TypedObject<T extends { $type: string }>(
+  value: T,
+): Unknown$TypedObject {
+  return value as unknown as Unknown$TypedObject
+}

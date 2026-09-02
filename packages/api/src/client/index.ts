@@ -464,6 +464,7 @@ import * as ToolsOzoneHostingGetAccountHistory from './types/tools/ozone/hosting
 import * as ToolsOzoneModerationCancelScheduledActions from './types/tools/ozone/moderation/cancelScheduledActions.js'
 import * as ToolsOzoneModerationDefs from './types/tools/ozone/moderation/defs.js'
 import * as ToolsOzoneModerationEmitEvent from './types/tools/ozone/moderation/emitEvent.js'
+import * as ToolsOzoneModerationGetAccountPreferences from './types/tools/ozone/moderation/getAccountPreferences.js'
 import * as ToolsOzoneModerationGetAccountTimeline from './types/tools/ozone/moderation/getAccountTimeline.js'
 import * as ToolsOzoneModerationGetEvent from './types/tools/ozone/moderation/getEvent.js'
 import * as ToolsOzoneModerationGetRecord from './types/tools/ozone/moderation/getRecord.js'
@@ -487,6 +488,7 @@ import * as ToolsOzoneQueueRouteReports from './types/tools/ozone/queue/routeRep
 import * as ToolsOzoneQueueUnassignModerator from './types/tools/ozone/queue/unassignModerator.js'
 import * as ToolsOzoneQueueUpdateQueue from './types/tools/ozone/queue/updateQueue.js'
 import * as ToolsOzoneReportAssignModerator from './types/tools/ozone/report/assignModerator.js'
+import * as ToolsOzoneReportCloseReports from './types/tools/ozone/report/closeReports.js'
 import * as ToolsOzoneReportCreateActivity from './types/tools/ozone/report/createActivity.js'
 import * as ToolsOzoneReportDefs from './types/tools/ozone/report/defs.js'
 import * as ToolsOzoneReportGetAssignments from './types/tools/ozone/report/getAssignments.js'
@@ -986,6 +988,7 @@ export * as ToolsOzoneHostingGetAccountHistory from './types/tools/ozone/hosting
 export * as ToolsOzoneModerationCancelScheduledActions from './types/tools/ozone/moderation/cancelScheduledActions.js'
 export * as ToolsOzoneModerationDefs from './types/tools/ozone/moderation/defs.js'
 export * as ToolsOzoneModerationEmitEvent from './types/tools/ozone/moderation/emitEvent.js'
+export * as ToolsOzoneModerationGetAccountPreferences from './types/tools/ozone/moderation/getAccountPreferences.js'
 export * as ToolsOzoneModerationGetAccountTimeline from './types/tools/ozone/moderation/getAccountTimeline.js'
 export * as ToolsOzoneModerationGetEvent from './types/tools/ozone/moderation/getEvent.js'
 export * as ToolsOzoneModerationGetRecord from './types/tools/ozone/moderation/getRecord.js'
@@ -1009,6 +1012,7 @@ export * as ToolsOzoneQueueRouteReports from './types/tools/ozone/queue/routeRep
 export * as ToolsOzoneQueueUnassignModerator from './types/tools/ozone/queue/unassignModerator.js'
 export * as ToolsOzoneQueueUpdateQueue from './types/tools/ozone/queue/updateQueue.js'
 export * as ToolsOzoneReportAssignModerator from './types/tools/ozone/report/assignModerator.js'
+export * as ToolsOzoneReportCloseReports from './types/tools/ozone/report/closeReports.js'
 export * as ToolsOzoneReportCreateActivity from './types/tools/ozone/report/createActivity.js'
 export * as ToolsOzoneReportDefs from './types/tools/ozone/report/defs.js'
 export * as ToolsOzoneReportGetAssignments from './types/tools/ozone/report/getAssignments.js'
@@ -10550,6 +10554,18 @@ export class ToolsOzoneModerationNS {
       })
   }
 
+  getAccountPreferences(
+    params?: ToolsOzoneModerationGetAccountPreferences.QueryParams,
+    opts?: ToolsOzoneModerationGetAccountPreferences.CallOptions,
+  ): Promise<ToolsOzoneModerationGetAccountPreferences.Response> {
+    return this._client.call(
+      'tools.ozone.moderation.getAccountPreferences',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
   getAccountTimeline(
     params?: ToolsOzoneModerationGetAccountTimeline.QueryParams,
     opts?: ToolsOzoneModerationGetAccountTimeline.CallOptions,
@@ -10800,12 +10816,11 @@ export class ToolsOzoneQueueNS {
     data?: ToolsOzoneQueueUpdateQueue.InputSchema,
     opts?: ToolsOzoneQueueUpdateQueue.CallOptions,
   ): Promise<ToolsOzoneQueueUpdateQueue.Response> {
-    return this._client.call(
-      'tools.ozone.queue.updateQueue',
-      opts?.qp,
-      data,
-      opts,
-    )
+    return this._client
+      .call('tools.ozone.queue.updateQueue', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ToolsOzoneQueueUpdateQueue.toKnownErr(e)
+      })
   }
 }
 
@@ -10825,6 +10840,18 @@ export class ToolsOzoneReportNS {
       .catch((e) => {
         throw ToolsOzoneReportAssignModerator.toKnownErr(e)
       })
+  }
+
+  closeReports(
+    data?: ToolsOzoneReportCloseReports.InputSchema,
+    opts?: ToolsOzoneReportCloseReports.CallOptions,
+  ): Promise<ToolsOzoneReportCloseReports.Response> {
+    return this._client.call(
+      'tools.ozone.report.closeReports',
+      opts?.qp,
+      data,
+      opts,
+    )
   }
 
   createActivity(

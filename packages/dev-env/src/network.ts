@@ -52,7 +52,7 @@ export class TestNetwork extends TestNetworkNoAppView {
     const chatPort = params.chat?.port ?? (await getPort())
     const pdsPort = params.pds?.port ?? (await getPort())
     const ozonePort = params.ozone?.port ?? (await getPort())
-    const chatUrl = `http://localhost:${chatPort}`
+    const chatUrl = `http://localhost:${chatPort}` as const
     const thirdPartyPdsParams = withoutPersistentPdsStorage(params.pds)
 
     const thirdPartyPds = await TestPds.create({

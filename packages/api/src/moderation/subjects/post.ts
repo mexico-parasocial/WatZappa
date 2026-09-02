@@ -399,7 +399,7 @@ function matchAllMuteWords(
 
       // quoted post gallery
       if (AppBskyEmbedGallery.isView(embed.media)) {
-        for (const item of embed.media.media) {
+        for (const item of embed.media.items) {
           if (AppBskyEmbedGallery.isViewImage(item)) {
             const matches = matchMuteWords({
               mutedWords,

@@ -2923,7 +2923,7 @@ export const schemaDict = {
     lexicon: 1,
     id: 'app.bsky.embed.gallery',
     description:
-      'A gallery of media embedded in a Bluesky record. Intended for larger imported media sets, such as Instagram profile or carousel imports.',
+      'An assortment of media embedded in a Bluesky record (eg, a post).',
     defs: {
       main: {
         type: 'object',
@@ -2931,21 +2931,24 @@ export const schemaDict = {
         properties: {
           items: {
             type: 'array',
+            maxLength: 20,
+            description:
+              'The schema-level maxLength of 20 is a future-proof ceiling. Clients should currently enforce a soft limit of 10 items in authoring UIs.',
             items: {
               type: 'union',
               refs: ['lex:app.bsky.embed.gallery#image'],
+              description:
+                'The media items in the gallery. Each item may be of a different type, but all types must be supported by the client.',
             },
-            maxLength: 20,
           },
         },
       },
       image: {
         type: 'object',
-        required: ['image', 'alt'],
+        required: ['image', 'alt', 'aspectRatio'],
         properties: {
           image: {
             type: 'blob',
-            description: 'The raw image file. May be up to 2 MB.',
             accept: ['image/*'],
             maxSize: 2000000,
           },
@@ -2962,21 +2965,20 @@ export const schemaDict = {
       },
       view: {
         type: 'object',
-        required: ['media'],
+        required: ['items'],
         properties: {
-          media: {
+          items: {
             type: 'array',
             items: {
               type: 'union',
               refs: ['lex:app.bsky.embed.gallery#viewImage'],
             },
-            maxLength: 20,
           },
         },
       },
       viewImage: {
         type: 'object',
-        required: ['thumbnail', 'fullsize', 'alt'],
+        required: ['thumbnail', 'fullsize', 'alt', 'aspectRatio'],
         properties: {
           thumbnail: {
             type: 'string',
@@ -16280,6 +16282,8 @@ export const schemaDict = {
                 refs: [
                   'lex:com.atproto.admin.defs#repoRef',
                   'lex:com.atproto.repo.strongRef',
+                  'lex:chat.bsky.convo.defs#convoRef',
+                  'lex:chat.bsky.convo.defs#messageRef',
                 ],
               },
               modTool: {
@@ -16318,6 +16322,8 @@ export const schemaDict = {
                 refs: [
                   'lex:com.atproto.admin.defs#repoRef',
                   'lex:com.atproto.repo.strongRef',
+                  'lex:chat.bsky.convo.defs#convoRef',
+                  'lex:chat.bsky.convo.defs#messageRef',
                 ],
               },
               reportedBy: {
@@ -32386,6 +32392,7 @@ export const schemaDict = {
               'lex:tools.ozone.moderation.defs#repoViewNotFound',
               'lex:tools.ozone.moderation.defs#recordView',
               'lex:tools.ozone.moderation.defs#recordViewNotFound',
+              'lex:tools.ozone.moderation.defs#convoView',
             ],
           },
           subjectBlobs: {
@@ -33123,7 +33130,7 @@ export const schemaDict = {
           durationInHours: {
             type: 'integer',
             description:
-              "If set, the tags in 'add' will be removed after this many hours.",
+              'Indicates how long the tags being added should remain before automatically being removed. Only applies to tags being added.',
           },
         },
       },
@@ -33487,6 +33494,19 @@ export const schemaDict = {
           },
         },
       },
+      convoView: {
+        type: 'object',
+        required: ['did', 'convoId'],
+        properties: {
+          did: {
+            type: 'string',
+            format: 'did',
+          },
+          convoId: {
+            type: 'string',
+          },
+        },
+      },
       moderation: {
         type: 'object',
         properties: {
@@ -33843,6 +33863,8 @@ export const schemaDict = {
                 refs: [
                   'lex:com.atproto.admin.defs#repoRef',
                   'lex:com.atproto.repo.strongRef',
+                  'lex:chat.bsky.convo.defs#convoRef',
+                  'lex:chat.bsky.convo.defs#messageRef',
                 ],
               },
               subjectBlobCids: {
@@ -33914,6 +33936,40 @@ export const schemaDict = {
           },
           note: {
             type: 'string',
+          },
+        },
+      },
+    },
+  },
+  ToolsOzoneModerationGetAccountPreferences: {
+    lexicon: 1,
+    id: 'tools.ozone.moderation.getAccountPreferences',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Get private preferences for an account. Requires moderator or admin auth.',
+        parameters: {
+          type: 'params',
+          required: ['did'],
+          properties: {
+            did: {
+              type: 'string',
+              format: 'did',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['preferences'],
+            properties: {
+              preferences: {
+                type: 'ref',
+                ref: 'lex:app.bsky.actor.defs#preferences',
+              },
+            },
           },
         },
       },
@@ -35102,6 +35158,14 @@ export const schemaDict = {
                 type: 'string',
                 description: 'Optional description of the queue',
               },
+              recommendedPolicies: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+                description:
+                  'Policy keys to recommend when actioning reports in this queue',
+              },
             },
           },
         },
@@ -35119,6 +35183,11 @@ export const schemaDict = {
           },
         },
         errors: [
+          {
+            name: 'InvalidRecommendedPolicies',
+            description:
+              'One or more recommended policy keys do not exist in the configured policy list',
+          },
           {
             name: 'ConflictingQueue',
             description:
@@ -35177,6 +35246,14 @@ export const schemaDict = {
           description: {
             type: 'string',
             description: 'Optional description of the queue',
+          },
+          recommendedPolicies: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+            description:
+              'Policy keys recommended when actioning reports in this queue',
           },
           createdBy: {
             type: 'string',
@@ -35549,8 +35626,7 @@ export const schemaDict = {
     defs: {
       main: {
         type: 'procedure',
-        description:
-          'Update queue properties. Currently only supports updating the name and enabled status to prevent configuration conflicts.',
+        description: 'Update queue properties.',
         input: {
           encoding: 'application/json',
           schema: {
@@ -35573,6 +35649,14 @@ export const schemaDict = {
                 type: 'string',
                 description: 'Optional description of the queue',
               },
+              recommendedPolicies: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+                description:
+                  'Policy keys to recommend when actioning reports in this queue',
+              },
             },
           },
         },
@@ -35589,6 +35673,13 @@ export const schemaDict = {
             },
           },
         },
+        errors: [
+          {
+            name: 'InvalidRecommendedPolicies',
+            description:
+              'One or more recommended policy keys do not exist in the configured policy list',
+          },
+        ],
       },
     },
   },
@@ -35649,6 +35740,72 @@ export const schemaDict = {
       },
     },
   },
+  ToolsOzoneReportCloseReports: {
+    lexicon: 1,
+    id: 'tools.ozone.report.closeReports',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          'Close all reports on a subject matching the given criteria. Reports whose current status does not permit a transition to closed are skipped silently. Intended for automated flows that resolve reports without taking action on the subject.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['subject'],
+            properties: {
+              subject: {
+                type: 'string',
+                format: 'uri',
+                description:
+                  'Subject DID (account-level reports) or AT-URI (record-level reports) whose reports should be closed.',
+              },
+              reportTypes: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+                description:
+                  'If specified, only reports of the given report types (fully qualified reason NSIDs) are closed. When omitted, all non-closed reports on the subject are targeted.',
+              },
+              internalNote: {
+                type: 'string',
+                description:
+                  'Optional moderator-only note recorded on each close activity. Not visible to reporters.',
+              },
+              isAutomated: {
+                type: 'boolean',
+                description:
+                  'Set true when this action is triggered by an automated process. Defaults to false.',
+                default: false,
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['closedCount', 'reportIds'],
+            properties: {
+              closedCount: {
+                type: 'integer',
+                description:
+                  'Number of reports that were transitioned to closed.',
+              },
+              reportIds: {
+                type: 'array',
+                items: {
+                  type: 'integer',
+                },
+                description: 'IDs of the reports that were closed.',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   ToolsOzoneReportCreateActivity: {
     lexicon: 1,
     id: 'tools.ozone.report.createActivity',
@@ -35661,11 +35818,17 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'object',
-            required: ['reportId', 'activity'],
+            required: ['activity'],
             properties: {
               reportId: {
                 type: 'integer',
-                description: 'ID of the report to record activity on',
+                description:
+                  'ID of the report to record activity on. Exactly one of reportId or eventId must be provided.',
+              },
+              eventId: {
+                type: 'integer',
+                description:
+                  'ID of the report moderation event. Resolves to the report created from that event. Exactly one of reportId or eventId must be provided.',
               },
               activity: {
                 type: 'union',
@@ -35714,7 +35877,7 @@ export const schemaDict = {
         errors: [
           {
             name: 'ReportNotFound',
-            description: 'No report exists with the given reportId',
+            description: 'No report exists with the given reportId or eventId',
           },
           {
             name: 'InvalidStateTransition',
@@ -39329,6 +39492,8 @@ export const ids = {
     'tools.ozone.moderation.cancelScheduledActions',
   ToolsOzoneModerationDefs: 'tools.ozone.moderation.defs',
   ToolsOzoneModerationEmitEvent: 'tools.ozone.moderation.emitEvent',
+  ToolsOzoneModerationGetAccountPreferences:
+    'tools.ozone.moderation.getAccountPreferences',
   ToolsOzoneModerationGetAccountTimeline:
     'tools.ozone.moderation.getAccountTimeline',
   ToolsOzoneModerationGetEvent: 'tools.ozone.moderation.getEvent',
@@ -39355,6 +39520,7 @@ export const ids = {
   ToolsOzoneQueueUnassignModerator: 'tools.ozone.queue.unassignModerator',
   ToolsOzoneQueueUpdateQueue: 'tools.ozone.queue.updateQueue',
   ToolsOzoneReportAssignModerator: 'tools.ozone.report.assignModerator',
+  ToolsOzoneReportCloseReports: 'tools.ozone.report.closeReports',
   ToolsOzoneReportCreateActivity: 'tools.ozone.report.createActivity',
   ToolsOzoneReportDefs: 'tools.ozone.report.defs',
   ToolsOzoneReportGetAssignments: 'tools.ozone.report.getAssignments',

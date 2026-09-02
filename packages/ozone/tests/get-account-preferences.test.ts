@@ -1,5 +1,5 @@
 import { type SeedClient, TestNetwork, usersSeed } from '@atproto/dev-env'
-import type { Client } from '@atproto/lex'
+import { Client } from '@atproto/lex'
 import { app, tools } from '../src/lexicons/index.js'
 
 // @TODO In order to properly test this, Ozone and the user should be on
@@ -14,7 +14,7 @@ describe('account preferences', () => {
       dbPostgresSchema: 'ozone_account_preferences_test',
     })
     sc = network.getSeedClient()
-    client = network.ozone.getClient()
+    client = new Client({ service: network.ozone.url })
     await usersSeed(sc)
     // @NOTE TestNetwork migrates Ozone's DID after the PDS has cached it.
     await network.pds.ctx.didCache.clearEntry(network.ozone.ctx.cfg.service.did)

@@ -1114,7 +1114,10 @@ export class Views {
   feedViewPost(
     item: FeedItem,
     state: HydrationState,
-  ): Un$Typed<FeedViewPost> | undefined {
+  ): (Un$Typed<FeedViewPost> & {
+    opThreadPostIndex?: number
+    opThreadPostCount?: number
+  }) | undefined {
     const postInfo = state.posts?.get(item.post.uri)
     let reason: $Typed<ReasonRepost> | $Typed<ReasonPin> | undefined
     if (item.authorPinned) {
@@ -2266,7 +2269,7 @@ export class Views {
       const view = this.galleryItemView(did, item)
       return view ? [view] : []
     })
-    return app.bsky.embed.gallery.view.$build({ media: items })
+    return app.bsky.embed.gallery.view.$build({ items })
   }
 
   private galleryItemView(

@@ -217,7 +217,7 @@ export class ModerationService {
       : null
     const subjectDid = subjectAtUri
       ? subjectAtUri.did
-      : isDidString(subject)
+      : typeof subject === 'string' && isDidString(subject)
         ? subject
         : null
 

@@ -59,7 +59,7 @@ const ifNumber = (val: unknown): number | undefined =>
 const ifDatetime = (val: unknown): DatetimeString | undefined =>
   isDatetimeString(val) ? val : undefined
 const ifHandle = (val: unknown): HandleString | undefined =>
-  isHandleString(val) ? val : undefined
+  typeof val === 'string' && isHandleString(val) ? val : undefined
 
 export type AuthHeaders = {
   headers: {

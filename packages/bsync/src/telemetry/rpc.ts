@@ -23,16 +23,21 @@ import {
 import { RPC_CALL_DURATION_BUCKETS } from '@atproto-labs/opentelemetry-node/conventions'
 import { statusCodeToString } from '@atproto-labs/opentelemetry-node/util'
 import type { Service } from '../proto/bsync_connect.js'
+import type { FixedServiceImpl } from '../types/connect-fix.js'
 
 type ServiceMethods = Partial<ServiceImpl<typeof Service>>
+
+// @connectrpc/connect's ServiceImpl fails to infer concrete message types
+// (see types/connect-fix.ts), so derive attribute requests from a fixed map.
+type ConcreteServiceMethods = Partial<FixedServiceImpl<typeof Service>>
 
 /**
  * Derives extra attributes from a request. The returned attributes land on both
  * the duration histogram and the request span, so they must stay
  * low-cardinality: no DIDs, keys or URIs, which would explode the metric series.
  */
-export type GetAttributes<M extends keyof ServiceMethods> = (
-  request: Parameters<NonNullable<ServiceMethods[M]>>[0],
+export type GetAttributes<M extends keyof ConcreteServiceMethods> = (
+  request: Parameters<NonNullable<ConcreteServiceMethods[M]>>[0],
 ) => Attributes
 
 const meter = metrics.getMeter('@atproto/bsync')
@@ -62,7 +67,7 @@ const rpcServerDuration = meter.createHistogram(
  */
 export const withRpcServerTelemetry = <T extends ServiceMethods>(
   methods: T,
-  getAttributes?: { [M in keyof T]?: GetAttributes<M & keyof ServiceMethods> },
+  getAttributes?: { [M in keyof T]?: GetAttributes<M & keyof ConcreteServiceMethods> },
 ): T =>
   Object.fromEntries(
     Object.entries(methods).map(([name, impl]) => [

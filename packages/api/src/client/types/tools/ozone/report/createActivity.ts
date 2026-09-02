@@ -20,8 +20,10 @@ const id = 'tools.ozone.report.createActivity'
 export type QueryParams = {}
 
 export interface InputSchema {
-  /** ID of the report to record activity on */
-  reportId: number
+  /** ID of the report to record activity on. Exactly one of reportId or eventId must be provided. */
+  reportId?: number
+  /** ID of the report moderation event. Resolves to the report created from that event. Exactly one of reportId or eventId must be provided. */
+  eventId?: number
   activity:
     | $Typed<ToolsOzoneReportDefs.QueueActivity>
     | $Typed<ToolsOzoneReportDefs.AssignmentActivity>

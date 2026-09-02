@@ -14,6 +14,7 @@ import {
 import type * as ComAtprotoModerationDefs from './defs.js'
 import type * as ComAtprotoAdminDefs from '../admin/defs.js'
 import type * as ComAtprotoRepoStrongRef from '../repo/strongRef.js'
+import type * as ChatBskyConvoDefs from '../../../chat/bsky/convo/defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -28,6 +29,8 @@ export interface InputSchema {
   subject:
     | $Typed<ComAtprotoAdminDefs.RepoRef>
     | $Typed<ComAtprotoRepoStrongRef.Main>
+    | $Typed<ChatBskyConvoDefs.ConvoRef>
+    | $Typed<ChatBskyConvoDefs.MessageRef>
     | { $type: string }
   modTool?: ModTool
 }
@@ -39,6 +42,8 @@ export interface OutputSchema {
   subject:
     | $Typed<ComAtprotoAdminDefs.RepoRef>
     | $Typed<ComAtprotoRepoStrongRef.Main>
+    | $Typed<ChatBskyConvoDefs.ConvoRef>
+    | $Typed<ChatBskyConvoDefs.MessageRef>
     | { $type: string }
   reportedBy: string
   createdAt: string

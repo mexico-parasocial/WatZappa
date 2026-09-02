@@ -1,7 +1,7 @@
 {
   "lexicon": 1,
   "id": "app.bsky.embed.gallery",
-  "description": "A gallery of media embedded in a Bluesky record. Intended for larger imported media sets, such as Instagram profile or carousel imports.",
+  "description": "An assortment of media embedded in a Bluesky record (eg, a post).",
   "defs": {
     "main": {
       "type": "object",
@@ -9,21 +9,22 @@
       "properties": {
         "items": {
           "type": "array",
+          "maxLength": 20,
+          "description": "The schema-level maxLength of 20 is a future-proof ceiling. Clients should currently enforce a soft limit of 10 items in authoring UIs.",
           "items": {
             "type": "union",
-            "refs": ["#image"]
-          },
-          "maxLength": 20
+            "refs": ["#image"],
+            "description": "The media items in the gallery. Each item may be of a different type, but all types must be supported by the client."
+          }
         }
       }
     },
     "image": {
       "type": "object",
-      "required": ["image", "alt"],
+      "required": ["image", "alt", "aspectRatio"],
       "properties": {
         "image": {
           "type": "blob",
-          "description": "The raw image file. May be up to 2 MB.",
           "accept": ["image/*"],
           "maxSize": 2000000
         },
@@ -39,21 +40,20 @@
     },
     "view": {
       "type": "object",
-      "required": ["media"],
+      "required": ["items"],
       "properties": {
-        "media": {
+        "items": {
           "type": "array",
           "items": {
             "type": "union",
             "refs": ["#viewImage"]
-          },
-          "maxLength": 20
+          }
         }
       }
     },
     "viewImage": {
       "type": "object",
-      "required": ["thumbnail", "fullsize", "alt"],
+      "required": ["thumbnail", "fullsize", "alt", "aspectRatio"],
       "properties": {
         "thumbnail": {
           "type": "string",

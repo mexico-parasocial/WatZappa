@@ -111,6 +111,7 @@ export interface ModEventViewDetail {
     | $Typed<RepoViewNotFound>
     | $Typed<RecordView>
     | $Typed<RecordViewNotFound>
+    | $Typed<ConvoView>
     | { $type: string }
   subjectBlobs: BlobView[]
   createdBy: string
@@ -699,7 +700,7 @@ export interface ModEventTag {
   remove: string[]
   /** Additional comment about added/removed tags. */
   comment?: string
-  /** If set, the tags in 'add' will be removed after this many hours. */
+  /** Indicates how long the tags being added should remain before automatically being removed. Only applies to tags being added. */
   durationInHours?: number
 }
 
@@ -942,6 +943,22 @@ export function isRecordViewNotFound<V>(v: V) {
 
 export function validateRecordViewNotFound<V>(v: V) {
   return validate<RecordViewNotFound & V>(v, id, hashRecordViewNotFound)
+}
+
+export interface ConvoView {
+  $type?: 'tools.ozone.moderation.defs#convoView'
+  did: string
+  convoId: string
+}
+
+const hashConvoView = 'convoView'
+
+export function isConvoView<V>(v: V) {
+  return is$typed(v, id, hashConvoView)
+}
+
+export function validateConvoView<V>(v: V) {
+  return validate<ConvoView & V>(v, id, hashConvoView)
 }
 
 export interface Moderation {
