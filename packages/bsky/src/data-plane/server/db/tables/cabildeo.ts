@@ -18,6 +18,8 @@ export interface CabildeoCabildeo {
   flairs: string[] | null
   region: string | null
   geoRestricted: 0 | 1 | null
+  latE7: number | null
+  lngE7: number | null
   options: unknown // JSON array of options
   minQuorum: number | null
   voteVisibility: string | null

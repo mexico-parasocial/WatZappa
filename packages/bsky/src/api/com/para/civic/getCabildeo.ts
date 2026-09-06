@@ -86,6 +86,7 @@ const mapCabildeoView = (view: {
   flairs: string[]
   region: string
   geoRestricted: boolean
+  geo?: { latE7: number; lngE7: number }
   options: Array<{ label: string; description: string; isConsensus: boolean }>
   minQuorum?: number
   voteVisibility?: string
@@ -162,6 +163,10 @@ const mapCabildeoView = (view: {
   flairs: view.flairs.length ? view.flairs : undefined,
   region: parseString(view.region),
   geoRestricted: view.geoRestricted,
+  geo:
+    Number.isInteger(view.geo?.latE7) && Number.isInteger(view.geo?.lngE7)
+      ? { latE7: view.geo.latE7, lngE7: view.geo.lngE7 }
+      : undefined,
   options: view.options.map((option) => ({
     label: option.label,
     description: parseString(option.description),

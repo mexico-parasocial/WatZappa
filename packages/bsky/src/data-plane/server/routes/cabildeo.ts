@@ -643,6 +643,8 @@ const mapCabildeoRow = async (
     flairs: unknown
     region: string | null
     geoRestricted: 0 | 1 | null
+    latE7: number | null
+    lngE7: number | null
     options: unknown
     minQuorum: number | null
     voteVisibility?: string | null
@@ -729,6 +731,10 @@ const mapCabildeoRow = async (
     flairs: asStringArray(row.flairs),
     region: row.region ?? '',
     geoRestricted: row.geoRestricted === 1,
+    geo:
+      typeof row.latE7 === 'number' && typeof row.lngE7 === 'number'
+        ? { latE7: row.latE7, lngE7: row.lngE7 }
+        : undefined,
     options,
     minQuorum:
       typeof row.minQuorum === 'number' && row.minQuorum > 0

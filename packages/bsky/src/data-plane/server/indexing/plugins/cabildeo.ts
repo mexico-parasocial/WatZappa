@@ -16,6 +16,7 @@ interface CabildeoRecord {
   flairs?: string[]
   region?: string
   geoRestricted?: boolean
+  geo?: { latE7: number; lngE7: number }
   options: unknown
   minQuorum?: number
   voteVisibility?: string
@@ -53,6 +54,14 @@ const insertFn = async (
       : null,
     region: obj.region || null,
     geoRestricted: obj.geoRestricted ? (1 as const) : (0 as const),
+    latE7:
+      typeof obj.geo?.latE7 === 'number' && Number.isInteger(obj.geo.latE7)
+        ? obj.geo.latE7
+        : null,
+    lngE7:
+      typeof obj.geo?.lngE7 === 'number' && Number.isInteger(obj.geo.lngE7)
+        ? obj.geo.lngE7
+        : null,
     options: sql`${JSON.stringify(obj.options)}`,
     minQuorum: obj.minQuorum || null,
     voteVisibility: normalizeVoteVisibility(obj.voteVisibility),
