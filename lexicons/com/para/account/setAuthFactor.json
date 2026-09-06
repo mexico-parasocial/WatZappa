@@ -1,0 +1,36 @@
+{
+  "lexicon": 1,
+  "id": "com.para.account.setAuthFactor",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Set the two-factor authentication method for the account. Omit authFactorType to turn 2FA off. Currently only iM8 verification is supported through this endpoint.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "authFactorType": {
+              "type": "string",
+              "knownValues": ["im8"],
+              "description": "The 2FA method to require at login. Omit to turn 2FA off."
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "authFactorType": {
+              "type": "string",
+              "knownValues": ["im8"],
+              "description": "The 2FA method now required at login. Absent when 2FA is off."
+            }
+          }
+        }
+      }
+    }
+  }
+}

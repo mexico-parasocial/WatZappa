@@ -261,6 +261,19 @@ export const setEmailConfirmedAt = async (
   )
 }
 
+export const updateAuthFactorType = async (
+  db: AccountDb,
+  did: DidString,
+  authFactorType: 'email' | 'im8' | null,
+) => {
+  await db.executeWithRetry(
+    db.db
+      .updateTable('account')
+      .set({ authFactorType })
+      .where('did', '=', did),
+  )
+}
+
 export const getAccountAdminStatus = async (
   db: AccountDb,
   did: DidString,

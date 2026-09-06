@@ -252,6 +252,8 @@ import * as ComAtprotoSyncSubscribeRepos from './types/com/atproto/sync/subscrib
 import * as ComAtprotoTempDereferenceScope from './types/com/atproto/temp/dereferenceScope.js'
 import * as ComAtprotoTempFetchLabels from './types/com/atproto/temp/fetchLabels.js'
 import * as ComAtprotoTempRevokeAccountCredentials from './types/com/atproto/temp/revokeAccountCredentials.js'
+import * as ComParaAccountGetAuthFactor from './types/com/para/account/getAuthFactor.js'
+import * as ComParaAccountSetAuthFactor from './types/com/para/account/setAuthFactor.js'
 import * as ComParaActorExportCivicTree from './types/com/para/actor/exportCivicTree.js'
 import * as ComParaActorGetProfileStats from './types/com/para/actor/getProfileStats.js'
 import * as ComParaActorGetSuggestedUsers from './types/com/para/actor/getSuggestedUsers.js'
@@ -3735,6 +3737,7 @@ export class ComAtprotoTempNS {
 
 export class ComParaNS {
   _server: Server
+  account: ComParaAccountNS
   actor: ComParaActorNS
   agent: ComParaAgentNS
   alpha: ComParaAlphaNS
@@ -3752,6 +3755,7 @@ export class ComParaNS {
 
   constructor(server: Server) {
     this._server = server
+    this.account = new ComParaAccountNS(server)
     this.actor = new ComParaActorNS(server)
     this.agent = new ComParaAgentNS(server)
     this.alpha = new ComParaAlphaNS(server)
@@ -3766,6 +3770,38 @@ export class ComParaNS {
     this.raq = new ComParaRaqNS(server)
     this.social = new ComParaSocialNS(server)
     this.sortition = new ComParaSortitionNS(server)
+  }
+}
+
+export class ComParaAccountNS {
+  _server: Server
+
+  constructor(server: Server) {
+    this._server = server
+  }
+
+  getAuthFactor<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ComParaAccountGetAuthFactor.QueryParams,
+      ComParaAccountGetAuthFactor.HandlerInput,
+      ComParaAccountGetAuthFactor.HandlerOutput
+    >,
+  ) {
+    const nsid = 'com.para.account.getAuthFactor' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  setAuthFactor<A extends Auth = void>(
+    cfg: MethodConfigOrHandler<
+      A,
+      ComParaAccountSetAuthFactor.QueryParams,
+      ComParaAccountSetAuthFactor.HandlerInput,
+      ComParaAccountSetAuthFactor.HandlerOutput
+    >,
+  ) {
+    const nsid = 'com.para.account.setAuthFactor' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
   }
 }
 

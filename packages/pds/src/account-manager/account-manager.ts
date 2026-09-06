@@ -891,6 +891,22 @@ export class AccountManager {
     })
   }
 
+  async updateAuthFactorType(
+    did: DidString,
+    authFactorType: 'im8' | null,
+  ): Promise<ActorAccount> {
+    const account = await this.getAccount(did, {
+      includeDeactivated: true,
+      includeTakenDown: true,
+    })
+    if (!account) {
+      throw new InvalidRequestError('account not found')
+    }
+    await accountHelpers.updateAuthFactorType(this.db, did, authFactorType)
+    account.authFactorType = authFactorType
+    return account
+  }
+
   async resetPassword(opts: { password: string; token: string }) {
     const did = await emailToken.assertValidTokenAndFindDid(
       this.db,

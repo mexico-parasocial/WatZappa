@@ -1,0 +1,27 @@
+{
+  "lexicon": 1,
+  "id": "com.para.account.getAuthFactor",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get the two-factor authentication method currently required for the account. Absent when 2FA is off.",
+      "parameters": {
+        "type": "params",
+        "properties": {}
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "authFactorType": {
+              "type": "string",
+              "knownValues": ["im8"],
+              "description": "The 2FA method required at login. Absent when 2FA is off."
+            }
+          }
+        }
+      }
+    }
+  }
+}
