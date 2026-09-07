@@ -16,6 +16,8 @@ interface CabildeoRecord {
   flairs?: string[]
   region?: string
   geoRestricted?: boolean
+  geoScope?: string
+  geo?: { latE7: number; lngE7: number }
   geo?: { latE7: number; lngE7: number }
   options: unknown
   minQuorum?: number
@@ -32,6 +34,44 @@ type IndexedCabildeo = {
 
 const lexId = 'com.para.civic.cabildeo'
 
+// Grid size in degrees per scope. Mirrors the PARA client policy in
+// src/geolocation/geoScope.ts: floor-snapping aggregates pins onto shared
+// grid points. `state` stores no coordinates at all.
+const GEO_SCOPE_GRID: Record<string, number | null> = {
+  state: null,
+  district: 0.01, // ~1.1 km
+  city: 0.001, // ~110 m
+}
+
+// Privacy backstop: never index more precision than the scope allows, no
+// matter what the client sent. Records without a scope keep their coords
+// so older clients don't silently lose map pins.
+const normalizeRecordGeo = (
+  scope: string | undefined,
+  geo: { latE7: number; lngE7: number } | undefined,
+): { latE7: number; lngE7: number } | null => {
+  if (
+    !geo ||
+    typeof geo.latE7 !== 'number' ||
+    typeof geo.lngE7 !== 'number' ||
+    !Number.isInteger(geo.latE7) ||
+    !Number.isInteger(geo.lngE7)
+  ) {
+    return null
+  }
+  if (scope === 'state') {
+    return null
+  }
+  const grid = scope ? GEO_SCOPE_GRID[scope] : undefined
+  if (grid === undefined || grid <= 0) {
+    return { latE7: geo.latE7, lngE7: geo.lngE7 }
+  }
+  return {
+    latE7: Math.round(Math.floor(geo.latE7 / 1e7 / grid) * grid * 1e7),
+    lngE7: Math.round(Math.floor(geo.lngE7 / 1e7 / grid) * grid * 1e7),
+  }
+}
+
 const insertFn = async (
   db: DatabaseSchema,
   uri: AtUri,
@@ -39,6 +79,7 @@ const insertFn = async (
   obj: CabildeoRecord,
   timestamp: string,
 ): Promise<IndexedCabildeo | null> => {
+  const normalizedGeo = normalizeRecordGeo(obj.geoScope, obj.geo)
   const record = {
     uri: uri.toString(),
     cid: cid.toString(),
@@ -54,14 +95,8 @@ const insertFn = async (
       : null,
     region: obj.region || null,
     geoRestricted: obj.geoRestricted ? (1 as const) : (0 as const),
-    latE7:
-      typeof obj.geo?.latE7 === 'number' && Number.isInteger(obj.geo.latE7)
-        ? obj.geo.latE7
-        : null,
-    lngE7:
-      typeof obj.geo?.lngE7 === 'number' && Number.isInteger(obj.geo.lngE7)
-        ? obj.geo.lngE7
-        : null,
+    latE7: normalizedGeo?.latE7 ?? null,
+    lngE7: normalizedGeo?.lngE7 ?? null,
     options: sql`${JSON.stringify(obj.options)}`,
     minQuorum: obj.minQuorum || null,
     voteVisibility: normalizeVoteVisibility(obj.voteVisibility),

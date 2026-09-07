@@ -26,6 +26,11 @@
           "region": { "type": "string", "maxLength": 100 },
           "geoRestricted": { "type": "boolean" },
           "geo": { "type": "ref", "ref": "#geoPoint" },
+          "geoScope": {
+            "type": "string",
+            "knownValues": ["state", "district", "city", "neighborhood"],
+            "description": "Precision tier the author chose. The indexer never stores more precision than the scope allows."
+          },
           "options": {
             "type": "array",
             "items": { "type": "ref", "ref": "#cabildeoOption" },
