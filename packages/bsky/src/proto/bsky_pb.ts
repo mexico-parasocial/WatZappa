@@ -15371,6 +15371,104 @@ export class ParaCommunityCivicTreeContributionResponse extends Message<ParaComm
 }
 
 /**
+ * @generated from message bsky.CreateParaCommunityCivicTreeRelationshipRequest
+ */
+export class CreateParaCommunityCivicTreeRelationshipRequest extends Message<CreateParaCommunityCivicTreeRelationshipRequest> {
+  /**
+   * @generated from field: string community_uri = 1;
+   */
+  communityUri = "";
+
+  /**
+   * @generated from field: string author_did = 2;
+   */
+  authorDid = "";
+
+  /**
+   * @generated from field: string source_card_id = 3;
+   */
+  sourceCardId = "";
+
+  /**
+   * @generated from field: string target_card_id = 4;
+   */
+  targetCardId = "";
+
+  /**
+   * @generated from field: string relationship_type = 5;
+   */
+  relationshipType = "";
+
+  constructor(data?: PartialMessage<CreateParaCommunityCivicTreeRelationshipRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.CreateParaCommunityCivicTreeRelationshipRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "community_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "author_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "source_card_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "target_card_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "relationship_type", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateParaCommunityCivicTreeRelationshipRequest {
+    return new CreateParaCommunityCivicTreeRelationshipRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CreateParaCommunityCivicTreeRelationshipRequest {
+    return new CreateParaCommunityCivicTreeRelationshipRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CreateParaCommunityCivicTreeRelationshipRequest {
+    return new CreateParaCommunityCivicTreeRelationshipRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: CreateParaCommunityCivicTreeRelationshipRequest | PlainMessage<CreateParaCommunityCivicTreeRelationshipRequest> | undefined, b: CreateParaCommunityCivicTreeRelationshipRequest | PlainMessage<CreateParaCommunityCivicTreeRelationshipRequest> | undefined): boolean {
+    return proto3.util.equals(CreateParaCommunityCivicTreeRelationshipRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.ParaCommunityCivicTreeRelationshipResponse
+ */
+export class ParaCommunityCivicTreeRelationshipResponse extends Message<ParaCommunityCivicTreeRelationshipResponse> {
+  /**
+   * @generated from field: string relationship_json = 1;
+   */
+  relationshipJson = "";
+
+  constructor(data?: PartialMessage<ParaCommunityCivicTreeRelationshipResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.ParaCommunityCivicTreeRelationshipResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "relationship_json", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ParaCommunityCivicTreeRelationshipResponse {
+    return new ParaCommunityCivicTreeRelationshipResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ParaCommunityCivicTreeRelationshipResponse {
+    return new ParaCommunityCivicTreeRelationshipResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ParaCommunityCivicTreeRelationshipResponse {
+    return new ParaCommunityCivicTreeRelationshipResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ParaCommunityCivicTreeRelationshipResponse | PlainMessage<ParaCommunityCivicTreeRelationshipResponse> | undefined, b: ParaCommunityCivicTreeRelationshipResponse | PlainMessage<ParaCommunityCivicTreeRelationshipResponse> | undefined): boolean {
+    return proto3.util.equals(ParaCommunityCivicTreeRelationshipResponse, a, b);
+  }
+}
+
+/**
  * @generated from message bsky.ParaDiscourseSnapshot
  */
 export class ParaDiscourseSnapshot extends Message<ParaDiscourseSnapshot> {

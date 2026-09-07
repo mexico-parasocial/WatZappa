@@ -2105,6 +2105,16 @@ message VoteParaCommunityCivicTreeContributionRequest {
 message ParaCommunityCivicTreeContributionResponse {
   string contribution_json = 1;
 }
+message CreateParaCommunityCivicTreeRelationshipRequest {
+  string community_uri = 1;
+  string author_did = 2;
+  string source_card_id = 3;
+  string target_card_id = 4;
+  string relationship_type = 5;
+}
+message ParaCommunityCivicTreeRelationshipResponse {
+  string relationship_json = 1;
+}
 
 
 message ParaDiscourseSnapshot {
@@ -2655,6 +2665,7 @@ service Service {
   rpc SubmitParaCommunityCivicTreeContribution(SubmitParaCommunityCivicTreeContributionRequest) returns (ParaCommunityCivicTreeContributionResponse);
   rpc GetParaCommunityCivicTreeContributions(GetParaCommunityCivicTreeContributionsRequest) returns (ParaJsonPageResponse);
   rpc VoteParaCommunityCivicTreeContribution(VoteParaCommunityCivicTreeContributionRequest) returns (ParaCommunityCivicTreeContributionResponse);
+  rpc CreateParaCommunityCivicTreeRelationship(CreateParaCommunityCivicTreeRelationshipRequest) returns (ParaCommunityCivicTreeRelationshipResponse);
   rpc GetParaDiscourseSnapshot(GetParaDiscourseSnapshotRequest) returns (GetParaDiscourseSnapshotResponse);
   rpc GetParaDiscourseTopics(GetParaDiscourseTopicsRequest) returns (GetParaDiscourseTopicsResponse);
   rpc GetParaDiscourseSentiment(GetParaDiscourseSentimentRequest) returns (GetParaDiscourseSentimentResponse);

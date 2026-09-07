@@ -73,6 +73,20 @@ const toContributionView = (
   ...(viewerVote ? { viewer_vote: viewerVote } : {}),
 })
 
+/**
+ * Shapes a relationship row for the wire. Field names are snake_case because
+ * the client consumes this JSON directly (relationshipView).
+ */
+const toRelationshipView = (row: Record<string, unknown>) => ({
+  id: row.id,
+  community_uri: row.communityUri,
+  author_did: row.authorDid,
+  source_card_id: row.sourceCardId,
+  target_card_id: row.targetCardId,
+  relationship_type: row.relationshipType,
+  created_at: row.createdAt,
+})
+
 export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   async getParaCommunityCivicTreeGraph(req) {
     const cards = await db.db
@@ -120,6 +134,8 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         source: edge.sourceCardId,
         target: edge.targetCardId,
         relationship_type: edge.relationshipType,
+        author_did: edge.authorDid,
+        created_at: edge.createdAt,
       }))
 
     return {
@@ -345,10 +361,68 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         .execute()
 
       return {
-        contributionJson: JSON.stringify(
-          toContributionView(updated, req.vote),
-        ),
+        contributionJson: JSON.stringify(toContributionView(updated, req.vote)),
       }
+    })
+  },
+
+  async createParaCommunityCivicTreeRelationship(req) {
+    return db.transaction(async (txn) => {
+      if (req.sourceCardId === req.targetCardId) {
+        throw new ConnectError('SelfRelation', Code.InvalidArgument)
+      }
+
+      const cards = await txn.db
+        .selectFrom(cardTableName)
+        .selectAll()
+        .where('communityUri', '=', req.communityUri)
+        .where('id', 'in', [req.sourceCardId, req.targetCardId])
+        .execute()
+      if (cards.length < 2) {
+        throw new ConnectError('CardNotFound', Code.NotFound)
+      }
+
+      const membership = await getMembership(
+        txn,
+        req.communityUri,
+        req.authorDid,
+      )
+      if (!isActiveMember(membership)) {
+        throw new ConnectError('NotAMember', Code.PermissionDenied)
+      }
+
+      /*
+       * The (source, target) pair is uniquely indexed; catching up the caller
+       * with the existing row keeps a double-tap on "connect" idempotent
+       * rather than surfacing a constraint violation.
+       */
+      const existing = await txn.db
+        .selectFrom(relationshipTableName)
+        .selectAll()
+        .where('communityUri', '=', req.communityUri)
+        .where('sourceCardId', '=', req.sourceCardId)
+        .where('targetCardId', '=', req.targetCardId)
+        .executeTakeFirst()
+      if (existing) {
+        return {
+          relationshipJson: JSON.stringify(toRelationshipView(existing)),
+        }
+      }
+
+      const timestamp = now()
+      const row = {
+        id: randomId(),
+        communityUri: req.communityUri,
+        authorDid: req.authorDid,
+        sourceCardId: req.sourceCardId,
+        targetCardId: req.targetCardId,
+        relationshipType: req.relationshipType,
+        createdAt: timestamp,
+        indexedAt: timestamp,
+      }
+      await txn.db.insertInto(relationshipTableName).values(row).execute()
+
+      return { relationshipJson: JSON.stringify(toRelationshipView(row)) }
     })
   },
 })

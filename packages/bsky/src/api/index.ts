@@ -124,6 +124,11 @@ import getParaAuditTrail from './com/para/community/getAuditTrail.js'
 import getParaCommunityBoard from './com/para/community/getBoard.js'
 import getParaBriefingPack from './com/para/community/getBriefingPack.js'
 import getParaCivicTree from './com/para/community/getCivicTree.js'
+import createParaCivicTreeRelationship from './com/para/community/civicTree/createRelationship.js'
+import listParaCivicTreeContributions from './com/para/community/civicTree/listContributions.js'
+import submitParaCivicTreeContribution from './com/para/community/civicTree/submitContribution.js'
+import voteParaCivicTreeContribution from './com/para/community/civicTree/voteContribution.js'
+import { civicTreeProcedureSchemas } from './com/para/community/civicTree/schemas.js'
 import getParaCommunityGovernance from './com/para/community/getGovernance.js'
 import getParaTallySimulation from './com/para/community/getTallySimulation.js'
 import listParaCommunityBoards from './com/para/community/listBoards.js'
@@ -170,6 +175,8 @@ export * as sitemap from './sitemap.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.addLexicons(paraSchemas)
+  // The civicTree procedure lexicons postdate the frozen generated registry.
+  server.addLexicons(civicTreeProcedureSchemas)
 
   const paraServer = { xrpc: server } as unknown as ParaLexiconServer
   const para = new ComParaNS(paraServer)
@@ -298,6 +305,10 @@ export default function (server: Server, ctx: AppContext) {
   getParaCommunityGovernance(paraServer, ctx)
   getParaAuditTrail(paraServer, ctx)
   getParaCivicTree(paraServer, ctx)
+  listParaCivicTreeContributions(paraServer, ctx)
+  submitParaCivicTreeContribution(paraServer, ctx)
+  voteParaCivicTreeContribution(paraServer, ctx)
+  createParaCivicTreeRelationship(paraServer, ctx)
   getParaTallySimulation(paraServer, ctx)
   listParaCommunityBoards(paraServer, ctx)
   listParaDelegations(paraServer, ctx)
