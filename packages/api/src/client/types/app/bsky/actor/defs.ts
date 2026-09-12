@@ -466,6 +466,8 @@ export function validateThreadViewPref<V>(v: V) {
 
 export interface InterestsPref {
   $type?: 'app.bsky.actor.defs#interestsPref'
+  /** The timestamp when the account owner last updated their interests. */
+  updatedAt?: string
   /** A list of tags which describe the account owner's interests gathered during onboarding. */
   tags: string[]
 }

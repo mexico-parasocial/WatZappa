@@ -4,21 +4,28 @@ packages:
   - 'packages/lex/*'
   - 'packages/oauth/*'
   - 'packages/internal/*'
-overrides:
-  '@smithy/core': ^3.29.5
+
 allowBuilds:
   '@bufbuild/buf': true
-  '@datadog/native-appsec': true
-  '@datadog/native-iast-taint-tracking': true
-  '@datadog/native-metrics': true
-  '@datadog/pprof': true
-  '@matrix-org/matrix-sdk-crypto-nodejs': true
   '@swc/core': true
   better-sqlite3: true
-  core-js: true
-  dd-trace: false
+  dd-trace: true
   esbuild: true
   protobufjs: true
   puppeteer: true
   sharp: true
   unrs-resolver: true
+  '@datadog/native-appsec': false
+  '@datadog/native-iast-taint-tracking': false
+  '@datadog/native-metrics': false
+  '@datadog/pprof': false
+  core-js: false
+  rolldown: true
+  '@parcel/watcher': true
+  '@matrix-org/matrix-sdk-crypto-nodejs': true
+
+overrides:
+  # @lingui/swc-plugin@5.11.0's wasm is built against swc-core 1.15.x ABI
+  '@swc/core': ~1.15.11
+  cookie: ^0.7.2
+  opentelemetry-plugin-better-sqlite3>@opentelemetry/core: ^1.30.0

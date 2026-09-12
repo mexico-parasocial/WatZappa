@@ -35,7 +35,7 @@ msgstr "<0>Bluesky 소셜</0> — 네트워크에 대한 일반 정보"
 
 #: src/pages/account/(authenticated)/about/page.tsx:119
 msgid "<0>Learn more</0><1>Want to learn more about the technology and network behind your Atmosphere account?</1>"
-msgstr "<0>더 알아보기</0><1>내 Atmosphere 계정 뒤편에 사용된 기술 및 네트워크에 대해 더 자세히 알아보고 싶으신가요?</1>"
+msgstr ""
 
 #: src/pages/account/(authenticated)/about/page.tsx:84
 msgid "<0>This website: your account control center</0><1>The website you're on right now is your <2>account management hub</2>. Here you can:</1><3><4>Update your email address and password</4><5>Manage your personal data and security settings</5><6>View and manage active sessions across devices (browsers where you're signed in)</6></3><7>This place is where you control the fundamental aspects of your Atmosphere identity, independently of any app-specific details like the profile you have on the <8>Bluesky social app</8>.</7><9>Your Atmosphere account is currently hosted by <10/>, one of many hosting providers in the Atmosphere network. You can switch to a different one at any time without losing your account, identity, or data.</9>"
@@ -47,7 +47,7 @@ msgstr "<0>여러 앱에서 사용하라</0><1>Atmosphere 계정은 <2>Bluesky �
 
 #: src/pages/account/(authenticated)/about/page.tsx:13
 msgid "<0>What is an Atmosphere account?</0><1>An <2>Atmosphere account</2> is your personal identity on the Atmosphere. Think of it as a digital passport that you truly own, not locked to any single app or company.</1>"
-msgstr "<0>Atmosphere 계정이란?</0><1><2>Atmosphere 계정</2>은 Atmosphere에서 사용하는 개인 식별 정보입니다. 특정 앱이나 회사에 종속되지 않고 진정으로 소유할 수 있는 디지털 여권이라고 생각하면 됩니다.</1>"
+msgstr ""
 
 #: src/pages/account/(authenticated)/about/page.tsx:51
 msgid "<0>What makes it special</0><1>The key difference: your data isn't trapped in any one app. Unlike traditional social media accounts, where your data belongs to the platform, with an Atmosphere account you genuinely own your identity and data:</1><2><3><4>You own your identity</4>: Your username (handle) and permanent ID belong to you</3><5><6>Your data is portable</6>: Posts, follows, and content live in your personal data storage, not locked in an app's database</5><7><8>You can move freely</8>: Switch hosting providers without losing your followers, posts, or connections. This also lets you choose a provider in your country if it matters where your data is stored.</7><9><10>Multiple apps, one identity</10>: Use the same account across different apps built on the same network</9></2>"
@@ -103,7 +103,7 @@ msgstr "계정"
 
 #: src/components/utils/account-image.tsx:60
 msgid "Account avatar"
-msgstr "계정 아바타"
+msgstr ""
 
 #: src/data/account.ts:23
 msgid "Account deactivated"
@@ -167,11 +167,11 @@ msgstr ""
 
 #: src/components/utils/error-card.tsx:82
 msgid "An unknown error occurred"
-msgstr "알 수 없는 오류가 발생했습니다"
+msgstr ""
 
 #: src/components/sign-in-picker.tsx:72
 msgid "Another account"
-msgstr "다른 계정"
+msgstr ""
 
 #: src/components/utils/scope-description.tsx:891
 msgid "Any collection"
@@ -207,7 +207,7 @@ msgstr "인증"
 #: src/components/utils/scope-description.tsx:520
 msgctxt "OAuthScope"
 msgid "Authenticate"
-msgstr "인증"
+msgstr ""
 
 #: src/components/consent-form.tsx:84
 #: src/components/consent-view.tsx:39
@@ -238,7 +238,7 @@ msgstr "Bluesky 앱 서비스"
 
 #: src/components/utils/scope-description.tsx:855
 msgid "Bluesky Chat services"
-msgstr "Bluesky 대화 서비스"
+msgstr ""
 
 #: src/pages/router.tsx:20
 msgid "Branding"
@@ -291,7 +291,7 @@ msgstr ""
 #. placeholder {0}: secondFactorError.hint
 #: src/components/sign-in-form.tsx:257
 msgid "Check your {0} email for a login code and enter it here."
-msgstr "{0} 이메일에서 로그인 코드를 확인한 후 여기에 입력하세요."
+msgstr ""
 
 #: src/components/delete-account-dialog.tsx:142
 msgid "Check your email for the confirmation code to enter below:"
@@ -385,7 +385,7 @@ msgstr "생성"
 
 #: src/components/authenticate-welcome-view.tsx:38
 msgid "Create a new account"
-msgstr "새 계정 만들기"
+msgstr ""
 
 #: src/components/utils/scope-description.tsx:630
 msgid "Create, update, and delete any public data linked to your account"
@@ -397,7 +397,7 @@ msgstr ""
 
 #: src/components/utils/scope-description.tsx:725
 msgid "Data"
-msgstr "데이터"
+msgstr ""
 
 #: src/components/deactivate-account-dialog.tsx:22
 #: src/pages/account/(authenticated)/manage/page.tsx:199
@@ -495,7 +495,7 @@ msgstr "비밀번호 입력"
 
 #: src/components/reset-password-view.tsx:73
 msgid "Enter the code you received to reset your password."
-msgstr "비밀번호를 재설정하려면 받은 코드를 입력하세요."
+msgstr ""
 
 #: src/components/update-handle-custom-form.tsx:34
 msgid "Enter the domain you want to use"
@@ -536,7 +536,7 @@ msgstr "세부 정보 펼치기"
 
 #: src/components/utils/password-strength-label.tsx:25
 msgid "Extra"
-msgstr "매우 강력"
+msgstr ""
 
 #: src/data/email.ts:51
 msgid "Failed to change email"
@@ -815,7 +815,7 @@ msgstr ""
 
 #: src/components/reset-password-confirm-form.tsx:64
 msgid "New password"
-msgstr "새 비밀번호"
+msgstr ""
 
 #: src/components/forms/wizard-card.tsx:128
 #: src/components/reset-password-view.tsx:50
@@ -942,7 +942,7 @@ msgstr "메시지 읽기 및 보내기"
 
 #: src/components/utils/scope-description.tsx:229
 msgid "Read and update your account's email address"
-msgstr "내 계정의 이메일 주소 읽기 및 변경"
+msgstr ""
 
 #: src/components/utils/scope-description.tsx:231
 msgid "Read your account's email address"
@@ -1005,7 +1005,7 @@ msgstr "다른 계정 선택"
 
 #: src/components/forms/input-handle-default.tsx:192
 msgid "Select domain"
-msgstr "도메인 선택"
+msgstr ""
 
 #: src/components/sign-in-view.tsx:126
 msgid "Select from an existing account"
@@ -1056,7 +1056,7 @@ msgstr "로그아웃"
 #: src/components/sign-up-view.tsx:56
 #: src/components/sign-up-view.tsx:61
 msgid "Sign up"
-msgstr "가입"
+msgstr ""
 
 #: src/authorization-page.tsx:162
 msgid "Sign-in canceled"
@@ -1077,7 +1077,7 @@ msgstr "{count}단계 중 {currentPosition}단계"
 
 #: src/components/utils/password-strength-label.tsx:27
 msgid "Strong"
-msgstr "강력"
+msgstr ""
 
 #: src/components/forms/form-card.tsx:49
 msgid "Submit"
@@ -1085,7 +1085,7 @@ msgstr "제출"
 
 #: src/data/account-sessions.ts:38
 msgid "Successfully removed device"
-msgstr "기기를 제거했습니다"
+msgstr ""
 
 #: src/data/oauth-sessions.ts:40
 msgid "Successfully revoked access"
@@ -1123,7 +1123,7 @@ msgstr ""
 
 #: src/components/utils/scope-description.tsx:524
 msgid "The AT Protocol network uses an authentication mechanism that allows to uniquely identify users when communicating with external services. This is typically used to retrieve or update data linked to your account, such as chat messages, feeds or moderation content. The application requests the permissions necessary to perform the following authenticated actions on your behalf:"
-msgstr "AT 프로토콜 네트워크는 외부 서비스와 통신할 때 사용자를 고유하게 식별할 수 있는 인증 메커니즘을 사용합니다. 이는 일반적으로 대화 메시지, 피드 또는 관리자 콘텐츠와 같이 계정과 연결된 데이터를 검색하거나 변경하는 데 사용됩니다. 애플리케이션은 사용자를 대신하여 다음과 같은 인증된 작업을 수행하는 데 필요한 권한을 요청합니다:"
+msgstr ""
 
 #: src/lib/api.ts:395
 msgid "The data you submitted is invalid. Please check the form and try again."
@@ -1135,7 +1135,7 @@ msgstr "허용되지 않는 도메인 이름입니다"
 
 #: src/lib/api.ts:495
 msgid "The invite code is not valid"
-msgstr "잘못된 초대 코드입니다"
+msgstr ""
 
 #: src/lib/api.ts:354
 msgid "The server encountered an unexpected error. Please try again."
@@ -1234,11 +1234,11 @@ msgstr ""
 
 #: src/contexts/session.tsx:207
 msgid "Unauthorized"
-msgstr "승인되지 않음"
+msgstr ""
 
 #: src/lib/json-client.ts:141
 msgid "Unexpected server response"
-msgstr "예상치 못한 서버 응답입니다"
+msgstr ""
 
 #: src/pages/account/(authenticated)/devices/page.tsx:92
 msgctxt "device list"
@@ -1345,11 +1345,11 @@ msgstr "<0/> 계정에 대한 접근 권한을 요청합니다"
 
 #: src/components/consent-form.tsx:124
 msgid "wants to uniquely identify you through your <0/> account"
-msgstr "<0/> 계정을 통해 나를 식별하고자 합니다"
+msgstr ""
 
 #: src/components/sign-in-form.tsx:221
 msgid "Warning"
-msgstr "경고"
+msgstr ""
 
 #: src/components/sign-up-view.tsx:57
 msgid "We're so excited to have you join us!"
@@ -1357,7 +1357,7 @@ msgstr "함께하게 되어 정말 기뻐요!"
 
 #: src/components/utils/password-strength-label.tsx:31
 msgid "Weak"
-msgstr "취약"
+msgstr ""
 
 #: src/components/authenticate-welcome-view.tsx:24
 msgid "Welcome"
@@ -1369,7 +1369,7 @@ msgstr ""
 
 #: src/pages/account/(authenticated)/page.tsx:34
 msgid "What does this mean?"
-msgstr "이게 무슨 뜻인가요?"
+msgstr ""
 
 #: src/pages/account/(authenticated)/route.tsx:79
 #: src/routes/account/u/$accountId/route.tsx:79
@@ -1484,7 +1484,7 @@ msgstr ""
 #. placeholder {0}: segment ? ( <span className="text-text-default block break-all font-medium"> @{segment} {domain} </span> ) : ( <span className="block break-all"> @{exampleSegment} {domain} </span> )
 #: src/components/forms/input-handle-default.tsx:115
 msgid "Your full username will be: {0}"
-msgstr "내 전체 사용자 이름: {0}"
+msgstr ""
 
 #: src/components/reactivate-account-dialog.tsx:24
 msgid "Your profile, posts, feeds, and lists will become visible again across the Atmosphere network — that includes the Bluesky app and any other Atmosphere app you use with this account."

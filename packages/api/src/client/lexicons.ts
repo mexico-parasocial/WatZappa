@@ -629,6 +629,12 @@ export const schemaDict = {
         type: 'object',
         required: ['tags'],
         properties: {
+          updatedAt: {
+            type: 'string',
+            format: 'datetime',
+            description:
+              'The timestamp when the account owner last updated their interests.',
+          },
           tags: {
             type: 'array',
             maxLength: 100,
@@ -21442,6 +21448,74 @@ export const schemaDict = {
       },
     },
   },
+  ComParaAccountGetAuthFactor: {
+    lexicon: 1,
+    id: 'com.para.account.getAuthFactor',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Get the two-factor authentication method currently required for the account. Absent when 2FA is off.',
+        parameters: {
+          type: 'params',
+          properties: {},
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              authFactorType: {
+                type: 'string',
+                knownValues: ['im8'],
+                description:
+                  'The 2FA method required at login. Absent when 2FA is off.',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaAccountSetAuthFactor: {
+    lexicon: 1,
+    id: 'com.para.account.setAuthFactor',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          'Set the two-factor authentication method for the account. Omit authFactorType to turn 2FA off. Currently only iM8 verification is supported through this endpoint.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              authFactorType: {
+                type: 'string',
+                knownValues: ['im8'],
+                description:
+                  'The 2FA method to require at login. Omit to turn 2FA off.',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              authFactorType: {
+                type: 'string',
+                knownValues: ['im8'],
+                description:
+                  'The 2FA method now required at login. Absent when 2FA is off.',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   ComParaActorDefs: {
     lexicon: 1,
     id: 'com.para.actor.defs',
@@ -22176,6 +22250,12 @@ export const schemaDict = {
             geo: {
               type: 'ref',
               ref: 'lex:com.para.civic.cabildeo#geoPoint',
+            },
+            geoScope: {
+              type: 'string',
+              knownValues: ['state', 'district', 'city', 'neighborhood'],
+              description:
+                'Precision tier the author chose. The indexer never stores more precision than the scope allows.',
             },
             options: {
               type: 'array',
@@ -39352,6 +39432,8 @@ export const ids = {
   ComAtprotoTempRevokeAccountCredentials:
     'com.atproto.temp.revokeAccountCredentials',
   ComGermnetworkDeclaration: 'com.germnetwork.declaration',
+  ComParaAccountGetAuthFactor: 'com.para.account.getAuthFactor',
+  ComParaAccountSetAuthFactor: 'com.para.account.setAuthFactor',
   ComParaActorDefs: 'com.para.actor.defs',
   ComParaActorExportCivicTree: 'com.para.actor.exportCivicTree',
   ComParaActorGetProfileStats: 'com.para.actor.getProfileStats',

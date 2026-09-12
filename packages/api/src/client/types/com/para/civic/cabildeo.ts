@@ -25,6 +25,8 @@ export interface Main {
   region?: string
   geoRestricted?: boolean
   geo?: GeoPoint
+  /** Precision tier the author chose. The indexer never stores more precision than the scope allows. */
+  geoScope?: 'state' | 'district' | 'city' | 'neighborhood' | (string & {})
   options: CabildeoOption[]
   minQuorum?: number
   /** Minimum tier required to view the cabildeo. Existing records default to public. */

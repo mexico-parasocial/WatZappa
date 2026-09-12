@@ -167,11 +167,11 @@ msgstr ""
 
 #: src/components/utils/error-card.tsx:82
 msgid "An unknown error occurred"
-msgstr "Ocurrió un error desconocido"
+msgstr ""
 
 #: src/components/sign-in-picker.tsx:72
 msgid "Another account"
-msgstr "Otra cuenta"
+msgstr ""
 
 #: src/components/utils/scope-description.tsx:891
 msgid "Any collection"
@@ -238,7 +238,7 @@ msgstr "Servicios de la app Bluesky"
 
 #: src/components/utils/scope-description.tsx:855
 msgid "Bluesky Chat services"
-msgstr "Servicios de chat de Bluesky"
+msgstr ""
 
 #: src/pages/router.tsx:20
 msgid "Branding"
@@ -291,7 +291,7 @@ msgstr ""
 #. placeholder {0}: secondFactorError.hint
 #: src/components/sign-in-form.tsx:257
 msgid "Check your {0} email for a login code and enter it here."
-msgstr "Revisa tu correo electrónico {0} para encontrar un código de inicio de sesión e ingrésalo aquí."
+msgstr ""
 
 #: src/components/delete-account-dialog.tsx:142
 msgid "Check your email for the confirmation code to enter below:"
@@ -385,7 +385,7 @@ msgstr "Crear"
 
 #: src/components/authenticate-welcome-view.tsx:38
 msgid "Create a new account"
-msgstr "Crear una nueva cuenta"
+msgstr ""
 
 #: src/components/utils/scope-description.tsx:630
 msgid "Create, update, and delete any public data linked to your account"
@@ -495,7 +495,7 @@ msgstr "Ingresa una contraseña"
 
 #: src/components/reset-password-view.tsx:73
 msgid "Enter the code you received to reset your password."
-msgstr "Ingresa el código que recibiste para restablecer tu contraseña."
+msgstr ""
 
 #: src/components/update-handle-custom-form.tsx:34
 msgid "Enter the domain you want to use"
@@ -536,7 +536,7 @@ msgstr "Ver detalles"
 
 #: src/components/utils/password-strength-label.tsx:25
 msgid "Extra"
-msgstr "Extra"
+msgstr ""
 
 #: src/data/email.ts:51
 msgid "Failed to change email"
@@ -815,7 +815,7 @@ msgstr ""
 
 #: src/components/reset-password-confirm-form.tsx:64
 msgid "New password"
-msgstr "Nueva contraseña"
+msgstr ""
 
 #: src/components/forms/wizard-card.tsx:128
 #: src/components/reset-password-view.tsx:50
@@ -942,7 +942,7 @@ msgstr "Leer y enviar mensajes"
 
 #: src/components/utils/scope-description.tsx:229
 msgid "Read and update your account's email address"
-msgstr "Leer y actualizar la dirección de correo electrónico de tu cuenta"
+msgstr ""
 
 #: src/components/utils/scope-description.tsx:231
 msgid "Read your account's email address"
@@ -1005,7 +1005,7 @@ msgstr ""
 
 #: src/components/forms/input-handle-default.tsx:192
 msgid "Select domain"
-msgstr "Seleccionar dominio"
+msgstr ""
 
 #: src/components/sign-in-view.tsx:126
 msgid "Select from an existing account"
@@ -1056,7 +1056,7 @@ msgstr ""
 #: src/components/sign-up-view.tsx:56
 #: src/components/sign-up-view.tsx:61
 msgid "Sign up"
-msgstr "Registrarse"
+msgstr ""
 
 #: src/authorization-page.tsx:162
 msgid "Sign-in canceled"
@@ -1077,7 +1077,7 @@ msgstr "Paso {currentPosition} de {count}"
 
 #: src/components/utils/password-strength-label.tsx:27
 msgid "Strong"
-msgstr "Fuerte"
+msgstr ""
 
 #: src/components/forms/form-card.tsx:49
 msgid "Submit"
@@ -1085,7 +1085,7 @@ msgstr "Enviar"
 
 #: src/data/account-sessions.ts:38
 msgid "Successfully removed device"
-msgstr "Dispositivo removido exitosamente"
+msgstr ""
 
 #: src/data/oauth-sessions.ts:40
 msgid "Successfully revoked access"
@@ -1135,7 +1135,7 @@ msgstr "El dominio no está permitido"
 
 #: src/lib/api.ts:495
 msgid "The invite code is not valid"
-msgstr "El código de invitación no es válido"
+msgstr ""
 
 #: src/lib/api.ts:354
 msgid "The server encountered an unexpected error. Please try again."
@@ -1238,7 +1238,7 @@ msgstr ""
 
 #: src/lib/json-client.ts:141
 msgid "Unexpected server response"
-msgstr "Respuesta inesperada del servidor"
+msgstr ""
 
 #: src/pages/account/(authenticated)/devices/page.tsx:92
 msgctxt "device list"
@@ -1345,11 +1345,11 @@ msgstr "quiere acceder a tu cuenta <0/>"
 
 #: src/components/consent-form.tsx:124
 msgid "wants to uniquely identify you through your <0/> account"
-msgstr "quiere identificarte de forma única a través de tu cuenta <0/>"
+msgstr ""
 
 #: src/components/sign-in-form.tsx:221
 msgid "Warning"
-msgstr "Advertencia"
+msgstr ""
 
 #: src/components/sign-up-view.tsx:57
 msgid "We're so excited to have you join us!"
@@ -1357,7 +1357,7 @@ msgstr "¡Nos alegra mucho tenerte con nosotros!"
 
 #: src/components/utils/password-strength-label.tsx:31
 msgid "Weak"
-msgstr "Débil"
+msgstr ""
 
 #: src/components/authenticate-welcome-view.tsx:24
 msgid "Welcome"
@@ -1484,7 +1484,7 @@ msgstr ""
 #. placeholder {0}: segment ? ( <span className="text-text-default block break-all font-medium"> @{segment} {domain} </span> ) : ( <span className="block break-all"> @{exampleSegment} {domain} </span> )
 #: src/components/forms/input-handle-default.tsx:115
 msgid "Your full username will be: {0}"
-msgstr "Tu nombre de usuario completo será: {0}"
+msgstr ""
 
 #: src/components/reactivate-account-dialog.tsx:24
 msgid "Your profile, posts, feeds, and lists will become visible again across the Atmosphere network — that includes the Bluesky app and any other Atmosphere app you use with this account."

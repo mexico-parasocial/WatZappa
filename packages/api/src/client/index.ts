@@ -337,6 +337,8 @@ import * as ComAtprotoTempDereferenceScope from './types/com/atproto/temp/derefe
 import * as ComAtprotoTempFetchLabels from './types/com/atproto/temp/fetchLabels.js'
 import * as ComAtprotoTempRevokeAccountCredentials from './types/com/atproto/temp/revokeAccountCredentials.js'
 import * as ComGermnetworkDeclaration from './types/com/germnetwork/declaration.js'
+import * as ComParaAccountGetAuthFactor from './types/com/para/account/getAuthFactor.js'
+import * as ComParaAccountSetAuthFactor from './types/com/para/account/setAuthFactor.js'
 import * as ComParaActorDefs from './types/com/para/actor/defs.js'
 import * as ComParaActorExportCivicTree from './types/com/para/actor/exportCivicTree.js'
 import * as ComParaActorGetProfileStats from './types/com/para/actor/getProfileStats.js'
@@ -861,6 +863,8 @@ export * as ComAtprotoTempDereferenceScope from './types/com/atproto/temp/derefe
 export * as ComAtprotoTempFetchLabels from './types/com/atproto/temp/fetchLabels.js'
 export * as ComAtprotoTempRevokeAccountCredentials from './types/com/atproto/temp/revokeAccountCredentials.js'
 export * as ComGermnetworkDeclaration from './types/com/germnetwork/declaration.js'
+export * as ComParaAccountGetAuthFactor from './types/com/para/account/getAuthFactor.js'
+export * as ComParaAccountSetAuthFactor from './types/com/para/account/setAuthFactor.js'
 export * as ComParaActorDefs from './types/com/para/actor/defs.js'
 export * as ComParaActorExportCivicTree from './types/com/para/actor/exportCivicTree.js'
 export * as ComParaActorGetProfileStats from './types/com/para/actor/getProfileStats.js'
@@ -6298,6 +6302,7 @@ export class ComParaNS {
   _client: XrpcClient
   post: ComParaPostRecord
   status: ComParaStatusRecord
+  account: ComParaAccountNS
   actor: ComParaActorNS
   agent: ComParaAgentNS
   alpha: ComParaAlphaNS
@@ -6315,6 +6320,7 @@ export class ComParaNS {
 
   constructor(client: XrpcClient) {
     this._client = client
+    this.account = new ComParaAccountNS(client)
     this.actor = new ComParaActorNS(client)
     this.agent = new ComParaAgentNS(client)
     this.alpha = new ComParaAlphaNS(client)
@@ -6331,6 +6337,38 @@ export class ComParaNS {
     this.sortition = new ComParaSortitionNS(client)
     this.post = new ComParaPostRecord(client)
     this.status = new ComParaStatusRecord(client)
+  }
+}
+
+export class ComParaAccountNS {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  getAuthFactor(
+    params?: ComParaAccountGetAuthFactor.QueryParams,
+    opts?: ComParaAccountGetAuthFactor.CallOptions,
+  ): Promise<ComParaAccountGetAuthFactor.Response> {
+    return this._client.call(
+      'com.para.account.getAuthFactor',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  setAuthFactor(
+    data?: ComParaAccountSetAuthFactor.InputSchema,
+    opts?: ComParaAccountSetAuthFactor.CallOptions,
+  ): Promise<ComParaAccountSetAuthFactor.Response> {
+    return this._client.call(
+      'com.para.account.setAuthFactor',
+      opts?.qp,
+      data,
+      opts,
+    )
   }
 }
 

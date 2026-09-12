@@ -19,7 +19,7 @@ export default function (server: Server, ctx: AppContext) {
 
       const account = await ctx.accountManager.updateAuthFactorType(
         did,
-        authFactorType,
+        authFactorType as 'im8' | null,
       )
 
       return {

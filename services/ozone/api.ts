@@ -1,21 +1,18 @@
-/* eslint-env node */
-
-'use strict'
-
-const path = require('node:path')
-const {
+import * as prometheus from 'prom-client'
+import {
   BunnyInvalidator,
   CloudfrontInvalidator,
   MultiImageInvalidator,
-} = require('@atproto/aws')
-const {
+} from '@atproto/aws'
+import {
   Database,
+  MetricsService,
   OzoneService,
   envToCfg,
   envToSecrets,
   httpLogger,
   readEnv,
-} = require('@atproto/ozone')
+} from '@atproto/ozone'
 
 const main = async () => {
   const env = readEnv()
@@ -27,7 +24,7 @@ const main = async () => {
   const bunnyAccessKey = process.env.OZONE_BUNNY_ACCESS_KEY
   const cfDistributionId = process.env.OZONE_CF_DISTRIBUTION_ID
 
-  const imgInvalidators = []
+  const imgInvalidators: (BunnyInvalidator | CloudfrontInvalidator)[] = []
 
   if (bunnyAccessKey) {
     imgInvalidators.push(
@@ -62,16 +59,37 @@ const main = async () => {
     await db.close()
   }
 
-  const ozone = await OzoneService.create(cfg, secrets, { imgInvalidator })
+  // Metrics are opt-in via OZONE_METRICS_PORT. When unset, no registry is
+  // created and OzoneService.create collects nothing.
+  const register = cfg.service.metricsPort
+    ? new prometheus.Registry()
+    : undefined
+
+  const ozone = await OzoneService.create(
+    cfg,
+    secrets,
+    { imgInvalidator },
+    register,
+  )
 
   await ozone.start()
 
   httpLogger.info('ozone is running')
 
+  let metrics: MetricsService | undefined
+  if (register && cfg.service.metricsPort) {
+    metrics = MetricsService.create(register, {
+      readinessCheck: () => ozone.ctx.db.ping(),
+    })
+    await metrics.start(cfg.service.metricsPort)
+    httpLogger.info('ozone metrics is running')
+  }
+
   // Graceful shutdown (see also https://aws.amazon.com/blogs/containers/graceful-shutdowns-with-ecs/)
   process.on('SIGTERM', async () => {
     httpLogger.info('ozone is stopping')
 
+    await metrics?.destroy()
     await ozone.destroy()
 
     httpLogger.info('ozone is stopped')

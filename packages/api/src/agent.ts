@@ -1074,6 +1074,7 @@ export class Agent extends XrpcClient {
         .concat({
           ...existing,
           ...pref,
+          $type: 'app.bsky.actor.defs#interestsPref',
           updatedAt: currentDatetimeString(),
         })
     })

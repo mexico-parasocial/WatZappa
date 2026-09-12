@@ -2,6 +2,7 @@ import { createReadStream } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import { Readable } from 'node:stream'
+import { ASSETS_ENDPOINT_PREFIX } from '@atproto/oauth-provider-api'
 import type { Manifest } from '@atproto-labs/rollup-plugin-bundle-manifest'
 import { AssetRef } from '../../lib/html/build-document.js'
 import {
@@ -30,7 +31,7 @@ type Asset =
       stream: () => Readable
     }
 
-const ASSETS_URL_PREFIX = '/@atproto/oauth-provider/~assets/'
+const ASSETS_URL_PREFIX = `${ASSETS_ENDPOINT_PREFIX}/`
 
 export function parseAssetsManifest(manifestPath: string) {
   // Using `require` instead of `JSON.parse(readFileSync())` so that node's
