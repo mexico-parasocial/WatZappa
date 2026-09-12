@@ -21,7 +21,7 @@ export class BskyAppView {
       { service: options.url },
       {
         strictResponseProcessing: false,
-        validateResponse: options.validateResponse ?? true,
+        validateResponse: options.validateResponse ?? false,
       },
     )
     this.cdnUrlPattern = options.cdnUrlPattern

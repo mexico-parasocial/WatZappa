@@ -1,35 +1,41 @@
-import { KeyObject, createPublicKey, createSecretKey } from 'node:crypto'
-import { IncomingMessage, ServerResponse } from 'node:http'
+import { type KeyObject, createPublicKey, createSecretKey } from 'node:crypto'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 import { secp256k1 } from '@noble/curves/secp256k1'
 import * as jose from 'jose'
 import { getVerificationMaterial } from '@atproto/common'
-import { IdResolver, getDidKeyFromMultibase } from '@atproto/identity'
+import { type IdResolver, getDidKeyFromMultibase } from '@atproto/identity'
+import {
+  type AtIdentifierString,
+  type DidString,
+  isDidString,
+} from '@atproto/lex'
 import {
   OAuthError,
+  WWWAuthenticateError,
+} from '@atproto/oauth-provider/errors'
+import type {
   OAuthVerifier,
   VerifyTokenPayloadOptions,
-  WWWAuthenticateError,
-} from '@atproto/oauth-provider'
+} from '@atproto/oauth-provider/verifier'
 import {
-  ScopePermissions,
+  type ScopePermissions,
   ScopePermissionsTransition,
 } from '@atproto/oauth-scopes'
-import { AtIdentifierString, DidString } from '@atproto/syntax'
 import {
   AuthRequiredError,
-  Awaitable,
+  type Awaitable,
   ForbiddenError,
   InvalidRequestError,
-  MethodAuthContext,
-  MethodAuthVerifier,
-  Params,
+  type MethodAuthContext,
+  type MethodAuthVerifier,
+  type Params,
   XRPCError,
   parseReqNsid,
   verifyJwt as verifyServiceJwt,
 } from '@atproto/xrpc-server'
-import { AccountManager } from './account-manager/account-manager.js'
-import { ActorAccount } from './account-manager/helpers/account.js'
-import {
+import type { AccountManager } from './account-manager/account-manager.js'
+import type { ActorAccount } from './account-manager/helpers/account.js'
+import type {
   AccessOutput,
   AdminTokenOutput,
   ModServiceOutput,
@@ -41,7 +47,7 @@ import {
 import { ACCESS_STANDARD, AuthScope, isAuthScope } from './auth-scope.js'
 import { softDeleted } from './db/index.js'
 import { appendVary } from './util/http.js'
-import { WithRequired } from './util/types.js'
+import type { WithRequired } from './util/types.js'
 
 export type VerifiedOptions = {
   checkTakedown?: boolean
@@ -125,6 +131,7 @@ export class AuthVerifier {
     }
   }
 
+  /** @deprecated We are steering away from this auth method */
   public adminToken: MethodAuthVerifier<AdminTokenOutput> = async (ctx) => {
     setAuthHeaders(ctx.res)
     const parsed = parseBasicAuth(ctx.req)
@@ -155,6 +162,7 @@ export class AuthVerifier {
     }
   }
 
+  /** @deprecated We are steering away from {@link adminToken} auth. Use {@link modService} instead. */
   public moderator: MethodAuthVerifier<AdminTokenOutput | ModServiceOutput> =
     async (ctx) => {
       const type = extractAuthType(ctx.req)
@@ -272,6 +280,22 @@ export class AuthVerifier {
     }
   }
 
+  public authorizationOrModService<P extends Params>(
+    opts: VerifiedOptions & ExtraScopedOptions & AuthorizedOptions<P>,
+  ): MethodAuthVerifier<AccessOutput | OAuthOutput | ModServiceOutput, P> {
+    const authorization = this.authorization(opts)
+    return async (ctx) => {
+      try {
+        return await this.modService(ctx)
+      } catch (err) {
+        if (err instanceof AuthRequiredError) {
+          return authorization(ctx)
+        }
+        throw err
+      }
+    }
+  }
+
   public authorizationOrAdminTokenOptional<P extends Params>(
     opts: VerifiedOptions & ExtraScopedOptions & AuthorizedOptions<P>,
   ): MethodAuthVerifier<
@@ -383,11 +407,11 @@ export class AuthVerifier {
           throw err
         })
 
-      if (typeof did !== 'string' || !did.startsWith('did:')) {
+      if (!isDidString(did)) {
         throw new InvalidRequestError('Malformed token', 'InvalidToken')
       }
 
-      await this.verifyStatus(did as DidString, verifyStatusOptions)
+      await this.verifyStatus(did, verifyStatusOptions)
 
       const permissions = new ScopePermissionsTransition(scope?.split(' '))
 
@@ -404,7 +428,7 @@ export class AuthVerifier {
       return {
         credentials: {
           type: 'oauth',
-          did: did as DidString,
+          did,
           permissions,
         },
       }
@@ -465,8 +489,8 @@ export class AuthVerifier {
       throw new AuthRequiredError(undefined, 'AuthMissing')
     }
 
-    const { payload, protectedHeader } = await jose
-      .jwtVerify(token, this._jwtKey, { ...options, typ: undefined })
+    const { payload } = await jose
+      .jwtVerify(token, this._jwtKey, options)
       .catch((cause) => {
         if (cause instanceof jose.errors.JWTExpired) {
           throw new InvalidRequestError('Token has expired', 'ExpiredToken', {
@@ -480,14 +504,6 @@ export class AuthVerifier {
           )
         }
       })
-
-    // @NOTE: the "typ" is now set in production environments, so we should be
-    // able to safely check it through jose.jwtVerify(). However, tests depend
-    // on @atproto/pds-entryway which does not set "typ" in the access tokens.
-    // For that reason, we still allow it to be missing.
-    if (protectedHeader.typ && options.typ !== protectedHeader.typ) {
-      throw new InvalidRequestError('Invalid token type', 'InvalidToken')
-    }
 
     const { sub, aud, scope, lxm, cnf, jti } = payload
 
@@ -504,7 +520,7 @@ export class AuthVerifier {
       // https://www.rfc-editor.org/rfc/rfc7800.html
       throw new InvalidRequestError('Malformed token', 'InvalidToken')
     }
-    if (typeof sub !== 'string' || !sub.startsWith('did:')) {
+    if (typeof sub !== 'string' || !isDidString(sub)) {
       throw new InvalidRequestError('Malformed token', 'InvalidToken')
     }
     if (typeof aud !== 'string' || !aud.startsWith('did:')) {
@@ -517,12 +533,7 @@ export class AuthVerifier {
       throw new InvalidRequestError('Bad token scope', 'InvalidToken')
     }
 
-    return {
-      sub: sub as DidString,
-      aud: aud as DidString,
-      jti,
-      scope: scope as S,
-    }
+    return { sub, aud, jti, scope: scope as S }
   }
 
   protected async verifyServiceJwt(
@@ -639,7 +650,7 @@ const extractAuthType = (req: IncomingMessage): AuthType | null => {
   return type
 }
 
-const bearerTokenFromReq = (req: IncomingMessage) => {
+export const bearerTokenFromReq = (req: IncomingMessage) => {
   const [type, token] = parseAuthorizationHeader(req)
   return type === AuthType.BEARER ? token : null
 }

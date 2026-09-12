@@ -7,22 +7,9 @@ export const getRedisClient = (host: string, password?: string): Redis => {
   const redis = new Redis({
     ...redisAddr,
     password,
-    // MVP hardening: avoid crashing the PDS on transient Redis failures.
-    maxRetriesPerRequest: 3,
-    connectTimeout: 10_000,
-    commandTimeout: 5_000,
-    lazyConnect: false,
-    retryStrategy: (times: number) => {
-      const delay = Math.min(times * 100, 3_000)
-      redisLogger.warn({ host, attempt: times, delay }, 'redis retrying')
-      return delay
-    },
   })
   redis.on('error', (err) => {
     redisLogger.error({ host, err }, 'redis error')
-  })
-  redis.on('reconnecting', () => {
-    redisLogger.warn({ host }, 'redis reconnecting')
   })
   return redis
 }

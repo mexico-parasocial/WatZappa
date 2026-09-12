@@ -1,6 +1,5 @@
-// @ts-nocheck
-import { AtpAgent } from '@atproto/api'
-import { SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
+import type { AtpAgent } from '@atproto/api'
+import { type SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
 import { createServer, verifyJwt } from '@atproto/xrpc-server'
 import { app } from '../../src/lexicons/index.js'
 import { startServer } from '../_util.js'
