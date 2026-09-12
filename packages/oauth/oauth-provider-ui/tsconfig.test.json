@@ -12,6 +12,8 @@
   "include": ["./src/**/*.test.ts"],
   "compilerOptions": {
     "rootDir": "./",
+    // Upstream tests import sibling sources with explicit `.ts` extensions.
+    "allowImportingTsExtensions": true,
     // The sources are browser code, but the tests themselves run under node.
     // Stated here because `browser.tsconfig.json`'s chain resets `types`,
     // discarding the `["node"]` that `vitest.tsconfig.json` inherits.

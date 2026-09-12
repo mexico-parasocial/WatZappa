@@ -1,8 +1,7 @@
 import { getNotif } from '@atproto/identity'
-import { xrpc } from '@atproto/lex'
-import { InvalidRequestError, Server } from '@atproto/xrpc-server'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import { AuthScope } from '../../../../auth-scope.js'
-import { AppContext } from '../../../../context.js'
+import type { AppContext } from '../../../../context.js'
 import { app } from '../../../../lexicons/index.js'
 import { getDidDoc } from '../util/resolver.js'
 
@@ -48,13 +47,12 @@ export default function (server: Server, ctx: AppContext) {
 
       const notifEndpoint = await getEndpoint(ctx, serviceDid)
 
-      await xrpc(notifEndpoint, app.bsky.notification.registerPush, {
-        validateRequest: ctx.cfg.service.devMode,
-        validateResponse: ctx.cfg.service.devMode,
-        strictResponseProcessing: ctx.cfg.service.devMode,
-        body,
-        headers,
-      })
+      await ctx
+        .safeClient(notifEndpoint)
+        .xrpc(app.bsky.notification.registerPush, {
+          body,
+          headers,
+        })
     },
   })
 }

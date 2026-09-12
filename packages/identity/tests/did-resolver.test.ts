@@ -3,7 +3,7 @@ import * as plc from '@did-plc/lib'
 import { Database as DidPlcDb, PlcServer } from '@did-plc/server'
 import getPort from 'get-port'
 import { Secp256k1Keypair } from '@atproto/crypto'
-import { DidDocument, DidResolver } from '../src/index.js'
+import { type DidDocument, DidResolver } from '../src/index.js'
 import { DidWebDb } from './web/db.js'
 import { DidWebServer } from './web/server.js'
 
@@ -27,7 +27,7 @@ describe('did resolver', () => {
     await plcServer.start()
 
     plcUrl = 'http://localhost:' + plcPort
-    resolver = new DidResolver({ plcUrl })
+    resolver = new DidResolver({ plcUrl, fetch: globalThis.fetch })
 
     close = async () => {
       await webServer.close()

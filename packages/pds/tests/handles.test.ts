@@ -1,9 +1,9 @@
 // @ts-nocheck
 import { jest } from '@jest/globals'
-import { type AtpAgent } from '@atproto/api'
-import { type SeedClient } from '@atproto/dev-env'
-import { AtIdentifierString, DidString } from '@atproto/syntax'
-import { type AppContext } from '../src/index.js'
+import type { AtpAgent } from '@atproto/api'
+import type { SeedClient } from '@atproto/dev-env'
+import type { AtIdentifierString, DidString } from '@atproto/syntax'
+import type { AppContext } from '../src/index.js'
 
 // outside of suite so they can be used in mock
 let alice: DidString
@@ -51,7 +51,10 @@ describe('handles', () => {
       dbPostgresSchema: 'handles',
     })
     ctx = network.pds.ctx
-    idResolver = new IdResolver({ plcUrl: ctx.cfg.identity.plcUrl })
+    idResolver = new IdResolver({
+      plcUrl: ctx.cfg.identity.plcUrl,
+      fetch: globalThis.fetch,
+    })
     agent = network.pds.getAgent()
     sc = network.getSeedClient()
     await basicSeed(sc)

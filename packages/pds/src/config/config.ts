@@ -1,14 +1,14 @@
 import assert from 'node:assert'
 import path from 'node:path'
 import { DAY, HOUR, SECOND } from '@atproto/common'
-import {
+import type {
   BrandingInput as BrandingConfig,
   HcaptchaConfig,
 } from '@atproto/oauth-provider'
 
 export type { BrandingConfig }
-import { DidString, ensureValidDid, isValidDid } from '@atproto/syntax'
-import { ServerEnvironment } from './env.js'
+import { type DidString, ensureValidDid, isValidDid } from '@atproto/syntax'
+import type { ServerEnvironment } from './env.js'
 
 // off-config but still from env:
 // logging: LOG_LEVEL, LOG_SYSTEMS, LOG_ENABLED, LOG_DESTINATION
@@ -459,6 +459,11 @@ export type DiskBlobstoreConfig = {
 
 export type IdentityConfig = {
   plcUrl: string
+  /**
+   * Bounds each individual identity resolution attempt. Note that
+   * `safeFetch`'s own 10s timeout acts as an upper backstop, so values above
+   * 10s are effectively capped.
+   */
   resolverTimeout: number
   cacheStaleTTL: number
   cacheMaxTTL: number

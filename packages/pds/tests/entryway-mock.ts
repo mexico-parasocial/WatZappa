@@ -1,16 +1,16 @@
 // @ts-nocheck
 import { createPrivateKey } from 'node:crypto'
-import * as http from 'node:http'
+import type * as http from 'node:http'
 import * as plcLib from '@did-plc/lib'
 import { secp256k1 } from '@noble/curves/secp256k1'
-import { HttpTerminator, createHttpTerminator } from 'http-terminator'
+import { type HttpTerminator, createHttpTerminator } from 'http-terminator'
 import * as jose from 'jose'
 import * as ui8 from 'uint8arrays'
 import { AtpAgent } from '@atproto/api'
 import { getVerificationMaterial } from '@atproto/common'
-import { Secp256k1Keypair, randomStr } from '@atproto/crypto'
+import { type Secp256k1Keypair, randomStr } from '@atproto/crypto'
 import { IdResolver, getDidKeyFromMultibase } from '@atproto/identity'
-import { DidString, HandleString } from '@atproto/syntax'
+import type { DidString, HandleString } from '@atproto/syntax'
 import {
   AuthRequiredError,
   createServer,
@@ -86,7 +86,10 @@ export class MockEntryway {
 
     const plcClient = new plcLib.Client(opts.plcUrl)
     const pdsAgent = new AtpAgent({ service: opts.pdsUrl })
-    const idResolver = new IdResolver({ plcUrl: opts.plcUrl })
+    const idResolver = new IdResolver({
+      plcUrl: opts.plcUrl,
+      fetch: globalThis.fetch,
+    })
 
     const accounts = new Map<string, Account>()
 

@@ -85,7 +85,7 @@ export default function (server: Server, ctx: AppContext) {
 
       let bufferRes: Awaited<ReturnType<typeof asPipeThroughBuffer>> | undefined
       try {
-        const { buffer } = (bufferRes = await asPipeThroughBuffer(streamRes))
+        const { buffer } = (bufferRes = await asPipeThroughBuffer(streamRes, ctx.cfg.proxy.maxResponseSize))
         const body = jsonToLex(
           JSON.parse(buffer.toString('utf8')),
         ) as OutputSchema

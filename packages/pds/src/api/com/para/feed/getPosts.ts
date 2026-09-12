@@ -69,7 +69,7 @@ export default function (server: Server, ctx: AppContext) {
       let bufferRes: Awaited<ReturnType<typeof asPipeThroughBuffer>> | undefined
       try {
         const { buffer } = (bufferRes =
-          await asPipeThroughBuffer(pipethroughRes))
+          await asPipeThroughBuffer(pipethroughRes, ctx.cfg.proxy.maxResponseSize))
         const lex = jsonToLex(JSON.parse(buffer.toString('utf8')))
         const original = lex as OutputSchema
         const data = await getPostsMunge(original, local, uris)

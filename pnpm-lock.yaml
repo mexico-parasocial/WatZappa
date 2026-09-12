@@ -777,6 +777,9 @@ importers:
       multiformats:
         specifier: ^13.0.0
         version: 13.4.2
+      pg:
+        specifier: ^8.10.0
+        version: 8.23.0
       uint8arrays:
         specifier: ^5.0.0
         version: 5.1.1
@@ -803,6 +806,9 @@ importers:
 
   packages/identity:
     dependencies:
+      '@atproto-labs/fetch-node':
+        specifier: workspace:^
+        version: link:../internal/fetch-node
       '@atproto/common-web':
         specifier: workspace:^
         version: link:../common-web
@@ -867,6 +873,10 @@ importers:
       '@atproto-labs/pipe':
         specifier: workspace:^
         version: link:../pipe
+    devDependencies:
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(@vitest/coverage-v8@4.1.10)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.44.0)(tsx@4.23.12)(yaml@2.9.0))
 
   packages/internal/fetch-node:
     dependencies:
@@ -879,9 +889,6 @@ importers:
       ipaddr.js:
         specifier: ^2.1.0
         version: 2.1.0
-      undici:
-        specifier: ^8.5.0
-        version: 8.5.0
       undici_v6:
         specifier: npm:undici@^6.x
         version: undici@6.19.8
@@ -893,7 +900,7 @@ importers:
         version: undici@8.5.0
     devDependencies:
       vitest:
-        specifier: ^4.0.16
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(@vitest/coverage-v8@4.1.10)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.44.0)(tsx@4.23.12)(yaml@2.9.0))
 
   packages/internal/handle-resolver:

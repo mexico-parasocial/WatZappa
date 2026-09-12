@@ -1,18 +1,18 @@
-import express from 'express'
-import { LexValue, l, lexParseJsonBytes } from '@atproto/lex'
-import { HeadersMap } from '@atproto/xrpc'
-import {
+import type express from 'express'
+import { type LexValue, l, lexParseJsonBytes } from '@atproto/lex'
+import type { HeadersMap } from '@atproto/xrpc'
+import type {
   HandlerPipeThrough,
   HandlerPipeThroughBuffer,
 } from '@atproto/xrpc-server'
-import { AppContext } from '../context.js'
+import type { AppContext } from '../context.js'
 import { readStickyLogger as log } from '../logger.js'
 import {
   asPipeThroughBuffer,
   isJsonContentType,
   pipethrough,
 } from '../pipethrough.js'
-import { HandlerResponse, LocalRecords, MungeFn } from './types.js'
+import type { HandlerResponse, LocalRecords, MungeFn } from './types.js'
 
 const REPO_REV_HEADER = 'atproto-repo-rev'
 
@@ -72,7 +72,10 @@ export const pipethroughReadAfterWrite = async <
       const local = await store.record.getRecordsSinceRev(rev)
       if (local.count === 0) return streamRes
 
-      const { buffer } = (bufferRes = await asPipeThroughBuffer(streamRes))
+      const { buffer } = (bufferRes = await asPipeThroughBuffer(
+        streamRes,
+        ctx.cfg.proxy.maxResponseSize,
+      ))
 
       const lex = lexParseJsonBytes(buffer, { strict: false })
 

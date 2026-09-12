@@ -1,13 +1,19 @@
 // @ts-nocheck
 import { createDeferrable, wait } from '@atproto/common'
 import {
-  SeedClient,
+  type SeedClient,
   TestNetworkNoAppView,
   mockResolvers,
 } from '@atproto/dev-env'
 import { IdResolver } from '@atproto/identity'
-import { DidString } from '@atproto/syntax'
-import { Create, Event, Firehose, FirehoseOptions, MemoryRunner } from '../src/index.js'
+import type { DidString } from '@atproto/syntax'
+import {
+  type Create,
+  type Event,
+  Firehose,
+  type FirehoseOptions,
+  MemoryRunner,
+} from '../src/index.js'
 
 describe('firehose', () => {
   let network: TestNetworkNoAppView
@@ -18,7 +24,10 @@ describe('firehose', () => {
     network = await TestNetworkNoAppView.create({
       dbPostgresSchema: 'sync_firehose',
     })
-    idResolver = new IdResolver({ plcUrl: network.plc.url })
+    idResolver = new IdResolver({
+      plcUrl: network.plc.url,
+      fetch: globalThis.fetch,
+    })
     mockResolvers(idResolver, network.pds)
     sc = network.getSeedClient()
   })

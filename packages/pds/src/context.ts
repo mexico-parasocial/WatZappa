@@ -14,8 +14,8 @@ import {
   JoseKey,
   LexResolver,
   OAuthProvider,
-  OAuthVerifier,
-} from '@atproto/oauth-provider'
+} from '@atproto/oauth-provider/provider'
+import { OAuthVerifier } from '@atproto/oauth-provider/verifier'
 import type { BlobStore } from '@atproto/repo'
 import {
   createServiceAuthHeaders,
@@ -45,6 +45,7 @@ import {
 import { Crawlers } from './crawlers.js'
 import { DidSqliteCache } from './did-cache/index.js'
 import { DiskBlobStore } from './disk-blobstore.js'
+import { events } from './events.js'
 import { ImageUrlBuilder } from './image/image-url-builder.js'
 import { fetchLogger, lexiconResolverLogger, oauthLogger } from './logger.js'
 import { ServerMailer } from './mailer/index.js'
@@ -84,7 +85,7 @@ export type AppContextOptions = {
   cfg: ServerConfig
 }
 
-export class AppContext {
+export class AppContext implements AsyncDisposable {
   public actorStore: ActorStore
   public blobstore: (did: string) => BlobStore
   public localViewer: LocalViewerCreator
@@ -150,6 +151,8 @@ export class AppContext {
     secrets: ServerSecrets,
     overrides?: Partial<AppContextOptions>,
   ): Promise<AppContext> {
+    // @TODO Implement using an AsyncDisposableStack
+
     const blobstore =
       cfg.blobstore.provider === 's3'
         ? S3BlobStore.creator({
@@ -180,6 +183,32 @@ export class AppContext {
 
     const moderationMailer = new ModerationMailer(modMailTransport, cfg)
 
+    /**
+     * A fetch() function that protects against SSRF attacks, large responses &
+     * known bad domains. This function can safely be used to fetch user
+     * provided URLs (unless "disableSsrfProtection" is true, of course).
+     *
+     * @note **DO NOT** wrap `safeFetch` with any logging or other transforms as
+     * this might prevent the use of explicit `redirect: "follow"` init from
+     * working. See {@link safeFetchWrap}.
+     */
+    const safeFetch = safeFetchWrap({
+      allowIpHost: false,
+      allowImplicitRedirect: false,
+      responseMaxSize: cfg.fetch.maxResponseSize,
+      ssrfProtection: !cfg.fetch.disableSsrfProtection,
+
+      fetch: function (input, init) {
+        const method =
+          init?.method ?? (input instanceof Request ? input.method : 'GET')
+        const uri = input instanceof Request ? input.url : String(input)
+
+        fetchLogger.info({ method, uri }, 'fetch')
+
+        return globalThis.fetch.call(this, input, init)
+      },
+    })
+
     const didCache = new DidSqliteCache(
       cfg.db.didCacheDbLoc,
       cfg.identity.cacheStaleTTL,
@@ -193,10 +222,11 @@ export class AppContext {
       didCache,
       timeout: cfg.identity.resolverTimeout,
       backupNameservers: cfg.identity.handleBackupNameservers,
+      fetch: safeFetch,
     })
     const plcClient = new plc.Client(cfg.identity.plcUrl)
 
-    const backgroundQueue = new BackgroundQueue()
+    const backgroundQueue = new BackgroundQueue(undefined, { concurrency: 5 })
     const crawlers = new Crawlers(
       backgroundQueue,
       cfg.service.hostname,
@@ -314,32 +344,6 @@ export class AppContext {
     // An agent for performing HTTP requests based on user provided URLs.
     const proxyAgent = buildProxyAgent(cfg.proxy)
 
-    /**
-     * A fetch() function that protects against SSRF attacks, large responses &
-     * known bad domains. This function can safely be used to fetch user
-     * provided URLs (unless "disableSsrfProtection" is true, of course).
-     *
-     * @note **DO NOT** wrap `safeFetch` with any logging or other transforms as
-     * this might prevent the use of explicit `redirect: "follow"` init from
-     * working. See {@link safeFetchWrap}.
-     */
-    const safeFetch = safeFetchWrap({
-      allowIpHost: false,
-      allowImplicitRedirect: false,
-      responseMaxSize: cfg.fetch.maxResponseSize,
-      ssrfProtection: !cfg.fetch.disableSsrfProtection,
-
-      fetch: function (input, init) {
-        const method =
-          init?.method ?? (input instanceof Request ? input.method : 'GET')
-        const uri = input instanceof Request ? input.url : String(input)
-
-        fetchLogger.info({ method, uri }, 'fetch')
-
-        return globalThis.fetch.call(this, input, init)
-      },
-    })
-
     const oauthProvider = cfg.oauth.provider
       ? new OAuthProvider({
           issuer: cfg.oauth.issuer,
@@ -415,6 +419,44 @@ export class AppContext {
             return {
               isTrusted: cfg.oauth.provider?.trustedClients?.includes(clientId),
             }
+          },
+          onSignedUp({ account, data, clientId }) {
+            events.accountCreated({
+              source: 'oauth',
+              did: account.did,
+              clientId,
+              invited: data.inviteCode != null,
+              deactivated: false,
+            })
+          },
+          onSignedIn({ account, clientId }) {
+            events.signedIn({
+              did: account.did,
+              clientId,
+            })
+          },
+          onAuthorized({ account, client }) {
+            events.oauthAuthorized({
+              did: account.did,
+              clientId: client.id,
+              clientFirstParty: client.isFirstParty,
+              clientTrusted: client.isTrusted,
+              clientConfidential: client.isConfidential,
+            })
+          },
+          onTokenCreated({ account, client }) {
+            events.sessionCreated({
+              source: 'oauth',
+              did: account.did,
+              clientId: client.id,
+            })
+          },
+          onTokenRefreshed({ account, client }) {
+            events.sessionRefreshed({
+              source: 'oauth',
+              did: account.did,
+              clientId: client.id,
+            })
           },
         })
       : undefined
@@ -512,6 +554,26 @@ export class AppContext {
     return forwardedFor(req, authPassthru(req))
   }
 
+  /**
+   * A {@link Client} for a service URL that was resolved from a DID document,
+   * i.e. a URL the PDS does not control. Routes the request through
+   * {@link safeFetch}, which restricts it to https origins that resolve to
+   * unicast addresses, and caps the response size. Lexicon validation follows
+   * the service's dev mode, as it does for the AppView client.
+   *
+   * Any call built from a DID document's service endpoint must use this.
+   */
+  safeClient(service: string | URL): Client {
+    return new Client(
+      { service, fetch: this.safeFetch },
+      {
+        validateRequest: this.cfg.service.devMode,
+        validateResponse: this.cfg.service.devMode,
+        strictResponseProcessing: this.cfg.service.devMode,
+      },
+    )
+  }
+
   async serviceAuthHeaders(did: string, aud: string, lxm: string) {
     const keypair = await this.actorStore.keypair(did)
     return createServiceAuthHeaders({
@@ -530,6 +592,30 @@ export class AppContext {
       lxm,
       keypair,
     })
+  }
+
+  async destroy(): Promise<void> {
+    try {
+      await this.backgroundQueue.destroy()
+    } finally {
+      try {
+        await this.sequencer.destroy()
+      } finally {
+        try {
+          await this.accountManager.close()
+        } finally {
+          try {
+            await this.redisScratch?.quit()
+          } finally {
+            await this.proxyAgent.destroy()
+          }
+        }
+      }
+    }
+  }
+
+  async [Symbol.asyncDispose]() {
+    await this.destroy()
   }
 }
 

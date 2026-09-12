@@ -6,9 +6,10 @@ async function run() {
     false,
   )
   const account = await db.db
-    .selectFrom('account')
+    .selectFrom('actor')
+    .innerJoin('account', 'actor.did', 'account.did')
     .selectAll()
-    .where('handle', '=', 'alice.test')
+    .where('actor.handle', '=', 'alice.test')
     .executeTakeFirst()
   console.log('ACCOUNT:', account)
   if (account) {
