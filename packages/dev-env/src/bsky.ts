@@ -1,6 +1,4 @@
-import * as plc from '@did-plc/lib'
 import { Client as PlcClient } from '@did-plc/lib'
-import getPort from 'get-port'
 import * as ui8 from 'uint8arrays'
 import { AtpAgent } from '@atproto/api'
 import * as bsky from '@atproto/bsky'
@@ -9,8 +7,8 @@ import { Secp256k1Keypair } from '@atproto/crypto'
 import { Client, type UriString } from '@atproto/lex'
 import type { DidString } from '@atproto/syntax'
 import { ADMIN_PASSWORD, EXAMPLE_LABELER } from './const.js'
-import { defaultDevIdentityProvider } from './identity.js'
-import { BskyConfig } from './types.js'
+import getPort from './get-port.js'
+import type { BskyConfig } from './types.js'
 export * from '@atproto/bsky'
 
 export class TestBsky {
@@ -20,7 +18,7 @@ export class TestBsky {
     public db: bsky.Database,
     public server: bsky.BskyAppView,
     public dataplane: bsky.DataPlaneServer,
-    public bsync: bsky.MockBsync,
+    public bsyncSub: bsky.BsyncSubscription,
     public sub: bsky.RepoSubscription,
     public serverDid: DidString,
   ) {}
@@ -28,57 +26,32 @@ export class TestBsky {
   static async create(cfg: BskyConfig): Promise<TestBsky> {
     const serviceKeypair = cfg.privateKey
       ? await Secp256k1Keypair.import(cfg.privateKey)
-      : await defaultDevIdentityProvider.keypair('bsky')
+      : await Secp256k1Keypair.create()
     const plcClient = new PlcClient(cfg.plcUrl)
 
     const port = cfg.port || (await getPort())
     const url: UriString = `http://localhost:${port}`
-    const handle = 'bsky.test'
-    const plcOp = await plc.signOperation(
-      {
-        type: 'plc_operation',
-        verificationMethods: {
-          atproto: serviceKeypair.did(),
-        },
-        rotationKeys: [serviceKeypair.did()],
-        alsoKnownAs: [`at://${handle}`],
-        services: {
-          atproto_pds: {
-            type: 'AtprotoPersonalDataServer',
-            endpoint: `http://localhost:${port}`,
-          },
-        },
-        prev: null,
-      },
-      serviceKeypair,
-    )
-    const serverDid = (await plc.didForCreateOp(plcOp)) as DidString
-    try {
-      await plcClient.getDocument(serverDid)
-    } catch (e) {
-      await plcClient.sendOperation(serverDid, plcOp)
-    }
+    const serverDid = (await plcClient.createDid({
+      signingKey: serviceKeypair.did(),
+      rotationKeys: [serviceKeypair.did()],
+      handle: 'bsky.test',
+      pds: `http://localhost:${port}`,
+      signer: serviceKeypair,
+    })) as DidString
 
     const endpoint = `http://localhost:${port}`
 
-    const doc = await plcClient.getDocument(serverDid)
-    const hasServices = doc.service?.some((s) =>
-      ['#bsky_notif', '#bsky_appview'].includes(s.id),
-    )
-
-    if (!hasServices) {
-      await plcClient.updateData(serverDid, serviceKeypair, (x) => {
-        x.services['bsky_notif'] = {
-          type: 'BskyNotificationService',
-          endpoint,
-        }
-        x.services['bsky_appview'] = {
-          type: 'BskyAppView',
-          endpoint,
-        }
-        return x
-      })
-    }
+    await plcClient.updateData(serverDid, serviceKeypair, (x) => {
+      x.services['bsky_notif'] = {
+        type: 'BskyNotificationService',
+        endpoint,
+      }
+      x.services['bsky_appview'] = {
+        type: 'BskyAppView',
+        endpoint,
+      }
+      return x
+    })
 
     // shared across server, ingester, and indexer in order to share pool, avoid too many pg connections.
     const db = new bsky.Database({
@@ -92,31 +65,26 @@ export class TestBsky {
       db,
       dataplanePort,
       cfg.plcUrl,
+      // Resolves against an in-process PLC on localhost.
+      globalThis.fetch,
     )
-
-    const bsyncPort = await getPort()
-    const bsync = await bsky.MockBsync.create(db, bsyncPort)
 
     const config = new bsky.ServerConfig({
       version: 'unknown',
       port,
       didPlcUrl: cfg.plcUrl,
       publicUrl: 'https://bsky.public.url',
-      serverDid: serverDid as DidString,
+      serverDid,
       alternateAudienceDids: [],
       dataplaneUrls: [`http://localhost:${dataplanePort}`],
       dataplaneHttpVersion: '1.1',
-      bsyncUrl: `http://localhost:${bsyncPort}`,
       bsyncHttpVersion: '1.1',
+      bsyncApiKey: 'bsync-api-key',
       modServiceDid: cfg.modServiceDid ?? 'did:example:invalidMod',
       labelsFromIssuerDids: [EXAMPLE_LABELER],
       bigThreadUris: new Set(),
       maxThreadParents: cfg.maxThreadParents ?? 50,
       disableSsrfProtection: true,
-      // Dev-env is by definition a debug environment: enables response
-      // validation and feature-gate bypasses (e.g. search v2) that depend on
-      // GrowthBook, which is not configured here.
-      debugMode: true,
       searchTagsHide: new Set(),
       searchTagsHideAll: new Set(),
       threadTagsBumpDown: new Set(),
@@ -126,7 +94,6 @@ export class TestBsky {
       debugFieldAllowedDids: new Set(),
       draftsLimit: 500,
       feedGenSkeletonTimeout: 5 * SECOND,
-      communityCreatorDids: [],
       ...cfg,
       adminPasswords: [ADMIN_PASSWORD],
       etcdHosts: [],
@@ -150,6 +117,11 @@ export class TestBsky {
       signingKey: serviceKeypair,
     })
 
+    const bsyncSub = new bsky.BsyncSubscription({
+      config,
+      db,
+    })
+
     const sub = new bsky.RepoSubscription({
       service: cfg.repoProvider,
       db,
@@ -158,9 +130,19 @@ export class TestBsky {
 
     await server.start()
 
-    sub.start()
+    bsyncSub.start()
+    void sub.start()
 
-    return new TestBsky(url, port, db, server, dataplane, bsync, sub, serverDid)
+    return new TestBsky(
+      url,
+      port,
+      db,
+      server,
+      dataplane,
+      bsyncSub,
+      sub,
+      serverDid,
+    )
   }
 
   get ctx(): bsky.AppContext {
@@ -194,10 +176,27 @@ export class TestBsky {
   }
 
   async close() {
-    await this.server.destroy()
-    await this.bsync.destroy()
-    await this.dataplane.destroy()
-    await this.sub.destroy()
-    await this.db.close()
+    // @TODO Use disposable stack when it becomes available (Node24+)
+    try {
+      await this.server.destroy()
+    } finally {
+      try {
+        await this.bsyncSub.destroy()
+      } finally {
+        try {
+          await this.dataplane.destroy()
+        } finally {
+          try {
+            await this.sub.destroy()
+          } finally {
+            await this.db.close()
+          }
+        }
+      }
+    }
+  }
+
+  async [Symbol.asyncDispose]() {
+    await this.close()
   }
 }
