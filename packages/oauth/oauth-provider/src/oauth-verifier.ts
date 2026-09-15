@@ -56,7 +56,9 @@ export type VerifyTokenPayloadOptions = {
   scope?: [string, ...string[]]
 }
 
-export { DpopNonce, Key, Keyset }
+// Space credential verification shares this replay manager with OAuth so that
+// a consumed client attestation survives across PDS processes backed by Redis.
+export { DpopNonce, Key, Keyset, ReplayManager }
 export type {
   AccessTokenPayload,
   DpopProof,

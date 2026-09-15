@@ -1,0 +1,9 @@
+# Signed policy publication
+
+- The standalone publisher signs governance-authorized material only. Never connect raw membership index rows or client-submitted roles directly to it.
+- Keep publisher encoding independent of PDS implementation imports; exercise both implementations in interoperability tests when changing normalization, claims or digest ordering.
+- Construct `ParaPolicyOutbox` with `db.$pickTables<'para_policy_publication' | 'para_policy_outbox'>()`. Call `enqueue` inside the authorized governance transaction, retaining the stable event ID. AppView's INT8 number parser is required.
+- The stream row lock serializes version/epoch allocation and leasing. Never regenerate an envelope for a retry or rotate keys by re-signing old versions. Only acknowledge an authenticated receiver's exact version/digest using the current lease token.
+- Expired head delivery latches `recovery-required`; never skip it or manually clear the latch. Keep acknowledged envelopes/event IDs until a reviewed retention/recovery protocol permits pruning.
+- `reconcileAccepted` requires an authenticated exact receiver receipt and may only repair delivery bookkeeping. It cannot clear PDS stale state or bypass a later expired head; never feed it unauthenticated response JSON.
+- No delivery/indexer/context wiring until governance authority, durable outbox, authenticated checkpoint recovery and transport are reviewed. Public JWKS output must never contain private key material.

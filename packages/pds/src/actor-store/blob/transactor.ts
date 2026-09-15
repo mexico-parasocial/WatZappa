@@ -1,30 +1,32 @@
 import crypto from 'node:crypto'
-import stream from 'node:stream'
+import type stream from 'node:stream'
+import * as FileTypeModule from 'file-type'
 import PQueue from 'p-queue'
 import { SECOND, cloneStream, streamSize } from '@atproto/common'
 import {
-  BlobRef,
-  Cid,
-  TypedBlobRef,
+  type BlobRef,
+  type Cid,
+  type TypedBlobRef,
   cidForRawHash,
   getBlobCidString,
   parseCid,
 } from '@atproto/lex-data'
-import { BlobNotFoundError, BlobStore, WriteOpAction } from '@atproto/repo'
-import { AtUri, currentDatetimeString } from '@atproto/syntax'
+import { BlobNotFoundError, type BlobStore, WriteOpAction } from '@atproto/repo'
+import { type AtUri, currentDatetimeString } from '@atproto/syntax'
 import { InvalidRequestError } from '@atproto/xrpc-server'
-import { BackgroundQueue } from '../../background.js'
-import { com } from '../../lexicons/index.js'
+import type { BackgroundQueue } from '../../background.js'
+import type { com } from '../../lexicons/index.js'
 import { blobStoreLogger as log } from '../../logger.js'
-import { PreparedWrite } from '../../repo/types.js'
-import { ActorDb, Blob as BlobTable } from '../db/index.js'
+import type { PreparedWrite } from '../../repo/types.js'
+import type { ActorDb, Blob as BlobTable } from '../db/index.js'
 import { BlobReader } from './reader.js'
-import FileTypeModule from 'file-type'
 
 const FileType =
-  (FileTypeModule as typeof FileTypeModule & {
-    default?: typeof FileTypeModule
-  }).default ?? FileTypeModule
+  (
+    FileTypeModule as typeof FileTypeModule & {
+      default?: typeof FileTypeModule
+    }
+  ).default ?? FileTypeModule
 const { fromStream: fileTypeFromStream } = FileType
 
 export type BlobMetadata = {
@@ -159,7 +161,7 @@ export class BlobTransactor extends BlobReader {
     takedown: com.atproto.admin.defs.StatusAttr,
   ) {
     const takedownRef = takedown.applied
-      ? takedown.ref ?? currentDatetimeString()
+      ? (takedown.ref ?? currentDatetimeString())
       : null
     await this.db.db
       .updateTable('blob')
@@ -197,32 +199,51 @@ export class BlobTransactor extends BlobReader {
     const uris = [...deletes, ...updates].map((w) => w.uri.toString())
     if (uris.length === 0) return
 
-    const deletedRepoBlobs = await this.db.db
+    const dereferenced = await this.db.db
       .deleteFrom('record_blob')
       .where('recordUri', 'in', uris)
       .returning('blobCid')
       .execute()
-    if (deletedRepoBlobs.length === 0) return
 
-    const deletedRepoBlobCids = deletedRepoBlobs.map((row) => row.blobCid)
-    const duplicateCids = await this.db.db
-      .selectFrom('record_blob')
-      .where('blobCid', 'in', deletedRepoBlobCids)
-      .select('blobCid')
-      .execute()
-
-    const newBlobCids = writes
+    const keepCids = writes
       .filter((w) => isUpdate(w) || isCreate(w))
       .flatMap((w) => w.blobs.map((b) => b.ref.toString()))
 
-    const cidsToKeep = [
-      ...newBlobCids,
-      ...duplicateCids.map((row) => row.blobCid),
-    ]
-
-    const cidsToDelete = deletedRepoBlobCids.filter(
-      (cid) => !cidsToKeep.includes(cid),
+    await this.deleteBlobsIfUnreferenced(
+      dereferenced.map((row) => row.blobCid),
+      keepCids,
+      skipBlobStore,
     )
+  }
+
+  // Reachability spans both link tables, so deleting a public record cannot
+  // strand the bytes a space record still points at.
+  private async deleteBlobsIfUnreferenced(
+    dereferencedCids: string[],
+    keepCids: string[],
+    skipBlobStore?: boolean,
+  ): Promise<void> {
+    if (dereferencedCids.length === 0) return
+
+    const [stillInRepo, stillInSpaces] = await Promise.all([
+      this.db.db
+        .selectFrom('record_blob')
+        .where('blobCid', 'in', dereferencedCids)
+        .select('blobCid')
+        .execute(),
+      this.db.db
+        .selectFrom('space_record_blob')
+        .where('blobCid', 'in', dereferencedCids)
+        .select('blobCid')
+        .execute(),
+    ])
+
+    const keep = new Set([
+      ...keepCids,
+      ...stillInRepo.map((row) => row.blobCid),
+      ...stillInSpaces.map((row) => row.blobCid),
+    ])
+    const cidsToDelete = dereferencedCids.filter((cid) => !keep.has(cid))
     if (cidsToDelete.length === 0) return
 
     await this.db.db
@@ -230,21 +251,20 @@ export class BlobTransactor extends BlobReader {
       .where('cid', 'in', cidsToDelete)
       .execute()
 
-    if (!skipBlobStore) {
-      this.db.onCommit(() => {
-        this.backgroundQueue.add(async () => {
-          try {
-            const cids = cidsToDelete.map((cid) => parseCid(cid))
-            await this.blobstore.deleteMany(cids)
-          } catch (err) {
-            log.error(
-              { err, cids: cidsToDelete },
-              'could not delete blobs from blobstore',
-            )
-          }
-        })
+    if (skipBlobStore) return
+    this.db.onCommit(() => {
+      this.backgroundQueue.add(async () => {
+        try {
+          const cids = cidsToDelete.map((cid) => parseCid(cid))
+          await this.blobstore.deleteMany(cids)
+        } catch (err) {
+          log.error(
+            { err, cids: cidsToDelete },
+            'could not delete blobs from blobstore',
+          )
+        }
       })
-    }
+    })
   }
 
   async verifyBlobAndMakePermanent(
@@ -321,6 +341,58 @@ export class BlobTransactor extends BlobReader {
       })
       .onConflict((oc) => oc.doNothing())
       .execute()
+  }
+
+  async associateSpaceBlob(
+    blob: TypedBlobRef,
+    recordUri: AtUri,
+  ): Promise<void> {
+    await this.db.db
+      .insertInto('space_record_blob')
+      .values({
+        blobCid: blob.ref.toString(),
+        recordUri: recordUri.toString(),
+      })
+      .onConflict((oc) => oc.doNothing())
+      .execute()
+  }
+
+  async deleteDereferencedSpaceBlobs(writes: PreparedWrite[]): Promise<void> {
+    const deletes = writes.filter(isDelete)
+    const updates = writes.filter(isUpdate)
+    const uris = [...deletes, ...updates].map((write) => write.uri.toString())
+    if (uris.length === 0) return
+
+    const dereferenced = await this.db.db
+      .deleteFrom('space_record_blob')
+      .where('recordUri', 'in', uris)
+      .returning('blobCid')
+      .execute()
+
+    const keepCids = writes
+      .filter((write) => isUpdate(write) || isCreate(write))
+      .flatMap((write) => write.blobs.map((blob) => blob.ref.toString()))
+
+    await this.deleteBlobsIfUnreferenced(
+      dereferenced.map((row) => row.blobCid),
+      keepCids,
+    )
+  }
+
+  // Must run before the space's records are dropped, since it scopes by them.
+  async deleteSpaceBlobs(space: string): Promise<void> {
+    const dereferenced = await this.db.db
+      .deleteFrom('space_record_blob')
+      .where('recordUri', 'in', (eb) =>
+        eb.selectFrom('space_record').select('uri').where('space', '=', space),
+      )
+      .returning('blobCid')
+      .execute()
+
+    await this.deleteBlobsIfUnreferenced(
+      dereferenced.map((row) => row.blobCid),
+      [],
+    )
   }
 }
 

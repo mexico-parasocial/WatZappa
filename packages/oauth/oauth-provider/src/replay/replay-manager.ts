@@ -1,11 +1,11 @@
-import { ClientId } from '../client/client-id.js'
+import type { ClientId } from '../client/client-id.js'
 import {
   CLIENT_ASSERTION_MAX_AGE,
   CODE_CHALLENGE_REPLAY_TIMEFRAME,
   DPOP_NONCE_MAX_AGE,
   JAR_MAX_AGE,
 } from '../oauth-constants.js'
-import { ReplayStore } from './replay-store.js'
+import type { ReplayStore } from './replay-store.js'
 
 const SECURITY_RATIO = 1.1 // 10% extra time for security
 const asTimeFrame = (timeFrame: number) => Math.ceil(timeFrame * SECURITY_RATIO)
@@ -39,6 +39,24 @@ export class ReplayManager {
       jti,
       asTimeFrame(DPOP_NONCE_MAX_AGE),
     )
+  }
+
+  /**
+   * Keeps space-protocol tokens separate from OAuth replay namespaces. The
+   * issuer is part of the namespace so unrelated authorities cannot consume
+   * each other's token IDs.
+   */
+  async uniqueSpaceToken(
+    kind: string,
+    issuer: string,
+    jti: string,
+    exp?: number,
+  ): Promise<boolean> {
+    const timeFrame =
+      exp == null
+        ? asTimeFrame(CLIENT_ASSERTION_MAX_AGE)
+        : exp * 1000 - Date.now()
+    return this.replayStore.unique(`Space:${kind}@${issuer}`, jti, timeFrame)
   }
 
   async uniqueCodeChallenge(challenge: string): Promise<boolean> {

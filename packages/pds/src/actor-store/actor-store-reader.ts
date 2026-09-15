@@ -1,15 +1,19 @@
-import { Keypair } from '@atproto/crypto'
-import { ActorStoreResources } from './actor-store-resources.js'
+import type { Keypair } from '@atproto/crypto'
+import type { ActorStoreResources } from './actor-store-resources.js'
 import { ActorStoreTransactor } from './actor-store-transactor.js'
-import { ActorDb } from './db/index.js'
+import type { ActorDb } from './db/index.js'
+import { ParaPolicyReader } from './para-policy/reader.js'
 import { PreferenceReader } from './preference/reader.js'
 import { RecordReader } from './record/reader.js'
 import { RepoReader } from './repo/reader.js'
+import { SpaceReader } from './space/reader.js'
 
 export class ActorStoreReader {
   public readonly repo: RepoReader
   public readonly record: RecordReader
   public readonly pref: PreferenceReader
+  public readonly paraPolicy: ParaPolicyReader
+  public readonly space: SpaceReader
 
   constructor(
     public readonly did: string,
@@ -22,6 +26,8 @@ export class ActorStoreReader {
     this.repo = new RepoReader(db, blobstore)
     this.record = new RecordReader(db)
     this.pref = new PreferenceReader(db)
+    this.paraPolicy = new ParaPolicyReader(db)
+    this.space = new SpaceReader(db)
 
     // Invoke "keypair" once. Also avoids leaking "this" as keypair context.
     let keypairPromise: Promise<Keypair>

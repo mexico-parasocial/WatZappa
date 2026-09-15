@@ -1,14 +1,19 @@
-import { Keypair } from '@atproto/crypto'
-import { ActorStoreResources } from './actor-store-resources.js'
-import { ActorDb } from './db/index.js'
+import type { Keypair } from '@atproto/crypto'
+import type { ActorStoreResources } from './actor-store-resources.js'
+import { BlobTransactor } from './blob/transactor.js'
+import type { ActorDb } from './db/index.js'
+import { ParaPolicyTransactor } from './para-policy/transactor.js'
 import { PreferenceTransactor } from './preference/transactor.js'
 import { RecordTransactor } from './record/transactor.js'
 import { RepoTransactor } from './repo/transactor.js'
+import { SpaceTransactor } from './space/transactor.js'
 
 export class ActorStoreTransactor {
   public readonly record: RecordTransactor
   public readonly repo: RepoTransactor
   public readonly pref: PreferenceTransactor
+  public readonly paraPolicy: ParaPolicyTransactor
+  public readonly space: SpaceTransactor
 
   constructor(
     public readonly did: string,
@@ -20,6 +25,11 @@ export class ActorStoreTransactor {
 
     this.record = new RecordTransactor(db, blobstore)
     this.pref = new PreferenceTransactor(db)
+    this.paraPolicy = new ParaPolicyTransactor(db, did)
+    this.space = new SpaceTransactor(
+      db,
+      new BlobTransactor(db, blobstore, resources.backgroundQueue),
+    )
     this.repo = new RepoTransactor(
       db,
       blobstore,

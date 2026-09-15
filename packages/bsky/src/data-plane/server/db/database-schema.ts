@@ -39,6 +39,7 @@ import * as paraCommunityRelation from './tables/para-community-relation.js'
 import * as paraCommunitySharedContentAction from './tables/para-community-shared-content-action.js'
 import * as paraCommunitySharedContent from './tables/para-community-shared-content.js'
 import * as paraOpenQuestionVote from './tables/para-open-question-vote.js'
+import type * as paraPolicyOutbox from './tables/para-policy-outbox.js'
 import * as paraPolicyVote from './tables/para-policy-vote.js'
 import * as paraPostMeta from './tables/para-post-meta.js'
 import * as paraPost from './tables/para-post.js'
@@ -143,6 +144,7 @@ export type DatabaseSchemaType = duplicateRecord.PartialDB &
   paraPostMeta.PartialDB &
   paraOpenQuestionVote.PartialDB &
   paraPolicyVote.PartialDB &
+  paraPolicyOutbox.PartialDB &
   paraStatus.PartialDB &
   paraProfileStats.PartialDB &
   highlight.PartialDB &

@@ -31,6 +31,7 @@
     "node": ">=22"
   },
   "dependencies": {
+    "@atproto-labs/fetch": "workspace:^",
     "@atproto-labs/fetch-node": "workspace:^",
     "@atproto-labs/opentelemetry-node": "workspace:^",
     "@atproto-labs/simple-store": "workspace:^",
@@ -42,6 +43,7 @@
     "@atproto/crypto": "workspace:^",
     "@atproto/did": "workspace:^",
     "@atproto/identity": "workspace:^",
+    "@atproto/jwk": "workspace:^",
     "@atproto/lex": "workspace:^",
     "@atproto/lex-cbor": "workspace:^",
     "@atproto/lex-data": "workspace:^",
@@ -50,7 +52,9 @@
     "@atproto/lexicon": "workspace:^",
     "@atproto/oauth-provider": "workspace:^",
     "@atproto/oauth-scopes": "workspace:^",
+    "@atproto/oauth-types": "workspace:^",
     "@atproto/repo": "workspace:^",
+    "@atproto/space": "workspace:^",
     "@atproto/syntax": "workspace:^",
     "@atproto/xrpc": "workspace:^",
     "@atproto/xrpc-server": "workspace:^",
