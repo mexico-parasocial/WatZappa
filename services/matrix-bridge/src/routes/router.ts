@@ -2,12 +2,13 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { RouteContext } from './context.js'
 
 import { healthzHandler, metricsHandler } from './infra.js'
-import { apiSpaceForCommunityHandler, apiMatrixTokenHandler, apiPushTokenHandler, apiMarkReadHandler, apiUnreadHandler, apiRoomsHandler } from './matrix-identity.js'
+import { apiSpaceForCommunityHandler, apiMatrixTokenHandler, apiPushTokenHandler, apiMarkReadHandler, apiUnreadHandler, apiRoomsHandler, apiListDevicesHandler, apiRevokeDeviceHandler } from './matrix-identity.js'
 import { matrixPushV1NotifyHandler } from './push.js'
 import { apiSortitionRunsPOSTHandler, apiSortitionRunsGETHandler, apiSortitionRunsProcessHandler, apiSortitionProofsHandler, apiSortitionProofHandler, apiVerifySortitionHandler, apiSortitionProofAsRecordHandler } from './sortition.js'
 import { apiConstitutionHandler, apiProposalsHandler, apiDecisionsHandler } from './governance-read.js'
 import { apiChatBadgesHandler, apiChatMemberListHandler, apiModerationReportHandler, apiModerationSanctionHandler, apiModerationDashboardHandler, apiModerationRecomputeHandler, apiUserChatPreferencesGETHandler, apiUserChatPreferencesPOSTHandler } from './moderation.js'
 import { apiAiConsentGETHandler, apiAiConsentPOSTHandler } from './consent.js'
+import { apiInstitutionMembersGETHandler, apiInstitutionMembersPOSTHandler, apiInstitutionMembersRevokeHandler } from './institutions.js'
 import { apiCardsPOSTHandler, apiCardsGETHandler, apiCommunityTreeContributionsPOSTHandler, apiCommunityTreeContributionsGETHandler, apiCommunityTreeContributionsVoteHandler, apiRelationshipsHandler, apiGraphHandler, apiSuggestionsHandler, apiSuggestionsAcceptHandler, apiSuggestionsRejectHandler, apiSummarizeHandler, apiVoteHandler, apiVotesHandler, apiCommunityPulseHandler, apiExtractHandler } from './deliberation.js'
 
 type Route = {
@@ -23,6 +24,8 @@ const ROUTES: Route[] = [
   { urls: ['/metrics'], prefix: false, method: null, handler: metricsHandler },
   { urls: ['/api/space-for-community'], prefix: true, method: null, handler: apiSpaceForCommunityHandler },
   { urls: ['/api/matrix-token'], prefix: false, method: 'POST', handler: apiMatrixTokenHandler },
+  { urls: ['/api/devices'], prefix: false, method: 'GET', handler: apiListDevicesHandler },
+  { urls: ['/api/devices/revoke'], prefix: false, method: 'POST', handler: apiRevokeDeviceHandler },
   { urls: ['/api/push-token'], prefix: false, method: 'POST', handler: apiPushTokenHandler },
   { urls: ['/_matrix/push/v1/notify'], prefix: false, method: 'POST', handler: matrixPushV1NotifyHandler },
   { urls: ['/api/mark-read'], prefix: false, method: 'POST', handler: apiMarkReadHandler },
@@ -48,6 +51,9 @@ const ROUTES: Route[] = [
   { urls: ['/api/user-chat-preferences'], prefix: false, method: 'POST', handler: apiUserChatPreferencesPOSTHandler },
   { urls: ['/api/ai-consent'], prefix: false, method: 'GET', handler: apiAiConsentGETHandler },
   { urls: ['/api/ai-consent'], prefix: false, method: 'POST', handler: apiAiConsentPOSTHandler },
+  { urls: ['/api/institution/members'], prefix: false, method: 'POST', handler: apiInstitutionMembersPOSTHandler },
+  { urls: ['/api/institution/members/revoke'], prefix: false, method: 'POST', handler: apiInstitutionMembersRevokeHandler },
+  { urls: ['/api/institution/members'], prefix: true, method: 'GET', handler: apiInstitutionMembersGETHandler },
   { urls: ['/api/cards'], prefix: false, method: 'POST', handler: apiCardsPOSTHandler },
   { urls: ['/api/cards'], prefix: true, method: 'GET', handler: apiCardsGETHandler },
   { urls: ['/api/community-tree/contributions', '/api/community-map/contributions'], prefix: false, method: 'POST', handler: apiCommunityTreeContributionsPOSTHandler },

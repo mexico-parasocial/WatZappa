@@ -15,6 +15,7 @@ import type {
   ConsentPrefsStore,
   MatrixEventsStore,
   DeliberationStore,
+  InstitutionStore,
 } from './stores/index.js'
 
 export interface IBridgeDatabase
@@ -26,7 +27,8 @@ export interface IBridgeDatabase
     ParticipationStore,
     ConsentPrefsStore,
     MatrixEventsStore,
-    DeliberationStore {
+    DeliberationStore,
+    InstitutionStore {
   close(): Promise<void>
 }
 
@@ -40,10 +42,12 @@ export type {
   ConsentPrefsStore,
   MatrixEventsStore,
   DeliberationStore,
+  InstitutionStore,
 } from './stores/index.js'
 export type {
   AiConsentRecord,
   CommunitySpaceMap,
+  DeviceSession,
   CommunityRoomKind,
   CommunityRoomSummary,
   SyncLogEntry,

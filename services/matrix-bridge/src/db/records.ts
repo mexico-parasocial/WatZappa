@@ -54,3 +54,15 @@ export interface CommunityRoomSummary {
 
 
 import type { IdentityMatrixStore, InfraStore, ConstitutionProposalsStore, SortitionStore, ModerationStore, ParticipationStore, ConsentPrefsStore, MatrixEventsStore, DeliberationStore } from './stores/index.js'
+
+export interface DeviceSession {
+  id: string
+  did: string
+  mxid: string
+  deviceId: string
+  friendlyName: string | null
+  userAgent: string | null
+  createdAt: string
+  lastSeenAt: string
+  revokedAt: string | null
+}

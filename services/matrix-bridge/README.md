@@ -71,6 +71,7 @@ The bridge uses [`matrix-bot-sdk`](https://github.com/turt2live/matrix-bot-sdk) 
 | `PDS_FIREHOSE_URL`         | `wss://pds.para.social/xrpc/com.atproto.sync.subscribeRepos` | AT Protocol firehose                                                         |
 | `MATRIX_HOMESERVER_URL`    | `http://synapse:8008`                                        | Synapse Admin API base URL                                                   |
 | `MATRIX_ADMIN_TOKEN`       | _(required)_                                                 | Synapse admin access token                                                   |
+| `MATRIX_APPSERVICE_TOKEN`  | optional (falls back to admin token)                         | Appservice token enabling device-bound logins (`m.login.application_service`); requires the matching appservice registration on Synapse |
 | `MATRIX_ENABLE_ENCRYPTION` | `false`                                                      | Enable Matrix E2EE (`m.megolm.v1.aes-sha2`) — requires working client crypto |
 | `M8_BASE_URL`              | `http://localhost:8787/v1`                                   | M8 Identity Manager API                                                      |
 | `BRIDGE_DB_PATH`           | `/data/bridge.db`                                            | SQLite database path                                                         |
@@ -81,7 +82,9 @@ The bridge uses [`matrix-bot-sdk`](https://github.com/turt2live/matrix-bot-sdk) 
 
 - `GET /healthz` — 200 if healthy, 503 if too many failed syncs
 - `GET /metrics` — Prometheus metrics (`para_matrix_invites_total`, `para_matrix_kicks_total`, `para_matrix_spaces_created_total`, `para_matrix_sync_latency_seconds`, `para_matrix_firehose_lag_seconds`)
-- `POST /api/matrix-token` — requires M8 bearer token; returns a Matrix login token for the authenticated session DID
+- `POST /api/matrix-token` — requires M8 bearer token; returns a **device-bound** Matrix session for the authenticated DID (accepts optional `{ friendlyName, deviceId }`; registers a real Synapse device via appservice login when `MATRIX_APPSERVICE_TOKEN` is set)
+- `GET /api/devices` — the caller's device sessions, including revoked ones
+- `POST /api/devices/revoke` — body `{ sessionId }`; deactivates the device on the homeserver and marks the session revoked
 - `POST /api/push-token` — requires M8 bearer token; registers push token for the authenticated session DID
 - `GET /api/space-for-community?uri=...` — requires M8 bearer token and active community membership
 - `GET /api/rooms` — requires M8 bearer token; lists the authenticated user's active Matrix rooms with unread counts

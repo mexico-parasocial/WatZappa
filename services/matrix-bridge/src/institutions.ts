@@ -310,3 +310,56 @@ export function validateHandover(request: HandoverRequest): HandoverValidation {
 
   return { ok: failures.length === 0, failures }
 }
+
+export const INSTITUTION_ROLES: ReadonlySet<InstitutionRole> = new Set([
+  'owner',
+  'workspace_admin',
+  'channel_manager',
+  'member',
+  'guest',
+  'auditor',
+  'records_custodian',
+])
+
+/** Type guard for role strings arriving over HTTP. */
+export function isInstitutionRole(role: string): role is InstitutionRole {
+  return (INSTITUTION_ROLES as ReadonlySet<string>).has(role)
+}
+
+// Role assignment.
+
+export interface RoleAssignment {
+  institutionId: string
+  grantor: InstitutionMembership
+  targetRole: InstitutionRole
+  targetWorkspaceId: string | null
+  now?: Date
+}
+
+/**
+ * Whether `grantor` may assign `targetRole` in the target workspace. Owners
+ * assign any role; workspace admins delegate operational roles inside their
+ * own workspace only. Everything else — including self-promotion by members —
+ * is denied.
+ */
+export function canAssignRole(assignment: RoleAssignment): boolean {
+  const { grantor, institutionId, targetRole, targetWorkspaceId } = assignment
+  const now = assignment.now ?? new Date()
+  if (
+    grantor.institutionId !== institutionId ||
+    !isMembershipActive(grantor, now)
+  ) {
+    return false
+  }
+  if (grantor.role === 'owner' && grantor.workspaceId === null) {
+    return true
+  }
+  return (
+    grantor.role === 'workspace_admin' &&
+    grantor.workspaceId !== null &&
+    grantor.workspaceId === targetWorkspaceId &&
+    (targetRole === 'channel_manager' ||
+      targetRole === 'member' ||
+      targetRole === 'guest')
+  )
+}

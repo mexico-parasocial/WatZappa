@@ -3,6 +3,8 @@ import {
   type HandoverRequest,
   type InstitutionMembership,
   authorize,
+  canAssignRole,
+  isInstitutionRole,
   isMembershipActive,
   roleCapabilities,
   validateHandover,
@@ -257,5 +259,100 @@ describe('validateHandover', () => {
         }),
       ).failures,
     ).toContain('successor-is-requester')
+  })
+})
+
+describe('canAssignRole', () => {
+  it('lets owners assign any role', () => {
+    for (const targetRole of [
+      'owner',
+      'workspace_admin',
+      'channel_manager',
+      'member',
+      'guest',
+      'auditor',
+      'records_custodian',
+    ] as const) {
+      expect(
+        canAssignRole({
+          institutionId: 'inst-1',
+          grantor: owner(),
+          targetRole,
+          targetWorkspaceId: 'ws-a',
+          now: NOW,
+        }),
+      ).toBe(true)
+    }
+  })
+
+  it('lets workspace admins delegate operational roles in their own workspace', () => {
+    const admin = membership({ role: 'workspace_admin', workspaceId: 'ws-a' })
+    for (const targetRole of ['channel_manager', 'member', 'guest'] as const) {
+      expect(
+        canAssignRole({
+          institutionId: 'inst-1',
+          grantor: admin,
+          targetRole,
+          targetWorkspaceId: 'ws-a',
+          now: NOW,
+        }),
+      ).toBe(true)
+    }
+    // …but not privileged roles, and not in other workspaces.
+    expect(
+      canAssignRole({
+        institutionId: 'inst-1',
+        grantor: admin,
+        targetRole: 'workspace_admin',
+        targetWorkspaceId: 'ws-a',
+        now: NOW,
+      }),
+    ).toBe(false)
+    expect(
+      canAssignRole({
+        institutionId: 'inst-1',
+        grantor: admin,
+        targetRole: 'member',
+        targetWorkspaceId: 'ws-b',
+        now: NOW,
+      }),
+    ).toBe(false)
+  })
+
+  it('denies members, guests, auditors, and inactive grantors', () => {
+    for (const role of ['member', 'guest', 'auditor'] as const) {
+      expect(
+        canAssignRole({
+          institutionId: 'inst-1',
+          grantor: membership({ role, workspaceId: 'ws-a' }),
+          targetRole: 'member',
+          targetWorkspaceId: 'ws-a',
+          now: NOW,
+        }),
+      ).toBe(false)
+    }
+    expect(
+      canAssignRole({
+        institutionId: 'inst-1',
+        grantor: membership({ role: 'owner', revokedAt: PAST }),
+        targetRole: 'member',
+        targetWorkspaceId: 'ws-a',
+        now: NOW,
+      }),
+    ).toBe(false)
+    expect(
+      canAssignRole({
+        institutionId: 'inst-2',
+        grantor: owner(),
+        targetRole: 'member',
+        targetWorkspaceId: 'ws-a',
+        now: NOW,
+      }),
+    ).toBe(false)
+  })
+
+  it('recognizes only known roles', () => {
+    expect(isInstitutionRole('owner')).toBe(true)
+    expect(isInstitutionRole('superadmin')).toBe(false)
   })
 })

@@ -42,10 +42,49 @@ export async function apiMatrixTokenHandler(req: IncomingMessage, res: ServerRes
         writeJson(res, 404, { error: 'User not mapped to Matrix' })
         return
       }
-      const tokenData = await ctx.matrix.generateUserToken(mxid)
+      // Read the (optional) JSON body: { friendlyName?, deviceId? }
+      let friendlyName: string | undefined
+      let requestedDeviceId: string | undefined
+      try {
+        const parsed = JSON.parse(await readBody(req))
+        if (typeof parsed.friendlyName === 'string')
+          friendlyName = parsed.friendlyName.slice(0, 100)
+        if (
+          typeof parsed.deviceId === 'string' &&
+          /^[A-Za-z0-9_.=-]{1,128}$/.test(parsed.deviceId)
+        )
+          requestedDeviceId = parsed.deviceId
+      } catch {
+        // empty body is fine
+      }
+      const userAgent = req.headers['user-agent']?.slice(0, 200)
+
+      const deviceId =
+        requestedDeviceId ?? `PARA-${randomUUID().replace(/-/g, '').slice(0, 16)}`
+      const session = await ctx.matrix.appServiceLogin(
+        mxid,
+        deviceId,
+        friendlyName ?? userAgent,
+      )
+
+      const id = randomUUID()
+      const now = new Date().toISOString()
+      await ctx.db.createDeviceSession({
+        id,
+        did,
+        mxid,
+        deviceId: session.deviceId,
+        friendlyName: friendlyName ?? null,
+        userAgent: userAgent ?? null,
+        createdAt: now,
+        lastSeenAt: now,
+        revokedAt: null,
+      })
+
       writeJson(res, 200, {
-        accessToken: tokenData.accessToken,
-        deviceId: tokenData.deviceId,
+        accessToken: session.accessToken,
+        deviceId: session.deviceId,
+        sessionId: id,
         userId: mxid,
         homeServer: ctx.config.matrixHomeserverUrl
           .replace('http://', 'https://')
@@ -134,4 +173,65 @@ export async function apiRoomsHandler(req: IncomingMessage, res: ServerResponse,
       const rooms = await ctx.db.getUnreadCountsForDid(auth.did)
       writeJson(res, 200, { rooms })
     
+}
+
+/**
+ * GET /api/devices — the caller's Matrix device sessions, newest first.
+ * Includes revoked sessions so clients can render their full device history.
+ */
+export async function apiListDevicesHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+  ctx: RouteContext,
+): Promise<void> {
+  const auth = await authenticateM8(req, ctx.config)
+  const sessions = await ctx.db.listDeviceSessions(auth.did)
+  writeJson(res, 200, {
+    devices: sessions.map((d) => ({
+      sessionId: d.id,
+      deviceId: d.deviceId,
+      friendlyName: d.friendlyName,
+      userAgent: d.userAgent,
+      createdAt: d.createdAt,
+      lastSeenAt: d.lastSeenAt,
+      revoked: d.revokedAt != null,
+    })),
+  })
+}
+
+/**
+ * POST /api/devices/revoke — body: { sessionId }. Deactivates the device on
+ * the homeserver (killing its access token) and marks the session revoked.
+ */
+export async function apiRevokeDeviceHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+  ctx: RouteContext,
+): Promise<void> {
+  const auth = await authenticateM8(req, ctx.config)
+  let sessionId: string | undefined
+  try {
+    const parsed = JSON.parse(await readBody(req))
+    if (typeof parsed.sessionId === 'string') sessionId = parsed.sessionId
+  } catch {
+    // fallthrough to validation error
+  }
+  if (!sessionId) {
+    writeJson(res, 400, { error: 'sessionId is required' })
+    return
+  }
+
+  const session = await ctx.db.getDeviceSession(sessionId)
+  if (!session || session.did !== auth.did) {
+    writeJson(res, 404, { error: 'Device session not found' })
+    return
+  }
+  if (session.revokedAt) {
+    writeJson(res, 200, { revoked: true, alreadyRevoked: true })
+    return
+  }
+
+  await ctx.matrix.adminDeactivateDevice(session.mxid, session.deviceId)
+  await ctx.db.revokeDeviceSession(auth.did, sessionId)
+  writeJson(res, 200, { revoked: true })
 }

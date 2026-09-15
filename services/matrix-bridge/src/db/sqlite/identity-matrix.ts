@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type {
   AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  DeviceSession, SyncLogEntry, UserMatrixMap, UserPushToken,
 } from '../interface.js'
 import { SqliteBase } from './base.js'
 
@@ -254,5 +254,73 @@ export class IdentityMatrixArea extends SqliteBase {
       .prepare('SELECT did FROM user_matrix_map WHERE matrix_user_id = ?')
       .get(mxid) as { did: string } | undefined
     return row?.did
+  }
+
+  // Device sessions (trusted-device registry, patterned on tranquil-pds)
+
+  private mapDeviceSession(row: any): DeviceSession {
+    return {
+      id: row.id,
+      did: row.did,
+      mxid: row.mxid,
+      deviceId: row.device_id,
+      friendlyName: row.friendly_name ?? null,
+      userAgent: row.user_agent ?? null,
+      createdAt: row.created_at,
+      lastSeenAt: row.last_seen_at,
+      revokedAt: row.revoked_at ?? null,
+    }
+  }
+
+  createDeviceSession(session: DeviceSession): Promise<void> {
+    this.db
+      .prepare(
+        `INSERT INTO device_sessions
+          (id, did, mxid, device_id, friendly_name, user_agent, created_at, last_seen_at, revoked_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
+      )
+      .run(
+        session.id,
+        session.did,
+        session.mxid,
+        session.deviceId,
+        session.friendlyName,
+        session.userAgent,
+        session.createdAt,
+        session.lastSeenAt,
+      )
+    return Promise.resolve()
+  }
+
+  listDeviceSessions(did: string): Promise<DeviceSession[]> {
+    const rows = this.db
+      .prepare(
+        'SELECT * FROM device_sessions WHERE did = ? ORDER BY created_at DESC',
+      )
+      .all(did) as any[]
+    return Promise.resolve(rows.map((r) => this.mapDeviceSession(r)))
+  }
+
+  getDeviceSession(id: string): Promise<DeviceSession | undefined> {
+    const row = this.db
+      .prepare('SELECT * FROM device_sessions WHERE id = ?')
+      .get(id) as any | undefined
+    return Promise.resolve(row ? this.mapDeviceSession(row) : undefined)
+  }
+
+  touchDeviceSession(id: string): Promise<void> {
+    this.db
+      .prepare("UPDATE device_sessions SET last_seen_at = datetime('now') WHERE id = ?")
+      .run(id)
+    return Promise.resolve()
+  }
+
+  revokeDeviceSession(did: string, id: string): Promise<boolean> {
+    const res = this.db
+      .prepare(
+        "UPDATE device_sessions SET revoked_at = datetime('now') WHERE id = ? AND did = ? AND revoked_at IS NULL",
+      )
+      .run(id, did)
+    return Promise.resolve(res.changes > 0)
   }
 }

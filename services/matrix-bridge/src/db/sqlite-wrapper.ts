@@ -1,4 +1,8 @@
 import type { Config } from '../config.js'
+import type {
+  InstitutionMembership,
+  InstitutionRole,
+} from '../institutions.js'
 import { BridgeDatabase } from './sqlite/index.js'
 import type {
   AiConsentRecord,
@@ -6,6 +10,7 @@ import type {
   IBridgeDatabase,
   SyncLogEntry,
   UserPushToken,
+  DeviceSession,
 } from './pg/index.js'
 
 /**
@@ -181,6 +186,26 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     roomId: string,
   ): Promise<{ communityUri: string; slug: string } | undefined> {
     return this.wrap(() => this.inner.getCommunityByRoomId(roomId))
+  }
+
+  async createDeviceSession(session: DeviceSession): Promise<void> {
+    await this.wrap(() => this.inner.createDeviceSession(session))
+  }
+
+  async listDeviceSessions(did: string): Promise<DeviceSession[]> {
+    return this.wrap(() => this.inner.listDeviceSessions(did))
+  }
+
+  async getDeviceSession(id: string): Promise<DeviceSession | undefined> {
+    return this.wrap(() => this.inner.getDeviceSession(id))
+  }
+
+  async touchDeviceSession(id: string): Promise<void> {
+    await this.wrap(() => this.inner.touchDeviceSession(id))
+  }
+
+  async revokeDeviceSession(did: string, id: string): Promise<boolean> {
+    return this.wrap(() => this.inner.revokeDeviceSession(did, id))
   }
 
   getDidForMxid(mxid: string): Promise<string | undefined> {
@@ -970,6 +995,52 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     }
   }> {
     return this.wrap(() => this.inner.getCommunityPulse(communityUri, voterDid))
+  }
+
+  // ── Institutional memberships ──
+
+  setInstitutionMembership(m: {
+    institutionId: string
+    workspaceId: string | null
+    did: string
+    role: InstitutionRole
+    expiresAt: string | null
+  }): Promise<void> {
+    return this.wrap(() => this.inner.setInstitutionMembership(m))
+  }
+
+  revokeInstitutionMembership(
+    institutionId: string,
+    workspaceId: string | null,
+    did: string,
+  ): Promise<void> {
+    return this.wrap(() =>
+      this.inner.revokeInstitutionMembership(institutionId, workspaceId, did),
+    )
+  }
+
+  getInstitutionMemberships(
+    institutionId: string,
+    did: string,
+  ): Promise<InstitutionMembership[]> {
+    return this.wrap(() =>
+      this.inner.getInstitutionMemberships(institutionId, did),
+    )
+  }
+
+  listInstitutionMemberships(
+    institutionId: string,
+    workspaceId?: string,
+  ): Promise<InstitutionMembership[]> {
+    return this.wrap(() =>
+      this.inner.listInstitutionMemberships(institutionId, workspaceId),
+    )
+  }
+
+  getInstitutionOwners(
+    institutionId: string,
+  ): Promise<Map<string, InstitutionMembership>> {
+    return this.wrap(() => this.inner.getInstitutionOwners(institutionId))
   }
 
   close(): Promise<void> {

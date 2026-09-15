@@ -1,10 +1,11 @@
-import { DeliberationArea } from './deliberation.js'
+import { InstitutionsArea } from './institutions.js'
 
 // Re-exported so existing `from './pg.js'` type imports keep resolving. The
 // canonical home for these is interface.ts.
 export type {
   AiConsentRecord,
   CommunitySpaceMap,
+  DeviceSession,
   CommunityRoomKind,
   CommunityRoomSummary,
   IBridgeDatabase,
@@ -13,4 +14,4 @@ export type {
   UserPushToken,
 } from '../interface.js'
 
-export class PgBridgeDatabase extends DeliberationArea {}
+export class PgBridgeDatabase extends InstitutionsArea {}

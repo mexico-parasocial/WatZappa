@@ -10,6 +10,7 @@ export interface MatrixRoomMember {
 export class MatrixAdminClient {
   private baseUrl: string
   private adminToken: string
+  private appServiceToken: string
   private enableEncryption: boolean
   readonly botUserId: string | undefined
   private client: MatrixClient
@@ -18,6 +19,7 @@ export class MatrixAdminClient {
   constructor(config: Config) {
     this.baseUrl = config.matrixHomeserverUrl.replace(/\/$/, '')
     this.adminToken = config.matrixAdminToken
+    this.appServiceToken = config.matrixAppServiceToken ?? config.matrixAdminToken
     this.botUserId = config.matrixBotUserId
     this.enableEncryption = config.matrixEnableEncryption
     this.client = new MatrixClient(this.baseUrl, this.adminToken)
@@ -207,6 +209,77 @@ export class MatrixAdminClient {
       accessToken: res.access_token as string,
       deviceId: res.device_id as string,
     }
+  }
+
+  /**
+   * Real, device-bound session via Application Service login
+   * (m.login.application_service). Requires MATRIX_APPSERVICE_TOKEN and the
+   * matching appservice registration on the homeserver; the created device
+   * appears in the user's device list and is individually revocable.
+   */
+  async appServiceLogin(
+    mxid: string,
+    deviceId: string,
+    initialDeviceDisplayName?: string,
+  ): Promise<{ accessToken: string; deviceId: string; expiresAtMs?: number }> {
+    const url = `${this.baseUrl}/_matrix/client/v3/login`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.appServiceToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'm.login.application_service',
+        identifier: { type: 'm.id.user', user: mxid },
+        device_id: deviceId,
+        initial_device_display_name: initialDeviceDisplayName,
+      }),
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(`Matrix appservice login error ${res.status}: ${text}`)
+    }
+    const body = (await res.json()) as {
+      access_token: string
+      device_id: string
+      expires_in_ms?: number
+    }
+    return {
+      accessToken: body.access_token,
+      deviceId: body.device_id,
+      expiresAtMs:
+        body.expires_in_ms != null ? Date.now() + body.expires_in_ms : undefined,
+    }
+  }
+
+  /** List the caller's devices using their own access token (spec endpoint). */
+  async listUserDevices(
+    userToken: string,
+  ): Promise<Array<{ deviceId: string; displayName?: string; lastSeenTs?: number }>> {
+    const res = await fetch(`${this.baseUrl}/_matrix/client/v3/devices`, {
+      headers: { Authorization: `Bearer ${userToken}` },
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(`Matrix API error ${res.status}: ${text}`)
+    }
+    const body = (await res.json()) as {
+      devices: Array<{ device_id: string; display_name?: string; last_seen_ts?: number }>
+    }
+    return body.devices.map((d) => ({
+      deviceId: d.device_id,
+      displayName: d.display_name,
+      lastSeenTs: d.last_seen_ts,
+    }))
+  }
+
+  /** Deactivate one of the user's devices via the Synapse admin API. */
+  async adminDeactivateDevice(mxid: string, deviceId: string): Promise<void> {
+    await this.request(
+      `/_synapse/admin/v2/users/${encodeURIComponent(mxid)}/devices/${encodeURIComponent(deviceId)}`,
+      { method: 'DELETE' },
+    )
   }
 
   async setPusherWithUserToken(

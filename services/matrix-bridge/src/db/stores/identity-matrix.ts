@@ -1,5 +1,6 @@
 import type {
   CommunitySpaceMap,
+  DeviceSession,
 } from '../records.js'
 
 export interface IdentityMatrixStore {
@@ -48,6 +49,16 @@ export interface IdentityMatrixStore {
   ): Promise<{ communityUri: string; slug: string } | undefined>
 
   getDidForMxid(mxid: string): Promise<string | undefined>
+
+  createDeviceSession(session: DeviceSession): Promise<void>
+
+  listDeviceSessions(did: string): Promise<DeviceSession[]>
+
+  getDeviceSession(id: string): Promise<DeviceSession | undefined>
+
+  touchDeviceSession(id: string): Promise<void>
+
+  revokeDeviceSession(did: string, id: string): Promise<boolean>
 
   setCommunityMembership(
     did: string,

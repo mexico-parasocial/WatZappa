@@ -1,3 +1,3 @@
-import { DeliberationArea } from './deliberation.js'
+import { InstitutionsArea } from './institutions.js'
 
-export class BridgeDatabase extends DeliberationArea {}
+export class BridgeDatabase extends InstitutionsArea {}

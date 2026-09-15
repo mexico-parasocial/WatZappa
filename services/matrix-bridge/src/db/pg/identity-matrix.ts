@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type {
   AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  DeviceSession, SyncLogEntry, UserMatrixMap, UserPushToken,
 } from '../interface.js'
 import { PgBase } from './base.js'
 
@@ -260,5 +260,70 @@ export class IdentityMatrixArea extends PgBase {
     }
 
     return result
+  }
+
+  // Device sessions (trusted-device registry, patterned on tranquil-pds)
+
+  private mapDeviceSession(row: any): DeviceSession {
+    return {
+      id: row.id,
+      did: row.did,
+      mxid: row.mxid,
+      deviceId: row.device_id,
+      friendlyName: row.friendly_name ?? null,
+      userAgent: row.user_agent ?? null,
+      createdAt: row.created_at,
+      lastSeenAt: row.last_seen_at,
+      revokedAt: row.revoked_at ?? null,
+    }
+  }
+
+  async createDeviceSession(session: DeviceSession): Promise<void> {
+    await this.query(
+      `INSERT INTO device_sessions
+        (id, did, mxid, device_id, friendly_name, user_agent, created_at, last_seen_at, revoked_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL)`,
+      [
+        session.id,
+        session.did,
+        session.mxid,
+        session.deviceId,
+        session.friendlyName,
+        session.userAgent,
+        session.createdAt,
+        session.lastSeenAt,
+      ],
+    )
+  }
+
+  async listDeviceSessions(did: string): Promise<DeviceSession[]> {
+    const res = await this.query(
+      'SELECT * FROM device_sessions WHERE did = $1 ORDER BY created_at DESC',
+      [did],
+    )
+    return res.rows.map((r) => this.mapDeviceSession(r))
+  }
+
+  async getDeviceSession(id: string): Promise<DeviceSession | undefined> {
+    const row = await this.queryOne<DeviceSession>(
+      'SELECT * FROM device_sessions WHERE id = $1',
+      [id],
+    )
+    return row ?? undefined
+  }
+
+  async touchDeviceSession(id: string): Promise<void> {
+    await this.query(
+      "UPDATE device_sessions SET last_seen_at = now() WHERE id = $1",
+      [id],
+    )
+  }
+
+  async revokeDeviceSession(did: string, id: string): Promise<boolean> {
+    const res = await this.query(
+      "UPDATE device_sessions SET revoked_at = now() WHERE id = $1 AND did = $2 AND revoked_at IS NULL",
+      [id, did],
+    )
+    return res.rowCount !== null && res.rowCount > 0
   }
 }
