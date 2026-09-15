@@ -20,7 +20,8 @@ import type {
 } from './stores/index.js'
 
 export interface IBridgeDatabase
-  extends IdentityMatrixStore,
+  extends
+    IdentityMatrixStore,
     InfraStore,
     ConstitutionProposalsStore,
     SortitionStore,

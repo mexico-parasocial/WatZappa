@@ -1,14 +1,17 @@
 import { randomUUID } from 'node:crypto'
 import { decideContribution } from '../../contributions.js'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunitySpaceMap,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  SyncLogEntry,
+  UserMatrixMap,
+  UserPushToken,
 } from '../interface.js'
 import { MatrixEventsArea } from './matrix-events.js'
 
 export class DeliberationArea extends MatrixEventsArea {
-
-
   // Community map contributions
   async insertCommunityMapContribution(contribution: {
     id: string
@@ -34,7 +37,6 @@ export class DeliberationArea extends MatrixEventsArea {
       ],
     )
   }
-
 
   async getCommunityMapContributions(
     communityUri: string,
@@ -70,7 +72,6 @@ export class DeliberationArea extends MatrixEventsArea {
     )
   }
 
-
   async getCommunityMapContribution(
     id: string,
     viewerDid?: string,
@@ -92,7 +93,6 @@ export class DeliberationArea extends MatrixEventsArea {
     }
   }
 
-
   async getCommunityContributionVote(
     contributionId: string,
     voterDid: string,
@@ -102,7 +102,6 @@ export class DeliberationArea extends MatrixEventsArea {
       [contributionId, voterDid],
     )
   }
-
 
   async getCommunityContributionVoteCounts(
     contributionId: string,
@@ -116,7 +115,6 @@ export class DeliberationArea extends MatrixEventsArea {
       reject: rows.find((r) => r.vote === 'reject')?.count ?? 0,
     }
   }
-
 
   async voteCommunityMapContribution(
     contributionId: string,
@@ -184,7 +182,6 @@ export class DeliberationArea extends MatrixEventsArea {
     }
   }
 
-
   // ── Deliberation Cards ──
 
   async insertCard(card: {
@@ -220,7 +217,6 @@ export class DeliberationArea extends MatrixEventsArea {
     )
   }
 
-
   async getCardsForCommunity(
     communityUri: string,
     opts: {
@@ -253,11 +249,9 @@ export class DeliberationArea extends MatrixEventsArea {
     return this.queryAll(sql, params)
   }
 
-
   async getCard(id: string): Promise<any | undefined> {
     return this.queryOne('SELECT * FROM deliberation_cards WHERE id = $1', [id])
   }
-
 
   async getCardCount(communityUri: string): Promise<number> {
     const row = await this.queryOne<{ count: number }>(
@@ -267,7 +261,6 @@ export class DeliberationArea extends MatrixEventsArea {
     return row?.count ?? 0
   }
 
-
   async getCardsPendingLLMEnrichment(limit = 10): Promise<any[]> {
     return this.queryAll(
       'SELECT * FROM deliberation_cards WHERE llm_enriched_at IS NULL ORDER BY extracted_at DESC LIMIT $1',
@@ -275,14 +268,12 @@ export class DeliberationArea extends MatrixEventsArea {
     )
   }
 
-
   async markCardEnriched(id: string, model: string): Promise<void> {
     await this.run(
       'UPDATE deliberation_cards SET llm_enriched_at = NOW(), llm_model = $1 WHERE id = $2',
       [model, id],
     )
   }
-
 
   async updateCardVisibility(
     id: string,
@@ -294,7 +285,6 @@ export class DeliberationArea extends MatrixEventsArea {
       [isPublic, passportVisible, id],
     )
   }
-
 
   // ── Card Votes (Influence) ──
 
@@ -313,7 +303,6 @@ export class DeliberationArea extends MatrixEventsArea {
     )
   }
 
-
   async getCardVote(
     cardId: string,
     voterDid: string,
@@ -324,7 +313,6 @@ export class DeliberationArea extends MatrixEventsArea {
     )
   }
 
-
   async getCardVotes(
     cardId: string,
   ): Promise<Array<{ voter_did: string; influence: number }>> {
@@ -333,7 +321,6 @@ export class DeliberationArea extends MatrixEventsArea {
       [cardId],
     )
   }
-
 
   async getCardInfluenceScores(
     cardIds: string[],
@@ -349,7 +336,6 @@ export class DeliberationArea extends MatrixEventsArea {
     }
     return map
   }
-
 
   async getCardVoteStats(
     cardIds: string[],
@@ -369,7 +355,6 @@ export class DeliberationArea extends MatrixEventsArea {
     }
     return map
   }
-
 
   // ── Relationships ──
 
@@ -392,14 +377,12 @@ export class DeliberationArea extends MatrixEventsArea {
     )
   }
 
-
   async getRelationshipsForCard(cardId: string): Promise<any[]> {
     return this.queryAll(
       'SELECT * FROM deliberation_relationships WHERE source_card_id = $1 OR target_card_id = $1',
       [cardId],
     )
   }
-
 
   async getGraphForCommunity(
     communityUri: string,
@@ -425,11 +408,9 @@ export class DeliberationArea extends MatrixEventsArea {
     return { nodes, edges }
   }
 
-
   async deleteRelationship(id: string): Promise<void> {
     await this.run('DELETE FROM deliberation_relationships WHERE id = $1', [id])
   }
-
 
   // ── Suggested Relationships ──
 
@@ -454,7 +435,6 @@ export class DeliberationArea extends MatrixEventsArea {
     )
   }
 
-
   async getSuggestionsForCommunity(
     communityUri: string,
     opts: { status?: string; limit?: number } = {},
@@ -477,7 +457,6 @@ export class DeliberationArea extends MatrixEventsArea {
     }
     return this.queryAll(sql, params)
   }
-
 
   async acceptSuggestion(id: string, authorDid: string): Promise<void> {
     const client = await this.pool.connect()
@@ -517,6 +496,28 @@ export class DeliberationArea extends MatrixEventsArea {
     }
   }
 
+  async getSuggestion(id: string): Promise<
+    | {
+        id: string
+        sourceCardId: string
+        targetCardId: string
+        status: string
+      }
+    | undefined
+  > {
+    const row = await this.queryOne<any>(
+      'SELECT id, source_card_id, target_card_id, status FROM suggested_relationships WHERE id = $1',
+      [id],
+    )
+    return row
+      ? {
+          id: row.id,
+          sourceCardId: row.source_card_id,
+          targetCardId: row.target_card_id,
+          status: row.status,
+        }
+      : undefined
+  }
 
   async rejectSuggestion(id: string): Promise<void> {
     await this.run(
@@ -524,7 +525,6 @@ export class DeliberationArea extends MatrixEventsArea {
       ['rejected', id],
     )
   }
-
 
   // ── Extracted Entities ──
 
@@ -547,14 +547,12 @@ export class DeliberationArea extends MatrixEventsArea {
     )
   }
 
-
   async getEntitiesForCard(cardId: string): Promise<any[]> {
     return this.queryAll(
       'SELECT * FROM extracted_entities WHERE card_id = $1',
       [cardId],
     )
   }
-
 
   // ── Community Pulse (Discourse Analysis) ──
 

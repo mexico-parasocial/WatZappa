@@ -1,10 +1,6 @@
-import type {
-  CommunitySpaceMap,
-  DeviceSession,
-} from '../records.js'
+import type { CommunitySpaceMap, DeviceSession } from '../records.js'
 
 export interface IdentityMatrixStore {
-
   getSpaceForCommunity(
     communityUri: string,
   ): Promise<CommunitySpaceMap | undefined>

@@ -6,7 +6,9 @@ export class EventLogArea extends InstitutionsArea {
   private mapEvent(row: any): BridgeEvent {
     let audience: string[] | null = null
     try {
-      audience = row.audience_dids_json ? JSON.parse(row.audience_dids_json) : null
+      audience = row.audience_dids_json
+        ? JSON.parse(row.audience_dids_json)
+        : null
     } catch {
       audience = null
     }
@@ -46,7 +48,10 @@ export class EventLogArea extends InstitutionsArea {
     return this.mapEvent(row)
   }
 
-  async listEventsAfter(afterSeq: number, limit: number): Promise<BridgeEvent[]> {
+  async listEventsAfter(
+    afterSeq: number,
+    limit: number,
+  ): Promise<BridgeEvent[]> {
     const res = await this.query(
       'SELECT * FROM event_log WHERE seq > $1 ORDER BY seq ASC LIMIT $2',
       [afterSeq, limit],
@@ -62,9 +67,10 @@ export class EventLogArea extends InstitutionsArea {
   }
 
   async pruneEventsBefore(cutoffIso: string): Promise<number> {
-    const res = await this.query('DELETE FROM event_log WHERE created_at < $1', [
-      cutoffIso,
-    ])
+    const res = await this.query(
+      'DELETE FROM event_log WHERE created_at < $1',
+      [cutoffIso],
+    )
     return res.rowCount ?? 0
   }
 }

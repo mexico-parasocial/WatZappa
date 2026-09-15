@@ -1,5 +1,4 @@
 export interface DeliberationStore {
-
   insertCommunityMapContribution(contribution: {
     id: string
     communityUri: string
@@ -127,6 +126,13 @@ export interface DeliberationStore {
   ): Promise<any[]>
 
   acceptSuggestion(id: string, authorDid: string): Promise<void>
+
+  getSuggestion(
+    id: string,
+  ): Promise<
+    | { id: string; sourceCardId: string; targetCardId: string; status: string }
+    | undefined
+  >
 
   rejectSuggestion(id: string): Promise<void>
 

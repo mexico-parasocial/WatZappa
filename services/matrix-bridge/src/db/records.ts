@@ -42,7 +42,6 @@ export interface AiConsentRecord {
   revokedAt: string | null
 }
 
-
 export type CommunityRoomKind = 'main' | 'chamber-a' | 'chamber-b' | 'observers'
 
 export interface CommunityRoomSummary {
@@ -52,8 +51,17 @@ export interface CommunityRoomSummary {
   kind: CommunityRoomKind
 }
 
-
-import type { IdentityMatrixStore, InfraStore, ConstitutionProposalsStore, SortitionStore, ModerationStore, ParticipationStore, ConsentPrefsStore, MatrixEventsStore, DeliberationStore } from './stores/index.js'
+import type {
+  IdentityMatrixStore,
+  InfraStore,
+  ConstitutionProposalsStore,
+  SortitionStore,
+  ModerationStore,
+  ParticipationStore,
+  ConsentPrefsStore,
+  MatrixEventsStore,
+  DeliberationStore,
+} from './stores/index.js'
 
 export interface DeviceSession {
   id: string

@@ -22,7 +22,6 @@ const CURSOR_SAVE_INTERVAL_MS = 30000
  * lives behind that port; this file speaks DIDs only.
  */
 export class FirehoseConsumer {
-
   private firehose: Firehose
   private db: IBridgeDatabase
   private projection: MatrixProjectionPort
@@ -285,11 +284,16 @@ export class FirehoseConsumer {
         })
         chamberRoomId = invited.chamberRoomId
 
-        await this.chatMod.recordMembership(userDid, communityUri, chamberRoomId ?? space.spaceId, {
-          isModerator: roles.includes('moderator') || roles.includes('owner'),
-          isDelegate: roles.includes('delegate'),
-          chamber: chamber ?? null,
-        })
+        await this.chatMod.recordMembership(
+          userDid,
+          communityUri,
+          chamberRoomId ?? space.spaceId,
+          {
+            isModerator: roles.includes('moderator') || roles.includes('owner'),
+            isDelegate: roles.includes('delegate'),
+            chamber: chamber ?? null,
+          },
+        )
 
         await this.db.logSync(
           'invite',
@@ -406,6 +410,14 @@ export class FirehoseConsumer {
         constitution.version,
         JSON.stringify(constitution.rules),
       )
+
+      if (this.events) {
+        await this.events.publish({
+          type: 'constitution.updated',
+          communityUri: constitution.community,
+          payload: { version: constitution.version },
+        })
+      }
       this.log.info(
         { community: constitution.community, version: constitution.version },
         'Constitution updated',

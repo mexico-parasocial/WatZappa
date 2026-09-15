@@ -66,3 +66,14 @@ describe('decideRoom (chamber scoping)', () => {
     expect(decideRoom(pending, 'main', 'A').allowed).toBe(false)
   })
 })
+
+describe('decideCommunity — user-data reads (authorizeUserRead policy)', () => {
+  it('moderate-level permission is the bar for reading another user data', () => {
+    // self is always allowed (handled before this policy); here we assert the
+    // role gate: plain members and observers cannot read others, mods can.
+    expect(decideCommunity(member, 'community.moderate').allowed).toBe(false)
+    expect(decideCommunity(moderator, 'community.moderate').allowed).toBe(true)
+    expect(decideCommunity(owner, 'community.moderate').allowed).toBe(true)
+    expect(decideCommunity(observer, 'community.moderate').allowed).toBe(false)
+  })
+})

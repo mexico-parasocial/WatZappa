@@ -288,8 +288,15 @@ requires `moderator`/`owner`/`delegate`, and room-scoped writes are
 chamber-scoped (the caller's chamber assignment must match the room's
 chamber; `observer`-role members reach only main/observers rooms). Applied
 to `mark-read`, `sortition/runs/process`, and the moderation dashboard;
-remaining read endpoints are being migrated onto the same call as they are
-touched. The SSE event stream re-evaluates entitlements during replay, so
+The migration is complete: every community-scoped endpoint (governance
+reads, member lists, badges, sortition runs/listings, deliberation
+cards/votes/graph/suggestions/pulse/summarize, user-chat-preferences) now
+runs through `authorize()`/`authorizeUserRead()`. Deliberate exceptions:
+sortition *proof* verification stays open to any authenticated user
+(public-audit value); `user-chat-preferences` reads are self-only. The
+unbound `suggestions/reject` write is now bound to the source card's
+community. The SSE stream re-evaluates entitlements during replay, so
+revocation is retroactive there too. The SSE event stream re-evaluates entitlements during replay, so
 revocation is retroactive there too.
 
 Singled out because this endpoint is where F9 and F4 compounded, and there the

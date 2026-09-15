@@ -1,13 +1,17 @@
 import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  DeviceSession, SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunitySpaceMap,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  DeviceSession,
+  SyncLogEntry,
+  UserMatrixMap,
+  UserPushToken,
 } from '../interface.js'
 import { PgBase } from './base.js'
 
 export class IdentityMatrixArea extends PgBase {
-
-
   // Community <-> Space mappings
   async getSpaceForCommunity(
     communityUri: string,
@@ -17,7 +21,6 @@ export class IdentityMatrixArea extends PgBase {
       [communityUri],
     )
   }
-
 
   async setSpaceForCommunity(
     communityUri: string,
@@ -37,7 +40,6 @@ export class IdentityMatrixArea extends PgBase {
     )
   }
 
-
   async setChamberRooms(
     communityUri: string,
     chamberA: string | null,
@@ -49,7 +51,6 @@ export class IdentityMatrixArea extends PgBase {
       [chamberA, chamberB, observerRoom, communityUri],
     )
   }
-
 
   // Chamber assignments
   async getChamberAssignment(
@@ -63,7 +64,6 @@ export class IdentityMatrixArea extends PgBase {
     return row?.chamber
   }
 
-
   async setChamberAssignment(
     communityUri: string,
     did: string,
@@ -76,7 +76,6 @@ export class IdentityMatrixArea extends PgBase {
     )
   }
 
-
   async getChamberMemberCount(
     communityUri: string,
     chamber: string,
@@ -88,7 +87,6 @@ export class IdentityMatrixArea extends PgBase {
     return row?.count ?? 0
   }
 
-
   async getActiveMemberCount(communityUri: string): Promise<number> {
     const row = await this.queryOne<{ count: number }>(
       "SELECT COUNT(*) as count FROM community_membership_state WHERE community_uri = $1 AND membership_state = 'active'",
@@ -96,7 +94,6 @@ export class IdentityMatrixArea extends PgBase {
     )
     return row?.count ?? 0
   }
-
 
   // User <-> MXID mappings
   async getMxidForDid(did: string): Promise<string | undefined> {
@@ -106,7 +103,6 @@ export class IdentityMatrixArea extends PgBase {
     )
     return row?.matrix_user_id
   }
-
 
   async setMxidForDid(
     did: string,
@@ -120,7 +116,6 @@ export class IdentityMatrixArea extends PgBase {
     )
   }
 
-
   async getUserPassword(did: string): Promise<string | undefined> {
     const row = await this.queryOne<{ password: string }>(
       'SELECT password FROM user_matrix_map WHERE did = $1',
@@ -128,7 +123,6 @@ export class IdentityMatrixArea extends PgBase {
     )
     return row?.password
   }
-
 
   // Lookup community by any of its room IDs
   async getCommunityByRoomId(
@@ -141,7 +135,6 @@ export class IdentityMatrixArea extends PgBase {
     return row ? { communityUri: row.community_uri, slug: row.slug } : undefined
   }
 
-
   // Get DID by MXID
   async getDidForMxid(mxid: string): Promise<string | undefined> {
     const row = await this.queryOne<{ did: string }>(
@@ -150,7 +143,6 @@ export class IdentityMatrixArea extends PgBase {
     )
     return row?.did
   }
-
 
   // Community membership state
   async setCommunityMembership(
@@ -170,12 +162,14 @@ export class IdentityMatrixArea extends PgBase {
     )
   }
 
-
   async getCommunityMembership(
     did: string,
     communityUri: string,
   ): Promise<{ state: string; roles: string[] } | undefined> {
-    const row = await this.queryOne<{ membership_state: string; roles_json: string }>(
+    const row = await this.queryOne<{
+      membership_state: string
+      roles_json: string
+    }>(
       'SELECT membership_state, roles_json FROM community_membership_state WHERE did = $1 AND community_uri = $2',
       [did, communityUri],
     )
@@ -199,7 +193,6 @@ export class IdentityMatrixArea extends PgBase {
     )
     return row?.membership_state === 'active'
   }
-
 
   async getActiveCommunityRoomsForDid(did: string): Promise<
     Array<{
@@ -332,14 +325,14 @@ export class IdentityMatrixArea extends PgBase {
 
   async touchDeviceSession(id: string): Promise<void> {
     await this.query(
-      "UPDATE device_sessions SET last_seen_at = now() WHERE id = $1",
+      'UPDATE device_sessions SET last_seen_at = now() WHERE id = $1',
       [id],
     )
   }
 
   async revokeDeviceSession(did: string, id: string): Promise<boolean> {
     const res = await this.query(
-      "UPDATE device_sessions SET revoked_at = now() WHERE id = $1 AND did = $2 AND revoked_at IS NULL",
+      'UPDATE device_sessions SET revoked_at = now() WHERE id = $1 AND did = $2 AND revoked_at IS NULL',
       [id, did],
     )
     return res.rowCount !== null && res.rowCount > 0

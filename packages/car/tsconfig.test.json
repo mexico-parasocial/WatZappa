@@ -3,7 +3,7 @@
     "../../tsconfig/vitest.tsconfig.json",
     "../../tsconfig/isolated.tsconfig.json",
   ],
-  "include": ["./tests", "./src/**/*.test.ts"],
+  "include": ["./tests", "./src/**/*.test.ts", "src/car-block.ts"],
   "references": [{ "path": "./tsconfig.build.json" }],
   "compilerOptions": {
     "rootDir": "./",

@@ -2,8 +2,13 @@ import { randomUUID } from 'node:crypto'
 import pg from 'pg'
 import type { QueryResult } from 'pg'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunitySpaceMap,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  SyncLogEntry,
+  UserMatrixMap,
+  UserPushToken,
 } from '../interface.js'
 
 // cjs-module-lexer cannot statically enumerate pg's named exports, so the
@@ -13,17 +18,14 @@ const { Pool } = pg
 
 /** Lifecycle, connection handle and shared query helpers. */
 export class PgBase {
-
   protected pool: pg.Pool
 
   protected initPromise: Promise<void>
-
 
   constructor(connectionString: string) {
     this.pool = new Pool({ connectionString, max: 20 })
     this.initPromise = this.init()
   }
-
 
   protected async init(): Promise<void> {
     await this.pool.query(`
@@ -458,12 +460,10 @@ export class PgBase {
     `)
   }
 
-
   protected async query(text: string, params?: any[]): Promise<QueryResult> {
     await this.initPromise
     return this.pool.query(text, params)
   }
-
 
   protected async queryOne<T = any>(
     text: string,
@@ -473,17 +473,17 @@ export class PgBase {
     return result.rows[0] as T | undefined
   }
 
-
-  protected async queryAll<T = any>(text: string, params?: any[]): Promise<T[]> {
+  protected async queryAll<T = any>(
+    text: string,
+    params?: any[],
+  ): Promise<T[]> {
     const result = await this.query(text, params)
     return result.rows as T[]
   }
 
-
   protected async run(text: string, params?: any[]): Promise<void> {
     await this.query(text, params)
   }
-
 
   async close(): Promise<void> {
     await this.pool.end()

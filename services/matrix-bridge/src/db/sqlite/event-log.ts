@@ -9,7 +9,9 @@ export class EventLogArea extends InstitutionsArea {
   private mapEvent(row: any): BridgeEvent {
     let audience: string[] | null = null
     try {
-      audience = row.audience_dids_json ? JSON.parse(row.audience_dids_json) : null
+      audience = row.audience_dids_json
+        ? JSON.parse(row.audience_dids_json)
+        : null
     } catch {
       audience = null
     }
@@ -54,9 +56,7 @@ export class EventLogArea extends InstitutionsArea {
 
   listEventsAfter(afterSeq: number, limit: number): BridgeEvent[] {
     const rows = this.db
-      .prepare(
-        'SELECT * FROM event_log WHERE seq > ? ORDER BY seq ASC LIMIT ?',
-      )
+      .prepare('SELECT * FROM event_log WHERE seq > ? ORDER BY seq ASC LIMIT ?')
       .all(afterSeq, limit) as any[]
     return rows.map((r) => this.mapEvent(r))
   }

@@ -1,5 +1,7 @@
 import type { RouteContext } from './routes/context.js'
+import type { ServerResponse } from 'node:http'
 import { HttpError } from './m8-auth.js'
+import { writeJson } from './routes/http.js'
 
 /**
  * F9 remediation: central, testable authorization for the bridge's API.
@@ -27,8 +29,7 @@ export type AuthzAction =
   | 'chamber.read'
 
 export type AuthzResource =
-  | { kind: 'community'; communityUri: string }
-  | { kind: 'room'; roomId: string }
+  { kind: 'community'; communityUri: string } | { kind: 'room'; roomId: string }
 
 export type Membership = { state: string; roles: string[] }
 
@@ -68,7 +69,10 @@ export function decideCommunity(
             reason: 'moderator, owner or delegate role required',
           }
     default:
-      return { allowed: false, reason: `unknown action ${action satisfies never}` }
+      return {
+        allowed: false,
+        reason: `unknown action ${action satisfies never}`,
+      }
   }
 }
 
@@ -110,7 +114,10 @@ export async function resolveRoom(
   ctx: RouteContext,
   roomId: string,
 ): Promise<
-  | { communityUri: string; roomKind: 'main' | 'chamber-a' | 'chamber-b' | 'observers' }
+  | {
+      communityUri: string
+      roomKind: 'main' | 'chamber-a' | 'chamber-b' | 'observers'
+    }
   | undefined
 > {
   const community = await ctx.db.getCommunityByRoomId(roomId)
@@ -157,7 +164,10 @@ export async function authorize(
   if (!room) {
     throw new AuthzError('Room does not belong to a known community')
   }
-  const membership = await ctx.db.getCommunityMembership(actor, room.communityUri)
+  const membership = await ctx.db.getCommunityMembership(
+    actor,
+    room.communityUri,
+  )
   const assignedChamber =
     action === 'chamber.read'
       ? await ctx.db.getChamberAssignment(room.communityUri, actor)
@@ -167,5 +177,68 @@ export async function authorize(
     throw new AuthzError(
       `Not authorized for ${action} on room: ${verdict.reason}`,
     )
+  }
+}
+
+/**
+ * authorize() + 403 response in one call: returns false (response written)
+ * when denied, true when allowed. Handlers: `if (!(await ...)) return`.
+ */
+export async function authorizeOrRespond(
+  ctx: RouteContext,
+  res: ServerResponse,
+  actor: string,
+  action: AuthzAction,
+  resource: AuthzResource,
+): Promise<boolean> {
+  try {
+    await authorize(ctx, actor, action, resource)
+    return true
+  } catch (err) {
+    if (err instanceof HttpError) {
+      writeJson(res, err.statusCode, { error: err.message })
+      return false
+    }
+    throw err
+  }
+}
+
+/** Same contract for authorizeUserRead. */
+export async function authorizeUserReadOrRespond(
+  ctx: RouteContext,
+  res: ServerResponse,
+  actor: string,
+  targetDid: string,
+  communityUri: string,
+): Promise<boolean> {
+  try {
+    await authorizeUserRead(ctx, actor, targetDid, communityUri)
+    return true
+  } catch (err) {
+    if (err instanceof HttpError) {
+      writeJson(res, err.statusCode, { error: err.message })
+      return false
+    }
+    throw err
+  }
+}
+
+/**
+ * Reading data *about* another user (their badges, votes, viewer-scoped
+ * views): allowed for the user themselves, or for a moderator/owner of the
+ * community the data belongs to. Strangers get 403 even when they can read
+ * the community itself.
+ */
+export async function authorizeUserRead(
+  ctx: RouteContext,
+  actor: string,
+  targetDid: string,
+  communityUri: string,
+): Promise<void> {
+  if (actor === targetDid) return
+  const membership = await ctx.db.getCommunityMembership(actor, communityUri)
+  const verdict = decideCommunity(membership, 'community.moderate')
+  if (!verdict.allowed) {
+    throw new AuthzError(`Not authorized to read user data: ${verdict.reason}`)
   }
 }

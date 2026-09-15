@@ -1,8 +1,5 @@
 import type { Config } from '../config.js'
-import type {
-  InstitutionMembership,
-  InstitutionRole,
-} from '../institutions.js'
+import type { InstitutionMembership, InstitutionRole } from '../institutions.js'
 import { BridgeDatabase } from './sqlite/index.js'
 import type {
   AiConsentRecord,
@@ -973,6 +970,15 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
 
   acceptSuggestion(id: string, authorDid: string): Promise<void> {
     return this.wrap(() => this.inner.acceptSuggestion(id, authorDid))
+  }
+
+  async getSuggestion(
+    id: string,
+  ): Promise<
+    | { id: string; sourceCardId: string; targetCardId: string; status: string }
+    | undefined
+  > {
+    return this.wrap(() => this.inner.getSuggestion(id))
   }
 
   rejectSuggestion(id: string): Promise<void> {

@@ -25,7 +25,9 @@ describe('BridgeDatabase — device sessions', () => {
   const did = 'did:plc:alice123'
   const mxid = '@did-plc-alice123:para.social'
 
-  const sample = (over: Partial<Parameters<BridgeDatabase['createDeviceSession']>[0]> = {}) => ({
+  const sample = (
+    over: Partial<Parameters<BridgeDatabase['createDeviceSession']>[0]> = {},
+  ) => ({
     id: `session-${Math.random().toString(36).slice(2)}`,
     did,
     mxid,
@@ -76,11 +78,15 @@ describe('BridgeDatabase — device sessions', () => {
     // another DID cannot revoke someone else's session
     const other = sample()
     await db.createDeviceSession(other)
-    expect(await db.revokeDeviceSession('did:plc:mallory', other.id)).toBe(false)
+    expect(await db.revokeDeviceSession('did:plc:mallory', other.id)).toBe(
+      false,
+    )
   })
 
   it('touches lastSeenAt', async () => {
-    const s = sample({ lastSeenAt: new Date(Date.now() - 60_000).toISOString() })
+    const s = sample({
+      lastSeenAt: new Date(Date.now() - 60_000).toISOString(),
+    })
     await db.createDeviceSession(s)
     await db.touchDeviceSession(s.id)
     const after = await db.getDeviceSession(s.id)

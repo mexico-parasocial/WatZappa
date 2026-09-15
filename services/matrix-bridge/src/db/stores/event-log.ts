@@ -9,10 +9,7 @@ export interface EventLogStore {
   }): Promise<BridgeEvent>
 
   /** Events with seq > afterSeq, ordered by seq, capped at limit. */
-  listEventsAfter(
-    afterSeq: number,
-    limit: number,
-  ): Promise<BridgeEvent[]>
+  listEventsAfter(afterSeq: number, limit: number): Promise<BridgeEvent[]>
 
   /** Highest seq currently retained (0 when the log is empty). */
   getMaxEventSeq(): Promise<number>

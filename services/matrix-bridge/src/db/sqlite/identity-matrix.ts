@@ -1,13 +1,17 @@
 import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  DeviceSession, SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunitySpaceMap,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  DeviceSession,
+  SyncLogEntry,
+  UserMatrixMap,
+  UserPushToken,
 } from '../interface.js'
 import { SqliteBase } from './base.js'
 
 export class IdentityMatrixArea extends SqliteBase {
-
-
   protected mapCommunitySpace(row: any): CommunitySpaceMap {
     return {
       communityUri: row.community_uri,
@@ -21,7 +25,6 @@ export class IdentityMatrixArea extends SqliteBase {
     }
   }
 
-
   // Community <-> Space mappings
   getSpaceForCommunity(communityUri: string): CommunitySpaceMap | undefined {
     const row = this.db
@@ -29,7 +32,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .get(communityUri) as any | undefined
     return row ? this.mapCommunitySpace(row) : undefined
   }
-
 
   setSpaceForCommunity(
     communityUri: string,
@@ -44,7 +46,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .run(communityUri, spaceId, slug, chamberMode)
   }
 
-
   setChamberRooms(
     communityUri: string,
     chamberA: string | null,
@@ -58,7 +59,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .run(chamberA, chamberB, observerRoom, communityUri)
   }
 
-
   // Chamber assignments
   getChamberAssignment(communityUri: string, did: string): string | undefined {
     const row = this.db
@@ -68,7 +68,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .get(communityUri, did) as { chamber: string } | undefined
     return row?.chamber
   }
-
 
   setChamberAssignment(
     communityUri: string,
@@ -82,7 +81,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .run(communityUri, did, chamber)
   }
 
-
   getChamberMemberCount(communityUri: string, chamber: string): number {
     const row = this.db
       .prepare(
@@ -91,7 +89,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .get(communityUri, chamber) as { count: number }
     return row.count
   }
-
 
   getActiveMemberCount(communityUri: string): number {
     const row = this.db
@@ -102,7 +99,6 @@ export class IdentityMatrixArea extends SqliteBase {
     return row.count
   }
 
-
   // User <-> MXID mappings
   getMxidForDid(did: string): string | undefined {
     const row = this.db
@@ -110,7 +106,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .get(did) as { matrix_user_id: string } | undefined
     return row?.matrix_user_id
   }
-
 
   setMxidForDid(did: string, mxid: string, password: string): void {
     this.db
@@ -120,14 +115,12 @@ export class IdentityMatrixArea extends SqliteBase {
       .run(did, mxid, password)
   }
 
-
   getUserPassword(did: string): string | undefined {
     const row = this.db
       .prepare('SELECT password FROM user_matrix_map WHERE did = ?')
       .get(did) as { password: string } | undefined
     return row?.password
   }
-
 
   setCommunityMembership(
     did: string,
@@ -143,7 +136,6 @@ export class IdentityMatrixArea extends SqliteBase {
       )
       .run(did, communityUri, membershipState, JSON.stringify(roles))
   }
-
 
   getCommunityMembership(
     did: string,
@@ -172,7 +164,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .get(did, communityUri) as { membership_state: string } | undefined
     return row?.membership_state === 'active'
   }
-
 
   getActiveCommunityRoomsForDid(did: string): CommunityRoomSummary[] {
     const rows = this.db
@@ -252,7 +243,6 @@ export class IdentityMatrixArea extends SqliteBase {
     })
   }
 
-
   // Lookup community by any of its room IDs
   getCommunityByRoomId(
     roomId: string,
@@ -265,7 +255,6 @@ export class IdentityMatrixArea extends SqliteBase {
       { community_uri: string; slug: string } | undefined
     return row ? { communityUri: row.community_uri, slug: row.slug } : undefined
   }
-
 
   // Get DID by MXID
   getDidForMxid(mxid: string): string | undefined {
@@ -329,7 +318,9 @@ export class IdentityMatrixArea extends SqliteBase {
 
   touchDeviceSession(id: string): Promise<void> {
     this.db
-      .prepare("UPDATE device_sessions SET last_seen_at = datetime('now') WHERE id = ?")
+      .prepare(
+        "UPDATE device_sessions SET last_seen_at = datetime('now') WHERE id = ?",
+      )
       .run(id)
     return Promise.resolve()
   }

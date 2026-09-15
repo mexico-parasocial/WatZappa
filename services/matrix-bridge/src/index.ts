@@ -48,11 +48,22 @@ async function main() {
   const chatMod = new ChatModerationEngine(db, log)
   const events = new EventBus(db, log)
   const proposals = new ProposalEngine(db, matrix, log, chatMod)
-  const firehose = new FirehoseConsumer(config, db, projection, proposals, chatMod, metrics, log)
+  const firehose = new FirehoseConsumer(
+    config,
+    db,
+    projection,
+    proposals,
+    chatMod,
+    metrics,
+    log,
+  )
   firehose.setEventBus(events)
   proposals.setEventBus(events)
   const retryWorker = new RetryWorker(db, matrix, metrics, log)
   const syncPoller = new MatrixSyncPoller(config, db, matrix, chatMod, log)
+
+  chatMod.setEventBus(events)
+  syncPoller.setEventBus(events)
   const sortition = createSortitionEngine(db, log, events)
 
   const ctx: RouteContext = {

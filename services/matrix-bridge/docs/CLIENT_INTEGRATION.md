@@ -107,9 +107,11 @@ Wire protocol:
 | `proposal.state` | community-wide | `{ proposalUri, from, to, votingEnds }` — today `from:"deliberation"`, `to:"voting"`; render the "voting open" surface |
 | `sortition.selected` | selected DIDs (direct) | `{ runId, cabildeoUri }` — you were selected for an assembly; mirror of the Expo push (`type: "sortition_selected"`) |
 | `sortition.run.updated` | community-wide | `{ runId, status, selectedCount, eligibleCount }` — aggregate only, **no member identities** |
+| `chat.unread` | community-wide (new messages) or the affected DID (read-clear) | `{ roomId, count }` on new messages; `{ roomId, clearedFor, upTo }` on mark-read — recompute exact unread via `GET /api/unread` |
+| `badge.updated` | the affected DID (direct) | `{ communityUri, badges }` — the caller's visible badge types changed |
+| `constitution.updated` | community-wide | `{ version }` — refetch `GET /api/constitution` for the rules |
 | `resync_required` | caller | `{ oldestRetainedSeq, maxSeq }` |
 
-Reserved (implemented type, producer pending): `chat.unread`,
 `badge.updated`, `constitution.updated`.
 
 ## 3. Authorization semantics (what 403 means)

@@ -3,15 +3,12 @@ import Database from 'better-sqlite3'
 import type { Config } from '../../config.js'
 /** Lifecycle, connection handle and shared query helpers. */
 export class SqliteBase {
-
   protected db: Database.Database
-
 
   constructor(config: Config) {
     this.db = new Database(config.dbPath)
     this.init()
   }
-
 
   protected init() {
     this.db.exec(`
@@ -463,7 +460,6 @@ export class SqliteBase {
       CREATE INDEX IF NOT EXISTS idx_institution_memberships_did ON institution_memberships(institution_id, did);
     `)
   }
-
 
   close(): void {
     this.db.close()

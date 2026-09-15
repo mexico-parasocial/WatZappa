@@ -510,6 +510,27 @@ export class DeliberationArea extends MatrixEventsArea {
   }
 
 
+  getSuggestion(id: string): {
+    id: string
+    sourceCardId: string
+    targetCardId: string
+    status: string
+  } | undefined {
+    const row = this.db
+      .prepare(
+        'SELECT id, source_card_id, target_card_id, status FROM suggested_relationships WHERE id = ?',
+      )
+      .get(id) as any | undefined
+    return row
+      ? {
+          id: row.id,
+          sourceCardId: row.source_card_id,
+          targetCardId: row.target_card_id,
+          status: row.status,
+        }
+      : undefined
+  }
+
   rejectSuggestion(id: string): void {
     this.db
       .prepare('UPDATE suggested_relationships SET status = ? WHERE id = ?')
