@@ -37,6 +37,11 @@ export class SqliteBase {
 
       CREATE INDEX IF NOT EXISTS idx_device_sessions_did ON device_sessions(did);
 
+      CREATE TABLE IF NOT EXISTS as_transactions (
+        txn_id TEXT PRIMARY KEY,
+        received_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
       CREATE TABLE IF NOT EXISTS event_log (
         seq INTEGER PRIMARY KEY AUTOINCREMENT,
         type TEXT NOT NULL,

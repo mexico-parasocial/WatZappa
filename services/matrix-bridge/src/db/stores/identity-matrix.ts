@@ -38,6 +38,7 @@ export interface IdentityMatrixStore {
 
   setMxidForDid(did: string, mxid: string, password: string): Promise<void>
 
+  /** @deprecated Never read anywhere; user_matrix_map.password is vestigial. */
   getUserPassword(did: string): Promise<string | undefined>
 
   getCommunityByRoomId(

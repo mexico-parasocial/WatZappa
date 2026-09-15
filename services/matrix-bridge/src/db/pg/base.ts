@@ -54,6 +54,11 @@ export class PgBase {
 
       CREATE INDEX IF NOT EXISTS idx_device_sessions_did ON device_sessions(did);
 
+      CREATE TABLE IF NOT EXISTS as_transactions (
+        txn_id TEXT PRIMARY KEY,
+        received_at TEXT NOT NULL DEFAULT (now()::text)
+      );
+
       CREATE TABLE IF NOT EXISTS event_log (
         seq BIGSERIAL PRIMARY KEY,
         type TEXT NOT NULL,

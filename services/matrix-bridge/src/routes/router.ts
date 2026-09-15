@@ -3,6 +3,7 @@ import type { RouteContext } from './context.js'
 
 import { healthzHandler, metricsHandler } from './infra.js'
 import { apiEventsSseHandler } from './events.js'
+import { appServiceTransactionHandler } from './appservice-txn.js'
 import { apiSpaceForCommunityHandler, apiMatrixTokenHandler, apiPushTokenHandler, apiMarkReadHandler, apiUnreadHandler, apiRoomsHandler, apiListDevicesHandler, apiRevokeDeviceHandler } from './matrix-identity.js'
 import { matrixPushV1NotifyHandler } from './push.js'
 import { apiSortitionRunsPOSTHandler, apiSortitionRunsGETHandler, apiSortitionRunsProcessHandler, apiSortitionProofsHandler, apiSortitionProofHandler, apiVerifySortitionHandler, apiSortitionProofAsRecordHandler } from './sortition.js'
@@ -33,6 +34,9 @@ const ROUTES: Route[] = [
   { urls: ['/api/unread'], prefix: true, method: 'GET', handler: apiUnreadHandler },
   { urls: ['/api/rooms'], prefix: false, method: 'GET', handler: apiRoomsHandler },
   { urls: ['/api/events'], prefix: false, method: 'GET', handler: apiEventsSseHandler },
+  // Appservice transaction push from Synapse (any /transactions/{id} path).
+  { urls: ['/_matrix/app/unstable/transactions/'], prefix: true, method: null, handler: appServiceTransactionHandler },
+  { urls: ['/_matrix/app/v1/transactions/'], prefix: true, method: null, handler: appServiceTransactionHandler },
   { urls: ['/api/sortition/runs'], prefix: false, method: 'POST', handler: apiSortitionRunsPOSTHandler },
   { urls: ['/api/sortition/runs'], prefix: true, method: 'GET', handler: apiSortitionRunsGETHandler },
   { urls: ['/api/sortition/runs/process'], prefix: true, method: 'POST', handler: apiSortitionRunsProcessHandler },

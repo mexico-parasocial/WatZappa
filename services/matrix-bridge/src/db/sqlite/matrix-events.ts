@@ -1,13 +1,16 @@
 import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunitySpaceMap,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  SyncLogEntry,
+  UserMatrixMap,
+  UserPushToken,
 } from '../interface.js'
 import { ConsentPrefsArea } from './consent-prefs.js'
 
 export class MatrixEventsArea extends ConsentPrefsArea {
-
-
   // Matrix event ingestion
   insertMatrixEvent(event: {
     roomId: string
@@ -40,14 +43,12 @@ export class MatrixEventsArea extends ConsentPrefsArea {
     }
   }
 
-
   eventExists(eventId: string): boolean {
     const row = this.db
       .prepare('SELECT 1 FROM matrix_events WHERE event_id = ?')
       .get(eventId) as { 1: number } | undefined
     return !!row
   }
-
 
   getRecentEvents(roomId: string, limit = 100): any[] {
     return this.db
@@ -57,7 +58,6 @@ export class MatrixEventsArea extends ConsentPrefsArea {
       .all(roomId, limit) as any[]
   }
 
-
   // Read markers & unread counts
   setReadMarker(did: string, roomId: string, eventId: string): void {
     this.db
@@ -66,7 +66,6 @@ export class MatrixEventsArea extends ConsentPrefsArea {
       )
       .run(did, roomId, eventId)
   }
-
 
   getUnreadCount(did: string, roomId: string): number {
     const marker = this.db
@@ -97,7 +96,6 @@ export class MatrixEventsArea extends ConsentPrefsArea {
     return row.count
   }
 
-
   getUnreadCountsForDid(
     did: string,
   ): Array<CommunityRoomSummary & { unread: number }> {
@@ -110,12 +108,10 @@ export class MatrixEventsArea extends ConsentPrefsArea {
     }))
   }
 
-
   getTotalUnreadForDid(did: string): number {
     const counts = this.getUnreadCountsForDid(did)
     return counts.reduce((sum, c) => sum + c.unread, 0)
   }
-
 
   // Get all tracked room IDs
   getAllRoomIds(): string[] {
@@ -141,5 +137,17 @@ export class MatrixEventsArea extends ConsentPrefsArea {
         ),
       ),
     )
+  }
+
+  recordAsTransaction(txnId: string): boolean {
+    try {
+      const res = this.db
+        .prepare('INSERT INTO as_transactions (txn_id) VALUES (?)')
+        .run(txnId)
+      return res.changes > 0
+    } catch {
+      // PRIMARY KEY conflict => already processed
+      return false
+    }
   }
 }

@@ -650,6 +650,10 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     return this.wrap(() => this.inner.getTotalUnreadForDid(did))
   }
 
+  async recordAsTransaction(txnId: string): Promise<boolean> {
+    return this.wrap(() => this.inner.recordAsTransaction(txnId))
+  }
+
   getAllRoomIds(): Promise<string[]> {
     return this.wrap(() => this.inner.getAllRoomIds())
   }

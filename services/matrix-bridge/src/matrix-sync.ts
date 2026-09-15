@@ -36,7 +36,9 @@ export class MatrixSyncPoller {
     this.matrix = matrix
     this.chatMod = chatMod
     this.log = log
-    this.pollIntervalMs = DEFAULT_POLL_INTERVAL_MS
+    // Reconciliation fallback only: primary ingestion is appservice
+    // transaction push (routes/appservice-txn.ts).
+    this.pollIntervalMs = config.syncFallbackMs || DEFAULT_POLL_INTERVAL_MS
   }
 
   start(): void {
