@@ -85,6 +85,7 @@ The bridge uses [`matrix-bot-sdk`](https://github.com/turt2live/matrix-bot-sdk) 
 - `POST /api/matrix-token` — requires M8 bearer token; returns a **device-bound** Matrix session for the authenticated DID (accepts optional `{ friendlyName, deviceId }`; registers a real Synapse device via appservice login when `MATRIX_APPSERVICE_TOKEN` is set)
 - `GET /api/devices` — the caller's device sessions, including revoked ones
 - `POST /api/devices/revoke` — body `{ sessionId }`; deactivates the device on the homeserver and marks the session revoked
+- `GET /api/events` — Server-Sent Events stream for the caller: governance/community events with replay from `Last-Event-ID` inside a 7-day retention window, per-DID audiences, dedup by `id` (delivery is at-least-once), `resync_required` when the cursor predates retention
 - `POST /api/push-token` — requires M8 bearer token; registers push token for the authenticated session DID
 - `GET /api/space-for-community?uri=...` — requires M8 bearer token and active community membership
 - `GET /api/rooms` — requires M8 bearer token; lists the authenticated user's active Matrix rooms with unread counts

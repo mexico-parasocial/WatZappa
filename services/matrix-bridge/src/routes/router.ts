@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { RouteContext } from './context.js'
 
 import { healthzHandler, metricsHandler } from './infra.js'
+import { apiEventsSseHandler } from './events.js'
 import { apiSpaceForCommunityHandler, apiMatrixTokenHandler, apiPushTokenHandler, apiMarkReadHandler, apiUnreadHandler, apiRoomsHandler, apiListDevicesHandler, apiRevokeDeviceHandler } from './matrix-identity.js'
 import { matrixPushV1NotifyHandler } from './push.js'
 import { apiSortitionRunsPOSTHandler, apiSortitionRunsGETHandler, apiSortitionRunsProcessHandler, apiSortitionProofsHandler, apiSortitionProofHandler, apiVerifySortitionHandler, apiSortitionProofAsRecordHandler } from './sortition.js'
@@ -31,6 +32,7 @@ const ROUTES: Route[] = [
   { urls: ['/api/mark-read'], prefix: false, method: 'POST', handler: apiMarkReadHandler },
   { urls: ['/api/unread'], prefix: true, method: 'GET', handler: apiUnreadHandler },
   { urls: ['/api/rooms'], prefix: false, method: 'GET', handler: apiRoomsHandler },
+  { urls: ['/api/events'], prefix: false, method: 'GET', handler: apiEventsSseHandler },
   { urls: ['/api/sortition/runs'], prefix: false, method: 'POST', handler: apiSortitionRunsPOSTHandler },
   { urls: ['/api/sortition/runs'], prefix: true, method: 'GET', handler: apiSortitionRunsGETHandler },
   { urls: ['/api/sortition/runs/process'], prefix: true, method: 'POST', handler: apiSortitionRunsProcessHandler },

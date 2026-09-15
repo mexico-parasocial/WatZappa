@@ -1,7 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { randomUUID } from 'node:crypto'
 import { AI_CONSENT_POLICY_VERSION } from '../ai-consent.js'
-import { authenticateM8 } from '../m8-auth.js'
+import { authenticateM8, HttpError } from '../m8-auth.js'
+import { authorize } from '../authz.js'
 import { fetchBeacon, fetchLatestBeacon } from '../drand.js'
 import { extractFromText, persistExtractedCard } from '../extraction.js'
 import { OpenAIClient } from '../openai-client.js'
@@ -229,6 +230,20 @@ export async function apiModerationDashboardHandler(req: IncomingMessage, res: S
           JSON.stringify({ error: 'modDid must match authenticated DID' }),
         )
         return
+      }
+      // F9: being the named moderator is not enough — the caller must hold
+      // the moderator or owner role in the community.
+      try {
+        await authorize(ctx, auth.did, 'community.moderate', {
+          kind: 'community',
+          communityUri,
+        })
+      } catch (err) {
+        if (err instanceof HttpError) {
+          writeJson(res, err.statusCode, { error: err.message })
+          return
+        }
+        throw err
       }
       const modStats = await ctx.db.getParticipationStats(auth.did, communityUri)
       if (!modStats || !modStats.is_moderator) {

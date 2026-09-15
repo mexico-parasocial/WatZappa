@@ -1,7 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { randomUUID } from 'node:crypto'
 import { AI_CONSENT_POLICY_VERSION } from '../ai-consent.js'
-import { authenticateM8 } from '../m8-auth.js'
+import { authenticateM8, HttpError } from '../m8-auth.js'
+import { authorize } from '../authz.js'
 import { fetchBeacon, fetchLatestBeacon } from '../drand.js'
 import { extractFromText, persistExtractedCard } from '../extraction.js'
 import { OpenAIClient } from '../openai-client.js'
@@ -139,13 +140,16 @@ export async function apiMarkReadHandler(req: IncomingMessage, res: ServerRespon
         writeJson(res, 400, { error: 'Missing roomId' })
         return
       }
-      const community = await ctx.db.getCommunityByRoomId(roomId)
-      if (
-        !community ||
-        !(await ctx.db.isActiveCommunityMember(did, community.communityUri))
-      ) {
-        writeJson(res, 403, { error: 'Not an active community member' })
-        return
+      // F9: membership alone is not enough — the caller's chamber assignment
+      // must match the room's chamber (observers only reach main/observers).
+      try {
+        await authorize(ctx, did, 'chamber.read', { kind: 'room', roomId })
+      } catch (err) {
+        if (err instanceof HttpError) {
+          writeJson(res, err.statusCode, { error: err.message })
+          return
+        }
+        throw err
       }
       // If no eventId provided, mark all current events as read
       const targetEventId =

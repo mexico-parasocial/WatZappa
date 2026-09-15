@@ -171,6 +171,24 @@ export class IdentityMatrixArea extends PgBase {
   }
 
 
+  async getCommunityMembership(
+    did: string,
+    communityUri: string,
+  ): Promise<{ state: string; roles: string[] } | undefined> {
+    const row = await this.queryOne<{ membership_state: string; roles_json: string }>(
+      'SELECT membership_state, roles_json FROM community_membership_state WHERE did = $1 AND community_uri = $2',
+      [did, communityUri],
+    )
+    if (!row) return undefined
+    let roles: string[] = []
+    try {
+      roles = JSON.parse(row.roles_json ?? '[]')
+    } catch {
+      roles = []
+    }
+    return { state: row.membership_state, roles }
+  }
+
   async isActiveCommunityMember(
     did: string,
     communityUri: string,

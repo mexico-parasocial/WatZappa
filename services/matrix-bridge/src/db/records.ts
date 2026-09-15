@@ -66,3 +66,13 @@ export interface DeviceSession {
   lastSeenAt: string
   revokedAt: string | null
 }
+
+export interface BridgeEvent {
+  seq: number
+  type: string
+  communityUri: string | null
+  /** DIDs that may receive this event; null = community-wide audience */
+  audienceDids: string[] | null
+  payload: unknown
+  createdAt: string
+}

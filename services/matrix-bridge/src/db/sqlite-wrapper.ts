@@ -208,6 +208,30 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     return this.wrap(() => this.inner.revokeDeviceSession(did, id))
   }
 
+  async appendEvent(event: {
+    type: string
+    communityUri: string | null
+    audienceDids: string[] | null
+    payload: unknown
+  }): Promise<import('./records.js').BridgeEvent> {
+    return this.wrap(() => this.inner.appendEvent(event))
+  }
+
+  async listEventsAfter(
+    afterSeq: number,
+    limit: number,
+  ): Promise<import('./records.js').BridgeEvent[]> {
+    return this.wrap(() => this.inner.listEventsAfter(afterSeq, limit))
+  }
+
+  async getMaxEventSeq(): Promise<number> {
+    return this.wrap(() => this.inner.getMaxEventSeq())
+  }
+
+  async pruneEventsBefore(cutoffIso: string): Promise<number> {
+    return this.wrap(() => this.inner.pruneEventsBefore(cutoffIso))
+  }
+
   getDidForMxid(mxid: string): Promise<string | undefined> {
     return this.wrap(() => this.inner.getDidForMxid(mxid))
   }
@@ -651,6 +675,13 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
         roles,
       ),
     )
+  }
+
+  async getCommunityMembership(
+    did: string,
+    communityUri: string,
+  ): Promise<{ state: string; roles: string[] } | undefined> {
+    return this.wrap(() => this.inner.getCommunityMembership(did, communityUri))
   }
 
   isActiveCommunityMember(did: string, communityUri: string): Promise<boolean> {

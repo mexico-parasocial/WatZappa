@@ -1,7 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { randomUUID } from 'node:crypto'
 import { AI_CONSENT_POLICY_VERSION } from '../ai-consent.js'
-import { authenticateM8 } from '../m8-auth.js'
+import { authenticateM8, HttpError } from '../m8-auth.js'
+import { authorize } from '../authz.js'
 import { fetchBeacon, fetchLatestBeacon } from '../drand.js'
 import { extractFromText, persistExtractedCard } from '../extraction.js'
 import { OpenAIClient } from '../openai-client.js'
@@ -139,14 +140,18 @@ export async function apiSortitionRunsProcessHandler(req: IncomingMessage, res: 
         res.end(JSON.stringify({ error: 'Sortition run not found' }))
         return
       }
-      if (!(await ctx.db.isActiveCommunityMember(auth.did, run.community_uri))) {
-        res.writeHead(403, { 'Content-Type': 'application/json' })
-        res.end(
-          JSON.stringify({
-            error: 'Only community members can process sortitions',
-          }),
-        )
-        return
+      // F9: processing a run selects members — requires a governance role.
+      try {
+        await authorize(ctx, auth.did, 'sortition.process', {
+          kind: 'community',
+          communityUri: run.community_uri,
+        })
+      } catch (err) {
+        if (err instanceof HttpError) {
+          writeJson(res, err.statusCode, { error: err.message })
+          return
+        }
+        throw err
       }
       const result = await ctx.sortition.processRun(runId)
       res.writeHead(200, { 'Content-Type': 'application/json' })

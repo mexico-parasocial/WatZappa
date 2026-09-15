@@ -28,6 +28,7 @@ export type BskyConfig = Partial<bsky.ServerConfig> & {
   dbPostgresSchema: string
   redisHost: string
   pdsPort: number
+  bsyncUrl: string
   migration?: string
   privateKey?: string
 }

@@ -40,6 +40,17 @@ export class SqliteBase {
 
       CREATE INDEX IF NOT EXISTS idx_device_sessions_did ON device_sessions(did);
 
+      CREATE TABLE IF NOT EXISTS event_log (
+        seq INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL,
+        community_uri TEXT,
+        audience_dids_json TEXT,
+        payload_json TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_event_log_created ON event_log(created_at);
+
       CREATE TABLE IF NOT EXISTS user_matrix_map (
         did TEXT PRIMARY KEY,
         matrix_user_id TEXT NOT NULL,

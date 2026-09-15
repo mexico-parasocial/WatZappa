@@ -145,6 +145,25 @@ export class IdentityMatrixArea extends SqliteBase {
   }
 
 
+  getCommunityMembership(
+    did: string,
+    communityUri: string,
+  ): { state: string; roles: string[] } | undefined {
+    const row = this.db
+      .prepare(
+        'SELECT membership_state, roles_json FROM community_membership_state WHERE did = ? AND community_uri = ?',
+      )
+      .get(did, communityUri) as any | undefined
+    if (!row) return undefined
+    let roles: string[] = []
+    try {
+      roles = JSON.parse(row.roles_json ?? '[]')
+    } catch {
+      roles = []
+    }
+    return { state: row.membership_state, roles }
+  }
+
   isActiveCommunityMember(did: string, communityUri: string): boolean {
     const row = this.db
       .prepare(

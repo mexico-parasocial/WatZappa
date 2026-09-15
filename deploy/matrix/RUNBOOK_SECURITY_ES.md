@@ -9,6 +9,7 @@
 ## Rotación
 
 - `MATRIX_ADMIN_TOKEN`: crear nuevo admin/token, actualizar `.env`, reiniciar `matrix-bridge`, revocar el token anterior.
+- `MATRIX_APPSERVICE_TOKEN` (si está en uso): rotar también el `as_token`/`hs_token` en `deploy/matrix/synapse/para-bridge-registration.yaml` y reiniciar Synapse y el bridge juntos (el login de usuarios falla mientras estén desincronizados).
 - Sesiones Matrix de usuario: regenerar token con `/api/matrix-token`; si hay sospecha de compromiso, invalidar dispositivos desde Synapse.
 - Backups cifrados M8: el cliente debe subir un nuevo blob a `/v1/identity/chat-key-backup`; M8 registra la rotación en `ledger`.
 - Salas legacy sin E2EE: crear sala cifrada nueva, invitar miembros activos, marcar la sala anterior read-only y publicar aviso de migración.

@@ -10,6 +10,7 @@ import type { MatrixProjectionPort } from './matrix-projection.js'
 import type { BridgeMetrics } from './metrics.js'
 import { ProposalEngine } from './proposals.js'
 import { assignChamberBalanced, assignChamberVerifiable } from './sortition.js'
+import type { EventBus } from './events/bus.js'
 
 const CURSOR_SAVE_INTERVAL_MS = 30000
 
@@ -21,6 +22,7 @@ const CURSOR_SAVE_INTERVAL_MS = 30000
  * lives behind that port; this file speaks DIDs only.
  */
 export class FirehoseConsumer {
+
   private firehose: Firehose
   private db: IBridgeDatabase
   private projection: MatrixProjectionPort
@@ -31,6 +33,8 @@ export class FirehoseConsumer {
   private lastSeq: number | undefined
   private initialCursor: number | undefined
   private cursorSaveTimer: NodeJS.Timeout | null = null
+
+  private events?: EventBus
 
   constructor(
     config: Config,
@@ -67,6 +71,11 @@ export class FirehoseConsumer {
       },
       getCursor: () => this.initialCursor ?? undefined,
     })
+  }
+
+  /** Late-injected SSE bus (main wires it after construction). */
+  setEventBus(events: EventBus): void {
+    this.events = events
   }
 
   async start(): Promise<void> {
@@ -238,6 +247,15 @@ export class FirehoseConsumer {
     const roles = (record.roles ?? []) as string[]
     const isObserver = roles.includes('observer')
     await this.db.setCommunityMembership(userDid, communityUri, state, roles)
+    if (this.events) {
+      // Community-visible; no direct audience — members see joins/leaves.
+      await this.events.publish({
+        type: 'membership.changed',
+        communityUri,
+        audienceDids: [userDid],
+        payload: { did: userDid, state, roles },
+      })
+    }
 
     const space = await this.db.getSpaceForCommunity(communityUri)
     if (!space) {

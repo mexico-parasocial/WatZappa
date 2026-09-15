@@ -12,6 +12,7 @@ import { BridgeMetrics } from './metrics.js'
 import { ProposalEngine } from './proposals.js'
 import { RetryWorker } from './retry.js'
 import { createSortitionEngine } from './sortition-runs.js'
+import { EventBus } from './events/bus.js'
 import { routeRequest, writeJsonFallback } from './routes/router.js'
 import { writeJson } from './routes/http.js'
 import type { RouteContext } from './routes/context.js'
@@ -45,11 +46,14 @@ async function main() {
   const metrics = new BridgeMetrics()
   const projection = createMatrixProjection(config, db, matrix, log)
   const chatMod = new ChatModerationEngine(db, log)
+  const events = new EventBus(db, log)
   const proposals = new ProposalEngine(db, matrix, log, chatMod)
   const firehose = new FirehoseConsumer(config, db, projection, proposals, chatMod, metrics, log)
+  firehose.setEventBus(events)
+  proposals.setEventBus(events)
   const retryWorker = new RetryWorker(db, matrix, metrics, log)
   const syncPoller = new MatrixSyncPoller(config, db, matrix, chatMod, log)
-  const sortition = createSortitionEngine(db, log)
+  const sortition = createSortitionEngine(db, log, events)
 
   const ctx: RouteContext = {
     config,
@@ -60,6 +64,7 @@ async function main() {
     chatMod,
     proposals,
     sortition,
+    events,
   }
 
   // Update gauge metrics periodically
@@ -108,6 +113,11 @@ async function main() {
     })
   }, 600_000)
 
+  // SSE event_log retention pruning — hourly
+  const eventPruneCron = setInterval(() => {
+    void events.prune()
+  }, 3_600_000)
+
   // Badge recompute + expiry — runs every 5 minutes
   const badgeCron = setInterval(() => {
     void (async () => {
@@ -131,6 +141,7 @@ async function main() {
     await firehose.stop()
     clearInterval(proposalCron)
     clearInterval(badgeCron)
+    clearInterval(eventPruneCron)
     server.close()
     await db.close()
     process.exit(0)

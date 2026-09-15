@@ -67,6 +67,11 @@ export interface IdentityMatrixStore {
     roles?: string[],
   ): Promise<void>
 
+  getCommunityMembership(
+    did: string,
+    communityUri: string,
+  ): Promise<{ state: string; roles: string[] } | undefined>
+
   isActiveCommunityMember(did: string, communityUri: string): Promise<boolean>
 
   getActiveCommunityRoomsForDid(did: string): Promise<
