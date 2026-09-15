@@ -54,6 +54,7 @@ msgid "<0>What makes it special</0><1>The key difference: your data isn't trappe
 msgstr "<0>What makes it special</0><1>The key difference: your data isn't trapped in any one app. Unlike traditional social media accounts, where your data belongs to the platform, with an Atmosphere account you genuinely own your identity and data:</1><2><3><4>You own your identity</4>: Your username (handle) and permanent ID belong to you</3><5><6>Your data is portable</6>: Posts, follows, and content live in your personal data storage, not locked in an app's database</5><7><8>You can move freely</8>: Switch hosting providers without losing your followers, posts, or connections. This also lets you choose a provider in your country if it matters where your data is stored.</7><9><10>Multiple apps, one identity</10>: Use the same account across different apps built on the same network</9></2>"
 
 #: src/components/forms/input-handle-custom-instructions.tsx
+#: src/components/forms/input-handle-custom-instructions.tsx
 msgid "<your-domain>"
 msgstr "<your-domain>"
 
@@ -167,6 +168,7 @@ msgstr "An application on your device"
 
 #: src/components/error-view.tsx
 #: src/contexts/notifications.tsx
+#: src/lib/notification-message.ts
 msgid "An error occurred"
 msgstr "An error occurred"
 
@@ -214,10 +216,12 @@ msgid "Authenticate"
 msgstr "Authenticate"
 
 #: src/components/utils/scope-description.tsx
+#: src/components/utils/scope-description.tsx
 msgctxt "OAuthScope"
 msgid "Authenticate"
 msgstr "Authenticate"
 
+#: src/components/consent-form.tsx
 #: src/components/consent-view.tsx
 msgctxt "OAuthConsent"
 msgid "Authorize"
@@ -230,6 +234,8 @@ msgid "Authorized on {0}"
 msgstr "Authorized on {0}"
 
 #: src/components/forms/form-card.tsx
+#: src/components/forms/form-shell.tsx
+#: src/components/forms/sign-up-wizard.tsx
 #: src/components/forms/wizard-card.tsx
 #: src/components/sign-in-picker.tsx
 #: src/routes/__root.tsx
@@ -252,6 +258,10 @@ msgstr "Bluesky Chat services"
 msgid "Branding"
 msgstr "Branding"
 
+#: src/components/consent-form.tsx
+msgid "By clicking <0>Authorize</0>, you will grant this application access to your account in accordance with its <1>terms of service</1> and <2>privacy policy</2>."
+msgstr "By clicking <0>Authorize</0>, you will grant this application access to your account in accordance with its <1>terms of service</1> and <2>privacy policy</2>."
+
 #. placeholder {0}: tosLink ? ( <LinkAnchor className="text-primary underline" link={tosLink}> <Trans>Terms of Service</Trans> </LinkAnchor> ) : ( <Trans>Terms of Service</Trans> )
 #. placeholder {1}: ppLink ? ( <LinkAnchor className="text-primary underline" link={ppLink}> <Trans>Privacy Policy</Trans> </LinkAnchor> ) : ( <Trans>Privacy Policy</Trans> )
 #: src/components/sign-up-disclaimer.tsx
@@ -265,7 +275,9 @@ msgstr "Call"
 
 #: src/components/authenticate-welcome-view.tsx
 #: src/components/delete-account-dialog.tsx
+#: src/components/delete-account-dialog.tsx
 #: src/components/forms/form-card.tsx
+#: src/components/forms/form-shell.tsx
 #: src/components/reactivate-account-view.tsx
 #: src/contexts/authentication.tsx
 msgid "Cancel"
@@ -331,6 +343,7 @@ msgstr "Click here if nothing happens"
 
 #: src/components/oauth-session-details-dialog.tsx
 #: src/components/ui/dialog.tsx
+#: src/components/ui/dialog.tsx
 #: src/components/ui/toast.tsx
 #: src/components/utils/dialog-simple.tsx
 msgid "Close"
@@ -373,14 +386,17 @@ msgid "Continue"
 msgstr "Continue"
 
 #: src/cookie-error-page.tsx
+#: src/cookie-error-page.tsx
 msgid "Cookie Error"
 msgstr "Cookie Error"
 
 #: src/components/forms/button-copy.tsx
+#: src/components/forms/copy-button.tsx
 msgid "Copied"
 msgstr "Copied"
 
 #: src/components/forms/button-copy.tsx
+#: src/components/forms/copy-button.tsx
 msgid "Copy to clipboard"
 msgstr "Copy to clipboard"
 
@@ -431,6 +447,11 @@ msgstr "Delete account <0/>"
 msgid "Delete my account"
 msgstr "Delete my account"
 
+#: src/components/consent-form.tsx
+msgctxt "OAuthConsent"
+msgid "Deny access"
+msgstr "Deny access"
+
 #: src/components/utils/description-card.tsx
 #: src/pages/account/(authenticated)/apps/page.tsx
 msgid "Details"
@@ -464,7 +485,9 @@ msgstr "e.g. <0>alice{0}</0>"
 msgid "Email"
 msgstr "Email"
 
+#: src/components/forms/fields/email-field.tsx
 #: src/components/forms/input-email-address.tsx
+#: src/components/reset-password-request-form.tsx
 #: src/components/reset-password-request-form.tsx
 #: src/pages/account/(authenticated)/manage/page.tsx
 msgid "Email address"
@@ -490,6 +513,7 @@ msgstr "Email these instructions"
 msgid "Email verified"
 msgstr "Email verified"
 
+#: src/components/forms/fields/new-password-field.tsx
 #: src/components/forms/input-new-password.tsx
 msgid "Enter a password"
 msgstr "Enter a password"
@@ -510,6 +534,7 @@ msgstr "Enter the email you used to create your account. We'll send you a \"rese
 msgid "Enter your email address"
 msgstr "Enter your email address"
 
+#: src/components/forms/fields/new-password-field.tsx
 #: src/components/forms/input-new-password.tsx
 msgid "Enter your new password"
 msgstr "Enter your new password"
@@ -518,6 +543,7 @@ msgstr "Enter your new password"
 msgid "Enter your password"
 msgstr "Enter your password"
 
+#: src/components/sign-in-view.tsx
 #: src/components/sign-in-view.tsx
 msgid "Enter your username and password"
 msgstr "Enter your username and password"
@@ -631,7 +657,8 @@ msgstr "Having trouble? <0>Contact support</0>"
 
 #. placeholder {0}: instructionsMethods .map(({ label, message, values }) => { return `${label}: ${message}\n${values.map(({ label, value }) => `${label}: ${value}`).join('\n')}` }) .join(`\n\n`)
 #: src/components/forms/input-handle-custom-instructions.tsx
-msgid "Hello,\n"
+msgid ""
+"Hello,\n"
 "\n"
 "To associate the domain \"{handle}\" with my AT Protocol identity ({did}), one of the following configuration changes is required. Either method is sufficient, only one needs to be applied.\n"
 "\n"
@@ -641,7 +668,8 @@ msgid "Hello,\n"
 "A detailed tutorial can be found here: {tutorialHref}\n"
 "\n"
 "Thank you."
-msgstr "Hello,\n"
+msgstr ""
+"Hello,\n"
 "\n"
 "To associate the domain \"{handle}\" with my AT Protocol identity ({did}), one of the following configuration changes is required. Either method is sufficient, only one needs to be applied.\n"
 "\n"
@@ -657,6 +685,7 @@ msgid "Help"
 msgstr "Help"
 
 #: src/components/forms/button-toggle-visibility.tsx
+#: src/components/forms/fields/password-field.tsx
 msgid "Hide"
 msgstr "Hide"
 
@@ -702,10 +731,15 @@ msgstr "If you update your email address, email 2FA (if enabled) will be disable
 msgid "If you're trying to change your handle or email, do so before you deactivate."
 msgstr "If you're trying to change your handle or email, do so before you deactivate."
 
+#: src/locales/locale-selector.tsx
+msgid "Interface language selector"
+msgstr "Interface language selector"
+
 #: src/components/utils/handle.tsx
 msgid "Invalid Handle"
 msgstr "Invalid Handle"
 
+#: src/components/sign-up-credentials-form.tsx
 #: src/components/sign-up-credentials-form.tsx
 msgid "Invite code"
 msgstr "Invite code"
@@ -743,6 +777,7 @@ msgid "Let's get your password reset!"
 msgstr "Let's get your password reset!"
 
 #: src/components/layouts/auth-shell.tsx
+#: src/components/layouts/layout-app.tsx
 msgid "Logo"
 msgstr "Logo"
 
@@ -759,6 +794,7 @@ msgid "Make a text file with the contents below available at the following URL."
 msgstr "Make a text file with the contents below available at the following URL."
 
 #: src/components/forms/button-toggle-visibility.tsx
+#: src/components/forms/fields/password-field.tsx
 msgid "Make visible"
 msgstr "Make visible"
 
@@ -825,7 +861,9 @@ msgstr "New email address"
 msgid "New password"
 msgstr "New password"
 
+#: src/components/forms/sign-up-wizard.tsx
 #: src/components/forms/wizard-card.tsx
+#: src/components/reset-password-view.tsx
 #: src/components/reset-password-view.tsx
 msgid "Next"
 msgstr "Next"
@@ -843,6 +881,7 @@ msgid "Page not found"
 msgstr "Page not found"
 
 #: src/components/delete-account-confirm-form.tsx
+#: src/components/forms/fields/password-field.tsx
 #: src/components/forms/input-password.tsx
 #: src/components/sign-in-form.tsx
 #: src/components/sign-up-credentials-form.tsx
@@ -871,6 +910,10 @@ msgstr "Password strength indicator"
 #: src/components/reset-password-view.tsx
 msgid "Password Updated"
 msgstr "Password Updated"
+
+#: src/components/forms/fields/new-password-field.tsx
+msgid "Password with at least {MIN_PASSWORD_LENGTH, plural, other {# characters}}"
+msgstr "Password with at least {MIN_PASSWORD_LENGTH, plural, other {# characters}}"
 
 #: src/components/forms/input-new-password.tsx
 msgid "Password with at least {MIN_PASSWORD_LENGTH} characters"
@@ -921,14 +964,21 @@ msgid "Please enter the security code that was sent to your email address."
 msgstr "Please enter the security code that was sent to your email address."
 
 #: src/data/account.ts
+#: src/data/account.ts
+#: src/data/account.ts
 #: src/data/email.ts
 msgid "Please try again in a moment."
 msgstr "Please try again in a moment."
+
+#: src/components/forms/request-code-button.tsx
+msgid "Please wait {remainingSeconds, plural, one {# second} other {# seconds}} before trying again."
+msgstr "Please wait {remainingSeconds, plural, one {# second} other {# seconds}} before trying again."
 
 #: src/components/forms/button-cooldown.tsx
 msgid "Please wait {remainingSeconds} seconds before trying again."
 msgstr "Please wait {remainingSeconds} seconds before trying again."
 
+#: src/components/sign-up-disclaimer.tsx
 #: src/components/sign-up-disclaimer.tsx
 #: src/components/utils/link-title.tsx
 msgid "Privacy Policy"
@@ -964,9 +1014,11 @@ msgid "Read your private preferences"
 msgstr "Read your private preferences"
 
 #: src/components/sign-in-form.tsx
+#: src/components/sign-in-form.tsx
 msgid "Remember this account on this device"
 msgstr "Remember this account on this device"
 
+#: src/components/utils/scope-description.tsx
 #: src/components/utils/scope-description.tsx
 msgid "Repository"
 msgstr "Repository"
@@ -993,6 +1045,8 @@ msgid "Retry"
 msgstr "Retry"
 
 #: src/components/forms/button-cooldown.tsx
+#: src/components/forms/request-code-button.tsx
+#: src/components/forms/request-code-button.tsx
 msgid "Retry in {remainingSeconds}s"
 msgstr "Retry in {remainingSeconds}s"
 
@@ -1028,6 +1082,7 @@ msgid "Send email"
 msgstr "Send email"
 
 #: src/components/forms/button-request-code.tsx
+#: src/components/forms/request-code-button.tsx
 msgid "Send verification code"
 msgstr "Send verification code"
 
@@ -1067,6 +1122,7 @@ msgstr "Sign out"
 
 #: src/components/sign-in-picker.tsx
 #: src/components/sign-up-view.tsx
+#: src/components/sign-up-view.tsx
 msgid "Sign up"
 msgstr "Sign up"
 
@@ -1084,6 +1140,7 @@ msgctxt "Error"
 msgid "Stack"
 msgstr "Stack"
 
+#: src/components/forms/sign-up-wizard.tsx
 #: src/components/forms/wizard-card.tsx
 msgid "Step {currentPosition} of {count}"
 msgstr "Step {currentPosition} of {count}"
@@ -1094,6 +1151,7 @@ msgid "Strong"
 msgstr "Strong"
 
 #: src/components/forms/form-card.tsx
+#: src/components/forms/form-shell.tsx
 msgid "Submit"
 msgstr "Submit"
 
@@ -1109,10 +1167,15 @@ msgstr "Successfully revoked access"
 msgid "Support"
 msgstr "Support"
 
+#: src/components/consent-form.tsx
+msgid "Technical details"
+msgstr "Technical details"
+
 #: src/components/utils/scope-description.tsx
 msgid "Temporarily activate or deactivate your account"
 msgstr "Temporarily activate or deactivate your account"
 
+#: src/components/sign-up-disclaimer.tsx
 #: src/components/sign-up-disclaimer.tsx
 #: src/components/utils/link-title.tsx
 msgid "Terms of Service"
@@ -1182,6 +1245,10 @@ msgstr "This app can uniquely identify you through your account."
 msgid "This app has access to your account with the following permissions:"
 msgstr "This app has access to your account with the following permissions:"
 
+#: src/components/consent-form.tsx
+msgid "This application is requesting the following permissions (scopes) to access your account:"
+msgstr "This application is requesting the following permissions (scopes) to access your account:"
+
 #: src/lib/api.ts
 msgid "This authorization request has been denied. Please try again."
 msgstr "This authorization request has been denied. Please try again."
@@ -1190,6 +1257,8 @@ msgstr "This authorization request has been denied. Please try again."
 msgid "This email is already used"
 msgstr "This email is already used"
 
+#: src/lib/api.ts
+#: src/lib/api.ts
 #: src/lib/api.ts
 msgid "This sign-in session has expired"
 msgstr "This sign-in session has expired"
@@ -1254,9 +1323,12 @@ msgid "Update"
 msgstr "Update"
 
 #: src/components/update-email-dialog.tsx
+#: src/components/update-email-dialog.tsx
 msgid "Update your email"
 msgstr "Update your email"
 
+#: src/components/update-handle-dialog.tsx
+#: src/components/update-handle-dialog.tsx
 #: src/components/update-handle-dialog.tsx
 msgid "Update your username"
 msgstr "Update your username"
@@ -1340,6 +1412,14 @@ msgstr "Verify you are human"
 #: src/components/verify-email-dialog.tsx
 msgid "Verify your email"
 msgstr "Verify your email"
+
+#: src/components/consent-form.tsx
+msgid "wants to access your <0/> account"
+msgstr "wants to access your <0/> account"
+
+#: src/components/consent-form.tsx
+msgid "wants to uniquely identify you through your <0/> account"
+msgstr "wants to uniquely identify you through your <0/> account"
 
 #: src/components/sign-in-form.tsx
 msgid "Warning"
