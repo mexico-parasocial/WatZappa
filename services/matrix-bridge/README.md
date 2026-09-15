@@ -1,5 +1,7 @@
 # Matrix↔PARA Community Bridge
 
+The native-client contract (sessions, SSE event catalog, push payloads,
+authorization semantics) lives in [docs/CLIENT_INTEGRATION.md](./docs/CLIENT_INTEGRATION.md).
 Synchronizes PARA community memberships with Matrix spaces. **PARA-only — federation disabled.**
 
 The bridge uses [`matrix-bot-sdk`](https://github.com/turt2live/matrix-bot-sdk) for Matrix client and supported admin operations; Synapse-specific admin endpoints not covered by the SDK are called directly.

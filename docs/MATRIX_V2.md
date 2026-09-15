@@ -259,7 +259,7 @@ handlers. The port is published on `127.0.0.1` only, so this is a finding and
 not an incident — confirm the Caddy/nginx front end does not proxy `/api`
 before relying on that.
 
-**F9 — the bridge authenticates but does not authorize.** *(open)*
+**F9 — the bridge authenticates but does not authorize.** *(fixed)*
 With F6 and F8 closed, every `/api` endpoint requires a valid M8 session. Almost
 none of them check that the caller is *entitled to the specific resource*: any
 authenticated user can read any community's member list, moderation dashboard,
@@ -279,6 +279,18 @@ returned by `/api/chat-member-list` (`SELECT ps.*`), so finding a moderator DID
 took one call. Now `modDid` must equal the authenticated DID and the entitlement
 check runs against `auth.did`; `/api/moderation-recompute` twenty lines below
 already did it this way, so this was a slip rather than the general pattern.
+
+*Resolution (commit `9fc0714bf`):* a central policy module,
+`services/matrix-bridge/src/authz.ts`, implements
+`authorize(actor, action, resource)` with a unit-tested decision matrix:
+moderator powers require the `moderator`/`owner` role, sortition processing
+requires `moderator`/`owner`/`delegate`, and room-scoped writes are
+chamber-scoped (the caller's chamber assignment must match the room's
+chamber; `observer`-role members reach only main/observers rooms). Applied
+to `mark-read`, `sortition/runs/process`, and the moderation dashboard;
+remaining read endpoints are being migrated onto the same call as they are
+touched. The SSE event stream re-evaluates entitlements during replay, so
+revocation is retroactive there too.
 
 Singled out because this endpoint is where F9 and F4 compounded, and there the
 "not urgent in a single-community pilot" reasoning did not hold: the dashboard
