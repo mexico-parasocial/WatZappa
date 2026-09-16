@@ -1,7 +1,8 @@
-import { Redis } from 'ioredis'
+import type { Redis } from 'ioredis'
 import { DAY, backoffMs, retry } from '@atproto/common'
-import { Client, XrpcError } from '@atproto/lex'
-import { InvalidTokenError, OAuthScope } from '@atproto/oauth-provider'
+import { type Client, XrpcError } from '@atproto/lex'
+import { InvalidTokenError } from '@atproto/oauth-provider/errors'
+import type { OAuthScope } from '@atproto/oauth-provider/store'
 import { UpstreamFailureError } from '@atproto/xrpc-server'
 import {
   CachedGetter,

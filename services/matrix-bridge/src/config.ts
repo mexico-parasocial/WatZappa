@@ -2,6 +2,9 @@ export interface Config {
   pdsFirehoseUrl: string
   matrixHomeserverUrl: string
   matrixAdminToken: string
+  matrixAppServiceToken?: string
+  matrixHsToken?: string
+  syncFallbackMs: number
   matrixBotUserId?: string
   matrixEnableEncryption: boolean
   m8BaseUrl: string
@@ -30,6 +33,16 @@ export function loadConfig(): Config {
     ),
     matrixHomeserverUrl: env('MATRIX_HOMESERVER_URL', 'http://synapse:8008'),
     matrixAdminToken: env('MATRIX_ADMIN_TOKEN'),
+    // Appservice token for m.login.application_service device-bound logins.
+    // Falls back to the admin token at runtime when absent (legacy behavior).
+    matrixAppServiceToken: process.env.MATRIX_APPSERVICE_TOKEN || undefined,
+    // hs_token from the appservice registration; required to accept
+    // transaction pushes from Synapse.
+    matrixHsToken: process.env.MATRIX_HS_TOKEN || undefined,
+    syncFallbackMs: parseInt(
+      process.env.BRIDGE_SYNC_FALLBACK_MS || '300000',
+      10,
+    ),
     matrixBotUserId: process.env.MATRIX_BOT_USER_ID || undefined,
     matrixEnableEncryption:
       process.env.MATRIX_ENABLE_ENCRYPTION === 'true' || false,

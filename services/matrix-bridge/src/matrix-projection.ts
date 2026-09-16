@@ -51,7 +51,11 @@ export interface MatrixProjectionPort {
   ): Promise<{ chamberRoomId: string | null }>
 
   /** Remove a member from every room of the community. */
-  kickMember(space: CommunitySpaceMap, did: string, reason: string): Promise<void>
+  kickMember(
+    space: CommunitySpaceMap,
+    did: string,
+    reason: string,
+  ): Promise<void>
 }
 
 export function createMatrixProjection(
@@ -74,9 +78,11 @@ export function createMatrixProjection(
   const ensureUserExists = async (mxid: string, did: string): Promise<void> => {
     const exists = await matrix.userExists(mxid)
     if (!exists) {
-      const password = randomUUID()
-      await matrix.createUser(mxid, did, password)
-      await db.setMxidForDid(did, mxid, password)
+      // One-time random secret for the Synapse upsert only — deliberately NOT
+      // persisted: user_matrix_map.password is deprecated (never read; sessions
+      // are device-bound via appservice login).
+      await matrix.createUser(mxid, did, randomUUID())
+      await db.setMxidForDid(did, mxid, '')
       log.info({ did, mxid }, 'Created Matrix user')
     }
   }
@@ -163,7 +169,11 @@ export function createMatrixProjection(
             'Invited observer to observer room',
           )
         }
-        await matrix.setPowerLevel(space.spaceId, userMxid, powerLevelForRoles(roles))
+        await matrix.setPowerLevel(
+          space.spaceId,
+          userMxid,
+          powerLevelForRoles(roles),
+        )
         return { chamberRoomId: null }
       }
 
@@ -185,10 +195,18 @@ export function createMatrixProjection(
             'Invited user to chamber',
           )
         }
-        await matrix.setPowerLevel(chamberRoomId, userMxid, powerLevelForRoles(roles))
+        await matrix.setPowerLevel(
+          chamberRoomId,
+          userMxid,
+          powerLevelForRoles(roles),
+        )
       }
 
-      await matrix.setPowerLevel(space.spaceId, userMxid, powerLevelForRoles(roles))
+      await matrix.setPowerLevel(
+        space.spaceId,
+        userMxid,
+        powerLevelForRoles(roles),
+      )
       return { chamberRoomId }
     },
 
@@ -207,7 +225,10 @@ export function createMatrixProjection(
           // User might not be in this room, ignore
         }
       }
-      log.info({ userMxid, state: reason }, 'Removed user from all community rooms')
+      log.info(
+        { userMxid, state: reason },
+        'Removed user from all community rooms',
+      )
     },
   }
 }

@@ -10,6 +10,7 @@ import type { MatrixProjectionPort } from './matrix-projection.js'
 import type { BridgeMetrics } from './metrics.js'
 import { ProposalEngine } from './proposals.js'
 import { assignChamberBalanced, assignChamberVerifiable } from './sortition.js'
+import type { EventBus } from './events/bus.js'
 
 const CURSOR_SAVE_INTERVAL_MS = 30000
 
@@ -31,6 +32,8 @@ export class FirehoseConsumer {
   private lastSeq: number | undefined
   private initialCursor: number | undefined
   private cursorSaveTimer: NodeJS.Timeout | null = null
+
+  private events?: EventBus
 
   constructor(
     config: Config,
@@ -67,6 +70,11 @@ export class FirehoseConsumer {
       },
       getCursor: () => this.initialCursor ?? undefined,
     })
+  }
+
+  /** Late-injected SSE bus (main wires it after construction). */
+  setEventBus(events: EventBus): void {
+    this.events = events
   }
 
   async start(): Promise<void> {
@@ -238,6 +246,15 @@ export class FirehoseConsumer {
     const roles = (record.roles ?? []) as string[]
     const isObserver = roles.includes('observer')
     await this.db.setCommunityMembership(userDid, communityUri, state, roles)
+    if (this.events) {
+      // Community-visible; no direct audience — members see joins/leaves.
+      await this.events.publish({
+        type: 'membership.changed',
+        communityUri,
+        audienceDids: [userDid],
+        payload: { did: userDid, state, roles },
+      })
+    }
 
     const space = await this.db.getSpaceForCommunity(communityUri)
     if (!space) {
@@ -267,11 +284,16 @@ export class FirehoseConsumer {
         })
         chamberRoomId = invited.chamberRoomId
 
-        await this.chatMod.recordMembership(userDid, communityUri, chamberRoomId ?? space.spaceId, {
-          isModerator: roles.includes('moderator') || roles.includes('owner'),
-          isDelegate: roles.includes('delegate'),
-          chamber: chamber ?? null,
-        })
+        await this.chatMod.recordMembership(
+          userDid,
+          communityUri,
+          chamberRoomId ?? space.spaceId,
+          {
+            isModerator: roles.includes('moderator') || roles.includes('owner'),
+            isDelegate: roles.includes('delegate'),
+            chamber: chamber ?? null,
+          },
+        )
 
         await this.db.logSync(
           'invite',
@@ -388,6 +410,14 @@ export class FirehoseConsumer {
         constitution.version,
         JSON.stringify(constitution.rules),
       )
+
+      if (this.events) {
+        await this.events.publish({
+          type: 'constitution.updated',
+          communityUri: constitution.community,
+          payload: { version: constitution.version },
+        })
+      }
       this.log.info(
         { community: constitution.community, version: constitution.version },
         'Constitution updated',

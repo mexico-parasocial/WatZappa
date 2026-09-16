@@ -1,5 +1,4 @@
 export interface MatrixEventsStore {
-
   insertMatrixEvent(event: {
     roomId: string
     eventId: string
@@ -26,4 +25,7 @@ export interface MatrixEventsStore {
   getTotalUnreadForDid(did: string): Promise<number>
 
   getAllRoomIds(): Promise<string[]>
+
+  /** Appservice transaction dedup: true when freshly recorded. */
+  recordAsTransaction(txnId: string): Promise<boolean>
 }

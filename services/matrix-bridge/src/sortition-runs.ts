@@ -6,6 +6,7 @@ import {
   fetchBeacon,
 } from './drand.js'
 import { sendExpoNotifications } from './push.js'
+import type { EventBus } from './events/bus.js'
 
 /**
  * Cabildeo assembly sortition engine. Extracted verbatim from the HTTP layer:
@@ -70,7 +71,11 @@ export function formatSortitionCandidate(row: any) {
   }
 }
 
-export function createSortitionEngine(db: IBridgeDatabase, log: pino.Logger) {
+export function createSortitionEngine(
+  db: IBridgeDatabase,
+  log: pino.Logger,
+  events?: EventBus,
+) {
   const processRun = async (runId: string) => {
     const run = (await db.getSortitionRun(runId)) as SortitionRunRow | undefined
     if (!run) {
@@ -170,6 +175,27 @@ export function createSortitionEngine(db: IBridgeDatabase, log: pino.Logger) {
       },
       'Processed Cabildeo sortition run',
     )
+
+    if (events) {
+      // Selected members learn first (direct audience); the community sees
+      // the aggregate run update without member identities.
+      await events.publish({
+        type: 'sortition.selected',
+        communityUri: run.community_uri,
+        audienceDids: selectedDids,
+        payload: { runId: run.id, cabildeoUri: run.cabildeo_uri },
+      })
+      await events.publish({
+        type: 'sortition.run.updated',
+        communityUri: run.community_uri,
+        payload: {
+          runId: run.id,
+          status: 'active',
+          selectedCount,
+          eligibleCount: ranked.length,
+        },
+      })
+    }
 
     const selectedCandidates = await db.getSortitionCandidates(run.id, true)
     return {

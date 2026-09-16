@@ -1,5 +1,6 @@
 import type { Logger } from 'pino'
 import type { ChatModerationEngine } from './chat-moderation.js'
+import type { EventBus } from './events/bus.js'
 import type { Config } from './config.js'
 import type { IBridgeDatabase } from './db/index.js'
 import type { MatrixAdminClient } from './matrix.js'
@@ -14,6 +15,7 @@ interface RoomPollState {
 }
 
 export class MatrixSyncPoller {
+  private events?: EventBus
   private db: IBridgeDatabase
   private matrix: MatrixAdminClient
   private chatMod: ChatModerationEngine
@@ -34,7 +36,9 @@ export class MatrixSyncPoller {
     this.matrix = matrix
     this.chatMod = chatMod
     this.log = log
-    this.pollIntervalMs = DEFAULT_POLL_INTERVAL_MS
+    // Reconciliation fallback only: primary ingestion is appservice
+    // transaction push (routes/appservice-txn.ts).
+    this.pollIntervalMs = config.syncFallbackMs || DEFAULT_POLL_INTERVAL_MS
   }
 
   start(): void {
@@ -61,6 +65,11 @@ export class MatrixSyncPoller {
       this.timer = null
     }
     this.log.info('Matrix sync poller stopped')
+  }
+
+  /** Late-injected SSE bus (main wires it after construction). */
+  setEventBus(events: EventBus): void {
+    this.events = events
   }
 
   private async pollAllRooms(): Promise<void> {
@@ -144,6 +153,17 @@ export class MatrixSyncPoller {
         { roomId, newEvents, totalChunk: result.chunk.length },
         'Ingested Matrix events',
       )
+    }
+
+    if (newEvents > 0 && this.events) {
+      // Aggregate, content-free notice: clients recompute exact unread via
+      // GET /api/unread. Community-wide audience; the route layer scopes it.
+      const community = await this.db.getCommunityByRoomId(roomId)
+      await this.events.publish({
+        type: 'chat.unread',
+        communityUri: community?.communityUri ?? null,
+        payload: { roomId, count: newEvents },
+      })
     }
 
     // Update state

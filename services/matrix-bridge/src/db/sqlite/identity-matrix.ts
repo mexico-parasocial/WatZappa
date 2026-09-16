@@ -1,13 +1,17 @@
 import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunitySpaceMap,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  DeviceSession,
+  SyncLogEntry,
+  UserMatrixMap,
+  UserPushToken,
 } from '../interface.js'
 import { SqliteBase } from './base.js'
 
 export class IdentityMatrixArea extends SqliteBase {
-
-
   protected mapCommunitySpace(row: any): CommunitySpaceMap {
     return {
       communityUri: row.community_uri,
@@ -21,7 +25,6 @@ export class IdentityMatrixArea extends SqliteBase {
     }
   }
 
-
   // Community <-> Space mappings
   getSpaceForCommunity(communityUri: string): CommunitySpaceMap | undefined {
     const row = this.db
@@ -29,7 +32,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .get(communityUri) as any | undefined
     return row ? this.mapCommunitySpace(row) : undefined
   }
-
 
   setSpaceForCommunity(
     communityUri: string,
@@ -44,7 +46,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .run(communityUri, spaceId, slug, chamberMode)
   }
 
-
   setChamberRooms(
     communityUri: string,
     chamberA: string | null,
@@ -58,7 +59,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .run(chamberA, chamberB, observerRoom, communityUri)
   }
 
-
   // Chamber assignments
   getChamberAssignment(communityUri: string, did: string): string | undefined {
     const row = this.db
@@ -68,7 +68,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .get(communityUri, did) as { chamber: string } | undefined
     return row?.chamber
   }
-
 
   setChamberAssignment(
     communityUri: string,
@@ -82,7 +81,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .run(communityUri, did, chamber)
   }
 
-
   getChamberMemberCount(communityUri: string, chamber: string): number {
     const row = this.db
       .prepare(
@@ -91,7 +89,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .get(communityUri, chamber) as { count: number }
     return row.count
   }
-
 
   getActiveMemberCount(communityUri: string): number {
     const row = this.db
@@ -102,7 +99,6 @@ export class IdentityMatrixArea extends SqliteBase {
     return row.count
   }
 
-
   // User <-> MXID mappings
   getMxidForDid(did: string): string | undefined {
     const row = this.db
@@ -110,7 +106,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .get(did) as { matrix_user_id: string } | undefined
     return row?.matrix_user_id
   }
-
 
   setMxidForDid(did: string, mxid: string, password: string): void {
     this.db
@@ -120,14 +115,12 @@ export class IdentityMatrixArea extends SqliteBase {
       .run(did, mxid, password)
   }
 
-
   getUserPassword(did: string): string | undefined {
     const row = this.db
       .prepare('SELECT password FROM user_matrix_map WHERE did = ?')
       .get(did) as { password: string } | undefined
     return row?.password
   }
-
 
   setCommunityMembership(
     did: string,
@@ -144,6 +137,24 @@ export class IdentityMatrixArea extends SqliteBase {
       .run(did, communityUri, membershipState, JSON.stringify(roles))
   }
 
+  getCommunityMembership(
+    did: string,
+    communityUri: string,
+  ): { state: string; roles: string[] } | undefined {
+    const row = this.db
+      .prepare(
+        'SELECT membership_state, roles_json FROM community_membership_state WHERE did = ? AND community_uri = ?',
+      )
+      .get(did, communityUri) as any | undefined
+    if (!row) return undefined
+    let roles: string[] = []
+    try {
+      roles = JSON.parse(row.roles_json ?? '[]')
+    } catch {
+      roles = []
+    }
+    return { state: row.membership_state, roles }
+  }
 
   isActiveCommunityMember(did: string, communityUri: string): boolean {
     const row = this.db
@@ -153,7 +164,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .get(did, communityUri) as { membership_state: string } | undefined
     return row?.membership_state === 'active'
   }
-
 
   getActiveCommunityRoomsForDid(did: string): CommunityRoomSummary[] {
     const rows = this.db
@@ -233,7 +243,6 @@ export class IdentityMatrixArea extends SqliteBase {
     })
   }
 
-
   // Lookup community by any of its room IDs
   getCommunityByRoomId(
     roomId: string,
@@ -247,12 +256,81 @@ export class IdentityMatrixArea extends SqliteBase {
     return row ? { communityUri: row.community_uri, slug: row.slug } : undefined
   }
 
-
   // Get DID by MXID
   getDidForMxid(mxid: string): string | undefined {
     const row = this.db
       .prepare('SELECT did FROM user_matrix_map WHERE matrix_user_id = ?')
       .get(mxid) as { did: string } | undefined
     return row?.did
+  }
+
+  // Device sessions (trusted-device registry, patterned on tranquil-pds)
+
+  private mapDeviceSession(row: any): DeviceSession {
+    return {
+      id: row.id,
+      did: row.did,
+      mxid: row.mxid,
+      deviceId: row.device_id,
+      friendlyName: row.friendly_name ?? null,
+      userAgent: row.user_agent ?? null,
+      createdAt: row.created_at,
+      lastSeenAt: row.last_seen_at,
+      revokedAt: row.revoked_at ?? null,
+    }
+  }
+
+  createDeviceSession(session: DeviceSession): Promise<void> {
+    this.db
+      .prepare(
+        `INSERT INTO device_sessions
+          (id, did, mxid, device_id, friendly_name, user_agent, created_at, last_seen_at, revoked_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
+      )
+      .run(
+        session.id,
+        session.did,
+        session.mxid,
+        session.deviceId,
+        session.friendlyName,
+        session.userAgent,
+        session.createdAt,
+        session.lastSeenAt,
+      )
+    return Promise.resolve()
+  }
+
+  listDeviceSessions(did: string): Promise<DeviceSession[]> {
+    const rows = this.db
+      .prepare(
+        'SELECT * FROM device_sessions WHERE did = ? ORDER BY created_at DESC',
+      )
+      .all(did) as any[]
+    return Promise.resolve(rows.map((r) => this.mapDeviceSession(r)))
+  }
+
+  getDeviceSession(id: string): Promise<DeviceSession | undefined> {
+    const row = this.db
+      .prepare('SELECT * FROM device_sessions WHERE id = ?')
+      .get(id) as any | undefined
+    return Promise.resolve(row ? this.mapDeviceSession(row) : undefined)
+  }
+
+  touchDeviceSession(id: string): Promise<void> {
+    this.db
+      .prepare(
+        "UPDATE device_sessions SET last_seen_at = datetime('now') WHERE id = ?",
+      )
+      .run(id)
+    return Promise.resolve()
+  }
+
+  revokeDeviceSession(did: string, id: string): Promise<boolean> {
+    const res = this.db
+      .prepare(
+        "UPDATE device_sessions SET revoked_at = datetime('now') WHERE id = ? AND did = ? AND revoked_at IS NULL",
+      )
+      .run(id, did)
+    return Promise.resolve(res.changes > 0)
   }
 }

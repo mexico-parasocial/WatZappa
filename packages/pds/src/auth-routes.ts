@@ -8,7 +8,7 @@ import {
   oauthProtectedResourceMetadataSchema,
 } from '@atproto/oauth-provider'
 import { AppContext } from './context.js'
-import { oauthLogger, reqSerializer } from './logger.js'
+import { oauthLogger } from './logger.js'
 
 export const createRouter = ({ oauthProvider, cfg }: AppContext): Router => {
   const router = Router()
@@ -41,7 +41,7 @@ export const createRouter = ({ oauthProvider, cfg }: AppContext): Router => {
       oauthMiddleware(oauthProvider, {
         onError: (req, res, err, msg) => {
           if (!ignoreError(err)) {
-            oauthLogger.error({ err, req: reqSerializer(req) }, msg)
+            oauthLogger.error({ err, req }, msg)
           }
         },
       }),

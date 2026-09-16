@@ -101,6 +101,7 @@ msgstr ""
 msgid "Account"
 msgstr ""
 
+#: src/components/identity/account-avatar.tsx
 #: src/components/utils/account-image.tsx
 msgid "Account avatar"
 msgstr ""
@@ -113,14 +114,17 @@ msgstr ""
 msgid "Account deleted"
 msgstr ""
 
+#: src/components/identity/account-identifier.tsx
 #: src/components/utils/account-identifier.tsx
 msgid "Account identifier"
 msgstr ""
 
+#: src/components/identity/account-name.tsx
 #: src/components/utils/account-name.tsx
 msgid "Account name"
 msgstr ""
 
+#: src/components/identity/account-menu.tsx
 #: src/components/utils/account-selector.tsx
 msgid "Account overview"
 msgstr ""
@@ -130,12 +134,17 @@ msgstr ""
 msgid "Account reactivated"
 msgstr ""
 
+#: src/components/identity/account-menu.tsx
 #: src/components/utils/account-selector.tsx
 msgid "Account selector"
 msgstr ""
 
 #: src/components/utils/handle.tsx
 msgid "Account username"
+msgstr ""
+
+#: src/components/session-list.tsx
+msgid "Actions"
 msgstr ""
 
 #: src/components/forms/input-handle-custom-instructions.tsx
@@ -152,12 +161,14 @@ msgstr ""
 msgid "Already have a code?"
 msgstr ""
 
+#: src/components/identity/client-name.tsx
 #: src/components/utils/client-name.tsx
 msgid "An application on your device"
 msgstr ""
 
 #: src/components/error-view.tsx
 #: src/contexts/notifications.tsx
+#: src/lib/notification-message.ts
 msgid "An error occurred"
 msgstr ""
 
@@ -165,6 +176,7 @@ msgstr ""
 msgid "An unexpected error occurred. Please try again."
 msgstr ""
 
+#: src/components/feedback/error-notice.tsx
 #: src/components/utils/error-card.tsx
 msgid "An unknown error occurred"
 msgstr ""
@@ -222,6 +234,8 @@ msgid "Authorized on {0}"
 msgstr ""
 
 #: src/components/forms/form-card.tsx
+#: src/components/forms/form-shell.tsx
+#: src/components/forms/sign-up-wizard.tsx
 #: src/components/forms/wizard-card.tsx
 #: src/components/sign-in-picker.tsx
 #: src/routes/__root.tsx
@@ -263,6 +277,7 @@ msgstr ""
 #: src/components/delete-account-dialog.tsx
 #: src/components/delete-account-dialog.tsx
 #: src/components/forms/form-card.tsx
+#: src/components/forms/form-shell.tsx
 #: src/components/reactivate-account-view.tsx
 #: src/contexts/authentication.tsx
 msgid "Cancel"
@@ -327,6 +342,9 @@ msgid "Click here if nothing happens"
 msgstr ""
 
 #: src/components/oauth-session-details-dialog.tsx
+#: src/components/ui/dialog.tsx
+#: src/components/ui/dialog.tsx
+#: src/components/ui/toast.tsx
 #: src/components/utils/dialog-simple.tsx
 msgid "Close"
 msgstr ""
@@ -339,6 +357,7 @@ msgstr ""
 msgid "Close details"
 msgstr ""
 
+#: src/components/feedback/error-details.tsx
 #: src/components/utils/error-details.tsx
 msgctxt "Error"
 msgid "Code"
@@ -372,10 +391,12 @@ msgid "Cookie Error"
 msgstr ""
 
 #: src/components/forms/button-copy.tsx
+#: src/components/forms/copy-button.tsx
 msgid "Copied"
 msgstr ""
 
 #: src/components/forms/button-copy.tsx
+#: src/components/forms/copy-button.tsx
 msgid "Copy to clipboard"
 msgstr ""
 
@@ -404,6 +425,7 @@ msgstr ""
 msgid "Deactivate account"
 msgstr ""
 
+#: src/components/identity/account-avatar.tsx
 #: src/components/utils/account-image.tsx
 msgid "Deactivated account"
 msgstr ""
@@ -440,6 +462,7 @@ msgstr ""
 msgid "Devices"
 msgstr ""
 
+#: src/components/forms/fields/token-field.tsx
 #: src/components/forms/input-token.tsx
 msgid "Didn't receive a code? <0>Click here to resend.</0>"
 msgstr ""
@@ -462,6 +485,7 @@ msgstr ""
 msgid "Email"
 msgstr ""
 
+#: src/components/forms/fields/email-field.tsx
 #: src/components/forms/input-email-address.tsx
 #: src/components/reset-password-request-form.tsx
 #: src/components/reset-password-request-form.tsx
@@ -489,6 +513,7 @@ msgstr ""
 msgid "Email verified"
 msgstr ""
 
+#: src/components/forms/fields/new-password-field.tsx
 #: src/components/forms/input-new-password.tsx
 msgid "Enter a password"
 msgstr ""
@@ -509,6 +534,7 @@ msgstr ""
 msgid "Enter your email address"
 msgstr ""
 
+#: src/components/forms/fields/new-password-field.tsx
 #: src/components/forms/input-new-password.tsx
 msgid "Enter your new password"
 msgstr ""
@@ -534,6 +560,7 @@ msgstr ""
 msgid "Expand details"
 msgstr ""
 
+#: src/components/feedback/password-strength.tsx
 #: src/components/utils/password-strength-label.tsx
 msgid "Extra"
 msgstr ""
@@ -648,6 +675,7 @@ msgid "Help"
 msgstr ""
 
 #: src/components/forms/button-toggle-visibility.tsx
+#: src/components/forms/fields/password-field.tsx
 msgid "Hide"
 msgstr ""
 
@@ -738,6 +766,7 @@ msgstr ""
 msgid "Let's get your password reset!"
 msgstr ""
 
+#: src/components/layouts/auth-shell.tsx
 #: src/components/layouts/layout-app.tsx
 msgid "Logo"
 msgstr ""
@@ -755,6 +784,7 @@ msgid "Make a text file with the contents below available at the following URL."
 msgstr ""
 
 #: src/components/forms/button-toggle-visibility.tsx
+#: src/components/forms/fields/password-field.tsx
 msgid "Make visible"
 msgstr ""
 
@@ -785,15 +815,18 @@ msgstr ""
 msgid "Manage your profile, posts, likes and follows as well as read your private preferences"
 msgstr ""
 
+#: src/components/feedback/error-details.tsx
 #: src/components/utils/error-details.tsx
 msgctxt "Error"
 msgid "Message"
 msgstr ""
 
+#: src/components/feedback/password-strength.tsx
 #: src/components/utils/password-strength-label.tsx
 msgid "Missing"
 msgstr ""
 
+#: src/components/feedback/password-strength.tsx
 #: src/components/utils/password-strength-label.tsx
 msgid "Moderate"
 msgstr ""
@@ -803,6 +836,7 @@ msgstr ""
 msgid "My Atmosphere Account"
 msgstr ""
 
+#: src/components/feedback/error-details.tsx
 #: src/components/utils/error-details.tsx
 msgctxt "Error"
 msgid "Name"
@@ -817,10 +851,15 @@ msgstr ""
 msgid "New password"
 msgstr ""
 
+#: src/components/forms/sign-up-wizard.tsx
 #: src/components/forms/wizard-card.tsx
 #: src/components/reset-password-view.tsx
 #: src/components/reset-password-view.tsx
 msgid "Next"
+msgstr ""
+
+#: src/components/session-list.tsx
+msgid "No matches"
 msgstr ""
 
 #: src/components/reset-password-view.tsx
@@ -832,6 +871,7 @@ msgid "Page not found"
 msgstr ""
 
 #: src/components/delete-account-confirm-form.tsx
+#: src/components/forms/fields/password-field.tsx
 #: src/components/forms/input-password.tsx
 #: src/components/sign-in-form.tsx
 #: src/components/sign-up-credentials-form.tsx
@@ -847,10 +887,12 @@ msgstr ""
 msgid "Password reset successful"
 msgstr ""
 
+#: src/components/feedback/password-strength.tsx
 #: src/components/utils/password-strength-label.tsx
 msgid "Password strength"
 msgstr ""
 
+#: src/components/feedback/password-strength.tsx
 #: src/components/utils/password-strength-meter.tsx
 msgid "Password strength indicator"
 msgstr ""
@@ -859,10 +901,15 @@ msgstr ""
 msgid "Password Updated"
 msgstr ""
 
+#: src/components/forms/fields/new-password-field.tsx
+msgid "Password with at least {MIN_PASSWORD_LENGTH, plural, other {# characters}}"
+msgstr ""
+
 #: src/components/forms/input-new-password.tsx
 msgid "Password with at least {MIN_PASSWORD_LENGTH} characters"
 msgstr ""
 
+#: src/components/feedback/error-details.tsx
 #: src/components/utils/error-details.tsx
 msgctxt "Error"
 msgid "Payload"
@@ -911,6 +958,10 @@ msgstr ""
 #: src/data/account.ts
 #: src/data/email.ts
 msgid "Please try again in a moment."
+msgstr ""
+
+#: src/components/forms/request-code-button.tsx
+msgid "Please wait {remainingSeconds, plural, one {# second} other {# seconds}} before trying again."
 msgstr ""
 
 #: src/components/forms/button-cooldown.tsx
@@ -974,6 +1025,7 @@ msgstr ""
 msgid "Reset your password"
 msgstr ""
 
+#: src/components/feedback/error-notice.tsx
 #: src/components/utils/error-card.tsx
 #: src/pages/account/(authenticated)/apps/page.tsx
 #: src/pages/account/(authenticated)/devices/page.tsx
@@ -983,6 +1035,8 @@ msgid "Retry"
 msgstr ""
 
 #: src/components/forms/button-cooldown.tsx
+#: src/components/forms/request-code-button.tsx
+#: src/components/forms/request-code-button.tsx
 msgid "Retry in {remainingSeconds}s"
 msgstr ""
 
@@ -999,10 +1053,12 @@ msgstr ""
 msgid "Security step required"
 msgstr ""
 
+#: src/components/identity/account-menu.tsx
 #: src/components/utils/account-selector.tsx
 msgid "Select another account"
 msgstr ""
 
+#: src/components/forms/fields/handle-field.tsx
 #: src/components/forms/input-handle-default.tsx
 msgid "Select domain"
 msgstr ""
@@ -1016,6 +1072,7 @@ msgid "Send email"
 msgstr ""
 
 #: src/components/forms/button-request-code.tsx
+#: src/components/forms/request-code-button.tsx
 msgid "Send verification code"
 msgstr ""
 
@@ -1043,6 +1100,7 @@ msgstr ""
 msgid "Sign in to an account that is not listed"
 msgstr ""
 
+#: src/components/identity/account-menu.tsx
 #: src/components/utils/account-selector.tsx
 msgid "Sign out"
 msgstr ""
@@ -1066,20 +1124,24 @@ msgstr ""
 msgid "Sign-in complete"
 msgstr ""
 
+#: src/components/feedback/error-details.tsx
 #: src/components/utils/error-details.tsx
 msgctxt "Error"
 msgid "Stack"
 msgstr ""
 
+#: src/components/forms/sign-up-wizard.tsx
 #: src/components/forms/wizard-card.tsx
 msgid "Step {currentPosition} of {count}"
 msgstr ""
 
+#: src/components/feedback/password-strength.tsx
 #: src/components/utils/password-strength-label.tsx
 msgid "Strong"
 msgstr ""
 
 #: src/components/forms/form-card.tsx
+#: src/components/forms/form-shell.tsx
 msgid "Submit"
 msgstr ""
 
@@ -1228,6 +1290,7 @@ msgstr ""
 msgid "Type your domain"
 msgstr ""
 
+#: src/components/forms/fields/handle-field.tsx
 #: src/components/forms/input-handle-default.tsx
 msgid "Type your username"
 msgstr ""
@@ -1272,6 +1335,7 @@ msgstr ""
 msgid "URL"
 msgstr ""
 
+#: src/components/forms/fields/handle-field.tsx
 #: src/components/forms/input-handle-default.tsx
 msgid "Use {minLength}–{maxLength, plural, one {# letter, number or hyphen} other {# letters, numbers or hyphens}}"
 msgstr ""
@@ -1355,6 +1419,7 @@ msgstr ""
 msgid "We're so excited to have you join us!"
 msgstr ""
 
+#: src/components/feedback/password-strength.tsx
 #: src/components/utils/password-strength-label.tsx
 msgid "Weak"
 msgstr ""
@@ -1481,7 +1546,9 @@ msgstr ""
 msgid "Your email address needs to be verified."
 msgstr ""
 
+#. placeholder {0}: segment ? ( <span className="text-foreground block font-medium break-all"> @{segment} {domain} </span> ) : ( <span className="block break-all"> @{exampleSegment} {domain} </span> )
 #. placeholder {0}: segment ? ( <span className="text-text-default block break-all font-medium"> @{segment} {domain} </span> ) : ( <span className="block break-all"> @{exampleSegment} {domain} </span> )
+#: src/components/forms/fields/handle-field.tsx
 #: src/components/forms/input-handle-default.tsx
 msgid "Your full username will be: {0}"
 msgstr ""
@@ -1502,6 +1569,7 @@ msgstr ""
 msgid "Your username has been updated."
 msgstr ""
 
+#: src/components/forms/fields/handle-field.tsx
 #: src/components/forms/input-handle-default.tsx
 msgid "yourname"
 msgstr ""

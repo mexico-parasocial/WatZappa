@@ -1,18 +1,21 @@
 import { mapDefined } from '@atproto/common'
-import { DidString } from '@atproto/lex'
-import { InvalidRequestError, Server } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { HydrateCtxWithViewer, Hydrator } from '../../../../hydration/hydrator.js'
+import type { DidString } from '@atproto/lex'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import type {
+  HydrateCtxWithViewer,
+  Hydrator,
+} from '../../../../hydration/hydrator.js'
 import { app } from '../../../../lexicons/index.js'
 import {
-  HydrationFnInput,
-  PresentationFnInput,
-  RulesFnInput,
-  SkeletonFnInput,
+  type HydrationFnInput,
+  type PresentationFnInput,
+  type RulesFnInput,
+  type SkeletonFnInput,
   createPipeline,
 } from '../../../../pipeline.js'
-import { Views } from '../../../../views/index.js'
-import { clearlyBadCursor, resHeaders } from '../../../util.js'
+import type { Views } from '../../../../views/index.js'
+import { clearlyBadCursor, fillPage, resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
   const getKnownFollowers = createPipeline(
@@ -31,7 +34,13 @@ export default function (server: Server, ctx: AppContext) {
         viewer,
       })
 
-      const result = await getKnownFollowers({ ...params, hydrateCtx }, ctx)
+      const result = await fillPage({
+        cursor: params.cursor,
+        limit: params.limit,
+        fetch: ({ cursor, limit }) =>
+          getKnownFollowers({ ...params, cursor, limit, hydrateCtx }, ctx),
+        items: (r) => r.followers,
+      })
 
       return {
         encoding: 'application/json',
@@ -57,16 +66,16 @@ const skeleton = async (
   const res = await ctx.hydrator.dataplane.getFollowsFollowing({
     actorDid: params.hydrateCtx.viewer,
     targetDids: [subjectDid],
+    limit: params.limit,
+    cursor: params.cursor,
   })
   const result = res.results.at(0)
-  const knownFollowers = result
-    ? (result.dids.slice(0, params.limit) as DidString[])
-    : []
+  const knownFollowers = result ? (result.dids as DidString[]) : []
 
   return {
     subjectDid,
     knownFollowers,
-    cursor: undefined,
+    cursor: result?.cursor,
   }
 }
 
@@ -101,7 +110,7 @@ const presentation = (
   })
   const subject = ctx.views.profile(skeleton.subjectDid, hydration)!
 
-  return { subject, followers, cursor: undefined }
+  return { subject, followers, cursor: skeleton.cursor }
 }
 
 type Context = {

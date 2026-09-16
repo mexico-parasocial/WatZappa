@@ -371,7 +371,12 @@ export class Hydrator {
   ): Promise<HydrationState> {
     const [knownFollowers, activitySubscriptions] = await Promise.all([
       this.actor
-        .getKnownFollowers(opts?.knownFollowersDids ?? dids, ctx.viewer)
+        .getKnownFollowers(opts?.knownFollowersDids ?? dids, ctx.viewer, {
+          sample: ctx.features.checkGate(
+            ctx.features.Gate.KnownFollowersSamplingEnable,
+            { did: ctx.viewer },
+          ),
+        })
         .catch((err): KnownFollowersStates => {
           hydrationLogger.error(
             { err },

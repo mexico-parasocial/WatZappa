@@ -3,15 +3,12 @@ import Database from 'better-sqlite3'
 import type { Config } from '../../config.js'
 /** Lifecycle, connection handle and shared query helpers. */
 export class SqliteBase {
-
   protected db: Database.Database
-
 
   constructor(config: Config) {
     this.db = new Database(config.dbPath)
     this.init()
   }
-
 
   protected init() {
     this.db.exec(`
@@ -25,6 +22,36 @@ export class SqliteBase {
         observer_room_id TEXT,
         created_at TEXT NOT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS device_sessions (
+        id TEXT PRIMARY KEY,
+        did TEXT NOT NULL,
+        mxid TEXT NOT NULL,
+        device_id TEXT NOT NULL,
+        friendly_name TEXT,
+        user_agent TEXT,
+        created_at TEXT NOT NULL,
+        last_seen_at TEXT NOT NULL,
+        revoked_at TEXT
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_device_sessions_did ON device_sessions(did);
+
+      CREATE TABLE IF NOT EXISTS as_transactions (
+        txn_id TEXT PRIMARY KEY,
+        received_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS event_log (
+        seq INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL,
+        community_uri TEXT,
+        audience_dids_json TEXT,
+        payload_json TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_event_log_created ON event_log(created_at);
 
       CREATE TABLE IF NOT EXISTS user_matrix_map (
         did TEXT PRIMARY KEY,
@@ -419,9 +446,25 @@ export class SqliteBase {
 
       CREATE INDEX IF NOT EXISTS idx_collection_items_collection ON policy_collection_items(collection_id);
       CREATE UNIQUE INDEX IF NOT EXISTS idx_collection_items_unique ON policy_collection_items(collection_id, policy_uri);
+
+      -- Institutional workspaces. workspace_id is '' for institution-wide
+      -- roles (owner, auditor, records_custodian); the role CHECK pins the
+      -- InstitutionRole union at storage.
+      CREATE TABLE IF NOT EXISTS institution_memberships (
+        institution_id TEXT NOT NULL,
+        workspace_id TEXT NOT NULL DEFAULT '',
+        did TEXT NOT NULL,
+        role TEXT NOT NULL CHECK (role IN ('owner','workspace_admin','channel_manager','member','guest','auditor','records_custodian')),
+        expires_at TEXT,
+        revoked_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (institution_id, workspace_id, did)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_institution_memberships_did ON institution_memberships(institution_id, did);
     `)
   }
-
 
   close(): void {
     this.db.close()

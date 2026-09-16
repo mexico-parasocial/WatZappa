@@ -434,6 +434,7 @@ import * as ComParaHighlightAnnotation from './types/com/para/highlight/annotati
 import * as ComParaHighlightDefs from './types/com/para/highlight/defs.js'
 import * as ComParaHighlightGetHighlight from './types/com/para/highlight/getHighlight.js'
 import * as ComParaHighlightListHighlights from './types/com/para/highlight/listHighlights.js'
+import * as ComParaIdentityLinkedChat from './types/com/para/identity/linkedChat.js'
 import * as ComParaNotificationGetPostSubscription from './types/com/para/notification/getPostSubscription.js'
 import * as ComParaNotificationPutPostSubscription from './types/com/para/notification/putPostSubscription.js'
 import * as ComParaOfficialAction from './types/com/para/official/action.js'
@@ -960,6 +961,7 @@ export * as ComParaHighlightAnnotation from './types/com/para/highlight/annotati
 export * as ComParaHighlightDefs from './types/com/para/highlight/defs.js'
 export * as ComParaHighlightGetHighlight from './types/com/para/highlight/getHighlight.js'
 export * as ComParaHighlightListHighlights from './types/com/para/highlight/listHighlights.js'
+export * as ComParaIdentityLinkedChat from './types/com/para/identity/linkedChat.js'
 export * as ComParaNotificationGetPostSubscription from './types/com/para/notification/getPostSubscription.js'
 export * as ComParaNotificationPutPostSubscription from './types/com/para/notification/putPostSubscription.js'
 export * as ComParaOfficialAction from './types/com/para/official/action.js'
@@ -6312,6 +6314,7 @@ export class ComParaNS {
   discourse: ComParaDiscourseNS
   feed: ComParaFeedNS
   highlight: ComParaHighlightNS
+  identity: ComParaIdentityNS
   notification: ComParaNotificationNS
   official: ComParaOfficialNS
   raq: ComParaRaqNS
@@ -6330,6 +6333,7 @@ export class ComParaNS {
     this.discourse = new ComParaDiscourseNS(client)
     this.feed = new ComParaFeedNS(client)
     this.highlight = new ComParaHighlightNS(client)
+    this.identity = new ComParaIdentityNS(client)
     this.notification = new ComParaNotificationNS(client)
     this.official = new ComParaOfficialNS(client)
     this.raq = new ComParaRaqNS(client)
@@ -9285,6 +9289,99 @@ export class ComParaHighlightAnnotationRecord {
       'com.atproto.repo.deleteRecord',
       undefined,
       { collection: 'com.para.highlight.annotation', ...params },
+      { headers },
+    )
+  }
+}
+
+export class ComParaIdentityNS {
+  _client: XrpcClient
+  linkedChat: ComParaIdentityLinkedChatRecord
+
+  constructor(client: XrpcClient) {
+    this._client = client
+    this.linkedChat = new ComParaIdentityLinkedChatRecord(client)
+  }
+}
+
+export class ComParaIdentityLinkedChatRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: ComParaIdentityLinkedChat.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'com.para.identity.linkedChat',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: ComParaIdentityLinkedChat.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'com.para.identity.linkedChat',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaIdentityLinkedChat.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.identity.linkedChat'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaIdentityLinkedChat.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.identity.linkedChat'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'com.para.identity.linkedChat', ...params },
       { headers },
     )
   }

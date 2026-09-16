@@ -13,6 +13,7 @@ import type { ChatModerationEngine } from './chat-moderation.js'
 import { getEffectiveRules, isApproved } from './constitution.js'
 import type { IBridgeDatabase } from './db/index.js'
 import type { MatrixAdminClient } from './matrix.js'
+import type { EventBus } from './events/bus.js'
 
 export type ProposalState =
   | 'deliberating'
@@ -27,6 +28,8 @@ export class ProposalEngine {
   private matrix: MatrixAdminClient
   private chatMod: ChatModerationEngine
   private log: Logger
+
+  private events?: EventBus
 
   constructor(
     db: IBridgeDatabase,
@@ -160,6 +163,11 @@ export class ProposalEngine {
    * Run state transitions. Called periodically by a cron worker.
    * This is where the constitution is actually enforced.
    */
+  /** Late-injected SSE bus (main wires it after construction). */
+  setEventBus(events: EventBus): void {
+    this.events = events
+  }
+
   async processStateTransitions(): Promise<void> {
     const now = new Date().toISOString()
 
@@ -207,6 +215,18 @@ export class ProposalEngine {
         await this.db.updateProposalState(p.uri, 'voting', now, votingEnds)
         communitiesWithActiveVoting.add(p.community_uri)
         this.log.info({ uri: p.uri }, 'Proposal moved to voting (FIFO)')
+        if (this.events) {
+          await this.events.publish({
+            type: 'proposal.state',
+            communityUri: p.community_uri,
+            payload: {
+              proposalUri: p.uri,
+              from: 'deliberation',
+              to: 'voting',
+              votingEnds,
+            },
+          })
+        }
 
         try {
           await this.announceInMatrix(

@@ -1,4 +1,5 @@
 import type { Config } from '../config.js'
+import type { InstitutionMembership, InstitutionRole } from '../institutions.js'
 import { BridgeDatabase } from './sqlite/index.js'
 import type {
   AiConsentRecord,
@@ -6,6 +7,7 @@ import type {
   IBridgeDatabase,
   SyncLogEntry,
   UserPushToken,
+  DeviceSession,
 } from './pg/index.js'
 
 /**
@@ -181,6 +183,50 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     roomId: string,
   ): Promise<{ communityUri: string; slug: string } | undefined> {
     return this.wrap(() => this.inner.getCommunityByRoomId(roomId))
+  }
+
+  async createDeviceSession(session: DeviceSession): Promise<void> {
+    await this.wrap(() => this.inner.createDeviceSession(session))
+  }
+
+  async listDeviceSessions(did: string): Promise<DeviceSession[]> {
+    return this.wrap(() => this.inner.listDeviceSessions(did))
+  }
+
+  async getDeviceSession(id: string): Promise<DeviceSession | undefined> {
+    return this.wrap(() => this.inner.getDeviceSession(id))
+  }
+
+  async touchDeviceSession(id: string): Promise<void> {
+    await this.wrap(() => this.inner.touchDeviceSession(id))
+  }
+
+  async revokeDeviceSession(did: string, id: string): Promise<boolean> {
+    return this.wrap(() => this.inner.revokeDeviceSession(did, id))
+  }
+
+  async appendEvent(event: {
+    type: string
+    communityUri: string | null
+    audienceDids: string[] | null
+    payload: unknown
+  }): Promise<import('./records.js').BridgeEvent> {
+    return this.wrap(() => this.inner.appendEvent(event))
+  }
+
+  async listEventsAfter(
+    afterSeq: number,
+    limit: number,
+  ): Promise<import('./records.js').BridgeEvent[]> {
+    return this.wrap(() => this.inner.listEventsAfter(afterSeq, limit))
+  }
+
+  async getMaxEventSeq(): Promise<number> {
+    return this.wrap(() => this.inner.getMaxEventSeq())
+  }
+
+  async pruneEventsBefore(cutoffIso: string): Promise<number> {
+    return this.wrap(() => this.inner.pruneEventsBefore(cutoffIso))
   }
 
   getDidForMxid(mxid: string): Promise<string | undefined> {
@@ -604,6 +650,10 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     return this.wrap(() => this.inner.getTotalUnreadForDid(did))
   }
 
+  async recordAsTransaction(txnId: string): Promise<boolean> {
+    return this.wrap(() => this.inner.recordAsTransaction(txnId))
+  }
+
   getAllRoomIds(): Promise<string[]> {
     return this.wrap(() => this.inner.getAllRoomIds())
   }
@@ -626,6 +676,13 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
         roles,
       ),
     )
+  }
+
+  async getCommunityMembership(
+    did: string,
+    communityUri: string,
+  ): Promise<{ state: string; roles: string[] } | undefined> {
+    return this.wrap(() => this.inner.getCommunityMembership(did, communityUri))
   }
 
   isActiveCommunityMember(did: string, communityUri: string): Promise<boolean> {
@@ -919,6 +976,15 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     return this.wrap(() => this.inner.acceptSuggestion(id, authorDid))
   }
 
+  async getSuggestion(
+    id: string,
+  ): Promise<
+    | { id: string; sourceCardId: string; targetCardId: string; status: string }
+    | undefined
+  > {
+    return this.wrap(() => this.inner.getSuggestion(id))
+  }
+
   rejectSuggestion(id: string): Promise<void> {
     return this.wrap(() => this.inner.rejectSuggestion(id))
   }
@@ -970,6 +1036,52 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     }
   }> {
     return this.wrap(() => this.inner.getCommunityPulse(communityUri, voterDid))
+  }
+
+  // ── Institutional memberships ──
+
+  setInstitutionMembership(m: {
+    institutionId: string
+    workspaceId: string | null
+    did: string
+    role: InstitutionRole
+    expiresAt: string | null
+  }): Promise<void> {
+    return this.wrap(() => this.inner.setInstitutionMembership(m))
+  }
+
+  revokeInstitutionMembership(
+    institutionId: string,
+    workspaceId: string | null,
+    did: string,
+  ): Promise<void> {
+    return this.wrap(() =>
+      this.inner.revokeInstitutionMembership(institutionId, workspaceId, did),
+    )
+  }
+
+  getInstitutionMemberships(
+    institutionId: string,
+    did: string,
+  ): Promise<InstitutionMembership[]> {
+    return this.wrap(() =>
+      this.inner.getInstitutionMemberships(institutionId, did),
+    )
+  }
+
+  listInstitutionMemberships(
+    institutionId: string,
+    workspaceId?: string,
+  ): Promise<InstitutionMembership[]> {
+    return this.wrap(() =>
+      this.inner.listInstitutionMemberships(institutionId, workspaceId),
+    )
+  }
+
+  getInstitutionOwners(
+    institutionId: string,
+  ): Promise<Map<string, InstitutionMembership>> {
+    return this.wrap(() => this.inner.getInstitutionOwners(institutionId))
   }
 
   close(): Promise<void> {

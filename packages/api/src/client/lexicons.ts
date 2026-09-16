@@ -30219,6 +30219,49 @@ export const schemaDict = {
       },
     },
   },
+  ComParaIdentityLinkedChat: {
+    lexicon: 1,
+    id: 'com.para.identity.linkedChat',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "Declares that this account communicates on an external chat provider under a specific Matrix identity. Written to the PARA account's repo; the linked account's repo should carry the reciprocal record (com.para.identity.linkedChat with this DID as paraDid) for the link to verify. The bridge never relays sessions between providers — this record proves identity linkage only.",
+        record: {
+          type: 'object',
+          required: ['provider', 'matrixUserId', 'linkedAt'],
+          properties: {
+            provider: {
+              type: 'string',
+              description:
+                "Identifier of the chat provider, e.g. 'solidarity.social' or 'para.social'.",
+              maxGraphemes: 128,
+              maxLength: 256,
+            },
+            matrixUserId: {
+              type: 'string',
+              description:
+                "The full Matrix user id on that provider, e.g. '@user:matrix.solidarity.social'.",
+              maxGraphemes: 256,
+              maxLength: 512,
+            },
+            paraDid: {
+              type: 'string',
+              format: 'did',
+              description:
+                'Present only in the reciprocal record written to the external-provider-linked account: the PARA DID this record vouches for.',
+            },
+            linkedAt: {
+              type: 'string',
+              format: 'datetime',
+              description: 'When the link was established.',
+            },
+          },
+        },
+        key: 'string',
+      },
+    },
+  },
   ComParaNotificationGetPostSubscription: {
     lexicon: 1,
     id: 'com.para.notification.getPostSubscription',
@@ -39534,6 +39577,7 @@ export const ids = {
   ComParaHighlightDefs: 'com.para.highlight.defs',
   ComParaHighlightGetHighlight: 'com.para.highlight.getHighlight',
   ComParaHighlightListHighlights: 'com.para.highlight.listHighlights',
+  ComParaIdentityLinkedChat: 'com.para.identity.linkedChat',
   ComParaNotificationGetPostSubscription:
     'com.para.notification.getPostSubscription',
   ComParaNotificationPutPostSubscription:

@@ -69,6 +69,13 @@ MATRIX_SERVER_NAME=matrix.para.social
 MATRIX_DOMAIN=chat.para.social
 MATRIX_DB_NAME=matrix
 MATRIX_ADMIN_TOKEN=<token-de-admin-generado-en-paso-4>
+# Opcional pero recomendado: sesiones Matrix ligadas a dispositivo vía
+# appservice login. El valor es el `as_token` de
+# deploy/matrix/synapse/para-bridge-registration.yaml
+MATRIX_APPSERVICE_TOKEN=<as_token-de-para-bridge-registration>
+# hs_token de la misma registración: lo presenta Synapse al enviar
+# transacciones del appservice al bridge (ingestión push de mensajes).
+MATRIX_HS_TOKEN=<hs_token-de-para-bridge-registration>
 
 # ─── Bridge ───
 PDS_FIREHOSE_URL=wss://pds.para.social/xrpc/com.atproto.sync.subscribeRepos

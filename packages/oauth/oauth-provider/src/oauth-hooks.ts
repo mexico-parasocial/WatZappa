@@ -367,6 +367,7 @@ export type OAuthHooks = {
     account: Account
     deviceId: DeviceId
     deviceMetadata: RequestMetadata
+    clientId: ClientId | undefined
   }) => Awaitable<void>
 
   /**

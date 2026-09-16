@@ -1,5 +1,5 @@
 import { xrpc } from '@atproto/lex'
-import { BackgroundQueue } from './background.js'
+import type { BackgroundQueue } from './background.js'
 import { com } from './lexicons/index.js'
 import { crawlerLogger as log } from './logger.js'
 
@@ -32,6 +32,9 @@ export class Crawlers {
       this.backgroundQueue.add(async () => {
         try {
           await xrpc(crawler, com.atproto.sync.requestCrawl, {
+            validateRequest: false,
+            validateResponse: false,
+            strictResponseProcessing: false,
             body: { hostname: this.hostname },
           })
         } catch (err) {

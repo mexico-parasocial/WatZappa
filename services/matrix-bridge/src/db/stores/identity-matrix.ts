@@ -1,9 +1,6 @@
-import type {
-  CommunitySpaceMap,
-} from '../records.js'
+import type { CommunitySpaceMap, DeviceSession } from '../records.js'
 
 export interface IdentityMatrixStore {
-
   getSpaceForCommunity(
     communityUri: string,
   ): Promise<CommunitySpaceMap | undefined>
@@ -41,6 +38,7 @@ export interface IdentityMatrixStore {
 
   setMxidForDid(did: string, mxid: string, password: string): Promise<void>
 
+  /** @deprecated Never read anywhere; user_matrix_map.password is vestigial. */
   getUserPassword(did: string): Promise<string | undefined>
 
   getCommunityByRoomId(
@@ -49,12 +47,27 @@ export interface IdentityMatrixStore {
 
   getDidForMxid(mxid: string): Promise<string | undefined>
 
+  createDeviceSession(session: DeviceSession): Promise<void>
+
+  listDeviceSessions(did: string): Promise<DeviceSession[]>
+
+  getDeviceSession(id: string): Promise<DeviceSession | undefined>
+
+  touchDeviceSession(id: string): Promise<void>
+
+  revokeDeviceSession(did: string, id: string): Promise<boolean>
+
   setCommunityMembership(
     did: string,
     communityUri: string,
     membershipState: string,
     roles?: string[],
   ): Promise<void>
+
+  getCommunityMembership(
+    did: string,
+    communityUri: string,
+  ): Promise<{ state: string; roles: string[] } | undefined>
 
   isActiveCommunityMember(did: string, communityUri: string): Promise<boolean>
 

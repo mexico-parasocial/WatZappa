@@ -2,8 +2,13 @@ import { randomUUID } from 'node:crypto'
 import pg from 'pg'
 import type { QueryResult } from 'pg'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunitySpaceMap,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  SyncLogEntry,
+  UserMatrixMap,
+  UserPushToken,
 } from '../interface.js'
 
 // cjs-module-lexer cannot statically enumerate pg's named exports, so the
@@ -13,17 +18,14 @@ const { Pool } = pg
 
 /** Lifecycle, connection handle and shared query helpers. */
 export class PgBase {
-
   protected pool: pg.Pool
 
   protected initPromise: Promise<void>
-
 
   constructor(connectionString: string) {
     this.pool = new Pool({ connectionString, max: 20 })
     this.initPromise = this.init()
   }
-
 
   protected async init(): Promise<void> {
     await this.pool.query(`
@@ -37,6 +39,36 @@ export class PgBase {
         observer_room_id TEXT,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       );
+
+      CREATE TABLE IF NOT EXISTS device_sessions (
+        id TEXT PRIMARY KEY,
+        did TEXT NOT NULL,
+        mxid TEXT NOT NULL,
+        device_id TEXT NOT NULL,
+        friendly_name TEXT,
+        user_agent TEXT,
+        created_at TEXT NOT NULL,
+        last_seen_at TEXT NOT NULL,
+        revoked_at TEXT
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_device_sessions_did ON device_sessions(did);
+
+      CREATE TABLE IF NOT EXISTS as_transactions (
+        txn_id TEXT PRIMARY KEY,
+        received_at TEXT NOT NULL DEFAULT (now()::text)
+      );
+
+      CREATE TABLE IF NOT EXISTS event_log (
+        seq BIGSERIAL PRIMARY KEY,
+        type TEXT NOT NULL,
+        community_uri TEXT,
+        audience_dids_json TEXT,
+        payload_json TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (now()::text)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_event_log_created ON event_log(created_at);
 
       CREATE TABLE IF NOT EXISTS user_matrix_map (
         did TEXT PRIMARY KEY,
@@ -414,15 +446,29 @@ export class PgBase {
       );
       CREATE INDEX IF NOT EXISTS idx_collection_items_collection ON policy_collection_items(collection_id);
       CREATE UNIQUE INDEX IF NOT EXISTS idx_collection_items_unique ON policy_collection_items(collection_id, policy_uri);
+
+      -- Institutional workspaces. workspace_id is '' for institution-wide
+      -- roles (owner, auditor, records_custodian); the role CHECK pins the
+      -- InstitutionRole union at storage.
+      CREATE TABLE IF NOT EXISTS institution_memberships (
+        institution_id TEXT NOT NULL,
+        workspace_id TEXT NOT NULL DEFAULT '',
+        did TEXT NOT NULL,
+        role TEXT NOT NULL CHECK (role IN ('owner','workspace_admin','channel_manager','member','guest','auditor','records_custodian')),
+        expires_at TIMESTAMP WITH TIME ZONE,
+        revoked_at TIMESTAMP WITH TIME ZONE,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (institution_id, workspace_id, did)
+      );
+      CREATE INDEX IF NOT EXISTS idx_institution_memberships_did ON institution_memberships(institution_id, did);
     `)
   }
-
 
   protected async query(text: string, params?: any[]): Promise<QueryResult> {
     await this.initPromise
     return this.pool.query(text, params)
   }
-
 
   protected async queryOne<T = any>(
     text: string,
@@ -432,17 +478,17 @@ export class PgBase {
     return result.rows[0] as T | undefined
   }
 
-
-  protected async queryAll<T = any>(text: string, params?: any[]): Promise<T[]> {
+  protected async queryAll<T = any>(
+    text: string,
+    params?: any[],
+  ): Promise<T[]> {
     const result = await this.query(text, params)
     return result.rows as T[]
   }
 
-
   protected async run(text: string, params?: any[]): Promise<void> {
     await this.query(text, params)
   }
-
 
   async close(): Promise<void> {
     await this.pool.end()

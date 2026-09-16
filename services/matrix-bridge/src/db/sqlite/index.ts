@@ -1,3 +1,3 @@
-import { DeliberationArea } from './deliberation.js'
+import { EventLogArea } from './event-log.js'
 
-export class BridgeDatabase extends DeliberationArea {}
+export class BridgeDatabase extends EventLogArea {}

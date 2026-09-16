@@ -1,4 +1,7 @@
 {
   "extends": ["../../tsconfig/config.tsconfig.json"],
   "include": ["./*.js", "./*.cjs", "./*.mjs", "./*.ts"],
+  // test-db.ts is a debug script that imports the PDS sources directly,
+  // dragging the whole packages/pds/src tree into this stricter program.
+  "exclude": ["./test-db.ts"],
 }

@@ -4,6 +4,7 @@ import * as uint8arrays from 'uint8arrays'
 import { wait } from '@atproto/common-web'
 import { createServiceJwt } from '@atproto/xrpc-server'
 import { TestBsky } from './bsky.js'
+import { TestBsync } from './bsync.js'
 import { TestChat } from './chat.js'
 import { withoutPersistentPdsStorage } from './config.js'
 import { EXAMPLE_LABELER } from './const.js'
@@ -30,6 +31,7 @@ export class TestNetwork extends TestNetworkNoAppView {
     public pds: TestPds,
     public chat: TestChat,
     public bsky: TestBsky,
+    public bsync: TestBsync,
     public ozone: TestOzone,
     public introspect?: IntrospectServer,
   ) {
@@ -77,10 +79,19 @@ export class TestNetwork extends TestNetworkNoAppView {
     const lexiconAuthorityProfile =
       await LexiconAuthorityProfile.create(thirdPartyPds)
 
+    const bsyncApiKey = 'bsync-api-key'
+    const bsync = await TestBsync.create({
+      apiKeys: [bsyncApiKey],
+      dbUrl: dbPostgresUrl,
+      dbSchema: `bsync_${dbPostgresSchema}`,
+    })
+
     const bsky = await TestBsky.create({
       port: bskyPort,
       plcUrl: plc.url,
       pdsPort,
+      bsyncApiKey,
+      bsyncUrl: bsync.url,
       rolodexUrl: process.env.BSKY_ROLODEX_URL,
       rolodexIgnoreBadTls: true,
       repoProvider: `ws://localhost:${pdsPort}`,
@@ -165,7 +176,15 @@ export class TestNetwork extends TestNetworkNoAppView {
       )
     }
 
-    const network = new TestNetwork(plc, pds, chat, bsky, ozone, introspect)
+    const network = new TestNetwork(
+      plc,
+      pds,
+      chat,
+      bsky,
+      bsync,
+      ozone,
+      introspect,
+    )
     network.manifest = createDevEnvManifest(network, {
       networkParams: params,
       skipMockSetup: false,
@@ -231,6 +250,7 @@ export class TestNetwork extends TestNetworkNoAppView {
     await this.chat.close()
     await this.ozone.close()
     await this.bsky.close()
+    await this.bsync.close()
     await this.pds.close()
     await this.plc.close()
     await this.introspect?.close()

@@ -3,6 +3,12 @@ import { Counter, Gauge, Histogram, Registry } from 'prom-client'
 export class BridgeMetrics {
   readonly registry = new Registry()
 
+  readonly asTransactionsTotal = new Counter({
+    name: 'bridge_as_transactions_total',
+    help: 'Appservice transactions accepted from the homeserver (post-dedup)',
+    registers: [this.registry],
+  })
+
   readonly invitesTotal = new Counter({
     name: 'para_matrix_invites_total',
     help: 'Total number of Matrix invites issued',

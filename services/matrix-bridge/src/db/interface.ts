@@ -15,10 +15,13 @@ import type {
   ConsentPrefsStore,
   MatrixEventsStore,
   DeliberationStore,
+  InstitutionStore,
+  EventLogStore,
 } from './stores/index.js'
 
 export interface IBridgeDatabase
-  extends IdentityMatrixStore,
+  extends
+    IdentityMatrixStore,
     InfraStore,
     ConstitutionProposalsStore,
     SortitionStore,
@@ -26,7 +29,9 @@ export interface IBridgeDatabase
     ParticipationStore,
     ConsentPrefsStore,
     MatrixEventsStore,
-    DeliberationStore {
+    DeliberationStore,
+    InstitutionStore,
+    EventLogStore {
   close(): Promise<void>
 }
 
@@ -40,10 +45,13 @@ export type {
   ConsentPrefsStore,
   MatrixEventsStore,
   DeliberationStore,
+  InstitutionStore,
 } from './stores/index.js'
 export type {
   AiConsentRecord,
+  BridgeEvent,
   CommunitySpaceMap,
+  DeviceSession,
   CommunityRoomKind,
   CommunityRoomSummary,
   SyncLogEntry,

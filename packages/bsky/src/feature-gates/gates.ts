@@ -15,6 +15,7 @@ export enum Gate {
   IrisFeed = 'iris:feed:enable',
   OpThreadMetadataEnable = 'op_thread_metadata:enable',
   KnownLikersFeedEnable = 'known_likers:feed:enable',
+  KnownFollowersSamplingEnable = 'known_followers:sampling:enable',
   TrendingTopicsV2 = 'trending_topics_v2',
 
   // temp

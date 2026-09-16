@@ -8,6 +8,7 @@ import type { MatrixAdminClient } from '../matrix.js'
 import type { BridgeMetrics } from '../metrics.js'
 import type { ProposalEngine } from '../proposals.js'
 import type { SortitionEngine } from '../sortition-runs.js'
+import type { EventBus } from '../events/bus.js'
 
 /**
  * Everything a route handler may touch, injected by main(). No module-level
@@ -22,6 +23,7 @@ export interface RouteContext {
   chatMod: ChatModerationEngine
   proposals: ProposalEngine
   sortition: SortitionEngine
+  events: EventBus
 }
 
 export type RouteHandler = (

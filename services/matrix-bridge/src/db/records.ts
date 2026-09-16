@@ -42,7 +42,6 @@ export interface AiConsentRecord {
   revokedAt: string | null
 }
 
-
 export type CommunityRoomKind = 'main' | 'chamber-a' | 'chamber-b' | 'observers'
 
 export interface CommunityRoomSummary {
@@ -52,5 +51,36 @@ export interface CommunityRoomSummary {
   kind: CommunityRoomKind
 }
 
+import type {
+  IdentityMatrixStore,
+  InfraStore,
+  ConstitutionProposalsStore,
+  SortitionStore,
+  ModerationStore,
+  ParticipationStore,
+  ConsentPrefsStore,
+  MatrixEventsStore,
+  DeliberationStore,
+} from './stores/index.js'
 
-import type { IdentityMatrixStore, InfraStore, ConstitutionProposalsStore, SortitionStore, ModerationStore, ParticipationStore, ConsentPrefsStore, MatrixEventsStore, DeliberationStore } from './stores/index.js'
+export interface DeviceSession {
+  id: string
+  did: string
+  mxid: string
+  deviceId: string
+  friendlyName: string | null
+  userAgent: string | null
+  createdAt: string
+  lastSeenAt: string
+  revokedAt: string | null
+}
+
+export interface BridgeEvent {
+  seq: number
+  type: string
+  communityUri: string | null
+  /** DIDs that may receive this event; null = community-wide audience */
+  audienceDids: string[] | null
+  payload: unknown
+  createdAt: string
+}

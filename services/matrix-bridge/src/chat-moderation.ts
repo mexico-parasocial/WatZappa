@@ -9,6 +9,7 @@
  */
 
 import type { Logger } from 'pino'
+import type { EventBus } from './events/bus.js'
 import type { IBridgeDatabase } from './db/index.js'
 
 export type BadgeSeverity = 'info' | 'warning' | 'critical'
@@ -60,6 +61,12 @@ const BADGE_DEFS: Record<
 }
 
 export class ChatModerationEngine {
+  private events?: EventBus
+
+  /** Late-injected SSE bus (main wires it after construction). */
+  setEventBus(events: EventBus): void {
+    this.events = events
+  }
   constructor(
     private db: IBridgeDatabase,
     private log: Logger,
@@ -299,8 +306,29 @@ export class ChatModerationEngine {
    * Full recompute + save for a single user.
    */
   async recomputeUser(did: string, communityUri: string): Promise<ChatBadge[]> {
+    const before = await this.db.getUserBadges(did, communityUri)
     const badges = await this.computeBadges(did, communityUri)
     await this.saveBadges(did, communityUri, badges)
+
+    // SSE: publish only on change so the periodic cron doesn't spam the bus.
+    if (this.events) {
+      const sig = (list: ChatBadge[]) =>
+        list
+          .map((b) => `${b.type}:${b.visibleInChat ? 1 : 0}`)
+          .sort()
+          .join('|')
+      if (sig(before ?? []) !== sig(badges)) {
+        await this.events.publish({
+          type: 'badge.updated',
+          communityUri,
+          audienceDids: [did],
+          payload: {
+            communityUri,
+            badges: badges.filter((b) => b.visibleInChat).map((b) => b.type),
+          },
+        })
+      }
+    }
     return badges
   }
 

@@ -1,13 +1,16 @@
 import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunitySpaceMap,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  SyncLogEntry,
+  UserMatrixMap,
+  UserPushToken,
 } from '../interface.js'
 import { ConsentPrefsArea } from './consent-prefs.js'
 
 export class MatrixEventsArea extends ConsentPrefsArea {
-
-
   // Matrix event ingestion
   async insertMatrixEvent(event: {
     roomId: string
@@ -38,7 +41,6 @@ export class MatrixEventsArea extends ConsentPrefsArea {
     }
   }
 
-
   async eventExists(eventId: string): Promise<boolean> {
     const row = await this.queryOne(
       'SELECT 1 FROM matrix_events WHERE event_id = $1',
@@ -47,14 +49,12 @@ export class MatrixEventsArea extends ConsentPrefsArea {
     return !!row
   }
 
-
   async getRecentEvents(roomId: string, limit = 100): Promise<any[]> {
     return this.queryAll(
       'SELECT * FROM matrix_events WHERE room_id = $1 ORDER BY origin_server_ts DESC LIMIT $2',
       [roomId, limit],
     )
   }
-
 
   // Read markers & unread counts
   async setReadMarker(
@@ -68,7 +68,6 @@ export class MatrixEventsArea extends ConsentPrefsArea {
       [did, roomId, eventId],
     )
   }
-
 
   async getUnreadCount(did: string, roomId: string): Promise<number> {
     const marker = await this.queryOne<{ last_read_event_id: string }>(
@@ -94,7 +93,6 @@ export class MatrixEventsArea extends ConsentPrefsArea {
     )
     return row?.count ?? 0
   }
-
 
   async getUnreadCountsForDid(
     did: string,
@@ -147,12 +145,10 @@ export class MatrixEventsArea extends ConsentPrefsArea {
     )
   }
 
-
   async getTotalUnreadForDid(did: string): Promise<number> {
     const counts = await this.getUnreadCountsForDid(did)
     return counts.reduce((sum, c) => sum + c.unread, 0)
   }
-
 
   // Get all tracked room IDs
   async getAllRoomIds(): Promise<string[]> {
@@ -176,5 +172,13 @@ export class MatrixEventsArea extends ConsentPrefsArea {
         ),
       ),
     )
+  }
+
+  async recordAsTransaction(txnId: string): Promise<boolean> {
+    const row = await this.queryOne<{ txn_id: string } | null>(
+      'INSERT INTO as_transactions (txn_id) VALUES ($1) ON CONFLICT (txn_id) DO NOTHING RETURNING txn_id',
+      [txnId],
+    )
+    return row != null
   }
 }
