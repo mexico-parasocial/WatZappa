@@ -10862,6 +10862,16 @@ export class GetFollowsFollowingRequest extends Message<GetFollowsFollowingReque
    */
   targetDids: string[] = [];
 
+  /**
+   * @generated from field: int32 limit = 3;
+   */
+  limit = 0;
+
+  /**
+   * @generated from field: string cursor = 4;
+   */
+  cursor = "";
+
   constructor(data?: PartialMessage<GetFollowsFollowingRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -10872,6 +10882,8 @@ export class GetFollowsFollowingRequest extends Message<GetFollowsFollowingReque
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "actor_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "target_dids", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 3, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 4, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetFollowsFollowingRequest {
@@ -10905,6 +10917,11 @@ export class FollowsFollowing extends Message<FollowsFollowing> {
    */
   dids: string[] = [];
 
+  /**
+   * @generated from field: string cursor = 3;
+   */
+  cursor = "";
+
   constructor(data?: PartialMessage<FollowsFollowing>) {
     super();
     proto3.util.initPartial(data, this);
@@ -10915,6 +10932,7 @@ export class FollowsFollowing extends Message<FollowsFollowing> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "target_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "dids", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 3, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): FollowsFollowing {
@@ -10968,6 +10986,141 @@ export class GetFollowsFollowingResponse extends Message<GetFollowsFollowingResp
 
   static equals(a: GetFollowsFollowingResponse | PlainMessage<GetFollowsFollowingResponse> | undefined, b: GetFollowsFollowingResponse | PlainMessage<GetFollowsFollowingResponse> | undefined): boolean {
     return proto3.util.equals(GetFollowsFollowingResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.SampleFollowsFollowingRequest
+ */
+export class SampleFollowsFollowingRequest extends Message<SampleFollowsFollowingRequest> {
+  /**
+   * @generated from field: string actor_did = 1;
+   */
+  actorDid = "";
+
+  /**
+   * @generated from field: repeated string target_dids = 2;
+   */
+  targetDids: string[] = [];
+
+  /**
+   * @generated from field: int32 limit = 3;
+   */
+  limit = 0;
+
+  constructor(data?: PartialMessage<SampleFollowsFollowingRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SampleFollowsFollowingRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "actor_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "target_dids", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 3, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SampleFollowsFollowingRequest {
+    return new SampleFollowsFollowingRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SampleFollowsFollowingRequest {
+    return new SampleFollowsFollowingRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SampleFollowsFollowingRequest {
+    return new SampleFollowsFollowingRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SampleFollowsFollowingRequest | PlainMessage<SampleFollowsFollowingRequest> | undefined, b: SampleFollowsFollowingRequest | PlainMessage<SampleFollowsFollowingRequest> | undefined): boolean {
+    return proto3.util.equals(SampleFollowsFollowingRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.SampledFollowsFollowing
+ */
+export class SampledFollowsFollowing extends Message<SampledFollowsFollowing> {
+  /**
+   * @generated from field: string target_did = 1;
+   */
+  targetDid = "";
+
+  /**
+   * @generated from field: repeated string dids = 2;
+   */
+  dids: string[] = [];
+
+  /**
+   * @generated from field: int32 total_known = 3;
+   */
+  totalKnown = 0;
+
+  constructor(data?: PartialMessage<SampledFollowsFollowing>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SampledFollowsFollowing";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "target_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "dids", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 3, name: "total_known", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SampledFollowsFollowing {
+    return new SampledFollowsFollowing().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SampledFollowsFollowing {
+    return new SampledFollowsFollowing().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SampledFollowsFollowing {
+    return new SampledFollowsFollowing().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SampledFollowsFollowing | PlainMessage<SampledFollowsFollowing> | undefined, b: SampledFollowsFollowing | PlainMessage<SampledFollowsFollowing> | undefined): boolean {
+    return proto3.util.equals(SampledFollowsFollowing, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.SampleFollowsFollowingResponse
+ */
+export class SampleFollowsFollowingResponse extends Message<SampleFollowsFollowingResponse> {
+  /**
+   * @generated from field: repeated bsky.SampledFollowsFollowing results = 1;
+   */
+  results: SampledFollowsFollowing[] = [];
+
+  constructor(data?: PartialMessage<SampleFollowsFollowingResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.SampleFollowsFollowingResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "results", kind: "message", T: SampledFollowsFollowing, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SampleFollowsFollowingResponse {
+    return new SampleFollowsFollowingResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SampleFollowsFollowingResponse {
+    return new SampleFollowsFollowingResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SampleFollowsFollowingResponse {
+    return new SampleFollowsFollowingResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SampleFollowsFollowingResponse | PlainMessage<SampleFollowsFollowingResponse> | undefined, b: SampleFollowsFollowingResponse | PlainMessage<SampleFollowsFollowingResponse> | undefined): boolean {
+    return proto3.util.equals(SampleFollowsFollowingResponse, a, b);
   }
 }
 

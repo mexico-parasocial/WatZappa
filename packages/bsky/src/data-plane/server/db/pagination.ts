@@ -1,7 +1,7 @@
-import { SqlBool, sql } from 'kysely'
+import { type SqlBool, sql } from 'kysely'
 import { ensureValidRecordKey } from '@atproto/syntax'
 import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AnyQb, DbRef } from './util.js'
+import type { AnyQb, DbRef } from './util.js'
 
 type KeysetCursor = { primary: string; secondary: string }
 type KeysetLabeledResult = {
@@ -35,6 +35,19 @@ export abstract class GenericKeyset<R, LR extends KeysetLabeledResult> {
     const result = Array.isArray(results) ? results.at(-1) : results
     if (!result) return
     return this.pack(this.labelResult(result))
+  }
+  page<Result extends R>(
+    results: Result[],
+    limit: number,
+  ): { items: Result[]; cursor?: string } {
+    const items = results.slice(0, limit)
+    return {
+      items,
+      cursor:
+        results.length > limit && items.length
+          ? this.packFromResult(items[items.length - 1])
+          : undefined,
+    }
   }
   pack(labeled?: LR): string | undefined {
     if (!labeled) return
