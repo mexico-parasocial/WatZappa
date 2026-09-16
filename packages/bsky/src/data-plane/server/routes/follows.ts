@@ -178,8 +178,10 @@ const getKnownFollowers = async (
     pageLimit = limit
     const { ref } = db.db.dynamic
     const keyset = new TimeCidKeyset(ref('follow.sortAt'), ref('follow.cid'))
+    // this fork's paginate() does not over-fetch by one like upstream's, so
+    // request an extra row here for next-page detection in keyset.page()
     pageReq = paginate(pageReq, {
-      limit,
+      limit: limit + 1,
       cursor,
       keyset,
       tryIndex: true,
