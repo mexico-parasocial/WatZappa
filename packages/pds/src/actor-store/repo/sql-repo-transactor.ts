@@ -1,7 +1,7 @@
 import { chunkArray } from '@atproto/common'
-import { Cid, parseCid } from '@atproto/lex-data'
-import { BlockMap, CommitData, RepoStorage } from '@atproto/repo'
-import { ActorDb, RepoBlock } from '../db/index.js'
+import { type Cid, parseCid } from '@atproto/lex-data'
+import { BlockMap, type CommitData, type RepoStorage } from '@atproto/repo'
+import type { ActorDb, RepoBlock } from '../db/index.js'
 import { SqlRepoReader } from './sql-repo-reader.js'
 
 export class SqlRepoTransactor extends SqlRepoReader implements RepoStorage {
@@ -45,12 +45,17 @@ export class SqlRepoTransactor extends SqlRepoReader implements RepoStorage {
   }
 
   async putMany(toPut: BlockMap, rev: string): Promise<void> {
-    const blocks: RepoBlock[] = Array.from(toPut, ([cid, bytes]) => ({
-      cid: cid.toString(),
-      repoRev: rev,
-      size: bytes.length,
-      content: bytes,
-    }))
+    const blocks: RepoBlock[] = []
+    // @NOTE forEach is the one iteration API shared by the built and source
+    // BlockMap implementations under the dependency overlay.
+    toPut.forEach((bytes, cid) =>
+      blocks.push({
+        cid: cid.toString(),
+        repoRev: rev,
+        size: bytes.length,
+        content: bytes,
+      }),
+    )
 
     for (const batch of chunkArray(blocks, 50)) {
       await this.db.db

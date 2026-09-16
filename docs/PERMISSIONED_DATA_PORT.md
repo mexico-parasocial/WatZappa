@@ -3,7 +3,21 @@
 **Status:** implementation in progress. This document is the integration
 boundary for OD-P1; it does not make community spaces a Q4 pilot dependency.
 
-## Checkpoint — 2026-09-14
+## Checkpoint — 2026-09-16
+
+Worktree: `WatZappa-permissioned-data`, branch `codex/permissioned-data-port`,
+based on `4e0ddd958`. The port implementation is committed (`61d9f2e95`, then
+`e12b62135` checkpoint recovery and `dff8080f3` sync-blob privacy), and the
+branch has **merged main** (at `5572c5a36`) in `3930c8eba`, adopting main's
+`packages/car`, PDS/OAuth reconciliation, oauth-provider-ui and Matrix-bridge
+work. Main's own worktree and its uncommitted changes were not touched. The
+dependency overlay reuses main's install plus local workspace symlinks
+(`@atproto/car`, `@atproto/lex-cbor`, `@atproto/lex-data`, `varint` for
+`packages/car`); this is not a clean lockfile installation. Upstream
+(`bluesky-social/atproto` `permissioned-data`) remains a behavioural reference
+only — never a merge source. Do not copy upstream files wholesale.
+
+## Checkpoint — 2026-09-14 (superseded)
 
 Worktree: `WatZappa-permissioned-data`, branch `codex/permissioned-data-port`,
 based on `4e0ddd958`, with the implementation saved in checkpoint `61d9f2e95`.
@@ -534,7 +548,7 @@ as a semantic diff. It must not replace a current file with its upstream version
 | Upstream area                                                             | Disposition in PARA         | Reason                                                                                                                                             |
 | ------------------------------------------------------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Actor-store migration, schema, space reader/transactor, blob reachability | **Ported, inert**           | Local persistence only; no route or policy decision is exposed.                                                                                    |
-| CAR stream helper                                                         | **Ported, tested**          | Required to support the already-vendored `@atproto/space` package without replacing common infrastructure.                                         |
+| CAR stream helper | **Replaced by `@atproto/car`** | The duplicated common/repo CAR code and varint shim are retired; repo re-exports the car package and the vendored space package consumes it directly. |
 | Replay namespace and client-attestation verifier                          | **Ported, inert**           | Provides verified client identity and single-use tokens, but cannot issue a credential.                                                            |
 | `AuthVerifier` space-token and DPoP paths                                 | **Adapt later**             | It touches existing PARA/OAuth authentication behavior; add only after the assurance exchange and its tests are defined.                           |
 | `SimpleSpaceManager` / `managing-app` callback                            | **Replace the policy seam** | Generic callback authorization is not an adequate community role/write gate. Route it through the local `PolicyResolver` and versioned projection. |

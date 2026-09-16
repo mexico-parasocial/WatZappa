@@ -1,15 +1,19 @@
-import { Cid } from '@atproto/lex-data'
-import { BlockMap } from '../block-map.js'
-import { readCarWithRoot } from '../car.js'
+import type { BlockMap } from '@atproto/car'
+import { readCarWithRoot } from '@atproto/car'
+import type { Cid } from '@atproto/lex-data'
 import { DataDiff } from '../data-diff.js'
 import { MST } from '../mst/index.js'
 import { ReadableRepo } from '../readable-repo.js'
-import { MemoryBlockstore, ReadableBlockstore, SyncStorage } from '../storage/index.js'
 import {
-  RecordCidClaim,
-  RecordClaim,
-  VerifiedDiff,
-  VerifiedRepo,
+  MemoryBlockstore,
+  type ReadableBlockstore,
+  SyncStorage,
+} from '../storage/index.js'
+import {
+  type RecordCidClaim,
+  type RecordClaim,
+  type VerifiedDiff,
+  type VerifiedRepo,
   def,
 } from '../types.js'
 import * as util from '../util.js'

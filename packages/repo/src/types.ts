@@ -1,8 +1,8 @@
 import { z } from 'zod'
-import { Cid, LexMap, ifCid } from '@atproto/lex-data'
-import { NsidString, RecordKeyString } from '@atproto/syntax'
-import { BlockMap } from './block-map.js'
-import { CidSet } from './cid-set.js'
+import type { BlockMap } from '@atproto/car'
+import { type Cid, type LexMap, ifCid } from '@atproto/lex-data'
+import type { NsidString, RecordKeyString } from '@atproto/syntax'
+import type { CidSet } from './cid-set.js'
 
 // Repo nodes
 // ---------------
@@ -159,9 +159,7 @@ export type RecordDeleteDescript = {
 }
 
 export type RecordWriteDescript =
-  | RecordCreateDescript
-  | RecordUpdateDescript
-  | RecordDeleteDescript
+  RecordCreateDescript | RecordUpdateDescript | RecordDeleteDescript
 
 export type WriteLog = RecordWriteDescript[][]
 
@@ -219,9 +217,4 @@ export type VerifiedDiff = {
 export type VerifiedRepo = {
   creates: RecordCreateDescript[]
   commit: CommitData
-}
-
-export type CarBlock = {
-  cid: Cid
-  bytes: Uint8Array
 }

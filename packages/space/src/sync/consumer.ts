@@ -1,4 +1,5 @@
-import { type check, readCarStream } from '@atproto/common'
+import { readCarStream } from '@atproto/car'
+import type { check } from '@atproto/common'
 import { decode } from '@atproto/lex-cbor'
 import type { Cid, LexMap } from '@atproto/lex-data'
 import { RepoVerificationError } from '../error.js'
@@ -48,7 +49,8 @@ export const verifyRepoCar = async (
   params: VerifyRepoParams,
 ): Promise<VerifiedRepo> => {
   // The reader hashes every block against its cid as it streams.
-  const { roots, blocks } = await readCarStream(car)
+  const carReader = await readCarStream(car)
+  const { roots, blocks } = carReader
   if (roots.length !== 2) {
     throw new RepoVerificationError(
       `expected 2 car roots (commit, index), got ${roots.length}`,
@@ -84,7 +86,22 @@ export const verifyRepoCar = async (
     commit,
     index,
     repo,
-    records: verifyRecords(blocks, index, params.expectValues !== false),
+    // @NOTE records are lazy: dispose the car reader when they finish or break.
+    records: disposeWith(
+      verifyRecords(blocks, index, params.expectValues !== false),
+      carReader,
+    ),
+  }
+}
+
+async function* disposeWith<T>(
+  records: AsyncGenerator<T>,
+  carReader: Awaited<ReturnType<typeof readCarStream>>,
+): AsyncGenerator<T> {
+  try {
+    yield* records
+  } finally {
+    await carReader[Symbol.asyncDispose]()
   }
 }
 

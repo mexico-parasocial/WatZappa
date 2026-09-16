@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import { encodeCarBlock, encodeCarHeader, readCarStream } from '@atproto/common'
+import { encodeCarBlock, encodeCarHeader, readCarStream } from '@atproto/car'
 import { type Keypair, Secp256k1Keypair } from '@atproto/crypto'
 import { encode } from '@atproto/lex-cbor'
 import { type Cid, cidForCbor } from '@atproto/lex-data'

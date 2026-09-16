@@ -1,12 +1,13 @@
 import { z } from 'zod'
+import { BlockMap } from '@atproto/car'
+import type { CarBlock } from '@atproto/car'
 import { cidForLex, encode } from '@atproto/lex-cbor'
-import { Cid, cidForCbor } from '@atproto/lex-data'
-import { BlockMap } from '../block-map.js'
+import { type Cid, cidForCbor } from '@atproto/lex-data'
 import { CidSet } from '../cid-set.js'
 import { MissingBlockError, MissingBlocksError } from '../error.js'
 import * as parse from '../parse.js'
-import { ReadableBlockstore } from '../storage/index.js'
-import { CarBlock, schema } from '../types.js'
+import type { ReadableBlockstore } from '../storage/index.js'
+import { schema } from '../types.js'
 import * as util from './util.js'
 
 /**
@@ -758,9 +759,7 @@ export class MST {
       throw new MissingBlocksError('mst leaf', leafData.missing)
     }
 
-    for (const leaf of leafData.blocks.entries()) {
-      yield leaf
-    }
+    yield* leafData.blocks
   }
 
   async cidsForPath(key: string): Promise<Cid[]> {
