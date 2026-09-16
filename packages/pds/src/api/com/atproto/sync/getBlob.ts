@@ -1,9 +1,9 @@
 import { parseCid } from '@atproto/lex-data'
 import { BlobNotFoundError } from '@atproto/repo'
-import { InvalidRequestError, Server } from '@atproto/xrpc-server'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import { AuthScope } from '../../../../auth-scope.js'
 import { isUserOrAdmin } from '../../../../auth-verifier.js'
-import { AppContext } from '../../../../context.js'
+import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 import { assertRepoAvailability } from './util.js'
 
@@ -21,6 +21,11 @@ export default function (server: Server, ctx: AppContext) {
 
       const cid = parseCid(params.cid)
       const found = await ctx.actorStore.read(params.did, async (store) => {
+        // @NOTE a blob referenced only by space records is private: public
+        // sync must not serve bytes that no public repo record dereferences.
+        if (!(await store.repo.blob.hasRecordsForBlob(cid))) {
+          throw new InvalidRequestError('Blob not found', 'BlobNotFound')
+        }
         try {
           return await store.repo.blob.getBlob(cid)
         } catch (err) {
