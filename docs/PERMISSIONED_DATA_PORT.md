@@ -6,17 +6,19 @@ boundary for OD-P1; it does not make community spaces a Q4 pilot dependency.
 ## Checkpoint — 2026-09-14
 
 Worktree: `WatZappa-permissioned-data`, branch `codex/permissioned-data-port`,
-based on `4e0ddd958`. These additions are local and uncommitted. The main
-WatZappa checkout now includes `5e42601c7` (PDS/OAuth reconciliation) and
-`f2f097d68` (institutional Matrix authorization policy). Integrate against those
-commits by reviewing each overlapping file; this worktree is not yet rebased or
-merged into main.
+based on `4e0ddd958`, with the implementation saved in checkpoint `61d9f2e95`.
+The isolated worktree was restored from that branch after its directory was
+removed; none of the checkpointed source was lost. Main is now at `5d79dc756`,
+including PDS/OAuth reconciliation, CAR build repairs, and further institutional
+Matrix work. Integrate against current main by reviewing each overlapping file;
+this worktree is not yet rebased or merged into main. Do not replace main's
+uncommitted changes or copy upstream files wholesale.
 
 | Area                                              | Current implementation                                                                                                                                                    | Remaining before route use                                                                              |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | Space persistence, blobs, CAR, client attestation | Implemented and tested locally                                                                                                                                            | Manual integration with current main and full regression run                                            |
-| PARA projection                                   | Authority-store state, members, receipts, snapshot/patch semantics, ordering, digest chain, retained deletion watermark; pinned-key signed intake and latched stale state | Production trust configuration and authenticated recovery protocol                                      |
-| AppView policy publisher                          | Ed25519 signer; independent normalization/digest encoding; public JWKS; transactional Postgres outbox with ordered leases and acknowledgements; tested against PDS        | Governance-authorized input, authenticated delivery worker and recovery                                 |
+| PARA projection                                   | Authority-store state, members, receipts, snapshot/patch semantics, ordering, digest chain, retained deletion watermark; pinned-key signed intake and latched stale state; single-use challenge checkpoint recovery (local component) | Production trust configuration, authenticated transport and governance wiring for recovery              |
+| AppView policy publisher                          | Ed25519 signer; independent normalization/digest encoding; public JWKS; transactional Postgres outbox with ordered leases and acknowledgements; tested against PDS; checkpoint reservation, fencing and exact receipt confirmation | Governance-authorized input, authenticated delivery worker and checkpoint transport                     |
 | PARA resolver                                     | Pure rule-based resolver; transactional input reader; active state, role expiry, client/collection/action scope, freshness and epoch checks                               | Reviewed production rule configuration and wiring in the same transaction as writes                     |
 | M8 assurance                                      | Standalone draft verifier, fixed public Ed25519 JWS vectors, bounded JWKS fetching and rotation; durable PDS challenges with atomic nonce/JTI consumption                 | Broker signer/JWKS agreement and implementation; authenticated issuance, rate limits and cleanup wiring |
 | Credential exchange                               | No registered route or context wiring                                                                                                                                     | Complete integration and existing-auth regression tests, then a disabled feature gate                   |
@@ -29,18 +31,40 @@ bytes behind it. This port does not yet provide a usable private-file service.
 Focused checkpoint verification: seven PDS suites, 111 tests passed (space storage,
 PARA projection storage/intake, resolver, client attestation, M8 verifier and durable store),
 plus one AppView/PDS interoperability suite with 17 tests and one Postgres outbox
-suite with 18 tests: 146 tests across nine suites total.
+suite with 18 tests. The checkpoint-recovery stage adds a PDS challenge/install
+suite with 26 tests and a Postgres-to-SQLite recovery suite with 10 tests:
+182 tests across eleven suites total. The space-blob sync-privacy port adds a
+route-level suite with 2 tests that boots this worktree's own PDS against its
+PLC mock: 184 tests across twelve suites.
 The 22 new durable-store tests exercise real SQLite, separate connections,
 restart persistence, expiry, migration round trips, bounded cleanup and forced
 write-failure rollback. Another 32 signed-policy intake tests cover trust bindings,
 key rotation, replay, invalidation, concurrent updates and persistence failures.
+The 26 checkpoint tests cover challenge eligibility (stale and ready-but-lagged),
+pending bounds and bounded
+cleanup, full install with revoked members still denied, chain continuation,
+catch-up of a ready projection and its invalidation by a concurrent ordinary
+delta, invalid envelopes that do not consume challenges, floor/chain violations,
+expiry, challenge reuse, state advanced between issuance and installation,
+forced write-failure rollback of consumption, concurrent single-winner
+installation, migration 005 round trip and configuration validation. The 10
+recovery tests
+cover the end-to-end lost revocation with superseded-event fencing and resumed
+ordered delivery, catch-up of a ready receiver after its undelivered head
+expired (proving an accepted receipt cannot clear the latch), lost-response
+reconciliation with worker fencing, publisher
+restart persistence, floors advancing between issuance and installation with
+re-preparation above the new floors, lease states and duplicate preparation
+refusal, forged confirmations, publisher challenge validation and bounded
+snapshot size, the governance-transaction precondition, and migration round
+trips of the new outbox columns.
 The interoperability suite runs the real AppView signer, PDS verifier/storage and
 resolver against temporary SQLite; it is not a deployed HTTP delivery test.
 The outbox suite uses a dedicated random schema per test in local Postgres,
 including concurrent writers/workers, transaction rollback, restart, lease expiry,
 migration round trips, and delivery of stored envelopes through real PDS intake.
 Targeted verifier/store/intake/publisher/outbox/test typechecking uses the PDS's
-existing `noImplicitAny: false` setting and a mapping to built fetch declarations.
+existing `noImplicitAny: false` setting and mappings to built fetch/JWK declarations.
 The latest Jest run uses the package's own config with the existing dependency
 overlay; it no longer requires the earlier temporary Jest mappings. The installed
 runner is invoked directly from the PDS directory to avoid pnpm changing that
@@ -48,6 +72,12 @@ overlay. The AppView compatibility suite likewise uses its installed Vitest runn
 and package config directly. The outbox suite requires Postgres, but no Redis;
 it bypasses the shared dev-infra cleanup wrapper and drops only its own random
 schemas. The older publisher suite needs neither service.
+All nine suites were rerun successfully after restoring the worktree. The outbox
+rerun used a temporary loopback-only Postgres instance because the previous test
+database was stopped. Targeted typechecking and lint of the latest fault-watermark
+and receipt-reconciliation changes passed; lint disables import resolution only
+for the local dependency overlay. Installed dependencies and built declarations
+come from main, not a fresh installation of this branch's lockfile.
 This is not a clean full workspace build or full PARA integration run.
 
 ## Decision
@@ -374,18 +404,104 @@ This recovers lost acknowledgements even after the original assertion expires,
 without touching PDS policy state or re-signing an old version. There is no network
 authentication implementation or public reconciliation endpoint in this slice.
 
-A genuine missing-update fault still needs a new full checkpoint. The next
-protocol must bind a short-lived PDS-issued challenge to the current accepted
-digest/version and both verified fault floors. The publisher must serialize a
-new governance-authorized snapshot above its own head and both receiver floors;
-the PDS must atomically verify/consume that challenge and install the checkpoint.
-Publisher leases and superseded pending envelopes must remain fenced until the
-exact checkpoint receipt is authenticated. This is a design requirement, not an
-implemented reset path; large snapshots and checkpoint delivery remain open.
+A genuine missing-update fault still needs a new full checkpoint. That protocol
+is now implemented locally as `ParaPolicyCheckpoint` (PDS) plus publisher and
+outbox checkpoint paths (AppView); see the next section. It is exercised
+component-to-component against real SQLite and Postgres, not over HTTP.
+
+### Authenticated checkpoint recovery (implemented locally, route-disabled)
+
+The checkpoint envelope is deliberately not an ordinary delta: it uses
+`typ: application/para-policy-checkpoint+jwt` with the same strict header and
+pinned-key rules, and its strict claims are `{ iss, aud, iat, exp, checkpoint }`
+where `checkpoint` carries `{ challenge: { id, secret }, kind: "snapshot",
+space, sourceUri, sourceCid, sourceIssuer, sourceVersion, policyEpoch,
+previousDeltaDigest, issuedAt, members }`. A checkpoint is always a full
+snapshot; `previousDeltaDigest` continues the chain from the challenged accepted
+digest, and the projection digest is computed with the same fixed-field
+encoding as an ordinary delta — over the projection fields plus the checkpoint
+envelope bytes — by two independent implementations (publisher and transactor)
+so tests detect encoding disagreement. Envelope input stays bounded by the
+16 KiB signed-receipt limit: larger recovery snapshots are rejected acotadamente
+and require a reviewed transport, never a silent size increase or a partial
+install.
+
+The PDS issues a challenge only for a live, non-deleted space with an existing
+projection for the configured source, in one of two recoverable conditions: a
+verified fault (`stale`), or a healthy-but-lagged `ready` projection whose
+publisher stream latched `recovery-required` after an undelivered head expired.
+Without the second case that latch has no exit: the expired artifact cannot be
+re-signed, an accepted receipt for the older version cannot clear it, and
+forcing a deliberate gap at the receiver just to reach `stale` would be worse.
+The challenge is single-use: a random 128-bit id plus a 256-bit secret whose
+SHA-256 is the only persisted form. It binds issuer, audience, authority,
+immutable space, source URI, the exact accepted version/digest, and both
+verified floors (the fault maxima when a fault exists, otherwise the accepted
+state's own version/epoch), with an operator-configured lifetime (1–3600 s,
+tested at 300 s), at most four outstanding challenges per space, and bounded
+expiry cleanup. Absent projections return no challenge: bootstrap is not
+recovery.
+
+Installation re-verifies signature, type, bindings and freshness, then inside
+one authority-store transaction re-checks the challenge (unconsumed,
+unexpired, secret hash), the space, the accepted state (still `ready` or
+`stale` at exactly the challenged version/digest — any ordinary delta that
+moved a healthy projection in the meantime invalidates the challenge) and both
+current floors; requires the checkpoint
+version above the version floor and the epoch above the epoch floor and
+chained to the challenged digest; consumes the challenge with a conditional
+update; and installs the snapshot, its delta receipt and a checkpoint receipt
+row. Any write failure rolls the consumption back; only a complete valid
+install can replace the projection, and only such an install moves `stale` to
+`ready`. Snapshot semantics preserve PARA rules:
+omitted members retire to `removed`, structured assignments keep precedence,
+and a revoked or blocked member stays denied after recovery. If any accepted
+state or floor advanced since issuance, the challenge is rejected
+(`CheckpointStateAdvanced`) and a fresh challenge must be issued; re-delivering
+installed bytes is refused (`CheckpointChallengeConsumed`) — after a lost
+response the only path is `getCheckpointReceipt()`, which reports the exact
+installed checkpoint while it is still the accepted projection, for the
+caller-authenticated reconciliation below.
+
+On the publisher side, `prepareCheckpoint` runs inside the same authorized
+governance transaction as the snapshot decision (there is still no governance
+adapter; the precondition is explicit). Under the existing stream lock it
+reserves `sourceVersion = max(stream head, challenge version floor) + 1` and
+`policyEpoch = max(stream epoch, challenge epoch floor) + 1` — two independent
+dimensions — and persists the stable event id, challenge-bound input digest,
+signed bytes and digest atomically, latching the stream `checkpoint-pending`.
+Ordinary `enqueue`/`claim` stay blocked while a checkpoint is pending. A new
+checkpoint may only be prepared after a pending one expires (it is then marked
+superseded); versions are never re-signed. `claimCheckpoint` leases the pending
+checkpoint with the same 30-second fencing tokens; `acknowledgeCheckpoint`
+confirms only the exact version/digest/challenge id under the current lease,
+and `reconcileCheckpoint` accepts the authenticated receiver receipt
+idempotently after a lost response. Either path marks superseded the replaced
+pending events (retained for traceability, never redelivered), advances the
+acknowledged cursor to the checkpoint and releases the stream to `ready`.
+Previous workers' tokens, expired leases, forged or mismatched receipts and
+late envelopes cannot confirm, revert or bypass the recovery.
+
+There is still no production transport: the challenge secret and both receipts
+are payloads whose callers must authenticate the other service, and no HTTP
+interopability exists. Oversized snapshots are rejected boundedly as above.
 
 Production action/collection/role mappings and freshness intervals are not
 invented here. The resolver has no permissive default rules. Institutional
 rosters must remain private and distinct from public community governance.
+
+### Key custody (operational guidance, pending DevOps decisions)
+
+The publisher's Ed25519 keys are the authorization root of the whole policy
+chain, yet the implementation deliberately holds no key material: publishers
+receive caller-provided private keys, expose public-only JWKS, pin trust in
+PDS configuration (1–16 kids), and store no signing material in the outbox.
+Rotation is a trusted-configuration update with an overlap window, and
+monotonic floors make rollback impossible even for the legitimate key holder.
+Custody, escrow, rotation cadence, the compromise runbook and the signing
+service's placement in the deployment tiers are documented in Spanish for the
+future operators: [KEY_CUSTODY_ES.md](./KEY_CUSTODY_ES.md). No production key
+or identity exists yet.
 
 ## Matrix boundary
 
@@ -513,6 +629,26 @@ Completed in the isolated manual-port branch:
 12. Added durable verified version/epoch fault floors and exact-receipt lost-ACK
     reconciliation. Tests prove reconciliation leaves PDS policy unchanged and
     does not bypass a stale projection or a later expired head.
+13. Added the authenticated checkpoint-recovery protocol: bounded single-use
+    PDS challenges bound to accepted state and both verified floors, atomic
+    challenge-consuming full-snapshot installation (migration 005), independent
+    checkpoint signing, outbox checkpoint reservation with pending/lease fencing
+    and exact receipt confirmation or reconciliation. Eligibility covers both a
+    stale projection and a ready-but-lagged one whose expired head latched the
+    publisher stream. Recovery is proven
+    Postgres-to-SQLite with lost revocations staying denied; it remains a local
+    component with no route, transport or governance adapter.
+14. Ported upstream 907f41a7b manually: public `sync.getBlob` now refuses any
+    blob that no public repo record dereferences (`BlobNotFound`), so
+    space-only blobs are never served through public sync; bytes shared with a
+    public record remain available until that record is deleted and space
+    reachability still protects them. To make route-level testing possible in
+    this worktree at all, the missing `src/events.ts` (present on main, already
+    imported by this branch's context) and its `eventsLogger` export were
+    brought over, lexicons and mailer templates were generated, and a new
+    suite builds this worktree's own PDS (not the dependency overlay's copy)
+    with only the PLC mock from dev-env. The guard's test fails without the
+    guard, proving it is load-bearing.
 
 Next, in order:
 
@@ -520,9 +656,10 @@ Next, in order:
    signing/JWKS interoperability tests. Policy epoch remains PDS-owned.
 2. Wire authenticated challenge issuance, endpoint rate limits and periodic
    cleanup only as part of the disabled credential-exchange integration below.
-3. Build the governance-authorized publisher input and authenticated checkpoint
-   recovery, including high-water marks, expired/ambiguous delivery and large-snapshot
-   transport. The signer and durable outbox are tested; live delivery remains unwired.
+3. Provide the governance-authorized snapshot input and an authenticated
+    checkpoint transport (including oversized snapshots), then a delivery
+    worker. The challenge/install/confirm protocol itself is implemented and
+    tested locally; nothing is wired to a route or scheduler yet.
 4. Review production collection/action/role rules and freshness policy; route
    credential issuance and every protected write through the local resolver.
 5. Manually reconcile current main's PDS/OAuth changes, then expose already
@@ -537,13 +674,12 @@ it is not part of this port's first release.
 
 ## Coordination with institutional messaging
 
-At the final local check, the main checkout also had uncommitted institutional
-SQLite/Postgres store and route/middleware changes. These belong to the other
+At the restoration check, main had advanced through `5d79dc756` and retained
+uncommitted changes in Matrix authorization, governance-read and moderation
+routes, a plan file, and CAR test configuration. These belong to the other
 workstream; their implementation and verification were not repeated here.
 
-The institutional bridge module on main is an authorization-policy foundation.
-Its next slice is membership persistence and route-level enforcement. Keep that
-work separate from public community governance and do not import its owner role
+Keep institutional messaging work separate from public community governance and do not import its owner role
 as a universal private-file grant. Referenced AT URIs still require authorization
 at their PDS. Any institution-specific file rules need a private, trusted policy
 source and the same complete credential/write gates as other protected resources.

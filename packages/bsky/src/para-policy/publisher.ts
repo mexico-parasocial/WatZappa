@@ -12,6 +12,7 @@ import {
 } from '@atproto/syntax'
 
 const typ = 'application/para-policy-delta+jwt'
+const checkpointTyp = 'application/para-policy-checkpoint+jwt'
 const datetime = z
   .string()
   .refine(isDatetimeString)
@@ -92,6 +93,23 @@ export type ParaPolicyPublisherConfig = {
   sourceUri: string
   kid: string
   lifetimeSec: number
+}
+
+/**
+ * A receiver-issued, single-use recovery challenge, relayed over authenticated
+ * transport. It authorizes one governance snapshot above its recorded floors.
+ */
+export type ParaPolicyRecoveryChallenge = {
+  id: string
+  secret: string
+  issuer: string
+  audience: string
+  space: string
+  sourceUri: string
+  acceptedSourceVersion: number
+  acceptedProjectionDigest: string
+  maxSourceVersion: number
+  maxPolicyEpoch: number
 }
 
 /** Persist this entire artifact in an ordered outbox before attempting delivery. */
@@ -219,6 +237,129 @@ export class ParaPolicyPublisher {
     const { members, ...metadata } = delta
     const projectionDigest = createHash('sha256')
       .update(JSON.stringify({ ...metadata, signedDelta: assertion, members }))
+      .digest('hex')
+    return Object.freeze({
+      assertion,
+      projectionDigest,
+      sourceVersion: update.sourceVersion,
+      policyEpoch: update.policyEpoch,
+      expiresAt: exp,
+    })
+  }
+
+  /**
+   * Sign a recovery checkpoint answering one receiver challenge. The caller
+   * allocates version/epoch above every recorded floor under the stream lock
+   * and must persist the returned bytes before attempting delivery. The
+   * snapshot material must come from an authorized governance decision, never
+   * from client-submitted roles or raw membership index rows.
+   */
+  async prepareCheckpoint(
+    challenge: ParaPolicyRecoveryChallenge,
+    allocation: { sourceVersion: number; policyEpoch: number },
+    input: Omit<
+      ParaPolicyUpdate,
+      'kind' | 'sourceVersion' | 'policyEpoch' | 'previousDeltaDigest'
+    >,
+  ): Promise<PreparedParaPolicyUpdate> {
+    if (
+      !challenge ||
+      typeof challenge.id !== 'string' ||
+      !challenge.id.trim() ||
+      challenge.id.length > 256 ||
+      typeof challenge.secret !== 'string' ||
+      !challenge.secret.trim() ||
+      challenge.secret.length > 512 ||
+      challenge.issuer !== this.config.issuer ||
+      challenge.audience !== this.config.audience ||
+      challenge.space !== this.config.space ||
+      challenge.sourceUri !== this.config.sourceUri ||
+      !Number.isSafeInteger(challenge.acceptedSourceVersion) ||
+      challenge.acceptedSourceVersion < 1 ||
+      !Number.isSafeInteger(challenge.maxSourceVersion) ||
+      challenge.maxSourceVersion < challenge.acceptedSourceVersion ||
+      !Number.isSafeInteger(challenge.maxPolicyEpoch) ||
+      challenge.maxPolicyEpoch < 1 ||
+      !/^[0-9a-f]{64}$/u.test(challenge.acceptedProjectionDigest)
+    )
+      throw new Error('Invalid PARA policy recovery challenge')
+    const update = parseParaPolicyUpdate({
+      ...input,
+      kind: 'snapshot',
+      sourceVersion: allocation.sourceVersion,
+      policyEpoch: allocation.policyEpoch,
+      previousDeltaDigest: challenge.acceptedProjectionDigest,
+    })
+    const iat = Math.floor(this.now().getTime() / 1_000)
+    const exp = iat + this.config.lifetimeSec
+    if (!Number.isSafeInteger(iat) || iat < 0 || !Number.isSafeInteger(exp)) {
+      throw new Error('Invalid PARA policy publisher clock or expiration')
+    }
+    const members = update.members.map((entry) => ({
+      did: entry.did,
+      membershipState: entry.membershipState,
+      roles: [...entry.roles],
+      roleAssignments: entry.roleAssignments.map((assignment) => ({
+        role: assignment.role,
+        ...(assignment.validFrom
+          ? { validFrom: assignment.validFrom }
+          : undefined),
+        ...(assignment.validUntil
+          ? { validUntil: assignment.validUntil }
+          : undefined),
+        ...(assignment.ratifiedBy
+          ? { ratifiedBy: assignment.ratifiedBy }
+          : undefined),
+      })),
+    }))
+    const checkpoint = {
+      challenge: { id: challenge.id, secret: challenge.secret },
+      kind: 'snapshot' as const,
+      space: this.config.space,
+      sourceUri: this.config.sourceUri,
+      sourceCid: update.sourceCid,
+      sourceIssuer: this.config.issuer,
+      sourceVersion: update.sourceVersion,
+      policyEpoch: update.policyEpoch,
+      previousDeltaDigest: update.previousDeltaDigest,
+      issuedAt: new Date(iat * 1_000).toISOString(),
+      members,
+    }
+    const assertion = await new SignJWT({
+      iss: this.config.issuer,
+      aud: this.config.audience,
+      iat,
+      exp,
+      checkpoint,
+    })
+      .setProtectedHeader({
+        alg: 'EdDSA',
+        typ: checkpointTyp,
+        kid: this.config.kid,
+      })
+      .sign(this.privateKey)
+    if (assertion.length > 16_384) {
+      throw new Error('Signed PARA policy update exceeds the receiver limit')
+    }
+    // @NOTE the digest covers the projection fields only, in the exact field
+    // order of an ordinary delta; the challenge is bound transitively through
+    // the signed envelope bytes. The receiver computes this independently.
+    const projectionDigest = createHash('sha256')
+      .update(
+        JSON.stringify({
+          kind: checkpoint.kind,
+          space: checkpoint.space,
+          sourceUri: checkpoint.sourceUri,
+          sourceCid: checkpoint.sourceCid,
+          sourceIssuer: checkpoint.sourceIssuer,
+          sourceVersion: checkpoint.sourceVersion,
+          policyEpoch: checkpoint.policyEpoch,
+          previousDeltaDigest: checkpoint.previousDeltaDigest,
+          issuedAt: checkpoint.issuedAt,
+          signedDelta: assertion,
+          members: checkpoint.members,
+        }),
+      )
       .digest('hex')
     return Object.freeze({
       assertion,

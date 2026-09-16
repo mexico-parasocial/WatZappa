@@ -18,9 +18,13 @@ import { getDb, getMigrator } from '../../pds/src/actor-store/db/index.js'
 import { ParaPolicyIntake } from '../../pds/src/actor-store/para-policy/intake.js'
 import { ParaPolicyReader } from '../../pds/src/actor-store/para-policy/reader.js'
 import {
-  down,
-  up,
+  down as downOutbox,
+  up as upOutbox,
 } from '../src/data-plane/server/db/migrations/20260914T180000000Z-add-para-policy-outbox.js'
+import {
+  down as downCheckpoint,
+  up as upCheckpoint,
+} from '../src/data-plane/server/db/migrations/20260915T000000000Z-add-para-policy-checkpoint.js'
 import type { PartialDB } from '../src/data-plane/server/db/tables/para-policy-outbox.js'
 import {
   type ParaPolicyChange,
@@ -76,7 +80,8 @@ describe('durable policy outbox (Postgres)', () => {
     schema = `policy_outbox_${randomBytes(8).toString('hex')}`
     db = connect()
     await db.schema.createSchema(schema).execute()
-    await up(db as Kysely<unknown>)
+    await upOutbox(db as Kysely<unknown>)
+    await upCheckpoint(db as Kysely<unknown>)
     await db.schema
       .createTable('governance_marker')
       .addColumn('id', 'integer', (col) => col.primaryKey())
@@ -362,8 +367,10 @@ describe('durable policy outbox (Postgres)', () => {
     await sql`insert into ${sql.table(`${schema}.governance_marker`)} (id) values (1)`.execute(
       db,
     )
-    await down(db as Kysely<unknown>)
-    await up(db as Kysely<unknown>)
+    await downCheckpoint(db as Kysely<unknown>)
+    await downOutbox(db as Kysely<unknown>)
+    await upOutbox(db as Kysely<unknown>)
+    await upCheckpoint(db as Kysely<unknown>)
     expect(
       (
         await sql`select * from ${sql.table(`${schema}.governance_marker`)}`.execute(

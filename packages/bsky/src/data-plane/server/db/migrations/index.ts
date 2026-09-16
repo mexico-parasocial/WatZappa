@@ -100,3 +100,4 @@ export * as _20260819T170000000Z from './20260819T170000000Z-add-like-subject-so
 export * as _20260821T120000000Z from './20260821T120000000Z-add-para-community-civic-tree.js'
 export * as _20260906T000000000Z from './20260906T000000000Z-add-cabildeo-geo.js'
 export * as _20260914T180000000Z from './20260914T180000000Z-add-para-policy-outbox.js'
+export * as _20260915T000000000Z from './20260915T000000000Z-add-para-policy-checkpoint.js'

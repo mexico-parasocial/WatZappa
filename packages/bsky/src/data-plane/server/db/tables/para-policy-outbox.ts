@@ -7,7 +7,7 @@ export interface ParaPolicyPublication {
   policyEpoch: number
   projectionDigest: string | null
   acknowledgedVersion: number
-  deliveryStatus: 'ready' | 'recovery-required'
+  deliveryStatus: 'ready' | 'recovery-required' | 'checkpoint-pending'
 }
 
 export interface ParaPolicyOutboxEntry {
@@ -22,6 +22,12 @@ export interface ParaPolicyOutboxEntry {
   leaseTokenHash: string | null
   leaseUntil: number | null
   acknowledgedAt: number | null
+  /** 'checkpoint' entries answer a receiver challenge and replace pending updates. */
+  artifactKind: 'update' | 'checkpoint'
+  /** The single-use receiver challenge this checkpoint answers. */
+  challengeId: string | null
+  /** Set when a confirmed checkpoint replaced this entry; it is never delivered after that. */
+  supersededAt: number | null
 }
 
 export type PartialDB = {

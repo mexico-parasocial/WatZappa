@@ -140,60 +140,60 @@ export class ParaPolicyTransactor extends ParaPolicyReader {
     this.db.assertTransaction()
     const delta = normalizeDelta(input)
     this.assertAuthority(delta.space)
-
-    const space = await this.db.db
-      .selectFrom('space')
-      .select(['uri', 'deletedAt'])
-      .where('uri', '=', delta.space)
-      .executeTakeFirst()
-    if (!space || space.deletedAt) {
-      throw new InvalidRequestError('Space not found', 'SpaceNotFound')
-    }
+    await this.assertSpaceAvailable(delta.space)
 
     const previous = await this.getPolicyState(delta.space)
     if (this.assertOrdering(previous, delta)) return
 
-    const receivedAt = new Date().toISOString()
-    const receipt = {
-      sourceVersion: delta.sourceVersion,
-      kind: delta.kind,
-      sourceUri: delta.sourceUri,
-      sourceCid: delta.sourceCid,
+    await this.persistProjection(delta, new Date().toISOString())
+  }
+
+  /**
+   * Install a fully verified recovery checkpoint as the new accepted
+   * projection. The caller has already verified the signed envelope, consumed
+   * its single-use challenge, and re-checked the accepted state and fault
+   * floors inside this same transaction. Unlike a delta, a checkpoint is
+   * allowed to jump the source version above the verified floors.
+   */
+  async installPolicyCheckpoint(
+    input: ParaPolicyProjectionDelta,
+    challengeId: string,
+  ): Promise<{ projectionDigest: string; installedAt: string }> {
+    this.db.assertTransaction()
+    const delta = normalizeDelta(input)
+    if (delta.kind !== 'snapshot') {
+      throw new InvalidRequestError(
+        'A PARA policy checkpoint must be a full snapshot',
+        'InvalidPolicyProjection',
+      )
+    }
+    if (!challengeId.trim() || challengeId.length > 256) {
+      throw new InvalidRequestError(
+        'Invalid PARA policy checkpoint challenge binding',
+        'InvalidPolicyProjection',
+      )
+    }
+    this.assertAuthority(delta.space)
+    await this.assertSpaceAvailable(delta.space)
+
+    const installedAt = new Date().toISOString()
+    await this.persistProjection(delta, installedAt)
+    const checkpoint = {
       sourceIssuer: delta.sourceIssuer,
+      sourceUri: delta.sourceUri,
+      sourceVersion: delta.sourceVersion,
       policyEpoch: delta.policyEpoch,
-      previousDeltaDigest: delta.previousDeltaDigest,
       projectionDigest: delta.projectionDigest,
-      issuedAt: delta.issuedAt,
-      receivedAt,
-      signedDelta: delta.signedDelta,
+      challengeId,
+      installedAt,
+      signedCheckpoint: delta.signedDelta,
     }
     await this.db.db
-      .insertInto('para_space_policy_delta')
-      .values({ space: delta.space, ...receipt })
+      .insertInto('para_space_policy_checkpoint')
+      .values({ space: delta.space, ...checkpoint })
+      .onConflict((oc) => oc.column('space').doUpdateSet(checkpoint))
       .execute()
-
-    const state = {
-      sourceUri: delta.sourceUri,
-      sourceCid: delta.sourceCid,
-      sourceIssuer: delta.sourceIssuer,
-      sourceVersion: delta.sourceVersion,
-      policyEpoch: delta.policyEpoch,
-      projectionDigest: delta.projectionDigest,
-      projectionStatus: 'ready',
-      issuedAt: delta.issuedAt,
-      receivedAt,
-      signedDelta: delta.signedDelta,
-    }
-    await this.db.db
-      .insertInto('para_space_policy_state')
-      .values({ space: delta.space, ...state })
-      .onConflict((oc) => oc.column('space').doUpdateSet(state))
-      .execute()
-
-    await this.upsertMembers(delta, receivedAt)
-    if (delta.kind === 'snapshot') {
-      await this.retireMembersAbsentFromSnapshot(delta, receivedAt)
-    }
+    return { projectionDigest: delta.projectionDigest, installedAt }
   }
 
   /** Record only signature-verified stream faults; never clears stale state. */
@@ -326,6 +326,63 @@ export class ParaPolicyTransactor extends ParaPolicyReader {
       )
     }
     return false
+  }
+
+  private async persistProjection(
+    delta: NormalizedParaPolicyDelta,
+    receivedAt: string,
+  ): Promise<void> {
+    const receipt = {
+      sourceVersion: delta.sourceVersion,
+      kind: delta.kind,
+      sourceUri: delta.sourceUri,
+      sourceCid: delta.sourceCid,
+      sourceIssuer: delta.sourceIssuer,
+      policyEpoch: delta.policyEpoch,
+      previousDeltaDigest: delta.previousDeltaDigest,
+      projectionDigest: delta.projectionDigest,
+      issuedAt: delta.issuedAt,
+      receivedAt,
+      signedDelta: delta.signedDelta,
+    }
+    await this.db.db
+      .insertInto('para_space_policy_delta')
+      .values({ space: delta.space, ...receipt })
+      .execute()
+
+    const state = {
+      sourceUri: delta.sourceUri,
+      sourceCid: delta.sourceCid,
+      sourceIssuer: delta.sourceIssuer,
+      sourceVersion: delta.sourceVersion,
+      policyEpoch: delta.policyEpoch,
+      projectionDigest: delta.projectionDigest,
+      projectionStatus: 'ready',
+      issuedAt: delta.issuedAt,
+      receivedAt,
+      signedDelta: delta.signedDelta,
+    }
+    await this.db.db
+      .insertInto('para_space_policy_state')
+      .values({ space: delta.space, ...state })
+      .onConflict((oc) => oc.column('space').doUpdateSet(state))
+      .execute()
+
+    await this.upsertMembers(delta, receivedAt)
+    if (delta.kind === 'snapshot') {
+      await this.retireMembersAbsentFromSnapshot(delta, receivedAt)
+    }
+  }
+
+  private async assertSpaceAvailable(space: string): Promise<void> {
+    const row = await this.db.db
+      .selectFrom('space')
+      .select(['uri', 'deletedAt'])
+      .where('uri', '=', space)
+      .executeTakeFirst()
+    if (!row || row.deletedAt) {
+      throw new InvalidRequestError('Space not found', 'SpaceNotFound')
+    }
   }
 
   private async upsertMembers(
