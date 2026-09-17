@@ -203,6 +203,9 @@ services:
       - ./services/caddy/Caddyfile.prod:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    networks:
+      - default
+      - para-edge
     depends_on:
       pds:
         condition: service_healthy
@@ -214,3 +217,7 @@ volumes:
   redis_data:
   caddy_data:
   caddy_config:
+
+networks:
+  para-edge:
+    external: true

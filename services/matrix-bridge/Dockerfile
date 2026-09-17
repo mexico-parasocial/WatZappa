@@ -1,15 +1,14 @@
-FROM node:24-slim AS build
+FROM node:22-slim AS build
 
 RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 
 WORKDIR /app
 
-COPY ./package.json ./
+COPY ./package.json ./pnpm-workspace.yaml ./pnpm-lock.yaml ./tsconfig.json ./
 RUN corepack install
 
 # Move files into the image and install
-COPY ./*.* ./
 COPY ./tsconfig ./tsconfig
 COPY ./lexicons ./lexicons
 COPY ./packages/internal ./packages/internal
@@ -57,9 +56,9 @@ RUN pnpm install --prod --shamefully-hoist --frozen-lockfile --prefer-offline --
 WORKDIR services/matrix-bridge
 
 # Uses assets from build stage to reduce build size
-FROM node:24-slim
+FROM node:22-slim
 
-RUN apt-get update && apt-get install -y --no-install-recommends dumb-init sqlite3 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends dumb-init sqlite3 wget && rm -rf /var/lib/apt/lists/*
 
 # Avoid zombie processes, handle signal forwarding
 ENTRYPOINT ["dumb-init", "--"]

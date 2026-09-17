@@ -1,19 +1,22 @@
 import { mapDefined } from '@atproto/common'
 import {
-  AtIdentifierString,
-  AtUriString,
-  DatetimeString,
-  DidString,
-  HandleString,
+  type AtIdentifierString,
+  type AtUriString,
+  type DatetimeString,
+  type DidString,
+  type HandleString,
   isDidIdentifier,
   isHandleIdentifier,
   normalizeHandle,
 } from '@atproto/syntax'
-import { DataPlaneClient } from '../data-plane/client/index.js'
+import type { DataPlaneClient } from '../data-plane/client/index.js'
 import { app, chat, com } from '../lexicons/index.js'
-import { ActivitySubscription, VerificationMeta } from '../proto/bsky_pb.js'
+import type {
+  ActivitySubscription,
+  VerificationMeta,
+} from '../proto/bsky_pb.js'
 import { events } from '../telemetry/events.js'
-import {
+import type {
   ChatDeclarationRecord,
   GermDeclarationRecord,
   NotificationDeclarationRecord,
@@ -22,7 +25,7 @@ import {
 } from '../views/types.js'
 import {
   HydrationMap,
-  RecordInfo,
+  type RecordInfo,
   isActivitySubscriptionEnabled,
   parseDate,
   parseRecord,
@@ -268,8 +271,7 @@ export class ActorHydrator {
       const verifications = mapDefined(
         Object.entries(actor.verifiedBy) as [DidString, VerificationMeta][],
         ([actorDid, verificationMeta]):
-          | VerificationHydrationState
-          | undefined => {
+          VerificationHydrationState | undefined => {
           if (
             verificationMeta.handle &&
             verificationMeta.rkey &&
@@ -508,28 +510,23 @@ export class ActorHydrator {
     if (!dids.length) return map
 
     try {
-      const { results: knownFollowersResults } =
-        await this.dataplane.getFollowsFollowing(
-          {
-            actorDid: viewer,
-            targetDids: dids,
-          },
-          {
-            signal: AbortSignal.timeout(100),
-          },
-        )
-
+      const { results } = await this.dataplane.sampleFollowsFollowing(
+        {
+          actorDid: viewer,
+          targetDids: dids,
+          limit: 5,
+        },
+        { signal: AbortSignal.timeout(100) },
+      )
       for (let i = 0; i < dids.length; i++) {
-        const did = dids[i]
-
-        const result = knownFollowersResults[i]?.dids
-
+        const result = results[i]
+        const followerDids = result?.dids
         map.set(
-          did,
-          result && result.length > 0
+          dids[i],
+          followerDids && followerDids.length > 0
             ? {
-                count: result.length,
-                followers: result.slice(0, 5) as DidString[],
+                count: result.totalKnown || followerDids.length,
+                followers: followerDids as DidString[],
               }
             : undefined,
         )
@@ -562,8 +559,7 @@ export class ActorHydrator {
         // against potentially missing subscription objects in the response, so
         // we keep that defense in place.
         const subscription = subscriptions[i] as
-          | ActivitySubscription
-          | undefined
+          ActivitySubscription | undefined
 
         const state = {
           post: subscription?.post != null,

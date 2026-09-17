@@ -17,7 +17,7 @@ const id = 'com.para.identity.linkedChat'
 
 export interface Main {
   $type: 'com.para.identity.linkedChat'
-  /** Identifier of the chat provider, e.g. 'solidarity.social' or 'para.social'. */
+  /** Identifier of the chat provider, e.g. 'solidarity.social' or 'para.social'. Also serves as the record key (one link record per provider). */
   provider: string
   /** The full Matrix user id on that provider, e.g. '@user:matrix.solidarity.social'. */
   matrixUserId: string

@@ -38,8 +38,9 @@ fi
 
 # ── 2. Ensure test infra containers are healthy ──────────────────────────────
 echo ""
-echo "🐳  Ensuring db_test (:5433) and redis_test (:6380) are running..."
+echo "🐳  Ensuring db_test (:5433), redis_test (:6380), and synapse (:8008) are running..."
 docker compose -f "$INFRA_DIR/docker-compose.yaml" up -d --wait db_test redis_test
+docker compose -f "$REPO_ROOT/docker-compose.matrix.yaml" up -d synapse
 echo "    Containers healthy ✓"
 
 # ── 3. Launch dev-env with the matrix-bridge attached ────────────────────────

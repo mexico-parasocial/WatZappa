@@ -77,6 +77,21 @@ if [ "$PDS_UP" != true ]; then
   echo "matrix-bridge: PDS did not come up within 120s — starting the bridge anyway" >&2
 fi
 
+# Auto-start Synapse if Docker is available and Synapse is not reachable.
+SYNAPSE_URL="${MATRIX_HOMESERVER_URL:-http://localhost:8008}"
+if ! curl -sf -o /dev/null "$SYNAPSE_URL/_matrix/client/versions"; then
+  if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    echo "🐳  matrix-bridge: auto-starting local Synapse container..."
+    docker compose -f "$ROOT/docker-compose.matrix.yaml" up -d synapse
+    for _ in $(seq 1 30); do
+      if curl -sf -o /dev/null "$SYNAPSE_URL/_matrix/client/versions"; then
+        break
+      fi
+      sleep 1
+    done
+  fi
+fi
+
 # Obtain an admin token for the local Synapse stack unless the caller set one.
 if [ -z "${MATRIX_ADMIN_TOKEN:-}" ]; then
   if MATRIX_ADMIN_TOKEN="$("$ROOT/scripts/get-matrix-dev-token.sh")"; then

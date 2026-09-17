@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /* eslint-env node */
-const { spawnSync } = require('node:child_process')
-const { createRequire } = require('node:module')
-const path = require('node:path')
+import { spawnSync } from 'node:child_process'
+import { createRequire } from 'node:module'
+import path from 'node:path'
 
 const repoRoot = path.resolve(import.meta.dirname, '..')
 const pdsRequire = createRequire(

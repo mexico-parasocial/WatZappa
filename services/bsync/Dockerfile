@@ -1,4 +1,4 @@
-FROM node:24.18-alpine3.23 AS build
+FROM node:22-alpine AS build
 
 RUN npm install -g pnpm@11.11.0
 
@@ -33,7 +33,7 @@ RUN pnpm run --recursive --stream --filter '@atproto/bsync...' build
 RUN pnpm install --prod --shamefully-hoist --frozen-lockfile --prefer-offline --config.confirmModulesPurge=false
 
 # Uses assets from build stage to reduce build size
-FROM node:24.18-alpine3.23
+FROM node:22-alpine
 
 RUN apk add --update dumb-init
 

@@ -3191,6 +3191,40 @@ export default async (sc: SeedClient) => {
     },
   ]
 
+  // Ensure host accounts have an active live status with an external embed
+  // before starting or joining the live sessions, as required by putLivePresence
+  for (const session of liveParticipants) {
+    const cab = cabildeos[session.cabIdx]
+    const host = users.find((u) => u.short === session.users[0])!
+    try {
+      await host.agent.com.atproto.repo.putRecord({
+        repo: host.did,
+        collection: 'app.bsky.actor.status',
+        rkey: 'self',
+        record: {
+          $type: 'app.bsky.actor.status',
+          status: 'app.bsky.actor.status#live',
+          embed: {
+            $type: 'app.bsky.embed.external',
+            external: {
+              uri: `https://live.para.social/stream/${cab.uri.split('/').pop()!}`,
+              title: `Transmisión en vivo: ${cab.title}`,
+              description:
+                'Debate ciudadano en tiempo real sobre esta propuesta. Transmisión oficial.',
+            },
+          },
+          durationMinutes: 120,
+          createdAt: createdAt(),
+        },
+      })
+    } catch (_err) {
+      /* ignore */
+    }
+  }
+
+  // Ingest status records so the AppView hydrator recognizes active host status
+  await sc.network.processAll()
+
   for (const session of liveParticipants) {
     const cab = cabildeos[session.cabIdx]
     for (const userShort of session.users) {

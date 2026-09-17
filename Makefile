@@ -30,6 +30,10 @@ run-dev-env: ## Run a "development environment" shell (incl. matrix-bridge on :3
 run-dev-env-logged: ## Run a "development environment" shell (with logging)
 	cd packages/dev-env; LOG_ENABLED=true NODE_ENV=development pnpm run start | pnpm exec pino-pretty
 
+.PHONY: matrix-smoke
+matrix-smoke: ## Boot Synapse+bridge and smoke-test the appservice paths
+	./scripts/matrix-smoke.sh
+
 .PHONY: run-dev-env-persistent
 run-dev-env-persistent: ## Run a persistent development environment shell
 	mkdir -p $${DEV_ENV_PDS_DATA_DIRECTORY:-$${HOME}/.paramx-demo/pds} $${DEV_ENV_PDS_BLOBSTORE_DIRECTORY:-$${HOME}/.paramx-demo/blobstore} $${DEV_ENV_PLC_DIRECTORY:-$${HOME}/.paramx-demo/plc}

@@ -76,6 +76,29 @@ ozone.para-g0v.app {
 }
 
 # ---------------------------------------------------------------------------
+# Matrix bridge — community chat/governance API for the PARA app
+# ---------------------------------------------------------------------------
+bridge.para-g0v.app {
+	encode gzip
+
+	# SSE: disable proxy buffering so events flush immediately.
+	handle /api/events {
+		reverse_proxy matrix-bridge:3001 {
+			flush_interval -1
+		}
+	}
+
+	reverse_proxy matrix-bridge:3001
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}
+
+# ---------------------------------------------------------------------------
 # Well-known endpoints (AT Protocol discovery)
 # These MUST be available at the domain root for federation.
 # ---------------------------------------------------------------------------
