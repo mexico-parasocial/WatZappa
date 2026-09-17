@@ -63,6 +63,7 @@
     { "path": "./services/bsky" },
     { "path": "./services/bsync" },
     { "path": "./services/ozone" },
+    { "path": "./services/matrix-bridge" },
     { "path": "./services/pds" },
   ],
 }

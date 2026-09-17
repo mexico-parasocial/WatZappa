@@ -1,7 +1,7 @@
 # para-idp has no workspace dependencies — only public npm packages — so it is
 # built standalone rather than through the monorepo. That keeps this image
 # small and independent of the rest of the repo's build graph.
-FROM node:24-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 
 COPY ./services/para-idp/package.json ./
@@ -13,7 +13,7 @@ COPY ./services/para-idp/tsconfig.json ./
 COPY ./services/para-idp/src ./src
 RUN npx tsc
 
-FROM node:24-alpine
+FROM node:22-alpine
 RUN apk add --update dumb-init wget
 ENTRYPOINT ["dumb-init", "--"]
 WORKDIR /app

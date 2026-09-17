@@ -30234,7 +30234,7 @@ export const schemaDict = {
             provider: {
               type: 'string',
               description:
-                "Identifier of the chat provider, e.g. 'solidarity.social' or 'para.social'.",
+                "Identifier of the chat provider, e.g. 'solidarity.social' or 'para.social'. Also serves as the record key (one link record per provider).",
               maxGraphemes: 128,
               maxLength: 256,
             },
@@ -30258,7 +30258,7 @@ export const schemaDict = {
             },
           },
         },
-        key: 'string',
+        key: 'any',
       },
     },
   },

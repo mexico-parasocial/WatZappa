@@ -145,3 +145,19 @@ On your 5950X, the entire Matrix stack will use approximately:
 
 - 🇪🇸 **Guía de Usuario** (Clientes): [`GUIA_USUARIO_ES.md`](./GUIA_USUARIO_ES.md)
 - 🇪🇸 **Guía de Administración** (DevOps): [`GUIA_ADMIN_ES.md`](./GUIA_ADMIN_ES.md)
+
+## Shared edge network
+
+Production Caddy (`docker-compose.prod.yaml`) reaches the bridge over the
+external Docker network `para-edge`:
+
+    docker network create para-edge   # once per host
+
+Both `caddy` (prod compose) and `matrix-bridge` (this stack) attach to it;
+`bridge.para-g0v.app` is served from `services/caddy/Caddyfile.prod`.
+
+## Smoke
+
+`make matrix-smoke` (repo root) boots Synapse + bridge and proves the
+appservice registration, transaction push/dedup, SSE delivery, and device
+session minting against a real Synapse.

@@ -1,25 +1,28 @@
 import { once } from 'node:events'
-import { FixedServiceImpl } from '../types/connect-fix.js'
-import { AppContext } from '../context.js'
+import type { ServiceImpl } from '@connectrpc/connect'
+import type { AppContext } from '../context.js'
 import { createMuteOpChannel } from '../db/schema/mute_op.js'
-import { Service } from '../proto/bsync_connect.js'
+import type { Service } from '../proto/bsync_connect.js'
 import { ScanMuteOperationsResponse } from '../proto/bsync_pb.js'
 import { authWithApiKey } from './auth.js'
-import { combineSignals, validCursor } from './util.js'
+import { combinedSignals, validCursor } from './util.js'
 
-export default (ctx: AppContext): Partial<FixedServiceImpl<typeof Service>> => ({
+export default (ctx: AppContext): Partial<ServiceImpl<typeof Service>> => ({
   async scanMuteOperations(req, handlerCtx) {
     authWithApiKey(ctx, handlerCtx)
     const { db, events } = ctx
     const limit = req.limit || 1000
     const cursor = validCursor(req.cursor)
-    const nextMuteOpPromise = once(events, createMuteOpChannel, {
-      signal: combineSignals(
-        ctx.shutdown,
-        AbortSignal.timeout(ctx.cfg.service.longPollTimeoutMs),
-      ),
-    })
-    nextMuteOpPromise.catch(() => null) // ensure timeout is always handled
+
+    using signal = combinedSignals(
+      ctx.shutdown,
+      AbortSignal.timeout(ctx.cfg.service.longPollTimeoutMs),
+    )
+
+    const nextMuteOpPromise = once(events, createMuteOpChannel, { signal })
+
+    // awaited later
+    void nextMuteOpPromise.catch(() => null)
 
     const nextMuteOpPageQb = db.db
       .selectFrom('mute_op')
@@ -35,7 +38,8 @@ export default (ctx: AppContext): Partial<FixedServiceImpl<typeof Service>> => (
       try {
         await nextMuteOpPromise
       } catch (err) {
-        ctx.shutdown.throwIfAborted()
+        if (ctx.shutdown.aborted) throw err
+
         return new ScanMuteOperationsResponse({
           operations: [],
           cursor: req.cursor,
@@ -58,6 +62,8 @@ export default (ctx: AppContext): Partial<FixedServiceImpl<typeof Service>> => (
         type: op.type,
         actorDid: op.actorDid,
         subject: op.subject,
+        onlyReposts: op.onlyReposts,
+        onlyQuoteposts: op.onlyQuoteposts,
       })),
       cursor: lastOp.id.toString(),
     })

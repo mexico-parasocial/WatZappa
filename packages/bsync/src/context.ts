@@ -1,28 +1,31 @@
 import { EventEmitter } from 'node:events'
-
-import { ServerConfig } from './config.js'
+import type { ServerConfig } from './config.js'
+import { type DataplaneClient, createDataplaneClient } from './dataplane.js'
 import { Database } from './db/index.js'
-import { createMuteOpChannel } from './db/schema/mute_op.js'
-import { createNotifOpChannel } from './db/schema/notif_op.js'
-import { createOperationChannel } from './db/schema/operation.js'
+import type { createMuteOpChannel } from './db/schema/mute_op.js'
+import type { createNotifOpChannel } from './db/schema/notif_op.js'
+import type { createOperationChannel } from './db/schema/operation.js'
 
 export type AppContextOptions = {
   db: Database
   cfg: ServerConfig
   shutdown: AbortSignal
+  dataplaneClients: DataplaneClient[]
 }
 
 export class AppContext {
   db: Database
   cfg: ServerConfig
   shutdown: AbortSignal
-  events: AppEventsEmitter
+  events: EventEmitter<AppEvents>
+  dataplaneClients: DataplaneClient[]
 
   constructor(opts: AppContextOptions) {
     this.db = opts.db
     this.cfg = opts.cfg
     this.shutdown = opts.shutdown
-    this.events = new EventEmitter() as AppEventsEmitter
+    this.events = new EventEmitter<AppEvents>()
+    this.dataplaneClients = opts.dataplaneClients
   }
 
   static async fromConfig(
@@ -37,21 +40,25 @@ export class AppContext {
       poolMaxUses: cfg.db.poolMaxUses,
       poolIdleTimeoutMs: cfg.db.poolIdleTimeoutMs,
     })
-    return new AppContext({ db, cfg, shutdown, ...overrides })
+    const dataplaneClients = cfg.dataplane.urls.map((baseUrl) =>
+      createDataplaneClient({
+        baseUrl,
+        authToken: cfg.dataplane.authToken!,
+        rejectUnauthorized: cfg.dataplane.rejectUnauthorized,
+      }),
+    )
+    return new AppContext({
+      db,
+      cfg,
+      shutdown,
+      dataplaneClients,
+      ...overrides,
+    })
   }
 }
 
 export type AppEvents = {
-  [createMuteOpChannel]: () => void
-  [createNotifOpChannel]: () => void
-  [createOperationChannel]: () => void
-}
-
-export interface AppEventsEmitter extends EventEmitter {
-  emit<E extends keyof AppEvents>(
-    event: E,
-    ...args: Parameters<AppEvents[E]>
-  ): boolean
-  on<E extends keyof AppEvents>(event: E, listener: AppEvents[E]): this
-  off<E extends keyof AppEvents>(event: E, listener: AppEvents[E]): this
+  [createMuteOpChannel]: []
+  [createNotifOpChannel]: []
+  [createOperationChannel]: []
 }

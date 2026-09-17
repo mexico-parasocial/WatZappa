@@ -1,12 +1,11 @@
-import { Code, ConnectError } from '@connectrpc/connect'
-import { FixedServiceImpl } from '../types/connect-fix.js'
-import { AppContext } from '../context.js'
-import { Service } from '../proto/bsync_connect.js'
+import { Code, ConnectError, type ServiceImpl } from '@connectrpc/connect'
+import type { AppContext } from '../context.js'
+import type { Service } from '../proto/bsync_connect.js'
 import { DeleteOperationsByActorAndNamespaceResponse } from '../proto/bsync_pb.js'
 import { authWithApiKey } from './auth.js'
 import { isValidDid, validateNamespace } from './util.js'
 
-export default (ctx: AppContext): Partial<FixedServiceImpl<typeof Service>> => ({
+export default (ctx: AppContext): Partial<ServiceImpl<typeof Service>> => ({
   /**
    * This method is responsible for deleting log rows from the bsync db, it has
    * no other downstream effects. This method is called from the dataplane in

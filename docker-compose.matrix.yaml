@@ -216,6 +216,9 @@ services:
       PORT: 3001
     volumes:
       - bridge_data:/data
+    networks:
+      - default
+      - para-edge
     ports:
       - '127.0.0.1:3001:3001'
     depends_on:
@@ -233,3 +236,7 @@ volumes:
   mas_postgres_data:
   bridge_data:
   # continuwuity_data:
+
+networks:
+  para-edge:
+    external: true
