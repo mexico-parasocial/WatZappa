@@ -42,14 +42,42 @@ Private file bytes remain an AT Protocol responsibility. Institutional Matrix
 permissions may authorize seeing a file reference; they cannot authorize the
 bytes behind it. This port does not yet provide a usable private-file service.
 
-Focused checkpoint verification: seven PDS suites, 111 tests passed (space storage,
-PARA projection storage/intake, resolver, client attestation, M8 verifier and durable store),
-plus one AppView/PDS interoperability suite with 17 tests and one Postgres outbox
-suite with 18 tests. The checkpoint-recovery stage adds a PDS challenge/install
-suite with 26 tests and a Postgres-to-SQLite recovery suite with 10 tests:
-182 tests across eleven suites total. The space-blob sync-privacy port adds a
-route-level suite with 2 tests that boots this worktree's own PDS against its
-PLC mock: 184 tests across twelve suites.
+Focused checkpoint verification (historical figures, produced under the former
+dependency overlay and **superseded** by the reproducible run below): seven PDS
+suites, 111 tests passed (space storage, PARA projection storage/intake,
+resolver, client attestation, M8 verifier and durable store), plus one
+AppView/PDS interoperability suite with 17 tests and one Postgres outbox suite
+with 18 tests. The checkpoint-recovery stage added a PDS challenge/install
+suite with 26 tests and a Postgres-to-SQLite recovery suite with 10 tests. The
+space-blob sync-privacy port added a route-level suite with 2 tests that boots
+this worktree's own PDS against its PLC mock.
+
+**Reproducible verification — 2026-09-18 (Gate 0 closed).** After replacing the
+dependency overlay with the branch's own install (`nodeLinker: hoisted`, now
+honored via `pnpm-workspace.yaml` as `.npmrc` intended; Node 22; lockfile passes
+`pnpm install --frozen-lockfile`; `pnpm run build` clean), all suites run and
+pass against this tree alone:
+
+| suites | runner | tests |
+| --- | --- | --- |
+| 9 PDS suites (space storage, para-policy storage/intake/checkpoint/resolver, client attestation, m8 verifier/store, space-blob privacy) | jest | **140/140** |
+| 3 AppView suites (publisher interop, Postgres outbox, checkpoint recovery) | vitest + temp Postgres | **45/45** |
+| `@atproto/space` | vitest | **100/100** |
+| `@atproto/car` | vitest | **37/37** |
+| **total** | | **322 across 12 suites** |
+
+Reproduce with Node 22 (.nvmrc): `packages/pds` →
+`../../node_modules/.bin/jest tests/{space-storage,client-attestation,m8-assurance-store,m8-assurance-verifier,para-policy-storage,para-policy-resolver,para-policy-intake,para-policy-checkpoint,space-blob-privacy}.test.ts`;
+`packages/bsky` → `../../node_modules/.bin/vitest run tests/para-policy-*.test.ts`
+(needs a local Postgres in `DB_POSTGRES_URL`; the suites create one random
+schema each and drop it); `--root ../space` / `--root ../car` for those packages.
+The former Jest ESM blocker (multiformats/uint8arrays export maps without a
+`require` condition) is resolved by compiling tests to CommonJS through
+`@swc/jest` (`.mjs` included) plus a repo-root custom resolver
+(`jest.esm-exports-resolver.cjs`) that falls back to the package's
+`import`/`default` export targets. The obsolete `varint` shim is removed. This
+Jest change is test-infrastructure only and should be offered to main, where
+the same pre-existing blocker reproduces.
 The 22 new durable-store tests exercise real SQLite, separate connections,
 restart persistence, expiry, migration round trips, bounded cleanup and forced
 write-failure rollback. Another 32 signed-policy intake tests cover trust bindings,
@@ -61,7 +89,7 @@ catch-up of a ready projection and its invalidation by a concurrent ordinary
 delta, invalid envelopes that do not consume challenges, floor/chain violations,
 expiry, challenge reuse, state advanced between issuance and installation,
 forced write-failure rollback of consumption, concurrent single-winner
-installation, migration 005 round trip and configuration validation. The 10
+installation, checkpoint-migration round trip and configuration validation. The 10
 recovery tests
 cover the end-to-end lost revocation with superseded-event fencing and resumed
 ordered delivery, catch-up of a ready receiver after its undelivered head
@@ -101,10 +129,21 @@ WatZappa will hand-port the permissioned-data PDS implementation from
 The histories have no merge-base. Upstream is therefore a behavioural reference,
 not a source tree to merge, cherry-pick, or copy wholesale.
 
-`packages/space`, the `com.atproto.space` and `com.atproto.simplespace`
-lexicons, and syntax support are already byte-identical to that reference. They
-are not part of this port. The work is the dormant PDS runtime: storage, auth,
-context, handlers, and tests.
+The `com.atproto.space` and `com.atproto.simplespace` lexicons and syntax
+support track upstream verbatim and are not part of this port: as of
+2026-09-18 they are byte-identical to upstream `permissioned-data@907f41a7b`,
+including the `putMember` / `readPolicy` / `writePolicy` reshaping that
+replaced `addMember`.
+
+`packages/space` is **no longer** byte-identical, in either direction, and the
+earlier claim that it was is withdrawn. It differs from the pinned reference
+`89deb9fac` in four files (the `@atproto/car` adoption), and from upstream
+`907f41a7b` in ten files, because upstream moved 76 commits since the pin.
+Re-basing it on current upstream is tracked as its own task; do not assume the
+vendored copy matches either reference.
+
+The work of this port is the dormant PDS runtime: storage, auth, context,
+handlers, and tests.
 
 ## PARA policy boundary
 
@@ -308,7 +347,7 @@ protocol remains required before route use; durable verified high-water marks
 are now implemented as prerequisites, not as permission to reset stale state.
 Do not manually clear `stale` or bypass intake to recover a live stream.
 
-Migration `004` adds `para_space_policy_fault`: independent maximum verified
+Migration `901-para-policy-fault` adds `para_space_policy_fault`: independent maximum verified
 source-version and policy-epoch floors, each retaining its signed evidence.
 The maxima are collected in the same transaction as stale invalidation and
 continue increasing for fresh authenticated messages received while stale.
@@ -645,7 +684,8 @@ Completed in the isolated manual-port branch:
     does not bypass a stale projection or a later expired head.
 13. Added the authenticated checkpoint-recovery protocol: bounded single-use
     PDS challenges bound to accepted state and both verified floors, atomic
-    challenge-consuming full-snapshot installation (migration 005), independent
+    challenge-consuming full-snapshot installation (migration
+    `902-para-policy-checkpoint`), independent
     checkpoint signing, outbox checkpoint reservation with pending/lease fencing
     and exact receipt confirmation or reconciliation. Eligibility covers both a
     stale projection and a ready-but-lagged one whose expired head latched the
