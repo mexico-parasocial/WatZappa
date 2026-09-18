@@ -1,6 +1,6 @@
 # Signed policy publication
 
-- The standalone publisher signs governance-authorized material only. Never connect raw membership index rows or client-submitted roles directly to it.
+- The standalone publisher signs governance-authorized material only. Never connect raw membership index rows or client-submitted roles directly to it. The reviewed boundary is `materializeGovernanceMembers`: transaction-bound, board-bound, admission-only, deterministic; roles stay out until a board-issued authority trace is persisted.
 - Keep publisher encoding independent of PDS implementation imports; exercise both implementations in interoperability tests when changing normalization, claims or digest ordering.
 - Construct `ParaPolicyOutbox` with `db.$pickTables<'para_policy_publication' | 'para_policy_outbox'>()`. Call `enqueue` inside the authorized governance transaction, retaining the stable event ID. AppView's INT8 number parser is required.
 - The stream row lock serializes version/epoch allocation and leasing. Never regenerate an envelope for a retry or rotate keys by re-signing old versions. Only acknowledge an authenticated receiver's exact version/digest using the current lease token.

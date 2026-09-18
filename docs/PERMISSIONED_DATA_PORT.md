@@ -32,7 +32,7 @@ uncommitted changes or copy upstream files wholesale.
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | Space persistence, blobs, CAR, client attestation | Implemented and tested locally                                                                                                                                            | Manual integration with current main and full regression run                                            |
 | PARA projection                                   | Authority-store state, members, receipts, snapshot/patch semantics, ordering, digest chain, retained deletion watermark; pinned-key signed intake and latched stale state; single-use challenge checkpoint recovery (local component) | Production trust configuration, authenticated transport and governance wiring for recovery              |
-| AppView policy publisher                          | Ed25519 signer; independent normalization/digest encoding; public JWKS; transactional Postgres outbox with ordered leases and acknowledgements; tested against PDS; checkpoint reservation, fencing and exact receipt confirmation | Governance-authorized input, authenticated delivery worker and checkpoint transport                     |
+| AppView policy publisher                          | Ed25519 signer; independent normalization/digest encoding; public JWKS; transactional Postgres outbox with ordered leases and acknowledgements; tested against PDS; checkpoint reservation, fencing and exact receipt confirmation; admission-only governance materializer from the community tables | Authenticated delivery worker and checkpoint transport; persisted board-issued authority trace for roles |
 | PARA resolver                                     | Pure rule-based resolver; transactional input reader; active state, role expiry, client/collection/action scope, freshness and epoch checks                               | Reviewed production rule configuration and wiring in the same transaction as writes                     |
 | M8 assurance                                      | Standalone draft verifier, fixed public Ed25519 JWS vectors, bounded JWKS fetching and rotation; durable PDS challenges with atomic nonce/JTI consumption                 | Broker signer/JWKS agreement and implementation; authenticated issuance, rate limits and cleanup wiring |
 | Credential exchange                               | No registered route or context wiring                                                                                                                                     | Complete integration and existing-auth regression tests, then a disabled feature gate                   |
@@ -61,10 +61,10 @@ pass against this tree alone:
 | suites | runner | tests |
 | --- | --- | --- |
 | 9 PDS suites (space storage, para-policy storage/intake/checkpoint/resolver, client attestation, m8 verifier/store, space-blob privacy) | jest | **140/140** |
-| 3 AppView suites (publisher interop, Postgres outbox, checkpoint recovery) | vitest + temp Postgres | **45/45** |
+| 4 AppView suites (publisher interop, Postgres outbox, checkpoint recovery, governance materializer) | vitest + temp Postgres | **51/51** |
 | `@atproto/space` | vitest | **100/100** |
 | `@atproto/car` | vitest | **37/37** |
-| **total** | | **322 across 12 suites** |
+| **total** | | **328 across 13 suites** |
 
 Reproduce with Node 22 (.nvmrc): `packages/pds` →
 `../../node_modules/.bin/jest tests/{space-storage,client-attestation,m8-assurance-store,m8-assurance-verifier,para-policy-storage,para-policy-resolver,para-policy-intake,para-policy-checkpoint,space-blob-privacy}.test.ts`;
@@ -542,6 +542,26 @@ interopability exists. Oversized snapshots are rejected boundedly as above.
 Production action/collection/role mappings and freshness intervals are not
 invented here. The resolver has no permissive default rules. Institutional
 rosters must remain private and distinct from public community governance.
+
+### Governance-authorized materialization (implemented, admission-only)
+
+`materializeGovernanceMembers` (packages/bsky/src/para-policy/governance.ts)
+is the reviewed boundary that turns AppView community state into publisher
+input. Contract, frozen: it must run inside the same Postgres transaction
+that calls `enqueue`/`prepareCheckpoint`; the board record must exist at the
+publisher's exact configured `sourceUri`; its `governanceMode` must be a
+known lexicon value (hierarchical/horizontal) or the materialization fails
+closed; members derive from the membership index with one row per member DID
+(latest `indexedAt` wins) in deterministic DID order so retries keep their
+event identity; states preserve PARA semantics — active stays active,
+left/removed/blocked persist as their tombstones, pending is omitted, and an
+unknown state fails closed. **No roles are materialized**: membership records
+are member-self-authored (their flat roles, roleAssignments and `ratifiedBy`
+claims carry no verifiable authority) and the governance record's moderator/
+official/deputy DID lists are not persisted by the indexer. Snapshots
+therefore grant admission only; PARA role rules stay in the PDS resolver
+until the indexer persists a board-issued authority trace — a defined, small
+follow-up, not an invented permission.
 
 ### Key custody (operational guidance, pending DevOps decisions)
 
