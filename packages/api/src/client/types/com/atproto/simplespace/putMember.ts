@@ -14,15 +14,19 @@ import {
 
 const is$typed = _is$typed,
   validate = _validate
-const id = 'com.atproto.simplespace.addMember'
+const id = 'com.atproto.simplespace.putMember'
 
 export type QueryParams = {}
 
 export interface InputSchema {
   /** Reference to the space. */
   space: string
-  /** The DID of the member to add. */
+  /** The DID of the member. */
   did: string
+  /** Whether the member may read under a member-list read policy. */
+  read: boolean
+  /** Whether the member's writes are tracked under a member-list write policy. */
+  write: boolean
 }
 
 export interface CallOptions {

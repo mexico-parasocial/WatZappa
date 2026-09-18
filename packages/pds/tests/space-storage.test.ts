@@ -16,6 +16,7 @@ import { SpaceTransactor } from '../src/actor-store/space/transactor.js'
 import type { BackgroundQueue } from '../src/background.js'
 
 const authority = 'did:plc:ragtjsm2j2vknwkz3zp4oxrd'
+const member = 'did:plc:z72i7hdynmk6r22z27h6tvur'
 const space = AtUri.makeSpace(
   authority,
   'com.para.space.personal',
@@ -69,12 +70,14 @@ describe('permissioned space storage', () => {
     await db.transaction(async (tx) => {
       const store = transactor(tx)
       await store.createSpace(space, {
-        policy: 'member-list',
-        managingApp: null,
+        readPolicy: 'member-list',
+        readManagingApp: null,
+        writePolicy: 'member-list',
+        writeManagingApp: null,
         appAccessType: 'open',
         appAllowed: '[]',
       })
-      await store.addMember(space, authority)
+      await store.putMember(space, authority, { read: true, write: true })
       await store.applyWrites(space, [
         {
           action: WriteOpAction.Create,
@@ -99,7 +102,11 @@ describe('permissioned space storage', () => {
       ])
     })
 
-    expect(await reader.isMember(space, authority)).toBe(true)
+    expect(await reader.getMember(space, authority)).toEqual({
+      did: authority,
+      read: 1,
+      write: 1,
+    })
     expect((await reader.getRecord(uri.toString()))?.value).toEqual(second)
 
     const ops = await reader.listRepoOps(space, { limit: 10 })
@@ -114,8 +121,10 @@ describe('permissioned space storage', () => {
     await db.transaction(async (tx) => {
       const store = transactor(tx)
       await store.createSpace(space, {
-        policy: 'member-list',
-        managingApp: null,
+        readPolicy: 'member-list',
+        readManagingApp: null,
+        writePolicy: 'member-list',
+        writeManagingApp: null,
         appAccessType: 'open',
         appAllowed: '[]',
       })
@@ -140,5 +149,56 @@ describe('permissioned space storage', () => {
     await expect(reader.getActiveSpaceConfig(space)).rejects.toMatchObject({
       error: 'SpaceNotFound',
     })
+  })
+
+  // Guards the storage contract the (not-yet-wired) access resolver will read.
+  // `getMember` returns the per-member read/write bits verbatim, `putMember`
+  // replaces them, and a non-member reads back as undefined — so a resolver can
+  // treat "no row" as "no access" and trust the bits for everyone else. See B1
+  // in plans/solidarity-social-recon.md context: the split read/write policy
+  // storage landed before any code consumes it; this pins its meaning first.
+  it('stores, replaces, and distinguishes per-member read/write access', async () => {
+    await db.transaction(async (tx) => {
+      const store = transactor(tx)
+      await store.createSpace(space, {
+        readPolicy: 'member-list',
+        readManagingApp: null,
+        writePolicy: 'member-list',
+        writeManagingApp: null,
+        appAccessType: 'open',
+        appAllowed: '[]',
+      })
+      // A reader-only member: may read under the member-list read policy, but
+      // is not a tracked writer.
+      await store.putMember(space, member, { read: true, write: false })
+    })
+
+    expect(await reader.getMember(space, member)).toEqual({
+      did: member,
+      read: 1,
+      write: 0,
+    })
+
+    // putMember replaces both bits rather than merging — granting write must be
+    // explicit and must not silently preserve a stale read grant either.
+    await db.transaction(async (tx) => {
+      await transactor(tx).putMember(space, member, { read: false, write: true })
+    })
+    expect(await reader.getMember(space, member)).toEqual({
+      did: member,
+      read: 0,
+      write: 1,
+    })
+
+    // A DID that was never added has no row; the resolver reads this as "no
+    // access" under a member-list policy.
+    expect(
+      await reader.getMember(space, 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa'),
+    ).toBeUndefined()
+
+    // listMembers carries the bits so a member-list projection can render who
+    // may read vs write without a second query.
+    const members = await reader.listMembers(space, { limit: 10 })
+    expect(members).toContainEqual({ did: member, read: 0, write: 1 })
   })
 })

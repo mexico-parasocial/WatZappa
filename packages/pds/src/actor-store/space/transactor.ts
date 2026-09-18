@@ -98,11 +98,23 @@ export class SpaceTransactor extends SpaceReader {
     // reactivation must receive a newer full snapshot before it becomes ready.
   }
 
-  async addMember(space: string, did: string): Promise<void> {
+  async putMember(
+    space: string,
+    did: string,
+    access: { read: boolean; write: boolean },
+  ): Promise<void> {
+    // Upsert with replace semantics: a repeat call overwrites both bits.
+    // The annotations keep the literal 0 | 1 the column type requires; an
+    // unannotated `cond ? 1 : 0` widens to number in a mutable object literal.
+    const read: 0 | 1 = access.read ? 1 : 0
+    const write: 0 | 1 = access.write ? 1 : 0
+    const values = { space, did, read, write }
     await this.db.db
       .insertInto('simplespace_member')
-      .values({ space, did })
-      .onConflict((oc) => oc.doNothing())
+      .values(values)
+      .onConflict((oc) =>
+        oc.columns(['space', 'did']).doUpdateSet({ read, write }),
+      )
       .execute()
   }
 

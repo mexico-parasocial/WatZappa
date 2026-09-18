@@ -236,23 +236,25 @@ export class SpaceReader {
     return !!row
   }
 
-  async isMember(space: string, did: string): Promise<boolean> {
-    const row = await this.db.db
+  async getMember(
+    space: string,
+    did: string,
+  ): Promise<{ read: 0 | 1; write: 0 | 1 } | undefined> {
+    return this.db.db
       .selectFrom('simplespace_member')
-      .select('did')
+      .select(['did', 'read', 'write'])
       .where('space', '=', space)
       .where('did', '=', did)
       .executeTakeFirst()
-    return !!row
   }
 
   async listMembers(
     space: string,
     opts: { limit: number; cursor?: string },
-  ): Promise<{ did: string }[]> {
+  ): Promise<{ did: string; read: 0 | 1; write: 0 | 1 }[]> {
     let builder = this.db.db
       .selectFrom('simplespace_member')
-      .select('did')
+      .select(['did', 'read', 'write'])
       .where('space', '=', space)
       .orderBy('did', 'asc')
       .limit(opts.limit)

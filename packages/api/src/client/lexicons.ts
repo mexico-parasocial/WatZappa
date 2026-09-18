@@ -18360,44 +18360,6 @@ export const schemaDict = {
       },
     },
   },
-  ComAtprotoSimplespaceAddMember: {
-    lexicon: 1,
-    id: 'com.atproto.simplespace.addMember',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          "Add a member to a space's member list. The member list is host-internal state consulted at credential-mint time when the space's policy is 'member-list'. It is not a synced protocol structure and is not enumerated to the network. Requires auth as the space owner.",
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['space', 'did'],
-            properties: {
-              space: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'Reference to the space.',
-              },
-              did: {
-                type: 'string',
-                format: 'did',
-                description: 'The DID of the member to add.',
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'NotSpaceOwner',
-          },
-        ],
-      },
-    },
-  },
   ComAtprotoSimplespaceCheckUserAccess: {
     lexicon: 1,
     id: 'com.atproto.simplespace.checkUserAccess',
@@ -18405,10 +18367,10 @@ export const schemaDict = {
       main: {
         type: 'query',
         description:
-          "Ask a space's managing app whether to authorize a requesting user for a space credential. Served by the managingApp (not the PDS), called by the space authority at mint time when policy is 'managing-app'. Authenticated with service auth from the authority.",
+          "Ask a space's managing app whether to authorize a user to read or write. Served by the managingApp (not the PDS), called by the space authority when the corresponding policy is 'managing-app'. Authenticated with service auth from the authority.",
         parameters: {
           type: 'params',
-          required: ['space', 'user'],
+          required: ['space', 'user', 'access'],
           properties: {
             space: {
               type: 'string',
@@ -18420,10 +18382,15 @@ export const schemaDict = {
               format: 'did',
               description: 'The DID of the requesting user.',
             },
+            access: {
+              type: 'string',
+              knownValues: ['read', 'write'],
+              description: 'The kind of access being checked.',
+            },
             clientId: {
               type: 'string',
               description:
-                'The attested client_id, if a client attestation was presented.',
+                'The attested client_id, if a client attestation was presented. Omitted for write checks.',
             },
           },
         },
@@ -18455,7 +18422,7 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'object',
-            required: ['type', 'policy', 'appAccess'],
+            required: ['type', 'readPolicy', 'writePolicy', 'appAccess'],
             properties: {
               type: {
                 type: 'string',
@@ -18469,10 +18436,20 @@ export const schemaDict = {
                 description:
                   'The space key. Used to differentiate multiple spaces of the same type under the same owner. Same syntax requirements as a record key. If not provided, one will be auto-generated (TID).',
               },
-              policy: {
+              readPolicy: {
                 type: 'union',
                 description:
-                  'How the authority decides whether to authorize a requesting user.',
+                  'How the authority decides whether to authorize a user to read the space.',
+                refs: [
+                  'lex:com.atproto.simplespace.defs#publicPolicy',
+                  'lex:com.atproto.simplespace.defs#memberListPolicy',
+                  'lex:com.atproto.simplespace.defs#managingAppPolicy',
+                ],
+              },
+              writePolicy: {
+                type: 'union',
+                description:
+                  "How the authority decides whether to track and forward a user's write notifications.",
                 refs: [
                   'lex:com.atproto.simplespace.defs#publicPolicy',
                   'lex:com.atproto.simplespace.defs#memberListPolicy',
@@ -18513,7 +18490,7 @@ export const schemaDict = {
           },
           {
             name: 'UnsupportedPolicy',
-            description: 'The requested policy is not one the host implements.',
+            description: 'A requested policy is not one the host implements.',
           },
           {
             name: 'UnsupportedAppAccess',
@@ -18632,17 +18609,27 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'object',
-            required: ['uri', 'policy', 'appAccess'],
+            required: ['uri', 'readPolicy', 'writePolicy', 'appAccess'],
             properties: {
               uri: {
                 type: 'string',
                 format: 'space-ref',
                 description: 'URI of the space.',
               },
-              policy: {
+              readPolicy: {
                 type: 'union',
                 description:
-                  'How the authority decides whether to authorize a requesting user.',
+                  'How the authority decides whether to authorize a user to read the space.',
+                refs: [
+                  'lex:com.atproto.simplespace.defs#publicPolicy',
+                  'lex:com.atproto.simplespace.defs#memberListPolicy',
+                  'lex:com.atproto.simplespace.defs#managingAppPolicy',
+                ],
+              },
+              writePolicy: {
+                type: 'union',
+                description:
+                  "How the authority decides whether to track and forward a user's write notifications.",
                 refs: [
                   'lex:com.atproto.simplespace.defs#publicPolicy',
                   'lex:com.atproto.simplespace.defs#memberListPolicy',
@@ -18676,7 +18663,7 @@ export const schemaDict = {
       main: {
         type: 'query',
         description:
-          "List the members in a space's host-internal member list. Must be called on the space authority's PDS. Requires OAuth with a covering read grant; a space credential is not sufficient, so members hosted elsewhere cannot enumerate the list. This reflects the simplespace member list, not a protocol-level reader set.",
+          "List the members in a space's host-internal member list and their read and write access. Must be called on the space authority's PDS. Requires OAuth with a covering read grant; a space credential is not sufficient, so members hosted elsewhere cannot enumerate the list.",
         parameters: {
           type: 'params',
           required: ['space'],
@@ -18725,13 +18712,67 @@ export const schemaDict = {
       },
       member: {
         type: 'object',
-        required: ['did'],
+        required: ['did', 'read', 'write'],
         properties: {
           did: {
             type: 'string',
             format: 'did',
           },
+          read: {
+            type: 'boolean',
+          },
+          write: {
+            type: 'boolean',
+          },
         },
+      },
+    },
+  },
+  ComAtprotoSimplespacePutMember: {
+    lexicon: 1,
+    id: 'com.atproto.simplespace.putMember',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          "Add a member to a space's host-internal member list or replace their read and write access. Requires auth as the space owner.",
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['space', 'did', 'read', 'write'],
+            properties: {
+              space: {
+                type: 'string',
+                format: 'space-ref',
+                description: 'Reference to the space.',
+              },
+              did: {
+                type: 'string',
+                format: 'did',
+                description: 'The DID of the member.',
+              },
+              read: {
+                type: 'boolean',
+                description:
+                  'Whether the member may read under a member-list read policy.',
+              },
+              write: {
+                type: 'boolean',
+                description:
+                  "Whether the member's writes are tracked under a member-list write policy.",
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'SpaceNotFound',
+          },
+          {
+            name: 'NotSpaceOwner',
+          },
+        ],
       },
     },
   },
@@ -18742,7 +18783,7 @@ export const schemaDict = {
       main: {
         type: 'procedure',
         description:
-          "Remove a member from a space's member list. The member list is host-internal state consulted at credential-mint time when the space's policy is 'member-list'. Requires auth as the space owner.",
+          "Remove a member from a space's host-internal member list. Requires auth as the space owner.",
         input: {
           encoding: 'application/json',
           schema: {
@@ -18792,10 +18833,20 @@ export const schemaDict = {
                 format: 'space-ref',
                 description: 'Reference to the space to update.',
               },
-              policy: {
+              readPolicy: {
                 type: 'union',
                 description:
-                  'How the authority decides whether to authorize a requesting user. When supplied, replaces the current policy wholesale.',
+                  'How the authority decides whether to authorize a user to read the space. When supplied, replaces the current read policy wholesale.',
+                refs: [
+                  'lex:com.atproto.simplespace.defs#publicPolicy',
+                  'lex:com.atproto.simplespace.defs#memberListPolicy',
+                  'lex:com.atproto.simplespace.defs#managingAppPolicy',
+                ],
+              },
+              writePolicy: {
+                type: 'union',
+                description:
+                  "How the authority decides whether to track and forward a user's write notifications. When supplied, replaces the current write policy wholesale.",
                 refs: [
                   'lex:com.atproto.simplespace.defs#publicPolicy',
                   'lex:com.atproto.simplespace.defs#memberListPolicy',
@@ -18823,7 +18874,7 @@ export const schemaDict = {
           },
           {
             name: 'UnsupportedPolicy',
-            description: 'The requested policy is not one the host implements.',
+            description: 'A requested policy is not one the host implements.',
           },
           {
             name: 'UnsupportedAppAccess',
@@ -30234,7 +30285,7 @@ export const schemaDict = {
             provider: {
               type: 'string',
               description:
-                "Identifier of the chat provider, e.g. 'solidarity.social' or 'para.social'.",
+                "Identifier of the chat provider, e.g. 'solidarity.social' or 'para.social'. Also serves as the record key (one link record per provider).",
               maxGraphemes: 128,
               maxLength: 256,
             },
@@ -30258,7 +30309,7 @@ export const schemaDict = {
             },
           },
         },
-        key: 'string',
+        key: 'any',
       },
     },
   },
@@ -39423,7 +39474,6 @@ export const ids = {
   ComAtprotoServerResetPassword: 'com.atproto.server.resetPassword',
   ComAtprotoServerRevokeAppPassword: 'com.atproto.server.revokeAppPassword',
   ComAtprotoServerUpdateEmail: 'com.atproto.server.updateEmail',
-  ComAtprotoSimplespaceAddMember: 'com.atproto.simplespace.addMember',
   ComAtprotoSimplespaceCheckUserAccess:
     'com.atproto.simplespace.checkUserAccess',
   ComAtprotoSimplespaceCreateSpace: 'com.atproto.simplespace.createSpace',
@@ -39431,6 +39481,7 @@ export const ids = {
   ComAtprotoSimplespaceDeleteSpace: 'com.atproto.simplespace.deleteSpace',
   ComAtprotoSimplespaceGetSpace: 'com.atproto.simplespace.getSpace',
   ComAtprotoSimplespaceListMembers: 'com.atproto.simplespace.listMembers',
+  ComAtprotoSimplespacePutMember: 'com.atproto.simplespace.putMember',
   ComAtprotoSimplespaceRemoveMember: 'com.atproto.simplespace.removeMember',
   ComAtprotoSimplespaceUpdateSpace: 'com.atproto.simplespace.updateSpace',
   ComAtprotoSpaceApplyWrites: 'com.atproto.space.applyWrites',

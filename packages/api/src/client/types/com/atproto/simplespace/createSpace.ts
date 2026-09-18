@@ -24,7 +24,12 @@ export interface InputSchema {
   type: string
   /** The space key. Used to differentiate multiple spaces of the same type under the same owner. Same syntax requirements as a record key. If not provided, one will be auto-generated (TID). */
   skey?: string
-  policy:
+  readPolicy:
+    | $Typed<ComAtprotoSimplespaceDefs.PublicPolicy>
+    | $Typed<ComAtprotoSimplespaceDefs.MemberListPolicy>
+    | $Typed<ComAtprotoSimplespaceDefs.ManagingAppPolicy>
+    | { $type: string }
+  writePolicy:
     | $Typed<ComAtprotoSimplespaceDefs.PublicPolicy>
     | $Typed<ComAtprotoSimplespaceDefs.MemberListPolicy>
     | $Typed<ComAtprotoSimplespaceDefs.ManagingAppPolicy>

@@ -48,8 +48,10 @@ describe('PARA policy projection storage', () => {
 
     await db.transaction(async (tx) => {
       await spaceTransactor(tx).createSpace(space, {
-        policy: 'member-list',
-        managingApp: null,
+        readPolicy: 'member-list',
+        readManagingApp: null,
+        writePolicy: 'member-list',
+        writeManagingApp: null,
         appAccessType: 'open',
         appAllowed: '[]',
       })

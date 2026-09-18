@@ -86,12 +86,14 @@ describe('space blob privacy on public sync routes', () => {
       .toString()
     await server.ctx.actorStore.transact(alice, async (store) => {
       await store.space.createSpace(spaceUri, {
-        policy: 'member-list',
-        managingApp: null,
+        readPolicy: 'member-list',
+        readManagingApp: null,
+        writePolicy: 'member-list',
+        writeManagingApp: null,
         appAccessType: 'open',
         appAllowed: '[]',
       })
-      await store.space.addMember(spaceUri, alice)
+      await store.space.putMember(spaceUri, alice, { read: true, write: true })
     })
   })
 

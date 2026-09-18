@@ -287,13 +287,13 @@ import * as ComAtprotoServerReserveSigningKey from './types/com/atproto/server/r
 import * as ComAtprotoServerResetPassword from './types/com/atproto/server/resetPassword.js'
 import * as ComAtprotoServerRevokeAppPassword from './types/com/atproto/server/revokeAppPassword.js'
 import * as ComAtprotoServerUpdateEmail from './types/com/atproto/server/updateEmail.js'
-import * as ComAtprotoSimplespaceAddMember from './types/com/atproto/simplespace/addMember.js'
 import * as ComAtprotoSimplespaceCheckUserAccess from './types/com/atproto/simplespace/checkUserAccess.js'
 import * as ComAtprotoSimplespaceCreateSpace from './types/com/atproto/simplespace/createSpace.js'
 import * as ComAtprotoSimplespaceDefs from './types/com/atproto/simplespace/defs.js'
 import * as ComAtprotoSimplespaceDeleteSpace from './types/com/atproto/simplespace/deleteSpace.js'
 import * as ComAtprotoSimplespaceGetSpace from './types/com/atproto/simplespace/getSpace.js'
 import * as ComAtprotoSimplespaceListMembers from './types/com/atproto/simplespace/listMembers.js'
+import * as ComAtprotoSimplespacePutMember from './types/com/atproto/simplespace/putMember.js'
 import * as ComAtprotoSimplespaceRemoveMember from './types/com/atproto/simplespace/removeMember.js'
 import * as ComAtprotoSimplespaceUpdateSpace from './types/com/atproto/simplespace/updateSpace.js'
 import * as ComAtprotoSpaceApplyWrites from './types/com/atproto/space/applyWrites.js'
@@ -814,13 +814,13 @@ export * as ComAtprotoServerReserveSigningKey from './types/com/atproto/server/r
 export * as ComAtprotoServerResetPassword from './types/com/atproto/server/resetPassword.js'
 export * as ComAtprotoServerRevokeAppPassword from './types/com/atproto/server/revokeAppPassword.js'
 export * as ComAtprotoServerUpdateEmail from './types/com/atproto/server/updateEmail.js'
-export * as ComAtprotoSimplespaceAddMember from './types/com/atproto/simplespace/addMember.js'
 export * as ComAtprotoSimplespaceCheckUserAccess from './types/com/atproto/simplespace/checkUserAccess.js'
 export * as ComAtprotoSimplespaceCreateSpace from './types/com/atproto/simplespace/createSpace.js'
 export * as ComAtprotoSimplespaceDefs from './types/com/atproto/simplespace/defs.js'
 export * as ComAtprotoSimplespaceDeleteSpace from './types/com/atproto/simplespace/deleteSpace.js'
 export * as ComAtprotoSimplespaceGetSpace from './types/com/atproto/simplespace/getSpace.js'
 export * as ComAtprotoSimplespaceListMembers from './types/com/atproto/simplespace/listMembers.js'
+export * as ComAtprotoSimplespacePutMember from './types/com/atproto/simplespace/putMember.js'
 export * as ComAtprotoSimplespaceRemoveMember from './types/com/atproto/simplespace/removeMember.js'
 export * as ComAtprotoSimplespaceUpdateSpace from './types/com/atproto/simplespace/updateSpace.js'
 export * as ComAtprotoSpaceApplyWrites from './types/com/atproto/space/applyWrites.js'
@@ -5670,17 +5670,6 @@ export class ComAtprotoSimplespaceNS {
     this._client = client
   }
 
-  addMember(
-    data?: ComAtprotoSimplespaceAddMember.InputSchema,
-    opts?: ComAtprotoSimplespaceAddMember.CallOptions,
-  ): Promise<ComAtprotoSimplespaceAddMember.Response> {
-    return this._client
-      .call('com.atproto.simplespace.addMember', opts?.qp, data, opts)
-      .catch((e) => {
-        throw ComAtprotoSimplespaceAddMember.toKnownErr(e)
-      })
-  }
-
   checkUserAccess(
     params?: ComAtprotoSimplespaceCheckUserAccess.QueryParams,
     opts?: ComAtprotoSimplespaceCheckUserAccess.CallOptions,
@@ -5734,6 +5723,17 @@ export class ComAtprotoSimplespaceNS {
       .call('com.atproto.simplespace.listMembers', params, undefined, opts)
       .catch((e) => {
         throw ComAtprotoSimplespaceListMembers.toKnownErr(e)
+      })
+  }
+
+  putMember(
+    data?: ComAtprotoSimplespacePutMember.InputSchema,
+    opts?: ComAtprotoSimplespacePutMember.CallOptions,
+  ): Promise<ComAtprotoSimplespacePutMember.Response> {
+    return this._client
+      .call('com.atproto.simplespace.putMember', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ComAtprotoSimplespacePutMember.toKnownErr(e)
       })
   }
 

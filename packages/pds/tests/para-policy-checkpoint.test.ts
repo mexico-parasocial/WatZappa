@@ -697,11 +697,11 @@ describe('authenticated PARA policy checkpoint recovery (draft)', () => {
     ).toHaveLength(1)
   })
 
-  it('round-trips migration 005 without resetting the accepted policy', async () => {
+  it('round-trips the checkpoint migration without resetting the accepted policy', async () => {
     await goStale()
     await checkpoint.issueChallenge()
     const state = await reader.getPolicyState(space)
-    await getMigrator(db).migrateToOrThrow('004')
+    await getMigrator(db).migrateToOrThrow('901-para-policy-fault')
     await getMigrator(db).migrateToLatestOrThrow()
     expect(await reader.getPolicyState(space)).toEqual(state)
     expect(

@@ -26,7 +26,12 @@ export type InputSchema = undefined
 export interface OutputSchema {
   /** URI of the space. */
   uri: string
-  policy:
+  readPolicy:
+    | $Typed<ComAtprotoSimplespaceDefs.PublicPolicy>
+    | $Typed<ComAtprotoSimplespaceDefs.MemberListPolicy>
+    | $Typed<ComAtprotoSimplespaceDefs.ManagingAppPolicy>
+    | { $type: string }
+  writePolicy:
     | $Typed<ComAtprotoSimplespaceDefs.PublicPolicy>
     | $Typed<ComAtprotoSimplespaceDefs.MemberListPolicy>
     | $Typed<ComAtprotoSimplespaceDefs.ManagingAppPolicy>

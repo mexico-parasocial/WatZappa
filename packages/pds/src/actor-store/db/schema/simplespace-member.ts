@@ -4,6 +4,8 @@
 export interface SimplespaceMember {
   space: string
   did: string
+  read: 0 | 1
+  write: 0 | 1
 }
 
 const tableName = 'simplespace_member'

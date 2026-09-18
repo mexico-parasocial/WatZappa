@@ -21,7 +21,9 @@ export type QueryParams = {
   space: string
   /** The DID of the requesting user. */
   user: string
-  /** The attested client_id, if a client attestation was presented. */
+  /** The kind of access being checked. */
+  access: 'read' | 'write' | (string & {})
+  /** The attested client_id, if a client attestation was presented. Omitted for write checks. */
   clientId?: string
 }
 export type InputSchema = undefined

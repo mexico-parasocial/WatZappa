@@ -530,7 +530,7 @@ describe('signed PARA policy intake (draft)', () => {
   it('round-trips the fault migration without resetting the accepted policy', async () => {
     await intake.ingest(await sign())
     const state = await reader.getPolicyState(space)
-    await getMigrator(db).migrateToOrThrow('003')
+    await getMigrator(db).migrateToOrThrow('900-para-policy')
     await getMigrator(db).migrateToLatestOrThrow()
     expect(await reader.getPolicyState(space)).toEqual(state)
     expect(await reader.getPolicyFault(space)).toBeNull()
