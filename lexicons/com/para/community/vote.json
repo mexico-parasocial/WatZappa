@@ -4,10 +4,16 @@
   "defs": {
     "main": {
       "type": "record",
+      "description": "DEPRECATED 2026-09-18 (ballot freeze E0). Do not write this record. `voter` and `signal` are both REQUIRED, and the record is written to the voter's own public repo, so every ballot publishes who voted what to the firehose, permanently. It is also rewritable by its author via putRecord while its nullifier still verifies, so the signal is not integrity-protected either. The replacement ballot leaves the voter's repo entirely: see WatZappa/docs/OD-7-BALLOT-IDENTITY-REGISTRATION.md §5a/§5b.",
       "key": "tid",
       "record": {
         "type": "object",
-        "required": ["proposal", "community", "voter", "signal"],
+        "required": [
+          "proposal",
+          "community",
+          "voter",
+          "signal"
+        ],
         "properties": {
           "proposal": {
             "type": "string",
@@ -31,7 +37,7 @@
           "voteNullifier": {
             "type": "string",
             "maxLength": 128,
-            "description": "Privacy-preserving one-person-one-vote nullifier for this proposal, issued by m8."
+            "description": "One-person-one-vote nullifier for this proposal, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a."
           },
           "eligibilityProofRef": {
             "type": "string",
