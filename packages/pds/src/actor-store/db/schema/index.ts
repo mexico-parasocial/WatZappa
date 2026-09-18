@@ -3,6 +3,7 @@ import type * as backlink from './backlink.js'
 import type * as blob from './blob.js'
 import type * as paraSpacePolicyChallenge from './para-space-policy-challenge.js'
 import type * as paraSpacePolicyCheckpoint from './para-space-policy-checkpoint.js'
+import type * as paraPolicyTransportReceipt from './para-policy-transport-receipt.js'
 import type * as paraSpacePolicyDelta from './para-space-policy-delta.js'
 import type * as paraSpacePolicyFault from './para-space-policy-fault.js'
 import type * as paraSpacePolicyMember from './para-space-policy-member.js'
@@ -30,6 +31,7 @@ export type DatabaseSchema = accountPref.PartialDB &
   recordBlob.PartialDB &
   paraSpacePolicyChallenge.PartialDB &
   paraSpacePolicyCheckpoint.PartialDB &
+  paraPolicyTransportReceipt.PartialDB &
   paraSpacePolicyDelta.PartialDB &
   paraSpacePolicyFault.PartialDB &
   paraSpacePolicyState.PartialDB &
@@ -53,6 +55,7 @@ export type { Blob } from './blob.js'
 export type { RecordBlob } from './record-blob.js'
 export type { ParaSpacePolicyChallenge } from './para-space-policy-challenge.js'
 export type { ParaSpacePolicyCheckpoint } from './para-space-policy-checkpoint.js'
+export type { ParaPolicyTransportReceipt } from './para-policy-transport-receipt.js'
 export type { ParaSpacePolicyDelta } from './para-space-policy-delta.js'
 export type { ParaSpacePolicyFault } from './para-space-policy-fault.js'
 export type { ParaSpacePolicyState } from './para-space-policy-state.js'

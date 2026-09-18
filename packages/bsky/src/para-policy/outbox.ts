@@ -182,6 +182,30 @@ export class ParaPolicyOutbox {
     return prepared
   }
 
+  /** Read-only stream state for delivery coordination decisions. */
+  async streamState(): Promise<{
+    sourceVersion: number
+    acknowledgedVersion: number
+    deliveryStatus: 'ready' | 'recovery-required' | 'checkpoint-pending'
+  }> {
+    const stream = await this.db
+      .selectFrom('para_policy_publication')
+      .select([
+        'sourceVersion',
+        'acknowledgedVersion',
+        'deliveryStatus',
+      ])
+      .where('space', '=', this.bindings.space)
+      .executeTakeFirst()
+    return (
+      stream ?? {
+        sourceVersion: 0,
+        acknowledgedVersion: 0,
+        deliveryStatus: 'ready',
+      }
+    )
+  }
+
   /** Lease only the next unacknowledged version; network I/O happens after commit. */
   async claim(): Promise<ParaPolicyDelivery> {
     this.assertNotTransaction()

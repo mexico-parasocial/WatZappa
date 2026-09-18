@@ -4,6 +4,7 @@ import * as spaceAccess from './003-space-access.js'
 import * as paraPolicy from './900-para-policy.js'
 import * as paraPolicyFault from './901-para-policy-fault.js'
 import * as paraPolicyCheckpoint from './902-para-policy-checkpoint.js'
+import * as paraPolicyTransport from './903-para-policy-transport.js'
 
 // Keys 001-899 are reserved for upstream's sequence so a future upstream
 // actor-store migration can be adopted at its own number without colliding
@@ -16,4 +17,5 @@ export default {
   '900-para-policy': paraPolicy,
   '901-para-policy-fault': paraPolicyFault,
   '902-para-policy-checkpoint': paraPolicyCheckpoint,
+  '903-para-policy-transport': paraPolicyTransport,
 }

@@ -32,7 +32,7 @@ uncommitted changes or copy upstream files wholesale.
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | Space persistence, blobs, CAR, client attestation | Implemented and tested locally                                                                                                                                            | Manual integration with current main and full regression run                                            |
 | PARA projection                                   | Authority-store state, members, receipts, snapshot/patch semantics, ordering, digest chain, retained deletion watermark; pinned-key signed intake and latched stale state; single-use challenge checkpoint recovery (local component) | Production trust configuration, authenticated transport and governance wiring for recovery              |
-| AppView policy publisher                          | Ed25519 signer; independent normalization/digest encoding; public JWKS; transactional Postgres outbox with ordered leases and acknowledgements; tested against PDS; checkpoint reservation, fencing and exact receipt confirmation; admission-only governance materializer from the community tables | Authenticated delivery worker and checkpoint transport; persisted board-issued authority trace for roles |
+| AppView policy publisher                          | Ed25519 signer; independent normalization/digest encoding; public JWKS; transactional Postgres outbox with ordered leases and acknowledgements; tested against PDS; checkpoint reservation, fencing and exact receipt confirmation; admission-only governance materializer; authenticated HTTP transport client and delivery coordinator | Persisted board-issued authority trace for roles; production mounting of the transport behind its flag |
 | PARA resolver                                     | Pure rule-based resolver; transactional input reader; active state, role expiry, client/collection/action scope, freshness and epoch checks                               | Reviewed production rule configuration and wiring in the same transaction as writes                     |
 | M8 assurance                                      | Standalone draft verifier, fixed public Ed25519 JWS vectors, bounded JWKS fetching and rotation; durable PDS challenges with atomic nonce/JTI consumption                 | Broker signer/JWKS agreement and implementation; authenticated issuance, rate limits and cleanup wiring |
 | Credential exchange                               | No registered route or context wiring                                                                                                                                     | Complete integration and existing-auth regression tests, then a disabled feature gate                   |
@@ -61,10 +61,10 @@ pass against this tree alone:
 | suites | runner | tests |
 | --- | --- | --- |
 | 9 PDS suites (space storage, para-policy storage/intake/checkpoint/resolver, client attestation, m8 verifier/store, space-blob privacy) | jest | **140/140** |
-| 4 AppView suites (publisher interop, Postgres outbox, checkpoint recovery, governance materializer) | vitest + temp Postgres | **51/51** |
+| 5 AppView suites (publisher interop, Postgres outbox, checkpoint recovery, governance materializer, HTTP transport) | vitest + temp Postgres | **60/60** |
 | `@atproto/space` | vitest | **100/100** |
 | `@atproto/car` | vitest | **37/37** |
-| **total** | | **328 across 13 suites** |
+| **total** | | **337 across 14 suites** |
 
 Reproduce with Node 22 (.nvmrc): `packages/pds` →
 `../../node_modules/.bin/jest tests/{space-storage,client-attestation,m8-assurance-store,m8-assurance-verifier,para-policy-storage,para-policy-resolver,para-policy-intake,para-policy-checkpoint,space-blob-privacy}.test.ts`;
@@ -562,6 +562,32 @@ official/deputy DID lists are not persisted by the indexer. Snapshots
 therefore grant admission only; PARA role rules stay in the PDS resolver
 until the indexer persists a board-issued authority trace — a defined, small
 follow-up, not an invented permission.
+
+### Authenticated service transport (implemented locally, unwired)
+
+The last missing piece of the publication loop now exists and is proven over
+real HTTP: `createParaPolicyTransportRouter` (PDS) plus
+`ParaPolicyTransportClient` and `ParaPolicyDeliveryCoordinator` (AppView).
+Requests are compact JWS envelopes (`application/para-policy-transport-request+jwt`)
+signed by the publisher's pinned service identity and bound to issuer,
+audience, freshness and a single-use `jti` — consumed durably before dispatch
+(actor-store migration `903-para-policy-transport`, bounded retention
+cleanup), so a captured request cannot be replayed. Oversized deliveries are
+rejected boundedly (413) before anything is consumed. Responses are signed by
+the PDS's own Ed25519 key (`application/para-policy-transport-response+jwt`)
+and carry the request's `jti`, so the client refuses any "ready" that is not
+signed by the pinned PDS key, addressed to this issuer, and bound to the
+exact request — closing the "unauthenticated response JSON" gap for both
+deltas and checkpoints. The coordinator claims an artifact, delivers it over
+HTTP, and acknowledges only on that authenticated exact receipt; checkpoint
+recovery runs challenge → prepare → deliver → confirm over the same
+transport, with automatic reconciliation through the persisted checkpoint
+receipt when the confirmation response was lost. A challenge from a healthy,
+fully caught-up receiver authorizes nothing and recovery reports
+`nothing-to-recover`. **Nothing mounts the router outside tests**: no public
+route, no scheduler, no worker; production wiring will mount it behind an
+off-by-default flag when a delivery worker exists, and the PDS
+response-signing key enters the key-custody inventory.
 
 ### Key custody (operational guidance, pending DevOps decisions)
 
