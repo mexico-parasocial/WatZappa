@@ -359,8 +359,12 @@ participates in it. Hence: this decision first.
 
 - [x] §5 answered from the vote path, in writing (§5a).
 - [x] Reading chosen: **A**.
-- [ ] Recorded as a CD in `mubEZ/docs/CRYPTO_DECISIONS.md`, superseding
-      `IDENTITY_DERIVATION.md`'s registration contract by name.
+- [x] Recorded as a CD in `mubEZ/docs/CRYPTO_DECISIONS.md`, superseding
+      `IDENTITY_DERIVATION.md`'s registration contract by name — **CD-9**
+      (2026-09-18). CD-9 records the general registration contract (public key +
+      PoP, stored standalone, no session linkage) and explicitly excludes the
+      ballot identity per Reading A; the ballot-specific binding-proof mechanism
+      below stays open.
 - [ ] `IDENTITY_DERIVATION.md` registration contract rewritten: the ballot
       identity registers **without** proof of possession, and the ballot proof -
       not a signature - is what authorises a vote.
