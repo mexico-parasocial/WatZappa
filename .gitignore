@@ -63,3 +63,10 @@ backups/
 # Each one is a full pg_dump of the Synapse or MAS database: real user rows,
 # password hashes and session state. Never version them.
 deploy/matrix/seed/
+
+# Persistent dev-env state (scripts/dev-env-persistent.sh): account sqlite,
+# repos, blobs and the local PLC registry. Real accounts, local and disposable
+# — delete the directory to start over. Never version it.
+.dev-env-data/
+# Credentials for the seeded test accounts (scripts/seed-test-accounts.sh).
+test-accounts.json
