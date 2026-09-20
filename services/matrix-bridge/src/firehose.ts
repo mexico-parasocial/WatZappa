@@ -51,7 +51,7 @@ export class FirehoseConsumer {
     this.metrics = metrics
     this.log = log
 
-    const idResolver = new IdResolver()
+    const idResolver = new IdResolver({ plcUrl: config.plcUrl })
 
     this.firehose = new Firehose({
       service: config.pdsFirehoseUrl,

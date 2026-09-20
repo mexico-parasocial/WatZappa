@@ -1,5 +1,12 @@
 export interface Config {
   pdsFirehoseUrl: string
+  /**
+   * DID PLC directory used to resolve firehose commits. Defaults to the public
+   * directory; a local dev-env mints DIDs on its own PLC (:2582), and without
+   * this the resolver 404s on every one of them and the consumer silently
+   * drops every event.
+   */
+  plcUrl?: string
   matrixHomeserverUrl: string
   /**
    * The homeserver URL clients should connect to, as opposed to the internal
@@ -34,6 +41,7 @@ function env(key: string, fallback?: string): string {
 
 export function loadConfig(): Config {
   return {
+    plcUrl: process.env.PLC_URL || undefined,
     pdsFirehoseUrl: env(
       'PDS_FIREHOSE_URL',
       'wss://pds.para.social/xrpc/com.atproto.sync.subscribeRepos',
