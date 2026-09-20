@@ -111,7 +111,7 @@
     "codegen:lex": "lex build --clear --indexFile --lexicons ../../lexicons",
     "codegen:templates": "node ./scripts/build.templates.js",
     "prebuild": "pnpm run '/^(codegen:.+)$/'",
-    "build": "tsgo --build tsconfig.build.json",
+    "build": "tsc --build tsconfig.build.json",
     "dev": "node ./scripts/build.templates.js --watch",
     "pretest": "puppeteer browsers install chrome",
     "test": "NODE_OPTIONS=--experimental-vm-modules ../dev-infra/with-test-redis-and-db.sh jest",
