@@ -1,0 +1,116 @@
+---
+# Host hardening and base packages.
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - software-properties-common
+      - htop
+      - vim
+      - ufw
+      - fail2ban
+      - ncdu
+      # rsync is required on the TARGET for para_source_strategy: rsync.
+      # Its absence is the classic "synchronize module hangs then fails"
+      # and it was not installed anywhere in the previous tree.
+      - rsync
+      # Used by the postgres role's backup scripts and by the health checks.
+      - postgresql-client
+      - jq
+      # Required by the docker role's deb822_repository task.
+      - python3-debian
+    state: present
+
+- name: Re-gather facts now that lsb-release is installed
+  ansible.builtin.setup:
+    filter: ansible_lsb*
+  # The docker role keys its apt repo off the distro codename. On a minimal
+  # image, facts gathered before lsb-release exists leave ansible_lsb empty,
+  # producing a repo line with a blank suite that apt rejects.
+
+- name: Set timezone to UTC
+  community.general.timezone:
+    name: UTC
+
+- name: Configure UFW — allow inbound TCP
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop: "{{ ufw_allowed_tcp_ports }}"
+  # 80 is in this list on purpose. Caddy needs it for the ACME HTTP-01
+  # challenge and the HTTPS redirect; without it, certificate issuance fails
+  # and every hostname serves a TLS error.
+
+- name: Configure UFW — Matrix federation port
+  community.general.ufw:
+    rule: "{{ 'allow' if ufw_allow_matrix_federation else 'deny' }}"
+    port: "8448"
+    proto: tcp
+  # Default is deny. deploy/matrix/hardening.yaml sets an empty
+  # federation_domain_whitelist, so this server federates with nobody; an open
+  # 8448 would advertise a federation endpoint that answers nothing useful and
+  # contradicts the disclosure shown in the PARA chat UI.
+
+- name: Enable UFW with a default-deny policy
+  community.general.ufw:
+    state: enabled
+    policy: deny
+
+- name: Configure fail2ban
+  ansible.builtin.template:
+    src: jail.local.j2
+    dest: /etc/fail2ban/jail.local
+    mode: "0644"
+  notify: Restart fail2ban
+
+- name: Ensure fail2ban is running
+  ansible.builtin.service:
+    name: fail2ban
+    state: started
+    enabled: true
+
+- name: Create the PARA deploy directory
+  ansible.builtin.file:
+    path: "{{ para_deploy_dir }}"
+    state: directory
+    mode: "0750"
+  # 0750, not 0755: this directory holds the stack .env, the Synapse signing
+  # key and the MAS shared secret. It has no business being world-readable.
+
+- name: Ensure br_netfilter is loaded
+  community.general.modprobe:
+    name: br_netfilter
+    state: present
+  # net.bridge.bridge-nf-call-iptables below does not exist until this module
+  # is loaded; setting it first fails the run with "No such file or directory".
+
+- name: Persist br_netfilter across reboots
+  ansible.builtin.copy:
+    content: "br_netfilter\n"
+    dest: /etc/modules-load.d/br_netfilter.conf
+    mode: "0644"
+
+- name: Tune kernel params for Docker
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: true
+  loop:
+    - {key: "net.ipv4.ip_forward", value: "1"}
+    - {key: "net.bridge.bridge-nf-call-iptables", value: "1"}
+    - {key: "net.bridge.bridge-nf-call-ip6tables", value: "1"}
+    - {key: "vm.max_map_count", value: "262144"}
+  loop_control:
+    label: "{{ item.key }}"

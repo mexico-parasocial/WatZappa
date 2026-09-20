@@ -1,0 +1,16 @@
+---
+# Collections every role in this tree depends on.
+#
+# Install before the first run:
+#   ansible-galaxy collection install -r requirements.yml
+#
+# Without community.docker, every task that touches Docker fails with
+# "couldn't resolve module/action" — which is how this tree failed silently
+# before: nothing declared the dependency.
+collections:
+  - name: community.docker
+    version: ">=3.10.0"
+  - name: community.general
+    version: ">=9.0.0"
+  - name: ansible.posix
+    version: ">=1.5.0"

@@ -1,0 +1,122 @@
+---
+# AT Protocol stack: postgres, redis, pds, dataplane, bsky, bsync, ozone, caddy.
+
+- name: Fail if the source .env is missing
+  ansible.builtin.stat:
+    path: "{{ app_stack_env_source }}"
+  register: app_stack_env
+  delegate_to: localhost
+  become: false
+
+- name: Explain the missing .env
+  ansible.builtin.fail:
+    msg: |
+      No .env at {{ app_stack_env_source }}.
+
+      The stack cannot start without it. Generate one:
+        ./infrascripts/generate-secrets.sh > .env
+      then set PARA_DOMAIN, PDS_HOSTNAME and the admin values before deploying.
+
+      Override the location with -e app_stack_env_source=/path/to/.env
+  when: not app_stack_env.stat.exists
+
+- name: Sync the working tree to the server
+  ansible.posix.synchronize:
+    src: "{{ playbook_dir }}/../../"
+    dest: "{{ para_deploy_dir }}/"
+    delete: true
+    rsync_opts: "{{ app_stack_rsync_excludes | map('regex_replace', '^', '--exclude=') | list }}"
+  when: para_source_strategy == 'rsync'
+
+- name: Clone or update the repository on the server
+  ansible.builtin.git:
+    repo: "{{ para_repo_url }}"
+    dest: "{{ para_deploy_dir }}"
+    version: "{{ para_repo_branch }}"
+    force: true
+  when: para_source_strategy == 'git'
+
+- name: Upload the stack .env
+  ansible.builtin.copy:
+    src: "{{ app_stack_env_source }}"
+    dest: "{{ para_deploy_dir }}/.env"
+    mode: "0600"
+  no_log: true
+  # `copy`, not `template`: this file contains secrets, and running it through
+  # Jinja means any `{{ }}` or `{%` sequence inside a generated password is
+  # evaluated as template syntax. The old role templated it, from a path that
+  # did not exist.
+
+- name: Ensure PARA_DOMAIN is set in the stack .env
+  ansible.builtin.lineinfile:
+    path: "{{ para_deploy_dir }}/.env"
+    regexp: "^PARA_DOMAIN="
+    line: "PARA_DOMAIN={{ para_domain }}"
+    mode: "0600"
+  # docker-compose.prod.yaml now fails fast without it, and Caddyfile.prod
+  # builds every site address from it.
+
+- name: Refuse to deploy with the dead domain in .env
+  ansible.builtin.command:
+    cmd: "grep -c para-g0v.app {{ para_deploy_dir }}/.env"
+  register: app_stack_dead_domain
+  changed_when: false
+  failed_when: false
+
+- name: Explain the dead domain
+  ansible.builtin.fail:
+    msg: |
+      .env still references para-g0v.app ({{ app_stack_dead_domain.stdout | trim }} occurrences).
+      That domain no longer resolves; Let's Encrypt will fail for every
+      hostname built from it. Update .env (PDS_HOSTNAME, PDS_BSKY_APP_VIEW_URL,
+      MATRIX_SERVER_NAME, MATRIX_DOMAIN) to {{ para_domain }} before deploying.
+
+      Note .env.example is also still written against para-g0v.app.
+  when: app_stack_dead_domain.stdout | trim | int > 0
+
+- name: Rebuild app images without cache
+  ansible.builtin.command:
+    cmd: "docker compose -f {{ app_compose_file }} build --no-cache"
+    chdir: "{{ para_deploy_dir }}"
+  when: compose_build_no_cache | bool
+  changed_when: true
+  # --no-cache is a `build` flag. `docker compose up --build --no-cache` is
+  # not valid and exits with a usage error, so the two steps stay separate.
+
+- name: Build and start the app stack
+  ansible.builtin.command:
+    cmd: "docker compose -f {{ app_compose_file }} up -d --build"
+    chdir: "{{ para_deploy_dir }}"
+  register: app_stack_up
+  changed_when: >-
+    'Started' in app_stack_up.stderr or 'Created' in app_stack_up.stderr
+    or 'Recreated' in app_stack_up.stderr
+  # No `down` first. infrascripts/deploy-production.sh tore the whole stack
+  # down and rebuilt with --no-cache on every run: full downtime plus a
+  # complete monorepo rebuild. `up -d --build` replaces only what changed.
+
+- name: Wait for the app stack to settle
+  ansible.builtin.shell:
+    cmd: |
+      set -euo pipefail
+      ps=$(docker compose -f {{ app_compose_file }} ps \
+            --format '{% raw %}{{.Service}}|{{.State}}|{{.Health}}{% endraw %}')
+      echo "$ps"
+      # Fail while any container is not running, or defines a healthcheck that
+      # is not yet passing. Services without a healthcheck report an empty
+      # health field and are judged on state alone.
+      echo "$ps" | awk -F'|' '
+        $2 != "running" { bad=1 }
+        $3 != "" && $3 != "<nil>" && $3 != "healthy" { bad=1 }
+        END { exit bad+0 }
+      '
+    chdir: "{{ para_deploy_dir }}"
+  register: app_stack_ps
+  changed_when: false
+  retries: 24
+  delay: 5
+  until: app_stack_ps is succeeded
+
+- name: Report app stack state
+  ansible.builtin.debug:
+    msg: "{{ app_stack_ps.stdout_lines }}"

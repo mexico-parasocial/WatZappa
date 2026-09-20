@@ -1,0 +1,13 @@
+[Unit]
+Description=PARA database backup timer
+
+[Timer]
+# One schedule. The previous unit set both `OnCalendar=daily` and an explicit
+# 03:00 line; systemd treats repeated OnCalendar as additive, so backups ran
+# twice a day, at midnight and at three.
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

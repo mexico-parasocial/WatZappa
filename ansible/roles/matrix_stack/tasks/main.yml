@@ -1,0 +1,139 @@
+---
+# Matrix stack: synapse, synapse-db, para-idp, mas, mas-db, element-web,
+# matrix-bridge.
+#
+# This stack had NO infrastructure-as-code at all before. It is the stack the
+# pilot's chat runs on, and the one repaired in the Synapse v1.161 + MAS 1.24
+# sprint (plans/synapse-v161-mas-repair.md).
+
+- name: Check that the Matrix config tree was synced
+  ansible.builtin.stat:
+    path: "{{ para_deploy_dir }}/deploy/matrix"
+  register: matrix_stack_dir
+
+- name: Fail if the Matrix config tree is missing
+  ansible.builtin.fail:
+    msg: >-
+      {{ para_deploy_dir }}/deploy/matrix does not exist. The app-stack role
+      syncs the repository; run site.yml rather than invoking this role alone.
+  when: not matrix_stack_dir.stat.exists
+
+- name: Generate the Synapse configuration
+  ansible.builtin.command:
+    cmd: ./deploy/matrix/setup.sh
+    chdir: "{{ para_deploy_dir }}"
+  register: matrix_stack_synapse_setup
+  changed_when: "'already exists' not in matrix_stack_synapse_setup.stdout"
+  # Idempotent: the script skips generation when the config is present. It
+  # mints the homeserver signing key, so it must never regenerate against a
+  # live server — that existing-config guard is what protects it.
+
+- name: Generate the MAS configuration and Synapse delegation block
+  ansible.builtin.command:
+    cmd: ./deploy/matrix/setup-mas.sh
+    chdir: "{{ para_deploy_dir }}"
+  register: matrix_stack_mas_setup
+  changed_when: "'already exists' not in matrix_stack_mas_setup.stdout"
+
+- name: Run MAS database migrations
+  ansible.builtin.command:
+    cmd: >-
+      docker compose -f {{ matrix_compose_file }}
+      run --rm mas database migrate -c /config/config.yaml
+    chdir: "{{ para_deploy_dir }}"
+  register: matrix_stack_migrate
+  changed_when: "'Migrating' in matrix_stack_migrate.stderr"
+  # The image entrypoint is already mas-cli, so the subcommand starts at
+  # `database`, not `mas-cli database`. MAS schema migrations are ONE-WAY:
+  # back up mas-db before any version bump (see the postgres role).
+
+- name: Start the Matrix stack
+  ansible.builtin.command:
+    cmd: "docker compose -f {{ matrix_compose_file }} up -d --build"
+    chdir: "{{ para_deploy_dir }}"
+  register: matrix_stack_up
+  changed_when: >-
+    'Started' in matrix_stack_up.stderr or 'Created' in matrix_stack_up.stderr
+    or 'Recreated' in matrix_stack_up.stderr
+
+- name: Wait for the Matrix stack to settle
+  ansible.builtin.shell:
+    cmd: |
+      set -euo pipefail
+      ps=$(docker compose -f {{ matrix_compose_file }} ps \
+            --format '{% raw %}{{.Service}}|{{.State}}|{{.Health}}{% endraw %}')
+      echo "$ps"
+      echo "$ps" | awk -F'|' '
+        $2 != "running" { bad=1 }
+        $3 != "" && $3 != "<nil>" && $3 != "healthy" { bad=1 }
+        END { exit bad+0 }
+      '
+    chdir: "{{ para_deploy_dir }}"
+  register: matrix_stack_ps
+  changed_when: false
+  retries: 36
+  delay: 5
+  until: matrix_stack_ps is succeeded
+  # Longer than the app stack: Synapse runs its own schema migrations on first
+  # boot and can take minutes to report healthy.
+  #
+  # The MAS healthcheck is `mas-cli --version`, not curl — the MAS image is
+  # distroless with neither a shell nor curl, so a curl-based healthcheck can
+  # never pass and the container reports unhealthy forever.
+
+- name: Check each Matrix service over HTTP
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ item.port }}{{ item.health }}"
+    status_code: 200
+  loop: "{{ matrix_services }}"
+  loop_control:
+    label: "{{ item.name }}:{{ item.port }}"
+  register: matrix_stack_http
+  retries: 6
+  delay: 5
+  until: matrix_stack_http is succeeded
+  # Unlike the app stack, these bind to 127.0.0.1 on the host, so a real HTTP
+  # probe works here.
+
+- name: Verify MAS auth delegation
+  ansible.builtin.command:
+    cmd: >-
+      docker compose -f {{ matrix_compose_file }}
+      exec -T mas mas-cli doctor -c /config/config.yaml
+    chdir: "{{ para_deploy_dir }}"
+  register: matrix_stack_doctor
+  changed_when: false
+  failed_when: false
+
+- name: Require the three delegation checks to pass
+  ansible.builtin.assert:
+    that:
+      - "'Homeserver is reachable' in matrix_stack_doctor.stderr"
+      - "'correctly rejected an invalid token' in matrix_stack_doctor.stderr"
+      - "'Synapse MAS API is reachable with authentication' in matrix_stack_doctor.stderr"
+    fail_msg: |
+      MAS is not correctly delegating for Synapse. Full doctor output:
+
+      {{ matrix_stack_doctor.stderr }}
+    success_msg: "MAS to Synapse delegation verified."
+
+- name: Verify the compat login endpoint is answered by MAS, not Synapse
+  ansible.builtin.uri:
+    url: "https://{{ matrix_server_name }}/_matrix/client/v3/login"
+    status_code: 200
+  register: matrix_stack_compat_login
+  retries: 6
+  delay: 10
+  until: matrix_stack_compat_login is succeeded
+  # The check the repair sprint could not make. Under delegation Synapse stops
+  # serving /login (it 404s) and the reverse proxy must route that path to MAS
+  # instead; `mas-cli doctor` reports that 404 as an error precisely because it
+  # probes Synapse directly with no proxy in front.
+  #
+  # This passes only through the public edge, which is why it lives here and
+  # not in the sprint's protocol-level verification. On failure, check the
+  # compat routes in deploy/matrix/Caddyfile.matrix.
+
+- name: Report Matrix stack state
+  ansible.builtin.debug:
+    msg: "{{ matrix_stack_ps.stdout_lines }}"

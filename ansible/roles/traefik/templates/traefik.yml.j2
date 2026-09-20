@@ -1,0 +1,57 @@
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+api:
+  dashboard: true
+  insecure: false
+
+log:
+  level: WARN
+  format: json
+
+accessLog:
+  format: json
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
+
+providers:
+  docker:
+    exposedByDefault: false
+    swarmMode: true
+    network: "{{ swarm_overlay_network }}"
+    watch: true
+
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: "{{ acme_email }}"
+      storage: /etc/traefik/certs/acme.json
+      # ONE challenge type per resolver. This block previously defined both
+      # tlsChallenge and httpChallenge; Traefik rejects that and issues no
+      # certificate at all, so every hostname served a TLS error.
+      #
+      # httpChallenge needs port 80 reachable — see ufw_allowed_tcp_ports.
+      httpChallenge:
+        entryPoint: web
+
+ping:
+  entryPoint: websecure

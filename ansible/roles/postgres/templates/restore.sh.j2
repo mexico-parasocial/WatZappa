@@ -1,0 +1,68 @@
+#!/bin/bash
+set -euo pipefail
+
+# PARA database restore.
+#
+#   restore.sh <dump.sql.gz> <app|synapse|mas>
+#
+# Restores through docker, matching how backup.sh dumps. None of the Postgres
+# containers publish 5432 to the host, so a psql running on the host cannot
+# reach them.
+#
+# THIS IS DESTRUCTIVE. It drops and recreates the target database.
+
+DEPLOY_DIR="{{ para_deploy_dir }}"
+PG_USER="{{ postgres_user }}"
+
+usage() {
+  echo "Usage: $0 <dump.sql.gz> <app|synapse|mas>" >&2
+  echo >&2
+  echo "  app      {{ postgres_db }}  ({{ app_compose_file }}, service: postgres)" >&2
+  echo "  synapse  matrix             ({{ matrix_compose_file }}, service: synapse-db)" >&2
+  echo "  mas      mas                ({{ matrix_compose_file }}, service: mas-db)" >&2
+  exit 1
+}
+
+[ $# -eq 2 ] || usage
+DUMP="$1"
+TARGET="$2"
+
+[ -f "$DUMP" ] || { echo "No such file: $DUMP" >&2; exit 1; }
+gzip -t "$DUMP" || { echo "Corrupt archive: $DUMP" >&2; exit 1; }
+
+case "$TARGET" in
+  app)     SERVICE="postgres";   COMPOSE="{{ app_compose_file }}";    DB="{{ postgres_db }}" ;;
+  synapse) SERVICE="synapse-db"; COMPOSE="{{ matrix_compose_file }}"; DB="matrix" ;;
+  mas)     SERVICE="mas-db";     COMPOSE="{{ matrix_compose_file }}"; DB="mas" ;;
+  *)       usage ;;
+esac
+
+cd "$DEPLOY_DIR"
+
+cat >&2 <<WARN
+
+  About to DROP and recreate database '$DB' on service '$SERVICE'
+  from $DUMP
+
+  Stop the services that use it first, or the restore will fight live
+  connections and may leave the database half-written.
+
+WARN
+read -r -p "Type the database name to confirm: " confirm
+[ "$confirm" = "$DB" ] || { echo "Aborted." >&2; exit 1; }
+
+echo "Terminating existing connections to $DB ..." >&2
+docker compose -f "$COMPOSE" exec -T "$SERVICE" \
+  psql -U "$PG_USER" -d postgres -c \
+  "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$DB' AND pid <> pg_backend_pid();"
+
+echo "Recreating $DB ..." >&2
+docker compose -f "$COMPOSE" exec -T "$SERVICE" psql -U "$PG_USER" -d postgres -c "DROP DATABASE IF EXISTS \"$DB\";"
+docker compose -f "$COMPOSE" exec -T "$SERVICE" psql -U "$PG_USER" -d postgres -c "CREATE DATABASE \"$DB\" OWNER \"$PG_USER\";"
+
+echo "Restoring ..." >&2
+gunzip -c "$DUMP" | docker compose -f "$COMPOSE" exec -T "$SERVICE" \
+  pg_restore -U "$PG_USER" -d "$DB" --no-owner --no-acl
+
+echo "Restored $DB from $(basename "$DUMP")." >&2
+echo "Restart the dependent services now." >&2

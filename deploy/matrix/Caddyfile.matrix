@@ -18,6 +18,25 @@ matrix.para.social {
 		respond `{ "m.homeserver": { "base_url": "https://matrix.para.social" } }`
 	}
 
+	# MAS compatibility layer: legacy login/logout/refresh endpoints must be
+	# handled by MAS, not Synapse, when auth is delegated
+	# (docs/setup/homeserver.md in matrix-authentication-service).
+	handle /_matrix/client/v1/login {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle /_matrix/client/v3/login {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle /_matrix/client/v1/logout* {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle /_matrix/client/v3/logout* {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle /_matrix/client/v1/refresh {
+		reverse_proxy 127.0.0.1:8080
+	}
+
 	# Reverse proxy to Synapse (port 8008)
 	reverse_proxy 127.0.0.1:8008
 
@@ -28,5 +47,6 @@ matrix.para.social {
 # Element Web client
 # ─────────────────────────────────────────────────────────────────────────────
 chat.para.social {
-	reverse_proxy 127.0.0.1:8080
+	# Element Web listens on 8082; 8080 belongs to MAS.
+	reverse_proxy 127.0.0.1:8082
 }

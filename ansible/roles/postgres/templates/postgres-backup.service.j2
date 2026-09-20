@@ -1,0 +1,14 @@
+[Unit]
+Description=PARA database backup (app, synapse, mas)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart={{ para_deploy_dir }}/postgres/scripts/backup.sh
+StandardOutput=journal
+StandardError=journal
+# Dumping three databases through docker on a busy host can take a while;
+# without this the default timeout can kill a run halfway and leave a
+# truncated dump that the script's gzip check will then flag.
+TimeoutStartSec=3600

@@ -1,0 +1,36 @@
+# Cloudflare Tunnel Config — PARA Local Test
+# Place this at ~/.cloudflared/config.yml after creating your tunnel
+#
+# This exposes your LOCAL Docker services to the internet via Cloudflare.
+# No public IP needed. Works from your laptop, home WiFi, anywhere.
+#
+# Steps:
+#   1. Install cloudflared: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
+#   2. Login: cloudflared tunnel login
+#   3. Create tunnel: cloudflared tunnel create para-local
+#   4. Copy the tunnel UUID from output
+#   5. Paste UUID below in 'tunnel:' field
+#   6. Run: cloudflared tunnel run para-local
+
+tunnel: <YOUR_TUNNEL_UUID_HERE>
+credentials-file: /Users/<YOUR_USERNAME>/.cloudflared/<YOUR_TUNNEL_UUID_HERE>.json
+
+ingress:
+  # PDS — Personal Data Server
+  - hostname: pds.para.social
+    service: http://localhost:2583
+
+  # AppView — Feeds, search, hydration
+  - hostname: appview.para.social
+    service: http://localhost:2584
+
+  # Ozone — Moderation (optional)
+  - hostname: ozone.para.social
+    service: http://localhost:3000
+
+  # Root domain — .well-known/ + landing page
+  - hostname: para.social
+    service: http://localhost:2583
+
+  # Fallback
+  - service: http_status:404

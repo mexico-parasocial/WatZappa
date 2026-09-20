@@ -1,0 +1,89 @@
+---
+# =============================================================================
+# Database backups
+# =============================================================================
+# This role no longer DEPLOYS Postgres. It used to declare a `postgres` swarm
+# service while docker-compose.prod.yaml (and docker-compose.swarm.yml) also
+# declared one, pointed at the same data directory — two postmasters competing
+# for one PGDATA.
+#
+# Compose owns the database containers. This role owns their backups, which is
+# the part nothing else was doing.
+#
+# It also no longer writes postgresql.conf into {{ para_deploy_dir }}/postgres.
+# docker-compose.prod.yaml mounts ./services/postgres/postgres-tuning.conf from
+# the repository, so that version-controlled file is where tuning belongs; the
+# config this role used to render was read by nothing.
+#
+# WHAT YOU ARE ACCEPTING with self-managed Postgres:
+#   - One host. Disk failure loses the database.
+#   - No managed failover; recovery is a manual restore from these dumps.
+#   - Recovery point is the last nightly dump, not the last transaction.
+#     There is no WAL archiving here. The previous role advertised continuous
+#     WAL shipping and point-in-time recovery, but nothing in the running
+#     stack enabled archive_mode, so the promise was never backed by config.
+#     If you need PITR, enable it in postgres-tuning.conf first and only then
+#     claim it here.
+
+- name: Create backup directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0700"
+  loop:
+    - "{{ para_deploy_dir }}/postgres"
+    - "{{ postgres_backup_dir }}"
+    - "{{ para_deploy_dir }}/postgres/scripts"
+
+- name: Install the AWS CLI for off-site upload
+  ansible.builtin.apt:
+    name: awscli
+    state: present
+  when: s3_endpoint | length > 0
+
+- name: Deploy the backup script
+  ansible.builtin.template:
+    src: backup.sh.j2
+    dest: "{{ para_deploy_dir }}/postgres/scripts/backup.sh"
+    mode: "0700"
+
+- name: Deploy the restore helper
+  ansible.builtin.template:
+    src: restore.sh.j2
+    dest: "{{ para_deploy_dir }}/postgres/scripts/restore.sh"
+    mode: "0700"
+
+- name: Deploy the backup systemd service
+  ansible.builtin.template:
+    src: postgres-backup.service.j2
+    dest: /etc/systemd/system/para-postgres-backup.service
+    mode: "0644"
+
+- name: Deploy the backup systemd timer
+  ansible.builtin.template:
+    src: postgres-backup.timer.j2
+    dest: /etc/systemd/system/para-postgres-backup.timer
+    mode: "0644"
+
+- name: Enable and start the backup timer
+  ansible.builtin.systemd:
+    name: para-postgres-backup.timer
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Run a backup now to prove the path works
+  ansible.builtin.command:
+    cmd: "{{ para_deploy_dir }}/postgres/scripts/backup.sh"
+  register: postgres_first_backup
+  changed_when: true
+  # A backup system that has never run is not a backup system. This fails the
+  # deploy if dumping is broken, rather than discovering it during a restore.
+
+- name: Warn when backups are local-only
+  ansible.builtin.debug:
+    msg: |
+      Backups are written to {{ postgres_backup_dir }} on this host ONLY.
+      s3_endpoint is unset, so a disk failure loses the databases and their
+      backups together. Set s3_endpoint and the vault_s3_* secrets to fix that.
+  when: s3_endpoint | length == 0

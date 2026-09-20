@@ -282,10 +282,27 @@ docker run --rm -v whatzatppa_synapse_data:/source -v /backups:/backup \
 
 ### Actualizar Synapse
 
-```bash
-docker pull matrixdotorg/synapse:latest
-docker compose -f WhatZatppa/docker-compose.matrix.yaml up -d synapse
-```
+La versión está fijada por etiqueta en `docker-compose.matrix.yaml` (un
+`docker pull latest` no cambia nada y salta notas de versión; no lo hagas).
+
+1. Lee las notas entre tu versión y la destino:
+   <https://github.com/element-hq/synapse/blob/develop/docs/upgrade.md>
+2. Cambia la etiqueta en `docker-compose.matrix.yaml`, por ejemplo:
+
+   ```yaml
+   image: matrixdotorg/synapse:v1.161.0
+   ```
+
+3. En el servidor:
+
+   ```bash
+   docker compose -f WhatZatppa/docker-compose.matrix.yaml pull synapse
+   docker compose -f WhatZatppa/docker-compose.matrix.yaml up -d synapse
+   ```
+
+4. Espera a que terminen las *background updates* antes de bajar de versión o
+   de apagar: `GET /_synapse/admin/v1/background_updates/enabled` y
+   `/status` con el token de admin.
 
 ### Actualizar el Bridge
 

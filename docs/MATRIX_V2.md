@@ -511,6 +511,67 @@ curl -s http://127.0.0.1:8008/_matrix/client/v3/publicRooms
 A hardened server rejects that unauthenticated; a server still running the
 auto-generated config returns a room list.
 
+### PW-CLEANUP — historical password material (reviewed 2026-09-20)
+
+Week 1 of the four-week chat plan asks to review the cleanup of *historical*
+passwords, "not only that new writes have stopped". They are different
+questions and they have different answers.
+
+**New writes: stopped.** Verified in three places.
+
+| Layer | State | Evidence |
+| --- | --- | --- |
+| Bridge | Scrubbed on every startup | `UPDATE user_matrix_map SET password = '' WHERE password <> ''` in both `src/db/sqlite/base.ts` and `src/db/pg/base.ts`; the column is marked vestigial in `src/db/stores/identity-matrix.ts` and read nowhere |
+| MAS | Disabled, and empty | `passwords.enabled: false` in `deploy/matrix/mas/config.yaml`; zero rows in `user_passwords` |
+| Synapse | Disabled as of 2026-09-20 | `password_config.enabled: false` now set in `deploy/matrix/hardening.yaml` — see below |
+
+**Historical material: still present, dormant.** Five of the seven accounts in
+Synapse's `users` table still carry a `password_hash` from before delegation:
+`@paratest`, `@alice`, `@bob`, `@admin`, `@bridge-admin`. The same five hold 16
+rows in Synapse's own `access_tokens` table.
+
+Those tokens were tested, not assumed. Presenting one to
+`/_matrix/client/v3/account/whoami` returns:
+
+```
+401 {"errcode":"M_UNKNOWN_TOKEN","error":"Token is not active"}
+```
+
+MAS introspection rejects Synapse's legacy tokens, so they are inert while
+delegation is on. The password hashes are equally unusable while `/login` is
+delegated — Synapse 404s it.
+
+**The residual risk is conditional, and that is the point.** Dormant is not
+removed. Every one of these becomes live again the moment delegation is turned
+off or misconfigured, which is exactly the "parallel way in" this document's
+hardening section warns about. A rollback performed under pressure — the most
+likely time to disable delegation — is also the least likely time to remember
+that five accounts, two of them Synapse admins, still have passwords.
+
+**Phase 1 exit taken.** `password_config.enabled: false` was gated on the
+bridge no longer issuing passwords. That gate is satisfied (table above), so
+the setting has been uncommented. Synapse restarts healthy with it and
+`mas-cli doctor` still passes its three delegation checks.
+
+**Not done, and deliberately left for a decision:** removing the historical
+rows. The cleanup is two statements against a live database:
+
+```sql
+-- Synapse: drop dormant password credentials
+UPDATE users SET password_hash = NULL
+ WHERE password_hash IS NOT NULL AND password_hash <> '';
+
+-- Synapse: drop legacy pre-delegation access tokens
+DELETE FROM access_tokens;
+```
+
+This is destructive and irreversible without a restore, so it should run after
+a `synapse-db` dump and with a decision on `@admin` and `@bridge-admin` —
+neither exists in MAS (MAS knows only `bridge-bot` and the one derived-MXID
+user), so nulling their passwords leaves them with no way in at all if
+delegation is ever removed. That may be exactly what you want. It should be a
+choice, not a side effect.
+
 ## 6. Open decisions
 
 **OD-1 — homeserver.** Synapse remains the default. The Tuwunel spike is

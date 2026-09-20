@@ -1,0 +1,46 @@
+---
+# =============================================================================
+# PARA — full provision and deploy, single host
+# =============================================================================
+#   ansible-galaxy collection install -r requirements.yml    # once
+#   ansible-playbook playbooks/site.yml
+#
+# Provisions the host from bare Ubuntu and brings up both stacks:
+#
+#   app stack     docker-compose.prod.yaml
+#                 postgres, redis, pds, dataplane, bsky, bsync, ozone, caddy
+#   matrix stack  docker-compose.matrix.yaml
+#                 synapse, synapse-db, para-idp, mas, mas-db, element-web,
+#                 matrix-bridge
+#
+# Caddy is the only public-facing service and fronts both stacks over the
+# shared external `para-edge` network, which is why para-edge runs before
+# either stack.
+#
+# For a code-only redeploy on an already-provisioned host, use deploy.yml —
+# it skips provisioning entirely and takes well under a minute.
+# =============================================================================
+
+- name: Provision and deploy PARA
+  hosts: para_servers
+  become: true
+
+  pre_tasks:
+    - name: Fail early if the inventory still holds the placeholder host
+      ansible.builtin.fail:
+        msg: >-
+          inventory/production.yml still points at {{ ansible_host }}.
+          Put the real host there before running this playbook.
+      when: "'CHANGEME' in ansible_host"
+
+  roles:
+    - role: common
+    - role: docker
+    - role: para_edge
+    - role: app_stack
+      when: app_stack_enabled | default(true)
+    - role: matrix_stack
+      when: matrix_stack_enabled | default(true)
+    - role: postgres
+    - role: monitoring
+      when: monitoring_enabled | default(true)

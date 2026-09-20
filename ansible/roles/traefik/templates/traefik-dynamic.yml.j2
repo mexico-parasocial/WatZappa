@@ -1,0 +1,82 @@
+http:
+  middlewares:
+    # Rate limit for public endpoints
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 200
+
+    # Compress responses
+    compress:
+      compress: {}
+
+    # Basic auth for Traefik dashboard (replace with strong password)
+    auth:
+      basicAuth:
+        users:
+          - "admin:$apr1$H6uskkkW$IgXLP6ewTrSuBkTrqE8wj/"
+
+  routers:
+    # PDS Router
+    pds:
+      rule: "Host(`{{ pds_hostname }}`)"
+      service: pds
+      entryPoints:
+        - websecure
+      middlewares:
+        - rate-limit
+        - compress
+      tls:
+        certResolver: letsencrypt
+
+    # AppView Router
+    appview:
+      rule: "Host(`{{ appview_hostname }}`)"
+      service: appview
+      entryPoints:
+        - websecure
+      middlewares:
+        - rate-limit
+        - compress
+      tls:
+        certResolver: letsencrypt
+
+    # Ozone Router
+    ozone:
+      rule: "Host(`{{ ozone_hostname }}`)"
+      service: ozone
+      entryPoints:
+        - websecure
+      middlewares:
+        - rate-limit
+        - compress
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    pds:
+      loadBalancer:
+        servers:
+          - url: "http://pds:2583"
+        healthCheck:
+          path: "/xrpc/_health"
+          interval: "10s"
+          timeout: "5s"
+
+    appview:
+      loadBalancer:
+        servers:
+          - url: "http://appview:2584"
+        healthCheck:
+          path: "/xrpc/_health"
+          interval: "10s"
+          timeout: "5s"
+
+    ozone:
+      loadBalancer:
+        servers:
+          - url: "http://ozone:3000"
+        healthCheck:
+          path: "/health"
+          interval: "10s"
+          timeout: "5s"

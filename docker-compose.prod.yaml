@@ -196,6 +196,11 @@ services:
     image: caddy:2
     container_name: para-caddy
     restart: unless-stopped
+    environment:
+      # Caddyfile.prod builds every site address from this. Without it Caddy
+      # serves the literal string "{$PARA_DOMAIN}" as a hostname and no
+      # certificate is ever issued.
+      PARA_DOMAIN: ${PARA_DOMAIN:?PARA_DOMAIN must be set in .env}
     ports:
       - '80:80'
       - '443:443'

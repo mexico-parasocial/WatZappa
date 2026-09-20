@@ -58,3 +58,8 @@ deploy/matrix/mas/
 # and encrypt before copying anywhere off the host (deploy/matrix/backup.sh).
 backups/
 *.tar.gz.age
+
+# Database dumps staged for a VPS seed (infrascripts/deploy-matrix-vps.sh).
+# Each one is a full pg_dump of the Synapse or MAS database: real user rows,
+# password hashes and session state. Never version them.
+deploy/matrix/seed/

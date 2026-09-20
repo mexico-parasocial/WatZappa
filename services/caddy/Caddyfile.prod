@@ -1,4 +1,11 @@
 # PARA Production Caddyfile
+#
+# Hostnames come from the PARA_DOMAIN environment variable, passed to the Caddy
+# container by docker-compose.prod.yaml. They were hardcoded to para-g0v.app,
+# which no longer resolves — Caddy would request Let's Encrypt certificates for
+# a domain with no DNS and every hostname would serve a TLS error.
+#
+# Set PARA_DOMAIN in the stack .env (e.g. PARA_DOMAIN=para.social).
 # Place this at /etc/caddy/Caddyfile on your edge server (Computer A).
 # For single-machine deploys, mount it via docker-compose.prod.yaml.
 #
@@ -12,7 +19,7 @@
 # ---------------------------------------------------------------------------
 # PDS — Personal Data Server (auth, repos, writes)
 # ---------------------------------------------------------------------------
-pds.para-g0v.app {
+pds.{$PARA_DOMAIN} {
 	encode gzip
 
 	# Blob reads are immutable once written; allow clients/CDN to cache them.
@@ -38,7 +45,7 @@ pds.para-g0v.app {
 # ---------------------------------------------------------------------------
 # AppView — Feeds, search, hydration, Civic Map
 # ---------------------------------------------------------------------------
-appview.para-g0v.app {
+appview.{$PARA_DOMAIN} {
 	encode gzip
 
 	# Image server thumbnails are expensive to generate; cache aggressively.
@@ -63,7 +70,7 @@ appview.para-g0v.app {
 # ---------------------------------------------------------------------------
 # Ozone — Moderation (staff-only)
 # ---------------------------------------------------------------------------
-ozone.para-g0v.app {
+ozone.{$PARA_DOMAIN} {
 	encode gzip
 	reverse_proxy ozone:3000
 
@@ -78,7 +85,7 @@ ozone.para-g0v.app {
 # ---------------------------------------------------------------------------
 # Matrix bridge — community chat/governance API for the PARA app
 # ---------------------------------------------------------------------------
-bridge.para-g0v.app {
+bridge.{$PARA_DOMAIN} {
 	encode gzip
 
 	# SSE: disable proxy buffering so events flush immediately.
@@ -102,7 +109,7 @@ bridge.para-g0v.app {
 # Well-known endpoints (AT Protocol discovery)
 # These MUST be available at the domain root for federation.
 # ---------------------------------------------------------------------------
-para-g0v.app {
+{$PARA_DOMAIN} {
 	encode gzip
 
 	# Serve .well-known/atproto-did for handle resolution
@@ -110,6 +117,13 @@ para-g0v.app {
 		reverse_proxy pds:2583
 	}
 
-	# Fallback: redirect to marketing site or app
-	redir https://para.social/app
+	# Fallback for everything else on the bare domain.
+	#
+	# This used to be `redir https://para.social/app`, written when the site
+	# address was para-g0v.app so the two hosts differed. Now that PARA_DOMAIN
+	# is para.social, that same redirect would point the domain at itself and
+	# loop. Serve a 404 and let whoever owns the marketing page opt in.
+	handle {
+		respond "Not Found" 404
+	}
 }

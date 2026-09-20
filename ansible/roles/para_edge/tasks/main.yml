@@ -1,0 +1,24 @@
+---
+# The shared edge network.
+#
+# Both docker-compose.prod.yaml and docker-compose.matrix.yaml declare
+# `para-edge` as `external: true`, meaning neither creates it — Docker expects
+# it to already exist and errors out with "network para-edge declared as
+# external, but could not be found" if it does not.
+#
+# Nothing created it. infrascripts/deploy-production.sh never did, so
+# `--with-matrix` could not have worked on a fresh host. This role is the
+# missing step, and it runs before either stack.
+
+- name: Create the shared edge network
+  community.docker.docker_network:
+    name: "{{ edge_network_name }}"
+    driver: bridge
+    state: present
+
+- name: Record which stacks are expected on this host
+  ansible.builtin.debug:
+    msg: >-
+      edge network {{ edge_network_name }} ready ·
+      app stack {{ 'ON' if app_stack_enabled | default(true) else 'off' }} ·
+      matrix stack {{ 'ON' if matrix_stack_enabled | default(true) else 'off' }}

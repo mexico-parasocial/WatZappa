@@ -1,0 +1,9 @@
+---
+# roles/swarm and roles/traefik belong to the parked multi-node path
+# (playbooks/swarm.yml, which refuses to run). They are kept for when that
+# path is revived and are deliberately NOT cleaned up here: linting them
+# clean would imply a review they have not had. See roles/traefik/README.md.
+exclude_paths:
+  - roles/swarm/
+  - roles/traefik/
+  - .ansible_facts/
