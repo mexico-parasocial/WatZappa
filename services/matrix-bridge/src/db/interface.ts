@@ -6,17 +6,17 @@
  */
 
 import type {
+  ConsentPrefsStore,
+  ConstitutionProposalsStore,
+  DeliberationStore,
+  EventLogStore,
   IdentityMatrixStore,
   InfraStore,
-  ConstitutionProposalsStore,
-  SortitionStore,
+  InstitutionStore,
+  MatrixEventsStore,
   ModerationStore,
   ParticipationStore,
-  ConsentPrefsStore,
-  MatrixEventsStore,
-  DeliberationStore,
-  InstitutionStore,
-  EventLogStore,
+  SortitionStore,
 } from './stores/index.js'
 
 export interface IBridgeDatabase
@@ -32,28 +32,30 @@ export interface IBridgeDatabase
     DeliberationStore,
     InstitutionStore,
     EventLogStore {
+  /** Database-only work: never perform network calls inside this transaction. */
+  transaction<T>(work: () => Promise<T>): Promise<T>
   close(): Promise<void>
 }
 
 export type {
+  ConsentPrefsStore,
+  ConstitutionProposalsStore,
+  DeliberationStore,
   IdentityMatrixStore,
   InfraStore,
-  ConstitutionProposalsStore,
-  SortitionStore,
+  InstitutionStore,
+  MatrixEventsStore,
   ModerationStore,
   ParticipationStore,
-  ConsentPrefsStore,
-  MatrixEventsStore,
-  DeliberationStore,
-  InstitutionStore,
+  SortitionStore,
 } from './stores/index.js'
 export type {
   AiConsentRecord,
   BridgeEvent,
-  CommunitySpaceMap,
-  DeviceSession,
   CommunityRoomKind,
   CommunityRoomSummary,
+  CommunitySpaceMap,
+  DeviceSession,
   SyncLogEntry,
   UserMatrixMap,
   UserPushToken,

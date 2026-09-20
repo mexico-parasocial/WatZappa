@@ -31,6 +31,7 @@ describe('M8 bridge auth', () => {
     expect(session.did).toBe('did:plc:alice')
     expect(fetchMock).toHaveBeenCalledWith('http://m8.test/v1/sessions/me', {
       headers: { Authorization: 'Bearer token-1' },
+      signal: expect.any(AbortSignal),
     })
 
     fetchMock.mockRestore()

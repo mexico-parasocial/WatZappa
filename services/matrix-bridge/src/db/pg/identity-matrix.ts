@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import type {
   AiConsentRecord,
-  CommunitySpaceMap,
   CommunityRoomKind,
   CommunityRoomSummary,
+  CommunitySpaceMap,
   DeviceSession,
   SyncLogEntry,
   UserMatrixMap,
@@ -112,7 +112,7 @@ export class IdentityMatrixArea extends PgBase {
     await this.run(
       `INSERT INTO user_matrix_map (did, matrix_user_id, password) VALUES ($1, $2, $3)
        ON CONFLICT (did) DO UPDATE SET matrix_user_id = EXCLUDED.matrix_user_id, password = EXCLUDED.password`,
-      [did, mxid, password],
+      [did, mxid, ''],
     )
   }
 

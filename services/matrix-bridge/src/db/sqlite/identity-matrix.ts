@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import type {
   AiConsentRecord,
-  CommunitySpaceMap,
   CommunityRoomKind,
   CommunityRoomSummary,
+  CommunitySpaceMap,
   DeviceSession,
   SyncLogEntry,
   UserMatrixMap,
@@ -112,7 +112,7 @@ export class IdentityMatrixArea extends SqliteBase {
       .prepare(
         'INSERT OR REPLACE INTO user_matrix_map (did, matrix_user_id, password) VALUES (?, ?, ?)',
       )
-      .run(did, mxid, password)
+      .run(did, mxid, '')
   }
 
   getUserPassword(did: string): string | undefined {

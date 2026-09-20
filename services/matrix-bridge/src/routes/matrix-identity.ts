@@ -1,14 +1,15 @@
-import type { IncomingMessage, ServerResponse } from 'node:http'
 import { randomUUID } from 'node:crypto'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 import { AI_CONSENT_POLICY_VERSION } from '../ai-consent.js'
-import { authenticateM8, HttpError } from '../m8-auth.js'
 import { authorize, resolveRoom } from '../authz.js'
 import { fetchBeacon, fetchLatestBeacon } from '../drand.js'
 import { extractFromText, persistExtractedCard } from '../extraction.js'
+import { HttpError, authenticateM8 } from '../m8-auth.js'
+import { MatrixLoginUnavailableError } from '../matrix-login-error.js'
 import { OpenAIClient } from '../openai-client.js'
-import { summarizeCommunityDeliberation } from '../summarize.js'
-import type { SortitionRunRow } from '../sortition-runs.js'
 import { sendExpoNotifications } from '../push.js'
+import type { SortitionRunRow } from '../sortition-runs.js'
+import { summarizeCommunityDeliberation } from '../summarize.js'
 import type { RouteContext } from './context.js'
 import { readBody, writeJson } from './http.js'
 
@@ -38,6 +39,42 @@ export async function apiSpaceForCommunityHandler(
 }
 
 /** POST /api/matrix-token */
+/**
+ * GET /api/matrix-identity — the caller's Matrix identity, without minting
+ * anything.
+ *
+ * `/api/matrix-token` used to be the only way a client learned its own MXID
+ * and homeserver, because both came bundled with a freshly minted session.
+ * Under MAS that endpoint returns 503 before it reaches the response, so a
+ * native client had no way to find out who it is — and it needs exactly that
+ * to build a crypto-store scope and start the authorization-code flow.
+ *
+ * This creates no session, no device and no token. It reads a mapping that
+ * already exists.
+ */
+export async function apiMatrixIdentityHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+  ctx: RouteContext,
+): Promise<void> {
+  const auth = await authenticateM8(req, ctx.config)
+  const mxid = await ctx.db.getMxidForDid(auth.did)
+  if (!mxid) {
+    writeJson(res, 404, { error: 'User not mapped to Matrix' })
+    return
+  }
+  writeJson(res, 200, {
+    userId: mxid,
+    homeServer: ctx.config.matrixPublicHomeserverUrl,
+    /**
+     * How this deployment expects a client to obtain a device session.
+     * `oidc` means: run the homeserver's authorization-code flow yourself.
+     * Never treat a bridge credential as a substitute.
+     */
+    loginFlow: 'oidc' as const,
+  })
+}
+
 export async function apiMatrixTokenHandler(
   req: IncomingMessage,
   res: ServerResponse,
@@ -53,8 +90,9 @@ export async function apiMatrixTokenHandler(
   // Read the (optional) JSON body: { friendlyName?, deviceId? }
   let friendlyName: string | undefined
   let requestedDeviceId: string | undefined
+  const raw = await readBody(req)
   try {
-    const parsed = JSON.parse(await readBody(req))
+    const parsed = JSON.parse(raw || '{}')
     if (typeof parsed.friendlyName === 'string')
       friendlyName = parsed.friendlyName.slice(0, 100)
     if (
@@ -63,17 +101,27 @@ export async function apiMatrixTokenHandler(
     )
       requestedDeviceId = parsed.deviceId
   } catch {
-    // empty body is fine
+    throw new HttpError(400, 'Invalid device session request')
   }
   const userAgent = req.headers['user-agent']?.slice(0, 200)
 
   const deviceId =
     requestedDeviceId ?? `PARA-${randomUUID().replace(/-/g, '').slice(0, 16)}`
-  const session = await ctx.matrix.appServiceLogin(
-    mxid,
-    deviceId,
-    friendlyName ?? userAgent,
-  )
+  let session
+  try {
+    session = await ctx.matrix.appServiceLogin(
+      mxid,
+      deviceId,
+      friendlyName ?? userAgent,
+    )
+  } catch (err) {
+    if (!(err instanceof MatrixLoginUnavailableError)) throw err
+    writeJson(res, 503, {
+      error: 'MATRIX_CLIENT_LOGIN_REQUIRED',
+      message: 'Authorize this device through the Matrix homeserver login flow',
+    })
+    return
+  }
 
   const id = randomUUID()
   const now = new Date().toISOString()
@@ -94,9 +142,7 @@ export async function apiMatrixTokenHandler(
     deviceId: session.deviceId,
     sessionId: id,
     userId: mxid,
-    homeServer: ctx.config.matrixHomeserverUrl
-      .replace('http://', 'https://')
-      .replace(':8008', ''),
+    homeServer: ctx.config.matrixPublicHomeserverUrl,
   })
 }
 

@@ -1,14 +1,15 @@
+import { AsyncLocalStorage } from 'node:async_hooks'
 import type { Config } from '../config.js'
 import type { InstitutionMembership, InstitutionRole } from '../institutions.js'
-import { BridgeDatabase } from './sqlite/index.js'
 import type {
   AiConsentRecord,
   CommunitySpaceMap,
+  DeviceSession,
   IBridgeDatabase,
   SyncLogEntry,
   UserPushToken,
-  DeviceSession,
 } from './pg/index.js'
+import { BridgeDatabase } from './sqlite/index.js'
 
 /**
  * Async wrapper around the synchronous SQLite BridgeDatabase.
@@ -16,17 +17,42 @@ import type {
  */
 export class SqliteBridgeDatabase implements IBridgeDatabase {
   private inner: BridgeDatabase
+  private transactionContext = new AsyncLocalStorage<{ active: boolean }>()
+  private queue: Promise<unknown> = Promise.resolve()
 
   constructor(config: Config) {
     this.inner = new BridgeDatabase(config)
   }
 
+  private exclusive<T>(fn: () => T | Promise<T>): Promise<T> {
+    const result = this.queue.then(fn)
+    this.queue = result.catch(() => {})
+    return result
+  }
+
   private wrap<T>(fn: () => T): Promise<T> {
-    try {
-      return Promise.resolve(fn())
-    } catch (err) {
-      return Promise.reject(err)
+    if (this.transactionContext.getStore()?.active) {
+      return Promise.resolve().then(fn)
     }
+    return this.exclusive(fn)
+  }
+
+  transaction<T>(work: () => Promise<T>): Promise<T> {
+    if (this.transactionContext.getStore()?.active) return work()
+    return this.exclusive(async () => {
+      this.inner.beginTransaction()
+      const context = { active: true }
+      try {
+        const result = await this.transactionContext.run(context, work)
+        this.inner.commitTransaction()
+        return result
+      } catch (err) {
+        this.inner.rollbackTransaction()
+        throw err
+      } finally {
+        context.active = false
+      }
+    })
   }
 
   // ── Community / Space ──
@@ -618,6 +644,14 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     originServerTs: number
   }): Promise<boolean> {
     return this.wrap(() => this.inner.insertMatrixEvent(event))
+  }
+
+  getMatrixPollCursor(roomId: string): Promise<string | undefined> {
+    return this.wrap(() => this.inner.getMatrixPollCursor(roomId))
+  }
+
+  setMatrixPollCursor(roomId: string, cursor: string): Promise<void> {
+    return this.wrap(() => this.inner.setMatrixPollCursor(roomId, cursor))
   }
 
   eventExists(eventId: string): Promise<boolean> {

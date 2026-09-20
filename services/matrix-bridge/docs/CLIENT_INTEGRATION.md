@@ -2,7 +2,33 @@
 
 This is the spec the PARA app implements against. It documents the current,
 shipped behavior of the bridge (`services/matrix-bridge`) — event payloads and
-endpoints here are exact, not aspirational. Version: matches commit `9fc0714bf`.
+endpoints here describe the bridge implementation. Updated 2026-09-20.
+
+**Deployment gate:** the Synapse v1.161.0 + MAS 1.24.0 deployment does not
+support `m.login.application_service`. Direct Synapse login returns 404; MAS
+exposes SSO/token login and rejects appservice login. `/api/matrix-token`
+returns 503 `MATRIX_CLIENT_LOGIN_REQUIRED` and creates no session record.
+Never give the client an appservice or admin credential as a fallback.
+
+**The supported path is the homeserver's own authorization-code flow**, run by
+the client:
+
+1. `GET /api/matrix-identity` (M8 bearer) → `{userId, homeServer, loginFlow}`.
+   Mints nothing; it reads the DID→MXID mapping that already exists. A client
+   needs this before it can open a crypto store or start authorization, and it
+   used to be obtainable only as a side effect of `/api/matrix-token`.
+2. The client asks the Matrix SDK for an authorization URL (`urlForOidc`),
+   opens it in a browser session, and completes with
+   `loginWithOidcCallback(redirectUrl)`. PARA's implementation is
+   `src/features/encryptedChat/` (`oidc.ts`, `client.native.ts`); the redirect
+   is `para://matrix-auth`.
+3. The resulting access token lives in the client's own encrypted store. It
+   never reaches the bridge, and the bridge never mints it.
+
+`loginFlow` is `'oidc'` for this deployment. Treat any other value as
+unsupported rather than falling back to something weaker.
+
+[MAS application-service login limitation](https://element-hq.github.io/matrix-authentication-service/as-login.html).
 
 The model is two-tier, on purpose:
 
@@ -11,14 +37,14 @@ The model is two-tier, on purpose:
   registration, and the real-time event stream. Clients talk to it with an
   **M8 bearer token** — the same token the app already holds for PDS login.
 - **The homeserver** (Synapse, e.g. `https://matrix.para.social`) owns chat
-  itself. Clients connect with a **device-bound Matrix session minted by the
-  bridge** and speak the standard Matrix client API (matrix-js-sdk / Matrix
+  itself. Where appservice login is supported, the bridge can mint a
+  device-bound Matrix session. With MAS, native authorization is required. Clients speak the standard Matrix client API (matrix-js-sdk / Matrix
   Rust SDK).
 
-The bridge never sees message content for rooms it does not host events in,
-and — by design — **does not observe DMs hosted on other providers** (e.g. a
-user's solidarity.social account). Those live entirely between the client and
-that provider.
+Appservice ingestion receives events for its registered namespaces, strips
+content before persistence, and ignores untracked rooms. In unencrypted rooms,
+the homeserver and appservice can see plaintext. In E2EE rooms only authorized
+clients holding keys can decrypt content. No message keys belong in the bridge.
 
 ## 1. Session flow (native screens)
 
@@ -33,21 +59,25 @@ M8 login ──► PARA app holds { m8 token, did }
    └─► GET  BRIDGE_URL/api/devices         (M8 bearer)          — settings screen
 ```
 
-### 1.1 Device sessions
+### 1.1 Device sessions (homeservers supporting appservice login)
 
 `POST /api/matrix-token` (M8 bearer; optional JSON body):
 
 ```json
-{ "friendlyName": "iPhone 15 (María)", "deviceId": "PARA-<stable-per-install-id>" }
+{
+  "friendlyName": "iPhone 15 (María)",
+  "deviceId": "PARA-<stable-per-install-id>"
+}
 ```
 
 - `deviceId` is **optional but recommended**: reuse a stable per-install id so
-  the homeserver sees the *same Matrix device* on every login. For the E2EE
+  the homeserver sees the _same Matrix device_ on every login. For the E2EE
   spike this is load-bearing — Megolm device keys and cross-signing attach to
-  the device, so device churn means key churn and undecryptable history.
+  the device. Never reuse that device ID after its crypto store is lost;
+  create a new device and recover/verify it instead.
 - Response: `{ accessToken, deviceId, sessionId, userId, homeServer }`.
   `homeServer` is the public URL (scheme/host fixed up from the internal one).
-- `sessionId` identifies the *bridge-side* session record (not a Matrix
+- `sessionId` identifies the _bridge-side_ session record (not a Matrix
   concept). Keep it for the settings screen.
 
 Lifecycle endpoints (M8 bearer):
@@ -75,7 +105,7 @@ be validated on iOS and Android — see MATRIX_V2 review §6.
 E2EE (phase 2 for PARA-hosted rooms): the client owns the crypto engine
 (Matrix Rust SDK natively; matrix-js-sdk WASM on web). The bridge is not in
 the content path and must never be. Key backup/verification UX belongs to the
-client; M8 may broker *access*, never message keys.
+client; M8 may broker _access_, never message keys.
 
 ## 2. Real-time events — `GET /api/events` (SSE)
 
@@ -85,8 +115,8 @@ last received `id`.
 Wire protocol:
 
 1. On connect the server sends `retry: 5000`, then a `hello` event:
-   `data: { "maxSeq": 123, "communities": ["at://…"] }` (the caller's active
-   communities — the audience filter).
+   `data: { "maxSeq": 123 }`. The snapshot is informational, not permission
+   to advance the cursor before replay.
 2. Replay: events with `seq > cursor` that the caller is entitled to **now**
    (entitlements are re-evaluated during replay — a revoked member cannot
    replay events from before revocation). Cursor comes from the
@@ -97,20 +127,26 @@ Wire protocol:
    `resync_required` event (`data: { oldestRetainedSeq, maxSeq }`) instead of
    a silent gap — refetch state over the regular REST endpoints, then
    continue from `maxSeq`.
-5. 25s heartbeat comment lines (`: heartbeat`) keep intermediaries alive.
+5. `checkpoint` events carry `{ seq }` and an `id`; persist that cursor even
+   when all intervening records were filtered. Process events/checkpoints in
+   arrival order and commit cursors only after handling prior events.
+6. 25s heartbeats also reconcile the durable log, repairing missed in-process
+   notifications. Resource access is checked at each delivery. M8 authentication
+   is refreshed on drains after 60 seconds; failure closes the stream. Slow
+   consumers are disconnected and must reconnect with their processed cursor.
 
 ### Event catalog (exact payloads)
 
-| Event (`event:`) | Audience | Payload |
-| --- | --- | --- |
-| `membership.changed` | the affected DID (direct) | `{ did, state, roles }` — your own membership/roles changed; `state` ∈ `active \| left \| removed \| blocked \| …`; on `left/removed/blocked` drop local community caches |
-| `proposal.state` | community-wide | `{ proposalUri, from, to, votingEnds }` — today `from:"deliberation"`, `to:"voting"`; render the "voting open" surface |
-| `sortition.selected` | selected DIDs (direct) | `{ runId, cabildeoUri }` — you were selected for an assembly; mirror of the Expo push (`type: "sortition_selected"`) |
-| `sortition.run.updated` | community-wide | `{ runId, status, selectedCount, eligibleCount }` — aggregate only, **no member identities** |
-| `chat.unread` | community-wide (new messages) or the affected DID (read-clear) | `{ roomId, count }` on new messages; `{ roomId, clearedFor, upTo }` on mark-read — recompute exact unread via `GET /api/unread` |
-| `badge.updated` | the affected DID (direct) | `{ communityUri, badges }` — the caller's visible badge types changed |
-| `constitution.updated` | community-wide | `{ version }` — refetch `GET /api/constitution` for the rules |
-| `resync_required` | caller | `{ oldestRetainedSeq, maxSeq }` |
+| Event (`event:`)        | Audience                                                                   | Payload                                                                                                                                                                                                                                                               |
+| ----------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `membership.changed`    | the affected DID (direct)                                                  | `{ did, state, roles }` — your own membership/roles changed; `state` ∈ `active \| left \| removed \| blocked \| …`; on `left/removed/blocked` drop local community caches                                                                                             |
+| `proposal.state`        | community-wide                                                             | `{ proposalUri, from, to, votingEnds }` — today `from:"deliberation"`, `to:"voting"`; render the "voting open" surface                                                                                                                                                |
+| `sortition.selected`    | selected DIDs (direct)                                                     | `{ runId, cabildeoUri }` — you were selected for an assembly; mirror of the Expo push (`type: "sortition_selected"`)                                                                                                                                                  |
+| `sortition.run.updated` | community-wide                                                             | `{ runId, status, selectedCount, eligibleCount }` — aggregate only, **no member identities**                                                                                                                                                                          |
+| `chat.unread`           | currently authorized room members, further restricted by DID on read-clear | `{ roomId, invalidated: true }` on activity; `{ roomId, clearedFor, upTo }` on mark-read. Refetch `/api/unread`; never add a message delta. Bridge counts reflect message/encrypted-event metadata; the native SDK is authoritative for decrypted timeline semantics. |
+| `badge.updated`         | the affected DID (direct)                                                  | `{ communityUri, badges }` — the caller's visible badge types changed                                                                                                                                                                                                 |
+| `constitution.updated`  | community-wide                                                             | `{ version }` — refetch `GET /api/constitution` for the rules                                                                                                                                                                                                         |
+| `resync_required`       | caller                                                                     | `{ oldestRetainedSeq, maxSeq }`                                                                                                                                                                                                                                       |
 
 `badge.updated`, `constitution.updated`.
 
@@ -137,11 +173,17 @@ next `membership.changed` for the caller's DID.
   open the room via the Matrix client.
 - Sortition push data payload: `{ type: "sortition_selected", runId, cabildeoUri, communityUri }`.
 
-## 5. Open items tracked elsewhere
+## 5. Institutions and identity links
 
-- Solidarity.social as a second Matrix provider: the client renders it as a
-  second homeserver profile; **blocked on verifying** how a third-party client
-  obtains a session there (password login? token-mint endpoint?). The bridge
-  has no admin powers there and must never receive the M8 bearer for relay.
-- Institutional rooms (owner transfer, shared inboxes): spec in progress;
-  institutional Matrix accounts own their rooms; the bridge only observes.
+- `POST /api/institutions` authenticates M8 and returns 201 `{ institutionId }`
+  with a server-generated UUID URN and an initial, non-expiring owner.
+- Generic membership routes operate only on existing institutions. They cannot
+  create, replace, expire or revoke owner memberships. Ownership handover is
+  unavailable until its dedicated acceptance/approval protocol and Matrix
+  authority changes are implemented.
+- Public `com.para.identity.linkedChat` records are unverified claims.
+  `verifyChatLink` fails closed with `matrix-proof-required` and performs no
+  remote reads. Do not use records to authorize memberships or correlate
+  private/work/voting identities automatically.
+- External providers are outside the current delivery; do not relay M8 tokens
+  to them. Solidarity integration is not a dependency of the native pilot.

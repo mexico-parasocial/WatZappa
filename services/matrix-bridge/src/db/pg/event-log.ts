@@ -34,18 +34,20 @@ export class EventLogArea extends InstitutionsArea {
     audienceDids: string[] | null
     payload: unknown
   }): Promise<BridgeEvent> {
-    const row = await this.queryOne<any>(
-      `INSERT INTO event_log (type, community_uri, audience_dids_json, payload_json)
+    return this.transaction(async () => {
+      const row = await this.queryOne<any>(
+        `INSERT INTO event_log (type, community_uri, audience_dids_json, payload_json)
        VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [
-        event.type,
-        event.communityUri,
-        event.audienceDids ? JSON.stringify(event.audienceDids) : null,
-        JSON.stringify(event.payload ?? {}),
-      ],
-    )
-    return this.mapEvent(row)
+        [
+          event.type,
+          event.communityUri,
+          event.audienceDids ? JSON.stringify(event.audienceDids) : null,
+          JSON.stringify(event.payload ?? {}),
+        ],
+      )
+      return this.mapEvent(row)
+    })
   }
 
   async listEventsAfter(
@@ -68,7 +70,7 @@ export class EventLogArea extends InstitutionsArea {
 
   async pruneEventsBefore(cutoffIso: string): Promise<number> {
     const res = await this.query(
-      'DELETE FROM event_log WHERE created_at < $1',
+      'DELETE FROM event_log WHERE created_at::timestamptz < $1::timestamptz',
       [cutoffIso],
     )
     return res.rowCount ?? 0

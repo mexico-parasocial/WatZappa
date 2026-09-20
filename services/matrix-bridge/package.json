@@ -8,8 +8,10 @@
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "backfill": "tsx src/backfill.ts",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "smoke:appservice": "tsx scripts/smoke-appservice.ts",
+    "test:postgres": "bash scripts/test-postgres.sh"
   },
   "dependencies": {
     "@atproto/api": "workspace:^",

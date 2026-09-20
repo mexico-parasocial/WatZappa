@@ -1,5 +1,6 @@
 import { AdminApis, MatrixClient } from 'matrix-bot-sdk'
 import type { Config } from './config.js'
+import { MatrixLoginUnavailableError } from './matrix-login-error.js'
 
 export interface MatrixRoomMember {
   user_id: string
@@ -10,7 +11,7 @@ export interface MatrixRoomMember {
 export class MatrixAdminClient {
   private baseUrl: string
   private adminToken: string
-  private appServiceToken: string
+  private appServiceToken: string | undefined
   private enableEncryption: boolean
   readonly botUserId: string | undefined
   private client: MatrixClient
@@ -19,7 +20,7 @@ export class MatrixAdminClient {
   constructor(config: Config) {
     this.baseUrl = config.matrixHomeserverUrl.replace(/\/$/, '')
     this.adminToken = config.matrixAdminToken
-    this.appServiceToken = config.matrixAppServiceToken ?? config.matrixAdminToken
+    this.appServiceToken = config.matrixAppServiceToken
     this.botUserId = config.matrixBotUserId
     this.enableEncryption = config.matrixEnableEncryption
     this.client = new MatrixClient(this.baseUrl, this.adminToken)
@@ -222,6 +223,7 @@ export class MatrixAdminClient {
     deviceId: string,
     initialDeviceDisplayName?: string,
   ): Promise<{ accessToken: string; deviceId: string; expiresAtMs?: number }> {
+    if (!this.appServiceToken) throw new MatrixLoginUnavailableError()
     const url = `${this.baseUrl}/_matrix/client/v3/login`
     const res = await fetch(url, {
       method: 'POST',
@@ -235,10 +237,12 @@ export class MatrixAdminClient {
         device_id: deviceId,
         initial_device_display_name: initialDeviceDisplayName,
       }),
+      signal: AbortSignal.timeout(10_000),
     })
     if (!res.ok) {
-      const text = await res.text()
-      throw new Error(`Matrix appservice login error ${res.status}: ${text}`)
+      if (res.status === 404 || res.status === 400)
+        throw new MatrixLoginUnavailableError()
+      throw new Error(`Matrix appservice login error ${res.status}`)
     }
     const body = (await res.json()) as {
       access_token: string
@@ -249,14 +253,18 @@ export class MatrixAdminClient {
       accessToken: body.access_token,
       deviceId: body.device_id,
       expiresAtMs:
-        body.expires_in_ms != null ? Date.now() + body.expires_in_ms : undefined,
+        body.expires_in_ms != null
+          ? Date.now() + body.expires_in_ms
+          : undefined,
     }
   }
 
   /** List the caller's devices using their own access token (spec endpoint). */
   async listUserDevices(
     userToken: string,
-  ): Promise<Array<{ deviceId: string; displayName?: string; lastSeenTs?: number }>> {
+  ): Promise<
+    Array<{ deviceId: string; displayName?: string; lastSeenTs?: number }>
+  > {
     const res = await fetch(`${this.baseUrl}/_matrix/client/v3/devices`, {
       headers: { Authorization: `Bearer ${userToken}` },
     })
@@ -265,7 +273,11 @@ export class MatrixAdminClient {
       throw new Error(`Matrix API error ${res.status}: ${text}`)
     }
     const body = (await res.json()) as {
-      devices: Array<{ device_id: string; display_name?: string; last_seen_ts?: number }>
+      devices: Array<{
+        device_id: string
+        display_name?: string
+        last_seen_ts?: number
+      }>
     }
     return body.devices.map((d) => ({
       deviceId: d.device_id,

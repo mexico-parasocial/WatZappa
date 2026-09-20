@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events'
-import type { BridgeEvent } from '../db/records.js'
 import type { IBridgeDatabase } from '../db/index.js'
+import type { BridgeEvent } from '../db/records.js'
 
 /**
  * In-process event bus backing GET /api/events (SSE).
@@ -58,7 +58,7 @@ export class EventBus {
       audienceDids: input.audienceDids ?? null,
       payload: input.payload,
     })
-    this.emitter.emit('event', event)
+    this.notifyCommitted(event)
     return event
   }
 
@@ -71,10 +71,31 @@ export class EventBus {
     lastSeq: number,
     mayReceive: (event: BridgeEvent) => boolean,
   ): Promise<{ events: BridgeEvent[]; resyncRequired: boolean }> {
-    const events = (
-      await this.db.listEventsAfter(lastSeq, REPLAY_BATCH)
-    ).filter(mayReceive)
+    const events: BridgeEvent[] = []
+    const maxSeq = await this.maxSeq()
+    let cursor = lastSeq
+    while (cursor < maxSeq) {
+      const batch = await this.db.listEventsAfter(cursor, REPLAY_BATCH)
+      if (!batch.length) break
+      for (const event of batch) {
+        if (event.seq > maxSeq) break
+        if (mayReceive(event)) events.push(event)
+        cursor = event.seq
+      }
+      if (batch.length < REPLAY_BATCH) break
+    }
     return { events, resyncRequired: false }
+  }
+
+  /** Wake subscribers only after the database commit; replay repairs missed wakes. */
+  notifyCommitted(event: BridgeEvent): void {
+    for (const listener of this.emitter.listeners('event')) {
+      try {
+        listener(event)
+      } catch (err) {
+        this.log.warn({ err }, 'SSE subscriber failed')
+      }
+    }
   }
 
   /** Subscribe to live events; returns an unsubscribe fn. */
@@ -125,6 +146,6 @@ export function audienceFilterFor(
     if (event.audienceDids) return event.audienceDids.includes(did)
     if (event.communityUri) return callerCommunities.has(event.communityUri)
     // Global events (no community, no audience) are bridge-wide notices.
-    return true
+    return false
   }
 }

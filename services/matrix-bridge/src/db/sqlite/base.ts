@@ -37,6 +37,11 @@ export class SqliteBase {
 
       CREATE INDEX IF NOT EXISTS idx_device_sessions_did ON device_sessions(did);
 
+      CREATE TABLE IF NOT EXISTS matrix_poll_cursors (
+        room_id TEXT PRIMARY KEY,
+        cursor TEXT NOT NULL
+      );
+
       CREATE TABLE IF NOT EXISTS as_transactions (
         txn_id TEXT PRIMARY KEY,
         received_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -69,6 +74,8 @@ export class SqliteBase {
       );
 
       CREATE INDEX IF NOT EXISTS idx_membership_state_community ON community_membership_state(community_uri);
+
+      UPDATE user_matrix_map SET password = '' WHERE password <> '';
 
       CREATE TABLE IF NOT EXISTS chamber_assignment (
         community_uri TEXT NOT NULL,
@@ -468,5 +475,17 @@ export class SqliteBase {
 
   close(): void {
     this.db.close()
+  }
+
+  beginTransaction(): void {
+    this.db.exec('BEGIN IMMEDIATE')
+  }
+
+  commitTransaction(): void {
+    this.db.exec('COMMIT')
+  }
+
+  rollbackTransaction(): void {
+    this.db.exec('ROLLBACK')
   }
 }

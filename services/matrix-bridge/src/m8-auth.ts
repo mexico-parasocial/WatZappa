@@ -31,6 +31,7 @@ export async function authenticateM8(
   const url = `${config.m8BaseUrl.replace(/\/$/, '')}/sessions/me`
   const response = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(10_000),
   })
   if (!response.ok) {
     throw new HttpError(401, 'Invalid M8 bearer token')

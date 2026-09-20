@@ -1,18 +1,13 @@
 import type { Logger } from 'pino'
 import type { ChatModerationEngine } from './chat-moderation.js'
-import type { EventBus } from './events/bus.js'
 import type { Config } from './config.js'
 import type { IBridgeDatabase } from './db/index.js'
+import type { EventBus } from './events/bus.js'
+import { ingestMatrixEvents } from './matrix-ingestion.js'
 import type { MatrixAdminClient } from './matrix.js'
 
-const DEFAULT_POLL_INTERVAL_MS = 30_000
+const DEFAULT_POLL_INTERVAL_MS = 300_000
 const MAX_EVENTS_PER_POLL = 200
-
-interface RoomPollState {
-  roomId: string
-  nextBatch?: string
-  lastPollAt: number
-}
 
 export class MatrixSyncPoller {
   private events?: EventBus
@@ -22,7 +17,7 @@ export class MatrixSyncPoller {
   private log: Logger
   private pollIntervalMs: number
   private timer: NodeJS.Timeout | null = null
-  private roomStates: Map<string, RoomPollState> = new Map()
+  private polling = false
   private isRunning = false
 
   constructor(
@@ -73,102 +68,59 @@ export class MatrixSyncPoller {
   }
 
   private async pollAllRooms(): Promise<void> {
-    const roomIds = await this.db.getAllRoomIds()
-    if (roomIds.length === 0) {
-      this.log.debug('No rooms to poll')
-      return
-    }
-
-    this.log.debug({ roomCount: roomIds.length }, 'Polling rooms')
-
-    for (const roomId of roomIds) {
-      try {
-        await this.pollRoom(roomId)
-      } catch (err: any) {
-        this.log.error({ err, roomId }, 'Failed to poll room')
+    if (this.polling) return
+    this.polling = true
+    try {
+      const roomIds = await this.db.getAllRoomIds()
+      if (roomIds.length === 0) {
+        this.log.debug('No rooms to poll')
+        return
       }
+
+      this.log.debug({ roomCount: roomIds.length }, 'Polling rooms')
+
+      for (const roomId of roomIds) {
+        try {
+          await this.pollRoom(roomId)
+        } catch (err: any) {
+          this.log.error({ err, roomId }, 'Failed to poll room')
+        }
+      }
+    } finally {
+      this.polling = false
     }
   }
 
   private async pollRoom(roomId: string): Promise<void> {
-    const state = this.roomStates.get(roomId) ?? { roomId, lastPollAt: 0 }
-    const now = Date.now()
-
-    // On first poll, only fetch last 24h to avoid backfilling too much
-    const from = state.nextBatch
-    const to = from ? undefined : String(now)
-
-    const result = await this.matrix.getRoomMessages(roomId, {
-      from,
-      to,
-      limit: MAX_EVENTS_PER_POLL,
-      dir: 'b',
-    })
-
-    let newEvents = 0
-    for (const event of result.chunk) {
-      if (!event.event_id) continue
-
-      // Skip if already processed
-      if (await this.db.eventExists(event.event_id)) {
-        continue
-      }
-
-      const inserted = await this.db.insertMatrixEvent({
-        roomId,
-        eventId: event.event_id,
-        sender: event.sender,
-        type: event.type,
-        content: '',
-        originServerTs: event.origin_server_ts,
+    let cursor = await this.db.getMatrixPollCursor(roomId)
+    for (let page = 0; page < 10; page++) {
+      const result = await this.matrix.getRoomMessages(roomId, {
+        from: cursor,
+        limit: MAX_EVENTS_PER_POLL,
+        dir: cursor ? 'f' : 'b',
       })
-
-      if (inserted) {
-        newEvents++
-
-        // Record participation metadata only. Content stays in Matrix/Synapse.
-        if (
-          event.type === 'm.room.message' ||
-          event.type === 'm.room.encrypted'
-        ) {
-          const did = await this.db.getDidForMxid(event.sender)
-          const community = await this.db.getCommunityByRoomId(roomId)
-          if (did && community) {
-            await this.chatMod.recordMessage(
-              did,
-              community.communityUri,
-              roomId,
-            )
-            this.log.debug(
-              { did, roomId, eventId: event.event_id },
-              'Recorded message',
-            )
-          }
-        }
-      }
-    }
-
-    if (newEvents > 0) {
-      this.log.info(
-        { roomId, newEvents, totalChunk: result.chunk.length },
-        'Ingested Matrix events',
+      await ingestMatrixEvents(
+        this.db,
+        result.chunk.map((event) => ({
+          roomId,
+          eventId: event.event_id,
+          sender: event.sender,
+          type: event.type,
+          originServerTs: event.origin_server_ts,
+        })),
+        this.events,
       )
+      // @NOTE first poll bootstraps the latest page; subsequent polls move forward.
+      const next = cursor ? result.end : result.start
+      if (next) await this.db.setMatrixPollCursor(roomId, next)
+      if (
+        !next ||
+        next === cursor ||
+        !cursor ||
+        result.chunk.length < MAX_EVENTS_PER_POLL
+      )
+        return
+      cursor = next
     }
-
-    if (newEvents > 0 && this.events) {
-      // Aggregate, content-free notice: clients recompute exact unread via
-      // GET /api/unread. Community-wide audience; the route layer scopes it.
-      const community = await this.db.getCommunityByRoomId(roomId)
-      await this.events.publish({
-        type: 'chat.unread',
-        communityUri: community?.communityUri ?? null,
-        payload: { roomId, count: newEvents },
-      })
-    }
-
-    // Update state
-    state.nextBatch = result.end
-    state.lastPollAt = now
-    this.roomStates.set(roomId, state)
   }
 }
