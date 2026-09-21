@@ -12428,6 +12428,64 @@ export class GetParaIntensitiesRequest extends Message<GetParaIntensitiesRequest
 }
 
 /**
+ * @generated from message bsky.GetParaDeliberationsRequest
+ */
+export class GetParaDeliberationsRequest extends Message<GetParaDeliberationsRequest> {
+  /**
+   * @generated from field: string proposal = 1;
+   */
+  proposal = "";
+
+  /**
+   * Whose own weighting to include on each statement, so the client can show
+   * the control already set. Empty for a logged-out viewer.
+   *
+   * @generated from field: string viewer = 2;
+   */
+  viewer = "";
+
+  /**
+   * @generated from field: int32 limit = 3;
+   */
+  limit = 0;
+
+  /**
+   * @generated from field: string cursor = 4;
+   */
+  cursor = "";
+
+  constructor(data?: PartialMessage<GetParaDeliberationsRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaDeliberationsRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "proposal", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "viewer", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 4, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaDeliberationsRequest {
+    return new GetParaDeliberationsRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaDeliberationsRequest {
+    return new GetParaDeliberationsRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaDeliberationsRequest {
+    return new GetParaDeliberationsRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaDeliberationsRequest | PlainMessage<GetParaDeliberationsRequest> | undefined, b: GetParaDeliberationsRequest | PlainMessage<GetParaDeliberationsRequest> | undefined): boolean {
+    return proto3.util.equals(GetParaDeliberationsRequest, a, b);
+  }
+}
+
+/**
  * @generated from message bsky.GetParaDelegationsRequest
  */
 export class GetParaDelegationsRequest extends Message<GetParaDelegationsRequest> {

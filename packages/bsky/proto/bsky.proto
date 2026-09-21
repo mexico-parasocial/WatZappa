@@ -1779,6 +1779,14 @@ message GetParaIntensitiesRequest {
   int32 limit = 2;
   string cursor = 3;
 }
+message GetParaDeliberationsRequest {
+  string proposal = 1;
+  // Whose own weighting to include on each statement, so the client can show
+  // the control already set. Empty for a logged-out viewer.
+  string viewer = 2;
+  int32 limit = 3;
+  string cursor = 4;
+}
 message GetParaDelegationsRequest {
   string delegator = 1;
   string delegate = 2;
@@ -2657,6 +2665,7 @@ service Service {
   rpc GetParaPostMeta(GetParaPostMetaRequest) returns (GetParaPostMetaResponse);
   rpc GetParaPolicyTally(GetParaPolicyTallyRequest) returns (GetParaPolicyTallyResponse);
   rpc GetParaVotes(GetParaVotesRequest) returns (ParaJsonPageResponse);
+  rpc GetParaDeliberations(GetParaDeliberationsRequest) returns (ParaJsonPageResponse);
   rpc GetParaIntensities(GetParaIntensitiesRequest) returns (ParaJsonPageResponse);
   rpc GetParaDelegations(GetParaDelegationsRequest) returns (ParaJsonPageResponse);
   rpc GetParaTallySimulation(GetParaTallySimulationRequest) returns (GetParaTallySimulationResponse);
