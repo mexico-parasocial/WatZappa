@@ -17,6 +17,13 @@ export enum Gate {
   KnownLikersFeedEnable = 'known_likers:feed:enable',
   TrendingTopicsV2 = 'trending_topics_v2',
 
+  /**
+   * QV-LD: the quadratic tally, its audit trail and the ballot listings it
+   * reads. In development and off by default — the canonical product does not
+   * depend on it. See `src/api/com/para/community/quadratic-voting-gate.ts`.
+   */
+  ParaQuadraticVotingEnable = 'para:quadratic_voting:enable',
+
   // temp
   AATest = 'aa-test-appview',
 }
