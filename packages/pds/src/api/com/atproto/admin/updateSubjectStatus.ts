@@ -1,7 +1,7 @@
 import { parseCid } from '@atproto/lex-data'
 import { AtUri } from '@atproto/syntax'
-import { InvalidRequestError, Server } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 
 export default function (server: Server, ctx: AppContext) {
@@ -21,7 +21,7 @@ export default function (server: Server, ctx: AppContext) {
           await ctx.accountManager.takedownAccount(subject.did, takedown)
         } else if (com.atproto.repo.strongRef.$isTypeOf(subject)) {
           const uri = new AtUri(subject.uri)
-          await ctx.actorStore.transact(uri.hostname, async (store) => {
+          await ctx.actorStore.transact(uri.did, async (store) => {
             await store.record.updateRecordTakedownStatus(uri, takedown)
           })
         } else if (com.atproto.admin.defs.repoBlobRef.$isTypeOf(subject)) {

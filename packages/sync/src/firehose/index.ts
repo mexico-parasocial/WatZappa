@@ -35,6 +35,17 @@ export type FirehoseOptions = ClientOptions & {
 
   handleEvent: (evt: Event) => void | Promise<void>
   onError: (err: Error) => void
+  /**
+   * Connection failures never reach onError — they only surface here, once
+   * per reconnect attempt (`initialSetup` = first attempt of the cycle).
+   * Omitting it makes an unreachable or mis-URL'd service fail in total
+   * silence.
+   */
+  onReconnectError?: (
+    error: unknown,
+    attempt: number,
+    initialSetup: boolean,
+  ) => void
   getCursor?: () => number | undefined | Promise<number | undefined>
 
   runner?: EventRunner // should only set getCursor *or* runner

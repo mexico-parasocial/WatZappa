@@ -1,20 +1,26 @@
-import * as crypto from '@atproto/crypto'
-import { Cid, parseCid } from '@atproto/lex-data'
-import { BlobStore, Repo, WriteOpAction, formatDataKey } from '@atproto/repo'
-import { AtUri } from '@atproto/syntax'
+import type * as crypto from '@atproto/crypto'
+import type { DidString } from '@atproto/lex'
+import { type Cid, parseCid } from '@atproto/lex-data'
+import {
+  type BlobStore,
+  Repo,
+  WriteOpAction,
+  formatDataKey,
+} from '@atproto/repo'
+import type { AtUri } from '@atproto/syntax'
 import { InvalidRequestError } from '@atproto/xrpc-server'
-import { BackgroundQueue } from '../../background.js'
+import type { BackgroundQueue } from '../../background.js'
 import { createWriteToOp, writeToOp } from '../../repo/index.js'
 import {
   BadCommitSwapError,
   BadRecordSwapError,
-  CommitDataWithOps,
-  CommitOp,
-  PreparedCreate,
-  PreparedWrite,
+  type CommitDataWithOps,
+  type CommitOp,
+  type PreparedCreate,
+  type PreparedWrite,
 } from '../../repo/types.js'
 import { BlobTransactor } from '../blob/transactor.js'
-import { ActorDb } from '../db/index.js'
+import type { ActorDb } from '../db/index.js'
 import { RecordTransactor } from '../record/transactor.js'
 import { RepoReader } from './reader.js'
 import { SqlRepoTransactor } from './sql-repo-transactor.js'
@@ -27,14 +33,14 @@ export class RepoTransactor extends RepoReader {
   constructor(
     public db: ActorDb,
     public blobstore: BlobStore,
-    public did: string,
+    public did: DidString,
     public signingKey: crypto.Keypair,
     public backgroundQueue: BackgroundQueue,
     public now: string = new Date().toISOString(),
   ) {
-    super(db, blobstore)
+    super(db, blobstore, did)
     this.blob = new BlobTransactor(db, blobstore, backgroundQueue)
-    this.record = new RecordTransactor(db, blobstore)
+    this.record = new RecordTransactor(db, did, blobstore)
     this.storage = new SqlRepoTransactor(db, did, now)
   }
 

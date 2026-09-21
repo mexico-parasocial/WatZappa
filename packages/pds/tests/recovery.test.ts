@@ -1,13 +1,16 @@
-// @ts-nocheck
 import fs from 'node:fs/promises'
 import * as ui8 from 'uint8arrays'
-import AtpAgent from '@atproto/api'
+import type AtpAgent from '@atproto/api'
 import { renameIfExists, rmIfExists } from '@atproto/common'
-import { SeedClient, TestNetworkNoAppView, basicSeed } from '@atproto/dev-env'
+import {
+  type SeedClient,
+  TestNetworkNoAppView,
+  basicSeed,
+} from '@atproto/dev-env'
 // import package to avoid type errors from circular dep with dev-env
 import { type AppContext, scripts } from '@atproto/pds'
 import { verifyRepoCar } from '@atproto/repo'
-import { DidString } from '@atproto/syntax'
+import type { DidString } from '@atproto/syntax'
 
 describe('recovery', () => {
   let network: TestNetworkNoAppView
@@ -32,10 +35,10 @@ describe('recovery', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
-  const getStats = (did: string) => {
+  const getStats = (did: DidString) => {
     return ctx.actorStore.read(did, async (store) => {
       const recordCount = await store.record.recordCount()
       const root = await store.repo.storage.getRootDetailed()
@@ -47,7 +50,7 @@ describe('recovery', () => {
     })
   }
 
-  const getRev = (did: string) => {
+  const getRev = (did: DidString) => {
     return ctx.actorStore.read(did, async (store) => {
       const root = await store.repo.storage.getRootDetailed()
       return root.rev

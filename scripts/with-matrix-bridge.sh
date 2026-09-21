@@ -19,7 +19,10 @@
 #   MATRIX_ADMIN_TOKEN     auto-provisioned for the local stack when unset
 #                          (scripts/get-matrix-dev-token.sh); placeholder if
 #                          no Synapse is reachable
-#   PDS_FIREHOSE_URL       default ws://localhost:2583/... (the dev PDS)
+#   PDS_FIREHOSE_URL       default ws://localhost:2583 (the dev PDS). Service
+#                          base only — the consumer appends /xrpc/... itself.
+#   PLC_URL                default http://localhost:2582 — the dev-env mints
+#                          DIDs on its own PLC; the public directory 404s them.
 
 set -euo pipefail
 
@@ -107,7 +110,8 @@ start_bridge() {
     cd "$BRIDGE_DIR"
     export NODE_ENV=development
     export PORT="$BRIDGE_PORT"
-    export PDS_FIREHOSE_URL="${PDS_FIREHOSE_URL:-ws://localhost:2583/xrpc/com.atproto.sync.subscribeRepos}"
+    export PDS_FIREHOSE_URL="${PDS_FIREHOSE_URL:-ws://localhost:2583}"
+    export PLC_URL="${PLC_URL:-http://localhost:2582}"
     export MATRIX_HOMESERVER_URL="${MATRIX_HOMESERVER_URL:-http://localhost:8008}"
     export MATRIX_ADMIN_TOKEN
     export BRIDGE_DB_PATH

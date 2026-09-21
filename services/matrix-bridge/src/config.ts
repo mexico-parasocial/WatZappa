@@ -39,12 +39,20 @@ function env(key: string, fallback?: string): string {
   return val
 }
 
+/**
+ * The Firehose appends `/xrpc/com.atproto.sync.subscribeRepos` to this URL
+ * itself; a full subscription URL here doubles the path and the PDS 404s
+ * every upgrade attempt (retried silently forever). Accept both shapes.
+ */
+function firehoseServiceBase(url: string): string {
+  return url.replace(/\/xrpc\/com\.atproto\.sync\.subscribeRepos\/?$/, '')
+}
+
 export function loadConfig(): Config {
   return {
     plcUrl: process.env.PLC_URL || undefined,
-    pdsFirehoseUrl: env(
-      'PDS_FIREHOSE_URL',
-      'wss://pds.para.social/xrpc/com.atproto.sync.subscribeRepos',
+    pdsFirehoseUrl: firehoseServiceBase(
+      env('PDS_FIREHOSE_URL', 'wss://pds.para.social'),
     ),
     matrixHomeserverUrl: env('MATRIX_HOMESERVER_URL', 'http://synapse:8008'),
     matrixPublicHomeserverUrl: env(

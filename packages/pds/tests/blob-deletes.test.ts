@@ -1,8 +1,8 @@
 // @ts-nocheck
-import { AtpAgent, BlobRef } from '@atproto/api'
-import { SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
+import type { AtpAgent, BlobRef } from '@atproto/api'
+import { type SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
-import { AppContext } from '../src/index.js'
+import type { AppContext } from '../src/index.js'
 
 describe('blob deletes', () => {
   let network: TestNetworkNoAppView
@@ -39,7 +39,7 @@ describe('blob deletes', () => {
     await network?.close()
   })
 
-  const getDbBlobsForDid = (did: string) => {
+  const getDbBlobsForDid = (did: DidString) => {
     return ctx.actorStore.read(did, (store) => store.repo.blob.getBlobCids())
   }
 

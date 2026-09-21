@@ -51,7 +51,13 @@ export class FirehoseConsumer {
     this.metrics = metrics
     this.log = log
 
-    const idResolver = new IdResolver({ plcUrl: config.plcUrl })
+    // PLC_URL is a dev-mode escape hatch: local PLCs (http://localhost:2582)
+    // are unreachable through the SSRF-guarded default fetch (allowHttp off,
+    // private IPs off), so an explicit opt-out supplies an unguarded fetch.
+    const idResolver = new IdResolver({
+      plcUrl: config.plcUrl,
+      fetch: config.plcUrl ? globalThis.fetch : undefined,
+    })
 
     this.firehose = new Firehose({
       service: config.pdsFirehoseUrl,
@@ -67,6 +73,15 @@ export class FirehoseConsumer {
       handleEvent: (evt) => this.handleEvent(evt),
       onError: (err) => {
         this.log.error({ err }, 'Firehose error')
+      },
+      // Connection failures never reach onError: without this, a wrong URL or
+      // an unreachable PDS retries forever with zero log output (exactly the
+      // failure mode that left this consumer silently indexing nothing).
+      onReconnectError: (err, attempt, initialSetup) => {
+        this.log.warn(
+          { err, attempt, initialSetup, service: config.pdsFirehoseUrl },
+          'Firehose connection failed, reconnecting',
+        )
       },
       getCursor: () => this.initialCursor ?? undefined,
     })

@@ -1,5 +1,6 @@
 import type express from 'express'
-import { type LexValue, l, lexParseJsonBytes } from '@atproto/lex'
+import { type DidString, type LexValue, l } from '@atproto/lex'
+import { lexParse } from '@atproto/lex-json'
 import type { HeadersMap } from '@atproto/xrpc'
 import type {
   HandlerPipeThrough,
@@ -49,7 +50,7 @@ export const pipethroughReadAfterWrite = async <
   HandlerResponse<l.InferMethodOutputBody<M>> | HandlerPipeThrough
 > => {
   const { req, auth } = reqCtx
-  const requester = auth.credentials.did
+  const requester = auth.credentials.did as DidString
   const method = l.getMain(ns)
 
   const streamRes = await pipethrough(ctx, req, { iss: requester })
@@ -77,7 +78,7 @@ export const pipethroughReadAfterWrite = async <
         ctx.cfg.proxy.maxResponseSize,
       ))
 
-      const lex = lexParseJsonBytes(buffer, { strict: false })
+      const lex = lexParse(buffer.toString('utf8'), { strict: false })
 
       const result = method.output.schema.safeValidate(lex, { strict: false })
 

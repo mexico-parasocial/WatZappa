@@ -211,7 +211,8 @@ services:
     container_name: para-matrix-bridge
     restart: unless-stopped
     environment:
-      PDS_FIREHOSE_URL: ${PDS_FIREHOSE_URL:-wss://pds.para.social/xrpc/com.atproto.sync.subscribeRepos}
+      # Service base only — the consumer appends /xrpc/com.atproto.sync.subscribeRepos
+      PDS_FIREHOSE_URL: ${PDS_FIREHOSE_URL:-wss://pds.para.social}
       MATRIX_HOMESERVER_URL: ${MATRIX_HOMESERVER_URL:-http://synapse:8008}
       MATRIX_ADMIN_TOKEN: ${MATRIX_ADMIN_TOKEN}
       MATRIX_APPSERVICE_TOKEN: ${MATRIX_APPSERVICE_TOKEN:-}

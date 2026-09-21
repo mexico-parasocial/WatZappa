@@ -1,10 +1,13 @@
 // @ts-nocheck
-import { Selectable } from 'kysely'
-import { CID } from 'multiformats/cid'
-import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
-import { BackgroundQueue } from '../../background.js'
-import { Database } from '../../db/index.js'
-import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
+import type { Selectable } from 'kysely'
+import type { Cid } from '@atproto/lex'
+import { type AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
+import type { BackgroundQueue } from '../../background.js'
+import type {
+  DatabaseSchema,
+  DatabaseSchemaType,
+} from '../../db/database-schema.js'
+import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
 
 interface DelegationRecord {
@@ -30,10 +33,13 @@ const lexId = 'com.para.community.delegation'
 const insertFn = async (
   db: DatabaseSchema,
   uri: AtUri,
-  cid: CID,
+  cid: Cid,
   obj: DelegationRecord,
   timestamp: string,
 ): Promise<ParaQvldDelegation | null> => {
+  // @NOTE a remote repository may name any delegator in its payload.
+  if (obj.delegator !== uri.host || obj.delegate === uri.host) return null
+
   const inserted = await db
     .insertInto('para_qvld_delegation')
     .values({
