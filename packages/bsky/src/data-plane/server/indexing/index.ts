@@ -1,5 +1,5 @@
 import { Selectable, sql } from 'kysely'
-import { DAY, HOUR } from '@atproto/common'
+import { DAY, HOUR, ballotWriteRefusal } from '@atproto/common'
 import { IdResolver, getPds } from '@atproto/identity'
 import { Cid, l, parseCid, xrpc, xrpcSafe } from '@atproto/lex'
 import {
@@ -48,6 +48,8 @@ import * as ParaQvlCivicTreeVote from './plugins/para-qvl-civic-tree-vote.js'
 import * as ParaQvlCivicTree from './plugins/para-qvl-civic-tree.js'
 import * as ParaQvlDelegation from './plugins/para-qvl-delegation.js'
 import * as ParaQvlIntensity from './plugins/para-qvl-intensity.js'
+import * as ParaDeliberationStatement from './plugins/para-deliberation-statement.js'
+import * as ParaDeliberationVote from './plugins/para-deliberation-vote.js'
 import * as ParaQvlVote from './plugins/para-qvl-vote.js'
 import * as ParaStatus from './plugins/para-status.js'
 import * as Postgate from './plugins/post-gate.js'
@@ -101,6 +103,8 @@ export class IndexingService {
     paraQvlDelegation: ParaQvlDelegation.PluginType
     paraQvlIntensity: ParaQvlIntensity.PluginType
     paraQvlVote: ParaQvlVote.PluginType
+    paraDeliberationStatement: ParaDeliberationStatement.PluginType
+    paraDeliberationVote: ParaDeliberationVote.PluginType
     paraStatus: ParaStatus.PluginType
     cabildeo: Cabildeo.PluginType
     cabildeoPosition: CabildeoPosition.PluginType
@@ -183,6 +187,14 @@ export class IndexingService {
       paraQvlDelegation: ParaQvlDelegation.makePlugin(this.db, this.background),
       paraQvlIntensity: ParaQvlIntensity.makePlugin(this.db, this.background),
       paraQvlVote: ParaQvlVote.makePlugin(this.db, this.background),
+      paraDeliberationStatement: ParaDeliberationStatement.makePlugin(
+        this.db,
+        this.background,
+      ),
+      paraDeliberationVote: ParaDeliberationVote.makePlugin(
+        this.db,
+        this.background,
+      ),
       paraStatus: ParaStatus.makePlugin(this.db, this.background),
       cabildeo: Cabildeo.makePlugin(this.db, this.background),
       cabildeoPosition: CabildeoPosition.makePlugin(this.db, this.background),
@@ -222,6 +234,18 @@ export class IndexingService {
     timestamp: string,
     opts?: { disableNotifs?: boolean; disableLabels?: boolean },
   ) {
+    // @NOTE the PARA ballot policy applies to any origin, not just repos this
+    // network hosts: a ballot written by some other PDS must not be aggregated
+    // into a queryable who-voted-what table here either. Deletes still index, so
+    // an author removing an old ballot removes it from us too.
+    const ballotRefusal = ballotWriteRefusal(uri.collection, obj)
+    if (ballotRefusal) {
+      subLogger.debug(
+        { uri: uri.toString(), reason: ballotRefusal },
+        'skipping indexing of refused ballot record',
+      )
+      return
+    }
     this.db.assertNotTransaction()
     return this.db.transaction(async (txn) => {
       const indexingTx = this.transact(txn)
@@ -560,6 +584,14 @@ export class IndexingService {
       .execute()
     await this.db.db
       .deleteFrom('para_qvld_civicTree_statement')
+      .where('creator', '=', did)
+      .execute()
+    await this.db.db
+      .deleteFrom('para_deliberation_vote')
+      .where('creator', '=', did)
+      .execute()
+    await this.db.db
+      .deleteFrom('para_deliberation_statement')
       .where('creator', '=', did)
       .execute()
     await this.db.db

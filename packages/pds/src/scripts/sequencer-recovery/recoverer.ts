@@ -23,7 +23,12 @@ import {
   prepareDelete,
   prepareUpdate,
 } from '../../repo/index.js'
-import { AccountEvt, CommitEvt, SeqEvt, Sequencer } from '../../sequencer/index.js'
+import {
+  AccountEvt,
+  CommitEvt,
+  SeqEvt,
+  Sequencer,
+} from '../../sequencer/index.js'
 import { RecoveryDb } from './recovery-db.js'
 import { UserQueues } from './user-queues.js'
 
@@ -251,6 +256,9 @@ const parseCommitEvt = async (
       if (!recordBytes) return undefined
       const record = cborToLexRecord(recordBytes)
 
+      // @NOTE `replay` waives the PARA ballot freeze: these ops were already
+      // committed and sequenced, and dropping one here would diverge the
+      // recovered repo from its commit.
       if (op.action === 'create') {
         return prepareCreate({
           did,
@@ -258,6 +266,7 @@ const parseCommitEvt = async (
           rkey,
           record,
           validate: false,
+          replay: true,
         })
       } else {
         return prepareUpdate({
@@ -266,6 +275,7 @@ const parseCommitEvt = async (
           rkey,
           record,
           validate: false,
+          replay: true,
         })
       }
     }),
