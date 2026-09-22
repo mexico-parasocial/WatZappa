@@ -1,0 +1,143 @@
+---
+title: com.para.raq.assessment
+description: Reference for the com.para.raq.assessment lexicon
+---
+**Lexicon Version:** 1
+
+## Definitions
+
+<a name="main"></a>
+### `main`
+
+**Type:** `record`
+
+A user's completed RAQ (Rightfully Asked Questions) assessment.
+
+**Record Key:** `tid`
+
+**Record Properties:**
+
+| Name | Type | Req'd  | Description | Constraints |
+|------|------|----------|-------------|-------------|
+| `answers` | Array of [`#answer`](#answer) | ✅  | Individual question answers keyed by question id |  |
+| `results` | Array of [`com.para.raq.defs#axisResult`]([[com-para-raq-defs|com.para.raq.defs#axisResult]]) | ✅  | Per-axis normalized scores |  |
+| `compass` | [`com.para.raq.defs#compassPosition`]([[com-para-raq-defs|com.para.raq.defs#compassPosition]]) | ✅  | Political compass position derived from results |  |
+| `ideology` | [`com.para.raq.defs#ideologyMatch`]([[com-para-raq-defs|com.para.raq.defs#ideologyMatch]]) | ✅  | Primary ideology archetype match |  |
+| `secondaryIdeology` | [`com.para.raq.defs#ideologyMatch`]([[com-para-raq-defs|com.para.raq.defs#ideologyMatch]]) | ❌  |  |  |
+| `partyMatches` | Array of [`com.para.raq.defs#partyMatch`]([[com-para-raq-defs|com.para.raq.defs#partyMatch]]) | ❌  | Political party alignment percentages |  |
+| `isPublic` | `boolean` | ❌  | Whether this assessment is visible on the user's profile | Default: `false` |
+| `completedAt` | `string` | ✅  |  | Format: `datetime` |
+| `version` | `string` | ❌  | Schema version of the RAQ questionnaire | Max Length: 16 |
+
+---
+
+<a name="answer"></a>
+### `answer`
+
+**Type:** `object`
+
+**Properties:**
+
+| Name | Type | Req'd  | Description | Constraints |
+|------|------|----------|-------------|-------------|
+| `questionId` | `string` | ✅  |  | Max Length: 16 |
+| `value` | `integer` | ✅  |  | Min: -3<br/>Max: 3 |
+
+---
+
+## Lexicon Source
+```json
+{
+  "lexicon": 1,
+  "id": "com.para.raq.assessment",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A user's completed RAQ (Rightfully Asked Questions) assessment.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "answers",
+          "results",
+          "compass",
+          "ideology",
+          "completedAt"
+        ],
+        "properties": {
+          "answers": {
+            "type": "array",
+            "description": "Individual question answers keyed by question id",
+            "items": {
+              "type": "ref",
+              "ref": "#answer"
+            }
+          },
+          "results": {
+            "type": "array",
+            "description": "Per-axis normalized scores",
+            "items": {
+              "type": "ref",
+              "ref": "com.para.raq.defs#axisResult"
+            }
+          },
+          "compass": {
+            "type": "ref",
+            "ref": "com.para.raq.defs#compassPosition",
+            "description": "Political compass position derived from results"
+          },
+          "ideology": {
+            "type": "ref",
+            "ref": "com.para.raq.defs#ideologyMatch",
+            "description": "Primary ideology archetype match"
+          },
+          "secondaryIdeology": {
+            "type": "ref",
+            "ref": "com.para.raq.defs#ideologyMatch"
+          },
+          "partyMatches": {
+            "type": "array",
+            "description": "Political party alignment percentages",
+            "items": {
+              "type": "ref",
+              "ref": "com.para.raq.defs#partyMatch"
+            }
+          },
+          "isPublic": {
+            "type": "boolean",
+            "description": "Whether this assessment is visible on the user's profile",
+            "default": false
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "version": {
+            "type": "string",
+            "description": "Schema version of the RAQ questionnaire",
+            "maxLength": 16
+          }
+        }
+      }
+    },
+    "answer": {
+      "type": "object",
+      "required": [
+        "questionId",
+        "value"
+      ],
+      "properties": {
+        "questionId": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "value": {
+          "type": "integer",
+          "minimum": -3,
+          "maximum": 3
+        }
+      }
+    }
+  }
+}
+```

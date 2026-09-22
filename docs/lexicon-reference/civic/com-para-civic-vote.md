@@ -1,0 +1,118 @@
+---
+title: com.para.civic.vote
+description: Reference for the com.para.civic.vote lexicon
+---
+**Lexicon Version:** 1
+
+## Definitions
+
+<a name="main"></a>
+### `main`
+
+**Type:** `record`
+
+A cabildeo ballot. PUBLIC AND ATTRIBUTABLE: the record is written to the voter's own repo, signed by their DID and sequenced to the firehose permanently, so who voted which option is published and cannot be unpublished. That is accepted for cabildeo votes and only for those (OD-7 §5c), which the PDS enforces: a write is refused unless `subjectType` is "cabildeo" and `selectedOption` is set, and refused outright if it carries `signal` or `delegatedFrom`. Those two fields remain defined for the records already written; a signal ballot or a named delegation needs the replacement ballot of OD-7 §5a/§5b, not this record.
+
+**Record Key:** `tid`
+
+**Record Properties:**
+
+| Name | Type | Req'd  | Description | Constraints |
+|------|------|----------|-------------|-------------|
+| `subject` | `string` | ❌  | The proposal, policy, matter, or cabildeo record being voted on. | Format: `at-uri` |
+| `subjectType` | `string` | ❌  | Semantic type for clients and indexers. Only "cabildeo" is accepted on write; the other values are carried by records written before OD-7 §5c. | Known Values: `cabildeo`, `policy`, `matter`, `governance` |
+| `cabildeo` | `string` | ❌  |  | Format: `at-uri` |
+| `selectedOption` | `integer` | ❌  |  | Min: 0 |
+| `signal` | `integer` | ❌  | NOT ACCEPTED ON WRITE (OD-7 §5c). Weighted consensus signal for policy-style votes: -3 strong opposition, 0 neutral/abstain, +3 strong support. Publishing it here would put the voter's -3..+3 position in their own public repo, which §5b rules out until the replacement ballot exists. | Min: -3<br/>Max: 3 |
+| `reason` | `string` | ❌  | Optional voter rationale for the signal. | Max Length: 1000 |
+| `isDirect` | `boolean` | ✅  |  |  |
+| `delegatedFrom` | Array of `string` | ❌  | NOT ACCEPTED ON WRITE (OD-7 §5c). Publishing it here would put the delegation graph in the delegate's own public repo, which §5b names as more re-identifying than the ballots themselves. | Max Items: 10000 |
+| `voteNullifier` | `string` | ❌  | One-person-one-vote nullifier for this subject, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a. | Max Length: 128 |
+| `eligibilityProofRef` | `string` | ❌  | Opaque reference to the m8 eligibility/nullifier proof used to cast this vote. | Max Length: 512 |
+| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+
+---
+
+## Lexicon Source
+```json
+{
+  "lexicon": 1,
+  "id": "com.para.civic.vote",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A cabildeo ballot. PUBLIC AND ATTRIBUTABLE: the record is written to the voter's own repo, signed by their DID and sequenced to the firehose permanently, so who voted which option is published and cannot be unpublished. That is accepted for cabildeo votes and only for those (OD-7 §5c), which the PDS enforces: a write is refused unless `subjectType` is \"cabildeo\" and `selectedOption` is set, and refused outright if it carries `signal` or `delegatedFrom`. Those two fields remain defined for the records already written; a signal ballot or a named delegation needs the replacement ballot of OD-7 §5a/§5b, not this record.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "isDirect",
+          "createdAt"
+        ],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The proposal, policy, matter, or cabildeo record being voted on."
+          },
+          "subjectType": {
+            "type": "string",
+            "knownValues": [
+              "cabildeo",
+              "policy",
+              "matter",
+              "governance"
+            ],
+            "description": "Semantic type for clients and indexers. Only \"cabildeo\" is accepted on write; the other values are carried by records written before OD-7 §5c."
+          },
+          "cabildeo": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "selectedOption": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "signal": {
+            "type": "integer",
+            "minimum": -3,
+            "maximum": 3,
+            "description": "NOT ACCEPTED ON WRITE (OD-7 §5c). Weighted consensus signal for policy-style votes: -3 strong opposition, 0 neutral/abstain, +3 strong support. Publishing it here would put the voter's -3..+3 position in their own public repo, which §5b rules out until the replacement ballot exists."
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Optional voter rationale for the signal."
+          },
+          "isDirect": {
+            "type": "boolean"
+          },
+          "delegatedFrom": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "did"
+            },
+            "maxLength": 10000,
+            "description": "NOT ACCEPTED ON WRITE (OD-7 §5c). Publishing it here would put the delegation graph in the delegate's own public repo, which §5b names as more re-identifying than the ballots themselves."
+          },
+          "voteNullifier": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "One-person-one-vote nullifier for this subject, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a."
+          },
+          "eligibilityProofRef": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Opaque reference to the m8 eligibility/nullifier proof used to cast this vote."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}
+```

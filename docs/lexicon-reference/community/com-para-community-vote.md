@@ -1,0 +1,89 @@
+---
+title: com.para.community.vote
+description: Reference for the com.para.community.vote lexicon
+---
+**Lexicon Version:** 1
+
+## Definitions
+
+<a name="main"></a>
+### `main`
+
+**Type:** `record`
+
+DEPRECATED 2026-09-18 (ballot freeze E0). Do not write this record. `voter` and `signal` are both REQUIRED, and the record is written to the voter's own public repo, so every ballot publishes who voted what to the firehose, permanently. It is also rewritable by its author via putRecord while its nullifier still verifies, so the signal is not integrity-protected either. The replacement ballot leaves the voter's repo entirely: see WatZappa/docs/OD-7-BALLOT-IDENTITY-REGISTRATION.md §5a/§5b.
+
+**Record Key:** `tid`
+
+**Record Properties:**
+
+| Name | Type | Req'd  | Description | Constraints |
+|------|------|----------|-------------|-------------|
+| `proposal` | `string` | ✅  | URI of the proposal being voted on | Format: `at-uri` |
+| `community` | `string` | ✅  |  | Format: `at-uri` |
+| `voter` | `string` | ✅  |  | Format: `did` |
+| `signal` | `integer` | ✅  | Base political signal: -3 strong against … +3 strong for. 0 = abstain. | Min: -3<br/>Max: 3 |
+| `voteNullifier` | `string` | ❌  | One-person-one-vote nullifier for this proposal, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a. | Max Length: 128 |
+| `eligibilityProofRef` | `string` | ❌  | Opaque reference to the m8 eligibility/nullifier proof used to cast this vote. | Max Length: 512 |
+| `createdAt` | `string` | ❌  |  | Format: `datetime` |
+
+---
+
+## Lexicon Source
+```json
+{
+  "lexicon": 1,
+  "id": "com.para.community.vote",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "DEPRECATED 2026-09-18 (ballot freeze E0). Do not write this record. `voter` and `signal` are both REQUIRED, and the record is written to the voter's own public repo, so every ballot publishes who voted what to the firehose, permanently. It is also rewritable by its author via putRecord while its nullifier still verifies, so the signal is not integrity-protected either. The replacement ballot leaves the voter's repo entirely: see WatZappa/docs/OD-7-BALLOT-IDENTITY-REGISTRATION.md §5a/§5b.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "proposal",
+          "community",
+          "voter",
+          "signal"
+        ],
+        "properties": {
+          "proposal": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "URI of the proposal being voted on"
+          },
+          "community": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "voter": {
+            "type": "string",
+            "format": "did"
+          },
+          "signal": {
+            "type": "integer",
+            "minimum": -3,
+            "maximum": 3,
+            "description": "Base political signal: -3 strong against … +3 strong for. 0 = abstain."
+          },
+          "voteNullifier": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "One-person-one-vote nullifier for this proposal, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a."
+          },
+          "eligibilityProofRef": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Opaque reference to the m8 eligibility/nullifier proof used to cast this vote."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}
+```
