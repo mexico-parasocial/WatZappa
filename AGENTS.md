@@ -67,6 +67,12 @@ For working with that SDK, invoke the focused skills under [.agents/skills/](.ag
 
 ## Architecture notes
 
+- Public cabildeo votes require `verifyCabildeoProof` before PDS preparation and
+  AppView indexing, including foreign repositories. `PARA_CIVIC_VOTE_VERIFIER_URL`
+  is operator configuration; absent/unavailable verification must never fall
+  back to account-only deduplication. This MAC authorization is not anonymous
+  voting. `civic.delegation` carrying `signal` is also refused by the shared policy.
+
 - `packages/bsky/src/governance-lab` is a synthetic reference only. Its
   `g1-follow-signal-v1` policy is provisional; never import it into production
   handlers or treat its publication threshold as an anonymity guarantee.

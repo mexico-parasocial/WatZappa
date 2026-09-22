@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { TID, cidForCbor } from '@atproto/common'
 import { type SeedClient, TestNetwork, usersSeed } from '@atproto/dev-env'
 import { WriteOpAction } from '@atproto/repo'
@@ -72,6 +72,98 @@ maybeDescribe('policy votes are refused', () => {
       .where('subject', '=', subject)
       .execute()
 
+    expect(rows).toHaveLength(0)
+  })
+  it('refuses foreign cabildeo records without issuer authorization', async () => {
+    using transaction = vi.spyOn(network.bsky.sub.indexingSvc.db, 'transaction')
+    const subject = `at://${sc.dids.alice}/com.para.civic.cabildeo/unverified`
+    const record = {
+      $type: 'com.para.civic.vote',
+      subject,
+      cabildeo: subject,
+      subjectType: 'cabildeo',
+      selectedOption: 1,
+      isDirect: true,
+      voteNullifier: 'invented',
+      createdAt: new Date().toISOString(),
+    }
+    await network.bsky.sub.indexingSvc.indexRecord(
+      AtUri.make(sc.dids.alice, record.$type, TID.nextStr()),
+      await cidForCbor(record),
+      record,
+      WriteOpAction.Create,
+      record.createdAt,
+    )
+    expect(transaction).not.toHaveBeenCalled()
+    const rows = await db.db
+      .selectFrom('cabildeo_vote')
+      .selectAll()
+      .where('cabildeo', '=', subject)
+      .execute()
+    expect(rows).toHaveLength(0)
+  })
+
+  it('does not silently drop an issuer outage as a valid or permanently invalid ballot', async () => {
+    const previousUrl = process.env.PARA_CIVIC_VOTE_VERIFIER_URL
+    process.env.PARA_CIVIC_VOTE_VERIFIER_URL = 'https://issuer.invalid/verify'
+    using request = vi
+      .spyOn(globalThis, 'fetch')
+      .mockRejectedValue(new Error('offline'))
+    using transaction = vi.spyOn(network.bsky.sub.indexingSvc.db, 'transaction')
+    const subject = `at://${sc.dids.alice}/com.para.civic.cabildeo/outage`
+    const record = {
+      $type: 'com.para.civic.vote',
+      subject,
+      cabildeo: subject,
+      subjectType: 'cabildeo',
+      selectedOption: 1,
+      isDirect: true,
+      voteNullifier: 'a'.repeat(64),
+      eligibilityProofRef: 'm8:cabildeo:v1:' + 'b'.repeat(43),
+      createdAt: new Date().toISOString(),
+    }
+    try {
+      await expect(
+        network.bsky.sub.indexingSvc.indexRecord(
+          AtUri.make(sc.dids.alice, record.$type, TID.nextStr()),
+          await cidForCbor(record),
+          record,
+          WriteOpAction.Create,
+          record.createdAt,
+        ),
+      ).rejects.toThrow(/verification is unavailable/)
+      expect(request).toHaveBeenCalledOnce()
+      expect(transaction).not.toHaveBeenCalled()
+    } finally {
+      if (previousUrl === undefined)
+        delete process.env.PARA_CIVIC_VOTE_VERIFIER_URL
+      else process.env.PARA_CIVIC_VOTE_VERIFIER_URL = previousUrl
+    }
+  })
+
+  it('refuses the civic delegation signal bypass from a foreign PDS', async () => {
+    const record = {
+      $type: 'com.para.civic.delegation',
+      mode: 'active',
+      cabildeo: `at://${sc.dids.alice}/com.para.civic.cabildeo/signal-bypass`,
+      delegateTo: sc.dids.bob,
+      reason: 'An otherwise indexable synthetic delegation',
+      signal: 2,
+      createdAt: new Date().toISOString(),
+    }
+    const uri = AtUri.make(sc.dids.alice, record.$type, TID.nextStr())
+    await network.bsky.sub.indexingSvc.indexRecord(
+      uri,
+      await cidForCbor(record),
+      record,
+      WriteOpAction.Create,
+      record.createdAt,
+    )
+    const rows = await db.db
+      .selectFrom('cabildeo_delegation')
+      .selectAll()
+      .where('uri', '=', uri.toString())
+      .execute()
     expect(rows).toHaveLength(0)
   })
 })

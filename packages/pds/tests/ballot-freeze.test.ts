@@ -1,3 +1,5 @@
+import { type Server, createServer } from 'node:http'
+import type { AddressInfo } from 'node:net'
 import type { AtpAgent } from '@atproto/api'
 import { FROZEN_BALLOT_COLLECTIONS, TID } from '@atproto/common'
 import { TestNetworkNoAppView } from '@atproto/dev-env'
@@ -12,6 +14,8 @@ const NOT_A_CABILDEO_BALLOT = /accepted only as a cabildeo ballot/
 const frozenRkey = TID.nextStr()
 
 describe('PARA ballot policy', () => {
+  let verifier: Server
+  const previousVerifier = process.env.PARA_CIVIC_VOTE_VERIFIER_URL
   let network: TestNetworkNoAppView
   let agent: AtpAgent
   let did: string
@@ -38,9 +42,26 @@ describe('PARA ballot policy', () => {
   })
 
   beforeAll(async () => {
-    network = await TestNetworkNoAppView.create({
-      dbPostgresSchema: 'ballot_freeze',
+    verifier = createServer((req, res) => {
+      let body = ''
+      req.on('data', (chunk) => {
+        body += chunk
+      })
+      req.on('end', () => {
+        const claim = JSON.parse(body)
+        const valid =
+          claim.actorDid === did &&
+          claim.selectedOption === 1 &&
+          claim.voteNullifier === 'a'.repeat(64) &&
+          claim.eligibilityProofRef === 'm8:cabildeo:v1:' + 'b'.repeat(43)
+        res.writeHead(valid ? 204 : 422).end()
+      })
     })
+    await new Promise<void>((resolve) =>
+      verifier.listen(0, '127.0.0.1', resolve),
+    )
+    process.env.PARA_CIVIC_VOTE_VERIFIER_URL = `http://127.0.0.1:${(verifier.address() as AddressInfo).port}/verify`
+    network = await TestNetworkNoAppView.create({})
     agent = network.pds.getAgent()
     const { data } = await agent.createAccount({
       email: 'voter@test.com',
@@ -55,6 +76,12 @@ describe('PARA ballot policy', () => {
 
   afterAll(async () => {
     await network?.close()
+    await new Promise<void>((resolve, reject) =>
+      verifier?.close((error) => (error ? reject(error) : resolve())),
+    )
+    if (previousVerifier === undefined)
+      delete process.env.PARA_CIVIC_VOTE_VERIFIER_URL
+    else process.env.PARA_CIVIC_VOTE_VERIFIER_URL = previousVerifier
   })
 
   it('refuses to create a com.para.community.vote', async () => {
@@ -156,6 +183,8 @@ describe('PARA ballot policy', () => {
       cabildeo,
       selectedOption: 1,
       isDirect: true,
+      voteNullifier: 'a'.repeat(64),
+      eligibilityProofRef: 'm8:cabildeo:v1:' + 'b'.repeat(43),
       createdAt: new Date().toISOString(),
       ...extra,
     })
@@ -167,6 +196,51 @@ describe('PARA ballot policy', () => {
         record: cabildeoBallot(),
       })
       expect(data.uri).toContain(com.para.civic.vote.$type)
+    })
+
+    it.each([
+      { voteNullifier: undefined },
+      { voteNullifier: 'invented' },
+      { eligibilityProofRef: undefined },
+      { selectedOption: 2 },
+      { eligibilityProofRef: 'm8:cabildeo:v1:' + 'c'.repeat(43) },
+    ])(
+      'rejects unverified direct writes even with schema validation off: %j',
+      async (extra) => {
+        await expect(
+          agent.com.atproto.repo.createRecord({
+            repo: did,
+            collection: com.para.civic.vote.$type,
+            record: cabildeoBallot(extra),
+            validate: false,
+          }),
+        ).rejects.toThrow(/valid cabildeo vote proof/)
+      },
+    )
+
+    it('rejects unverified votes through putRecord and atomic applyWrites', async () => {
+      await expect(
+        agent.com.atproto.repo.putRecord({
+          repo: did,
+          collection: com.para.civic.vote.$type,
+          rkey: TID.nextStr(),
+          record: cabildeoBallot({ voteNullifier: undefined }),
+          validate: false,
+        }),
+      ).rejects.toThrow(/valid cabildeo vote proof/)
+      await expect(
+        agent.com.atproto.repo.applyWrites({
+          repo: did,
+          validate: false,
+          writes: [
+            {
+              $type: 'com.atproto.repo.applyWrites#create',
+              collection: com.para.civic.vote.$type,
+              value: cabildeoBallot({ voteNullifier: undefined }),
+            },
+          ],
+        }),
+      ).rejects.toThrow(/valid cabildeo vote proof/)
     })
 
     it('refuses a policy ballot', async () => {
@@ -209,6 +283,48 @@ describe('PARA ballot policy', () => {
       await expect(attempt).rejects.toThrow(NOT_A_CABILDEO_BALLOT)
     })
   })
+
+  it.each([-3, 0, 3])(
+    'refuses civic delegation signal %s through all write methods',
+    async (signal) => {
+      const record = {
+        $type: 'com.para.civic.delegation',
+        signal,
+        createdAt: new Date().toISOString(),
+      }
+      const collection = 'com.para.civic.delegation'
+      await expect(
+        agent.com.atproto.repo.createRecord({
+          repo: did,
+          collection,
+          record,
+          validate: false,
+        }),
+      ).rejects.toThrow(/cannot publish a signal/)
+      await expect(
+        agent.com.atproto.repo.putRecord({
+          repo: did,
+          collection,
+          rkey: TID.nextStr(),
+          record,
+          validate: false,
+        }),
+      ).rejects.toThrow(/cannot publish a signal/)
+      await expect(
+        agent.com.atproto.repo.applyWrites({
+          repo: did,
+          validate: false,
+          writes: [
+            {
+              $type: 'com.atproto.repo.applyWrites#create',
+              collection,
+              value: record,
+            },
+          ],
+        }),
+      ).rejects.toThrow(/cannot publish a signal/)
+    },
+  )
 
   it('names collections that the lexicons still define', () => {
     // The freeze list is written as string literals because @atproto/common has

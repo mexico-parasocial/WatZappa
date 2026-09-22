@@ -1,22 +1,27 @@
-import { Selectable, sql } from 'kysely'
-import { DAY, HOUR, ballotWriteRefusal } from '@atproto/common'
-import { IdResolver, getPds } from '@atproto/identity'
-import { Cid, l, parseCid, xrpc, xrpcSafe } from '@atproto/lex'
+import { type Selectable, sql } from 'kysely'
 import {
-  VerifiedRepo,
+  DAY,
+  HOUR,
+  ballotWriteRefusal,
+  verifyCabildeoProof,
+} from '@atproto/common'
+import { type IdResolver, getPds } from '@atproto/identity'
+import { type Cid, l, parseCid, xrpc, xrpcSafe } from '@atproto/lex'
+import {
+  type VerifiedRepo,
   WriteOpAction,
   getAndParseRecord,
   readCarWithRoot,
   verifyRepo,
 } from '@atproto/repo'
-import { AtUri, DidString } from '@atproto/syntax'
-import { ParaCacheService } from '../../../cache/para-cache.js'
+import { AtUri, type DidString } from '@atproto/syntax'
+import type { ParaCacheService } from '../../../cache/para-cache.js'
 import { com } from '../../../lexicons.js'
 import { subLogger } from '../../../logger.js'
 import { retryXrpc } from '../../../util/retry.js'
-import { BackgroundQueue } from '../background.js'
-import { Database } from '../db/index.js'
-import { Actor } from '../db/tables/actor.js'
+import type { BackgroundQueue } from '../background.js'
+import type { Database } from '../db/index.js'
+import type { Actor } from '../db/tables/actor.js'
 import * as Block from './plugins/block.js'
 import * as CabildeoDelegation from './plugins/cabildeo-delegation.js'
 import * as CabildeoPosition from './plugins/cabildeo-position.js'
@@ -42,14 +47,14 @@ import * as ParaCommunityMembership from './plugins/para-community-membership.js
 import * as ParaCommunityRelation from './plugins/para-community-relation.js'
 import * as ParaCommunitySharedContentAction from './plugins/para-community-shared-content-action.js'
 import * as ParaCommunitySharedContent from './plugins/para-community-shared-content.js'
+import * as ParaDeliberationStatement from './plugins/para-deliberation-statement.js'
+import * as ParaDeliberationVote from './plugins/para-deliberation-vote.js'
 import * as ParaPostMeta from './plugins/para-post-meta.js'
 import * as ParaPost from './plugins/para-post.js'
 import * as ParaQvlCivicTreeVote from './plugins/para-qvl-civic-tree-vote.js'
 import * as ParaQvlCivicTree from './plugins/para-qvl-civic-tree.js'
 import * as ParaQvlDelegation from './plugins/para-qvl-delegation.js'
 import * as ParaQvlIntensity from './plugins/para-qvl-intensity.js'
-import * as ParaDeliberationStatement from './plugins/para-deliberation-statement.js'
-import * as ParaDeliberationVote from './plugins/para-deliberation-vote.js'
 import * as ParaQvlVote from './plugins/para-qvl-vote.js'
 import * as ParaStatus from './plugins/para-status.js'
 import * as Postgate from './plugins/post-gate.js'
@@ -247,6 +252,12 @@ export class IndexingService {
       return
     }
     this.db.assertNotTransaction()
+    if (
+      uri.collection === 'com.para.civic.vote' &&
+      !(await verifyCabildeoProof(uri.host, obj))
+    ) {
+      return
+    }
     return this.db.transaction(async (txn) => {
       const indexingTx = this.transact(txn)
       const indexer = indexingTx.findIndexerForCollection(uri.collection)

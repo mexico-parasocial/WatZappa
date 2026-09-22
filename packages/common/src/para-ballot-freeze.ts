@@ -61,6 +61,16 @@ export function ballotWriteRefusal(
     )
   }
 
+  if (
+    collection === 'com.para.civic.delegation' &&
+    typeof record === 'object' &&
+    record !== null &&
+    'signal' in record &&
+    record.signal !== undefined
+  ) {
+    return `${collection} cannot publish a signal: the private ballot replacement is required. See ${DOCS} §5b.`
+  }
+
   if (collection === CABILDEO_BALLOT_COLLECTION) {
     const refusal = cabildeoBallotRefusal(record)
     if (refusal) {

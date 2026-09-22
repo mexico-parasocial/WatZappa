@@ -1,4 +1,4 @@
-import { TID, ballotWriteRefusal } from '@atproto/common'
+import { TID, ballotWriteRefusal, verifyCabildeoProof } from '@atproto/common'
 import { RecordSchema, walk } from '@atproto/lex'
 import { encode } from '@atproto/lex-cbor'
 import {
@@ -156,6 +156,20 @@ async function prepareWrite(opts: {
   if (!opts.replay) {
     const refusal = ballotWriteRefusal(opts.collection, opts.record)
     if (refusal) throw new BallotRefusedError(refusal)
+    if (opts.collection === 'com.para.civic.vote') {
+      try {
+        if (!(await verifyCabildeoProof(opts.did, opts.record))) {
+          throw new BallotRefusedError(
+            'A valid cabildeo vote proof is required',
+          )
+        }
+      } catch (error) {
+        if (error instanceof BallotRefusedError) throw error
+        throw new BallotRefusedError(
+          'Civic vote verification is unavailable; no vote was written',
+        )
+      }
+    }
   }
 
   const record: null | TypedLexMap =
