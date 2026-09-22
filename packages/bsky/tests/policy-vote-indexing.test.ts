@@ -166,4 +166,47 @@ maybeDescribe('policy votes are refused', () => {
       .execute()
     expect(rows).toHaveLength(0)
   })
+
+  // OD-7 §5h box 1: a -3..+3 RAQ answer and the dead civic-tree stance record
+  // are frozen at both layers, so neither is aggregated here from a foreign PDS.
+  it.each([
+    [
+      'com.para.raq.proposalAnswer',
+      'raq_proposal_answer',
+      (subject: string) => ({
+        $type: 'com.para.raq.proposalAnswer',
+        subject,
+        value: -3,
+        createdAt: new Date().toISOString(),
+      }),
+    ],
+    [
+      'com.para.community.civicTreeVote',
+      'para_qvld_civicTree_vote',
+      (subject: string) => ({
+        $type: 'com.para.community.civicTreeVote',
+        civicTree: subject,
+        voter: sc.dids.alice,
+        direction: 'agree',
+        createdAt: new Date().toISOString(),
+      }),
+    ],
+  ])('refuses to index a frozen %s', async (collection, table, build) => {
+    const subject = `at://${sc.dids.alice}/com.para.raq.proposal/${TID.nextStr()}`
+    const record = build(subject)
+    const uri = AtUri.make(sc.dids.alice, collection, TID.nextStr())
+    await network.bsky.sub.indexingSvc.indexRecord(
+      uri,
+      await cidForCbor(record),
+      record,
+      WriteOpAction.Create,
+      record.createdAt,
+    )
+    const rows = await db.db
+      .selectFrom(table)
+      .selectAll()
+      .where('uri', '=', uri.toString())
+      .execute()
+    expect(rows).toHaveLength(0)
+  })
 })

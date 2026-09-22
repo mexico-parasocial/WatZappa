@@ -1,7 +1,11 @@
 import { type Server, createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import type { AtpAgent } from '@atproto/api'
-import { FROZEN_BALLOT_COLLECTIONS, TID } from '@atproto/common'
+import {
+  FROZEN_BALLOT_COLLECTIONS,
+  REACTION_COLLECTIONS,
+  TID,
+} from '@atproto/common'
 import { TestNetworkNoAppView } from '@atproto/dev-env'
 import { com } from '../src/lexicons.js'
 
@@ -10,6 +14,7 @@ import { com } from '../src/lexicons.js'
 // dozen places.
 const FROZEN = /is frozen and will not be written/
 const NOT_A_CABILDEO_BALLOT = /accepted only as a cabildeo ballot/
+const PROOF_ON_REACTION = /is a public reaction and must not carry/
 
 const frozenRkey = TID.nextStr()
 
@@ -326,13 +331,160 @@ describe('PARA ballot policy', () => {
     },
   )
 
+  describe('box 1: a -3..+3 answer and a dead stance record are frozen', () => {
+    const records = (): Record<string, Record<string, unknown>> => ({
+      'com.para.raq.proposalAnswer': {
+        $type: 'com.para.raq.proposalAnswer',
+        subject: proposal,
+        value: 3,
+        createdAt: new Date().toISOString(),
+      },
+      'com.para.community.civicTreeVote': {
+        $type: 'com.para.community.civicTreeVote',
+        civicTree: proposal,
+        voter: did,
+        direction: 'agree',
+        createdAt: new Date().toISOString(),
+      },
+    })
+
+    it.each([
+      'com.para.raq.proposalAnswer',
+      'com.para.community.civicTreeVote',
+    ])(
+      'refuses to create a %s, with or without validation',
+      async (collection) => {
+        const record = records()[collection]
+        for (const validate of [true, false]) {
+          await expect(
+            agent.com.atproto.repo.createRecord({
+              repo: did,
+              collection,
+              record,
+              validate,
+            }),
+          ).rejects.toThrow(FROZEN)
+        }
+      },
+    )
+
+    it('names the -3..+3 value as the reason for proposalAnswer', async () => {
+      await expect(
+        agent.com.atproto.repo.createRecord({
+          repo: did,
+          collection: 'com.para.raq.proposalAnswer',
+          record: records()['com.para.raq.proposalAnswer'],
+        }),
+      ).rejects.toThrow(/signal under another name/)
+    })
+  })
+
+  describe('box 3: reactions are written without an m8 proof', () => {
+    const reactions = (): Record<string, Record<string, unknown>> => ({
+      'com.para.civic.openQuestionVote': {
+        $type: 'com.para.civic.openQuestionVote',
+        subject: proposal,
+        value: 1,
+        createdAt: new Date().toISOString(),
+      },
+      'com.para.raq.proposalVote': {
+        $type: 'com.para.raq.proposalVote',
+        subject: proposal,
+        value: -1,
+        createdAt: new Date().toISOString(),
+      },
+      'com.para.raq.axisVote': {
+        $type: 'com.para.raq.axisVote',
+        axisId: 'community-axis-1',
+        value: 1,
+        createdAt: new Date().toISOString(),
+      },
+    })
+
+    it.each([
+      'com.para.civic.openQuestionVote',
+      'com.para.raq.proposalVote',
+      'com.para.raq.axisVote',
+    ])('writes a %s that carries no proof', async (collection) => {
+      const { data } = await agent.com.atproto.repo.createRecord({
+        repo: did,
+        collection,
+        record: reactions()[collection],
+      })
+      expect(data.uri).toContain(collection)
+    })
+
+    it.each([
+      ['com.para.civic.openQuestionVote', 'voteNullifier'],
+      ['com.para.raq.proposalVote', 'eligibilityProofRef'],
+      ['com.para.raq.axisVote', 'voteNullifier'],
+    ])(
+      'refuses a %s carrying %s, even with validation disabled',
+      async (collection, field) => {
+        const record = { ...reactions()[collection], [field]: 'a'.repeat(64) }
+        for (const validate of [true, false]) {
+          await expect(
+            agent.com.atproto.repo.createRecord({
+              repo: did,
+              collection,
+              record,
+              validate,
+            }),
+          ).rejects.toThrow(PROOF_ON_REACTION)
+        }
+      },
+    )
+
+    it('refuses a proof-carrying reaction inside applyWrites, writing nothing', async () => {
+      const before = await agent.com.atproto.repo.listRecords({
+        repo: did,
+        collection: 'com.para.raq.axisVote',
+      })
+      await expect(
+        agent.com.atproto.repo.applyWrites({
+          repo: did,
+          writes: [
+            {
+              $type: 'com.atproto.repo.applyWrites#create',
+              collection: 'com.para.raq.axisVote',
+              value: reactions()['com.para.raq.axisVote'],
+            },
+            {
+              $type: 'com.atproto.repo.applyWrites#create',
+              collection: 'com.para.raq.axisVote',
+              value: {
+                ...reactions()['com.para.raq.axisVote'],
+                voteNullifier: 'a'.repeat(64),
+              },
+            },
+          ],
+        }),
+      ).rejects.toThrow(PROOF_ON_REACTION)
+      const after = await agent.com.atproto.repo.listRecords({
+        repo: did,
+        collection: 'com.para.raq.axisVote',
+      })
+      expect(after.data.records.length).toBe(before.data.records.length)
+    })
+  })
+
   it('names collections that the lexicons still define', () => {
-    // The freeze list is written as string literals because @atproto/common has
-    // no lexicon codegen. This is what stops a rename from silently thawing one.
+    // The policy lists are written as string literals because @atproto/common
+    // has no lexicon codegen. This is what stops a rename from silently thawing
+    // one, or silently letting a reaction ask m8 again.
     expect([...FROZEN_BALLOT_COLLECTIONS].sort()).toEqual(
       [
         com.para.community.intensity.$type,
         com.para.community.vote.$type,
+        com.para.raq.proposalAnswer.$type,
+        com.para.community.civicTreeVote.$type,
+      ].sort(),
+    )
+    expect([...REACTION_COLLECTIONS].sort()).toEqual(
+      [
+        com.para.civic.openQuestionVote.$type,
+        com.para.raq.proposalVote.$type,
+        com.para.raq.axisVote.$type,
       ].sort(),
     )
   })

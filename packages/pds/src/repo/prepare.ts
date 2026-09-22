@@ -1,4 +1,9 @@
-import { TID, ballotWriteRefusal, verifyCabildeoProof } from '@atproto/common'
+import {
+  TID,
+  ballotWriteRefusal,
+  reactionWriteRefusal,
+  verifyCabildeoProof,
+} from '@atproto/common'
 import { RecordSchema, walk } from '@atproto/lex'
 import { encode } from '@atproto/lex-cbor'
 import {
@@ -154,7 +159,9 @@ async function prepareWrite(opts: {
   // is the sole escape and belongs to sequencer recovery re-emitting history that
   // was already committed — never set it from an XRPC handler.
   if (!opts.replay) {
-    const refusal = ballotWriteRefusal(opts.collection, opts.record)
+    const refusal =
+      ballotWriteRefusal(opts.collection, opts.record) ??
+      reactionWriteRefusal(opts.collection, opts.record)
     if (refusal) throw new BallotRefusedError(refusal)
     if (opts.collection === 'com.para.civic.vote') {
       try {

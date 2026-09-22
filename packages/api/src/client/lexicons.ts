@@ -30746,7 +30746,7 @@ export const schemaDict = {
       main: {
         type: 'record',
         description:
-          "A user's completed RAQ (Rapid Alignment Questionnaire) assessment.",
+          "A user's completed RAQ (Rightfully Asked Questions) assessment.",
         key: 'tid',
         record: {
           type: 'object',

@@ -661,6 +661,67 @@ enforceable form lives where the schema does, as **CD-11** in
 `mubEZ/docs/CRYPTO_DECISIONS.md`. Whoever replaces `ineSimulation.ts` will be
 working in that repo and has no reason to read this one.
 
+## 5h. Decision: three boxes for every ballot-shaped record
+
+**Decided 2026-09-22.** §5c froze two collections and §5d narrowed a third, but
+an audit of the vote backend found six more records shaped like ballots, all
+written to their author's public repo, none covered by either rule. Deciding
+them one at a time would leave the next one to be found by accident, so the rule
+is stated once and every ballot-shaped record goes into exactly one box:
+
+1. **It publishes a magnitude or the delegation graph: frozen.** This is the
+   §5b/§5c rule, unchanged. Refused on write and on index.
+2. **Its count decides something: redemption required.** A valid m8
+   authorization, checked fail-closed on write and on index. Only the cabildeo
+   ballot (§5d) is here today.
+3. **Its count decides nothing: a public reaction, per account, with no m8
+   proof.** Asking m8 for a nullifier makes the issuer store a durable
+   `(person, subject)` row. For a vote that passes, promotes or ranks nothing,
+   that is a privacy cost with no integrity bought by it.
+
+Nothing sits between them. Before this decision three live reactions sat in a
+fourth box that should not exist: they asked m8 for a proof and decided nothing.
+
+| Record                                | What its count does                                                 | Box                           |
+| ------------------------------------- | ------------------------------------------------------------------- | ----------------------------- |
+| `com.para.raq.proposalAnswer`         | Nothing, but `value` is -3..+3, strongly disagree to strongly agree | 1, frozen                     |
+| `com.para.community.civicTreeVote`    | Nothing; no writer left, superseded by `deliberationVote`           | 1, frozen                     |
+| `com.para.civic.openQuestionVote`     | Displayed as a score; the thread sorts chronologically              | 3                             |
+| `com.para.raq.proposalVote`           | Displayed as up/down counts; no promotion exists                    | 3                             |
+| `com.para.raq.axisVote`               | Nothing; no AppView route reads it                                  | 3                             |
+| `com.para.community.deliberationVote` | Per-argument counts; confers no power (§5f)                         | public by design, per account |
+
+**`proposalAnswer` is the finding.** It is a `signal` under another name,
+written with `validate: false`, no proof and no nullifier, which is the exact
+thing this document already refuses on `community.vote`, on `civic.vote` and
+on `civic.delegation`. Freezing it retires the "Your Answer:" control in
+`ProposedRAQList`. That also corrects §5f, which said the -3..+3 control
+persisted nothing in RAQ. It did persist, into this record. After this change
+the claim is true for RAQ; the feed call site is unchanged.
+
+**What enforces it.** Both lists live in `@atproto/common`
+(`para-ballot-freeze.ts`), pinned against the generated lexicons by
+`packages/pds/tests/ballot-freeze.test.ts`. Box 1 goes through
+`ballotWriteRefusal`, at both layers. Box 3 goes through `reactionWriteRefusal`,
+**on write only**. Every historical reaction was written with a proof, because
+that is what the client did. Refusing them at index time would erase that
+history on the next backfill and gain nothing, since the privacy cost was paid
+at issuance. The write-side refusal stops an old or modified client from asking
+m8 again.
+
+**The copy stops promising a mechanism that does not exist.** Two RAQ screens
+told people their votes would make a proposed question "official" or
+"mainstream". No threshold, job or writer does that; `isMainstream` is
+hard-coded `false`. The copy now says what the vote does. If promotion is ever
+built, `proposalVote` starts deciding something and moves to box 2.
+
+**What this does not do.** The reactions stay signed by the account the person
+signed in with, which m8 knows from its session table; that is §5g's open work,
+not this section's. The nullifiers m8 already issued for reactions are still in
+`civic_vote_nullifiers` and need their own retention decision. The lexicon
+descriptions of `voteNullifier` on the three reaction records still describe a
+field their collections now refuse.
+
 ## 6. Why this is on the critical path
 
 The `anonymous_identities` table joins every identity to the session that
@@ -696,8 +757,9 @@ participates in it. Hence: this decision first.
 - [x] `com.para.civic.vote` decided (2026-09-20): cabildeo ballots stay public,
       and `com.para.civic.vote` is narrowed to cabildeo ballots so the condition
       is enforced rather than assumed (§5d).
-- [ ] `CabildeoDetailScreen` tells the voter, before they cast, that the ballot
-      is published under their DID permanently (§5d).
+- [x] `CabildeoDetailScreen` tells the voter, before they cast, that the ballot
+      is published under their DID permanently (§5d). `PublicBallotNotice`
+      opens before `castVote`; verified 2026-09-22 on `remove-atproto-api`.
 - [x] Quadratic voting reclassified as a gated experiment rather than canonical
       product surface, behind `para:quadratic_voting:enable` (§5e).
 - [ ] QV-LD extracted to its own package, scoped by function rather than by the
@@ -705,8 +767,12 @@ participates in it. Hence: this decision first.
 - [x] Deliberation given a schema, an index and a served read, and decided
       unweighted: positions are counted, never weighed (§5f).
 - [ ] The -3..+3 control still writes nowhere. Either give it a destination or
-      retire it from the feed and RAQ, where it currently discards what people
-      tell it (§5f).
+      retire it from the feed, where it discards what people tell it (§5f). The
+      RAQ call site did persist, into `proposalAnswer`, and is retired with that
+      record's freeze (§5h).
+- [x] Every ballot-shaped record assigned a box: frozen, redemption required,
+      or public reaction without a proof (§5h). Box 1 refused at both layers,
+      box 3's proof fields refused on write.
 - [x] Privacy target set: votes bind to the civic pseudonym, and m8 holds no
       legal identity to join them to (§5g).
 - [ ] `person_roots.id` unlinkability written as an enforced invariant, with a
@@ -752,7 +818,8 @@ participates in it. Hence: this decision first.
       `alias_did` beside `vote_nullifier`. Until it does, the nullifier is an
       integrity mechanism only, and `com.para.civic.vote`'s field description
       should say so rather than claiming privacy it does not provide.
-- [ ] `aliasDid` removed from `issueParaVoteProof` (§5a.4).
+- [x] `aliasDid` removed from `issueParaVoteProof` (§5a.4). Verified
+      2026-09-22 on `remove-atproto-api`; mubEZ no longer accepts it.
 - [ ] `identitySignature.test.ts:291` re-documented: it currently pins the
       refusal without recording which reading it encodes. Under A it is correct
       and should say so, so a later reader does not read it as incidental.
