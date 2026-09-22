@@ -8,6 +8,9 @@ export interface MatrixEventsStore {
     originServerTs: number
   }): Promise<boolean>
 
+  getMatrixPollCursor(roomId: string): Promise<string | undefined>
+  setMatrixPollCursor(roomId: string, cursor: string): Promise<void>
+
   eventExists(eventId: string): Promise<boolean>
 
   getRecentEvents(roomId: string, limit?: number): Promise<any[]>

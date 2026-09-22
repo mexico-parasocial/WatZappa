@@ -199,12 +199,20 @@ rc_invites:
 #
 # encryption_enabled_by_default_for_room_type: all
 
-# PHASE 1 EXIT (after MAS + para-idp are live, plan §3.2).
-# Local password login must be off once authentication is delegated, otherwise
-# the password database remains a parallel way in and the derived-MXID property
-# is not actually enforced. Enabling this while the bridge still issues
-# passwords (services/matrix-bridge/src/db.ts `user_matrix_map.password`) would
-# lock every existing user out.
+# PHASE 1 EXIT — TAKEN 2026-09-20.
+# Local password login is off now that authentication is delegated to MAS.
+# Leaving it on kept the password database as a parallel way in and meant the
+# derived-MXID property was not actually enforced.
 #
-# password_config:
-#   enabled: false
+# The gate on this was "the bridge still issues passwords
+# (`user_matrix_map.password`)". That is no longer true: both database backends
+# scrub the column to '' on startup (src/db/sqlite/base.ts, src/db/pg/base.ts)
+# and nothing reads it (src/db/stores/identity-matrix.ts marks it vestigial).
+# MAS has passwords disabled too (deploy/matrix/mas/config.yaml) and holds zero
+# user_passwords rows.
+#
+# This does NOT remove the historical password_hash values already in Synapse's
+# users table — five accounts still carry one. Those are dormant while
+# delegation is on, not gone. See MATRIX_V2 §PW-CLEANUP.
+password_config:
+  enabled: false

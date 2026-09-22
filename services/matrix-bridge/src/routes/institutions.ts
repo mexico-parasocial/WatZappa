@@ -1,17 +1,14 @@
+import { randomUUID } from 'node:crypto'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { authenticateM8, HttpError } from '../m8-auth.js'
-import {
-  canAssignRole,
-  isInstitutionRole,
-  isMembershipActive,
-} from '../institutions.js'
+import { canAssignRole, isInstitutionRole } from '../institutions.js'
+import { HttpError, authenticateM8 } from '../m8-auth.js'
 import type { RouteContext } from './context.js'
 import { readBody, writeJson } from './http.js'
 import { requireInstitutionCapability } from './require-institution.js'
 
 function asOptionalString(value: unknown): string | null {
   if (value === undefined || value === null) return null
-  if (typeof value !== 'string') {
+  if (typeof value !== 'string' || value.length === 0 || value.length > 512) {
     throw new HttpError(400, 'workspaceId must be a string when present')
   }
   return value
@@ -46,49 +43,53 @@ export async function apiInstitutionMembersPOSTHandler(
   const workspaceId = asOptionalString(body.workspaceId)
   const expiresAt = asOptionalIsoDate(body.expiresAt)
 
-  // Bootstrap: the first membership of an institution must be a
-  // self-registered owner. Anything else needs an entitled grantor.
-  const owners = await ctx.db.getInstitutionOwners(institutionId)
-  if (owners.size === 0) {
-    if (role !== 'owner' || did !== auth.did || workspaceId !== null) {
+  await ctx.db.transaction(async () => {
+    const existing = (
+      await ctx.db.getInstitutionMemberships(institutionId, did)
+    ).find((m) => m.workspaceId === workspaceId)
+    if (role === 'owner' || existing?.role === 'owner') {
       throw new HttpError(
-        403,
-        'first membership of an institution must be a self-registered owner',
+        409,
+        'Owner changes require the ownership handover protocol',
       )
+    }
+    if (
+      workspaceId === null &&
+      !['auditor', 'records_custodian'].includes(role)
+    ) {
+      throw new HttpError(400, 'Operational roles require a workspace')
+    }
+    if (
+      workspaceId !== null &&
+      ['auditor', 'records_custodian'].includes(role)
+    ) {
+      throw new HttpError(400, 'Institution roles cannot be workspace-scoped')
+    }
+    if (expiresAt !== null && Date.parse(expiresAt) <= Date.now()) {
+      throw new HttpError(400, 'Expiry must be in the future')
+    }
+    const grantor = await requireInstitutionCapability(ctx.db, auth, {
+      institutionId,
+      workspaceId: workspaceId ?? undefined,
+      capability: 'member.invite',
+    })
+    if (
+      !canAssignRole({
+        institutionId,
+        grantor,
+        targetRole: role,
+        targetWorkspaceId: workspaceId,
+      })
+    ) {
+      throw new HttpError(403, 'role cannot assign the requested role')
     }
     await ctx.db.setInstitutionMembership({
       institutionId,
-      workspaceId: null,
+      workspaceId,
       did,
-      role: 'owner',
+      role,
       expiresAt,
     })
-    ctx.log.info({ institutionId, did }, 'Institution bootstrapped')
-    writeJson(res, 200, { ok: true, bootstrapped: true })
-    return
-  }
-
-  const grantor = await requireInstitutionCapability(ctx.db, auth, {
-    institutionId,
-    workspaceId: workspaceId ?? undefined,
-    capability: 'member.invite',
-  })
-  if (
-    !canAssignRole({
-      institutionId,
-      grantor,
-      targetRole: role,
-      targetWorkspaceId: workspaceId,
-    })
-  ) {
-    throw new HttpError(403, 'role cannot assign the requested role')
-  }
-  await ctx.db.setInstitutionMembership({
-    institutionId,
-    workspaceId,
-    did,
-    role,
-    expiresAt,
   })
   ctx.log.info(
     { institutionId, workspaceId, did, role, grantor: auth.did },
@@ -114,39 +115,29 @@ export async function apiInstitutionMembersRevokeHandler(
   }
   const workspaceId = asOptionalString(body.workspaceId)
 
-  await requireInstitutionCapability(ctx.db, auth, {
-    institutionId,
-    workspaceId: workspaceId ?? undefined,
-    capability: 'member.remove',
-  })
+  await ctx.db.transaction(async () => {
+    await requireInstitutionCapability(ctx.db, auth, {
+      institutionId,
+      workspaceId: workspaceId ?? undefined,
+      capability: 'member.remove',
+    })
 
-  const target = (
-    await ctx.db.getInstitutionMemberships(institutionId, did)
-  ).find((m) => m.workspaceId === workspaceId)
-  if (!target) {
-    throw new HttpError(404, 'membership not found')
-  }
+    const target = (
+      await ctx.db.getInstitutionMemberships(institutionId, did)
+    ).find((m) => m.workspaceId === workspaceId)
+    if (!target) {
+      throw new HttpError(404, 'membership not found')
+    }
 
-  // The last active owner is irremovable: ownership must be handed over
-  // first, never destroyed by revocation.
-  const now = new Date()
-  if (target.role === 'owner' && isMembershipActive(target, now)) {
-    const owners = await ctx.db.getInstitutionOwners(institutionId)
-    const activeOwners = [...owners.values()].filter((m) =>
-      isMembershipActive(m, now),
-    )
-    if (
-      activeOwners.length === 1 &&
-      activeOwners[0]?.did === target.did
-    ) {
+    if (target.role === 'owner') {
       throw new HttpError(
         409,
-        'cannot revoke the last active owner; transfer ownership first',
+        'Owner changes require the ownership handover protocol',
       )
     }
-  }
 
-  await ctx.db.revokeInstitutionMembership(institutionId, workspaceId, did)
+    await ctx.db.revokeInstitutionMembership(institutionId, workspaceId, did)
+  })
   ctx.log.info(
     { institutionId, workspaceId, did, revokedBy: auth.did },
     'Institution membership revoked',
@@ -187,4 +178,25 @@ export async function apiInstitutionMembersGETHandler(
       revokedAt: m.revokedAt,
     })),
   })
+}
+
+/** Create a new institution; arbitrary existing identifiers cannot be claimed. */
+export async function apiInstitutionsPOSTHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+  ctx: RouteContext,
+): Promise<void> {
+  const auth = await authenticateM8(req, ctx.config)
+  const institutionId = `urn:uuid:${randomUUID()}`
+  await ctx.db.transaction(async () => {
+    await ctx.db.setInstitutionMembership({
+      institutionId,
+      workspaceId: null,
+      did: auth.did,
+      role: 'owner',
+      expiresAt: null,
+    })
+  })
+  ctx.log.info({ institutionId, did: auth.did }, 'Institution created')
+  writeJson(res, 201, { institutionId })
 }

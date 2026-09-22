@@ -70,7 +70,9 @@ export class EventLogArea extends InstitutionsArea {
 
   pruneEventsBefore(cutoffIso: string): number {
     const res = this.db
-      .prepare('DELETE FROM event_log WHERE created_at < ?')
+      .prepare(
+        'DELETE FROM event_log WHERE julianday(created_at) < julianday(?)',
+      )
       .run(cutoffIso)
     return res.changes
   }

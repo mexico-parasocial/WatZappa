@@ -1,5 +1,4 @@
 export interface ParticipationStore {
-
   getParticipationStats(
     did: string,
     communityUri: string,

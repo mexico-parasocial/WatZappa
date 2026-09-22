@@ -1,6 +1,6 @@
 import { CID } from 'multiformats/cid'
 import { TID } from '@atproto/common'
-import { AtUri } from '@atproto/syntax'
+import { AtUri, type DidString } from '@atproto/syntax'
 import { InvalidRequestError } from '@atproto/xrpc-server'
 import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'
@@ -37,7 +37,7 @@ export default function (server: Server, ctx: AppContext) {
         })
       }
 
-      const boardCreatorDid = communityUri.host as string
+      const boardCreatorDid = communityUri.host as DidString
 
       const { board, starterPackRecord, listItems } = await ctx.actorStore.read(
         boardCreatorDid,

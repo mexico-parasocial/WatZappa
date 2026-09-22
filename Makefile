@@ -34,6 +34,34 @@ run-dev-env-logged: ## Run a "development environment" shell (with logging)
 matrix-smoke: ## Boot Synapse+bridge and smoke-test the appservice paths
 	./scripts/matrix-smoke.sh
 
+# The Matrix stack mounts its config by relative path, so starting compose from
+# the wrong directory silently creates empty mounts and boots a broken Synapse
+# and MAS. These targets always resolve the repo root from the script location.
+
+.PHONY: matrix-up
+matrix-up: ## Start the Matrix stack (Synapse, MAS, para-idp, Element) from the repo root
+	./scripts/matrix-stack.sh up
+
+.PHONY: matrix-up-with-bridge
+matrix-up-with-bridge: ## Start the Matrix stack including the containerized bridge (stop the host bridge first)
+	./scripts/matrix-stack.sh up --with-bridge
+
+.PHONY: matrix-down
+matrix-down: ## Stop the Matrix stack (volumes preserved)
+	./scripts/matrix-stack.sh down
+
+.PHONY: matrix-status
+matrix-status: ## Container status plus a reachability probe of every Matrix endpoint
+	./scripts/matrix-stack.sh status
+
+.PHONY: matrix-doctor
+matrix-doctor: ## Report how far the community -> space -> event pipeline has actually got
+	./scripts/matrix-stack.sh doctor
+
+.PHONY: matrix-logs
+matrix-logs: ## Tail the Matrix stack logs (make matrix-logs SERVICE=synapse)
+	./scripts/matrix-stack.sh logs $(SERVICE)
+
 .PHONY: run-dev-env-persistent
 run-dev-env-persistent: ## Run a persistent development environment shell
 	mkdir -p $${DEV_ENV_PDS_DATA_DIRECTORY:-$${HOME}/.paramx-demo/pds} $${DEV_ENV_PDS_BLOBSTORE_DIRECTORY:-$${HOME}/.paramx-demo/blobstore} $${DEV_ENV_PLC_DIRECTORY:-$${HOME}/.paramx-demo/plc}

@@ -1,13 +1,13 @@
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { randomUUID } from 'node:crypto'
 import pg from 'pg'
 import type { QueryResult } from 'pg'
 import type {
   AiConsentRecord,
-  CommunitySpaceMap,
   CommunityRoomKind,
   CommunityRoomSummary,
+  CommunitySpaceMap,
   SyncLogEntry,
-  UserMatrixMap,
   UserPushToken,
 } from '../interface.js'
 
@@ -18,6 +18,10 @@ const { Pool } = pg
 
 /** Lifecycle, connection handle and shared query helpers. */
 export class PgBase {
+  private transactionContext = new AsyncLocalStorage<{
+    client: pg.PoolClient
+    active: boolean
+  }>()
   protected pool: pg.Pool
 
   protected initPromise: Promise<void>
@@ -54,6 +58,11 @@ export class PgBase {
 
       CREATE INDEX IF NOT EXISTS idx_device_sessions_did ON device_sessions(did);
 
+      CREATE TABLE IF NOT EXISTS matrix_poll_cursors (
+        room_id TEXT PRIMARY KEY,
+        cursor TEXT NOT NULL
+      );
+
       CREATE TABLE IF NOT EXISTS as_transactions (
         txn_id TEXT PRIMARY KEY,
         received_at TEXT NOT NULL DEFAULT (now()::text)
@@ -70,10 +79,15 @@ export class PgBase {
 
       CREATE INDEX IF NOT EXISTS idx_event_log_created ON event_log(created_at);
 
-      CREATE TABLE IF NOT EXISTS user_matrix_map (
-        did TEXT PRIMARY KEY,
-        matrix_user_id TEXT NOT NULL,
-        password TEXT NOT NULL
+      -- v1 linkage table, deleted by CD-M1 (see the sqlite init comment).
+      DROP TABLE IF EXISTS user_matrix_map;
+
+      -- DID-free membership lease (CD-M6, see the sqlite init comment).
+      CREATE TABLE IF NOT EXISTS community_membership_lease (
+        community_uri TEXT NOT NULL,
+        mxid TEXT NOT NULL,
+        last_verified_at TEXT NOT NULL,
+        PRIMARY KEY (community_uri, mxid)
       );
 
       CREATE TABLE IF NOT EXISTS chamber_assignment (
@@ -310,9 +324,10 @@ export class PgBase {
         sender TEXT NOT NULL,
         type TEXT NOT NULL,
         content TEXT,
-        origin_server_ts INTEGER NOT NULL,
+        origin_server_ts BIGINT NOT NULL,
         processed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       );
+      ALTER TABLE matrix_events ALTER COLUMN origin_server_ts TYPE BIGINT;
       CREATE INDEX IF NOT EXISTS idx_matrix_events_room ON matrix_events(room_id, origin_server_ts DESC);
       CREATE INDEX IF NOT EXISTS idx_matrix_events_sender ON matrix_events(sender);
 
@@ -467,7 +482,29 @@ export class PgBase {
 
   protected async query(text: string, params?: any[]): Promise<QueryResult> {
     await this.initPromise
-    return this.pool.query(text, params)
+    const context = this.transactionContext.getStore()
+    return (context?.active ? context.client : this.pool).query(text, params)
+  }
+
+  async transaction<T>(work: () => Promise<T>): Promise<T> {
+    if (this.transactionContext.getStore()?.active) return work()
+    await this.initPromise
+    const client = await this.pool.connect()
+    const context = { client, active: true }
+    try {
+      await client.query('BEGIN')
+      // @NOTE serialize ingestion, event sequence allocation and role mutations.
+      await client.query('SELECT pg_advisory_xact_lock(72419301)')
+      const result = await this.transactionContext.run(context, work)
+      await client.query('COMMIT')
+      return result
+    } catch (err) {
+      await client.query('ROLLBACK')
+      throw err
+    } finally {
+      context.active = false
+      client.release()
+    }
   }
 
   protected async queryOne<T = any>(

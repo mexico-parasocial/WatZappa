@@ -19,7 +19,7 @@ services:
   # OPTION A: Synapse (Recommended for production)
   # ═════════════════════════════════════════════════════════════════════════════
   synapse:
-    image: matrixdotorg/synapse:v1.134.0
+    image: matrixdotorg/synapse:v1.161.0
     container_name: para-matrix-synapse
     restart: unless-stopped
     # Share the existing Postgres or use a dedicated one.
@@ -143,10 +143,11 @@ services:
       retries: 5
 
   # ═════════════════════════════════════════════════════════════════════════════
-  # Matrix Authentication Service — owns logins; Synapse delegates via MSC3861
+  # Matrix Authentication Service — owns logins; Synapse delegates to it via
+  # the stable matrix_authentication_service config
   # ═════════════════════════════════════════════════════════════════════════════
   mas:
-    image: ghcr.io/element-hq/matrix-authentication-service:0.20.0
+    image: ghcr.io/element-hq/matrix-authentication-service:1.24.0
     container_name: para-matrix-mas
     restart: unless-stopped
     depends_on:
@@ -160,7 +161,12 @@ services:
     ports:
       - '127.0.0.1:8080:8080'
     healthcheck:
-      test: ['CMD', 'curl', '-fsS', 'http://localhost:8081/health']
+      # The image is distroless: no shell/curl/wget, so the HTTP listener
+      # cannot be probed from inside. mas-cli --version proves the binary and
+      # container are alive; check the real endpoint from a sibling:
+      #   docker compose -f docker-compose.matrix.yaml exec synapse \
+      #     curl -fsS http://mas:8081/health
+      test: ['CMD', 'mas-cli', '--version']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -205,17 +211,20 @@ services:
     container_name: para-matrix-bridge
     restart: unless-stopped
     environment:
-      PDS_FIREHOSE_URL: ${PDS_FIREHOSE_URL:-wss://pds.para.social/xrpc/com.atproto.sync.subscribeRepos}
+      # Service base only — the consumer appends /xrpc/com.atproto.sync.subscribeRepos
+      PDS_FIREHOSE_URL: ${PDS_FIREHOSE_URL:-wss://pds.para.social}
       MATRIX_HOMESERVER_URL: ${MATRIX_HOMESERVER_URL:-http://synapse:8008}
       MATRIX_ADMIN_TOKEN: ${MATRIX_ADMIN_TOKEN}
       MATRIX_APPSERVICE_TOKEN: ${MATRIX_APPSERVICE_TOKEN:-}
       MATRIX_ENABLE_ENCRYPTION: ${MATRIX_ENABLE_ENCRYPTION:-false}
       M8_BASE_URL: ${M8_BASE_URL:-http://host.docker.internal:8787/v1}
-      BRIDGE_DB_PATH: /data/bridge.db
+      # The image chowns /app/data to `node`; mounting there (not /data) is
+      # what makes a fresh named volume writable by the non-root process.
+      BRIDGE_DB_PATH: /app/data/bridge.db
       BRIDGE_LOG_LEVEL: ${BRIDGE_LOG_LEVEL:-info}
       PORT: 3001
     volumes:
-      - bridge_data:/data
+      - bridge_data:/app/data
     networks:
       - default
       - para-edge

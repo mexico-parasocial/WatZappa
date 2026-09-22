@@ -30,6 +30,7 @@ import personalCivicTree from './personal-civic-tree.js'
 import postSubscription from './post-subscription.js'
 import profile from './profile.js'
 import quotes from './quotes.js'
+import paraDeliberation from './para-deliberation.js'
 import qvlAudit from './qvl-audit.js'
 import qvlSimulation from './qvl-simulation.js'
 import qvlVoting from './qvl-voting.js'
@@ -58,6 +59,7 @@ export default (db: Database, idResolver: IdResolver) =>
       ...civicTree(db),
       ...communityCivicTree(db),
       ...discourse(db),
+      ...paraDeliberation(db),
       ...qvlAudit(db),
       ...qvlSimulation(db),
       ...qvlVoting(db),

@@ -2,15 +2,15 @@ import type { Logger } from 'pino'
 import { IdResolver } from '@atproto/identity'
 import { Firehose } from '@atproto/sync'
 import type { CommitEvt, Event } from '@atproto/sync'
-import { ChatModerationEngine } from './chat-moderation.js'
+import type { ChatModerationEngine } from './chat-moderation.js'
 import type { Config } from './config.js'
 import { parseConstitution } from './constitution.js'
 import type { IBridgeDatabase } from './db/index.js'
+import type { EventBus } from './events/bus.js'
 import type { MatrixProjectionPort } from './matrix-projection.js'
 import type { BridgeMetrics } from './metrics.js'
-import { ProposalEngine } from './proposals.js'
+import type { ProposalEngine } from './proposals.js'
 import { assignChamberBalanced, assignChamberVerifiable } from './sortition.js'
-import type { EventBus } from './events/bus.js'
 
 const CURSOR_SAVE_INTERVAL_MS = 30000
 
@@ -51,7 +51,13 @@ export class FirehoseConsumer {
     this.metrics = metrics
     this.log = log
 
-    const idResolver = new IdResolver()
+    // PLC_URL is a dev-mode escape hatch: local PLCs (http://localhost:2582)
+    // are unreachable through the SSRF-guarded default fetch (allowHttp off,
+    // private IPs off), so an explicit opt-out supplies an unguarded fetch.
+    const idResolver = new IdResolver({
+      plcUrl: config.plcUrl,
+      fetch: config.plcUrl ? globalThis.fetch : undefined,
+    })
 
     this.firehose = new Firehose({
       service: config.pdsFirehoseUrl,
@@ -67,6 +73,15 @@ export class FirehoseConsumer {
       handleEvent: (evt) => this.handleEvent(evt),
       onError: (err) => {
         this.log.error({ err }, 'Firehose error')
+      },
+      // Connection failures never reach onError: without this, a wrong URL or
+      // an unreachable PDS retries forever with zero log output (exactly the
+      // failure mode that left this consumer silently indexing nothing).
+      onReconnectError: (err, attempt, initialSetup) => {
+        this.log.warn(
+          { err, attempt, initialSetup, service: config.pdsFirehoseUrl },
+          'Firehose connection failed, reconnecting',
+        )
       },
       getCursor: () => this.initialCursor ?? undefined,
     })
@@ -131,7 +146,12 @@ export class FirehoseConsumer {
     if (evt.event === 'delete') return
 
     if (collection === 'com.para.community.board' && evt.event === 'create') {
-      await this.handleCommunityCreate(did, evt.record)
+      await this.handleCommunityCreate(
+        did,
+        evt.record,
+        evt.uri.toString(),
+        evt.rkey,
+      )
     } else if (collection === 'com.para.community.membership') {
       await this.handleMembershipChange(did, evt.record, evt.event)
     } else if (collection === 'com.para.community.constitution') {
@@ -149,15 +169,29 @@ export class FirehoseConsumer {
     }
   }
 
+  /**
+   * @param communityUri the board record's real at-uri, as the firehose
+   *   reports it. It has to be this and not a reconstruction: membership
+   *   records reference the board by exactly this string, and the space is
+   *   looked up by it. A previous version rebuilt the uri from a `slug`
+   *   property the board lexicon does not define, so every community was
+   *   filed under `at://<did>/com.para.community.board/community` while every
+   *   membership asked for `.../<rkey>`. The lookup missed, membership sync
+   *   logged "no Matrix space found" at debug level, and nobody was ever
+   *   invited to anything.
+   * @param rkey used as the room-alias localpart. Unique per record, where the
+   *   old constant slug made every community fight over `#community:<server>`.
+   */
   private async handleCommunityCreate(
     creatorDid: string,
     record: any,
+    communityUri: string,
+    rkey: string,
   ): Promise<void> {
     if (!record) return
-    const slug = (record.slug ?? 'community') as string
+    const slug = rkey
     const name = (record.name ?? 'Unnamed Community') as string
     const chamberMode = (record.chamberMode ?? 'unicameral') as string
-    const communityUri = `at://${creatorDid}/com.para.community.board/${slug}`
 
     const existing = await this.db.getSpaceForCommunity(communityUri)
     if (existing) {
@@ -205,10 +239,13 @@ export class FirehoseConsumer {
         )
       }
 
+      // Post-CD-M1 the creator is not pushed into anything: membership is
+      // recorded here (governance) and the owner joins by presenting a
+      // verified proof of possession (CD-M6 verified join), like every other
+      // member.
       await this.db.setCommunityMembership(creatorDid, communityUri, 'active', [
         'owner',
       ])
-      await this.projection.installOwner(provisioned.spaceId, creatorDid)
       await this.db.logSync(
         'create_space',
         communityUri,
@@ -265,11 +302,21 @@ export class FirehoseConsumer {
       return
     }
 
+    const isJoin =
+      state === 'active' && (action === 'create' || action === 'update')
+    const isRemoval =
+      (state === 'left' || state === 'removed' || state === 'blocked') &&
+      action === 'update'
     const end = this.metrics.syncLatency.startTimer({
-      event_type: state === 'active' ? 'invite' : 'kick',
+      event_type: isJoin ? 'join_deferred' : isRemoval ? 'revoke' : 'noop',
     })
     try {
-      if (state === 'active' && (action === 'create' || action === 'update')) {
+      if (isJoin) {
+        // Post-CD-M1 (F7): the bridge cannot name the member — the MXID is a
+        // hash of client-held key material — so it does not invite. It
+        // records the governance decision and the member joins by presenting
+        // a verified proof of possession (CD-M6, /api/community-join). The
+        // membership.changed SSE event above is the client's signal.
         let chamberRoomId: string | null = null
         let chamber: 'A' | 'B' | null = null
 
@@ -277,12 +324,11 @@ export class FirehoseConsumer {
           chamber = await this.decideChamber(communityUri, userDid)
         }
 
-        const invited = await this.projection.inviteMember(space, userDid, {
-          roles,
-          chamber,
-          isObserver,
-        })
-        chamberRoomId = invited.chamberRoomId
+        chamberRoomId = chamber
+          ? chamber === 'A'
+            ? space.chamberA_RoomId
+            : space.chamberB_RoomId
+          : null
 
         await this.chatMod.recordMembership(
           userDid,
@@ -295,20 +341,41 @@ export class FirehoseConsumer {
           },
         )
 
+        if (action === 'update') {
+          // The handover protocol: a membership *update* while active is a
+          // role change (moderation rotation, sortition replacing a delegate,
+          // owner handover). Project the new roles onto the rooms the member
+          // already occupies — through the chat accounts this bridge minted
+          // sessions for, the only ones it can name.
+          await this.projection.applyMemberRoles(space, userDid, {
+            roles,
+            chamber,
+            isObserver,
+          })
+          await this.db.logSync(
+            'apply_roles',
+            communityUri,
+            userDid,
+            space.spaceId,
+            true,
+          )
+        } else {
+          await this.db.logSync(
+            'join_deferred',
+            communityUri,
+            userDid,
+            space.spaceId,
+            true,
+          )
+        }
+      } else if (isRemoval) {
+        // The bridge cannot kick a DID it cannot name; it revokes what it
+        // holds: every device session minted for that DID is deactivated and
+        // banned from the community's rooms. Re-entry fails at the next
+        // verified join's active-membership check.
+        await this.projection.revokeMemberAccess(space, userDid, state)
         await this.db.logSync(
-          'invite',
-          communityUri,
-          userDid,
-          space.spaceId,
-          true,
-        )
-      } else if (
-        (state === 'left' || state === 'removed' || state === 'blocked') &&
-        action === 'update'
-      ) {
-        await this.projection.kickMember(space, userDid, state)
-        await this.db.logSync(
-          'kick',
+          'revoke',
           communityUri,
           userDid,
           space.spaceId,
@@ -316,13 +383,14 @@ export class FirehoseConsumer {
         )
       }
     } catch (err: any) {
-      const eventType = state === 'active' ? 'invite' : 'kick'
-      if (state === 'active') {
-        this.metrics.invitesTotal.inc({
-          community_uri: communityUri,
-          status: 'failure',
-        })
-      } else {
+      const eventType = isJoin
+        ? action === 'update'
+          ? 'apply_roles'
+          : 'join_deferred'
+        : isRemoval
+          ? 'revoke'
+          : 'noop'
+      if (isRemoval) {
         this.metrics.kicksTotal.inc({
           community_uri: communityUri,
           status: 'failure',
@@ -348,8 +416,12 @@ export class FirehoseConsumer {
   /**
    * Governance decision: which chamber does this member belong to? Verifiable
    * sortition via drand, deterministic fallback if the beacon is unreachable.
+   *
+   * Public because the verified-join route asks the same question at join
+   * time — the firehose may not have seen a membership record yet (or missed
+   * one), and the join is the moment the decision has to exist.
    */
-  private async decideChamber(
+  async decideChamber(
     communityUri: string,
     userDid: string,
   ): Promise<'A' | 'B'> {

@@ -1,10 +1,10 @@
 import { TID } from '@atproto/common'
 import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
-import { dbLogger } from '../../../../logger.js'
+import type { AppContext } from '../../../../context.js'
+import type { Server } from '../../../../lexicon/index.js'
 import { ids } from '../../../../lexicon/lexicons.js'
 import { com } from '../../../../lexicons.js'
+import { dbLogger } from '../../../../logger.js'
 import {
   BadCommitSwapError,
   BadRecordSwapError,
@@ -33,8 +33,20 @@ export default function (server: Server, ctx: AppContext) {
       const did = auth.credentials.did
       const cabildeoUri = input.body.cabildeo
       const selectedOption = input.body.selectedOption
-      const voteNullifier = normalizeOpaqueProofField(input.body.voteNullifier, 128)
-      const eligibilityProofRef = normalizeOpaqueProofField(input.body.eligibilityProofRef, 512)
+      const voteNullifier = normalizeOpaqueProofField(
+        input.body.voteNullifier,
+        128,
+      )
+      const eligibilityProofRef = normalizeOpaqueProofField(
+        input.body.eligibilityProofRef,
+        512,
+      )
+      if (!voteNullifier || !eligibilityProofRef) {
+        throw new InvalidRequestError(
+          'A vote nullifier and authorization proof are required',
+          'InvalidVoteProof',
+        )
+      }
       const now = new Date()
       const createdAt = now.toISOString()
 
@@ -50,8 +62,8 @@ export default function (server: Server, ctx: AppContext) {
         cabildeo: cabildeoUri,
         selectedOption,
         isDirect: true,
-        ...(voteNullifier ? { voteNullifier } : {}),
-        ...(eligibilityProofRef ? { eligibilityProofRef } : {}),
+        voteNullifier,
+        eligibilityProofRef,
         createdAt,
       }
 
@@ -140,8 +152,8 @@ const getCabildeoForVote = async (
     did,
     ids.ComParaCivicGetCabildeo,
   )
-  const res = await ctx.bskyAppView!.client
-    .call(
+  const res = await ctx
+    .bskyAppView!.client.call(
       com.para.civic.getCabildeo.main,
       { cabildeo: cabildeoUri as any },
       { headers },
@@ -200,8 +212,12 @@ const assertActiveCommunityMember = async (
     did,
     ids.ComParaCommunityGetBoard,
   )
-  const res = await ctx.bskyAppView!.client
-    .call(com.para.community.getBoard.main, { communityId }, { headers })
+  const res = await ctx
+    .bskyAppView!.client.call(
+      com.para.community.getBoard.main,
+      { communityId },
+      { headers },
+    )
     .catch(() => null)
 
   if (res?.board?.viewerMembershipState !== 'active') {

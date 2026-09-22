@@ -1,13 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  CommunitySpaceMap,
+  SyncLogEntry,
+  UserPushToken,
 } from '../interface.js'
 import { ModerationArea } from './moderation.js'
 
 export class ParticipationArea extends ModerationArea {
-
-
   // Chat participation stats
   getParticipationStats(did: string, communityUri: string): any | undefined {
     return this.db
@@ -16,7 +18,6 @@ export class ParticipationArea extends ModerationArea {
       )
       .get(did, communityUri)
   }
-
 
   ensureParticipationStats(
     did: string,
@@ -30,7 +31,6 @@ export class ParticipationArea extends ModerationArea {
       .run(did, communityUri, matrixRoomId ?? null)
   }
 
-
   incrementMessageCount(did: string, communityUri: string): void {
     this.db
       .prepare(
@@ -38,7 +38,6 @@ export class ParticipationArea extends ModerationArea {
       )
       .run(did, communityUri)
   }
-
 
   incrementVoteCount(did: string, communityUri: string): void {
     this.db
@@ -48,7 +47,6 @@ export class ParticipationArea extends ModerationArea {
       .run(did, communityUri)
   }
 
-
   incrementProposalCount(did: string, communityUri: string): void {
     this.db
       .prepare(
@@ -56,7 +54,6 @@ export class ParticipationArea extends ModerationArea {
       )
       .run(did, communityUri)
   }
-
 
   setParticipationRoles(
     did: string,
@@ -90,7 +87,6 @@ export class ParticipationArea extends ModerationArea {
       .run(...values)
   }
 
-
   getParticipationStatsByCommunity(communityUri: string): any[] {
     return this.db
       .prepare(
@@ -99,15 +95,13 @@ export class ParticipationArea extends ModerationArea {
       .all(communityUri) as any[]
   }
 
-
   getMemberList(communityUri: string, limit = 100, offset = 0): any[] {
     return this.db
       .prepare(
-        'SELECT ps.*, umm.matrix_user_id FROM chat_participation_stats ps LEFT JOIN user_matrix_map umm ON ps.did = umm.did WHERE ps.community_uri = ? ORDER BY ps.last_message_at DESC LIMIT ? OFFSET ?',
+        'SELECT ps.* FROM chat_participation_stats ps WHERE ps.community_uri = ? ORDER BY ps.last_message_at DESC LIMIT ? OFFSET ?',
       )
       .all(communityUri, limit, offset) as any[]
   }
-
 
   getActiveCommunityUris(): string[] {
     const rows = this.db

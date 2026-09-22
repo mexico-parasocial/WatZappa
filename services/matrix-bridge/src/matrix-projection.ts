@@ -1,26 +1,32 @@
-import { randomUUID } from 'node:crypto'
 import type { Logger } from 'pino'
-
-import type { CommunitySpaceMap } from './db/interface.js'
-import type { IBridgeDatabase } from './db/index.js'
 import type { Config } from './config.js'
+import type { IBridgeDatabase } from './db/index.js'
+import type { CommunitySpaceMap } from './db/interface.js'
+import { mxidForIdentityPub } from './identity-proof.js'
 import type { MatrixAdminClient } from './matrix.js'
-import { didToMxid, extractServerName } from './matrix.js'
 
 /**
  * Matrix projection port (CD-M2). The governance side (firehose) decides
  * WHAT should happen — who belongs, which chamber a member sits in, who owns
- * a community — and expresses it through this interface in terms of DIDs.
- * The implementation owns everything MXID: deriving identities, provisioning
- * Synapse users, inviting, kicking and setting power levels. Governance code
- * never resolves, stores or derives an MXID itself.
+ * a community — and expresses it through this interface in terms of DIDs and,
+ * for the verified join, the identity public key the member presented. The
+ * implementation owns everything MXID: deriving localparts from presented
+ * keys, provisioning Synapse users, joining rooms and setting power levels.
+ * Governance code never resolves, stores or derives an MXID itself.
  *
  * The one-way rule from MATRIX_V2 §7: governance → projection calls only.
  * Nothing here calls back into governance state.
+ *
+ * Post-CD-M1 (F7): the projection cannot name a user from a DID — the MXID
+ * is a hash of client-held key material, and no table relates the two. Every
+ * operation that used to push a DID into a room is gone. Membership is
+ * pull-based (CD-M6): the member presents a CD-M4 proof of possession, the
+ * route verifies it alongside M8 session + active community membership, and
+ * calls verifiedJoin with the presented key.
  */
 export interface MatrixProjectionPort {
   /** Provision a space (and, for bicameral, its chamber rooms) for a new
-   *  community. Returns the room map to persist. */
+   *  community. Returns the room map to persist. Creates no user accounts. */
   createCommunitySpace(input: {
     name: string
     slug: string
@@ -32,15 +38,35 @@ export interface MatrixProjectionPort {
     observerRoomId: string | null
   }>
 
-  /** Ensure the creator exists as a Matrix user and owns their space. */
-  installOwner(spaceId: string, did: string): Promise<void>
+  /**
+   * Verified join (OD-6 / CD-M6). Derive the MXID from the identity public
+   * key the member just proved possession of, ensure the Synapse account
+   * exists, force-join it into the right rooms (main + chamber, or observer
+   * layout) and set power levels from roles. `chamber` is the governance
+   * decision; the room choice is here. Returns the MXID and joined rooms.
+   */
+  verifiedJoin(
+    space: CommunitySpaceMap,
+    did: string,
+    identityPub: Uint8Array,
+    opts: {
+      roles: string[]
+      chamber: 'A' | 'B' | null
+      isObserver: boolean
+    },
+  ): Promise<{ mxid: string; joinedRoomIds: string[] }>
 
   /**
-   * Project an active membership: create the Matrix user if needed, invite to
-   * the right rooms (main + chamber, or observer layout) and set power levels
-   * from roles. `chamber` is the governance decision; the room choice is here.
+   * Record-driven role projection (the handover protocol). Applies current
+   * roles as power levels — in every room of the community — to every chat
+   * account this bridge has minted a device session for under that DID. This
+   * is the only mechanism by which a role change (moderation rotation,
+   * sortition replacing a delegate, owner handover) reaches rooms the member
+   * has already joined: the projection cannot name them from the DID, but it
+   * can act on the accounts it provisioned sessions for. Idempotent; a DID
+   * with no minted sessions (not yet joined) is a no-op.
    */
-  inviteMember(
+  applyMemberRoles(
     space: CommunitySpaceMap,
     did: string,
     opts: {
@@ -48,14 +74,38 @@ export interface MatrixProjectionPort {
       chamber: 'A' | 'B' | null
       isObserver: boolean
     },
-  ): Promise<{ chamberRoomId: string | null }>
+  ): Promise<void>
 
-  /** Remove a member from every room of the community. */
-  kickMember(
-    space: CommunitySpaceMap,
+  /**
+   * Revocation. The bridge cannot kick a DID it cannot name, so removal is
+   * enforced on what it does hold: every device session it minted for the
+   * DID is deactivated on the homeserver (killing that account's access
+   * tokens) and banned from the community's rooms. Re-entry is already
+   * impossible — the next verified join would fail the active-membership
+   * check. Returns the number of sessions revoked.
+   */
+  revokeMemberAccess(
+    space: CommunitySpaceMap | null,
     did: string,
     reason: string,
-  ): Promise<void>
+  ): Promise<number>
+
+  /**
+   * Interaction-time access reconciliation. Runs at every verified
+   * interaction (identity probe, session mint, attestation, join): for each
+   * community the DID has state for, active memberships get their current
+   * roles projected (catching downgrades that arrived while the member was
+   * offline), and non-active memberships get the presented account banned
+   * and any minted sessions revoked (catching removals that arrived while
+   * the member was offline — including MAS-native accounts the bridge never
+   * minted a session for, which revocation-at-event-time cannot reach).
+   *
+   * This is what makes removal and role drift self-healing without ever
+   * persisting the DID↔MXID pairing: the presented proof supplies the
+   * account, governance state supplies the verdict, and neither outlives
+   * the request.
+   */
+  reconcileMemberAccess(did: string, presentedMxid: string): Promise<void>
 }
 
 export function createMatrixProjection(
@@ -64,42 +114,137 @@ export function createMatrixProjection(
   matrix: MatrixAdminClient,
   log: Logger,
 ): MatrixProjectionPort {
-  const serverName = extractServerName(config.matrixHomeserverUrl)
+  // The homeserver's own server_name, not the host we reach it on. Those are
+  // the same only in production; anywhere else this minted MXIDs Synapse
+  // considers foreign and refused to act on.
+  const serverName = config.matrixServerName
 
-  const ensureMxid = async (did: string): Promise<string> => {
-    let mxid = await db.getMxidForDid(did)
-    if (!mxid) {
-      mxid = didToMxid(did, serverName)
-      await db.setMxidForDid(did, mxid, '')
-    }
-    return mxid
-  }
-
-  const ensureUserExists = async (mxid: string, did: string): Promise<void> => {
+  const ensureUserExists = async (mxid: string): Promise<void> => {
     const exists = await matrix.userExists(mxid)
     if (!exists) {
-      // One-time random secret for the Synapse upsert only — deliberately NOT
-      // persisted: user_matrix_map.password is deprecated (never read; sessions
-      // are device-bound via appservice login).
-      await matrix.createUser(mxid, did, randomUUID())
-      await db.setMxidForDid(did, mxid, '')
-      log.info({ did, mxid }, 'Created Matrix user')
+      await matrix.createUser(mxid)
+      log.info({ mxid }, 'Created Matrix user from verified identity key')
     }
   }
 
-  const inviteIfAbsent = async (roomId: string, userMxid: string) => {
-    const members = await matrix.getRoomMembers(roomId)
-    if (!members.some((m) => m.user_id === userMxid)) {
-      await matrix.inviteUser(roomId, userMxid)
-      return true
-    }
-    return false
+  /**
+   * Chat accounts attributable to a DID — the accounts this bridge minted a
+   * device session for. This is operational session state, not a mapping
+   * table: rows exist only where the member completed a verified interaction
+   * with this bridge, they are revocable, and nothing exposes them as a
+   * directory. It is what makes revocation and role projection possible
+   * after CD-M1 removed the DID→MXID table.
+   */
+  const sessionMxidsForDid = async (did: string): Promise<string[]> => {
+    const sessions = await db.listDeviceSessions(did)
+    const active = sessions.filter((s) => s.revokedAt == null)
+    return [...new Set(active.map((s) => s.mxid))]
   }
+
+  const communityRoomIds = (space: CommunitySpaceMap): string[] =>
+    [
+      space.spaceId,
+      space.chamberA_RoomId,
+      space.chamberB_RoomId,
+      space.observerRoomId,
+    ].filter((roomId): roomId is string => Boolean(roomId))
 
   const powerLevelForRoles = (roles: string[]): number => {
     if (roles.includes('owner')) return 100
     if (roles.includes('moderator')) return 50
     return 0
+  }
+
+  /** Join one member into the right rooms with the right power levels. */
+  const joinMemberRooms = async (
+    space: CommunitySpaceMap,
+    did: string,
+    mxid: string,
+    opts: { roles: string[]; chamber: 'A' | 'B' | null; isObserver: boolean },
+  ): Promise<string[]> => {
+    const joined: string[] = []
+    await ensureUserExists(mxid)
+
+    // Everyone gets the main space (announcements + votes).
+    joined.push(await matrix.joinUser(space.spaceId, mxid))
+
+    if (opts.isObserver) {
+      // Observers join both chambers read-only (PL = -1) and participate
+      // fully in the observer room.
+      for (const roomId of [space.chamberA_RoomId, space.chamberB_RoomId]) {
+        if (!roomId) continue
+        joined.push(await matrix.joinUser(roomId, mxid))
+        await matrix.setPowerLevel(roomId, mxid, -1)
+      }
+      if (space.observerRoomId) {
+        joined.push(await matrix.joinUser(space.observerRoomId, mxid))
+      }
+      await matrix.setPowerLevel(
+        space.spaceId,
+        mxid,
+        powerLevelForRoles(opts.roles),
+      )
+      return joined
+    }
+
+    if (space.chamberMode === 'bicameral' && opts.chamber) {
+      const chamberRoomId =
+        opts.chamber === 'A' ? space.chamberA_RoomId : space.chamberB_RoomId
+      if (!chamberRoomId) {
+        throw new Error(`Chamber ${opts.chamber} room not found for community`)
+      }
+      joined.push(await matrix.joinUser(chamberRoomId, mxid))
+      await matrix.setPowerLevel(
+        chamberRoomId,
+        mxid,
+        powerLevelForRoles(opts.roles),
+      )
+      log.info(
+        { communityUri: space.communityUri, did, chamber: opts.chamber },
+        'Verified join placed member in chamber',
+      )
+    }
+
+    await matrix.setPowerLevel(
+      space.spaceId,
+      mxid,
+      powerLevelForRoles(opts.roles),
+    )
+    return joined
+  }
+
+  /** Write the member's current roles as power levels for specific accounts. */
+  const projectRolesToMxids = async (
+    space: CommunitySpaceMap,
+    mxids: string[],
+    opts: { roles: string[]; chamber: 'A' | 'B' | null; isObserver: boolean },
+  ): Promise<void> => {
+    if (mxids.length === 0) return
+    const chamberRoomId =
+      opts.isObserver || !opts.chamber
+        ? null
+        : opts.chamber === 'A'
+          ? space.chamberA_RoomId
+          : space.chamberB_RoomId
+    for (const mxid of mxids) {
+      if (opts.isObserver) {
+        for (const roomId of [space.chamberA_RoomId, space.chamberB_RoomId]) {
+          if (!roomId) continue
+          await matrix.setPowerLevel(roomId, mxid, -1)
+        }
+      } else if (chamberRoomId) {
+        await matrix.setPowerLevel(
+          chamberRoomId,
+          mxid,
+          powerLevelForRoles(opts.roles),
+        )
+      }
+      await matrix.setPowerLevel(
+        space.spaceId,
+        mxid,
+        powerLevelForRoles(opts.roles),
+      )
+    }
   }
 
   return {
@@ -135,100 +280,136 @@ export function createMatrixProjection(
       }
     },
 
-    async installOwner(spaceId, did) {
-      const creatorMxid = await ensureMxid(did)
-      await ensureUserExists(creatorMxid, did)
-      await matrix.inviteUser(spaceId, creatorMxid)
-      await matrix.setPowerLevel(spaceId, creatorMxid, 100)
-    },
-
-    async inviteMember(space, did, { roles, chamber, isObserver }) {
-      const userMxid = await ensureMxid(did)
-      await ensureUserExists(userMxid, did)
-
-      // Everyone gets the main space (announcements + votes).
-      const mainMembers = await matrix.getRoomMembers(space.spaceId)
-      if (!mainMembers.some((m) => m.user_id === userMxid)) {
-        await matrix.inviteUser(space.spaceId, userMxid)
-      }
-
-      let chamberRoomId: string | null = null
-
-      if (isObserver) {
-        // Observers join both chambers read-only (PL = -1) and participate
-        // fully in the observer room.
-        for (const roomId of [space.chamberA_RoomId, space.chamberB_RoomId]) {
-          if (!roomId) continue
-          await inviteIfAbsent(roomId, userMxid)
-          await matrix.setPowerLevel(roomId, userMxid, -1)
-        }
-        if (space.observerRoomId) {
-          await inviteIfAbsent(space.observerRoomId, userMxid)
-          log.info(
-            { communityUri: space.communityUri, userMxid },
-            'Invited observer to observer room',
-          )
-        }
-        await matrix.setPowerLevel(
-          space.spaceId,
-          userMxid,
-          powerLevelForRoles(roles),
-        )
-        return { chamberRoomId: null }
-      }
-
-      if (space.chamberMode === 'bicameral' && chamber) {
-        chamberRoomId =
-          chamber === 'A' ? space.chamberA_RoomId : space.chamberB_RoomId
-        if (!chamberRoomId) {
-          throw new Error(`Chamber ${chamber} room not found for community`)
-        }
-        const invited = await inviteIfAbsent(chamberRoomId, userMxid)
-        if (invited) {
-          log.info(
-            {
-              communityUri: space.communityUri,
-              did,
-              chamber,
-              roomId: chamberRoomId,
-            },
-            'Invited user to chamber',
-          )
-        }
-        await matrix.setPowerLevel(
-          chamberRoomId,
-          userMxid,
-          powerLevelForRoles(roles),
-        )
-      }
-
-      await matrix.setPowerLevel(
-        space.spaceId,
-        userMxid,
-        powerLevelForRoles(roles),
+    async verifiedJoin(space, did, identityPub, opts) {
+      const mxid = mxidForIdentityPub(identityPub, serverName)
+      const joinedRoomIds = await joinMemberRooms(space, did, mxid, opts)
+      // The join is a verified interaction: it starts (or renews) the
+      // account's membership lease for this community, so the lease sweep
+      // will reach this account if it is ever removed and never heard from
+      // again.
+      await db.upsertCommunityMembershipLease(
+        space.communityUri,
+        mxid,
+        new Date().toISOString(),
       )
-      return { chamberRoomId }
+      log.info(
+        { communityUri: space.communityUri, did, mxid, joinedRoomIds },
+        'Verified join completed',
+      )
+      return { mxid, joinedRoomIds }
     },
 
-    async kickMember(space, did, reason) {
-      const userMxid = await ensureMxid(did)
-      const rooms = [
-        space.spaceId,
-        space.chamberA_RoomId,
-        space.chamberB_RoomId,
-        space.observerRoomId,
-      ].filter((roomId): roomId is string => Boolean(roomId))
-      for (const roomId of rooms) {
-        try {
-          await matrix.kickUser(roomId, userMxid, `Membership state: ${reason}`)
-        } catch {
-          // User might not be in this room, ignore
+    async applyMemberRoles(space, did, opts) {
+      const mxids = await sessionMxidsForDid(did)
+      if (mxids.length === 0) {
+        // Never joined (or all sessions revoked): nothing to project onto.
+        // The roles take effect at the next verified join.
+        log.debug(
+          { communityUri: space.communityUri, did },
+          'Role change for member with no chat sessions; applied at next join',
+        )
+        return
+      }
+      await projectRolesToMxids(space, mxids, opts)
+      log.info(
+        { communityUri: space.communityUri, did, roles: opts.roles, mxids },
+        'Projected role change to chat rooms',
+      )
+    },
+
+    async revokeMemberAccess(space, did, reason) {
+      const sessions = await db.listDeviceSessions(did)
+      if (sessions.length === 0) return 0
+      const rooms = space ? communityRoomIds(space) : []
+      for (const session of sessions) {
+        if (!session.revokedAt) {
+          try {
+            await matrix.adminDeactivateDevice(session.mxid, session.deviceId)
+          } catch (err) {
+            // Device may already be gone on the homeserver; the local revocation
+            // below is still the source of truth for "this session is dead".
+            log.warn(
+              { err, mxid: session.mxid, deviceId: session.deviceId },
+              'Homeserver device deactivation failed during revocation',
+            )
+          }
+        }
+        for (const roomId of rooms) {
+          try {
+            await matrix.banUser(
+              roomId,
+              session.mxid,
+              `Membership state: ${reason}`,
+            )
+          } catch {
+            // Not in this room, or already banned.
+          }
+        }
+        if (!session.revokedAt) {
+          await db.revokeDeviceSession(did, session.id)
         }
       }
       log.info(
-        { userMxid, state: reason },
-        'Removed user from all community rooms',
+        { did, state: reason, sessions: sessions.length },
+        'Revoked Matrix access for all minted sessions',
       )
+      return sessions.length
+    },
+
+    async reconcileMemberAccess(did, presentedMxid) {
+      const memberships = await db.getMembershipsForDid(did)
+      for (const membership of memberships) {
+        const space = await db.getSpaceForCommunity(membership.communityUri)
+        if (!space) continue
+        if (membership.state === 'active') {
+          // Catch-up for role changes that arrived while offline. The
+          // presented account is included: it is entitled by membership,
+          // even if this interaction is its first under this community.
+          const roles = membership.roles ?? []
+          const assigned = await db.getChamberAssignment(
+            membership.communityUri,
+            did,
+          )
+          const chamber: 'A' | 'B' | null =
+            assigned === 'A' || assigned === 'B' ? assigned : null
+          const opts = {
+            roles,
+            chamber,
+            isObserver: roles.includes('observer'),
+          }
+          const entitled = [
+            ...new Set([...(await sessionMxidsForDid(did)), presentedMxid]),
+          ]
+          await projectRolesToMxids(space, entitled, opts)
+          // This interaction renews the lease of every account the member
+          // actively holds for this community.
+          const nowIso = new Date().toISOString()
+          for (const mxid of entitled) {
+            await db.upsertCommunityMembershipLease(
+              membership.communityUri,
+              mxid,
+              nowIso,
+            )
+          }
+        } else {
+          // Removal that arrived while offline. The presented account is
+          // banned from the rooms even when the bridge never minted a
+          // session for it (MAS-native logins); minted sessions are
+          // deactivated and banned as at event time.
+          for (const roomId of communityRoomIds(space)) {
+            try {
+              await matrix.banUser(
+                roomId,
+                presentedMxid,
+                `Membership state: ${membership.state}`,
+              )
+            } catch {
+              // Not in this room, or already banned.
+            }
+          }
+          await this.revokeMemberAccess(space, did, membership.state)
+        }
+      }
     },
   }
 }

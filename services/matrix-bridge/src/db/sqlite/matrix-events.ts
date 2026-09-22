@@ -1,11 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import type {
   AiConsentRecord,
-  CommunitySpaceMap,
   CommunityRoomKind,
   CommunityRoomSummary,
+  CommunitySpaceMap,
   SyncLogEntry,
-  UserMatrixMap,
   UserPushToken,
 } from '../interface.js'
 import { ConsentPrefsArea } from './consent-prefs.js'
@@ -41,6 +40,22 @@ export class MatrixEventsArea extends ConsentPrefsArea {
       }
       throw err
     }
+  }
+
+  getMatrixPollCursor(roomId: string): string | undefined {
+    return (
+      this.db
+        .prepare('SELECT cursor FROM matrix_poll_cursors WHERE room_id = ?')
+        .get(roomId) as { cursor: string } | undefined
+    )?.cursor
+  }
+
+  setMatrixPollCursor(roomId: string, cursor: string): void {
+    this.db
+      .prepare(
+        'INSERT INTO matrix_poll_cursors (room_id, cursor) VALUES (?, ?) ON CONFLICT (room_id) DO UPDATE SET cursor = excluded.cursor',
+      )
+      .run(roomId, cursor)
   }
 
   eventExists(eventId: string): boolean {
@@ -140,14 +155,11 @@ export class MatrixEventsArea extends ConsentPrefsArea {
   }
 
   recordAsTransaction(txnId: string): boolean {
-    try {
-      const res = this.db
-        .prepare('INSERT INTO as_transactions (txn_id) VALUES (?)')
-        .run(txnId)
-      return res.changes > 0
-    } catch {
-      // PRIMARY KEY conflict => already processed
-      return false
-    }
+    const res = this.db
+      .prepare(
+        'INSERT INTO as_transactions (txn_id) VALUES (?) ON CONFLICT (txn_id) DO NOTHING',
+      )
+      .run(txnId)
+    return res.changes > 0
   }
 }

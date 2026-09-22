@@ -1,6 +1,6 @@
 {
   "name": "@atproto/pds",
-  "version": "0.5.32",
+  "version": "0.5.35",
   "license": "MIT",
   "description": "Reference implementation of atproto Personal Data Server (PDS)",
   "keywords": [
@@ -45,6 +45,7 @@
     "@atproto/lex": "workspace:^",
     "@atproto/lex-cbor": "workspace:^",
     "@atproto/lex-data": "workspace:^",
+    "@atproto/lex-document": "workspace:^",
     "@atproto/lex-json": "workspace:^",
     "@atproto/lex-schema": "workspace:^",
     "@atproto/lexicon": "workspace:^",
@@ -90,7 +91,6 @@
   "devDependencies": {
     "@atproto/api": "workspace:^",
     "@atproto/bsky": "workspace:^",
-    "@atproto/lex-document": "workspace:^",
     "@atproto/oauth-client-browser-example": "workspace:^",
     "@did-plc/server": "^0.0.1",
     "@jest/globals": "^30.0.0",
@@ -111,7 +111,7 @@
     "codegen:lex": "lex build --clear --indexFile --lexicons ../../lexicons",
     "codegen:templates": "node ./scripts/build.templates.js",
     "prebuild": "pnpm run '/^(codegen:.+)$/'",
-    "build": "tsgo --build tsconfig.build.json",
+    "build": "tsc --build tsconfig.build.json",
     "dev": "node ./scripts/build.templates.js --watch",
     "pretest": "puppeteer browsers install chrome",
     "test": "NODE_OPTIONS=--experimental-vm-modules ../dev-infra/with-test-redis-and-db.sh jest",

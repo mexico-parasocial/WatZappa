@@ -22383,7 +22383,7 @@ export const schemaDict = {
                 type: 'string',
                 maxLength: 128,
                 description:
-                  'Privacy-preserving one-person-one-vote nullifier for this cabildeo.',
+                  "One-person-one-vote nullifier for this cabildeo, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a.",
               },
               eligibilityProofRef: {
                 type: 'string',
@@ -23564,7 +23564,7 @@ export const schemaDict = {
               type: 'string',
               maxLength: 128,
               description:
-                'Privacy-preserving one-person-one-vote nullifier for this open question reply, issued by m8.',
+                "One-person-one-vote nullifier for this open question reply, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a.",
             },
             eligibilityProofRef: {
               type: 'string',
@@ -23750,7 +23750,7 @@ export const schemaDict = {
               type: 'string',
               maxLength: 128,
               description:
-                'Privacy-preserving one-person-one-vote nullifier for this subject, issued by m8.',
+                "One-person-one-vote nullifier for this subject, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a.",
             },
             eligibilityProofRef: {
               type: 'string',
@@ -24457,7 +24457,7 @@ export const schemaDict = {
               type: 'string',
               maxLength: 128,
               description:
-                'Privacy-preserving one-person-one-vote nullifier for this civicTree statement, issued by m8.',
+                "One-person-one-vote nullifier for this civicTree statement, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a.",
             },
             eligibilityProofRef: {
               type: 'string',
@@ -26732,6 +26732,8 @@ export const schemaDict = {
     defs: {
       main: {
         type: 'record',
+        description:
+          "DEPRECATED 2026-09-18 (ballot freeze E0). Do not write this record. It carries everything com.para.community.vote does plus `units`, `creditsSpent`, `effectiveWeight` and `delegatedFrom` — the delegation graph, which OD-7 §5b names as more re-identifying than the ballots themselves — all in the voter's own public repo. Quadratic intensity is the last stage of the replacement design, not the first: see WatZappa/docs/OD-7-BALLOT-IDENTITY-REGISTRATION.md §5a.3/§5b.",
         key: 'tid',
         record: {
           type: 'object',
@@ -26788,7 +26790,7 @@ export const schemaDict = {
               type: 'string',
               maxLength: 128,
               description:
-                'Privacy-preserving one-person-one-vote nullifier for this proposal intensity declaration, issued by m8.',
+                "One-person-one-vote nullifier for this proposal intensity declaration, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a.",
             },
             eligibilityProofRef: {
               type: 'string',
@@ -28807,6 +28809,8 @@ export const schemaDict = {
     defs: {
       main: {
         type: 'record',
+        description:
+          "DEPRECATED 2026-09-18 (ballot freeze E0). Do not write this record. `voter` and `signal` are both REQUIRED, and the record is written to the voter's own public repo, so every ballot publishes who voted what to the firehose, permanently. It is also rewritable by its author via putRecord while its nullifier still verifies, so the signal is not integrity-protected either. The replacement ballot leaves the voter's repo entirely: see WatZappa/docs/OD-7-BALLOT-IDENTITY-REGISTRATION.md §5a/§5b.",
         key: 'tid',
         record: {
           type: 'object',
@@ -28836,7 +28840,7 @@ export const schemaDict = {
               type: 'string',
               maxLength: 128,
               description:
-                'Privacy-preserving one-person-one-vote nullifier for this proposal, issued by m8.',
+                "One-person-one-vote nullifier for this proposal, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a.",
             },
             eligibilityProofRef: {
               type: 'string',
@@ -30234,14 +30238,14 @@ export const schemaDict = {
             provider: {
               type: 'string',
               description:
-                "Identifier of the chat provider, e.g. 'solidarity.social' or 'para.social'. Also serves as the record key (one link record per provider).",
+                "Identifier of the chat provider, e.g. 'para.social'. Also serves as the record key (one link record per provider).",
               maxGraphemes: 128,
               maxLength: 256,
             },
             matrixUserId: {
               type: 'string',
               description:
-                "The full Matrix user id on that provider, e.g. '@user:matrix.solidarity.social'.",
+                "The full Matrix user id on that provider, e.g. '@user:matrix.para.social'.",
               maxGraphemes: 256,
               maxLength: 512,
             },
@@ -30742,7 +30746,7 @@ export const schemaDict = {
       main: {
         type: 'record',
         description:
-          "A user's completed RAQ (Rapid Alignment Questionnaire) assessment.",
+          "A user's completed RAQ (Rightfully Asked Questions) assessment.",
         key: 'tid',
         record: {
           type: 'object',
@@ -30855,7 +30859,7 @@ export const schemaDict = {
               type: 'string',
               maxLength: 128,
               description:
-                'Privacy-preserving one-person-one-vote nullifier for this RAQ axis, issued by m8.',
+                "One-person-one-vote nullifier for this RAQ axis, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a.",
             },
             eligibilityProofRef: {
               type: 'string',
@@ -31400,7 +31404,7 @@ export const schemaDict = {
               type: 'string',
               maxLength: 128,
               description:
-                'Privacy-preserving one-person-one-vote nullifier for this RAQ proposal, issued by m8.',
+                "One-person-one-vote nullifier for this RAQ proposal, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a.",
             },
             eligibilityProofRef: {
               type: 'string',

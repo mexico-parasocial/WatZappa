@@ -1,6 +1,6 @@
 import type { Logger } from 'pino'
 import type { IBridgeDatabase } from './db/index.js'
-import type { MatrixAdminClient } from './matrix.js'
+import type { MatrixProjectionPort } from './matrix-projection.js'
 import type { BridgeMetrics } from './metrics.js'
 
 const RETRY_INTERVAL_MS = 60_000
@@ -12,7 +12,7 @@ export class RetryWorker {
 
   constructor(
     private db: IBridgeDatabase,
-    private matrix: MatrixAdminClient,
+    private projection: MatrixProjectionPort,
     private metrics: BridgeMetrics,
     private log: Logger,
   ) {}
@@ -63,23 +63,52 @@ export class RetryWorker {
             // Space already exists or failed to create — nothing to retry
             this.log.debug({ entryId: entry.id }, 'Skipping create_space retry')
           } else if (
-            entry.eventType === 'invite' &&
-            entry.spaceId &&
+            entry.eventType === 'apply_roles' &&
+            entry.communityUri &&
             entry.did
           ) {
-            const mxid = await this.db.getMxidForDid(entry.did)
-            if (!mxid) continue
-            await this.matrix.inviteUser(entry.spaceId, mxid)
+            // Handover projection: re-apply the member's current governance
+            // roles as room power levels. Reading the current state (not the
+            // state at failure time) is what makes the retry safe.
+            const space = await this.db.getSpaceForCommunity(entry.communityUri)
+            const membership = await this.db.getCommunityMembership(
+              entry.did,
+              entry.communityUri,
+            )
+            if (!space || !membership || membership.state !== 'active') {
+              await this.db.markSyncSuccess(entry.id)
+              continue
+            }
+            const roles = membership.roles ?? []
+            const isObserver = roles.includes('observer')
+            const assigned = await this.db.getChamberAssignment(
+              entry.communityUri,
+              entry.did,
+            )
+            const chamber =
+              assigned === 'A' || assigned === 'B' ? assigned : null
+            await this.projection.applyMemberRoles(space, entry.did, {
+              roles,
+              chamber,
+              isObserver,
+            })
             await this.db.markSyncSuccess(entry.id)
             this.metrics.retryAttemptsTotal.inc({
               event_type: entry.eventType,
               status: 'success',
             })
             this.log.info({ entryId: entry.id }, 'Retry succeeded')
-          } else if (entry.eventType === 'kick' && entry.spaceId && entry.did) {
-            const mxid = await this.db.getMxidForDid(entry.did)
-            if (!mxid) continue
-            await this.matrix.kickUser(entry.spaceId, mxid)
+          } else if (
+            entry.eventType === 'revoke' &&
+            entry.communityUri &&
+            entry.did
+          ) {
+            const space = await this.db.getSpaceForCommunity(entry.communityUri)
+            await this.projection.revokeMemberAccess(
+              space ?? null,
+              entry.did,
+              'retry',
+            )
             await this.db.markSyncSuccess(entry.id)
             this.metrics.retryAttemptsTotal.inc({
               event_type: entry.eventType,

@@ -2,12 +2,14 @@
 import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'
 import { resHeaders } from '../../../util.js'
+import { assertQuadraticVotingEnabled } from './quadratic-voting-gate.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.com.para.community.getAuditTrail({
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
+      assertQuadraticVotingEnabled(ctx, { viewer, req })
       const labelers = ctx.reqLabelers(req)
 
       const res = await ctx.dataplane.getParaAuditTrail({

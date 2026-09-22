@@ -37,6 +37,11 @@ export class SqliteBase {
 
       CREATE INDEX IF NOT EXISTS idx_device_sessions_did ON device_sessions(did);
 
+      CREATE TABLE IF NOT EXISTS matrix_poll_cursors (
+        room_id TEXT PRIMARY KEY,
+        cursor TEXT NOT NULL
+      );
+
       CREATE TABLE IF NOT EXISTS as_transactions (
         txn_id TEXT PRIMARY KEY,
         received_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -53,12 +58,6 @@ export class SqliteBase {
 
       CREATE INDEX IF NOT EXISTS idx_event_log_created ON event_log(created_at);
 
-      CREATE TABLE IF NOT EXISTS user_matrix_map (
-        did TEXT PRIMARY KEY,
-        matrix_user_id TEXT NOT NULL,
-        password TEXT NOT NULL
-      );
-
       CREATE TABLE IF NOT EXISTS community_membership_state (
         did TEXT NOT NULL,
         community_uri TEXT NOT NULL,
@@ -69,6 +68,23 @@ export class SqliteBase {
       );
 
       CREATE INDEX IF NOT EXISTS idx_membership_state_community ON community_membership_state(community_uri);
+
+      -- v1 linkage table, deleted by CD-M1: a DID must not be relatable to a
+      -- chat account through anything this bridge stores. Dropped on every
+      -- start so deployments that still carry rows lose them, not just stop
+      -- accumulating new ones (the PW-CLEANUP lesson).
+      DROP TABLE IF EXISTS user_matrix_map;
+
+      -- DID-free membership lease (CD-M6): when each chat account last
+      -- proved currency for each community through a verified interaction.
+      -- The sweep evicts accounts whose lease expired, which is what reaches
+      -- removed members who never interact again. No DID column, on purpose.
+      CREATE TABLE IF NOT EXISTS community_membership_lease (
+        community_uri TEXT NOT NULL,
+        mxid TEXT NOT NULL,
+        last_verified_at TEXT NOT NULL,
+        PRIMARY KEY (community_uri, mxid)
+      );
 
       CREATE TABLE IF NOT EXISTS chamber_assignment (
         community_uri TEXT NOT NULL,
@@ -468,5 +484,17 @@ export class SqliteBase {
 
   close(): void {
     this.db.close()
+  }
+
+  beginTransaction(): void {
+    this.db.exec('BEGIN IMMEDIATE')
+  }
+
+  commitTransaction(): void {
+    this.db.exec('COMMIT')
+  }
+
+  rollbackTransaction(): void {
+    this.db.exec('ROLLBACK')
   }
 }

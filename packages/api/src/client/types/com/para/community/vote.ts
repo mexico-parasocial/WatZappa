@@ -23,7 +23,7 @@ export interface Main {
   voter: string
   /** Base political signal: -3 strong against … +3 strong for. 0 = abstain. */
   signal: number
-  /** Privacy-preserving one-person-one-vote nullifier for this proposal, issued by m8. */
+  /** One-person-one-vote nullifier for this proposal, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a. */
   voteNullifier?: string
   /** Opaque reference to the m8 eligibility/nullifier proof used to cast this vote. */
   eligibilityProofRef?: string

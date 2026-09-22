@@ -1,23 +1,36 @@
 # PARA Bare-Metal Stack
-# Optimized for AMD Ryzen 9 5950X (16c/32t) + 128GB RAM
+#
+# Two tuning profiles ship side by side:
+#   - Original limits/postgres.conf: AMD Ryzen 9 5950X (16c/32t) + 128GB RAM (production-scale reference)
+#   - This file's active values: Mac Mini M4, 16GB unified memory, local testing only
+#     (Docker Desktop here is granted ~7.75GB / 10 CPUs total for ALL containers —
+#     check `docker info` and re-tune if your allocation differs)
 # Zero cloud. Zero third parties. Full privacy.
 #
 # Start: docker compose -f docker-compose.local.yaml up -d
-# Scale: docker compose -f docker-compose.local.yaml up -d --scale pds=4 --scale bsky=4
+# Scale (only if you've raised Docker Desktop's memory allocation first):
+#   docker compose -f docker-compose.local.yaml up -d --scale pds=4 --scale bsky=4
+#
+# Named explicitly so this stack's project ("para-core") never collides with
+# docker-compose.matrix.yaml's ("para-matrix") — both files live in this same
+# directory, and without distinct names Compose infers the same project for
+# both from the directory name, so `up`/`down` on one can recreate the
+# other's shared default network and bounce its containers.
+name: para-core
 
 services:
   postgres:
     image: postgres:15-alpine
     container_name: para-postgres
     restart: unless-stopped
-    shm_size: 8gb
+    shm_size: 256mb
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-pg}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
       POSTGRES_DB: ${POSTGRES_DB:-para}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/postgres-tuning.conf:/etc/postgresql/postgresql.conf:ro
+      - ./scripts/postgres-tuning.mac-mini.conf:/etc/postgresql/postgresql.conf:ro
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
     ports:
       - '5432:5432'
@@ -29,8 +42,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '8.0'
-          memory: 64G
+          cpus: '2.0'
+          memory: 1G
     ulimits:
       nofile:
         soft: 65536
@@ -42,7 +55,7 @@ services:
     restart: unless-stopped
     command: >
       redis-server
-      --maxmemory 16gb
+      --maxmemory 256mb
       --maxmemory-policy allkeys-lru
       --save 300 1
       --appendonly yes
@@ -59,8 +72,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
-          memory: 16G
+          cpus: '1.0'
+          memory: 384M
 
   pds:
     build:
@@ -79,18 +92,18 @@ services:
     environment:
       PDS_PORT: 2583
       PDS_DB_POSTGRES_URL: postgres://${POSTGRES_USER:-pg}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-para}
-      PDS_BLOBSTORE_S3_BUCKET: blobs
+      PDS_BLOBSTORE_S3_BUCKET: ${PDS_BLOBSTORE_S3_BUCKET:-blobs}
       PDS_BLOBSTORE_S3_REGION: us-east-1
       PDS_BLOBSTORE_S3_ENDPOINT: http://seaweed-s3:8333
       PDS_BLOBSTORE_S3_FORCE_PATH_STYLE: 'true'
       PDS_RATE_LIMITS_ENABLED: 'true'
       PDS_DISABLE_SSRF_PROTECTION: '0'
     deploy:
-      replicas: ${PDS_REPLICAS:-4}
+      replicas: ${PDS_REPLICAS:-1}
       resources:
         limits:
-          cpus: '2.0'
-          memory: 4G
+          cpus: '1.0'
+          memory: 768M
     healthcheck:
       test:
         ['CMD', 'wget', '-q', '--spider', 'http://localhost:2583/xrpc/_health']
@@ -119,11 +132,11 @@ services:
       DATAPLANE_URLS: http://dataplane:2585
       BSYNC_URL: http://bsync:2586
     deploy:
-      replicas: ${BSKY_REPLICAS:-4}
+      replicas: ${BSKY_REPLICAS:-1}
       resources:
         limits:
-          cpus: '2.0'
-          memory: 4G
+          cpus: '1.0'
+          memory: 768M
     healthcheck:
       test:
         ['CMD', 'wget', '-q', '--spider', 'http://localhost:2584/xrpc/_health']
@@ -147,8 +160,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
-          memory: 4G
+          cpus: '0.5'
+          memory: 384M
 
   bsync:
     build:
@@ -166,8 +179,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 2G
+          cpus: '0.5'
+          memory: 256M
 
   ozone:
     build:
@@ -187,8 +200,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 2G
+          cpus: '0.5'
+          memory: 256M
 
   # ------------------------------------------------------------
   # SeaweedFS – self-hosted S3-compatible blobstore
@@ -219,8 +232,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 2G
+          cpus: '0.25'
+          memory: 192M
 
   seaweed-volume:
     image: chrislusf/seaweedfs:4.37
@@ -251,8 +264,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
-          memory: 4G
+          cpus: '0.5'
+          memory: 384M
 
   seaweed-filer:
     image: chrislusf/seaweedfs:4.37
@@ -284,8 +297,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 2G
+          cpus: '0.25'
+          memory: 192M
 
   seaweed-s3:
     image: chrislusf/seaweedfs:4.37
@@ -319,8 +332,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 2G
+          cpus: '0.25'
+          memory: 192M
 
   nginx:
     image: nginx:alpine
@@ -338,8 +351,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
-          memory: 1G
+          cpus: '0.5'
+          memory: 128M
 
   # Self-hosted analytics — zero third parties
   umami:
@@ -358,8 +371,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 1G
+          cpus: '0.5'
+          memory: 256M
 
 volumes:
   postgres_data:

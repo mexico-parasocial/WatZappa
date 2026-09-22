@@ -1,0 +1,146 @@
+---
+# PARA Ansible variables (non-secret).
+# Secrets belong in an Ansible Vault file; see group_vars/all/vault.yml.example.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Domain
+# ─────────────────────────────────────────────────────────────────────────────
+# para.social is the live registration. para-g0v.app is GONE — it no longer
+# resolves — but it is still hardcoded in services/caddy/Caddyfile.prod and in
+# .env.example. Anything generated from those templates will request Let's
+# Encrypt certificates for a domain with no DNS, and fail. Keep this variable
+# as the single source of truth and render the edge config from it.
+para_domain: "para.social"
+
+pds_hostname: "pds.{{ para_domain }}"
+appview_hostname: "appview.{{ para_domain }}"
+ozone_hostname: "ozone.{{ para_domain }}"
+bridge_hostname: "bridge.{{ para_domain }}"
+
+# Matrix hostnames. matrix_server_name is baked into every MXID that has ever
+# been minted and into the Synapse signing key filename
+# (deploy/matrix/synapse/matrix.para.social.signing.key). Changing it after
+# users exist invalidates every user ID on the server. Treat it as immutable.
+matrix_server_name: "matrix.{{ para_domain }}"
+chat_hostname: "chat.{{ para_domain }}"
+
+acme_email: "ops@{{ para_domain }}"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Deployment
+# ─────────────────────────────────────────────────────────────────────────────
+para_deploy_dir: "/opt/para"
+
+# The real remote. The previous value (git@github.com:TinoMachino/final.git)
+# was inherited from another project and pointed at a repository that has
+# nothing to do with this stack.
+para_repo_url: "https://github.com/mexico-parasocial/WatZappa.git"
+para_repo_branch: "main"
+
+# How code reaches the server.
+#   rsync — push the working tree from the operator's machine. This is what
+#           infrascripts/deploy-production.sh did, and the only path that has
+#           ever produced a running deployment. Works with uncommitted changes.
+#   git   — clone/pull on the server. Reproducible, auditable, requires the
+#           branch to actually contain what you want deployed.
+para_source_strategy: "rsync"
+
+# Compose files, applied in this order. Both join the external `para-edge`
+# network, which the para-edge role creates first; Caddy in the app stack is
+# the only public-facing service and fronts Matrix too.
+app_compose_file: "docker-compose.prod.yaml"
+matrix_compose_file: "docker-compose.matrix.yaml"
+edge_network_name: "para-edge"
+
+# Full rebuilds are slow (deploy-production.sh used --no-cache on every run,
+# which rebuilt the entire TypeScript monorepo each deploy). Opt in explicitly
+# when you actually need to bust the cache: -e compose_build_no_cache=true
+compose_build_no_cache: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Service map — internal ports, used for health checks
+# ─────────────────────────────────────────────────────────────────────────────
+# Everything except Caddy binds to 127.0.0.1 on the host. Verified against
+# docker-compose.prod.yaml and docker-compose.matrix.yaml.
+# In docker-compose.prod.yaml these services use `expose:`, NOT `ports:` —
+# they are reachable only from inside the compose network. Caddy is the sole
+# service bound to the host. So app-stack health is checked at the Docker
+# level (container state, and health status where compose defines a
+# healthcheck), not over HTTP from the host: an HTTP probe against
+# 127.0.0.1:2583 would fail on a perfectly healthy deployment.
+app_services:
+  - {name: "postgres", has_healthcheck: true}
+  - {name: "redis", has_healthcheck: true}
+  - {name: "pds", has_healthcheck: true}
+  - {name: "bsky", has_healthcheck: true}
+  - {name: "dataplane", has_healthcheck: false}
+  - {name: "bsync", has_healthcheck: false}
+  - {name: "ozone", has_healthcheck: false}
+  - {name: "caddy", has_healthcheck: false}
+
+# The Matrix stack DOES bind to the host (127.0.0.1 only), so these are
+# checked over real HTTP. Verified against docker-compose.matrix.yaml.
+matrix_services:
+  - {name: "synapse", port: 8008, health: "/health"}
+  - {name: "para-idp", port: 8090, health: "/healthz"}
+  - {name: "mas", port: 8080, health: "/health"}
+  - {name: "matrix-bridge", port: 3001, health: "/healthz"}
+  - {name: "element-web", port: 8082, health: "/"}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Docker
+# ─────────────────────────────────────────────────────────────────────────────
+# Empty means "current stable from Docker's apt repo". Set to a full apt
+# version string to pin (e.g. "5:27.0.0-1~ubuntu.24.04~noble"). The old tree
+# declared a pinned version and then never used it, so it always installed
+# latest while claiming otherwise.
+docker_apt_version: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Firewall
+# ─────────────────────────────────────────────────────────────────────────────
+# 80 is REQUIRED, not optional: Caddy needs it for the ACME HTTP-01 challenge
+# and for the HTTP→HTTPS redirect. The previous tree opened 22 and 443 only,
+# which silently broke certificate issuance.
+ufw_allowed_tcp_ports: [22, 80, 443]
+
+# Matrix federation (8448) stays CLOSED. deploy/matrix/hardening.yaml sets an
+# empty federation_domain_whitelist — this server federates with nobody, by
+# decision (MATRIX_V2.md §3.8). Opening this port would contradict the
+# privacy disclosure now shown in the PARA chat UI.
+ufw_allow_matrix_federation: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Postgres
+# ─────────────────────────────────────────────────────────────────────────────
+# The app stack's Postgres is defined in docker-compose.prod.yaml and owned by
+# compose. This role only manages its configuration and backups — it no longer
+# deploys a second, competing Postgres service onto the same data directory.
+#
+# Matrix keeps its own two databases (synapse-db, mas-db) in the Matrix
+# compose file. They are backed up separately; see the postgres role.
+postgres_user: "pg"
+postgres_db: "para"
+postgres_backup_dir: "{{ para_deploy_dir }}/postgres/backups"
+postgres_backup_retention_days: 14
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Backups — off-site (S3-compatible: R2, MinIO, AWS)
+# ─────────────────────────────────────────────────────────────────────────────
+# Leave s3_endpoint empty to keep backups local-only. The role will say so
+# loudly rather than pretending off-site backups exist.
+s3_endpoint: ""
+s3_backup_bucket: "para-backups"
+s3_region: "auto"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Monitoring
+# ─────────────────────────────────────────────────────────────────────────────
+# QUARTER_PLAN_2026Q4 S1: "nothing scrapes the bridge's Prometheus metrics".
+# The previous tree deployed node-exporter and cAdvisor with no Prometheus, so
+# metrics were produced and discarded. Prometheus is now part of the role.
+monitoring_enabled: true
+node_exporter_version: "1.8.0"
+cadvisor_version: "0.49.1"
+prometheus_version: "v2.54.1"
+prometheus_retention: "15d"

@@ -4,13 +4,12 @@ import { EventLogArea } from './event-log.js'
 // canonical home for these is interface.ts.
 export type {
   AiConsentRecord,
-  CommunitySpaceMap,
-  DeviceSession,
   CommunityRoomKind,
   CommunityRoomSummary,
+  CommunitySpaceMap,
+  DeviceSession,
   IBridgeDatabase,
   SyncLogEntry,
-  UserMatrixMap,
   UserPushToken,
 } from '../interface.js'
 

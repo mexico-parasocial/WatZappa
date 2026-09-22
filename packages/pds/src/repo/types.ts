@@ -52,6 +52,15 @@ export type SyncEvtData = {
 
 export class InvalidRecordError extends Error {}
 
+/**
+ * A write refused by the PARA ballot policy. Subclasses
+ * {@link InvalidRecordError} so that every handler already mapping that to a
+ * 400 refuses the write without a per-handler change.
+ */
+export class BallotRefusedError extends InvalidRecordError {
+  name = 'BallotRefusedError'
+}
+
 export class BadCommitSwapError extends Error {
   constructor(public cid: Cid) {
     super(`Commit was at ${cid.toString()}`)

@@ -1,0 +1,27 @@
+---
+# =============================================================================
+# PARA — code-only redeploy
+# =============================================================================
+#   ansible-playbook playbooks/deploy.yml
+#   ansible-playbook playbooks/deploy.yml -e compose_build_no_cache=true
+#   ansible-playbook playbooks/deploy.yml --tags app      # app stack only
+#   ansible-playbook playbooks/deploy.yml --tags matrix   # Matrix only
+#
+# Assumes the host is already provisioned by site.yml. Syncs code, rebuilds
+# changed images and restarts, without touching the firewall, Docker install,
+# Postgres configuration or monitoring.
+# =============================================================================
+
+- name: Redeploy PARA code
+  hosts: para_servers
+  become: true
+
+  roles:
+    - role: para_edge
+      tags: [app, matrix]
+    - role: app_stack
+      when: app_stack_enabled | default(true)
+      tags: [app]
+    - role: matrix_stack
+      when: matrix_stack_enabled | default(true)
+      tags: [matrix]

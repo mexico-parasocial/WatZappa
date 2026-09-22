@@ -9,12 +9,6 @@ export interface CommunitySpaceMap {
   createdAt: string
 }
 
-export interface UserMatrixMap {
-  did: string
-  matrixUserId: string
-  password: string
-}
-
 export interface UserPushToken {
   did: string
   expoPushToken: string
@@ -52,15 +46,15 @@ export interface CommunityRoomSummary {
 }
 
 import type {
+  ConsentPrefsStore,
+  ConstitutionProposalsStore,
+  DeliberationStore,
   IdentityMatrixStore,
   InfraStore,
-  ConstitutionProposalsStore,
-  SortitionStore,
+  MatrixEventsStore,
   ModerationStore,
   ParticipationStore,
-  ConsentPrefsStore,
-  MatrixEventsStore,
-  DeliberationStore,
+  SortitionStore,
 } from './stores/index.js'
 
 export interface DeviceSession {

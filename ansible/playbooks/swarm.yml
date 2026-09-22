@@ -1,0 +1,34 @@
+---
+# =============================================================================
+# PARA — multi-node Docker Swarm (PARKED, NOT READY)
+# =============================================================================
+# Kept because the horizontal-scale design is worth preserving, but it is not
+# on the default path and it will NOT deploy as-is. Two blockers, both real:
+#
+#   1. NO IMAGE REGISTRY. docker-compose.swarm.yml declares
+#      `image: para-pds:latest` next to a `build:` block. `docker stack
+#      deploy` ignores `build:` entirely and pulls from a registry. There is
+#      no registry in this repo, so worker nodes have nothing to pull. Fix
+#      this first: stand up a registry, build and push tagged images, and
+#      replace the bare `para-*:latest` tags with registry-qualified ones.
+#
+#   2. NO MATRIX. docker-compose.swarm.yml covers postgres, redis, pds,
+#      dataplane, appview, bsync and ozone. The eight Matrix services have no
+#      swarm equivalent, so chat — the thing the pilot is for — would not
+#      deploy at all.
+#
+# Until both are fixed, use site.yml. Revisit after the pilot proves out F9
+# in production and multi-community is actually unblocked (risk R10).
+# =============================================================================
+
+- name: Refuse to run until the swarm blockers are resolved
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Stop
+      ansible.builtin.fail:
+        msg: |
+          playbooks/swarm.yml is parked. See the header of this file.
+          Blockers: no image registry; no Matrix services in the swarm stack.
+          Use playbooks/site.yml for the single-host deployment.

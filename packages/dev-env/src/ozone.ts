@@ -115,11 +115,12 @@ export class TestOzone {
   }
 
   async addAdminDid(did: DidString) {
-    await this.ctx.teamService(this.ctx.db).create({
+    // upsert, not create: these run on every boot, and with a persistent
+    // Postgres (scripts/dev-env-persistent.sh) the row already exists from
+    // the last one. `create` throws on member_pkey and takes dev-env down
+    // before it finishes starting.
+    await this.ctx.teamService(this.ctx.db).upsert({
       did,
-      disabled: false,
-      handle: null,
-      displayName: null,
       lastUpdatedBy: this.ctx.cfg.service.did,
       role: 'tools.ozone.team.defs#roleAdmin',
     })
@@ -127,11 +128,12 @@ export class TestOzone {
   }
 
   async addModeratorDid(did: DidString) {
-    await this.ctx.teamService(this.ctx.db).create({
+    // upsert, not create: these run on every boot, and with a persistent
+    // Postgres (scripts/dev-env-persistent.sh) the row already exists from
+    // the last one. `create` throws on member_pkey and takes dev-env down
+    // before it finishes starting.
+    await this.ctx.teamService(this.ctx.db).upsert({
       did,
-      disabled: false,
-      handle: null,
-      displayName: null,
       lastUpdatedBy: this.ctx.cfg.service.did,
       role: 'tools.ozone.team.defs#roleModerator',
     })
@@ -139,11 +141,12 @@ export class TestOzone {
   }
 
   async addTriageDid(did: DidString) {
-    await this.ctx.teamService(this.ctx.db).create({
+    // upsert, not create: these run on every boot, and with a persistent
+    // Postgres (scripts/dev-env-persistent.sh) the row already exists from
+    // the last one. `create` throws on member_pkey and takes dev-env down
+    // before it finishes starting.
+    await this.ctx.teamService(this.ctx.db).upsert({
       did,
-      disabled: false,
-      handle: null,
-      displayName: null,
       lastUpdatedBy: this.ctx.cfg.service.did,
       role: 'tools.ozone.team.defs#roleTriage',
     })

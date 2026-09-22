@@ -4,6 +4,10 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 
+# npm 10.9.x (bundled in some node:22-alpine pulls) crashes with
+# "Cannot read properties of null (reading 'edgesOut')" on fresh resolves.
+RUN npm install -g npm@12
+
 COPY ./services/para-idp/package.json ./
 # No workspace lockfile here, so this resolves fresh. Pin exact versions in
 # package.json if byte-reproducible images become a requirement.
@@ -18,6 +22,7 @@ RUN apk add --update dumb-init wget
 ENTRYPOINT ["dumb-init", "--"]
 WORKDIR /app
 
+RUN npm install -g npm@12
 COPY ./services/para-idp/package.json ./
 RUN npm install --omit=dev --no-audit --no-fund && npm cache clean --force
 COPY --from=build /app/dist ./dist

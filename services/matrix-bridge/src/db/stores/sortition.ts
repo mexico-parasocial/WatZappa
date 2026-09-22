@@ -1,5 +1,4 @@
 export interface SortitionStore {
-
   saveSortitionProof(proof: {
     did: string
     communityUri: string

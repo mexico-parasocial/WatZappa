@@ -1,6 +1,6 @@
 {
   "name": "@atproto-labs/simple-store",
-  "version": "0.4.3",
+  "version": "0.5.1",
   "license": "MIT",
   "description": "Simple store interfaces & utilities",
   "keywords": [
@@ -28,10 +28,10 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "tsgo --build tsconfig.build.json",
+    "build": "tsc --build tsconfig.build.json",
     "test": "vitest run"
   },
   "devDependencies": {
-    "vitest": "^4.0.16"
+    "vitest": "^4.1.10"
   }
 }

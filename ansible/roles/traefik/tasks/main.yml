@@ -1,0 +1,56 @@
+---
+- name: Create Traefik config directories
+  file:
+    path: "{{ para_deploy_dir }}/traefik/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - ""
+    - "certs"
+    - "dynamic"
+
+- name: Deploy Traefik static config
+  template:
+    src: traefik.yml.j2
+    dest: "{{ para_deploy_dir }}/traefik/traefik.yml"
+
+- name: Deploy Traefik dynamic config
+  template:
+    src: traefik-dynamic.yml.j2
+    dest: "{{ para_deploy_dir }}/traefik/dynamic/para.yml"
+
+- name: Deploy Traefik as a Swarm service
+  docker_swarm_service:
+    name: traefik
+    image: "traefik:{{ traefik_version }}"
+    mode: global
+    placement:
+      constraints:
+        - "node.labels.traefik-public==true"
+    publish:
+      - target_port: 80
+        published_port: 80
+        protocol: tcp
+        mode: host
+      - target_port: 443
+        published_port: 443
+        protocol: tcp
+        mode: host
+    mounts:
+      - source: "{{ para_deploy_dir }}/traefik"
+        target: /etc/traefik
+        type: bind
+        read_only: yes
+      - source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        type: bind
+        read_only: yes
+    networks:
+      - "{{ swarm_overlay_network }}"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.api.rule: "Host(`traefik.{{ para_domain }}`)"
+      traefik.http.routers.api.service: "api@internal"
+      traefik.http.routers.api.middlewares: "auth@file"
+  delegate_to: "{{ groups['swarm_managers'][0] }}"
+  run_once: true

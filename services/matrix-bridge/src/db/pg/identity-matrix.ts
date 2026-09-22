@@ -1,12 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import type {
   AiConsentRecord,
-  CommunitySpaceMap,
   CommunityRoomKind,
   CommunityRoomSummary,
+  CommunitySpaceMap,
   DeviceSession,
   SyncLogEntry,
-  UserMatrixMap,
   UserPushToken,
 } from '../interface.js'
 import { PgBase } from './base.js'
@@ -95,35 +94,6 @@ export class IdentityMatrixArea extends PgBase {
     return row?.count ?? 0
   }
 
-  // User <-> MXID mappings
-  async getMxidForDid(did: string): Promise<string | undefined> {
-    const row = await this.queryOne<{ matrix_user_id: string }>(
-      'SELECT matrix_user_id FROM user_matrix_map WHERE did = $1',
-      [did],
-    )
-    return row?.matrix_user_id
-  }
-
-  async setMxidForDid(
-    did: string,
-    mxid: string,
-    password: string,
-  ): Promise<void> {
-    await this.run(
-      `INSERT INTO user_matrix_map (did, matrix_user_id, password) VALUES ($1, $2, $3)
-       ON CONFLICT (did) DO UPDATE SET matrix_user_id = EXCLUDED.matrix_user_id, password = EXCLUDED.password`,
-      [did, mxid, password],
-    )
-  }
-
-  async getUserPassword(did: string): Promise<string | undefined> {
-    const row = await this.queryOne<{ password: string }>(
-      'SELECT password FROM user_matrix_map WHERE did = $1',
-      [did],
-    )
-    return row?.password
-  }
-
   // Lookup community by any of its room IDs
   async getCommunityByRoomId(
     roomId: string,
@@ -135,10 +105,17 @@ export class IdentityMatrixArea extends PgBase {
     return row ? { communityUri: row.community_uri, slug: row.slug } : undefined
   }
 
-  // Get DID by MXID
+  // Chat-account attribution (post-CD-M1)
+  //
+  // There is no DID↔MXID mapping table and no way to mint one: the MXID is a
+  // hash of client-held key material (identity-proof.ts). The only reverse
+  // resolution available is over the device sessions this bridge itself
+  // minted after a verified proof of possession — operational state, not a
+  // directory. It backs chat-message attribution in matrix-ingestion.ts and
+  // is deliberately absent from any API response.
   async getDidForMxid(mxid: string): Promise<string | undefined> {
     const row = await this.queryOne<{ did: string }>(
-      'SELECT did FROM user_matrix_map WHERE matrix_user_id = $1',
+      'SELECT did FROM device_sessions WHERE mxid = $1 AND revoked_at IS NULL LIMIT 1',
       [mxid],
     )
     return row?.did
@@ -181,6 +158,67 @@ export class IdentityMatrixArea extends PgBase {
       roles = []
     }
     return { state: row.membership_state, roles }
+  }
+
+  async getMembershipsForDid(
+    did: string,
+  ): Promise<Array<{ communityUri: string; state: string; roles: string[] }>> {
+    const rows = await this.queryAll<{
+      community_uri: string
+      membership_state: string
+      roles_json: string
+    }>(
+      'SELECT community_uri, membership_state, roles_json FROM community_membership_state WHERE did = $1',
+      [did],
+    )
+    return rows.map((r) => ({
+      communityUri: r.community_uri,
+      state: r.membership_state,
+      roles: JSON.parse(r.roles_json ?? '[]'),
+    }))
+  }
+
+  async upsertCommunityMembershipLease(
+    communityUri: string,
+    mxid: string,
+    verifiedAtIso: string,
+  ): Promise<void> {
+    await this.run(
+      `INSERT INTO community_membership_lease (community_uri, mxid, last_verified_at)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (community_uri, mxid) DO UPDATE SET last_verified_at = EXCLUDED.last_verified_at`,
+      [communityUri, mxid, verifiedAtIso],
+    )
+  }
+
+  async getExpiredCommunityMembershipLeases(
+    cutoffIso: string,
+  ): Promise<
+    Array<{ communityUri: string; mxid: string; lastVerifiedAt: string }>
+  > {
+    const rows = await this.queryAll<{
+      community_uri: string
+      mxid: string
+      last_verified_at: string
+    }>(
+      'SELECT community_uri, mxid, last_verified_at FROM community_membership_lease WHERE last_verified_at < $1',
+      [cutoffIso],
+    )
+    return rows.map((r) => ({
+      communityUri: r.community_uri,
+      mxid: r.mxid,
+      lastVerifiedAt: r.last_verified_at,
+    }))
+  }
+
+  async deleteCommunityMembershipLease(
+    communityUri: string,
+    mxid: string,
+  ): Promise<void> {
+    await this.run(
+      'DELETE FROM community_membership_lease WHERE community_uri = $1 AND mxid = $2',
+      [communityUri, mxid],
+    )
   }
 
   async isActiveCommunityMember(

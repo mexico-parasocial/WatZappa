@@ -1,0 +1,9 @@
+---
+# The common role has notified `Restart fail2ban` since it was written, with
+# no handlers file anywhere in the role. Ansible fails the run with "The
+# requested handler 'Restart fail2ban' was not found" — which is one reason
+# this tree had never completed a run.
+- name: Restart fail2ban
+  ansible.builtin.service:
+    name: fail2ban
+    state: restarted

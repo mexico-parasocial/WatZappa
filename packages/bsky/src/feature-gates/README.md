@@ -56,16 +56,23 @@ const hydrateCtx = await ctx.hydrator.createContext({
 > intention is to use the `ScopedFeatureGatesClient` returned by `scope()` for
 > gate checks within the application.
 
-You can also pass the user context directly to `checkGate` or `checkGates`. This
-overrides any default scope set on the client, allowing for flexibility in cases
-where user context is only available at the point of gate evaluation.
+`checkGates` on the client itself is private, so a gate check always goes
+through `scope()`. Its `checkGate`/`checkGates` accept user context overrides,
+which take precedence over the scope, for cases where the relevant user is only
+known at the point of evaluation.
 
 ```typescript
-const enabled = ctx.featureGatesClient.checkGate(
-  ctx.featureGatesClient.Gate.ImageFeatureEnabled,
-  { did: imageAuthor.did },
+const features = ctx.featureGatesClient.scope(
+  ctx.featureGatesClient.parseUserContextFromHandler({ viewer, req }),
 )
+const enabled = features.checkGate(features.Gate.ImageFeatureEnabled, {
+  did: imageAuthor.did,
+})
 ```
+
+Gate checks are synchronous, and return `false` when GrowthBook is unconfigured
+or has not finished loading — a gated feature is off until it is deliberately
+turned on.
 
 ### Adding Gates
 

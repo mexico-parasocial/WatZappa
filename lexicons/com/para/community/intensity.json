@@ -4,10 +4,16 @@
   "defs": {
     "main": {
       "type": "record",
+      "description": "DEPRECATED 2026-09-18 (ballot freeze E0). Do not write this record. It carries everything com.para.community.vote does plus `units`, `creditsSpent`, `effectiveWeight` and `delegatedFrom` — the delegation graph, which OD-7 §5b names as more re-identifying than the ballots themselves — all in the voter's own public repo. Quadratic intensity is the last stage of the replacement design, not the first: see WatZappa/docs/OD-7-BALLOT-IDENTITY-REGISTRATION.md §5a.3/§5b.",
       "key": "tid",
       "record": {
         "type": "object",
-        "required": ["proposal", "voter", "signal", "units"],
+        "required": [
+          "proposal",
+          "voter",
+          "signal",
+          "units"
+        ],
         "properties": {
           "proposal": {
             "type": "string",
@@ -37,7 +43,10 @@
           },
           "delegatedFrom": {
             "type": "array",
-            "items": { "type": "string", "format": "did" },
+            "items": {
+              "type": "string",
+              "format": "did"
+            },
             "description": "DIDs whose voting power was aggregated into this intensity record. Empty = direct."
           },
           "delegationDepth": {
@@ -51,7 +60,7 @@
           "voteNullifier": {
             "type": "string",
             "maxLength": 128,
-            "description": "Privacy-preserving one-person-one-vote nullifier for this proposal intensity declaration, issued by m8."
+            "description": "One-person-one-vote nullifier for this proposal intensity declaration, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a."
           },
           "eligibilityProofRef": {
             "type": "string",

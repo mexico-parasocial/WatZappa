@@ -1,22 +1,27 @@
-import { Selectable, sql } from 'kysely'
-import { DAY, HOUR } from '@atproto/common'
-import { IdResolver, getPds } from '@atproto/identity'
-import { Cid, l, parseCid, xrpc, xrpcSafe } from '@atproto/lex'
+import { type Selectable, sql } from 'kysely'
 import {
-  VerifiedRepo,
+  DAY,
+  HOUR,
+  ballotWriteRefusal,
+  verifyCabildeoProof,
+} from '@atproto/common'
+import { type IdResolver, getPds } from '@atproto/identity'
+import { type Cid, l, parseCid, xrpc, xrpcSafe } from '@atproto/lex'
+import {
+  type VerifiedRepo,
   WriteOpAction,
   getAndParseRecord,
   readCarWithRoot,
   verifyRepo,
 } from '@atproto/repo'
-import { AtUri, DidString } from '@atproto/syntax'
-import { ParaCacheService } from '../../../cache/para-cache.js'
+import { AtUri, type DidString } from '@atproto/syntax'
+import type { ParaCacheService } from '../../../cache/para-cache.js'
 import { com } from '../../../lexicons.js'
 import { subLogger } from '../../../logger.js'
 import { retryXrpc } from '../../../util/retry.js'
-import { BackgroundQueue } from '../background.js'
-import { Database } from '../db/index.js'
-import { Actor } from '../db/tables/actor.js'
+import type { BackgroundQueue } from '../background.js'
+import type { Database } from '../db/index.js'
+import type { Actor } from '../db/tables/actor.js'
 import * as Block from './plugins/block.js'
 import * as CabildeoDelegation from './plugins/cabildeo-delegation.js'
 import * as CabildeoPosition from './plugins/cabildeo-position.js'
@@ -42,6 +47,8 @@ import * as ParaCommunityMembership from './plugins/para-community-membership.js
 import * as ParaCommunityRelation from './plugins/para-community-relation.js'
 import * as ParaCommunitySharedContentAction from './plugins/para-community-shared-content-action.js'
 import * as ParaCommunitySharedContent from './plugins/para-community-shared-content.js'
+import * as ParaDeliberationStatement from './plugins/para-deliberation-statement.js'
+import * as ParaDeliberationVote from './plugins/para-deliberation-vote.js'
 import * as ParaPostMeta from './plugins/para-post-meta.js'
 import * as ParaPost from './plugins/para-post.js'
 import * as ParaQvlCivicTreeVote from './plugins/para-qvl-civic-tree-vote.js'
@@ -101,6 +108,8 @@ export class IndexingService {
     paraQvlDelegation: ParaQvlDelegation.PluginType
     paraQvlIntensity: ParaQvlIntensity.PluginType
     paraQvlVote: ParaQvlVote.PluginType
+    paraDeliberationStatement: ParaDeliberationStatement.PluginType
+    paraDeliberationVote: ParaDeliberationVote.PluginType
     paraStatus: ParaStatus.PluginType
     cabildeo: Cabildeo.PluginType
     cabildeoPosition: CabildeoPosition.PluginType
@@ -183,6 +192,14 @@ export class IndexingService {
       paraQvlDelegation: ParaQvlDelegation.makePlugin(this.db, this.background),
       paraQvlIntensity: ParaQvlIntensity.makePlugin(this.db, this.background),
       paraQvlVote: ParaQvlVote.makePlugin(this.db, this.background),
+      paraDeliberationStatement: ParaDeliberationStatement.makePlugin(
+        this.db,
+        this.background,
+      ),
+      paraDeliberationVote: ParaDeliberationVote.makePlugin(
+        this.db,
+        this.background,
+      ),
       paraStatus: ParaStatus.makePlugin(this.db, this.background),
       cabildeo: Cabildeo.makePlugin(this.db, this.background),
       cabildeoPosition: CabildeoPosition.makePlugin(this.db, this.background),
@@ -222,7 +239,25 @@ export class IndexingService {
     timestamp: string,
     opts?: { disableNotifs?: boolean; disableLabels?: boolean },
   ) {
+    // @NOTE the PARA ballot policy applies to any origin, not just repos this
+    // network hosts: a ballot written by some other PDS must not be aggregated
+    // into a queryable who-voted-what table here either. Deletes still index, so
+    // an author removing an old ballot removes it from us too.
+    const ballotRefusal = ballotWriteRefusal(uri.collection, obj)
+    if (ballotRefusal) {
+      subLogger.debug(
+        { uri: uri.toString(), reason: ballotRefusal },
+        'skipping indexing of refused ballot record',
+      )
+      return
+    }
     this.db.assertNotTransaction()
+    if (
+      uri.collection === 'com.para.civic.vote' &&
+      !(await verifyCabildeoProof(uri.host, obj))
+    ) {
+      return
+    }
     return this.db.transaction(async (txn) => {
       const indexingTx = this.transact(txn)
       const indexer = indexingTx.findIndexerForCollection(uri.collection)
@@ -560,6 +595,14 @@ export class IndexingService {
       .execute()
     await this.db.db
       .deleteFrom('para_qvld_civicTree_statement')
+      .where('creator', '=', did)
+      .execute()
+    await this.db.db
+      .deleteFrom('para_deliberation_vote')
+      .where('creator', '=', did)
+      .execute()
+    await this.db.db
+      .deleteFrom('para_deliberation_statement')
       .where('creator', '=', did)
       .execute()
     await this.db.db

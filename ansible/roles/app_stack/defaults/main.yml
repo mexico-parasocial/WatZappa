@@ -1,0 +1,21 @@
+---
+# Path on the CONTROL machine to the .env that the stack runs on. Defaults to
+# the repo root beside this ansible tree. Generate one with
+# infrascripts/generate-secrets.sh if you do not have it yet.
+app_stack_env_source: "{{ playbook_dir }}/../../.env"
+
+# Excludes mirror infrascripts/deploy-production.sh, which is the sync that
+# has actually worked. `.git` is excluded deliberately: the server builds from
+# the synced tree, it does not need history.
+app_stack_rsync_excludes:
+  - "node_modules"
+  - ".git"
+  - ".pnpm-store"
+  - "dist"
+  - "build"
+  - "*.log"
+  - ".DS_Store"
+  - "__tests__"
+  - "coverage"
+  - ".changeset"
+  - "ansible/.ansible_facts"

@@ -67,6 +67,23 @@ For working with that SDK, invoke the focused skills under [.agents/skills/](.ag
 
 ## Architecture notes
 
+- Public cabildeo votes require `verifyCabildeoProof` before PDS preparation and
+  AppView indexing, including foreign repositories. `PARA_CIVIC_VOTE_VERIFIER_URL`
+  is operator configuration; absent/unavailable verification must never fall
+  back to account-only deduplication. This MAC authorization is not anonymous
+  voting. `civic.delegation` carrying `signal` is also refused by the shared policy.
+
+- `packages/bsky/src/governance-lab` is a synthetic reference only. Its
+  `g1-follow-signal-v1` policy is provisional; never import it into production
+  handlers or treat its publication threshold as an anonymity guarantee.
+  PARA's local lab compiles this same source instead of copying tally formulas.
+
+- Legacy QV ballot reads remain frozen independently of the experiment flag:
+  `quadratic-voting-gate.ts` refuses enabled callers with `BallotPrivacyUnavailable`.
+  Reopening requires the private publication path in OD-7, including protection
+  against differencing aggregates. Delegation payloads must bind the delegator
+  to the repository owner before indexing voting power.
+
 - **Lexicons are the contract.** The JSON files in [lexicons/](lexicons/) drive both client types and server route validation. Service packages don't hand-write XRPC method signatures — they import the generated definitions from their `src/lexicons/` directory (gitignored / regenerated).
 - **bsky legacy route registry is frozen.** The generated `Server` + typed handlers in `packages/bsky/src/lexicon/` (legacy lexgen output) can no longer be regenerated — `lex build` writes the runtime schema tree to `src/lexicons/` instead. To serve an XRPC method the registry predates: install its `LexiconDoc` via `server.addLexicons(...)` (see `packages/bsky/src/api/com/para/community/civicTree/schemas.ts`) and register the handler with `server.xrpc.method(nsid, cfg)` (see the post-subscription endpoints for the existing pattern). Bind write-endpoint DIDs to `auth.credentials.iss`, never the payload.
 - ([packages/pds](packages/pds)) — a single-tenant atproto server: account management, repo storage (kysely-over-sqlite), actor storage (kysely-over-postgres), email, OAuth provider, blob storage. Runtime entry point is [services/pds](services/pds); production code is in `packages/pds/src`.
@@ -80,7 +97,7 @@ For working with that SDK, invoke the focused skills under [.agents/skills/](.ag
 
 **Code style rules live in [STYLE_GUIDE.md](./STYLE_GUIDE.md)** — imports, typing, dependencies, change scope, and formatting. Read it before writing code. The rest of this section covers repository mechanics only.
 
-- Node ≥22 runtime floor; build/dev default to Node 22 (`.nvmrc`). Use `node --enable-source-maps` for production-style runs.
+- Node ≥22 runtime floor for published packages; **local dev is pinned to 22.x** (`devEngines.runtime`, `onFail: error`), so `pnpm` refuses to run on any other major — `nvm use` picks it up from `.nvmrc`. Native modules are compiled per Node ABI: after switching versions, `pnpm rebuild better-sqlite3`, or the pds/bsky test suites fail to boot. Use `node --enable-source-maps` for production-style runs.
 - TypeScript compilation uses the native TS7 `tsc` (the standard `typescript` package). There is no per-package `typescript` devDependency — it is hoisted at the root. Note TS7 has no stable programmatic API yet; tools needing one must pin TS6.
 - **Every package touched by a change needs a changeset entry.** Add a file under [.changeset/](.changeset/) listing each modified package with an appropriate bump level (pre-v1 breaking changes are `minor` and everything else `patch`, post-v1 `major` for breaking changes, `minor` for new public API, `patch` otherwise). Dependency-only bumps are generated automatically — don't list them by hand. Create that file with `pnpm changeset`.
 - **Never buffer an unbounded stream from outside the process.** Decoding or buffering a request/response body that did not originate locally requires an explicit size bound on the _decoded_ bytes — a wire-size cap does not bound a compressed payload. Compose `createDecoders` with `MaxSizeChecker` in a `pipeline` (see `packages/xrpc-server/src/util.ts`), rather than passing a decoded stream straight to `streamToNodeBuffer`.

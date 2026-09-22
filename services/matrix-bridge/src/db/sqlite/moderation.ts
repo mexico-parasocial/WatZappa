@@ -1,13 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  CommunitySpaceMap,
+  SyncLogEntry,
+  UserPushToken,
 } from '../interface.js'
 import { SortitionArea } from './sortition.js'
 
 export class ModerationArea extends SortitionArea {
-
-
   // Chat moderation events
   insertModerationEvent(event: {
     did: string
@@ -39,7 +41,6 @@ export class ModerationArea extends SortitionArea {
       )
   }
 
-
   getModerationEvents(
     did: string,
     communityUri: string,
@@ -52,7 +53,6 @@ export class ModerationArea extends SortitionArea {
       .all(did, communityUri, sinceDays) as any[]
   }
 
-
   getRecentReportsForCommunity(communityUri: string, days = 30): any[] {
     return this.db
       .prepare(
@@ -60,7 +60,6 @@ export class ModerationArea extends SortitionArea {
       )
       .all(communityUri, days) as any[]
   }
-
 
   /**
    * F4: clear message excerpts captured by earlier versions. Idempotent, runs
@@ -76,7 +75,6 @@ export class ModerationArea extends SortitionArea {
     return info.changes
   }
 
-
   getActiveSanctions(did: string, communityUri: string): any[] {
     return this.db
       .prepare(
@@ -84,7 +82,6 @@ export class ModerationArea extends SortitionArea {
       )
       .all(did, communityUri) as any[]
   }
-
 
   // Chat user badges (computed cache)
   setUserBadge(badge: {
@@ -109,7 +106,6 @@ export class ModerationArea extends SortitionArea {
       )
   }
 
-
   clearUserBadges(did: string, communityUri: string): void {
     this.db
       .prepare(
@@ -118,7 +114,6 @@ export class ModerationArea extends SortitionArea {
       .run(did, communityUri)
   }
 
-
   getUserBadges(did: string, communityUri: string): any[] {
     return this.db
       .prepare(
@@ -126,7 +121,6 @@ export class ModerationArea extends SortitionArea {
       )
       .all(did, communityUri) as any[]
   }
-
 
   getCommunityBadgeSummary(communityUri: string): {
     warning: number
@@ -139,7 +133,6 @@ export class ModerationArea extends SortitionArea {
       .get(communityUri) as { warning: number; critical: number }
     return row
   }
-
 
   expireBadges(): { did: string; communityUri: string }[] {
     const affected = this.db

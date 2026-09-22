@@ -5,7 +5,7 @@ app: the WebView shell in `CommunityChatScreen.tsx`, the bundled
 `matrix-js-sdk` HTML client in `matrix-client.ts` (780 lines), the Messages
 tab structure, and — critically — the already-present native engine:
 `@unomed/react-native-matrix-sdk` (Rust, E2EE, sliding sync, SecureStore
-secrets) with a working lab client in `src/features/encryptedChat/`
+secrets) with an unvalidated lab adapter in `src/features/encryptedChat/`
 (`client.native.ts`) that has no UI consumers yet.
 
 ## Architecture of the redesigned chat surface
@@ -13,11 +13,17 @@ secrets) with a working lab client in `src/features/encryptedChat/`
 **1. Native room screen replaces the WebView.** `CommunityChat` keeps its
 route and params (`communityUri`, `communityName`, `roomId`) — deep links and
 push taps keep working unchanged. Internally it renders a native timeline +
-composer driven by the unomed client (per-room scope), with the WebView as a
+composer driven by the unomed client (per-room scope), with the WebView available only for explicitly unencrypted rooms as a
 feature-flagged fallback (`EXPO_PUBLIC_CHAT_ENGINE=webview`). The E2EE lab
 flag graduates into the engine flag: same client, now with UI.
 
-**2. Session = device-bound bridge session.** On first chat open: reuse the
+**Deployment correction (2026-09-20):** the local MAS deployment rejects
+appservice login. Implement native homeserver authorization before integrating
+these screens. The bridge reports `MATRIX_CLIENT_LOGIN_REQUIRED`; do not fall
+back to shared admin/appservice credentials. Public linkedChat records do not
+prove Matrix ownership. `verifyChatLink` remains disabled for authorization.
+
+**2. Session = device-bound Matrix session.** On homeservers supporting appservice login: On first chat open: reuse the
 existing `POST /api/matrix-token` call, but pass `{ friendlyName, deviceId }`
 with a **stable per-install deviceId** (Keychain/UUID kept in SecureStore) —
 required for Megolm device-key continuity later. Cache the session
@@ -44,8 +50,7 @@ this mapping; until then the app keeps a local profile registry.
 identidades" section): device management (`GET /api/devices`,
 `POST /api/devices/revoke` — clear UI list with friendly names/last-seen),
 and "Vincular cuenta de chat externa" (solidarity linking; writes the
-reciprocal `com.para.identity.linkedChat` records, verified via
-`verifyChatLink`'s algorithm client-side).
+reciprocal `com.para.identity.linkedChat` records, disabled until a Matrix ownership proof is implemented).
 
 ## User stories (flows and the actions each requires)
 
@@ -80,8 +85,7 @@ Settings → "Chat e identidades" → "Vincular cuenta externa" → picks
 solidarity.social → logs in with her solidarity Matrix account (their OIDC/
 password flow — pending their answer on third-party client login) → app
 writes `com.para.identity.linkedChat` to her PARA repo and guides the
-reciprocal record on the linked account → verification runs
-(reciprocity check) → Personal section appears with her solidarity DMs →
+reciprocal record on the linked account → a future Matrix-side proof must verify account ownership → Personal section appears with her solidarity DMs →
 she reads/writes E2EE DMs under that profile. **Privacy invariant:** the M8
 bearer never leaves PARA's own services; the solidarity session lives in
 iM8's encrypted store, not in the PARA backend. **Blocked on:** solidarity's
@@ -109,7 +113,7 @@ verifiable by anyone).
 ### US-6 — Institutional handover (reserved)
 
 The Secretariat inbox transfers to a successor without sharing personal
-credentials: owner transfers room authority per Matrix power levels;
+credentials: the handover must account for immutable creators in room version 12;
 institutional Matrix accounts own their rooms; the bridge observes, never
 custodies. Ships with the Trabajo context.
 

@@ -42,10 +42,11 @@ CREATE TABLE IF NOT EXISTS event_log (
 
 CREATE INDEX IF NOT EXISTS idx_event_log_created ON event_log(created_at);
 
-CREATE TABLE IF NOT EXISTS user_matrix_map (
-  did TEXT PRIMARY KEY,
-  matrix_user_id TEXT NOT NULL,
-  password TEXT NOT NULL
+CREATE TABLE IF NOT EXISTS community_membership_lease (
+  community_uri TEXT NOT NULL,
+  mxid TEXT NOT NULL,
+  last_verified_at TEXT NOT NULL,
+  PRIMARY KEY (community_uri, mxid)
 );
 
 CREATE TABLE IF NOT EXISTS community_membership_state (

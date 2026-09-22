@@ -39,6 +39,6 @@
     "rollup": "^4.10.0"
   },
   "scripts": {
-    "build": "tsgo --build tsconfig.json"
+    "build": "tsc --build tsconfig.json"
   }
 }

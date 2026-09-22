@@ -55,6 +55,6 @@
     "react-native-url-polyfill": "*"
   },
   "scripts": {
-    "build": "tsgo --build tsconfig.build.json"
+    "build": "tsc --build tsconfig.build.json"
   }
 }

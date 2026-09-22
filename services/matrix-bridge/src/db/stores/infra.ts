@@ -1,9 +1,6 @@
-import type {
-  SyncLogEntry, UserPushToken,
-} from '../records.js'
+import type { SyncLogEntry, UserPushToken } from '../records.js'
 
 export interface InfraStore {
-
   logSync(
     eventType: string,
     communityUri: string,

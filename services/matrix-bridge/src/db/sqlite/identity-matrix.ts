@@ -1,12 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import type {
   AiConsentRecord,
-  CommunitySpaceMap,
   CommunityRoomKind,
   CommunityRoomSummary,
+  CommunitySpaceMap,
   DeviceSession,
   SyncLogEntry,
-  UserMatrixMap,
   UserPushToken,
 } from '../interface.js'
 import { SqliteBase } from './base.js'
@@ -99,27 +98,21 @@ export class IdentityMatrixArea extends SqliteBase {
     return row.count
   }
 
-  // User <-> MXID mappings
-  getMxidForDid(did: string): string | undefined {
+  // Chat-account attribution (post-CD-M1)
+  //
+  // There is no DID↔MXID mapping table and no way to mint one: the MXID is a
+  // hash of client-held key material (identity-proof.ts). The only reverse
+  // resolution available is over the device sessions this bridge itself
+  // minted after a verified proof of possession — operational state, not a
+  // directory. It backs chat-message attribution in matrix-ingestion.ts and
+  // is deliberately absent from any API response.
+  getDidForMxid(mxid: string): string | undefined {
     const row = this.db
-      .prepare('SELECT matrix_user_id FROM user_matrix_map WHERE did = ?')
-      .get(did) as { matrix_user_id: string } | undefined
-    return row?.matrix_user_id
-  }
-
-  setMxidForDid(did: string, mxid: string, password: string): void {
-    this.db
       .prepare(
-        'INSERT OR REPLACE INTO user_matrix_map (did, matrix_user_id, password) VALUES (?, ?, ?)',
+        'SELECT did FROM device_sessions WHERE mxid = ? AND revoked_at IS NULL LIMIT 1',
       )
-      .run(did, mxid, password)
-  }
-
-  getUserPassword(did: string): string | undefined {
-    const row = this.db
-      .prepare('SELECT password FROM user_matrix_map WHERE did = ?')
-      .get(did) as { password: string } | undefined
-    return row?.password
+      .get(mxid) as { did: string } | undefined
+    return row?.did
   }
 
   setCommunityMembership(
@@ -154,6 +147,68 @@ export class IdentityMatrixArea extends SqliteBase {
       roles = []
     }
     return { state: row.membership_state, roles }
+  }
+
+  getMembershipsForDid(
+    did: string,
+  ): Array<{ communityUri: string; state: string; roles: string[] }> {
+    const rows = this.db
+      .prepare(
+        'SELECT community_uri, membership_state, roles_json FROM community_membership_state WHERE did = ?',
+      )
+      .all(did) as Array<{
+      community_uri: string
+      membership_state: string
+      roles_json: string
+    }>
+    return rows.map((r) => ({
+      communityUri: r.community_uri,
+      state: r.membership_state,
+      roles: JSON.parse(r.roles_json ?? '[]'),
+    }))
+  }
+
+  upsertCommunityMembershipLease(
+    communityUri: string,
+    mxid: string,
+    verifiedAtIso: string,
+  ): void {
+    this.db
+      .prepare(
+        `INSERT INTO community_membership_lease (community_uri, mxid, last_verified_at)
+         VALUES (?, ?, ?)
+         ON CONFLICT (community_uri, mxid) DO UPDATE SET last_verified_at = EXCLUDED.last_verified_at`,
+      )
+      .run(communityUri, mxid, verifiedAtIso)
+  }
+
+  getExpiredCommunityMembershipLeases(cutoffIso: string): Array<{
+    communityUri: string
+    mxid: string
+    lastVerifiedAt: string
+  }> {
+    const rows = this.db
+      .prepare(
+        'SELECT community_uri, mxid, last_verified_at FROM community_membership_lease WHERE last_verified_at < ?',
+      )
+      .all(cutoffIso) as Array<{
+      community_uri: string
+      mxid: string
+      last_verified_at: string
+    }>
+    return rows.map((r) => ({
+      communityUri: r.community_uri,
+      mxid: r.mxid,
+      lastVerifiedAt: r.last_verified_at,
+    }))
+  }
+
+  deleteCommunityMembershipLease(communityUri: string, mxid: string): void {
+    this.db
+      .prepare(
+        'DELETE FROM community_membership_lease WHERE community_uri = ? AND mxid = ?',
+      )
+      .run(communityUri, mxid)
   }
 
   isActiveCommunityMember(did: string, communityUri: string): boolean {
@@ -254,14 +309,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .get(roomId, roomId, roomId, roomId) as
       { community_uri: string; slug: string } | undefined
     return row ? { communityUri: row.community_uri, slug: row.slug } : undefined
-  }
-
-  // Get DID by MXID
-  getDidForMxid(mxid: string): string | undefined {
-    const row = this.db
-      .prepare('SELECT did FROM user_matrix_map WHERE matrix_user_id = ?')
-      .get(mxid) as { did: string } | undefined
-    return row?.did
   }
 
   // Device sessions (trusted-device registry, patterned on tranquil-pds)

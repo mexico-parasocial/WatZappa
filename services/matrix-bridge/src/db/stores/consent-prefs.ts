@@ -1,9 +1,6 @@
-import type {
-  AiConsentRecord,
-} from '../records.js'
+import type { AiConsentRecord } from '../records.js'
 
 export interface ConsentPrefsStore {
-
   getChatPreferences(did: string): Promise<{ showChatBadges: boolean }>
 
   setChatPreferences(did: string, showChatBadges: boolean): Promise<void>

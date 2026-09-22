@@ -32,6 +32,7 @@ COPY ./packages/internal/identity-resolver ./packages/internal/identity-resolver
 COPY ./packages/internal/opentelemetry-node ./packages/internal/opentelemetry-node
 COPY ./packages/internal/pipe ./packages/internal/pipe
 COPY ./packages/internal/rolldown-plugin-bundle-manifest ./packages/internal/rolldown-plugin-bundle-manifest
+COPY ./packages/internal/rollup-plugin-bundle-manifest ./packages/internal/rollup-plugin-bundle-manifest
 COPY ./packages/internal/simple-store-memory ./packages/internal/simple-store-memory
 COPY ./packages/internal/simple-store-redis ./packages/internal/simple-store-redis
 COPY ./packages/internal/simple-store ./packages/internal/simple-store

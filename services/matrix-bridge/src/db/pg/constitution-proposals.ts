@@ -1,13 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  CommunitySpaceMap,
+  SyncLogEntry,
+  UserPushToken,
 } from '../interface.js'
 import { InfraArea } from './infra.js'
 
 export class ConstitutionProposalsArea extends InfraArea {
-
-
   // Constitutions
   async setConstitution(
     communityUri: string,
@@ -20,7 +22,6 @@ export class ConstitutionProposalsArea extends InfraArea {
       [communityUri, version, rulesJson],
     )
   }
-
 
   async getConstitution(communityUri: string): Promise<
     | {
@@ -49,7 +50,6 @@ export class ConstitutionProposalsArea extends InfraArea {
       : undefined
   }
 
-
   // Proposals
   async insertProposal(
     uri: string,
@@ -76,11 +76,9 @@ export class ConstitutionProposalsArea extends InfraArea {
     )
   }
 
-
   async getProposal(uri: string): Promise<any | undefined> {
     return this.queryOne('SELECT * FROM proposals WHERE uri = $1', [uri])
   }
-
 
   async getProposalsByCommunity(
     communityUri: string,
@@ -98,14 +96,12 @@ export class ConstitutionProposalsArea extends InfraArea {
     )
   }
 
-
   async getProposalsByState(state: string): Promise<any[]> {
     return this.queryAll(
       'SELECT * FROM proposals WHERE state = $1 ORDER BY created_at ASC',
       [state],
     )
   }
-
 
   async updateProposalState(
     uri: string,
@@ -119,7 +115,6 @@ export class ConstitutionProposalsArea extends InfraArea {
     )
   }
 
-
   async updateProposalVoteCounts(
     uri: string,
     forVotes: number,
@@ -132,7 +127,6 @@ export class ConstitutionProposalsArea extends InfraArea {
     )
   }
 
-
   async finalizeProposal(
     uri: string,
     result: string,
@@ -143,7 +137,6 @@ export class ConstitutionProposalsArea extends InfraArea {
       [result, decidedAt, uri],
     )
   }
-
 
   // Votes
   async insertVote(
@@ -162,13 +155,11 @@ export class ConstitutionProposalsArea extends InfraArea {
     )
   }
 
-
   async getVotesForProposal(proposalUri: string): Promise<any[]> {
     return this.queryAll('SELECT * FROM votes WHERE proposal_uri = $1', [
       proposalUri,
     ])
   }
-
 
   // Decisions
   async insertDecision(
@@ -204,13 +195,11 @@ export class ConstitutionProposalsArea extends InfraArea {
     )
   }
 
-
   async getDecision(proposalUri: string): Promise<any | undefined> {
     return this.queryOne('SELECT * FROM decisions WHERE proposal_uri = $1', [
       proposalUri,
     ])
   }
-
 
   async getDecisionsByCommunity(communityUri: string): Promise<any[]> {
     return this.queryAll(

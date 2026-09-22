@@ -1,21 +1,23 @@
 import { createServer } from 'node:http'
 import pino from 'pino'
+import { ChallengeStore } from './challenge.js'
 import { ChatModerationEngine } from './chat-moderation.js'
 import { loadConfig } from './config.js'
 import { createDatabase } from './db/index.js'
+import { EventBus } from './events/bus.js'
 import { FirehoseConsumer } from './firehose.js'
 import { HttpError } from './m8-auth.js'
-import { MatrixSyncPoller } from './matrix-sync.js'
-import { MatrixAdminClient } from './matrix.js'
 import { createMatrixProjection } from './matrix-projection.js'
+import { MatrixSyncPoller } from './matrix-sync.js'
+import { sweepExpiredMembershipLeases } from './membership-lease.js'
+import { MatrixAdminClient } from './matrix.js'
 import { BridgeMetrics } from './metrics.js'
 import { ProposalEngine } from './proposals.js'
 import { RetryWorker } from './retry.js'
-import { createSortitionEngine } from './sortition-runs.js'
-import { EventBus } from './events/bus.js'
-import { routeRequest, writeJsonFallback } from './routes/router.js'
-import { writeJson } from './routes/http.js'
 import type { RouteContext } from './routes/context.js'
+import { writeJson } from './routes/http.js'
+import { routeRequest, writeJsonFallback } from './routes/router.js'
+import { createSortitionEngine } from './sortition-runs.js'
 
 async function main() {
   const config = loadConfig()
@@ -45,6 +47,7 @@ async function main() {
   const matrix = new MatrixAdminClient(config)
   const metrics = new BridgeMetrics()
   const projection = createMatrixProjection(config, db, matrix, log)
+  const challenges = new ChallengeStore()
   const chatMod = new ChatModerationEngine(db, log)
   const events = new EventBus(db, log)
   const proposals = new ProposalEngine(db, matrix, log, chatMod)
@@ -59,7 +62,7 @@ async function main() {
   )
   firehose.setEventBus(events)
   proposals.setEventBus(events)
-  const retryWorker = new RetryWorker(db, matrix, metrics, log)
+  const retryWorker = new RetryWorker(db, projection, metrics, log)
   const syncPoller = new MatrixSyncPoller(config, db, matrix, chatMod, log)
 
   chatMod.setEventBus(events)
@@ -70,6 +73,9 @@ async function main() {
     config,
     db,
     matrix,
+    projection,
+    challenges,
+    firehose,
     metrics,
     log,
     chatMod,
@@ -129,6 +135,30 @@ async function main() {
     void events.prune()
   }, 3_600_000)
 
+  // Membership-lease sweep (CD-M6) — hourly, plus once shortly after start.
+  const leaseSweepCron = setInterval(() => {
+    void (async () => {
+      try {
+        await sweepExpiredMembershipLeases(
+          db,
+          matrix,
+          log,
+          config.membershipLeaseTtlMs,
+        )
+      } catch (err: any) {
+        log.error({ err }, 'Membership-lease sweep failed')
+      }
+    })()
+  }, 3_600_000)
+  setTimeout(() => {
+    void sweepExpiredMembershipLeases(
+      db,
+      matrix,
+      log,
+      config.membershipLeaseTtlMs,
+    ).catch((err: any) => log.error({ err }, 'Membership-lease sweep failed'))
+  }, 60_000)
+
   // Badge recompute + expiry — runs every 5 minutes
   const badgeCron = setInterval(() => {
     void (async () => {
@@ -153,6 +183,7 @@ async function main() {
     clearInterval(proposalCron)
     clearInterval(badgeCron)
     clearInterval(eventPruneCron)
+    clearInterval(leaseSweepCron)
     server.close()
     await db.close()
     process.exit(0)

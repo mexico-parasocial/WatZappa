@@ -266,6 +266,7 @@ export function validateHandover(request: HandoverRequest): HandoverValidation {
   const recentAuth = Date.parse(request.requesterRecentAuthAt)
   if (
     Number.isNaN(recentAuth) ||
+    recentAuth > now.getTime() ||
     now.getTime() - recentAuth > HANDOVER_RECENT_AUTH_WINDOW_MS
   ) {
     failures.push('requester-stale-auth')
@@ -277,6 +278,7 @@ export function validateHandover(request: HandoverRequest): HandoverValidation {
   if (
     request.successor === null ||
     request.successor.institutionId !== request.institutionId ||
+    request.successor.did !== request.successorDid ||
     !isMembershipActive(request.successor, now)
   ) {
     failures.push('successor-inactive')
@@ -286,6 +288,13 @@ export function validateHandover(request: HandoverRequest): HandoverValidation {
 
   const secondApproval = request.approvals.some((approval) => {
     if (approval.approverDid === request.requester.did) return false
+    const approvedAt = Date.parse(approval.approvedAt)
+    if (
+      !Number.isFinite(approvedAt) ||
+      approvedAt > now.getTime() ||
+      now.getTime() - approvedAt > HANDOVER_RECENT_AUTH_WINDOW_MS
+    )
+      return false
     const owner = request.ownersByDid.get(approval.approverDid)
     return (
       owner !== undefined &&

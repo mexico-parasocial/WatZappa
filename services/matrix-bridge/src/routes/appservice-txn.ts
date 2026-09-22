@@ -1,132 +1,92 @@
+import { timingSafeEqual } from 'node:crypto'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { HttpError } from '../m8-auth.js'
-import { writeJson } from './http.js'
+import {
+  type MatrixEventMetadata,
+  ingestMatrixEvents,
+} from '../matrix-ingestion.js'
 import type { RouteContext } from './context.js'
+import { readBody, writeJson } from './http.js'
 
-/**
- * Appservice transaction push: Synapse POSTs (or PUTs) every event in rooms
- * our namespace users occupy to `/_matrix/app/unstable/transactions/{txnId}`.
- * This replaces per-room admin polling as the primary ingestion path — the
- * MatrixSyncPoller remains only as a slow reconciliation fallback.
- *
- * Auth is the homeserver token (`hs_token` from the appservice registration,
- * env MATRIX_HS_TOKEN): Synapse sends it as the access_token query param or
- * Authorization header. Transactions are deduped by id in the DB; a repeated
- * txnId is acked 200 without reprocessing (Synapse retries until 200).
- *
- * Content policy unchanged: we record only event metadata (id, sender, type,
- * ts) for participation/unread — message bodies stay in Synapse.
- */
+const MAX_TRANSACTION_BYTES = 4 * 1024 * 1024
+const MAX_EVENTS = 1000
 
-const MESSAGE_TYPES = new Set(['m.room.message', 'm.room.encrypted'])
-const TXN_ID_RE = /^\d+\.+\w+$|^[A-Za-z0-9_.-]+$/
+function matches(token: string | undefined, expected: string): boolean {
+  if (!token) return false
+  const a = Buffer.from(token)
+  const b = Buffer.from(expected)
+  return a.length === b.length && timingSafeEqual(a, b)
+}
 
+/** Synapse's stable PUT transaction endpoint, with legacy POST compatibility. */
 export async function appServiceTransactionHandler(
   req: IncomingMessage,
   res: ServerResponse,
   ctx: RouteContext,
 ): Promise<void> {
+  if (req.method !== 'PUT' && req.method !== 'POST') {
+    writeJson(res, 405, { errcode: 'M_UNRECOGNIZED', error: 'Use PUT' })
+    return
+  }
   const url = new URL(req.url ?? '', `http://localhost:${ctx.config.port}`)
+  const token = ctx.config.matrixHsToken
+  const queryToken = url.searchParams.get('access_token') ?? undefined
+  const bearer = req.headers.authorization?.startsWith('Bearer ')
+    ? req.headers.authorization.slice(7).trim()
+    : undefined
+  if (
+    !token ||
+    !(bearer || queryToken) ||
+    (bearer !== undefined && !matches(bearer, token)) ||
+    (queryToken !== undefined && !matches(queryToken, token))
+  ) {
+    writeJson(res, 403, { errcode: 'M_FORBIDDEN', error: 'Invalid hs_token' })
+    return
+  }
   const txnId = url.pathname.split('/').pop() ?? ''
-
-  // Homeserver auth: access_token query param or bearer header.
-  const hsToken = ctx.config.matrixHsToken
-  if (!hsToken) {
-    // Not configured: 403 so Synapse logs the mismatch loudly instead of
-    // silently dropping events the operator believes are being delivered.
-    writeJson(res, 403, { error: 'Appservice transactions not configured' })
-    return
-  }
-  const presented =
-    url.searchParams.get('access_token') ??
-    (req.headers.authorization?.startsWith('Bearer ')
-      ? req.headers.authorization.slice(7).trim()
-      : undefined)
-  if (presented !== hsToken) {
-    writeJson(res, 401, {
-      errcode: 'M_UNKNOWN_TOKEN',
-      error: 'Invalid hs_token',
-    })
-    return
-  }
-
-  if (!TXN_ID_RE.test(txnId) || txnId.length > 255) {
+  if (!/^[A-Za-z0-9_.-]{1,255}$/.test(txnId)) {
     writeJson(res, 400, { errcode: 'M_INVALID_PARAM', error: 'Invalid txnId' })
     return
   }
-
-  // Dedup before any work: a retry of an acked transaction is a no-op ack.
-  // Parse BEFORE dedup: a malformed body must stay retryable (400), not be
-  // acked-and-dropped.
-  type AsEvent = {
-    event_id?: string
-    room_id?: string
-    sender?: string
-    type?: string
-    origin_server_ts?: number
-  }
-  let events: AsEvent[] = []
+  let events: MatrixEventMetadata[]
   try {
-    const chunks: Buffer[] = []
-    for await (const chunk of req) chunks.push(chunk as Buffer)
-    const body = JSON.parse(Buffer.concat(chunks).toString('utf8'))
-    events = Array.isArray(body?.events) ? body.events : []
-  } catch {
-    writeJson(res, 400, {
-      errcode: 'M_NOT_JSON',
-      error: 'Malformed transaction body',
-    })
-    return
-  }
-
-  // Dedup only once the transaction is processable: a retry of an acked
-  // transaction is a no-op ack.
-  if (!(await ctx.db.recordAsTransaction(txnId))) {
-    writeJson(res, 200, {})
-    return
-  }
-
-  // Aggregate unread notice per room within this transaction (one SSE event
-  // per room, not per message).
-  const newByRoom = new Map<string, number>()
-  for (const event of events) {
-    if (!event.event_id || !event.room_id || !event.type) continue
-    const inserted = await ctx.db.insertMatrixEvent({
-      roomId: event.room_id,
-      eventId: event.event_id,
-      sender: event.sender ?? '',
-      type: event.type,
-      content: '',
-      originServerTs: event.origin_server_ts ?? Date.now(),
-    })
-    if (!inserted) continue
-
-    if (MESSAGE_TYPES.has(event.type) && event.sender) {
-      newByRoom.set(event.room_id, (newByRoom.get(event.room_id) ?? 0) + 1)
-      const did = await ctx.db.getDidForMxid(event.sender)
-      const community = await ctx.db.getCommunityByRoomId(event.room_id)
-      if (did && community) {
-        await ctx.chatMod.recordMessage(
-          did,
-          community.communityUri,
-          event.room_id,
+    const body = JSON.parse(await readBody(req, MAX_TRANSACTION_BYTES))
+    if (!Array.isArray(body?.events) || body.events.length > MAX_EVENTS)
+      throw new HttpError(400, 'Invalid events array')
+    events = body.events.map((event: unknown) => {
+      if (!event || typeof event !== 'object')
+        throw new HttpError(400, 'Invalid event')
+      const e = event as Record<string, unknown>
+      if (
+        ['event_id', 'room_id', 'sender', 'type'].some(
+          (k) =>
+            typeof e[k] !== 'string' ||
+            !(e[k] as string).length ||
+            (e[k] as string).length > 1024,
         )
+      )
+        throw new HttpError(400, 'Invalid event metadata')
+      if (
+        !Number.isSafeInteger(e.origin_server_ts) ||
+        (e.origin_server_ts as number) < 0
+      )
+        throw new HttpError(400, 'Invalid event timestamp')
+      return {
+        eventId: e.event_id as string,
+        roomId: e.room_id as string,
+        sender: e.sender as string,
+        type: e.type as string,
+        originServerTs: e.origin_server_ts as number,
       }
-    }
-  }
-
-  for (const [roomId, count] of newByRoom) {
-    if (!ctx.events) break
-    const community = await ctx.db.getCommunityByRoomId(roomId)
-    await ctx.events.publish({
-      type: 'chat.unread',
-      communityUri: community?.communityUri ?? null,
-      payload: { roomId, count },
     })
+  } catch (err) {
+    writeJson(res, err instanceof HttpError ? err.statusCode : 400, {
+      errcode: 'M_BAD_JSON',
+      error: err instanceof HttpError ? err.message : 'Malformed transaction',
+    })
+    return
   }
-
+  await ingestMatrixEvents(ctx.db, events, ctx.events, txnId)
   ctx.metrics?.asTransactionsTotal?.inc()
   writeJson(res, 200, {})
 }
-
-export { HttpError }

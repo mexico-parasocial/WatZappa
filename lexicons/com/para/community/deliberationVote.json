@@ -1,0 +1,39 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.deliberationVote",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Whether a person agrees with one argument in a debate. Deliberately unweighted: a position here is for or against, with no magnitude, so no one can press harder than anyone else on an argument. ATTRIBUTABLE BY DESIGN: the record lives in the voter's own repo and is signed by their DID, which is the point — debate is meant to be owned. It is NOT a ballot: it confers no voting power over the proposal, and is not covered by the ballot freeze of OD-7 §5c.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["deliberation", "voter", "direction", "createdAt"],
+        "properties": {
+          "deliberation": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The argument being weighed."
+          },
+          "voter": { "type": "string", "format": "did" },
+          "direction": {
+            "type": "string",
+            "knownValues": ["agree", "disagree", "pass"],
+            "description": "Which way the voter leans on this argument. `pass` records having read it without taking a side."
+          },
+          "voteNullifier": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "One-person-one-argument nullifier issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier. This record is attributable to its author anyway, by design. See OD-7 §5a."
+          },
+          "eligibilityProofRef": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Opaque reference to the m8 eligibility/nullifier proof used."
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

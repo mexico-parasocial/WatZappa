@@ -1,11 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import type {
   AiConsentRecord,
-  CommunitySpaceMap,
   CommunityRoomKind,
   CommunityRoomSummary,
+  CommunitySpaceMap,
   SyncLogEntry,
-  UserMatrixMap,
   UserPushToken,
 } from '../interface.js'
 import { ConsentPrefsArea } from './consent-prefs.js'
@@ -20,25 +19,35 @@ export class MatrixEventsArea extends ConsentPrefsArea {
     content: string
     originServerTs: number
   }): Promise<boolean> {
-    try {
-      await this.run(
-        'INSERT INTO matrix_events (room_id, event_id, sender, type, content, origin_server_ts) VALUES ($1, $2, $3, $4, $5, $6)',
-        [
-          event.roomId,
-          event.eventId,
-          event.sender,
-          event.type,
-          event.content,
-          event.originServerTs,
-        ],
+    const row = await this.queryOne(
+      `INSERT INTO matrix_events (room_id, event_id, sender, type, content, origin_server_ts)
+       VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (event_id) DO NOTHING RETURNING event_id`,
+      [
+        event.roomId,
+        event.eventId,
+        event.sender,
+        event.type,
+        event.content,
+        event.originServerTs,
+      ],
+    )
+    return row !== undefined
+  }
+
+  async getMatrixPollCursor(roomId: string): Promise<string | undefined> {
+    return (
+      await this.queryOne<{ cursor: string }>(
+        'SELECT cursor FROM matrix_poll_cursors WHERE room_id = $1',
+        [roomId],
       )
-      return true
-    } catch (err: any) {
-      if (err.code === '23505') {
-        return false
-      }
-      throw err
-    }
+    )?.cursor
+  }
+
+  async setMatrixPollCursor(roomId: string, cursor: string): Promise<void> {
+    await this.run(
+      'INSERT INTO matrix_poll_cursors (room_id, cursor) VALUES ($1, $2) ON CONFLICT (room_id) DO UPDATE SET cursor = excluded.cursor',
+      [roomId, cursor],
+    )
   }
 
   async eventExists(eventId: string): Promise<boolean> {

@@ -1,6 +1,6 @@
 {
   "name": "@atproto-labs/pipe",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "license": "MIT",
   "description": "Library for combining multiple functions into a single function.",
   "keywords": [
@@ -24,6 +24,6 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "tsgo --build tsconfig.json"
+    "build": "tsc --build tsconfig.json"
   }
 }

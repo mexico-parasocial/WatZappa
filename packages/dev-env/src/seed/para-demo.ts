@@ -3381,7 +3381,7 @@ export default async (sc: SeedClient) => {
   await checkpoints.flush('postMeta')
 
   // ═══════════════════════════════════════════════════════════════════════
-  //  RAQ (Rapid Alignment Questionnaire) seed data
+  //  RAQ (Rightfully Asked Questions) seed data
   // ═══════════════════════════════════════════════════════════════════════
 
   const sampleAxes = [

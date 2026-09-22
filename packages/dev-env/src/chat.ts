@@ -169,7 +169,11 @@ export class TestChat {
     public did: string,
     plcUrl: string,
   ) {
-    this.idResolver = new IdResolver({ plcUrl })
+    // Resolves against an in-process PLC on localhost, so use the raw fetch:
+    // the default resolver fetch's SSRF guard forbids plain-http targets and
+    // would reject every JWT-auth verification (same rationale as the
+    // AppView dataplane in bsky.ts).
+    this.idResolver = new IdResolver({ plcUrl, fetch: globalThis.fetch })
   }
 
   static async create(config: TestChatConfig): Promise<TestChat> {

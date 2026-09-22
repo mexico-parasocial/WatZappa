@@ -48,6 +48,7 @@ COPY ./services/matrix-bridge ./services/matrix-bridge
 
 # install all deps
 RUN PUPPETEER_SKIP_DOWNLOAD=true pnpm install --frozen-lockfile
+
 # build all packages with external node_modules
 RUN pnpm run --recursive --stream --filter '@para/matrix-bridge...' build
 # install only prod deps, hoisted to root node_modules dir

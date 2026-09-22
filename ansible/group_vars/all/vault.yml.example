@@ -1,0 +1,17 @@
+---
+# Copy to vault.yml and encrypt:
+#   ansible-vault encrypt group_vars/all/vault.yml
+#
+# These are the secrets ANSIBLE itself needs. The application secrets live in
+# the stack's .env file, which is uploaded separately (see `para_env_source`
+# in the app-stack role) — do not duplicate them here.
+#
+# vault.yml is gitignored. vault.yml.example is not, and must never contain a
+# real value.
+
+vault_postgres_password: "CHANGEME"
+
+# Only needed when s3_endpoint is set in vars.yml. Empty endpoint means
+# backups stay on local disk and these are unused.
+vault_s3_access_key: ""
+vault_s3_secret_key: ""

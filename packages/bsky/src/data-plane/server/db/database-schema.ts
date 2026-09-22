@@ -49,6 +49,8 @@ import * as paraQvlDelegation from './tables/para-qvl-delegation.js'
 import * as paraQvlEigenstateSnapshot from './tables/para-qvl-eigenstate-snapshot.js'
 import * as paraQvlGovernanceConfig from './tables/para-qvl-governance-config.js'
 import * as paraQvlIntensity from './tables/para-qvl-intensity.js'
+import * as paraDeliberationStatement from './tables/para-deliberation-statement.js'
+import * as paraDeliberationVote from './tables/para-deliberation-vote.js'
 import * as paraQvlVote from './tables/para-qvl-vote.js'
 import * as paraStatus from './tables/para-status.js'
 import * as postAgg from './tables/post-agg.js'
@@ -139,6 +141,8 @@ export type DatabaseSchemaType = duplicateRecord.PartialDB &
   paraQvlGovernanceConfig.PartialDB &
   paraQvlIntensity.PartialDB &
   paraQvlVote.PartialDB &
+  paraDeliberationStatement.PartialDB &
+  paraDeliberationVote.PartialDB &
   paraPost.PartialDB &
   paraPostMeta.PartialDB &
   paraOpenQuestionVote.PartialDB &

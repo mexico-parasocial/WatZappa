@@ -2,11 +2,10 @@ import { randomUUID } from 'node:crypto'
 import { decideContribution } from '../../contributions.js'
 import type {
   AiConsentRecord,
-  CommunitySpaceMap,
   CommunityRoomKind,
   CommunityRoomSummary,
+  CommunitySpaceMap,
   SyncLogEntry,
-  UserMatrixMap,
   UserPushToken,
 } from '../interface.js'
 import { MatrixEventsArea } from './matrix-events.js'

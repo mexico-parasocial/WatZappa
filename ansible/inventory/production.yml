@@ -1,0 +1,32 @@
+---
+# PARA production inventory — ONE host.
+#
+# The pilot is a single community by design (QUARTER_PLAN_2026Q4 risk R10:
+# "single-community constraint until F9 proves out in production"), and the
+# full stack — AT Protocol services plus the eight Matrix services — fits on
+# one adequately sized box. Multi-node lives in playbooks/swarm.yml and is
+# not on the default path; see README.
+#
+# BEFORE THE FIRST RUN, replace ansible_host below. The value here is a
+# documentation placeholder and will fail to connect, deliberately: an
+# inventory that looks plausible but points nowhere is worse than one that
+# refuses to run.
+#
+# Sizing: Synapse alone wants ~4-8 GB. With Postgres, Redis, the AppView and
+# the bridge, treat 16 GB / 8 vCPU / 200 GB SSD as the floor.
+
+all:
+  children:
+    para_servers:
+      hosts:
+        para-prod-01:
+          ansible_host: CHANGEME.example.invalid
+          ansible_user: root
+
+          # Which stacks this host runs. Both default to true — the whole
+          # point of the single-host layout. Set matrix_stack_enabled to
+          # false only if you are deliberately running chat elsewhere, and
+          # then read the note about `para-edge` in the README, because the
+          # two stacks share that network.
+          app_stack_enabled: true
+          matrix_stack_enabled: true

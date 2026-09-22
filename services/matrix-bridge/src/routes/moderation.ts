@@ -1,7 +1,6 @@
-import type { IncomingMessage, ServerResponse } from 'node:http'
 import { randomUUID } from 'node:crypto'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 import { AI_CONSENT_POLICY_VERSION } from '../ai-consent.js'
-import { authenticateM8, HttpError } from '../m8-auth.js'
 import {
   authorize,
   authorizeOrRespond,
@@ -9,10 +8,11 @@ import {
 } from '../authz.js'
 import { fetchBeacon, fetchLatestBeacon } from '../drand.js'
 import { extractFromText, persistExtractedCard } from '../extraction.js'
+import { HttpError, authenticateM8 } from '../m8-auth.js'
 import { OpenAIClient } from '../openai-client.js'
-import { summarizeCommunityDeliberation } from '../summarize.js'
-import type { SortitionRunRow } from '../sortition-runs.js'
 import { sendExpoNotifications } from '../push.js'
+import type { SortitionRunRow } from '../sortition-runs.js'
+import { summarizeCommunityDeliberation } from '../summarize.js'
 import type { RouteContext } from './context.js'
 import { readBody, writeJson } from './http.js'
 
@@ -187,11 +187,19 @@ export async function apiModerationSanctionHandler(
     matrixRoomId,
   })
 
-  // Enforce the sanction in Matrix rooms
+  // Enforce the sanction in Matrix rooms. Post-CD-M1 the bridge has no
+  // DID→MXID mapping to read: the sanction lands on the chat accounts this
+  // bridge minted device sessions for under the target DID (operational
+  // state — see matrix-projection.ts sessionMxidsForDid).
   try {
-    const targetMxid = await ctx.db.getMxidForDid(targetDid)
+    const sessions = await ctx.db.listDeviceSessions(targetDid)
+    const targetMxids = [
+      ...new Set(
+        sessions.filter((s) => s.revokedAt == null).map((s) => s.mxid),
+      ),
+    ]
     const space = await ctx.db.getSpaceForCommunity(communityUri)
-    if (targetMxid && space) {
+    if (targetMxids.length > 0 && space) {
       const rooms = matrixRoomId
         ? [matrixRoomId]
         : [
@@ -200,19 +208,21 @@ export async function apiModerationSanctionHandler(
             space.chamberB_RoomId,
             space.observerRoomId,
           ].filter((r): r is string => Boolean(r))
-      for (const roomId of rooms) {
-        try {
-          if (type === 'ban') {
-            await ctx.matrix.banUser(roomId, targetMxid)
-          } else if (type === 'mute') {
-            await ctx.matrix.muteUser(roomId, targetMxid)
+      for (const targetMxid of targetMxids) {
+        for (const roomId of rooms) {
+          try {
+            if (type === 'ban') {
+              await ctx.matrix.banUser(roomId, targetMxid)
+            } else if (type === 'mute') {
+              await ctx.matrix.muteUser(roomId, targetMxid)
+            }
+            // 'redact' is informational-only; actual redaction needs an event_id.
+          } catch (roomErr: any) {
+            ctx.log.warn(
+              { err: roomErr, roomId, targetMxid, type },
+              'Failed to apply moderation sanction in Matrix room',
+            )
           }
-          // 'redact' is informational-only; actual redaction needs an event_id.
-        } catch (roomErr: any) {
-          ctx.log.warn(
-            { err: roomErr, roomId, targetMxid, type },
-            'Failed to apply moderation sanction in Matrix room',
-          )
         }
       }
     }

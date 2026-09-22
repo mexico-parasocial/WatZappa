@@ -15,13 +15,13 @@
         "properties": {
           "provider": {
             "type": "string",
-            "description": "Identifier of the chat provider, e.g. 'solidarity.social' or 'para.social'. Also serves as the record key (one link record per provider).",
+            "description": "Identifier of the chat provider, e.g. 'para.social'. Also serves as the record key (one link record per provider).",
             "maxGraphemes": 128,
             "maxLength": 256
           },
           "matrixUserId": {
             "type": "string",
-            "description": "The full Matrix user id on that provider, e.g. '@user:matrix.solidarity.social'.",
+            "description": "The full Matrix user id on that provider, e.g. '@user:matrix.para.social'.",
             "maxGraphemes": 256,
             "maxLength": 512
           },
