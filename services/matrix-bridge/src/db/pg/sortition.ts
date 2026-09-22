@@ -1,13 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  CommunitySpaceMap,
+  SyncLogEntry,
+  UserPushToken,
 } from '../interface.js'
 import { ConstitutionProposalsArea } from './constitution-proposals.js'
 
 export class SortitionArea extends ConstitutionProposalsArea {
-
-
   // Sortition proofs
   async saveSortitionProof(proof: {
     did: string
@@ -37,7 +39,6 @@ export class SortitionArea extends ConstitutionProposalsArea {
     )
   }
 
-
   async getSortitionProof(
     did: string,
     communityUri: string,
@@ -48,14 +49,12 @@ export class SortitionArea extends ConstitutionProposalsArea {
     )
   }
 
-
   async getSortitionProofsByCommunity(communityUri: string): Promise<any[]> {
     return this.queryAll(
       'SELECT * FROM sortition_proofs WHERE community_uri = $1 ORDER BY timestamp DESC',
       [communityUri],
     )
   }
-
 
   async getUnverifiedProofs(limit = 100): Promise<any[]> {
     return this.queryAll(
@@ -64,13 +63,11 @@ export class SortitionArea extends ConstitutionProposalsArea {
     )
   }
 
-
   async markProofVerified(id: number): Promise<void> {
     await this.run('UPDATE sortition_proofs SET verified = 1 WHERE id = $1', [
       id,
     ])
   }
-
 
   async getSortitionProofCount(): Promise<number> {
     const row = await this.queryOne<{ count: number }>(
@@ -78,7 +75,6 @@ export class SortitionArea extends ConstitutionProposalsArea {
     )
     return row?.count ?? 0
   }
-
 
   // Sortition run lifecycle
   async createSortitionRun(run: {
@@ -112,11 +108,9 @@ export class SortitionArea extends ConstitutionProposalsArea {
     return this.getSortitionRun(run.id)
   }
 
-
   async getSortitionRun(id: string): Promise<any | undefined> {
     return this.queryOne('SELECT * FROM sortition_runs WHERE id = $1', [id])
   }
-
 
   async getSortitionRunByCabildeo(
     cabildeoUri: string,
@@ -127,14 +121,12 @@ export class SortitionArea extends ConstitutionProposalsArea {
     )
   }
 
-
   async getScheduledSortitionRuns(limit = 10): Promise<any[]> {
     return this.queryAll(
       "SELECT * FROM sortition_runs WHERE status = 'scheduled' ORDER BY drand_round ASC LIMIT $1",
       [limit],
     )
   }
-
 
   async replaceSortitionCandidates(
     runId: string,
@@ -185,7 +177,6 @@ export class SortitionArea extends ConstitutionProposalsArea {
     }
   }
 
-
   async activateSortitionRun(run: {
     id: string
     drandRandomness: string
@@ -211,14 +202,12 @@ export class SortitionArea extends ConstitutionProposalsArea {
     return this.getSortitionRun(run.id)
   }
 
-
   async failSortitionRun(id: string): Promise<void> {
     await this.run(
       "UPDATE sortition_runs SET status = 'failed', processed_at = NOW() WHERE id = $1",
       [id],
     )
   }
-
 
   async getSortitionCandidates(
     runId: string,
@@ -235,7 +224,6 @@ export class SortitionArea extends ConstitutionProposalsArea {
       [runId],
     )
   }
-
 
   async getSortitionCandidate(
     runId: string,

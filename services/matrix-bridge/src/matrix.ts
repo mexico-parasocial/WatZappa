@@ -130,14 +130,33 @@ export class MatrixAdminClient {
     })
   }
 
-  async inviteUser(roomId: string, userId: string): Promise<void> {
-    await this.request(
-      `/_synapse/admin/v1/rooms/${encodeURIComponent(roomId)}/invite`,
+  /**
+   * Join a bridge-managed local user into a room, as the homeserver admin.
+   *
+   * `POST /_synapse/admin/v1/join/{roomIdOrAlias}` is the one admin-side
+   * membership endpoint verified to exist on a live Synapse (see the
+   * AGENTS.md note): it force-joins a local user regardless of join rules,
+   * which is exactly the pull-model primitive the verified join (CD-M6) needs
+   * — the room stays `invite`-only for everyone else, and only the bridge
+   * joins members it has just verified. Returns the resolved room ID.
+   */
+  async joinUser(roomIdOrAlias: string, mxid: string): Promise<string> {
+    const res = await this.request(
+      `/_synapse/admin/v1/join/${encodeURIComponent(roomIdOrAlias)}`,
       {
         method: 'POST',
-        body: JSON.stringify({ user_id: userId }),
+        body: JSON.stringify({ user_id: mxid }),
       },
     )
+    return (res?.room_id as string) ?? roomIdOrAlias
+  }
+
+  async inviteUser(roomId: string, userId: string): Promise<void> {
+    // Spec client API as the room creator (this.client holds the admin token
+    // of the user every space and room is created by, so it is in-room with
+    // PL 100). The /_synapse/admin/v1/rooms/{id}/invite path previously used
+    // here does not exist in Synapse.
+    await this.client.inviteUser(userId, roomId)
   }
 
   async kickUser(
@@ -145,27 +164,37 @@ export class MatrixAdminClient {
     userId: string,
     reason = 'Left PARA community',
   ): Promise<void> {
-    await this.request(
-      `/_synapse/admin/v1/rooms/${encodeURIComponent(roomId)}/kick`,
-      {
-        method: 'POST',
-        body: JSON.stringify({ user_id: userId, reason }),
-      },
-    )
+    await this.client.kickUser(userId, roomId, reason)
   }
 
+  /**
+   * Set a member's power level via the m.room.power_levels state event.
+   *
+   * Read-modify-write over the spec client API; the /_synapse/admin/v1
+   * power_levels path previously used here does not exist in Synapse.
+   */
   async setPowerLevel(
     roomId: string,
     userId: string,
     level: number,
   ): Promise<void> {
-    await this.request(
-      `/_synapse/admin/v1/rooms/${encodeURIComponent(roomId)}/power_levels`,
-      {
-        method: 'PUT',
-        body: JSON.stringify({ users: { [userId]: level } }),
-      },
-    )
+    let current: Record<string, any> = {}
+    try {
+      current = await this.client.getRoomStateEvent(
+        roomId,
+        'm.room.power_levels',
+        '',
+      )
+    } catch {
+      // No power_levels event yet (or not in room): create one. Rooms this
+      // bridge provisions always carry one from creation, so this is a guard,
+      // not an expected path.
+    }
+    const users = { ...(current?.users ?? {}), [userId]: level }
+    await this.client.sendStateEvent(roomId, 'm.room.power_levels', '', {
+      ...current,
+      users,
+    })
   }
 
   async getRoomMembers(roomId: string): Promise<MatrixRoomMember[]> {
@@ -184,14 +213,51 @@ export class MatrixAdminClient {
     }
   }
 
-  async createUser(
-    userId: string,
-    displayName: string,
-    password: string,
-  ): Promise<void> {
+  /**
+   * Create a bridge-managed user.
+   *
+   * The appservice registration claims the derived localparts
+   * (`@[a-z2-7]{32}`) as an EXCLUSIVE namespace, which means the admin API is
+   * not allowed to create those users — Synapse answers `M_EXCLUSIVE: This
+   * user ID is reserved by an application service`. Only the appservice
+   * itself may register them, with its as_token. Registering as the
+   * appservice is therefore the primary path; the admin upsert stays as a
+   * fallback for deployments with no appservice registered, where the
+   * namespace is not reserved and the admin API is allowed.
+   *
+   * No display name is ever set from a DID or any identifying value: the
+   * account must not be linkable to an atproto identity through homeserver
+   * profile data. Clients set their own display name after login.
+   */
+  async createUser(userId: string): Promise<void> {
+    if (this.appServiceToken) {
+      const localpart = userId.replace(/^@/, '').split(':')[0]
+      const res = await fetch(`${this.baseUrl}/_matrix/client/v3/register`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.appServiceToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'm.login.application_service',
+          username: localpart,
+          // Required when authentication is delegated to MAS: the homeserver
+          // cannot mint a session for a user it does not own the logins of, and
+          // rejects the registration outright without this
+          // (M_APPSERVICE_LOGIN_UNSUPPORTED). We only want the user to exist —
+          // sessions come from the client's own authorization-code flow.
+          inhibit_login: true,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      })
+      if (res.ok) return
+      const text = await res.text()
+      // Someone else won the race, or the user already existed: the desired
+      // end state, so not an error.
+      if (text.includes('M_USER_IN_USE')) return
+      throw new Error(`Matrix appservice register error ${res.status}: ${text}`)
+    }
     await this.admin.synapse.upsertUser(userId, {
-      displayname: displayName,
-      password,
       admin: false,
     })
   }
@@ -387,20 +453,16 @@ export class MatrixAdminClient {
   }
 
   /**
-   * Ban a user from a room.
+   * Ban a user from a room via the spec client API (the previous
+   * /_synapse/admin/v1/rooms/{id}/members/{userId} path is not a real
+   * Synapse endpoint).
    */
   async banUser(
     roomId: string,
     userId: string,
     reason = 'Community moderation sanction',
   ): Promise<void> {
-    await this.request(
-      `/_synapse/admin/v1/rooms/${encodeURIComponent(roomId)}/members/${encodeURIComponent(userId)}`,
-      {
-        method: 'PUT',
-        body: JSON.stringify({ membership: 'ban', reason }),
-      },
-    )
+    await this.client.banUser(userId, roomId, reason)
   }
 
   /**
@@ -416,12 +478,6 @@ export class MatrixAdminClient {
   async unmuteUser(roomId: string, userId: string): Promise<void> {
     await this.setPowerLevel(roomId, userId, 0)
   }
-}
-
-export function didToMxid(did: string, serverName: string): string {
-  // did:plc:abc123 -> @did-plc-abc123:matrix.para.social
-  const localpart = did.replace(/:/g, '-').replace(/\./g, '-')
-  return `@${localpart}:${serverName}`
 }
 
 export function extractServerName(homeserverUrl: string): string {

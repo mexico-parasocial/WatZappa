@@ -8,7 +8,6 @@ import type {
   CommunityRoomSummary,
   CommunitySpaceMap,
   SyncLogEntry,
-  UserMatrixMap,
   UserPushToken,
 } from '../interface.js'
 
@@ -80,13 +79,16 @@ export class PgBase {
 
       CREATE INDEX IF NOT EXISTS idx_event_log_created ON event_log(created_at);
 
-      CREATE TABLE IF NOT EXISTS user_matrix_map (
-        did TEXT PRIMARY KEY,
-        matrix_user_id TEXT NOT NULL,
-        password TEXT NOT NULL
-      );
+      -- v1 linkage table, deleted by CD-M1 (see the sqlite init comment).
+      DROP TABLE IF EXISTS user_matrix_map;
 
-      UPDATE user_matrix_map SET password = '' WHERE password <> '';
+      -- DID-free membership lease (CD-M6, see the sqlite init comment).
+      CREATE TABLE IF NOT EXISTS community_membership_lease (
+        community_uri TEXT NOT NULL,
+        mxid TEXT NOT NULL,
+        last_verified_at TEXT NOT NULL,
+        PRIMARY KEY (community_uri, mxid)
+      );
 
       CREATE TABLE IF NOT EXISTS chamber_assignment (
         community_uri TEXT NOT NULL,

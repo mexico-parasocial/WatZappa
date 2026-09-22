@@ -1,14 +1,16 @@
 import { randomUUID } from 'node:crypto'
 import { decideContribution } from '../../contributions.js'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  CommunitySpaceMap,
+  SyncLogEntry,
+  UserPushToken,
 } from '../interface.js'
 import { MatrixEventsArea } from './matrix-events.js'
 
 export class DeliberationArea extends MatrixEventsArea {
-
-
   // ── Deliberation Cards ──
 
   insertCard(card: {
@@ -45,7 +47,6 @@ export class DeliberationArea extends MatrixEventsArea {
       )
   }
 
-
   getCardsForCommunity(
     communityUri: string,
     opts: {
@@ -77,13 +78,11 @@ export class DeliberationArea extends MatrixEventsArea {
     return this.db.prepare(sql).all(...params) as any[]
   }
 
-
   getCard(id: string): any | undefined {
     return this.db
       .prepare('SELECT * FROM deliberation_cards WHERE id = ?')
       .get(id)
   }
-
 
   getCardCount(communityUri: string): number {
     const row = this.db
@@ -93,7 +92,6 @@ export class DeliberationArea extends MatrixEventsArea {
       .get(communityUri) as { count: number }
     return row.count
   }
-
 
   // ── Community Map Contributions ──
 
@@ -121,7 +119,6 @@ export class DeliberationArea extends MatrixEventsArea {
     }
   }
 
-
   insertCommunityMapContribution(contribution: {
     id: string
     communityUri: string
@@ -148,7 +145,6 @@ export class DeliberationArea extends MatrixEventsArea {
       )
   }
 
-
   getCommunityMapContributions(
     communityUri: string,
     opts: { status?: string; viewerDid?: string; limit?: number } = {},
@@ -169,14 +165,12 @@ export class DeliberationArea extends MatrixEventsArea {
     return rows.map((row) => this.mapCommunityContribution(row, opts.viewerDid))
   }
 
-
   getCommunityMapContribution(id: string, viewerDid?: string): any | undefined {
     const row = this.db
       .prepare('SELECT * FROM community_map_contributions WHERE id = ?')
       .get(id)
     return row ? this.mapCommunityContribution(row, viewerDid) : undefined
   }
-
 
   getCommunityContributionVote(
     contributionId: string,
@@ -188,7 +182,6 @@ export class DeliberationArea extends MatrixEventsArea {
       )
       .get(contributionId, voterDid) as { vote: string } | undefined
   }
-
 
   getCommunityContributionVoteCounts(contributionId: string): {
     approve: number
@@ -204,7 +197,6 @@ export class DeliberationArea extends MatrixEventsArea {
       reject: rows.find((row) => row.vote === 'reject')?.count ?? 0,
     }
   }
-
 
   voteCommunityMapContribution(
     contributionId: string,
@@ -267,7 +259,6 @@ export class DeliberationArea extends MatrixEventsArea {
     return decide()
   }
 
-
   getCardsPendingLLMEnrichment(limit = 10): any[] {
     return this.db
       .prepare(
@@ -276,7 +267,6 @@ export class DeliberationArea extends MatrixEventsArea {
       .all(limit) as any[]
   }
 
-
   markCardEnriched(id: string, model: string): void {
     this.db
       .prepare(
@@ -284,7 +274,6 @@ export class DeliberationArea extends MatrixEventsArea {
       )
       .run(model, id)
   }
-
 
   updateCardVisibility(
     id: string,
@@ -297,7 +286,6 @@ export class DeliberationArea extends MatrixEventsArea {
       )
       .run(isPublic, passportVisible, id)
   }
-
 
   // ── Card Votes (Influence) ──
 
@@ -315,7 +303,6 @@ export class DeliberationArea extends MatrixEventsArea {
       .run(cardId, voterDid, influence)
   }
 
-
   getCardVote(
     cardId: string,
     voterDid: string,
@@ -327,7 +314,6 @@ export class DeliberationArea extends MatrixEventsArea {
       .get(cardId, voterDid) as { influence: number } | undefined
   }
 
-
   getCardVotes(
     cardId: string,
   ): Array<{ voter_did: string; influence: number }> {
@@ -335,7 +321,6 @@ export class DeliberationArea extends MatrixEventsArea {
       .prepare('SELECT voter_did, influence FROM card_votes WHERE card_id = ?')
       .all(cardId) as Array<{ voter_did: string; influence: number }>
   }
-
 
   getCardInfluenceScores(cardIds: string[]): Map<string, number> {
     if (cardIds.length === 0) return new Map()
@@ -351,7 +336,6 @@ export class DeliberationArea extends MatrixEventsArea {
     }
     return map
   }
-
 
   getCardVoteStats(
     cardIds: string[],
@@ -373,7 +357,6 @@ export class DeliberationArea extends MatrixEventsArea {
     }
     return map
   }
-
 
   // ── Relationships ──
 
@@ -397,7 +380,6 @@ export class DeliberationArea extends MatrixEventsArea {
       )
   }
 
-
   getRelationshipsForCard(cardId: string): any[] {
     return this.db
       .prepare(
@@ -405,7 +387,6 @@ export class DeliberationArea extends MatrixEventsArea {
       )
       .all(cardId, cardId) as any[]
   }
-
 
   getGraphForCommunity(communityUri: string): { nodes: any[]; edges: any[] } {
     const nodes = this.db
@@ -430,13 +411,11 @@ export class DeliberationArea extends MatrixEventsArea {
     return { nodes, edges }
   }
 
-
   deleteRelationship(id: string): void {
     this.db
       .prepare('DELETE FROM deliberation_relationships WHERE id = ?')
       .run(id)
   }
-
 
   // ── Suggested Relationships ──
 
@@ -462,7 +441,6 @@ export class DeliberationArea extends MatrixEventsArea {
       )
   }
 
-
   getSuggestionsForCommunity(
     communityUri: string,
     opts: { status?: string; limit?: number } = {},
@@ -484,7 +462,6 @@ export class DeliberationArea extends MatrixEventsArea {
     }
     return this.db.prepare(sql).all(...params) as any[]
   }
-
 
   acceptSuggestion(id: string, authorDid: string): void {
     const sugg = this.db
@@ -509,13 +486,14 @@ export class DeliberationArea extends MatrixEventsArea {
     })
   }
 
-
-  getSuggestion(id: string): {
-    id: string
-    sourceCardId: string
-    targetCardId: string
-    status: string
-  } | undefined {
+  getSuggestion(id: string):
+    | {
+        id: string
+        sourceCardId: string
+        targetCardId: string
+        status: string
+      }
+    | undefined {
     const row = this.db
       .prepare(
         'SELECT id, source_card_id, target_card_id, status FROM suggested_relationships WHERE id = ?',
@@ -536,7 +514,6 @@ export class DeliberationArea extends MatrixEventsArea {
       .prepare('UPDATE suggested_relationships SET status = ? WHERE id = ?')
       .run('rejected', id)
   }
-
 
   // ── Extracted Entities ──
 
@@ -560,13 +537,11 @@ export class DeliberationArea extends MatrixEventsArea {
       )
   }
 
-
   getEntitiesForCard(cardId: string): any[] {
     return this.db
       .prepare('SELECT * FROM extracted_entities WHERE card_id = ?')
       .all(cardId) as any[]
   }
-
 
   // ── Community Pulse (Discourse Analysis) ──
 

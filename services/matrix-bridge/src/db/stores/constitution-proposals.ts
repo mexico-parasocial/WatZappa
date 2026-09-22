@@ -1,5 +1,4 @@
 export interface ConstitutionProposalsStore {
-
   setConstitution(
     communityUri: string,
     version: number,

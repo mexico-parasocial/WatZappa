@@ -90,7 +90,6 @@ async function migrate() {
     'observer_room_id',
     'created_at',
   ])
-  await migrateTable('user_matrix_map', ['did', 'matrix_user_id', 'password'])
   await migrateTable('community_membership_state', [
     'did',
     'community_uri',

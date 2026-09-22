@@ -33,9 +33,13 @@ import {
   apiInstitutionsPOSTHandler,
 } from './institutions.js'
 import {
+  apiCommunityJoinHandler,
   apiListDevicesHandler,
   apiMarkReadHandler,
+  apiMatrixAttestHandler,
+  apiMatrixChallengeHandler,
   apiMatrixIdentityHandler,
+  apiMatrixIdentityGoneHandler,
   apiMatrixTokenHandler,
   apiPushTokenHandler,
   apiRevokeDeviceHandler,
@@ -86,16 +90,40 @@ const ROUTES: Route[] = [
     handler: apiSpaceForCommunityHandler,
   },
   {
+    urls: ['/api/matrix-challenge'],
+    prefix: false,
+    method: 'POST',
+    handler: apiMatrixChallengeHandler,
+  },
+  {
     urls: ['/api/matrix-identity'],
     prefix: false,
     method: 'GET',
+    handler: apiMatrixIdentityGoneHandler,
+  },
+  {
+    urls: ['/api/matrix-identity'],
+    prefix: false,
+    method: 'POST',
     handler: apiMatrixIdentityHandler,
+  },
+  {
+    urls: ['/api/matrix-attest'],
+    prefix: false,
+    method: 'POST',
+    handler: apiMatrixAttestHandler,
   },
   {
     urls: ['/api/matrix-token'],
     prefix: false,
     method: 'POST',
     handler: apiMatrixTokenHandler,
+  },
+  {
+    urls: ['/api/community-join'],
+    prefix: false,
+    method: 'POST',
+    handler: apiCommunityJoinHandler,
   },
   {
     urls: ['/api/devices'],

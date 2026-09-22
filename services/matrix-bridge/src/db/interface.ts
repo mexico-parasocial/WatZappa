@@ -57,6 +57,5 @@ export type {
   CommunitySpaceMap,
   DeviceSession,
   SyncLogEntry,
-  UserMatrixMap,
   UserPushToken,
 } from './records.js'

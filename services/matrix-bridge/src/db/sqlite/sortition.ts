@@ -1,13 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  CommunitySpaceMap,
+  SyncLogEntry,
+  UserPushToken,
 } from '../interface.js'
 import { ConstitutionProposalsArea } from './constitution-proposals.js'
 
 export class SortitionArea extends ConstitutionProposalsArea {
-
-
   // Sortition proofs
   saveSortitionProof(proof: {
     did: string
@@ -37,7 +39,6 @@ export class SortitionArea extends ConstitutionProposalsArea {
       )
   }
 
-
   getSortitionProof(did: string, communityUri: string): any | undefined {
     return this.db
       .prepare(
@@ -45,7 +46,6 @@ export class SortitionArea extends ConstitutionProposalsArea {
       )
       .get(did, communityUri)
   }
-
 
   getSortitionProofsByCommunity(communityUri: string): any[] {
     return this.db
@@ -55,7 +55,6 @@ export class SortitionArea extends ConstitutionProposalsArea {
       .all(communityUri) as any[]
   }
 
-
   getUnverifiedProofs(limit = 100): any[] {
     return this.db
       .prepare(
@@ -64,13 +63,11 @@ export class SortitionArea extends ConstitutionProposalsArea {
       .all(limit) as any[]
   }
 
-
   markProofVerified(id: number): void {
     this.db
       .prepare('UPDATE sortition_proofs SET verified = 1 WHERE id = ?')
       .run(id)
   }
-
 
   getSortitionProofCount(): number {
     const row = this.db
@@ -78,7 +75,6 @@ export class SortitionArea extends ConstitutionProposalsArea {
       .get() as { count: number }
     return row.count
   }
-
 
   // Cabildeo sortition assemblies
   createSortitionRun(run: {
@@ -113,18 +109,15 @@ export class SortitionArea extends ConstitutionProposalsArea {
     return this.getSortitionRun(run.id)
   }
 
-
   getSortitionRun(id: string): any | undefined {
     return this.db.prepare('SELECT * FROM sortition_runs WHERE id = ?').get(id)
   }
-
 
   getSortitionRunByCabildeo(cabildeoUri: string): any | undefined {
     return this.db
       .prepare('SELECT * FROM sortition_runs WHERE cabildeo_uri = ?')
       .get(cabildeoUri)
   }
-
 
   getScheduledSortitionRuns(limit = 10): any[] {
     return this.db
@@ -133,7 +126,6 @@ export class SortitionArea extends ConstitutionProposalsArea {
       )
       .all('scheduled', limit) as any[]
   }
-
 
   replaceSortitionCandidates(
     runId: string,
@@ -177,7 +169,6 @@ export class SortitionArea extends ConstitutionProposalsArea {
     tx()
   }
 
-
   activateSortitionRun(run: {
     id: string
     drandRandomness: string
@@ -208,7 +199,6 @@ export class SortitionArea extends ConstitutionProposalsArea {
     return this.getSortitionRun(run.id)
   }
 
-
   failSortitionRun(id: string): void {
     this.db
       .prepare(
@@ -217,14 +207,12 @@ export class SortitionArea extends ConstitutionProposalsArea {
       .run(id)
   }
 
-
   getSortitionCandidates(runId: string, selectedOnly = false): any[] {
     const sql = selectedOnly
       ? 'SELECT * FROM sortition_candidates WHERE run_id = ? AND selected = 1 ORDER BY hash_value ASC'
       : 'SELECT * FROM sortition_candidates WHERE run_id = ? ORDER BY hash_value ASC'
     return this.db.prepare(sql).all(runId) as any[]
   }
-
 
   getSortitionCandidate(runId: string, did: string): any | undefined {
     return this.db

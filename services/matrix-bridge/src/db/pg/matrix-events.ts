@@ -5,7 +5,6 @@ import type {
   CommunityRoomSummary,
   CommunitySpaceMap,
   SyncLogEntry,
-  UserMatrixMap,
   UserPushToken,
 } from '../interface.js'
 import { ConsentPrefsArea } from './consent-prefs.js'

@@ -1,13 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  CommunitySpaceMap,
+  SyncLogEntry,
+  UserPushToken,
 } from '../interface.js'
 import { IdentityMatrixArea } from './identity-matrix.js'
 
 export class InfraArea extends IdentityMatrixArea {
-
-
   // Sync logging
   async logSync(
     eventType: string,
@@ -23,14 +25,12 @@ export class InfraArea extends IdentityMatrixArea {
     )
   }
 
-
   async getFailedSyncs(limit = 100): Promise<SyncLogEntry[]> {
     return this.queryAll<SyncLogEntry>(
       'SELECT * FROM sync_log WHERE success = 0 ORDER BY created_at DESC LIMIT $1',
       [limit],
     )
   }
-
 
   async getRetryCount(entryId: number): Promise<number> {
     const row = await this.queryOne<{ retry_count: number }>(
@@ -40,7 +40,6 @@ export class InfraArea extends IdentityMatrixArea {
     return row?.retry_count ?? 0
   }
 
-
   async incrementRetryCount(entryId: number): Promise<void> {
     await this.run(
       'UPDATE sync_log SET retry_count = retry_count + 1 WHERE id = $1',
@@ -48,14 +47,12 @@ export class InfraArea extends IdentityMatrixArea {
     )
   }
 
-
   async markSyncSuccess(entryId: number): Promise<void> {
     await this.run(
       'UPDATE sync_log SET success = 1, error = NULL WHERE id = $1',
       [entryId],
     )
   }
-
 
   // Firehose cursor persistence
   async getSyncCursor(): Promise<number | undefined> {
@@ -65,7 +62,6 @@ export class InfraArea extends IdentityMatrixArea {
     return row?.cursor
   }
 
-
   async setSyncCursor(cursor: number): Promise<void> {
     await this.run(
       `INSERT INTO sync_cursor (id, cursor) VALUES (1, $1)
@@ -74,14 +70,14 @@ export class InfraArea extends IdentityMatrixArea {
     )
   }
 
-
   async getUserCount(): Promise<number> {
+    // Post-CD-M1 there is no user mapping to count; the meaningful gauge is
+    // distinct active members across communities (governance state).
     const row = await this.queryOne<{ count: number }>(
-      'SELECT COUNT(*) as count FROM user_matrix_map',
+      "SELECT COUNT(DISTINCT did) as count FROM community_membership_state WHERE membership_state = 'active'",
     )
     return row?.count ?? 0
   }
-
 
   async getSpaceCount(): Promise<number> {
     const row = await this.queryOne<{ count: number }>(
@@ -89,7 +85,6 @@ export class InfraArea extends IdentityMatrixArea {
     )
     return row?.count ?? 0
   }
-
 
   // Push tokens
   async setPushToken(
@@ -104,14 +99,12 @@ export class InfraArea extends IdentityMatrixArea {
     )
   }
 
-
   async getPushToken(did: string): Promise<UserPushToken | undefined> {
     return this.queryOne<UserPushToken>(
       'SELECT * FROM user_push_tokens WHERE did = $1',
       [did],
     )
   }
-
 
   async getPushTokensByDid(dids: string[]): Promise<UserPushToken[]> {
     if (dids.length === 0) return []

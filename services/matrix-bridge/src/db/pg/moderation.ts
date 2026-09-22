@@ -1,13 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  CommunitySpaceMap,
+  SyncLogEntry,
+  UserPushToken,
 } from '../interface.js'
 import { SortitionArea } from './sortition.js'
 
 export class ModerationArea extends SortitionArea {
-
-
   // Chat moderation events
   async insertModerationEvent(event: {
     did: string
@@ -38,7 +40,6 @@ export class ModerationArea extends SortitionArea {
     )
   }
 
-
   async getModerationEvents(
     did: string,
     communityUri: string,
@@ -50,7 +51,6 @@ export class ModerationArea extends SortitionArea {
     )
   }
 
-
   async getRecentReportsForCommunity(
     communityUri: string,
     days = 30,
@@ -60,7 +60,6 @@ export class ModerationArea extends SortitionArea {
       [communityUri, days],
     )
   }
-
 
   /**
    * F4: clear message excerpts captured by earlier versions. Idempotent, runs
@@ -74,14 +73,12 @@ export class ModerationArea extends SortitionArea {
     return rows.length
   }
 
-
   async getActiveSanctions(did: string, communityUri: string): Promise<any[]> {
     return this.queryAll(
       "SELECT * FROM chat_moderation_events WHERE did = $1 AND community_uri = $2 AND event_type IN ('mute','ban') AND created_at >= NOW() - INTERVAL '90 days' ORDER BY created_at DESC",
       [did, communityUri],
     )
   }
-
 
   // Chat user badges
   async setUserBadge(badge: {
@@ -109,7 +106,6 @@ export class ModerationArea extends SortitionArea {
     )
   }
 
-
   async clearUserBadges(did: string, communityUri: string): Promise<void> {
     await this.run(
       'DELETE FROM chat_user_badges WHERE did = $1 AND community_uri = $2',
@@ -117,14 +113,12 @@ export class ModerationArea extends SortitionArea {
     )
   }
 
-
   async getUserBadges(did: string, communityUri: string): Promise<any[]> {
     return this.queryAll(
       'SELECT * FROM chat_user_badges WHERE did = $1 AND community_uri = $2',
       [did, communityUri],
     )
   }
-
 
   async getCommunityBadgeSummary(
     communityUri: string,
@@ -135,7 +129,6 @@ export class ModerationArea extends SortitionArea {
     )
     return row ?? { warning: 0, critical: 0 }
   }
-
 
   async expireBadges(): Promise<{ did: string; communityUri: string }[]> {
     const affected = await this.queryAll<{

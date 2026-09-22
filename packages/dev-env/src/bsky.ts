@@ -1,4 +1,4 @@
-import { Client as PlcClient } from '@did-plc/lib'
+import { Client as PlcClient, didForCreateOp, signOperation } from '@did-plc/lib'
 import * as ui8 from 'uint8arrays'
 import { AtpAgent } from '@atproto/api'
 import * as bsky from '@atproto/bsky'
@@ -7,6 +7,7 @@ import { Secp256k1Keypair } from '@atproto/crypto'
 import { Client, type UriString } from '@atproto/lex'
 import type { DidString } from '@atproto/syntax'
 import { ADMIN_PASSWORD, EXAMPLE_LABELER } from './const.js'
+import { defaultDevIdentityProvider } from './identity.js'
 import getPort from './get-port.js'
 import type { BskyConfig } from './types.js'
 export * from '@atproto/bsky'
@@ -26,20 +27,41 @@ export class TestBsky {
   static async create(cfg: BskyConfig): Promise<TestBsky> {
     const serviceKeypair = cfg.privateKey
       ? await Secp256k1Keypair.import(cfg.privateKey)
-      : await Secp256k1Keypair.create()
+      : await defaultDevIdentityProvider.keypair('bsky')
     const plcClient = new PlcClient(cfg.plcUrl)
 
     const port = cfg.port || (await getPort())
     const url: UriString = `http://localhost:${port}`
-    const serverDid = (await plcClient.createDid({
-      signingKey: serviceKeypair.did(),
-      rotationKeys: [serviceKeypair.did()],
-      handle: 'bsky.test',
-      pds: `http://localhost:${port}`,
-      signer: serviceKeypair,
-    })) as DidString
-
     const endpoint = `http://localhost:${port}`
+
+    // Sign the create-op with the stable dev key, like ChatServiceProfile
+    // does: the DID is derived from the op, so the AppView keeps the same
+    // identity across dev-env restarts instead of re-minting one per run and
+    // desyncing every consumer configured with the previous DID.
+    const plcOp = await signOperation(
+      {
+        type: 'plc_operation',
+        rotationKeys: [serviceKeypair.did()],
+        alsoKnownAs: ['at://bsky.test'],
+        verificationMethods: {
+          atproto: serviceKeypair.did(),
+        },
+        services: {
+          atproto_pds: {
+            type: 'AtprotoPersonalDataServer',
+            endpoint,
+          },
+        },
+        prev: null,
+      },
+      serviceKeypair,
+    )
+    const serverDid = (await didForCreateOp(plcOp)) as DidString
+    try {
+      await plcClient.getDocument(serverDid)
+    } catch {
+      await plcClient.sendOperation(serverDid, plcOp)
+    }
 
     await plcClient.updateData(serverDid, serviceKeypair, (x) => {
       x.services['bsky_notif'] = {

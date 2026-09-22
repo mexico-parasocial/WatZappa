@@ -9,6 +9,14 @@ export interface Config {
   plcUrl?: string
   matrixHomeserverUrl: string
   /**
+   * The homeserver's own `server_name`, not the host of
+   * `MATRIX_HOMESERVER_URL`. They differ everywhere but production: dev
+   * reaches Synapse at `localhost`, compose at `synapse`, while the server
+   * names itself `matrix.para.social`. Deriving MXIDs from the URL host
+   * minted users Synapse treats as foreign and refuses to act on.
+   */
+  matrixServerName: string
+  /**
    * The homeserver URL clients should connect to, as opposed to the internal
    * one this service uses. Clients need a real, resolvable address: the
    * previous code derived it by rewriting the internal URL
@@ -19,6 +27,11 @@ export interface Config {
   matrixAppServiceToken?: string
   matrixHsToken?: string
   syncFallbackMs: number
+  /**
+   * Membership-lease TTL (CD-M6): how long a chat account stays in a
+   * community's rooms without a verified interaction. 0 disables the sweep.
+   */
+  membershipLeaseTtlMs: number
   matrixBotUserId?: string
   matrixEnableEncryption: boolean
   m8BaseUrl: string
@@ -55,6 +68,7 @@ export function loadConfig(): Config {
       env('PDS_FIREHOSE_URL', 'wss://pds.para.social'),
     ),
     matrixHomeserverUrl: env('MATRIX_HOMESERVER_URL', 'http://synapse:8008'),
+    matrixServerName: env('MATRIX_SERVER_NAME', 'matrix.para.social'),
     matrixPublicHomeserverUrl: env(
       'MATRIX_PUBLIC_HOMESERVER_URL',
       `https://${process.env.MATRIX_SERVER_NAME || 'matrix.para.social'}`,
@@ -68,6 +82,11 @@ export function loadConfig(): Config {
     matrixHsToken: process.env.MATRIX_HS_TOKEN || undefined,
     syncFallbackMs: parseInt(
       process.env.BRIDGE_SYNC_FALLBACK_MS || '300000',
+      10,
+    ),
+    membershipLeaseTtlMs: parseInt(
+      process.env.BRIDGE_MEMBERSHIP_LEASE_TTL_MS ||
+        String(30 * 24 * 3600 * 1000),
       10,
     ),
     matrixBotUserId: process.env.MATRIX_BOT_USER_ID || undefined,

@@ -9,8 +9,8 @@
  */
 
 import type { Logger } from 'pino'
-import type { EventBus } from './events/bus.js'
 import type { IBridgeDatabase } from './db/index.js'
+import type { EventBus } from './events/bus.js'
 
 export type BadgeSeverity = 'info' | 'warning' | 'critical'
 
@@ -387,7 +387,6 @@ export class ChatModerationEngine {
   ): Promise<
     Array<{
       did: string
-      matrixUserId?: string
       badges: ChatBadge[]
       participation: ParticipationSummary | null
       lastActiveAt?: string
@@ -401,7 +400,6 @@ export class ChatModerationEngine {
         )
         return {
           did: row.did,
-          matrixUserId: row.matrix_user_id,
           badges,
           participation: await this.getParticipationSummary(
             row.did,

@@ -120,20 +120,6 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     return this.wrap(() => this.inner.getActiveMemberCount(communityUri))
   }
 
-  // ── User Matrix ──
-
-  getMxidForDid(did: string): Promise<string | undefined> {
-    return this.wrap(() => this.inner.getMxidForDid(did))
-  }
-
-  setMxidForDid(did: string, mxid: string, password: string): Promise<void> {
-    return this.wrap(() => this.inner.setMxidForDid(did, mxid, password))
-  }
-
-  getUserPassword(did: string): Promise<string | undefined> {
-    return this.wrap(() => this.inner.getUserPassword(did))
-  }
-
   // ── Sync ──
 
   logSync(
@@ -717,6 +703,45 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     communityUri: string,
   ): Promise<{ state: string; roles: string[] } | undefined> {
     return this.wrap(() => this.inner.getCommunityMembership(did, communityUri))
+  }
+
+  async getMembershipsForDid(
+    did: string,
+  ): Promise<Array<{ communityUri: string; state: string; roles: string[] }>> {
+    return this.wrap(() => this.inner.getMembershipsForDid(did))
+  }
+
+  async upsertCommunityMembershipLease(
+    communityUri: string,
+    mxid: string,
+    verifiedAtIso: string,
+  ): Promise<void> {
+    return this.wrap(() =>
+      this.inner.upsertCommunityMembershipLease(
+        communityUri,
+        mxid,
+        verifiedAtIso,
+      ),
+    )
+  }
+
+  async getExpiredCommunityMembershipLeases(
+    cutoffIso: string,
+  ): Promise<
+    Array<{ communityUri: string; mxid: string; lastVerifiedAt: string }>
+  > {
+    return this.wrap(() =>
+      this.inner.getExpiredCommunityMembershipLeases(cutoffIso),
+    )
+  }
+
+  async deleteCommunityMembershipLease(
+    communityUri: string,
+    mxid: string,
+  ): Promise<void> {
+    return this.wrap(() =>
+      this.inner.deleteCommunityMembershipLease(communityUri, mxid),
+    )
   }
 
   isActiveCommunityMember(did: string, communityUri: string): Promise<boolean> {

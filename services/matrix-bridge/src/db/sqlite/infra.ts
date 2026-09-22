@@ -1,13 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  CommunitySpaceMap,
+  SyncLogEntry,
+  UserPushToken,
 } from '../interface.js'
 import { IdentityMatrixArea } from './identity-matrix.js'
 
 export class InfraArea extends IdentityMatrixArea {
-
-
   // Sync logging
   logSync(
     eventType: string,
@@ -31,7 +33,6 @@ export class InfraArea extends IdentityMatrixArea {
       )
   }
 
-
   getFailedSyncs(limit = 100): SyncLogEntry[] {
     return this.db
       .prepare(
@@ -40,7 +41,6 @@ export class InfraArea extends IdentityMatrixArea {
       .all(limit) as SyncLogEntry[]
   }
 
-
   getRetryCount(entryId: number): number {
     const row = this.db
       .prepare('SELECT retry_count FROM sync_log WHERE id = ?')
@@ -48,20 +48,17 @@ export class InfraArea extends IdentityMatrixArea {
     return row?.retry_count ?? 0
   }
 
-
   incrementRetryCount(entryId: number): void {
     this.db
       .prepare('UPDATE sync_log SET retry_count = retry_count + 1 WHERE id = ?')
       .run(entryId)
   }
 
-
   markSyncSuccess(entryId: number): void {
     this.db
       .prepare('UPDATE sync_log SET success = 1, error = NULL WHERE id = ?')
       .run(entryId)
   }
-
 
   // Firehose cursor persistence
   getSyncCursor(): number | undefined {
@@ -71,21 +68,22 @@ export class InfraArea extends IdentityMatrixArea {
     return row?.cursor
   }
 
-
   setSyncCursor(cursor: number): void {
     this.db
       .prepare('INSERT OR REPLACE INTO sync_cursor (id, cursor) VALUES (1, ?)')
       .run(cursor)
   }
 
-
   getUserCount(): number {
+    // Post-CD-M1 there is no user mapping to count; the meaningful gauge is
+    // distinct active members across communities (governance state).
     const row = this.db
-      .prepare('SELECT COUNT(*) as count FROM user_matrix_map')
+      .prepare(
+        "SELECT COUNT(DISTINCT did) as count FROM community_membership_state WHERE membership_state = 'active'",
+      )
       .get() as { count: number }
     return row.count
   }
-
 
   getSpaceCount(): number {
     const row = this.db
@@ -93,7 +91,6 @@ export class InfraArea extends IdentityMatrixArea {
       .get() as { count: number }
     return row.count
   }
-
 
   // Push tokens
   setPushToken(did: string, expoPushToken: string, platform: string): void {
@@ -104,13 +101,11 @@ export class InfraArea extends IdentityMatrixArea {
       .run(did, expoPushToken, platform)
   }
 
-
   getPushToken(did: string): UserPushToken | undefined {
     return this.db
       .prepare('SELECT * FROM user_push_tokens WHERE did = ?')
       .get(did) as UserPushToken | undefined
   }
-
 
   getPushTokensByDid(dids: string[]): UserPushToken[] {
     if (dids.length === 0) return []

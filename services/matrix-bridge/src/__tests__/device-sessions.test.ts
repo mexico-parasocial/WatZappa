@@ -9,7 +9,10 @@ describe('BridgeDatabase — device sessions', () => {
   let dbPath: string
 
   beforeEach(() => {
-    dbPath = path.join(os.tmpdir(), `para-bridge-test-${Date.now()}.db`)
+    dbPath = path.join(
+      os.tmpdir(),
+      `para-bridge-test-${Date.now()}-${Math.random().toString(36).slice(2)}.db`,
+    )
     db = new BridgeDatabase({ dbPath } as any)
   })
 

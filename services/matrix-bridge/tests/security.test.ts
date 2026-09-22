@@ -4,10 +4,16 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { PassThrough } from 'node:stream'
 import pg from 'pg'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  deriveIdentity,
+  signAssertion,
+} from '../src/__tests__/helpers/identity.js'
+import { ChallengeStore } from '../src/challenge.js'
 import type { IBridgeDatabase } from '../src/db/interface.js'
 import { PgBridgeDatabase } from '../src/db/pg/index.js'
 import { SqliteBridgeDatabase } from '../src/db/sqlite-wrapper.js'
 import { EventBus } from '../src/events/bus.js'
+import { BRIDGE_AUDIENCES } from '../src/identity-proof.js'
 import { ingestMatrixEvents } from '../src/matrix-ingestion.js'
 import { MatrixLoginUnavailableError } from '../src/matrix-login-error.js'
 import type { RouteContext, RouteHandler } from '../src/routes/context.js'
@@ -18,7 +24,9 @@ import {
   apiInstitutionsPOSTHandler,
 } from '../src/routes/institutions.js'
 import {
+  apiMatrixAttestHandler,
   apiMatrixIdentityHandler,
+  apiMatrixIdentityGoneHandler,
   apiMatrixTokenHandler,
 } from '../src/routes/matrix-identity.js'
 
@@ -29,6 +37,10 @@ vi.mock('../src/m8-auth.js', async (importOriginal) => ({
 const did = 'did:plc:alice'
 const community = 'at://did:plc:creator/com.para.community.board/one'
 const log = { warn() {}, info() {} }
+const identity = deriveIdentity(
+  new Uint8Array(32), // all-zero seed vector
+  'public',
+)
 class Response extends EventEmitter {
   text = ''
   statusCode = 200
@@ -80,8 +92,11 @@ describe.each([
       config: {
         port: 3001,
         matrixPublicHomeserverUrl: 'https://matrix.example',
+        matrixServerName: 'matrix.example',
       },
       events: new EventBus(db, log),
+      challenges: new ChallengeStore(),
+      matrix: { userExists: async () => true },
       log,
     } as unknown as RouteContext
     await db.setSpaceForCommunity(community, '!main:para', 'one', 'bicameral')
@@ -110,8 +125,19 @@ describe.each([
     })
   }
   it('atomically retries failed ingestion and deduplicates both producers', async () => {
-    await db.setMxidForDid(did, '@alice:para', 'unused-secret')
-    expect(await db.getUserPassword(did)).toBe('')
+    // Attribution flows through minted device sessions post-CD-M1.
+    const now = new Date().toISOString()
+    await db.createDeviceSession({
+      id: randomUUID(),
+      did,
+      mxid: '@alice:para',
+      deviceId: 'DEVTEST',
+      friendlyName: null,
+      userAgent: null,
+      createdAt: now,
+      lastSeenAt: now,
+      revokedAt: null,
+    })
     const event = {
       roomId: '!a:para',
       eventId: '$event',
@@ -214,28 +240,41 @@ describe.each([
     return res
   }
   it('does not fabricate a device session when delegated auth rejects appservice login', async () => {
-    await db.setMxidForDid(did, '@alice:para', '')
     ctx.matrix = {
+      userExists: async () => true,
       appServiceLogin: async () => {
         throw new MatrixLoginUnavailableError()
       },
     } as never
-    const res = await invoke(apiMatrixTokenHandler, {})
+    const challenge = ctx.challenges.issue(did).challenge
+    const signed = signAssertion(identity, {
+      purpose: 'matrix-login',
+      audience: BRIDGE_AUDIENCES.session,
+      challenge,
+    })
+    const res = await invoke(apiMatrixTokenHandler, signed)
     expect(res.statusCode).toBe(503)
     expect(JSON.parse(res.text).error).toBe('MATRIX_CLIENT_LOGIN_REQUIRED')
     expect(await db.listDeviceSessions(did)).toHaveLength(0)
   })
   it('reports the Matrix identity and login flow without minting a session', async () => {
-    await db.setMxidForDid(did, '@alice:para', '')
     ctx.matrix = {
+      userExists: async () => true,
       appServiceLogin: async () => {
         throw new Error('must not be called')
       },
     } as never
-    const res = await invoke(apiMatrixIdentityHandler, {})
+    const challenge = ctx.challenges.issue(did).challenge
+    const signed = signAssertion(identity, {
+      purpose: 'matrix-login',
+      audience: BRIDGE_AUDIENCES.identity,
+      challenge,
+    })
+    const res = await invoke(apiMatrixIdentityHandler, signed)
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.text)
-    expect(body.userId).toBe('@alice:para')
+    // Derived from the zero-seed public identity key, pinned in iM8.
+    expect(body.userId).toBe('@k4o2lmcmitomgymtdb7y3htsthoofobo:matrix.example')
     expect(body.loginFlow).toBe('oidc')
     // A client needs a resolvable address. The token endpoint used to derive
     // one by rewriting the internal URL, which produced https://synapse.
@@ -244,9 +283,80 @@ describe.each([
     expect(await db.listDeviceSessions(did)).toHaveLength(0)
     expect(body.accessToken).toBeUndefined()
   })
-  it('does not report an identity for a DID with no Matrix mapping', async () => {
-    const res = await invoke(apiMatrixIdentityHandler, {})
-    expect(res.statusCode).toBe(404)
+  it('attests a client-managed MAS session and is idempotent per device', async () => {
+    ctx.matrix = { userExists: async () => true } as never
+    const challenge = ctx.challenges.issue(did).challenge
+    const signed = signAssertion(identity, {
+      purpose: 'matrix-login',
+      audience: BRIDGE_AUDIENCES.attest,
+      challenge,
+    })
+    const res = await invoke(apiMatrixAttestHandler, {
+      ...signed,
+      deviceId: 'MASDEVICE1',
+    })
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.text)
+    expect(body.attested).toBe(true)
+    expect(body.userId).toBe('@k4o2lmcmitomgymtdb7y3htsthoofobo:matrix.example')
+    const sessions = await db.listDeviceSessions(did)
+    expect(sessions).toHaveLength(1)
+    expect(sessions[0].deviceId).toBe('MASDEVICE1')
+
+    // Re-attesting the same device reuses the row instead of accumulating.
+    const challenge2 = ctx.challenges.issue(did).challenge
+    const signed2 = signAssertion(identity, {
+      purpose: 'matrix-login',
+      audience: BRIDGE_AUDIENCES.attest,
+      challenge: challenge2,
+    })
+    const res2 = await invoke(apiMatrixAttestHandler, {
+      ...signed2,
+      deviceId: 'MASDEVICE1',
+    })
+    expect(res2.statusCode).toBe(200)
+    expect(JSON.parse(res2.text).sessionId).toBe(body.sessionId)
+    expect(await db.listDeviceSessions(did)).toHaveLength(1)
+  })
+
+  it('rejects an attestation signed for another audience', async () => {
+    const challenge = ctx.challenges.issue(did).challenge
+    const signed = signAssertion(identity, {
+      purpose: 'matrix-login',
+      audience: BRIDGE_AUDIENCES.session,
+      challenge,
+    })
+    const res = await invoke(apiMatrixAttestHandler, {
+      ...signed,
+      deviceId: 'MASDEVICE1',
+    })
+    expect(res.statusCode).toBe(401)
+    expect(await db.listDeviceSessions(did)).toHaveLength(0)
+  })
+
+  it('answers 410 with a migration pointer on the removed GET identity route', async () => {
+    const res = await invoke(apiMatrixIdentityGoneHandler, undefined)
+    expect(res.statusCode).toBe(410)
+    expect(JSON.parse(res.text).migrate.challenge).toBe(
+      'POST /api/matrix-challenge',
+    )
+  })
+
+  it('refuses to report an identity without a proof', async () => {
+    // No assertion at all: shape-rejected before anything is derived. The
+    // HttpError is what the server's error layer turns into the 400.
+    await expect(invoke(apiMatrixIdentityHandler, {})).rejects.toMatchObject({
+      statusCode: 400,
+    })
+    expect(await db.listDeviceSessions(did)).toHaveLength(0)
+    // An assertion over an unknown/foreign challenge never verifies.
+    const foreign = signAssertion(identity, {
+      purpose: 'matrix-login',
+      audience: BRIDGE_AUDIENCES.identity,
+      challenge: 'f'.repeat(64),
+    })
+    const res2 = await invoke(apiMatrixIdentityHandler, foreign)
+    expect(res2.statusCode).toBe(401)
     expect(await db.listDeviceSessions(did)).toHaveLength(0)
   })
   it('creates a server-chosen institution and refuses arbitrary owner claims', async () => {

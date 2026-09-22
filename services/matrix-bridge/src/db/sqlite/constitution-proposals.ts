@@ -1,13 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  CommunitySpaceMap,
+  SyncLogEntry,
+  UserPushToken,
 } from '../interface.js'
 import { InfraArea } from './infra.js'
 
 export class ConstitutionProposalsArea extends InfraArea {
-
-
   // Constitutions
   setConstitution(
     communityUri: string,
@@ -20,7 +22,6 @@ export class ConstitutionProposalsArea extends InfraArea {
       )
       .run(communityUri, version, rulesJson)
   }
-
 
   getConstitution(communityUri: string):
     | {
@@ -50,7 +51,6 @@ export class ConstitutionProposalsArea extends InfraArea {
       : undefined
   }
 
-
   // Proposals
   insertProposal(
     uri: string,
@@ -78,11 +78,9 @@ export class ConstitutionProposalsArea extends InfraArea {
       )
   }
 
-
   getProposal(uri: string): any | undefined {
     return this.db.prepare('SELECT * FROM proposals WHERE uri = ?').get(uri)
   }
-
 
   getProposalsByCommunity(communityUri: string, state?: string): any[] {
     if (state) {
@@ -99,7 +97,6 @@ export class ConstitutionProposalsArea extends InfraArea {
       .all(communityUri) as any[]
   }
 
-
   getProposalsByState(state: string): any[] {
     return this.db
       .prepare(
@@ -107,7 +104,6 @@ export class ConstitutionProposalsArea extends InfraArea {
       )
       .all(state) as any[]
   }
-
 
   updateProposalState(
     uri: string,
@@ -122,7 +118,6 @@ export class ConstitutionProposalsArea extends InfraArea {
       .run(state, votingStartsAt ?? null, votingEndsAt ?? null, uri)
   }
 
-
   updateProposalVoteCounts(
     uri: string,
     forVotes: number,
@@ -136,13 +131,11 @@ export class ConstitutionProposalsArea extends InfraArea {
       .run(forVotes, againstVotes, abstainVotes, uri)
   }
 
-
   finalizeProposal(uri: string, result: string, decidedAt: string): void {
     this.db
       .prepare('UPDATE proposals SET state = ?, decided_at = ? WHERE uri = ?')
       .run(result, decidedAt, uri)
   }
-
 
   // Votes
   insertVote(
@@ -161,13 +154,11 @@ export class ConstitutionProposalsArea extends InfraArea {
       .run(uri, proposalUri, communityUri, voterDid, choice, weight, createdAt)
   }
 
-
   getVotesForProposal(proposalUri: string): any[] {
     return this.db
       .prepare('SELECT * FROM votes WHERE proposal_uri = ?')
       .all(proposalUri) as any[]
   }
-
 
   // Decisions
   insertDecision(
@@ -204,13 +195,11 @@ export class ConstitutionProposalsArea extends InfraArea {
       )
   }
 
-
   getDecision(proposalUri: string): any | undefined {
     return this.db
       .prepare('SELECT * FROM decisions WHERE proposal_uri = ?')
       .get(proposalUri)
   }
-
 
   getDecisionsByCommunity(communityUri: string): any[] {
     return this.db

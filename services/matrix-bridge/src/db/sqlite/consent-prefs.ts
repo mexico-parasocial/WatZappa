@@ -1,13 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  CommunitySpaceMap,
+  SyncLogEntry,
+  UserPushToken,
 } from '../interface.js'
 import { ParticipationArea } from './participation.js'
 
 export class ConsentPrefsArea extends ParticipationArea {
-
-
   // User chat preferences
   getChatPreferences(did: string): { showChatBadges: boolean } {
     const row = this.db
@@ -18,7 +20,6 @@ export class ConsentPrefsArea extends ParticipationArea {
     return { showChatBadges: row ? row.show_chat_badges === 1 : false }
   }
 
-
   setChatPreferences(did: string, showChatBadges: boolean): void {
     this.db
       .prepare(
@@ -26,7 +27,6 @@ export class ConsentPrefsArea extends ParticipationArea {
       )
       .run(did, showChatBadges ? 1 : 0)
   }
-
 
   // Third-party LLM processing consent (OD-3)
   getAiConsent(did: string): AiConsentRecord {
@@ -61,7 +61,6 @@ export class ConsentPrefsArea extends ParticipationArea {
     }
   }
 
-
   setAiConsent(did: string, granted: boolean, policyVersion: number): void {
     const existing = this.getAiConsent(did)
     const now = new Date().toISOString()
@@ -75,7 +74,6 @@ export class ConsentPrefsArea extends ParticipationArea {
       )
       .run(did, granted ? 1 : 0, policyVersion, grantedAt, revokedAt)
   }
-
 
   getConsentingDids(dids: string[], policyVersion: number): Set<string> {
     if (dids.length === 0) return new Set()

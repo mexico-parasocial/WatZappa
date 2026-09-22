@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import os from 'node:os'
@@ -97,7 +98,19 @@ describe('appservice transaction endpoint', () => {
       '!r:para',
       'one',
     )
-    await wrapped.setMxidForDid('did:plc:a', '@did-plc-a:para', '')
+    // Attribution flows through minted device sessions post-CD-M1.
+    const nowIso = new Date().toISOString()
+    await wrapped.createDeviceSession({
+      id: randomUUID(),
+      did: 'did:plc:a',
+      mxid: '@did-plc-a:para',
+      deviceId: 'DEVTEST',
+      friendlyName: null,
+      userAgent: null,
+      createdAt: nowIso,
+      lastSeenAt: nowIso,
+      revokedAt: null,
+    })
   })
 
   afterEach(async () => {

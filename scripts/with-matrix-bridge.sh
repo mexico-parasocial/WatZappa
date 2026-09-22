@@ -85,7 +85,7 @@ SYNAPSE_URL="${MATRIX_HOMESERVER_URL:-http://localhost:8008}"
 if ! curl -sf -o /dev/null "$SYNAPSE_URL/_matrix/client/versions"; then
   if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
     echo "🐳  matrix-bridge: auto-starting local Synapse container..."
-    docker compose -f "$ROOT/docker-compose.matrix.yaml" up -d synapse
+    "$ROOT/scripts/matrix-stack.sh" up
     for _ in $(seq 1 30); do
       if curl -sf -o /dev/null "$SYNAPSE_URL/_matrix/client/versions"; then
         break
@@ -105,6 +105,41 @@ if [ -z "${MATRIX_ADMIN_TOKEN:-}" ]; then
   fi
 fi
 
+# Read one key out of the repo .env. Deliberately not `source`: that file also
+# holds production R2 and PDS credentials which this process has no business
+# exporting. Always succeeds, so `set -e` does not abort on a missing key.
+env_from_repo() {
+  local key="$1"
+  if [ -f "$ROOT/.env" ]; then
+    sed -n "s/^${key}=//p" "$ROOT/.env" | tail -n1
+  fi
+  return 0
+}
+
+# Appservice credentials. Without these the bridge rejects Synapse's
+# transaction pushes, so no room event ever reaches matrix_events and the
+# whole ingestion half of the bridge is silently dead.
+MATRIX_APPSERVICE_TOKEN="${MATRIX_APPSERVICE_TOKEN:-$(env_from_repo MATRIX_APPSERVICE_TOKEN)}"
+MATRIX_HS_TOKEN="${MATRIX_HS_TOKEN:-$(env_from_repo MATRIX_HS_TOKEN)}"
+# Rooms are created with m.room.encryption only when this is true, and they are
+# never retro-encrypted. The native PARA chat engine refuses an unencrypted
+# room (ENCRYPTED_ROOM_REQUIRED), so a false here means the native screen can
+# open nothing that this bridge created.
+MATRIX_ENABLE_ENCRYPTION="${MATRIX_ENABLE_ENCRYPTION:-$(env_from_repo MATRIX_ENABLE_ENCRYPTION)}"
+# What GET /api/matrix-identity hands a native client as its homeserver. The
+# built-in fallback is https://matrix.para.social, which does not resolve; on a
+# phone, localhost is the phone. Set it to the Mac's LAN address.
+MATRIX_PUBLIC_HOMESERVER_URL="${MATRIX_PUBLIC_HOMESERVER_URL:-$(env_from_repo MATRIX_PUBLIC_HOMESERVER_URL)}"
+# The identity broker every bridge endpoint authenticates against (mubEZ).
+M8_BASE_URL="${M8_BASE_URL:-http://localhost:8787/v1}"
+
+if [ -z "$MATRIX_HS_TOKEN" ]; then
+  echo "matrix-bridge: MATRIX_HS_TOKEN unset — Synapse transaction pushes will be rejected (401)" >&2
+fi
+if [ "$MATRIX_ENABLE_ENCRYPTION" != true ]; then
+  echo "matrix-bridge: MATRIX_ENABLE_ENCRYPTION is not true — rooms will be created unencrypted and the native chat engine will refuse them" >&2
+fi
+
 start_bridge() {
   (
     cd "$BRIDGE_DIR"
@@ -114,6 +149,11 @@ start_bridge() {
     export PLC_URL="${PLC_URL:-http://localhost:2582}"
     export MATRIX_HOMESERVER_URL="${MATRIX_HOMESERVER_URL:-http://localhost:8008}"
     export MATRIX_ADMIN_TOKEN
+    export MATRIX_APPSERVICE_TOKEN
+    export MATRIX_HS_TOKEN
+    export MATRIX_ENABLE_ENCRYPTION
+    export MATRIX_PUBLIC_HOMESERVER_URL
+    export M8_BASE_URL
     export BRIDGE_DB_PATH
     exec node --enable-source-maps dist/index.js
   ) &

@@ -1,5 +1,4 @@
 export interface ModerationStore {
-
   insertModerationEvent(event: {
     did: string
     communityUri: string

@@ -11,9 +11,12 @@ The bridge uses [`matrix-bot-sdk`](https://github.com/turt2live/matrix-bot-sdk) 
 1. **Consumes** `com.atproto.sync.subscribeRepos` firehose
 2. **Filters** `com.para.community.board` (create) and `com.para.community.membership` records
 3. **Creates** a Matrix space for each new PARA community
-4. **Invites/kicks** users based on membership state
-5. **Sets power levels**: owners → 100, moderators → 50, members → 0
-6. **Chat client** — the PARA app hosts a self-contained WebView shell that loads a pinned, project-bundled copy of `matrix-js-sdk` from `PARA/assets/chat/`
+4. **Records governance state** (membership, roles, chambers via verifiable sortition) — and pushes no one into any room
+5. **Membership is pull-based** (CD-M6): a member joins by presenting an M8 session plus a CD-M4 proof of possession of the identity key behind their MXID (`POST /api/community-join`); the bridge derives the MXID, ensures the account and force-joins it with the right power levels (owners → 100, moderators → 50, members → 0)
+6. **Revocation and role changes** project through minted device sessions: removal deactivates the DID's sessions and bans those accounts; a role update re-writes power levels immediately (the handover protocol); every verified interaction settles role drift and offline removals (`reconcileMemberAccess`)
+7. **Room membership is a lease** (`community_membership_lease`, no DID column): renewed by any verified interaction, swept hourly — accounts past the TTL (`BRIDGE_MEMBERSHIP_LEASE_TTL_MS`, default 30 days) are kicked from the community's rooms, which is what reaches removed members who never interact again
+8. **Chat client** — the PARA app hosts a self-contained WebView shell that loads a pinned, project-bundled copy of `matrix-js-sdk` from `PARA/assets/chat/`
+
 
 ## Security Model (PARA-Only)
 
@@ -83,8 +86,13 @@ The bridge uses [`matrix-bot-sdk`](https://github.com/turt2live/matrix-bot-sdk) 
 ## Endpoints
 
 - `GET /healthz` — 200 if healthy, 503 if too many failed syncs
-- `GET /metrics` — Prometheus metrics (`para_matrix_invites_total`, `para_matrix_kicks_total`, `para_matrix_spaces_created_total`, `para_matrix_sync_latency_seconds`, `para_matrix_firehose_lag_seconds`)
-- `POST /api/matrix-token` — requires M8 bearer token; returns a **device-bound** Matrix session for the authenticated DID (accepts optional `{ friendlyName, deviceId }`; registers a real Synapse device via appservice login when `MATRIX_APPSERVICE_TOKEN` is set)
+- `GET /metrics` — Prometheus metrics (`para_matrix_kicks_total`, `para_matrix_spaces_created_total`, `para_matrix_sync_latency_seconds`, `para_matrix_firehose_lag_seconds`)
+- `POST /api/matrix-challenge` — requires M8 bearer token; issues the one-time challenge (TTL 5 min, session-bound) that every proof of possession signs
+- `POST /api/matrix-identity` — requires M8 bearer token + CD-M4 `SignedAssertion` (audience `para-matrix-bridge/identity.v1`); derives the caller's MXID from the presented key, ensures the account exists, returns `{userId, homeServer, loginFlow}`; mints nothing
+- `POST /api/community-join` — requires M8 bearer token + active community membership + `SignedAssertion` (audience `para-matrix-bridge/join.v1`); the verified join: force-joins the derived MXID into the community's rooms with governance power levels
+- `POST /api/matrix-attest` — requires M8 bearer token + `SignedAssertion` (audience `para-matrix-bridge/attest.v1`) + `{deviceId}`; registers a client-managed (MAS-native) Matrix session against the derived MXID so attribution, moderation, revocation and role projection reach it; idempotent per device
+- `POST /api/matrix-token` — requires M8 bearer token + `SignedAssertion` (audience `para-matrix-bridge/session.v1`); returns a **device-bound** Matrix session for the derived MXID (accepts optional `{ friendlyName, deviceId }`; registers a real Synapse device via appservice login when `MATRIX_APPSERVICE_TOKEN` is set)
+- `GET /api/matrix-identity` — 410 with a migration pointer (the v1 mapping read is gone)
 - `GET /api/devices` — the caller's device sessions, including revoked ones
 - `POST /api/devices/revoke` — body `{ sessionId }`; deactivates the device on the homeserver and marks the session revoked
 - `GET /api/events` — Server-Sent Events stream for the caller: governance/community events with replay from `Last-Event-ID` inside a 7-day retention window, per-DID audiences, dedup by `id` (delivery is at-least-once), `resync_required` when the cursor predates retention

@@ -1,13 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord, CommunitySpaceMap, CommunityRoomKind, CommunityRoomSummary,
-  SyncLogEntry, UserMatrixMap, UserPushToken,
+  AiConsentRecord,
+  CommunityRoomKind,
+  CommunityRoomSummary,
+  CommunitySpaceMap,
+  SyncLogEntry,
+  UserPushToken,
 } from '../interface.js'
 import { ModerationArea } from './moderation.js'
 
 export class ParticipationArea extends ModerationArea {
-
-
   // Chat participation stats
   async getParticipationStats(
     did: string,
@@ -18,7 +20,6 @@ export class ParticipationArea extends ModerationArea {
       [did, communityUri],
     )
   }
-
 
   async ensureParticipationStats(
     did: string,
@@ -31,7 +32,6 @@ export class ParticipationArea extends ModerationArea {
     )
   }
 
-
   async incrementMessageCount(
     did: string,
     communityUri: string,
@@ -42,14 +42,12 @@ export class ParticipationArea extends ModerationArea {
     )
   }
 
-
   async incrementVoteCount(did: string, communityUri: string): Promise<void> {
     await this.run(
       'UPDATE chat_participation_stats SET votes_cast = votes_cast + 1, updated_at = NOW() WHERE did = $1 AND community_uri = $2',
       [did, communityUri],
     )
   }
-
 
   async incrementProposalCount(
     did: string,
@@ -60,7 +58,6 @@ export class ParticipationArea extends ModerationArea {
       [did, communityUri],
     )
   }
-
 
   async setParticipationRoles(
     did: string,
@@ -94,7 +91,6 @@ export class ParticipationArea extends ModerationArea {
     )
   }
 
-
   async getParticipationStatsByCommunity(communityUri: string): Promise<any[]> {
     return this.queryAll(
       'SELECT * FROM chat_participation_stats WHERE community_uri = $1 ORDER BY message_count DESC',
@@ -102,18 +98,16 @@ export class ParticipationArea extends ModerationArea {
     )
   }
 
-
   async getMemberList(
     communityUri: string,
     limit = 100,
     offset = 0,
   ): Promise<any[]> {
     return this.queryAll(
-      'SELECT ps.*, umm.matrix_user_id FROM chat_participation_stats ps LEFT JOIN user_matrix_map umm ON ps.did = umm.did WHERE ps.community_uri = $1 ORDER BY ps.last_message_at DESC LIMIT $2 OFFSET $3',
+      'SELECT ps.* FROM chat_participation_stats ps WHERE ps.community_uri = $1 ORDER BY ps.last_message_at DESC LIMIT $2 OFFSET $3',
       [communityUri, limit, offset],
     )
   }
-
 
   async getActiveCommunityUris(): Promise<string[]> {
     const rows = await this.queryAll<{ community_uri: string }>(

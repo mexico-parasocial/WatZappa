@@ -189,8 +189,8 @@ the POST endpoints. This requires a valid M8 session, closing the gap with the
 README's claim; it does not add a community-membership check beyond that —
 same authorization level the POST endpoints on these resources already use.
 
-**F7 — push-based membership projection cannot survive CD-M1.** *(open,
-structural — this is what OD-5 is really about)*
+**F7 — push-based membership projection cannot survive CD-M1.** *(closed by
+CD-M1 + CD-M6, 2026-09-21 — the v1 mechanisms are deleted from the bridge)*
 When the firehose sees a `com.para.community.membership` record it invites that
 member to the community's rooms. To do that it needs an MXID, and it gets one
 from `ensureMxid` (`firehose.ts`): read `user_matrix_map`, and on a miss derive
@@ -215,6 +215,14 @@ The consequence is that OD-5 is not only "move governance logic out of the
 bridge". The governance side is already portable (CD-M2). It is the
 *provisioner* that has to change shape: it can no longer push users into rooms,
 because it cannot name them.
+
+*Closed as designed:* `user_matrix_map` is dropped at startup on both backends
+(the PW-CLEANUP lesson — deployed rows are deleted, not merely stopped),
+`didToMxid` no longer exists, and membership inverted from push to pull via the
+CD-M6 verified join. The residual linkage surface is `device_sessions`, which
+retains (did, mxid) per minted session as operational, revocable state — see
+CD-M6's consequences for why that is not the mapping table re-formed, and what
+still has to move at the CD-M2 physical split.
 
 **F8 — fifteen more GET endpoints are still unauthenticated.** *(fixed)*
 F6 closed the three endpoints that had been spot-checked. A full pass over all
@@ -348,6 +356,12 @@ vague claim generously.
   refusal cannot be bypassed through the second entry point.
 - **The MXID is a pure function of the identity public key.** No server table
   is required to relate an account to a DID or to another identity (§4).
+- **No DID↔MXID mapping table exists.** *(since CD-M1/CD-M6, 2026-09-21)*
+  `user_matrix_map` is dropped at startup on both backends, no store method
+  resolves an MXID from a DID, and the boundary suite
+  (`services/matrix-bridge/src/__tests__/identity-boundary.test.ts`) pins all
+  three. Residual: `device_sessions` holds (did, mxid) per minted session as
+  operational state — see CD-M6 consequences.
 - **Push payloads carry no message content.** `push.include_content: false` is
   server-enforced; a misconfigured client cannot opt back in.
 - **Media requires authentication.** `enable_authenticated_media: true`.
@@ -373,9 +387,6 @@ vague claim generously.
 - **End-to-end encryption.** Not on. The current client cannot decrypt. Until
   the Phase 2 crypto spike lands, the homeserver operator can read message
   content, and no wording anywhere should imply otherwise.
-- **No server-held identity mapping.** v1 holds a bidirectional DID↔MXID table
-  with passwords. §4 removes the *need* for it; deleting it is Phase 2/3 work
-  and it exists until then.
 
 ## 4. MXID derivation
 
@@ -616,13 +627,16 @@ user. Investigating this surfaced F7 — the current push-based membership
 projection is unimplementable after CD-M1 — which is why the residual question
 below is filed separately rather than treated as an implementation detail.
 
-**OD-6 — the join seam (from F7 / CD-M2).** If the server can no longer invite a
-member because it cannot compute their MXID, how does a member join a community
-room? The client can derive its own MXID and holds `identity_priv_i`, so the
-shape is a join authorized by proof rather than an invite. Undecided: whether
-the proof is a short-lived capability token issued by `para-governance`, a
-Synapse module validating it at join time, or MAS-mediated. **Blocked on OD-2** —
-all three need the same signature primitive.
+**OD-6 — the join seam (from F7 / CD-M2).** *(CLOSED 2026-09-21 — CD-M6 below)*
+If the server can no longer invite a member because it cannot compute their
+MXID, how does a member join a community room? The client can derive its own
+MXID and holds `identity_priv_i`, so the shape is a join authorized by proof
+rather than an invite. Undecided: whether the proof is a short-lived capability
+token issued by `para-governance`, a Synapse module validating it at join time,
+or MAS-mediated. **Blocked on OD-2** — all three need the same signature
+primitive. *Resolved by CD-M6: the proof is a CD-M4 assertion verified by the
+bridge, and the join is the Synapse admin force-join endpoint. Not a Synapse
+module, not MAS-mediated, not a separate token service.*
 
 ## 7. Service decomposition
 
@@ -887,18 +901,140 @@ Tempting — it would delete a whole service and its operational burden. It fail
 on both properties above: PARA would lose encryption it has planned for, and
 regain the linkage it has spent this quarter removing.
 
+### CD-M6 — the join seam is a bridge-verified proof plus admin force-join; membership is pull
+
+**Decision.** A member joins a community's rooms by presenting two credentials
+to the bridge in one request, and the bridge — not the homeserver — checks
+both:
+
+1. an **M8 session** (the same bearer the app already holds), proving the DID
+   is an active member of the community in governance state;
+2. a **CD-M4 assertion** (`para.identity.pop.v1`, purpose `matrix-login`,
+   audience `para-matrix-bridge/join.v1`) over a bridge-issued one-time
+   challenge, proving the caller holds `identity_priv_i`.
+
+The bridge derives the MXID from the presented public key (CD-M1, implemented
+once, in `services/matrix-bridge/src/identity-proof.ts`), ensures the Synapse
+account exists via appservice registration, and force-joins it with
+`POST /_synapse/admin/v1/join/{roomId}` — the one admin membership endpoint
+verified to exist on a live Synapse. Rooms stay `invite`-only for everyone
+else. Revocation and role changes are projected through the same boundary
+(Consequences). Three audiences distinguish the three proofs a client may
+present (`identity`, `session`, `join`); a signature for one never verifies as
+another.
+
+**Problem.** F7: after CD-M1 the server cannot name the member it wants to
+invite, so v1's push model is unimplementable. OD-6 left three candidate
+mechanisms open.
+
+**Rejected alternatives.**
+
+- *A Synapse module validating join proofs at the homeserver.* Strongest
+  end-state, but it is new homeserver-side code in a component we harden rather
+  than extend, and it does not exist today. The admin force-join endpoint
+  already does the one thing needed: join a local user regardless of join
+  rules, as the admin. Revisit if the bridge is ever removed from the trust
+  boundary.
+- *MAS-mediated join (the authorization-code flow carrying membership).* MAS
+  knows users by MXID only; it cannot check PARA governance state (which is
+  DID-keyed) without becoming a governance consumer. That couples the identity
+  provider to the governance plane — exactly the layering CD-M2 exists to
+  prevent.
+- *A separate capability-token service.* A third credential to issue, store,
+  revoke and audit, for a decision that can be made from two credentials the
+  caller already holds. The one-time challenge already gives the assertion
+  replay protection; a capability token would add infrastructure, not
+  properties.
+- *Keeping the v1 table "just for invites".* The linkage table serving its
+  original purpose is the vulnerability, not a mitigation for it.
+
+**Consequences.**
+
+- The join decision (DID active in community ∧ key possessed) is made and
+  consumed inside one request. Nothing about the DID↔MXID pairing is
+  persisted; the pairing is re-proven at every interaction. This is the
+  property the whole design rests on, and the boundary suite pins it:
+  `user_matrix_map` is dropped at startup on both backends, no store method
+  resolves an MXID from a DID, and the member-list endpoint carries no chat
+  identifier (`src/__tests__/identity-boundary.test.ts`).
+- **`device_sessions` is the residual linkage surface, deliberately.** Each
+  row holds (did, mxid) for a session the bridge minted after a verified
+  proof. It is operational state — rows exist only where a verified
+  interaction completed, they are revocable, and no API returns the pairing —
+  not a directory. It is what makes revocation and role projection possible
+  without the v1 table, and it moves to the provisioner side at the CD-M2
+  physical split. Until that split, "the bridge database cannot answer who is
+  who" is enforced by absence of the *forward* lookup only.
+- **Revocation inverts too.** The bridge cannot kick a DID it cannot name, so
+  removal deactivates every device session minted for that DID (killing those
+  access tokens) and bans those MXIDs from the community's rooms. Re-entry is
+  impossible anyway: the next verified join fails the active-membership check.
+- **Role changes (the handover protocol) project at two moments.** A
+  membership *update* while active — moderation rotation, sortition replacing
+  a delegate, owner handover — triggers `applyMemberRoles`: current roles are
+  written as room power levels for every minted-session MXID, immediately and
+  idempotently, retried by the retry worker. A member not yet joined picks the
+  roles up at their next verified join.
+- **Interaction-time reconciliation closes the offline gap** (2026-09-21).
+  Every verified interaction — identity probe, session mint, attestation,
+  join — ends with `reconcileMemberAccess(did, presentedMxid)`: for each
+  community the DID has state for, active memberships get current roles
+  projected onto the presented account (catching downgrades that arrived
+  while offline) and non-active memberships get the presented account banned
+  and minted sessions revoked (catching removals that arrived while offline —
+  including MAS-native accounts with no minted session, which the
+  event-time path cannot reach). Removal and role drift are therefore
+  self-healing at the member's next app open, with zero persistence of the
+  DID↔MXID pairing: the proof supplies the account, governance state supplies
+  the verdict, neither outlives the request.
+- **The membership lease closes the never-interacts-again residual**
+  (2026-09-21). Every verified interaction also records, per community, when
+  each chat account last proved currency — `community_membership_lease`,
+  keyed by (community, MXID), **no DID column**: it is a DID-free roster of
+  "which accounts are in the rooms we manage and when they last showed up",
+  not a mapping in disguise. An hourly sweep
+  (`sweepExpiredMembershipLeases`, TTL `BRIDGE_MEMBERSHIP_LEASE_TTL_MS`,
+  default 30 days, 0 disables) kicks accounts whose lease expired from the
+  community's rooms and drops the rows. A removed member who never interacts
+  again is therefore evicted within the TTL regardless — without the bridge
+  ever naming them. Eviction is a kick, not a ban, because expiry also
+  reaches active members who simply did not open the app: their next
+  verified join re-admits them immediately (idempotent, membership still
+  active); bans remain reserved for explicit removal. The client contract
+  asks for an automatic re-join at app open when the homeserver reports the
+  account left a community room.
+- **Session attestation brings MAS-native clients into the same operational
+  treatment** (2026-09-21). `POST /api/matrix-attest` (audience
+  `para-matrix-bridge/attest.v1`): the client presents the standard proof
+  plus its MAS device id, and the bridge records a device-session row for
+  the derived MXID without minting anything. With that row,
+  chat-message attribution counts the sender, moderation sanctions resolve
+  the target, removal deactivates the device, and role changes reach it.
+  Voluntary and idempotent per device; a MAS client that never attests
+  keeps the pre-attestation behaviour (unattributed messages, no
+  bridge-side enforcement handle) — the client contract asks for it on
+  login.
+- The client contract changed: `POST /api/matrix-challenge` then
+  `POST /api/matrix-identity` / `/api/matrix-token` / `/api/community-join`
+  with the assertion. `GET /api/matrix-identity` (mapping read) is gone.
+  Documented in `services/matrix-bridge/docs/CLIENT_INTEGRATION.md`.
+- The appservice namespace is now `@[a-z2-7]{32}` (exclusive). Switching it
+  renames every account on a v1 deployment — CD-M1 makes the derivation a
+  versioned wire format, and the registration file carries the migration note.
+
 ## 8. Phase status
 
 | Plan item | Status |
 |---|---|
 | Confirm v1 assumptions; inventory what the bridge stores | Done — §1, §2 |
 | Metadata hardening applied and documented | Done — §5, **verified on a running server 2026-08-20** (F1) |
-| MXID derivation formula locked | Done — §4, CD-M1 |
+| MXID derivation formula locked | Done — §4, CD-M1; **bridge-side implementation + v1 table deletion landed 2026-09-21** |
 | iM8 `getMatrixIdentity` with tests | Done — `matrixIdentity.ts`, 18 tests |
-| Identity-boundary CI suite (Matrix) | Partial — the "voting key has no Matrix account" half is covered. The "no DID↔MXID table exists" half cannot pass until the v1 table is removed (Phase 2). |
+| Identity-boundary CI suite (Matrix) | **Done — both halves.** Client half in iM8; server half in `services/matrix-bridge/src/__tests__/identity-boundary.test.ts` (table dropped at startup, no forward lookup, no chat identifier in member lists). |
 | `para-idp` + MAS prototype | **Done and verified 2026-08-20** — a PARA seed creates `@k4o2lmcmitomgymtdb7y3htsthoofobo:matrix.para.social`; zero DID columns in either database |
 | Tuwunel spike | Not started |
 | Homeserver decision recorded | Open — OD-1 (deferred out of this quarter) |
-| Proof of possession | Done — CD-M4, `identitySignature.ts`, 16 tests |
+| Proof of possession | Done — CD-M4, `identitySignature.ts`, 16 tests; **bridge-side verification in `identity-proof.ts`** |
+| Join seam (OD-6) | **Done — CD-M6** (verified join, pull-model membership, handover projection, session-based revocation) |
 | Target for governance logic | Done — §7, CD-M2. Migration blocked on OD-2/OD-6; **the `firehose.ts` interface extraction landed 2026-08-22** (`MatrixProjectionPort` in `matrix-projection.ts`; firehose is DID-only). Physical schema split still awaits OD-2/OD-6. |
 | LLM processing consent surface | Done — §7, CD-M3, 11 tests. Policy half of OD-3 still open; client-side prompt not built. |

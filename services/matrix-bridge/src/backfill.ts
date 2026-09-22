@@ -22,7 +22,7 @@ import pino from 'pino'
 import { AtpAgent } from '@atproto/api'
 import { loadConfig } from './config.js'
 import { type IBridgeDatabase, createDatabase } from './db/index.js'
-import { MatrixAdminClient, didToMxid, extractServerName } from './matrix.js'
+import { MatrixAdminClient, extractServerName } from './matrix.js'
 
 const log = pino({
   level: 'info',
@@ -159,16 +159,15 @@ async function main() {
           ])
         }
 
-        // Invite creator as admin
-        const creatorMxid = await ensureUser(
-          matrix,
-          db,
-          comm.creatorDid,
-          serverName,
+        // Post-CD-M1 the creator is not pushed into anything: membership is
+        // recorded and the owner joins via the verified join, like everyone.
+        await db.setCommunityMembership(comm.creatorDid, comm.uri, 'active', [
+          'owner',
+        ])
+        log.info(
+          { uri: comm.uri, creator: comm.creatorDid },
+          'Recorded creator as owner (joins via verified join)',
         )
-        await matrix.inviteUser(spaceId, creatorMxid)
-        await matrix.setPowerLevel(spaceId, creatorMxid, 100)
-        log.info({ uri: comm.uri, creatorMxid }, 'Invited creator as admin')
       } catch (err: any) {
         log.error({ err, uri: comm.uri }, 'Failed to create Matrix space')
         continue
@@ -185,34 +184,18 @@ async function main() {
     // For now, this is a placeholder that expects manual input or AppView integration
     log.warn('Membership backfill requires AppView integration.')
     log.info(
-      'To backfill members, query your AppView for all active memberships and call:',
+      'To backfill members, record governance state only — members join by verified proof:',
     )
-    log.info('  ensureUser(matrix, db, member.did, serverName)')
-    log.info('  matrix.inviteUser(spaceId, mxid)')
     log.info(
-      '  For bicameral: assignChamberBalanced() then invite to chamber room',
+      '  db.setCommunityMembership(member.did, comm.uri, "active", roles)',
+    )
+    log.info(
+      '  Each member then calls POST /api/community-join with an identity proof',
     )
   }
 
   await db.close()
   log.info('Backfill complete')
-}
-
-async function ensureUser(
-  matrix: MatrixAdminClient,
-  db: IBridgeDatabase,
-  did: string,
-  serverName: string,
-): Promise<string> {
-  let mxid = await db.getMxidForDid(did)
-  if (!mxid) {
-    mxid = didToMxid(did, serverName)
-    await db.setMxidForDid(did, mxid, '')
-  }
-
-  // Note: We don't create the user here because createUser is async.
-  // In the backfill loop, call ensureUserAsync() instead.
-  return mxid
 }
 
 main().catch((err) => {
