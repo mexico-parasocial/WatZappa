@@ -20995,13 +20995,13 @@ export const schemaDict = {
               type: 'string',
               maxLength: 128,
               description:
-                'Privacy-preserving one-person-one-vote nullifier for this open question reply, issued by m8.',
+                'DEPRECATED 2026-09-22 (OD-7 §5h): this collection is a public reaction and its count decides nothing, so no m8 nullifier is requested. The PDS refuses any write of this record that carries this field; do not set it. When reactions did request one, issuance made m8 derive the value server-side from a stable person identifier and store a durable (person, subject) row beside it.',
             },
             eligibilityProofRef: {
               type: 'string',
               maxLength: 512,
               description:
-                'Opaque reference to the m8 eligibility/nullifier proof used to cast this vote.',
+                'DEPRECATED 2026-09-22 (OD-7 §5h): this reaction carries no m8 proof. The PDS refuses any write of this record that carries this field; do not set it.',
             },
             createdAt: {
               type: 'string',
@@ -28152,13 +28152,13 @@ export const schemaDict = {
               type: 'string',
               maxLength: 128,
               description:
-                'Privacy-preserving one-person-one-vote nullifier for this RAQ axis, issued by m8.',
+                'DEPRECATED 2026-09-22 (OD-7 §5h): this collection is a public reaction and its count decides nothing, so no m8 nullifier is requested. The PDS refuses any write of this record that carries this field; do not set it. When reactions did request one, issuance made m8 derive the value server-side from a stable person identifier and store a durable (person, subject) row beside it.',
             },
             eligibilityProofRef: {
               type: 'string',
               maxLength: 512,
               description:
-                'Opaque reference to the m8 eligibility/nullifier proof used to cast this vote.',
+                'DEPRECATED 2026-09-22 (OD-7 §5h): this reaction carries no m8 proof. The PDS refuses any write of this record that carries this field; do not set it.',
             },
             createdAt: {
               type: 'string',
@@ -28697,13 +28697,13 @@ export const schemaDict = {
               type: 'string',
               maxLength: 128,
               description:
-                'Privacy-preserving one-person-one-vote nullifier for this RAQ proposal, issued by m8.',
+                'DEPRECATED 2026-09-22 (OD-7 §5h): this collection is a public reaction and its count decides nothing, so no m8 nullifier is requested. The PDS refuses any write of this record that carries this field; do not set it. When reactions did request one, issuance made m8 derive the value server-side from a stable person identifier and store a durable (person, subject) row beside it.',
             },
             eligibilityProofRef: {
               type: 'string',
               maxLength: 512,
               description:
-                'Opaque reference to the m8 eligibility/nullifier proof used to cast this vote.',
+                'DEPRECATED 2026-09-22 (OD-7 §5h): this reaction carries no m8 proof. The PDS refuses any write of this record that carries this field; do not set it.',
             },
             createdAt: {
               type: 'string',
