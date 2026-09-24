@@ -58,6 +58,17 @@ export class MatrixEventsArea extends ConsentPrefsArea {
     return !!row
   }
 
+  async getEventSender(
+    roomId: string,
+    eventId: string,
+  ): Promise<string | undefined> {
+    const row = await this.queryOne<{ sender: string }>(
+      'SELECT sender FROM matrix_events WHERE room_id = $1 AND event_id = $2',
+      [roomId, eventId],
+    )
+    return row?.sender
+  }
+
   async getRecentEvents(roomId: string, limit = 100): Promise<any[]> {
     return this.queryAll(
       'SELECT * FROM matrix_events WHERE room_id = $1 ORDER BY origin_server_ts DESC LIMIT $2',

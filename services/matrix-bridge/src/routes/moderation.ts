@@ -8,6 +8,7 @@ import {
 } from '../authz.js'
 import { fetchBeacon, fetchLatestBeacon } from '../drand.js'
 import { extractFromText, persistExtractedCard } from '../extraction.js'
+import { isMessageReportReason } from '../chat-moderation.js'
 import { HttpError, authenticateM8 } from '../m8-auth.js'
 import { OpenAIClient } from '../openai-client.js'
 import { sendExpoNotifications } from '../push.js'
@@ -86,7 +87,14 @@ export async function apiChatMemberListHandler(
   res.end(JSON.stringify({ members, total: members.length }))
 }
 
-/** POST /api/moderation-report */
+/**
+ * POST /api/moderation-report
+ *
+ * Two shapes. A message report names the room and event and a reason from
+ * MESSAGE_REPORT_REASONS; the bridge resolves who sent it (the client knows
+ * only an MXID and must not need a DID). A member report, with no event,
+ * names `reportedDid` directly, as before.
+ */
 export async function apiModerationReportHandler(
   req: IncomingMessage,
   res: ServerResponse,
@@ -95,14 +103,20 @@ export async function apiModerationReportHandler(
   const auth = await authenticateM8(req, ctx.config)
   const body = await readBody(req)
   const {
-    reportedDid,
+    reportedDid: claimedReportedDid,
     reporterDid,
     communityUri,
     reason,
     matrixEventId,
     matrixRoomId,
   } = JSON.parse(body)
-  if (!reportedDid || !reporterDid || !communityUri || !reason) {
+  const isMessageReport = matrixEventId !== undefined
+  if (
+    !reporterDid ||
+    !communityUri ||
+    !reason ||
+    (isMessageReport ? !matrixRoomId : !claimedReportedDid)
+  ) {
     res.writeHead(400, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ error: 'Missing required fields' }))
     return
@@ -116,6 +130,13 @@ export async function apiModerationReportHandler(
     )
     return
   }
+  if (isMessageReport && !isMessageReportReason(reason)) {
+    writeJson(res, 400, {
+      error: 'reason must be one of the fixed message-report reasons',
+      code: 'InvalidReason',
+    })
+    return
+  }
   // F9: reporting requires active membership (central policy).
   if (
     !(await authorizeOrRespond(ctx, res, auth.did, 'community.contribute', {
@@ -124,9 +145,35 @@ export async function apiModerationReportHandler(
     }))
   )
     return
+
+  let reportedDid: string = claimedReportedDid
+  if (isMessageReport) {
+    const resolved = await ctx.chatMod.resolveReportedMessage({
+      reporterDid,
+      communityUri,
+      matrixRoomId,
+      matrixEventId,
+      reportedDid: claimedReportedDid,
+    })
+    if (!resolved.ok) {
+      const status =
+        resolved.code === 'EventNotFound'
+          ? 404
+          : resolved.code === 'SenderNotAttributable'
+            ? 422
+            : 400
+      writeJson(res, status, {
+        error: 'The reported message cannot be accepted',
+        code: resolved.code,
+      })
+      return
+    }
+    reportedDid = resolved.reportedDid
+  }
+
   // `context` is accepted in the body for compatibility with clients that
-  // still send it, and deliberately dropped: F4. The reported message is
-  // resolved live from Synapse via matrixEventId at review time.
+  // still send it, and deliberately dropped: F4, D2. Moderators read the
+  // reported message in the room, from their own client.
   await ctx.chatMod.ingestReport({
     reportedDid,
     reporterDid,

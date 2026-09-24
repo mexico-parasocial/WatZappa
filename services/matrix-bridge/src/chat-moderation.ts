@@ -14,6 +14,39 @@ import type { EventBus } from './events/bus.js'
 
 export type BadgeSeverity = 'info' | 'warning' | 'critical'
 
+/**
+ * Reasons a chat message can be reported for. A fixed set, not free text: a
+ * free-text reason is a channel for pasting the reported message, which F4
+ * and D2 rule out (the message stays in the room; moderators read it there).
+ */
+export const MESSAGE_REPORT_REASONS = [
+  'spam',
+  'harassment',
+  'hate',
+  'violence',
+  'impersonation',
+  'other',
+] as const
+export type MessageReportReason = (typeof MESSAGE_REPORT_REASONS)[number]
+
+export function isMessageReportReason(
+  value: unknown,
+): value is MessageReportReason {
+  return (MESSAGE_REPORT_REASONS as readonly unknown[]).includes(value)
+}
+
+export type ReportedMessageResolution =
+  | { ok: true; reportedDid: string }
+  | {
+      ok: false
+      code:
+        | 'RoomNotInCommunity'
+        | 'EventNotFound'
+        | 'SenderNotAttributable'
+        | 'ReportedDidMismatch'
+        | 'SelfReport'
+    }
+
 export interface ChatBadge {
   type: string
   label: string
@@ -85,6 +118,45 @@ export class ChatModerationEngine {
    * There is deliberately no `context` parameter: an excerpt that cannot be
    * passed in cannot be persisted by a later caller who has not read this.
    */
+  /**
+   * Who sent a reported chat message, resolved on the bridge rather than taken
+   * from the client.
+   *
+   * The reporter only knows the sender's MXID, and since CD-M1 an MXID does not
+   * reveal a DID to clients, so the app cannot and should not name one. The
+   * bridge resolves it from its own ingested events and minted sessions, and a
+   * client-supplied `reportedDid`, if any, must agree: otherwise anyone could
+   * pin a report on anyone by naming a DID beside an unrelated event.
+   */
+  async resolveReportedMessage(params: {
+    reporterDid: string
+    communityUri: string
+    matrixRoomId: string
+    matrixEventId: string
+    reportedDid?: string
+  }): Promise<ReportedMessageResolution> {
+    const community = await this.db.getCommunityByRoomId(params.matrixRoomId)
+    if (!community || community.communityUri !== params.communityUri) {
+      return { ok: false, code: 'RoomNotInCommunity' }
+    }
+    const sender = await this.db.getEventSender(
+      params.matrixRoomId,
+      params.matrixEventId,
+    )
+    if (!sender) return { ok: false, code: 'EventNotFound' }
+    // An MXID without a bridge-minted session (e.g. a MAS-native login) has no
+    // DID here. That is the CD-M1 boundary holding, not a lookup miss.
+    const reportedDid = await this.db.getDidForMxid(sender)
+    if (!reportedDid) return { ok: false, code: 'SenderNotAttributable' }
+    if (params.reportedDid && params.reportedDid !== reportedDid) {
+      return { ok: false, code: 'ReportedDidMismatch' }
+    }
+    if (reportedDid === params.reporterDid) {
+      return { ok: false, code: 'SelfReport' }
+    }
+    return { ok: true, reportedDid }
+  }
+
   async ingestReport(params: {
     reportedDid: string
     reporterDid: string

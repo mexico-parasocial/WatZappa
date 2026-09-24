@@ -644,6 +644,10 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     return this.wrap(() => this.inner.eventExists(eventId))
   }
 
+  getEventSender(roomId: string, eventId: string): Promise<string | undefined> {
+    return this.wrap(() => this.inner.getEventSender(roomId, eventId))
+  }
+
   getRecentEvents(roomId: string, limit = 100): Promise<any[]> {
     return this.wrap(() => this.inner.getRecentEvents(roomId, limit))
   }
