@@ -32,7 +32,14 @@ function makeStubDeps() {
     roles: string[]
   }> = []
   const chamberByUri: Record<string, 'A' | 'B' | undefined> = {}
+  // Joined members per room, as the Synapse admin API reports them.
+  const roomMembers: Record<string, string[]> = {}
   const matrix = {
+    getRoomMembers: async (roomId: string) =>
+      (roomMembers[roomId] ?? []).map((user_id) => ({ user_id })),
+    kickUser: async (roomId: string, mxid: string) => {
+      calls.push({ op: 'kick', args: [roomId, mxid] })
+    },
     userExists: async () => false,
     createUser: async (mxid: string) => {
       calls.push({ op: 'createUser', args: [mxid] })
@@ -70,6 +77,7 @@ function makeStubDeps() {
   } as unknown as IBridgeDatabase
   return {
     calls,
+    roomMembers,
     sessions,
     revoked,
     memberships,
@@ -117,7 +125,14 @@ describe('verifiedJoin (CD-M6)', () => {
       },
     )
     expect(result.mxid).toBe(expectedMxid)
-    expect(result.joinedRoomIds).toEqual(['!main:para', '!a:para'])
+    // A moderator is placed in every room of the community (D2), not only
+    // their assigned chamber.
+    expect(result.joinedRoomIds).toEqual([
+      '!main:para',
+      '!a:para',
+      '!b:para',
+      '!obs:para',
+    ])
     // The user record is created from the derived MXID only — no DID, no
     // display name, nothing reversible.
     expect(calls[0]).toEqual({ op: 'createUser', args: [expectedMxid] })
@@ -201,18 +216,14 @@ describe('applyMemberRoles (handover)', () => {
       chamber: 'B',
       isObserver: false,
     })
-    // Owner promotion reaches main + the assigned chamber, not the other chamber.
-    expect(calls).toContainEqual({
-      op: 'power',
-      args: ['!main:para', expectedMxid, 100],
-    })
-    expect(calls).toContainEqual({
-      op: 'power',
-      args: ['!b:para', expectedMxid, 100],
-    })
-    expect(calls.some((c) => c.op === 'power' && c.args[0] === '!a:para')).toBe(
-      false,
-    )
+    // An owner moderates every room (D2): main, both chambers and the
+    // observer room, not only the chamber they were assigned.
+    for (const roomId of ['!main:para', '!a:para', '!b:para', '!obs:para']) {
+      expect(calls).toContainEqual({
+        op: 'power',
+        args: [roomId, expectedMxid, 100],
+      })
+    }
     expect(
       calls.some(
         (c) => c.op === 'power' && c.args[1] === '@other:matrix.example',
@@ -252,6 +263,84 @@ describe('applyMemberRoles (handover)', () => {
       op: 'power',
       args: ['!main:para', expectedMxid, 0],
     })
+  })
+})
+
+describe('moderators reach every room (D2)', () => {
+  const allRooms = ['!main:para', '!a:para', '!b:para', '!obs:para']
+
+  it('joins a moderator into both chambers and the observer room at first join', async () => {
+    const { calls, matrix, db } = makeStubDeps()
+    const projection = createMatrixProjection(config, db, matrix, log)
+    await projection.verifiedJoin(space, 'did:plc:mod', identity.pub, {
+      roles: ['moderator'],
+      chamber: 'A',
+      isObserver: false,
+    })
+    for (const roomId of allRooms) {
+      expect(calls).toContainEqual({ op: 'join', args: [roomId, expectedMxid] })
+      expect(calls).toContainEqual({
+        op: 'power',
+        args: [roomId, expectedMxid, 50],
+      })
+    }
+  })
+
+  it('still places an ordinary member in their own chamber only', async () => {
+    const { calls, matrix, db } = makeStubDeps()
+    const projection = createMatrixProjection(config, db, matrix, log)
+    await projection.verifiedJoin(space, 'did:plc:member', identity.pub, {
+      roles: [],
+      chamber: 'A',
+      isObserver: false,
+    })
+    const joined = calls.filter((c) => c.op === 'join').map((c) => c.args[0])
+    expect(joined.sort()).toEqual(['!a:para', '!main:para'])
+  })
+
+  it('joins a member promoted to moderator into the rooms they were missing', async () => {
+    const { calls, sessions, matrix, db } = makeStubDeps()
+    sessions.push(session('did:plc:m', expectedMxid, 's1'))
+    const projection = createMatrixProjection(config, db, matrix, log)
+    await projection.applyMemberRoles(space, 'did:plc:m', {
+      roles: ['moderator'],
+      chamber: 'A',
+      isObserver: false,
+    })
+    for (const roomId of ['!a:para', '!b:para', '!obs:para']) {
+      expect(calls).toContainEqual({ op: 'join', args: [roomId, expectedMxid] })
+    }
+    expect(calls.some((c) => c.op === 'kick')).toBe(false)
+  })
+
+  it('removes a demoted moderator from the rooms their role no longer covers', async () => {
+    const { calls, sessions, roomMembers, matrix, db } = makeStubDeps()
+    sessions.push(session('did:plc:m', expectedMxid, 's1'))
+    for (const roomId of allRooms) roomMembers[roomId] = [expectedMxid]
+    const projection = createMatrixProjection(config, db, matrix, log)
+    await projection.applyMemberRoles(space, 'did:plc:m', {
+      roles: [],
+      chamber: 'A',
+      isObserver: false,
+    })
+    const kicked = calls.filter((c) => c.op === 'kick').map((c) => c.args[0])
+    expect(kicked.sort()).toEqual(['!b:para', '!obs:para'])
+    expect(calls).toContainEqual({
+      op: 'power',
+      args: ['!a:para', expectedMxid, 0],
+    })
+  })
+
+  it('does not kick from rooms the account was never in', async () => {
+    const { calls, sessions, matrix, db } = makeStubDeps()
+    sessions.push(session('did:plc:m', expectedMxid, 's1'))
+    const projection = createMatrixProjection(config, db, matrix, log)
+    await projection.applyMemberRoles(space, 'did:plc:m', {
+      roles: [],
+      chamber: 'B',
+      isObserver: false,
+    })
+    expect(calls.some((c) => c.op === 'kick')).toBe(false)
   })
 })
 
