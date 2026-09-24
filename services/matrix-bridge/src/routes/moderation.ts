@@ -285,6 +285,46 @@ export async function apiModerationSanctionHandler(
   res.end(JSON.stringify({ ok: true }))
 }
 
+/**
+ * GET /api/moderation-reports?community=…&modDid=… (prefix)
+ *
+ * The report queue for one community, for its moderators and owners only.
+ * Grouped by reported message; reporter identities and message text are not
+ * returned (see ModerationReportGroup).
+ */
+export async function apiModerationReportsHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+  ctx: RouteContext,
+): Promise<void> {
+  const auth = await authenticateM8(req, ctx.config)
+  const url = new URL(req.url ?? '', `http://localhost:${ctx.config.port}`)
+  const communityUri = url.searchParams.get('community')
+  const modDid = url.searchParams.get('modDid')
+  if (!communityUri || !modDid) {
+    writeJson(res, 400, { error: 'Missing community or modDid parameter' })
+    return
+  }
+  if (auth.did !== modDid) {
+    writeJson(res, 403, { error: 'modDid must match authenticated DID' })
+    return
+  }
+  try {
+    await authorize(ctx, auth.did, 'community.moderate', {
+      kind: 'community',
+      communityUri,
+    })
+  } catch (err) {
+    if (err instanceof HttpError) {
+      writeJson(res, err.statusCode, { error: err.message })
+      return
+    }
+    throw err
+  }
+  const reports = await ctx.chatMod.listReports(communityUri)
+  writeJson(res, 200, { reports })
+}
+
 /** GET /api/moderation-dashboard (prefix) */
 export async function apiModerationDashboardHandler(
   req: IncomingMessage,

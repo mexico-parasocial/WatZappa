@@ -8,11 +8,16 @@ import type { IBridgeDatabase } from '../src/db/interface.js'
 import { PgBridgeDatabase } from '../src/db/pg/index.js'
 import { SqliteBridgeDatabase } from '../src/db/sqlite-wrapper.js'
 import type { RouteContext } from '../src/routes/context.js'
-import { apiModerationReportHandler } from '../src/routes/moderation.js'
+import {
+  apiModerationReportHandler,
+  apiModerationReportsHandler,
+} from '../src/routes/moderation.js'
 
+// The authenticated caller; each test may switch it (reporter or moderator).
+const auth = vi.hoisted(() => ({ did: 'did:plc:reporter' }))
 vi.mock('../src/m8-auth.js', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../src/m8-auth.js')>()),
-  authenticateM8: async () => ({ did: 'did:plc:reporter' }),
+  authenticateM8: async () => ({ did: auth.did }),
 }))
 
 const reporter = 'did:plc:reporter'
@@ -42,6 +47,15 @@ class Response {
   }
 }
 
+function getRequest(url: string): IncomingMessage {
+  const req = new PassThrough() as unknown as IncomingMessage
+  req.headers = {}
+  req.url = url
+  req.method = 'GET'
+  ;(req as unknown as PassThrough).end()
+  return req
+}
+
 function request(body: unknown): IncomingMessage {
   const req = new PassThrough() as unknown as IncomingMessage
   req.headers = {}
@@ -66,6 +80,7 @@ describe.each([
   let ctx: RouteContext
 
   beforeEach(async () => {
+    auth.did = reporter
     if (driver === 'postgres') {
       const url = new URL(process.env.MATRIX_TEST_DATABASE_URL!)
       admin = new pg.Pool({ connectionString: url.toString() })
@@ -185,5 +200,90 @@ describe.each([
     const res = await post({ reportedDid: author.did, reason: 'spam' })
     expect(res.statusCode).toBe(200)
     expect(await db.getModerationEvents(author.did, community)).toHaveLength(1)
+  })
+
+  describe('GET /api/moderation-reports', () => {
+    const moderator = 'did:plc:moderator'
+    const secondReporter = 'did:plc:second-reporter'
+
+    async function get(modDid: string) {
+      const res = new Response()
+      const params = new URLSearchParams({ community, modDid })
+      await apiModerationReportsHandler(
+        getRequest(`/api/moderation-reports?${params}`),
+        res as unknown as ServerResponse,
+        ctx,
+      )
+      return res
+    }
+
+    beforeEach(async () => {
+      await db.setCommunityMembership(moderator, community, 'active', [
+        'moderator',
+      ])
+      await db.setCommunityMembership(secondReporter, community, 'active', [])
+      // Two people report the same message, one of them twice.
+      for (const [who, reason] of [
+        [reporter, 'harassment'],
+        [secondReporter, 'harassment'],
+        [secondReporter, 'spam'],
+      ] as const) {
+        auth.did = who
+        const res = await post({
+          reporterDid: who,
+          matrixRoomId: room,
+          matrixEventId: '$reported',
+          reason,
+        })
+        expect(res.statusCode).toBe(200)
+      }
+      auth.did = reporter
+      expect(
+        (await post({ reportedDid: author.did, reason: 'spam' })).statusCode,
+      ).toBe(200)
+    })
+
+    it('groups reports by message for a moderator, without reporter identities', async () => {
+      auth.did = moderator
+      const res = await get(moderator)
+      expect(res.statusCode).toBe(200)
+      const { reports } = res.json
+      expect(reports).toHaveLength(2)
+
+      const message = reports.find(
+        (r: { matrixEventId: string | null }) =>
+          r.matrixEventId === '$reported',
+      )
+      expect(message).toMatchObject({
+        reportedDid: author.did,
+        matrixRoomId: room,
+        reportCount: 3,
+        reporterCount: 2,
+        reasons: { harassment: 2, spam: 1 },
+      })
+      const member = reports.find(
+        (r: { matrixEventId: string | null }) => r.matrixEventId === null,
+      )
+      expect(member).toMatchObject({ reportedDid: author.did, reportCount: 1 })
+      // ISO-8601 UTC from both drivers, so every client parses it the same.
+      for (const group of reports) {
+        expect(group.lastReportedAt).toMatch(/^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/)
+      }
+
+      expect(res.text).not.toContain(reporter)
+      expect(res.text).not.toContain(secondReporter)
+    })
+
+    it('refuses a member who is not a moderator', async () => {
+      auth.did = reporter
+      const res = await get(reporter)
+      expect(res.statusCode).toBe(403)
+    })
+
+    it('refuses naming another moderator', async () => {
+      auth.did = reporter
+      const res = await get(moderator)
+      expect(res.statusCode).toBe(403)
+    })
   })
 })
