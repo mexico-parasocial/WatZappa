@@ -5,9 +5,8 @@
 # data/matrix/admin-token.
 #
 # The matrix-bridge authenticates to Synapse's admin API with this token
-# (MATRIX_ADMIN_TOKEN). Tokens do not expire, so the cached one is reused after
-# a /account/whoami check; on failure the admin user is (re-)registered and a
-# fresh token is issued.
+# (MATRIX_ADMIN_TOKEN). The cached token is reused only if it can list rooms:
+# MAS's static admin token passes server_version but fails on room messages.
 #
 # Usage:
 #   scripts/get-matrix-dev-token.sh     # prints the token on stdout
@@ -22,21 +21,33 @@ ADMIN_USER="${MATRIX_ADMIN_USER:-bridge-admin}"
 ADMIN_PASS="${MATRIX_ADMIN_PASSWORD:-para-dev-bridge-admin}"
 
 token_ok() {
-  if [ -s "$TOKEN_FILE" ]; then
-    local t
-    t="$(cat "$TOKEN_FILE")"
-    curl -sf -H "Authorization: Bearer $t" \
-      "$SYNAPSE_URL/_synapse/admin/v1/server_version" >/dev/null 2>&1 ||
-    curl -sf -H "Authorization: Bearer $t" \
-      "$SYNAPSE_URL/_matrix/client/v3/account/whoami" >/dev/null 2>&1
-  else
-    return 1
-  fi
+  local t="${1:-}"
+  [ -n "$t" ] || return 1
+  curl -sf -H "Authorization: Bearer $t" \
+    "$SYNAPSE_URL/_synapse/admin/v1/rooms?limit=1" >/dev/null 2>&1
 }
 
-if token_ok; then
+cache_token() {
+  mkdir -p "$(dirname "$TOKEN_FILE")"
+  umask 077
+  printf '%s' "$1" >"$TOKEN_FILE"
+}
+
+if [ -s "$TOKEN_FILE" ] && token_ok "$(cat "$TOKEN_FILE")"; then
   cat "$TOKEN_FILE"
   exit 0
+fi
+
+# Use the local stack's existing admin session if available. Never send the
+# local .env token to a configured remote homeserver.
+if [[ "$SYNAPSE_URL" =~ ^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?/?$ ]] && [ -f "$ROOT/.env" ]; then
+  ENV_TOKEN="$(sed -n 's/^MATRIX_ADMIN_TOKEN=//p' "$ROOT/.env" | tail -n1)"
+  if token_ok "$ENV_TOKEN"; then
+    cache_token "$ENV_TOKEN"
+    echo "get-matrix-dev-token: using validated local .env admin token" >&2
+    cat "$TOKEN_FILE"
+    exit 0
+  fi
 fi
 
 if ! curl -sf -o /dev/null "$SYNAPSE_URL/_matrix/client/versions"; then
@@ -50,10 +61,8 @@ MSC3861_CONFIG="$ROOT/deploy/matrix/synapse/zz-para-msc3861.yaml"
 if [ -f "$MSC3861_CONFIG" ]; then
   MSC_TOKEN="$(grep 'admin_token:' "$MSC3861_CONFIG" | head -n1 | awk '{print $2}' | tr -d '\r\n"'\''')"
   if [ -n "$MSC_TOKEN" ]; then
-    if curl -sf -H "Authorization: Bearer $MSC_TOKEN" "$SYNAPSE_URL/_synapse/admin/v1/server_version" >/dev/null 2>&1; then
-      mkdir -p "$(dirname "$TOKEN_FILE")"
-      umask 077
-      printf '%s' "$MSC_TOKEN" >"$TOKEN_FILE"
+    if token_ok "$MSC_TOKEN"; then
+      cache_token "$MSC_TOKEN"
       echo "get-matrix-dev-token: using MSC3861 admin token (cached at $TOKEN_FILE)" >&2
       printf '%s' "$MSC_TOKEN"
       exit 0
@@ -78,10 +87,7 @@ TOKEN="$(curl -sf -X POST "$SYNAPSE_URL/_matrix/client/v3/login" \
   exit 1
 }
 
-mkdir -p "$(dirname "$TOKEN_FILE")"
-umask 077
-printf '%s' "$TOKEN" >"$TOKEN_FILE"
+cache_token "$TOKEN"
 
 echo "get-matrix-dev-token: issued admin token for @$ADMIN_USER (cached at $TOKEN_FILE)" >&2
 printf '%s' "$TOKEN"
-
