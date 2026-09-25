@@ -71,6 +71,8 @@ run-dev-env-persistent: ## Run a persistent development environment shell
 	DEV_ENV_PDS_DATA_DIRECTORY=$${DEV_ENV_PDS_DATA_DIRECTORY:-$${HOME}/.paramx-demo/pds} \
 	DEV_ENV_PDS_BLOBSTORE_DIRECTORY=$${DEV_ENV_PDS_BLOBSTORE_DIRECTORY:-$${HOME}/.paramx-demo/blobstore} \
 	DEV_ENV_PLC_DIRECTORY=$${DEV_ENV_PLC_DIRECTORY:-$${HOME}/.paramx-demo/plc} \
+	DEV_ENV_M8_URL=$${DEV_ENV_M8_URL:-http://localhost:8787/v1} \
+	DEV_ENV_M8_RESOLVER_SECRET=$${DEV_ENV_M8_RESOLVER_SECRET:-$$(sed -n 's/^CIVIC_DELEGATION_RESOLVER_SECRET=//p' $${MUBEZ_DIR:-../../../mubEZ}/.env 2>/dev/null)} \
 	../dev-infra/with-redis-and-db.sh node --enable-source-maps dist/bin.js
 
 .PHONY: run-dev-env-persistent-logged
@@ -83,6 +85,8 @@ run-dev-env-persistent-logged: ## Run a persistent development environment shell
 	DEV_ENV_PDS_DATA_DIRECTORY=$${DEV_ENV_PDS_DATA_DIRECTORY:-$${HOME}/.paramx-demo/pds} \
 	DEV_ENV_PDS_BLOBSTORE_DIRECTORY=$${DEV_ENV_PDS_BLOBSTORE_DIRECTORY:-$${HOME}/.paramx-demo/blobstore} \
 	DEV_ENV_PLC_DIRECTORY=$${DEV_ENV_PLC_DIRECTORY:-$${HOME}/.paramx-demo/plc} \
+	DEV_ENV_M8_URL=$${DEV_ENV_M8_URL:-http://localhost:8787/v1} \
+	DEV_ENV_M8_RESOLVER_SECRET=$${DEV_ENV_M8_RESOLVER_SECRET:-$$(sed -n 's/^CIVIC_DELEGATION_RESOLVER_SECRET=//p' $${MUBEZ_DIR:-../../../mubEZ}/.env 2>/dev/null)} \
 	../dev-infra/with-redis-and-db.sh node --enable-source-maps dist/bin.js | pnpm exec pino-pretty
 
 .PHONY: codegen

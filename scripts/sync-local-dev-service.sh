@@ -16,8 +16,13 @@
 # - Only PARA/.env (not .env.local) is written: Expo gives .env.local priority,
 #   so any key pinned there silently overrides this sync.
 #
+# - Point the local m8 broker (mubEZ/.env) at the local PLC and PDS, and give
+#   it the civic secrets it needs to issue cabildeo vote and delegation proofs.
+#   Secrets are generated once and never overwritten; dev-env reads the shared
+#   resolver secret back from mubEZ/.env (see `make run-dev-env-persistent`).
+#
 # Overrides (mainly for testing): DEV_ENV_INTROSPECT_URL, DEV_ENV_PLC_URL,
-# PARA_ENV and WATX_ENV_LOCAL (the files written).
+# PARA_ENV, WATX_ENV_LOCAL and MUBEZ_ENV (the files written).
 
 set -euo pipefail
 
@@ -26,6 +31,7 @@ PARA_DIR="$(cd "$ROOT_DIR/../PARA" && pwd)"
 
 WATX_ENV_LOCAL="${WATX_ENV_LOCAL:-$ROOT_DIR/.env.local}"
 PARA_ENV="${PARA_ENV:-$PARA_DIR/.env}"
+MUBEZ_ENV="${MUBEZ_ENV:-$ROOT_DIR/../mubEZ/.env}"
 
 INTROSPECT_URL="${DEV_ENV_INTROSPECT_URL:-http://127.0.0.1:2581}"
 
@@ -83,6 +89,15 @@ detect_local_host() {
   fi
 
   return 1
+}
+
+# Sets KEY only when it is absent or empty, so generated secrets stay stable.
+ensure_env_secret() {
+  local file="$1" key="$2"
+  if ! grep -qE "^${key}=.+" "$file" 2>/dev/null; then
+    upsert_env_var "$file" "$key" "$(openssl rand -hex 32)"
+    printf 'Generated %s in %s\n' "$key" "$file"
+  fi
 }
 
 upsert_env_var() {
@@ -204,6 +219,15 @@ if [[ -n "${LOCAL_APPVIEW_DID:-}" ]]; then
 fi
 if [[ -n "${LOCAL_CHAT_DID:-}" ]]; then
   upsert_env_var "$PARA_ENV" "EXPO_PUBLIC_LOCAL_CHAT_PROXY_DID" "$LOCAL_CHAT_DID"
+fi
+
+# m8 broker side (only when a mubEZ checkout with an .env exists).
+if [[ -f "$MUBEZ_ENV" ]]; then
+  PDS_LOCAL_URL="$(introspection_field pds.url)"
+  upsert_env_var "$MUBEZ_ENV" "PLC_URL" "$PLC_URL"
+  upsert_env_var "$MUBEZ_ENV" "PDS_URL" "${PDS_LOCAL_URL:-http://localhost:2583}"
+  ensure_env_secret "$MUBEZ_ENV" "CIVIC_VOTE_PROOF_SECRET"
+  ensure_env_secret "$MUBEZ_ENV" "CIVIC_DELEGATION_RESOLVER_SECRET"
 fi
 
 if [[ -n "${LOCAL_HOST:-}" ]]; then
