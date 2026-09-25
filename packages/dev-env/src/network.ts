@@ -6,6 +6,7 @@ import { createServiceJwt } from '@atproto/xrpc-server'
 import { TestBsky } from './bsky.js'
 import { TestBsync } from './bsync.js'
 import { TestChat } from './chat.js'
+import { DevCivicVerifier } from './civic-verifier.js'
 import { withoutPersistentPdsStorage } from './config.js'
 import { EXAMPLE_LABELER } from './const.js'
 import { IntrospectServer } from './introspect.js'
@@ -25,6 +26,7 @@ const ADMIN_PASSWORD = 'admin-pass'
 
 export class TestNetwork extends TestNetworkNoAppView {
   manifest?: DevEnvManifest
+  civicVerifier?: DevCivicVerifier
 
   constructor(
     public plc: TestPlc,
@@ -47,6 +49,13 @@ export class TestNetwork extends TestNetworkNoAppView {
     assert(redisHost, 'Missing redis host for tests')
     const dbPostgresSchema =
       params.dbPostgresSchema || process.env.DB_POSTGRES_SCHEMA
+
+    // Without a configured m8 verifier the PDS refuses every cabildeo vote and
+    // delegation. Stand one in, forwarding to the local m8 broker if known.
+    const civicVerifier = await DevCivicVerifier.startIfUnconfigured({
+      upstreamUrl: process.env.DEV_ENV_M8_URL,
+      upstreamResolverSecret: process.env.DEV_ENV_M8_RESOLVER_SECRET,
+    })
 
     const plc = await TestPlc.create(params.plc ?? {})
 
@@ -186,6 +195,7 @@ export class TestNetwork extends TestNetworkNoAppView {
       ozone,
       introspect,
     )
+    network.civicVerifier = civicVerifier
     network.manifest = createDevEnvManifest(network, {
       networkParams: params,
       skipMockSetup: false,
@@ -255,5 +265,6 @@ export class TestNetwork extends TestNetworkNoAppView {
     await this.pds.close()
     await this.plc.close()
     await this.introspect?.close()
+    await this.civicVerifier?.close()
   }
 }

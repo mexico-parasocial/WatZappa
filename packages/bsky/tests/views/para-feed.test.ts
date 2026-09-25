@@ -874,23 +874,22 @@ describe('para feed views', () => {
     })
     await network.processAll()
 
-    const voteNullifier = 'm8-test-nullifier-shared-person'
-    await createNullifiedCabildeoVoteRecord(sc, bob, {
+    // m8 issues the same nullifier to one person, whichever account votes.
+    const voteNullifier = 'e'.repeat(64)
+    await createCabildeoVoteRecord(sc, bob, {
       cabildeo: cabildeo.uri,
       selectedOption: 0,
       isDirect: true,
       voteNullifier,
-      eligibilityProofRef: 'm8:civic-vote-proof:test-bob',
     })
     await network.processAll()
     await network.processAll()
 
-    await createNullifiedCabildeoVoteRecord(sc, carol, {
+    await createCabildeoVoteRecord(sc, carol, {
       cabildeo: cabildeo.uri,
       selectedOption: 1,
       isDirect: true,
       voteNullifier,
-      eligibilityProofRef: 'm8:civic-vote-proof:test-carol',
     })
     await network.processAll()
     await network.processAll()
@@ -1391,42 +1390,6 @@ const callParaRaw = async (
     status: res.statusCode,
     body: await res.body.json(),
   }
-}
-
-const createNullifiedCabildeoVoteRecord = async (
-  sc: SeedClient,
-  by: string,
-  opts: {
-    cabildeo: string
-    selectedOption: number
-    isDirect: boolean
-    voteNullifier: string
-    eligibilityProofRef: string
-  },
-) => {
-  const { data } = await sc.agent.com.atproto.repo.createRecord(
-    {
-      repo: by,
-      collection: 'com.para.civic.vote',
-      record: {
-        $type: 'com.para.civic.vote',
-        subject: opts.cabildeo,
-        subjectType: 'cabildeo',
-        cabildeo: opts.cabildeo,
-        selectedOption: opts.selectedOption,
-        isDirect: opts.isDirect,
-        voteNullifier: opts.voteNullifier,
-        eligibilityProofRef: opts.eligibilityProofRef,
-        createdAt: new Date().toISOString(),
-      },
-    },
-    {
-      encoding: 'application/json',
-      headers: sc.getHeaders(by),
-    },
-  )
-
-  return { uri: data.uri, cid: data.cid }
 }
 
 const callParaProcedure = async <T>(

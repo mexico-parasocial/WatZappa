@@ -1,6 +1,11 @@
 import { request } from 'undici'
 import type { DidString } from '@atproto/syntax'
 import { AppBskyEmbedExternal } from '@atproto/api'
+import {
+  type DevDelegationClaim,
+  devCabildeoVoteProof,
+  devDelegationProof,
+} from '../civic-verifier.js'
 import { SeedClient } from './client.js'
 
 export type ParaStrongRef = {
@@ -464,8 +469,19 @@ export const createCabildeoVoteRecord = async (
         cabildeo: opts.cabildeo,
         selectedOption: opts.selectedOption,
         isDirect: opts.isDirect,
-        voteNullifier: opts.voteNullifier,
-        eligibilityProofRef: opts.eligibilityProofRef,
+        // Unless the caller supplies its own, mint a proof the dev-env m8
+        // stand-in accepts (see civic-verifier.ts).
+        ...(opts.eligibilityProofRef
+          ? {
+              voteNullifier: opts.voteNullifier,
+              eligibilityProofRef: opts.eligibilityProofRef,
+            }
+          : devCabildeoVoteProof(
+              by,
+              opts.cabildeo,
+              opts.selectedOption,
+              opts.voteNullifier,
+            )),
         createdAt: new Date().toISOString(),
       },
     },
@@ -481,19 +497,36 @@ export const createCabildeoVoteRecord = async (
 export const createCabildeoDelegationRecord = async (
   sc: SeedClient,
   by: DidString,
-  opts: {
-    cabildeo?: string
-    delegateTo: string
-  },
+  opts:
+    | { cabildeo: string; delegateTo: string; eligibilityProofRef?: string }
+    | {
+        cabildeo?: undefined
+        delegateTo: string
+        party: string
+        community: string
+        scopeFlairs: string[]
+        eligibilityProofRef?: string
+      },
 ): Promise<ParaStrongRef> => {
+  const claim: DevDelegationClaim =
+    opts.cabildeo !== undefined
+      ? { mode: 'active', delegateTo: opts.delegateTo, cabildeo: opts.cabildeo }
+      : {
+          mode: 'passive',
+          delegateTo: opts.delegateTo,
+          party: opts.party,
+          community: opts.community,
+          scopeFlairs: opts.scopeFlairs,
+        }
   const { data } = await sc.agent.com.atproto.repo.createRecord(
     {
       repo: by,
       collection: COM_PARA_CIVIC_DELEGATION,
       record: {
         $type: COM_PARA_CIVIC_DELEGATION,
-        cabildeo: opts.cabildeo,
-        delegateTo: opts.delegateTo,
+        ...claim,
+        eligibilityProofRef:
+          opts.eligibilityProofRef ?? devDelegationProof(by, claim),
         createdAt: new Date().toISOString(),
       },
     },
