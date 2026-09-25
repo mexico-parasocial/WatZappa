@@ -173,6 +173,7 @@ export class TestNetwork extends TestNetworkNoAppView {
         pds,
         bsky,
         ozone,
+        chat,
       )
     }
 
