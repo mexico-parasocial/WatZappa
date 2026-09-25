@@ -8,6 +8,7 @@ import {
   createCabildeoPositionRecord,
   createCabildeoRecord,
   createCabildeoVoteRecord,
+  setCabildeoPhase,
   createCommunityBoardRecord,
   createCommunityGovernanceRecord,
   createCommunityMembershipRecord,
@@ -697,7 +698,7 @@ describe('para feed views', () => {
       title: 'Cabildeo de agua',
       description: 'Debate sobre abastecimiento regional.',
       community: 'mx-federal',
-      phase: 'resolved',
+      phase: 'voting',
       options: [{ label: 'Invertir' }, { label: 'Mantener' }],
     })
     await network.processAll()
@@ -734,6 +735,8 @@ describe('para feed views', () => {
       delegateTo: bob,
     })
     await network.processAll()
+    // Ballots count only while voting; resolving freezes the final tally.
+    await setCabildeoPhase(sc, alice, cabildeo.uri, 'resolved')
     await network.processAll()
     const list = await callPara<ParaListCabildeosOutput>(
       network,
@@ -828,7 +831,17 @@ describe('para feed views', () => {
     expect(detail.cabildeo.voteTotals.direct).toBe(1)
     expect(detail.cabildeo.optionSummary[0]?.votes).toBe(0)
     expect(detail.cabildeo.optionSummary[1]?.votes).toBe(1)
-    expect(detail.cabildeo.outcomeSummary?.winningOption).toBe(1)
+    // The outcome is published only once the cabildeo is resolved.
+    expect(detail.cabildeo.outcomeSummary).toBeUndefined()
+    await setCabildeoPhase(sc, alice, cabildeo.uri, 'resolved')
+    await network.processAll()
+    const resolved = await callPara<ParaGetCabildeoOutput>(
+      network,
+      'com.para.civic.getCabildeo',
+      { cabildeo: cabildeo.uri },
+      bob,
+    )
+    expect(resolved.cabildeo.outcomeSummary?.winningOption).toBe(1)
 
     const draft = await createCabildeoRecord(sc, alice, {
       title: 'Draft vote guardrail',

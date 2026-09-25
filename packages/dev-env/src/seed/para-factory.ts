@@ -415,6 +415,34 @@ export const createCabildeoRecord = async (
   return { uri: data.uri, cid: data.cid }
 }
 
+/** Advances a cabildeo's phase the way PARA does: the author rewrites it. */
+export const setCabildeoPhase = async (
+  sc: SeedClient,
+  by: DidString,
+  cabildeoUri: string,
+  phase: CabildeoPhase,
+): Promise<ParaStrongRef> => {
+  const rkey = cabildeoUri.split('/').pop()!
+  const { data: current } = await sc.agent.com.atproto.repo.getRecord({
+    repo: by,
+    collection: COM_PARA_CIVIC_CABILDEO,
+    rkey,
+  })
+  const { data } = await sc.agent.com.atproto.repo.putRecord(
+    {
+      repo: by,
+      collection: COM_PARA_CIVIC_CABILDEO,
+      rkey,
+      record: { ...(current.value as Record<string, unknown>), phase },
+    },
+    {
+      encoding: 'application/json',
+      headers: sc.getHeaders(by),
+    },
+  )
+  return { uri: data.uri, cid: data.cid }
+}
+
 export const createCabildeoPositionRecord = async (
   sc: SeedClient,
   by: DidString,

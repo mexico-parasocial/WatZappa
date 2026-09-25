@@ -443,7 +443,8 @@ const selectDelegateLikeMembers = async (db: Database, communityUri: string) =>
     .where('communityUri', '=', communityUri)
     .where('membershipState', '=', 'active')
     .where(
-      sql<boolean>`coalesce("roles", array[]::text[]) && array[
+      // `roles` is a jsonb array: `?|` is true when it holds any listed role.
+      sql<boolean>`coalesce("roles", '[]'::jsonb) ?| array[
         'delegate',
         'delegado',
         'representative',

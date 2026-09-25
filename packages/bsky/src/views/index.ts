@@ -387,7 +387,10 @@ export class Views {
         record: actor.profile,
       }),
     ]
-    return {
+    // PARA extension: `cabildeoLive` is not in the app.bsky lexicon, so it
+    // rides along on the view untyped (restored after the 2026-08-22 WIP
+    // commit dropped it).
+    const view: Un$Typed<ProfileViewBasic> & { cabildeoLive?: unknown } = {
       did,
       handle: actor.handle ?? INVALID_HANDLE,
       displayName: actor.profile?.displayName,
@@ -420,6 +423,36 @@ export class Views {
       verification: this.verification(did, state),
       status: this.status(did, state),
       debug: state.ctx?.includeDebugField ? actor.debug : undefined,
+    }
+    const cabildeoLive = this.cabildeoLive(actor)
+    if (cabildeoLive) {
+      view.cabildeoLive = cabildeoLive
+    }
+    return view
+  }
+
+  /**
+   * The cabildeo an actor is live in, unless their current generic live status
+   * points somewhere else (a generic live status takes precedence).
+   */
+  cabildeoLive(actor: Actor) {
+    const live = actor.cabildeoLive
+    if (!live) return undefined
+
+    const status = actor.status?.record
+    const external =
+      status?.embed && isExternalEmbedType(status.embed)
+        ? status.embed.external
+        : undefined
+    if (external?.uri && external.uri !== live.liveUri) {
+      return undefined
+    }
+
+    return {
+      cabildeoUri: live.cabildeoUri,
+      community: live.community,
+      phase: live.phase,
+      expiresAt: live.expiresAt,
     }
   }
 
