@@ -1,12 +1,19 @@
 // @ts-nocheck
-import { Selectable } from 'kysely'
-import { CID } from 'multiformats/cid'
-import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
-import { BackgroundQueue } from '../../background.js'
-import { Database } from '../../db/index.js'
-import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
-import { deletePostDiscourse, indexPostDiscourse } from '../discourse-indexing.js'
+import type { Selectable } from 'kysely'
+import type { CID } from 'multiformats/cid'
+import { type AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
+import type { BackgroundQueue } from '../../background.js'
+import type {
+  DatabaseSchema,
+  DatabaseSchemaType,
+} from '../../db/database-schema.js'
+import type { Database } from '../../db/index.js'
+import {
+  deletePostDiscourse,
+  indexPostDiscourse,
+} from '../discourse-indexing.js'
 import { RecordProcessor } from '../processor.js'
+import { finalizeDueCabildeos } from './finalize-cabildeos.js'
 import { recomputeCabildeoAggregates } from './recompute-cabildeo-aggregates.js'
 
 interface PositionRecord {
@@ -32,6 +39,7 @@ const insertFn = async (
   obj: PositionRecord,
   timestamp: string,
 ): Promise<IndexedPosition | null> => {
+  await finalizeDueCabildeos(db)
   const record = {
     uri: uri.toString(),
     cid: cid.toString(),
@@ -73,6 +81,7 @@ const deleteFn = async (
   db: DatabaseSchema,
   uri: AtUri,
 ): Promise<IndexedPosition | null> => {
+  await finalizeDueCabildeos(db)
   const deleted = await db
     .deleteFrom('cabildeo_position')
     .where('uri', '=', uri.toString())

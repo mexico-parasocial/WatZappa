@@ -1,18 +1,25 @@
-import { IdResolver } from '@atproto/identity'
+import type { IdResolver } from '@atproto/identity'
 import { WriteOpAction } from '@atproto/repo'
-import { Event as FirehoseEvent, Firehose, MemoryRunner } from '@atproto/sync'
-import { DidString } from '@atproto/syntax'
-import { ParaCacheService } from '../../cache/para-cache.js'
+import {
+  type Event as FirehoseEvent,
+  Firehose,
+  MemoryRunner,
+} from '@atproto/sync'
+import type { DidString } from '@atproto/syntax'
+import type { ParaCacheService } from '../../cache/para-cache.js'
 import { subLogger as log } from '../../logger.js'
 import { BackgroundQueue } from './background.js'
-import { Database } from './db/index.js'
+import type { Database } from './db/index.js'
 import { IndexingService } from './indexing/index.js'
+import { finalizeDueCabildeos } from './indexing/plugins/finalize-cabildeos.js'
 
 export class RepoSubscription {
   firehose: Firehose
   runner: MemoryRunner
   background: BackgroundQueue
   indexingSvc: IndexingService
+  private finalizerTimer?: ReturnType<typeof setInterval>
+  private finalizing = false
 
   constructor(
     public opts: {
@@ -42,6 +49,23 @@ export class RepoSubscription {
 
   start() {
     this.firehose.start()
+    if (!this.finalizerTimer) {
+      const finalize = async () => {
+        if (this.finalizing) return
+        this.finalizing = true
+        try {
+          await this.runner.processAll()
+          await this.background.processAll()
+          await finalizeDueCabildeos(this.opts.db.db)
+        } catch (err) {
+          log.error({ err }, 'error finalizing cabildeo')
+        } finally {
+          this.finalizing = false
+        }
+      }
+      void finalize()
+      this.finalizerTimer = setInterval(finalize, 15_000)
+    }
   }
 
   async restart() {
@@ -62,6 +86,8 @@ export class RepoSubscription {
   }
 
   async destroy() {
+    if (this.finalizerTimer) clearInterval(this.finalizerTimer)
+    this.finalizerTimer = undefined
     await this.firehose.destroy()
     await this.runner.destroy()
     await this.background.processAll()

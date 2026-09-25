@@ -1,8 +1,8 @@
 // @ts-nocheck
-import { AppContext } from '../../../../context.js'
+import type { AppContext } from '../../../../context.js'
 import { parseCid, parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/civic/listCabildeos.js'
+import type { Server } from '../../../../lexicon/index.js'
+import type { QueryParams } from '../../../../lexicon/types/com/para/civic/listCabildeos.js'
 import { clearlyBadCursor, resHeaders } from '../../../util.js'
 import { getVisibleParticipantDids, parseDataplaneJson } from './util.js'
 
@@ -108,6 +108,7 @@ const mapCabildeoView = (view: {
     optionIndex: number
     label: string
     votes: number
+    effectivePowerMicros?: number
     positions: number
   }>
   positionCounts?: {
@@ -136,6 +137,7 @@ const mapCabildeoView = (view: {
     winningOption?: number
     totalParticipants: number
     effectiveTotalPower: number
+    effectiveTotalPowerMicros?: number
     tie: boolean
     breakdown: Array<{
       optionIndex: number
@@ -207,6 +209,8 @@ const mapCabildeoView = (view: {
         winningOption: view.outcomeSummary.winningOption,
         totalParticipants: view.outcomeSummary.totalParticipants,
         effectiveTotalPower: view.outcomeSummary.effectiveTotalPower,
+        effectiveTotalPowerMicros:
+          view.outcomeSummary.effectiveTotalPowerMicros,
         tie: view.outcomeSummary.tie,
         breakdown: view.outcomeSummary.breakdown,
       }

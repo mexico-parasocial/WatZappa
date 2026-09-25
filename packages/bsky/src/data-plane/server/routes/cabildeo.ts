@@ -1,6 +1,6 @@
-import { Code, ConnectError, ServiceImpl } from '@connectrpc/connect'
+import { Code, ConnectError, type ServiceImpl } from '@connectrpc/connect'
 import { sql } from 'kysely'
-import { Service } from '../../../proto/bsky_connect.js'
+import type { Service } from '../../../proto/bsky_connect.js'
 import {
   LIVE_CABILDEO_ALLOWED_PHASES,
   activeHostPresenceExistsSql,
@@ -9,7 +9,7 @@ import {
   isLiveCabildeoPhase,
   presenceExpiry,
 } from '../cabildeo-live.js'
-import { Database } from '../db/index.js'
+import type { Database } from '../db/index.js'
 import { TimeCidKeyset, paginate } from '../db/pagination.js'
 
 export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
@@ -228,7 +228,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
           roles: [...(rolesByDid.get(did) ?? new Set<string>())],
           activeDelegationCount: delegationCounts.get(did) ?? 0,
           hasVoted: exposeCandidateVotes ? Boolean(vote) : false,
-          votedAt: exposeCandidateVotes ? vote?.createdAt ?? '' : '',
+          votedAt: exposeCandidateVotes ? (vote?.createdAt ?? '') : '',
           selectedOption:
             exposeCandidateVotes && typeof vote?.selectedOption === 'number'
               ? vote.selectedOption
@@ -660,6 +660,8 @@ const mapCabildeoRow = async (
     directVoteCount: number
     delegatedVoteCount: number
     optionVoteCounts: unknown
+    optionEffectivePowerMicros: unknown
+    effectiveTotalPowerMicros: string
     optionPositionCounts: unknown
     winningOption: number | null
     isTie: 0 | 1
@@ -670,6 +672,10 @@ const mapCabildeoRow = async (
 ) => {
   const options = asOptions(row.options)
   const voteCounts = asNumberArray(row.optionVoteCounts, options.length)
+  const effectivePowerMicros = asNumberArray(
+    row.optionEffectivePowerMicros,
+    options.length,
+  )
   const positionCounts = asNumberArray(row.optionPositionCounts, options.length)
   const voteVisibility = normalizeVoteVisibility(row.voteVisibility)
 
@@ -677,6 +683,7 @@ const mapCabildeoRow = async (
     optionIndex,
     label: option.label,
     votes: voteCounts[optionIndex] || 0,
+    effectivePowerMicros: effectivePowerMicros[optionIndex] || 0,
     positions: positionCounts[optionIndex] || 0,
   }))
 
@@ -702,7 +709,9 @@ const mapCabildeoRow = async (
               ? row.winningOption
               : undefined,
           totalParticipants: row.voteCount,
-          effectiveTotalPower: row.voteCount,
+          effectiveTotalPower:
+            (Number(row.effectiveTotalPowerMicros) || 0) / 1_000_000,
+          effectiveTotalPowerMicros: Number(row.effectiveTotalPowerMicros) || 0,
           tie: row.isTie === 1,
           breakdown: optionSummary,
         }
@@ -759,7 +768,7 @@ const getViewerContext = async (
   cabildeoUri: string,
   viewerDid: string,
 ) => {
-  const [currentVote, delegation] = await Promise.all([
+  const [currentVote, grants, subject] = await Promise.all([
     db.db
       .selectFrom('cabildeo_vote')
       .where('creator', '=', viewerDid)
@@ -774,12 +783,64 @@ const getViewerContext = async (
       .where((eb) =>
         eb.or([eb('cabildeo', '=', cabildeoUri), eb('cabildeo', 'is', null)]),
       )
-      .orderBy(sql`case when "cabildeo" = ${cabildeoUri} then 0 else 1 end`)
-      .orderBy('createdAt', 'desc')
-      .orderBy('indexedAt', 'desc')
-      .select(['delegateTo'])
+      .where('eligibilityProofRef', 'is not', null)
+      .select([
+        'uri',
+        'mode',
+        'cabildeo',
+        'delegateTo',
+        'party',
+        'community',
+        'scopeFlairs',
+        'indexedAt',
+      ])
+      .execute(),
+    db.db
+      .selectFrom('cabildeo_cabildeo')
+      .where('uri', '=', cabildeoUri)
+      .select(['community', 'flairs'])
       .executeTakeFirst(),
   ])
+
+  const standing = grants.filter(
+    (grant) =>
+      grant.mode === 'passive' &&
+      grant.delegateTo &&
+      grant.cabildeo === null &&
+      grant.community?.trim().toLowerCase() ===
+        subject?.community.trim().toLowerCase() &&
+      grant.scopeFlairs?.some((flair) => subject?.flairs?.includes(flair)),
+  )
+  const parties = standing.length
+    ? await db.db
+        .selectFrom('para_status')
+        .where(
+          'did',
+          'in',
+          standing.map((grant) => grant.delegateTo!),
+        )
+        .select(['did', 'party'])
+        .execute()
+    : []
+  const partyByDid = new Map(
+    parties.map((row) => [row.did, row.party?.trim().toLowerCase()]),
+  )
+  const delegation = grants
+    .filter(
+      (grant) =>
+        grant.delegateTo &&
+        ((grant.mode === 'active' && grant.cabildeo === cabildeoUri) ||
+          (grant.mode === 'passive' &&
+            standing.includes(grant) &&
+            partyByDid.get(grant.delegateTo) ===
+              grant.party?.trim().toLowerCase())),
+    )
+    .sort((a, b) => {
+      if (a.mode !== b.mode) return a.mode === 'active' ? -1 : 1
+      return (
+        b.indexedAt.localeCompare(a.indexedAt) || b.uri.localeCompare(a.uri)
+      )
+    })[0]
 
   const delegateVote =
     delegation?.delegateTo && delegation.delegateTo.length
@@ -794,12 +855,6 @@ const getViewerContext = async (
       : null
 
   const delegatedVotedAt = delegateVote?.createdAt ?? ''
-  const gracePeriodEndsAt = delegatedVotedAt
-    ? new Date(
-        new Date(delegatedVotedAt).getTime() + 24 * 60 * 60 * 1000,
-      ).toISOString()
-    : ''
-
   return {
     currentVoteOption:
       typeof currentVote?.selectedOption === 'number'
@@ -814,7 +869,7 @@ const getViewerContext = async (
         ? delegateVote.selectedOption
         : undefined,
     delegatedVotedAt,
-    gracePeriodEndsAt,
+    gracePeriodEndsAt: '',
     delegateVoteDismissed: false,
   }
 }
@@ -844,13 +899,11 @@ const getPartyVoteSummary = async (
   >()
   for (const row of rows) {
     const party = normalizePartyLabel(row.party)
-    const item =
-      summary.get(party) ??
-      {
-        party,
-        total: 0,
-        byOption: Array.from({ length: optionCount }, () => 0),
-      }
+    const item = summary.get(party) ?? {
+      party,
+      total: 0,
+      byOption: Array.from({ length: optionCount }, () => 0),
+    }
     const count = Number(row.count) || 0
     item.total += count
     if (

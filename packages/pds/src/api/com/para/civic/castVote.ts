@@ -72,6 +72,11 @@ export default function (server: Server, ctx: AppContext) {
         collection: VOTE_COLLECTION,
         rkey: TID.nextStr(),
         record,
+      }).catch((err) => {
+        if (err instanceof InvalidRecordError) {
+          throw new InvalidRequestError(err.message, 'InvalidVoteProof')
+        }
+        throw err
       })
 
       const commit = await ctx.actorStore.transact(did, async (actorTxn) => {

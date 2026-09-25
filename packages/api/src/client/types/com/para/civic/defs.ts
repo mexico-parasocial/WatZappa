@@ -37,6 +37,7 @@ export interface OptionSummary {
   optionIndex: number
   label: string
   votes: number
+  effectivePowerMicros?: number
   positions: number
 }
 
@@ -108,6 +109,7 @@ export interface OutcomeSummary {
   winningOption?: number
   totalParticipants: number
   effectiveTotalPower: number
+  effectiveTotalPowerMicros?: number
   tie: boolean
   breakdown: OptionSummary[]
 }

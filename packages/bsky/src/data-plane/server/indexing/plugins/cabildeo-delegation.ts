@@ -1,11 +1,15 @@
 // @ts-nocheck
-import { Selectable, sql } from 'kysely'
-import { CID } from 'multiformats/cid'
-import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
-import { BackgroundQueue } from '../../background.js'
-import { Database } from '../../db/index.js'
-import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
+import { type Selectable, sql } from 'kysely'
+import type { CID } from 'multiformats/cid'
+import { type AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
+import type { BackgroundQueue } from '../../background.js'
+import type {
+  DatabaseSchema,
+  DatabaseSchemaType,
+} from '../../db/database-schema.js'
+import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
+import { finalizeDueCabildeos } from './finalize-cabildeos.js'
 import { recomputeCabildeoAggregates } from './recompute-cabildeo-aggregates.js'
 
 interface DelegationRecord {
@@ -18,6 +22,7 @@ interface DelegationRecord {
   preferredOption?: number
   signal?: number
   reason?: string
+  eligibilityProofRef?: string
   createdAt: string
 }
 
@@ -56,6 +61,7 @@ const insertFn = async (
       typeof obj.preferredOption === 'number' ? obj.preferredOption : null,
     signal: typeof obj.signal === 'number' ? obj.signal : null,
     reason: obj.reason || null,
+    eligibilityProofRef: obj.eligibilityProofRef || null,
     createdAt: normalizeDatetimeAlways(obj.createdAt),
     indexedAt: timestamp,
   }
@@ -78,23 +84,21 @@ const isValidCessionRecord = (
   obj: DelegationRecord,
   mode: 'active' | 'passive',
 ) => {
+  if (
+    !obj.delegateTo?.startsWith('did:') ||
+    !obj.eligibilityProofRef ||
+    obj.signal !== undefined
+  )
+    return false
   if (mode === 'active') {
-    // Must have a delegate. Must have EITHER a specific cabildeo OR scope flairs for expertise.
-    if (!obj.delegateTo) return false
-    if (!obj.cabildeo && (!obj.scopeFlairs || obj.scopeFlairs.length === 0)) {
-      return false
-    }
-    const criteriaCount =
-      (typeof obj.preferredOption === 'number' ? 1 : 0) +
-      (typeof obj.reason === 'string' && obj.reason.trim().length > 0 ? 1 : 0) +
-      (typeof obj.signal === 'number' ? 1 : 0)
-    return criteriaCount >= 2
+    return Boolean(obj.cabildeo?.startsWith('at://'))
   }
 
   return Boolean(
+    !obj.cabildeo &&
     obj.party?.trim() &&
-      obj.community?.trim() &&
-      obj.scopeFlairs?.some((item) => item.trim().length > 0),
+    obj.community?.trim() &&
+    obj.scopeFlairs?.some((item) => item.trim().length > 0),
   )
 }
 
@@ -110,6 +114,7 @@ const deleteFn = async (
   db: DatabaseSchema,
   uri: AtUri,
 ): Promise<IndexedDelegation | null> => {
+  await finalizeDueCabildeos(db)
   const deleted = await db
     .deleteFrom('cabildeo_delegation')
     .where('uri', '=', uri.toString())
@@ -131,8 +136,28 @@ const updateAggregates = async (
   indexed: IndexedDelegation,
 ) => {
   const cabildeoUri = indexed.record.cabildeo
-  if (!cabildeoUri) return
-  await recomputeCabildeoAggregates(db, cabildeoUri)
+  if (cabildeoUri) {
+    await recomputeCabildeoAggregates(db, cabildeoUri)
+    return
+  }
+  const open = await db
+    .selectFrom('cabildeo_cabildeo')
+    .where('phase', '=', 'voting')
+    .where('community', '=', indexed.record.community ?? '')
+    .select(['uri', 'flairs'])
+    .execute()
+  for (const cabildeo of open) {
+    if (
+      cabildeo.flairs?.some((flair) =>
+        indexed.record.scopeFlairs?.some(
+          (scopeFlair) =>
+            scopeFlair.trim().toLowerCase() === flair.trim().toLowerCase(),
+        ),
+      )
+    ) {
+      await recomputeCabildeoAggregates(db, cabildeo.uri)
+    }
+  }
 }
 
 export type PluginType = RecordProcessor<DelegationRecord, IndexedDelegation>

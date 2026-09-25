@@ -1,13 +1,16 @@
 // @ts-nocheck
-import { Selectable, sql } from 'kysely'
-import { CID } from 'multiformats/cid'
-import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
-// eslint-disable-next-line import/no-unresolved
-import { ParaCacheService } from '../../../cache/para-cache.js'
-import { BackgroundQueue } from '../../background.js'
-import { Database } from '../../db/index.js'
-import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
+import { type Selectable, sql } from 'kysely'
+import type { CID } from 'multiformats/cid'
+import { type AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
+import type { ParaCacheService } from '../../../cache/para-cache.js'
+import type { BackgroundQueue } from '../../background.js'
+import type {
+  DatabaseSchema,
+  DatabaseSchemaType,
+} from '../../db/database-schema.js'
+import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
+import { finalizeDueCabildeos } from './finalize-cabildeos.js'
 import { recomputeCabildeoAggregates } from './recompute-cabildeo-aggregates.js'
 
 interface VoteRecord {
@@ -57,7 +60,10 @@ const insertFn = async (
         ? sql<string[]>`${JSON.stringify(obj.delegatedFrom)}`
         : null,
       voteNullifier: normalizeOpaqueProofField(obj.voteNullifier, 128),
-      eligibilityProofRef: normalizeOpaqueProofField(obj.eligibilityProofRef, 512),
+      eligibilityProofRef: normalizeOpaqueProofField(
+        obj.eligibilityProofRef,
+        512,
+      ),
       reason: obj.reason ?? null,
       createdAt: normalizeDatetimeAlways(obj.createdAt),
       indexedAt: timestamp,
@@ -134,7 +140,10 @@ const insertFn = async (
       ? sql<string[]>`${JSON.stringify(obj.delegatedFrom)}`
       : null,
     voteNullifier: normalizeOpaqueProofField(obj.voteNullifier, 128),
-    eligibilityProofRef: normalizeOpaqueProofField(obj.eligibilityProofRef, 512),
+    eligibilityProofRef: normalizeOpaqueProofField(
+      obj.eligibilityProofRef,
+      512,
+    ),
     createdAt: normalizeDatetimeAlways(obj.createdAt),
     indexedAt: timestamp,
   }
@@ -144,14 +153,14 @@ const insertFn = async (
         .selectFrom('cabildeo_vote')
         .where('cabildeo', '=', record.cabildeo)
         .where('voteNullifier', '=', record.voteNullifier)
-        .select(['uri'])
+        .select(['uri', 'createdAt'])
         .executeTakeFirst()
     : null
 
   const inserted = existingByNullifier
     ? await db
         .updateTable('cabildeo_vote')
-        .set(record)
+        .set({ ...record, createdAt: existingByNullifier.createdAt })
         .where('uri', '=', existingByNullifier.uri)
         .returningAll()
         .executeTakeFirst()
@@ -200,10 +209,27 @@ const getCabildeoVoteEligibility = async (
     .select(['uri', 'community', 'options', 'phase', 'phaseDeadline'])
     .executeTakeFirst()
 
-  if (!cabildeo || !['voting', 'resolved'].includes(cabildeo.phase)) {
+  if (!cabildeo || cabildeo.phase !== 'voting') {
     return null
   }
+  const final = await db
+    .selectFrom('cabildeo_final_tally')
+    .where('cabildeo', '=', opts.cabildeoUri)
+    .select('cabildeo')
+    .executeTakeFirst()
+  if (final) return null
+  const closePolicy = await db
+    .selectFrom('cabildeo_close_policy')
+    .where('cabildeo', '=', opts.cabildeoUri)
+    .select('deadline')
+    .executeTakeFirst()
   if (
+    closePolicy?.deadline &&
+    new Date(closePolicy.deadline) <= new Date(opts.indexedAt)
+  )
+    return null
+  if (
+    !closePolicy &&
     cabildeo.phaseDeadline &&
     new Date(cabildeo.phaseDeadline) <= new Date(opts.indexedAt)
   ) {
@@ -269,6 +295,7 @@ const deleteFn = async (
   db: DatabaseSchema,
   uri: AtUri,
 ): Promise<IndexedVote | null> => {
+  await finalizeDueCabildeos(db)
   const deletedPolicy = await db
     .deleteFrom('para_policy_vote')
     .where('uri', '=', uri.toString())

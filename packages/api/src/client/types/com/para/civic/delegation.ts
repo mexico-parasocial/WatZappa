@@ -20,6 +20,8 @@ export interface Main {
   cabildeo?: string
   mode?: 'active' | 'passive' | (string & {})
   delegateTo?: string
+  /** m8 authorization binding the delegator's DID, recipient and scope. Required for new writes; older records are not counted. */
+  eligibilityProofRef?: string
   party?: string
   community?: string
   scopeFlairs?: string[]

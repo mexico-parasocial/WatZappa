@@ -3,6 +3,7 @@ import {
   DAY,
   HOUR,
   ballotWriteRefusal,
+  verifyCabildeoDelegation,
   verifyCabildeoProof,
 } from '@atproto/common'
 import { type IdResolver, getPds } from '@atproto/identity'
@@ -255,6 +256,12 @@ export class IndexingService {
     if (
       uri.collection === 'com.para.civic.vote' &&
       !(await verifyCabildeoProof(uri.host, obj))
+    ) {
+      return
+    }
+    if (
+      uri.collection === 'com.para.civic.delegation' &&
+      !(await verifyCabildeoDelegation(uri.host, obj))
     ) {
       return
     }

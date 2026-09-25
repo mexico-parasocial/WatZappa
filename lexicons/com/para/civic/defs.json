@@ -18,6 +18,7 @@
         "optionIndex": { "type": "integer", "minimum": 0 },
         "label": { "type": "string", "maxLength": 100 },
         "votes": { "type": "integer", "minimum": 0 },
+        "effectivePowerMicros": { "type": "integer", "minimum": 0 },
         "positions": { "type": "integer", "minimum": 0 }
       }
     },
@@ -68,6 +69,7 @@
         "winningOption": { "type": "integer", "minimum": 0 },
         "totalParticipants": { "type": "integer", "minimum": 0 },
         "effectiveTotalPower": { "type": "integer", "minimum": 0 },
+        "effectiveTotalPowerMicros": { "type": "integer", "minimum": 0 },
         "tie": { "type": "boolean" },
         "breakdown": {
           "type": "array",

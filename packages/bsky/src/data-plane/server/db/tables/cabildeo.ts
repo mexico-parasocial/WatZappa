@@ -1,4 +1,4 @@
-import { GeneratedAlways } from 'kysely'
+import type { GeneratedAlways } from 'kysely'
 
 export const cabildeoTableName = 'cabildeo_cabildeo'
 export const positionTableName = 'cabildeo_position'
@@ -35,6 +35,8 @@ export interface CabildeoCabildeo {
   delegatedVoteCount: number
   delegationCount: number
   optionVoteCounts: number[] | null
+  optionEffectivePowerMicros: number[]
+  effectiveTotalPowerMicros: string
   optionPositionCounts: number[] | null
   winningOption: number | null
   isTie: 0 | 1
@@ -69,6 +71,7 @@ export interface CabildeoDelegation {
   preferredOption: number | null
   signal: number | null
   reason: string | null
+  eligibilityProofRef: string | null
   createdAt: string
   indexedAt: string
 }
@@ -107,6 +110,20 @@ export interface CabildeoLivePresence {
   expiresAt: string
 }
 
+export interface CabildeoFinalTally {
+  cabildeo: string
+  closedAt: string
+  finalizedAt: string
+  summary: unknown
+  acceptedInputs: unknown
+}
+
+export interface CabildeoClosePolicy {
+  cabildeo: string
+  deadline: string | null
+  openedAt: string
+}
+
 export type PartialDB = {
   [cabildeoTableName]: CabildeoCabildeo
   [positionTableName]: CabildeoPosition
@@ -114,4 +131,6 @@ export type PartialDB = {
   [voteTableName]: CabildeoVote
   [liveSessionTableName]: CabildeoLiveSession
   [livePresenceTableName]: CabildeoLivePresence
+  cabildeo_final_tally: CabildeoFinalTally
+  cabildeo_close_policy: CabildeoClosePolicy
 }

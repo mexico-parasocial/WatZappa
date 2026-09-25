@@ -2,6 +2,7 @@ import {
   TID,
   ballotWriteRefusal,
   reactionWriteRefusal,
+  verifyCabildeoDelegation,
   verifyCabildeoProof,
 } from '@atproto/common'
 import { RecordSchema, walk } from '@atproto/lex'
@@ -174,6 +175,20 @@ async function prepareWrite(opts: {
         if (error instanceof BallotRefusedError) throw error
         throw new BallotRefusedError(
           'Civic vote verification is unavailable; no vote was written',
+        )
+      }
+    }
+    if (opts.collection === 'com.para.civic.delegation') {
+      try {
+        if (!(await verifyCabildeoDelegation(opts.did, opts.record))) {
+          throw new BallotRefusedError(
+            'A valid civic delegation proof is required',
+          )
+        }
+      } catch (error) {
+        if (error instanceof BallotRefusedError) throw error
+        throw new BallotRefusedError(
+          'Civic delegation verification is unavailable; no delegation was written',
         )
       }
     }
