@@ -101,3 +101,4 @@ export * as _20260821T120000000Z from './20260821T120000000Z-add-para-community-
 export * as _20260906T000000000Z from './20260906T000000000Z-add-cabildeo-geo.js'
 export * as _20260920T230000000Z from './20260920T230000000Z-add-para-deliberation.js'
 export * as _20260924T120000000Z from './20260924T120000000Z-cabildeo-delegation-tally.js'
+export * as _20260925T120000000Z from './20260925T120000000Z-drop-para-reposts.js'

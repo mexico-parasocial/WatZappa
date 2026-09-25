@@ -61,6 +61,15 @@ export class BallotRefusedError extends InvalidRecordError {
   name = 'BallotRefusedError'
 }
 
+/**
+ * A write refused because PARA does not support its record type (e.g.
+ * reposts). Subclasses {@link InvalidRecordError} so every handler maps it to
+ * a 400 without a per-handler change.
+ */
+export class UnsupportedRecordError extends InvalidRecordError {
+  name = 'UnsupportedRecordError'
+}
+
 export class BadCommitSwapError extends Error {
   constructor(public cid: Cid) {
     super(`Commit was at ${cid.toString()}`)

@@ -1,4 +1,5 @@
 import { Insertable, Selectable } from 'kysely'
+import { repostsEnabled } from '@atproto/common'
 import { Cid } from '@atproto/lex'
 import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
 import { app } from '../../../../lexicons.js'
@@ -74,7 +75,8 @@ const notifsForInsert = (obj: IndexedLike) => {
     },
   ]
 
-  if (obj.via) {
+  // `via` points at a repost. PARA has none, so there is no reposter to notify.
+  if (obj.via && repostsEnabled()) {
     const viaUri = new AtUri(obj.via)
     const isLikeFromViaSubjectUser = viaUri.host === obj.creator
     // prevent self-notifications

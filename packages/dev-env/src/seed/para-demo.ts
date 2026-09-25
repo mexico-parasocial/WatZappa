@@ -2775,7 +2775,7 @@ export default async (sc: SeedClient) => {
   await checkpoints.flush('posts')
 
   // ═══════════════════════════════════════════════════════════════════════
-  //  ENGAGEMENT  (likes, reposts, replies, bookmarks)
+  //  ENGAGEMENT  (likes, replies, bookmarks; PARA has no reposts)
   // ═══════════════════════════════════════════════════════════════════════
 
   // Likes on posts (weighted by post quality/polarity)
@@ -2788,26 +2788,6 @@ export default async (sc: SeedClient) => {
       if (liker.did !== post.did) {
         try {
           await sc.like(liker.did, new RecordRef(post.uri, post.cid))
-        } catch (e) {
-          /* ignore */
-        }
-      }
-    }
-  }
-
-  // Reposts (more selective)
-  const repostablePosts = createdPosts.filter(
-    (_, i) => i % 5 === 0 || i % 7 === 0,
-  )
-  for (const post of repostablePosts) {
-    const numReposts = 1 + Math.floor(Math.random() * 4)
-    const reposters = [...users]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, numReposts)
-    for (const reposter of reposters) {
-      if (reposter.did !== post.did) {
-        try {
-          await sc.repost(reposter.did, new RecordRef(post.uri, post.cid))
         } catch (e) {
           /* ignore */
         }
@@ -3672,7 +3652,7 @@ export default async (sc: SeedClient) => {
     `║  Posts:              ${createdPosts.length.toString().padEnd(2)} (policy/matter/raq/meme/meta)      ║`,
   )
   console.log(
-    `║  Engagement:         likes, reposts, replies, bookmarks              ║`,
+    `║  Engagement:         likes, replies, bookmarks                       ║`,
   )
   console.log(
     `║  Highlights:         12  (public/private annotations)                ║`,

@@ -3,6 +3,7 @@ import {
   DAY,
   HOUR,
   ballotWriteRefusal,
+  repostWriteRefusal,
   verifyCabildeoDelegation,
   verifyCabildeoProof,
 } from '@atproto/common'
@@ -249,6 +250,14 @@ export class IndexingService {
       subLogger.debug(
         { uri: uri.toString(), reason: ballotRefusal },
         'skipping indexing of refused ballot record',
+      )
+      return
+    }
+    const repostRefusal = repostWriteRefusal(uri.collection)
+    if (repostRefusal) {
+      subLogger.debug(
+        { uri: uri.toString(), reason: repostRefusal },
+        'skipping indexing of refused repost record',
       )
       return
     }

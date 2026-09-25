@@ -19,7 +19,7 @@ import { ChatServiceProfile } from './service-profile-chat.js'
 import { LexiconAuthorityProfile } from './service-profile-lexicon.js'
 import { OzoneServiceProfile } from './service-profile-ozone.js'
 import { TestServerParams } from './types.js'
-import { mockNetworkUtilities } from './util.js'
+import { allowRepostsUnlessConfigured, mockNetworkUtilities } from './util.js'
 
 const ADMIN_USERNAME = 'admin'
 const ADMIN_PASSWORD = 'admin-pass'
@@ -52,6 +52,7 @@ export class TestNetwork extends TestNetworkNoAppView {
 
     // Without a configured m8 verifier the PDS refuses every cabildeo vote and
     // delegation. Stand one in, forwarding to the local m8 broker if known.
+    const restoreReposts = allowRepostsUnlessConfigured()
     const civicVerifier = await DevCivicVerifier.startIfUnconfigured({
       upstreamUrl: process.env.DEV_ENV_M8_URL,
       upstreamResolverSecret: process.env.DEV_ENV_M8_RESOLVER_SECRET,
@@ -196,6 +197,7 @@ export class TestNetwork extends TestNetworkNoAppView {
       introspect,
     )
     network.civicVerifier = civicVerifier
+    network.restoreReposts = restoreReposts
     network.manifest = createDevEnvManifest(network, {
       networkParams: params,
       skipMockSetup: false,
@@ -266,5 +268,6 @@ export class TestNetwork extends TestNetworkNoAppView {
     await this.plc.close()
     await this.introspect?.close()
     await this.civicVerifier?.close()
+    this.restoreReposts()
   }
 }
