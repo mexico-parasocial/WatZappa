@@ -1,12 +1,4 @@
-import { randomUUID } from 'node:crypto'
-import type {
-  AiConsentRecord,
-  CommunityRoomKind,
-  CommunityRoomSummary,
-  CommunitySpaceMap,
-  SyncLogEntry,
-  UserPushToken,
-} from '../interface.js'
+import type { SyncLogEntry, UserPushToken } from '../interface.js'
 import { IdentityMatrixArea } from './identity-matrix.js'
 
 export class InfraArea extends IdentityMatrixArea {
@@ -27,7 +19,10 @@ export class InfraArea extends IdentityMatrixArea {
 
   async getFailedSyncs(limit = 100): Promise<SyncLogEntry[]> {
     return this.queryAll<SyncLogEntry>(
-      'SELECT * FROM sync_log WHERE success = 0 ORDER BY created_at DESC LIMIT $1',
+      `SELECT id, event_type AS "eventType", community_uri AS "communityUri",
+        did, space_id AS "spaceId", success, retry_count AS "retryCount",
+        error, created_at::text AS "createdAt"
+       FROM sync_log WHERE success = 0 ORDER BY created_at DESC, id DESC LIMIT $1`,
       [limit],
     )
   }
