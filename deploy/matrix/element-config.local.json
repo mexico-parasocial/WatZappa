@@ -1,0 +1,15 @@
+{
+  "default_server_config": {
+    "m.homeserver": {
+      "base_url": "http://localhost:8082",
+      "server_name": "matrix.para.social"
+    }
+  },
+  "brand": "PARA Chat · Local",
+  "disable_custom_urls": true,
+  "disable_guests": true,
+  "disable_3pid_login": true,
+  "integrations_ui_url": "",
+  "integrations_rest_url": "",
+  "integrations_widgets_urls": []
+}
