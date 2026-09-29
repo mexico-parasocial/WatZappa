@@ -1,4 +1,4 @@
-import { app, chat, com, site } from '../lexicons/index.js'
+import { app, type chat, com, type site } from '../lexicons/index.js'
 
 // app.bsky.actor
 
@@ -87,19 +87,17 @@ export type RecordEmbedViewInternal =
 export type LikeRecord = app.bsky.feed.like.Main
 export type RepostRecord = app.bsky.feed.repost.Main
 
-export type PostRecord = app.bsky.feed.post.Main
-export const isPostRecordType = app.bsky.feed.post.$isTypeOf
+export type PostRecord = app.bsky.feed.post.Main | com.para.post.Main
+export const isPostRecordType = (value: {
+  $type?: unknown
+}): value is PostRecord =>
+  app.bsky.feed.post.$isTypeOf(value) || com.para.post.$isTypeOf(value)
 
 export type PostgateRecord = app.bsky.feed.postgate.Main
 export const isPostgateDisableRuleType =
   app.bsky.feed.postgate.disableRule.$isTypeOf
 
-// TODO Temporary off-Lexicon fields used to expose canonical OP thread
-// numbering on feed items while the public response schema remains unchanged.
-export type FeedViewPost = app.bsky.feed.defs.FeedViewPost & {
-  opThreadPostIndex?: number
-  opThreadPostCount?: number
-}
+export type FeedViewPost = app.bsky.feed.defs.FeedViewPost
 export type ReasonPin = app.bsky.feed.defs.ReasonPin
 export type ReasonRepost = app.bsky.feed.defs.ReasonRepost
 export type ReplyRef = app.bsky.feed.defs.ReplyRef

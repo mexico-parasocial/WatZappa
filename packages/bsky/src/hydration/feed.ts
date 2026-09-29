@@ -1,7 +1,7 @@
 import { dedupeStrs } from '@atproto/common'
-import type { AtUriString, DidString } from '@atproto/syntax'
+import { AtUri, type AtUriString, type DidString } from '@atproto/syntax'
 import type { DataPlaneClient } from '../data-plane/client/index.js'
-import { app } from '../lexicons/index.js'
+import { app, com } from '../lexicons/index.js'
 import {
   postUriToPostgateUri,
   postUriToThreadgateUri,
@@ -156,7 +156,9 @@ export class FeedHydrator {
 
       for (let i = 0; i < need.length; i++) {
         const record = parseRecord(
-          app.bsky.feed.post.main,
+          new AtUri(need[i]).collection === com.para.post.$type
+            ? com.para.post.main
+            : app.bsky.feed.post.main,
           res.records[i],
           includeTakedowns,
         )
