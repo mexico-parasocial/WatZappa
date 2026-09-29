@@ -1,7 +1,11 @@
 import assert from 'node:assert'
+import { execFileSync } from 'node:child_process'
+import fs from 'node:fs'
+import path from 'node:path'
 import getPort from 'get-port'
 import * as uint8arrays from 'uint8arrays'
 import { wait } from '@atproto/common-web'
+import { type DidString, isDidString } from '@atproto/lex'
 import { createServiceJwt } from '@atproto/xrpc-server'
 import { TestBsky } from './bsky.js'
 import { TestBsync } from './bsync.js'
@@ -18,7 +22,7 @@ import { TestPlc } from './plc.js'
 import { ChatServiceProfile } from './service-profile-chat.js'
 import { LexiconAuthorityProfile } from './service-profile-lexicon.js'
 import { OzoneServiceProfile } from './service-profile-ozone.js'
-import { TestServerParams } from './types.js'
+import type { TestServerParams } from './types.js'
 import { allowRepostsUnlessConfigured, mockNetworkUtilities } from './util.js'
 
 const ADMIN_USERNAME = 'admin'
@@ -88,6 +92,13 @@ export class TestNetwork extends TestNetworkNoAppView {
     })
     const lexiconAuthorityProfile =
       await LexiconAuthorityProfile.create(thirdPartyPds)
+    const persistentProfiles = existingPersistentProfiles(
+      params.pds?.dataDirectory,
+    )
+    const moderationDid =
+      persistentProfiles['mod-authority.test'] ?? ozoneServiceProfile.did
+    const lexiconDid =
+      persistentProfiles['lex-authority.test'] ?? lexiconAuthorityProfile.did
 
     const bsyncApiKey = 'bsync-api-key'
     const bsync = await TestBsync.create({
@@ -108,8 +119,8 @@ export class TestNetwork extends TestNetworkNoAppView {
       dbPostgresSchema: `appview_${dbPostgresSchema}`,
       dbPostgresUrl,
       redisHost,
-      modServiceDid: ozoneServiceProfile.did,
-      labelsFromIssuerDids: [ozoneServiceProfile.did, EXAMPLE_LABELER],
+      modServiceDid: moderationDid,
+      labelsFromIssuerDids: [moderationDid, EXAMPLE_LABELER],
       ...params.bsky,
     })
 
@@ -119,8 +130,8 @@ export class TestNetwork extends TestNetworkNoAppView {
       bskyAppViewUrl: bsky.url,
       bskyAppViewDid: bsky.ctx.cfg.serverDid,
       modServiceUrl: ozoneUrl,
-      modServiceDid: ozoneServiceProfile.did,
-      lexiconDidAuthority: lexiconAuthorityProfile.did,
+      modServiceDid: moderationDid,
+      lexiconDidAuthority: lexiconDid,
       ...params.pds,
     })
 
@@ -131,7 +142,7 @@ export class TestNetwork extends TestNetworkNoAppView {
       port: ozonePort,
       plcUrl: plc.url,
       signingKey: ozoneServiceProfile.key,
-      serverDid: ozoneServiceProfile.did,
+      serverDid: moderationDid,
       dbPostgresSchema: `ozone_${dbPostgresSchema || 'db'}`,
       dbPostgresUrl,
       appviewUrl: bsky.url,
@@ -141,7 +152,7 @@ export class TestNetwork extends TestNetworkNoAppView {
       pdsDid: pds.ctx.cfg.service.did,
       chatUrl,
       chatDid: chatServiceProfile.did,
-      verifierDid: ozoneServiceProfile.did,
+      verifierDid: moderationDid,
       verifierUrl: pds.url,
       verifierPassword: 'temp',
       ...params.ozone,
@@ -270,4 +281,34 @@ export class TestNetwork extends TestNetworkNoAppView {
     await this.civicVerifier?.close()
     this.restoreReposts()
   }
+}
+
+function existingPersistentProfiles(
+  pdsDataDirectory: string | undefined,
+): Record<string, DidString> {
+  if (!pdsDataDirectory) return {}
+  const db = path.join(pdsDataDirectory, 'account.sqlite')
+  if (!fs.existsSync(db)) return {}
+  const output = execFileSync(
+    'sqlite3',
+    [
+      '-readonly',
+      '-json',
+      db,
+      "SELECT handle, did FROM actor WHERE handle IN ('mod-authority.test', 'lex-authority.test')",
+    ],
+    { encoding: 'utf8' },
+  )
+  const accounts = JSON.parse(output || '[]') as Array<{
+    handle: string
+    did: string
+  }>
+  return Object.fromEntries(
+    accounts.map(({ handle, did }) => {
+      if (!isDidString(did)) {
+        throw new Error(`Invalid DID for persistent service account ${handle}`)
+      }
+      return [handle, did]
+    }),
+  )
 }

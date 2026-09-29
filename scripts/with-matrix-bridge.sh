@@ -4,16 +4,17 @@
 #
 # The bridge (services/matrix-bridge) serves the PARA app's /api endpoints and
 # consumes the dev PDS firehose. It is started once the dev PDS accepts
-# connections (its firehose consumer exits when it cannot connect), restarted
-# if it dies while the backend is still up, and stopped together with the
-# backend on Ctrl-C.
+# connections (its firehose consumer exits when it cannot connect), and both
+# processes are stopped together on Ctrl-C or a fatal bridge error.
 #
 # Usage:
 #   scripts/with-matrix-bridge.sh <command...>
 #
 # Environment (all optional):
 #   BRIDGE_PORT            default 3001
-#   BRIDGE_DB_PATH         default <repo>/data/bridge/bridge.db
+#   BRIDGE_DB_PATH         default a per-run temporary SQLite database
+#   BRIDGE_PDS_SOURCE_ID   stable identifier for the matching PDS data generation
+#   BRIDGE_BACKFILL_FROM_START  set to 1 to replay available prior events
 #   MATRIX_HOMESERVER_URL  default http://localhost:8008 — the local Synapse
 #                          stack from docker-compose.matrix.yaml
 #   MATRIX_ADMIN_TOKEN     auto-provisioned for the local stack when unset
@@ -29,12 +30,26 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BRIDGE_DIR="$ROOT/services/matrix-bridge"
 BRIDGE_PORT="${BRIDGE_PORT:-3001}"
-BRIDGE_DB_PATH="${BRIDGE_DB_PATH:-$ROOT/data/bridge/bridge.db}"
+TEMP_BRIDGE_DIR=''
 PDS_HEALTH_URL="${PDS_HEALTH_URL:-http://localhost:2583/xrpc/_health}"
 
 if [ $# -eq 0 ]; then
   echo "usage: $0 <command...>" >&2
   exit 64
+fi
+
+for port in 2583 "$BRIDGE_PORT"; do
+  if command -v lsof >/dev/null 2>&1 && lsof -nP -tiTCP:"$port" -sTCP:LISTEN | grep -q .; then
+    echo "Port $port is already in use; refusing to start a second dev stack." >&2
+    exit 2
+  fi
+done
+
+if [ -z "${BRIDGE_DB_PATH:-}" ]; then
+  TEMP_BRIDGE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/para-bridge.XXXXXX")"
+  BRIDGE_DB_PATH="$TEMP_BRIDGE_DIR/bridge.db"
+  BRIDGE_PDS_SOURCE_ID="$(uuidgen)"
+  BRIDGE_BACKFILL_FROM_START=1
 fi
 
 # Always clean-build the bridge: the root `pnpm build` does not cover this
@@ -48,11 +63,25 @@ rm -rf "$BRIDGE_DIR/dist"
 mkdir -p "$(dirname "$BRIDGE_DB_PATH")"
 
 BRIDGE_PID=''
+BACKEND_PID=''
 
 cleanup() {
   if [ -n "$BRIDGE_PID" ]; then
-    kill "$BRIDGE_PID" 2>/dev/null || true
+    kill_tree "$BRIDGE_PID"
   fi
+  if [ -n "$BACKEND_PID" ]; then
+    kill_tree "$BACKEND_PID"
+  fi
+  if [ -n "$TEMP_BRIDGE_DIR" ]; then
+    rm -rf "$TEMP_BRIDGE_DIR"
+  fi
+}
+kill_tree() {
+  local child
+  while read -r child; do
+    [ -n "$child" ] && kill_tree "$child"
+  done < <(pgrep -P "$1" 2>/dev/null || true)
+  kill "$1" 2>/dev/null || true
 }
 trap cleanup EXIT
 trap 'exit 130' INT
@@ -155,6 +184,8 @@ start_bridge() {
     export MATRIX_PUBLIC_HOMESERVER_URL
     export M8_BASE_URL
     export BRIDGE_DB_PATH
+    export BRIDGE_PDS_SOURCE_ID
+    export BRIDGE_BACKFILL_FROM_START
     exec node --enable-source-maps dist/index.js
   ) &
   BRIDGE_PID=$!
@@ -163,17 +194,19 @@ start_bridge() {
 start_bridge
 echo "🌉 matrix-bridge: started on :$BRIDGE_PORT (db: $BRIDGE_DB_PATH)"
 
-# Supervise until the backend exits, restarting the bridge if it dies.
+# A failed bridge must stop the stack rather than restart with the same bad cursor.
 while :; do
   if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
     wait "$BACKEND_PID"
     exit $?
   fi
   if ! kill -0 "$BRIDGE_PID" 2>/dev/null; then
-    wait "$BRIDGE_PID" || true
-    echo "matrix-bridge: exited — restarting in 2s..." >&2
-    sleep 2
-    start_bridge
+    if wait "$BRIDGE_PID"; then
+      echo 'matrix-bridge: exited unexpectedly' >&2
+    else
+      echo 'matrix-bridge: failed; stopping its dev backend' >&2
+    fi
+    exit 1
   fi
   sleep 1
 done
