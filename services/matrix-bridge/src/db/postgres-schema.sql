@@ -86,6 +86,11 @@ CREATE TABLE IF NOT EXISTS sync_cursor (
   cursor INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS sync_source (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  source_id TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS user_push_tokens (
   did TEXT PRIMARY KEY,
   expo_push_token TEXT NOT NULL,

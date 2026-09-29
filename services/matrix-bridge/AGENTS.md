@@ -1,5 +1,7 @@
 # Matrix bridge
 
+- Bind a persisted firehose cursor to the PDS data generation. A mismatched or future cursor must fail clearly; never replay a bridge database against another local PDS.
+
 - Follow root testing skill. Run package scripts with the repo's Node 22; rebuild native SQLite dependencies after changing Node major versions.
 - `pnpm test:postgres` runs the suite against SQLite and a disposable local PostgreSQL container. `pnpm smoke:appservice` creates and removes an isolated Synapse container. Never point these fixtures at deployed databases.
 - `db.transaction` is for database-only work. Await all operations inside it; no network requests or live SSE notifications before commit. Ingestion uses `ingestMatrixEvents` for both appservice and polling; persisted event_log records are the delivery source of truth.

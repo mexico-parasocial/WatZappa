@@ -22,6 +22,10 @@ export interface InfraStore {
 
   setSyncCursor(cursor: number): Promise<void>
 
+  getSyncSource(): Promise<string | undefined>
+
+  setSyncSource(sourceId: string): Promise<void>
+
   getUserCount(): Promise<number>
 
   getSpaceCount(): Promise<number>

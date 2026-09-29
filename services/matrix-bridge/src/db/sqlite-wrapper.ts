@@ -9,6 +9,7 @@ import type {
   SyncLogEntry,
   UserPushToken,
 } from './pg/index.js'
+import type { BridgeEvent } from './records.js'
 import { BridgeDatabase } from './sqlite/index.js'
 
 /**
@@ -159,6 +160,14 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     return this.wrap(() => this.inner.setSyncCursor(cursor))
   }
 
+  getSyncSource(): Promise<string | undefined> {
+    return this.wrap(() => this.inner.getSyncSource())
+  }
+
+  setSyncSource(sourceId: string): Promise<void> {
+    return this.wrap(() => this.inner.setSyncSource(sourceId))
+  }
+
   // ── Stats ──
 
   getUserCount(): Promise<number> {
@@ -222,14 +231,14 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     communityUri: string | null
     audienceDids: string[] | null
     payload: unknown
-  }): Promise<import('./records.js').BridgeEvent> {
+  }): Promise<BridgeEvent> {
     return this.wrap(() => this.inner.appendEvent(event))
   }
 
   async listEventsAfter(
     afterSeq: number,
     limit: number,
-  ): Promise<import('./records.js').BridgeEvent[]> {
+  ): Promise<BridgeEvent[]> {
     return this.wrap(() => this.inner.listEventsAfter(afterSeq, limit))
   }
 

@@ -69,6 +69,21 @@ export class InfraArea extends IdentityMatrixArea {
       .run(cursor)
   }
 
+  getSyncSource(): string | undefined {
+    const row = this.db
+      .prepare('SELECT source_id FROM sync_source WHERE id = 1')
+      .get() as { source_id: string } | undefined
+    return row?.source_id
+  }
+
+  setSyncSource(sourceId: string): void {
+    this.db
+      .prepare(
+        'INSERT OR REPLACE INTO sync_source (id, source_id) VALUES (1, ?)',
+      )
+      .run(sourceId)
+  }
+
   getUserCount(): number {
     // Post-CD-M1 there is no user mapping to count; the meaningful gauge is
     // distinct active members across communities (governance state).

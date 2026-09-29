@@ -65,6 +65,21 @@ export class InfraArea extends IdentityMatrixArea {
     )
   }
 
+  async getSyncSource(): Promise<string | undefined> {
+    const row = await this.queryOne<{ source_id: string }>(
+      'SELECT source_id FROM sync_source WHERE id = 1',
+    )
+    return row?.source_id
+  }
+
+  async setSyncSource(sourceId: string): Promise<void> {
+    await this.run(
+      `INSERT INTO sync_source (id, source_id) VALUES (1, $1)
+       ON CONFLICT (id) DO UPDATE SET source_id = EXCLUDED.source_id`,
+      [sourceId],
+    )
+  }
+
   async getUserCount(): Promise<number> {
     // Post-CD-M1 there is no user mapping to count; the meaningful gauge is
     // distinct active members across communities (governance state).

@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import Database from 'better-sqlite3'
 import type { Config } from '../../config.js'
 /** Lifecycle, connection handle and shared query helpers. */
@@ -113,6 +112,11 @@ export class SqliteBase {
       CREATE TABLE IF NOT EXISTS sync_cursor (
         id INTEGER PRIMARY KEY CHECK (id = 1),
         cursor INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS sync_source (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        source_id TEXT NOT NULL
       );
 
       CREATE TABLE IF NOT EXISTS user_push_tokens (
