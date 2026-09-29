@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import events from 'node:events'
-import http from 'node:http'
-import { ConnectRouter } from '@connectrpc/connect'
+import type http from 'node:http'
+import type { ConnectRouter } from '@connectrpc/connect'
 import { expressConnectMiddleware } from '@connectrpc/connect-express'
 import express from 'express'
 import { TID } from '@atproto/common'
@@ -13,10 +13,10 @@ import { Service } from '../../proto/bsync_connect.js'
 import {
   Method,
   MuteOperation_Type,
-  PutOperationRequest,
+  type PutOperationRequest,
 } from '../../proto/bsync_pb.js'
 import { Namespaces } from '../../stash.js'
-import { Database } from '../server/db/index.js'
+import type { Database } from '../server/db/index.js'
 import { countAll, excluded } from '../server/db/util.js'
 
 export class MockBsync {
@@ -123,24 +123,6 @@ const createRoutes = (db: Database) => (router: ConnectRouter) => {
 
     async scanMuteOperations() {
       throw new Error('not implemented')
-    },
-
-    async addNotifOperation(req) {
-      const { actorDid, priority } = req
-      if (priority !== undefined) {
-        await db.db
-          .insertInto('actor_state')
-          .values({
-            did: actorDid,
-            priorityNotifs: priority,
-            lastSeenNotifs: new Date().toISOString(),
-          })
-          .onConflict((oc) =>
-            oc.column('did').doUpdateSet({ priorityNotifs: priority }),
-          )
-          .execute()
-      }
-      return {}
     },
 
     async scanNotifOperations() {

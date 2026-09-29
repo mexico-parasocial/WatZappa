@@ -4115,11 +4115,6 @@ export class ActorInfo extends Message<ActorInfo> {
   createdAt?: Timestamp;
 
   /**
-   * @generated from field: bool priority_notifications = 11;
-   */
-  priorityNotifications = false;
-
-  /**
    * @generated from field: double pagerank = 12;
    */
   pagerank = 0;
@@ -4196,7 +4191,6 @@ export class ActorInfo extends Message<ActorInfo> {
     { no: 8, name: "allow_incoming_chats_from", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 9, name: "upstream_status", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 10, name: "created_at", kind: "message", T: Timestamp },
-    { no: 11, name: "priority_notifications", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
     { no: 12, name: "pagerank", kind: "scalar", T: 1 /* ScalarType.DOUBLE */ },
     { no: 13, name: "trusted_verifier", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
     { no: 14, name: "verified_by", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "message", T: VerificationMeta} },

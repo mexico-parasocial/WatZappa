@@ -1,25 +1,26 @@
-import crypto, { KeyObject } from 'node:crypto'
+import crypto, { type KeyObject } from 'node:crypto'
 import { secp256k1 } from '@noble/curves/secp256k1'
-import express from 'express'
+import type express from 'express'
 import * as jose from 'jose'
 import * as ui8 from 'uint8arrays'
 import { SECP256K1_JWT_ALG, parseDidKey } from '@atproto/crypto'
-import { DidString, isDidString } from '@atproto/lex'
+import { type DidString, isDidString } from '@atproto/lex'
 import {
   AuthRequiredError,
-  VerifySignatureWithKeyFn,
+  type VerifySignatureWithKeyFn,
   cryptoVerifySignatureWithKey,
   parseReqNsid,
   verifyJwt as verifyServiceJwt,
 } from '@atproto/xrpc-server'
 import {
   Code,
-  DataPlaneClient,
+  type DataPlaneClient,
   getKeyAsDidKey,
   isDataplaneError,
   unpackIdentityKeys,
 } from './data-plane/index.js'
-import { GetIdentityByDidResponse } from './proto/bsky_pb.js'
+import { httpLogger } from './logger.js'
+import type { GetIdentityByDidResponse } from './proto/bsky_pb.js'
 
 type ReqCtx = {
   req: express.Request
@@ -333,6 +334,15 @@ export class AuthVerifier {
       const keys = unpackIdentityKeys(identity.keys)
       const didKey = getKeyAsDidKey(keys, { id: keyId })
       if (!didKey) {
+        httpLogger.warn(
+          {
+            issuer: iss,
+            keyId,
+            route: parseReqNsid(reqCtx.req),
+            expectedAudience: opts.aud,
+          },
+          'Service JWT issuer has no usable key in its DID document',
+        )
         throw new AuthRequiredError('missing or bad key')
       }
       return didKey

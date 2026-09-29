@@ -1,7 +1,6 @@
 export interface ActorState {
   did: string
   lastSeenNotifs: string
-  priorityNotifs: boolean
   lastSeenPriorityNotifs: string | undefined
 }
 

@@ -1,19 +1,19 @@
 import { Timestamp } from '@bufbuild/protobuf'
-import { ServiceImpl } from '@connectrpc/connect'
-import { Selectable, sql } from 'kysely'
+import type { ServiceImpl } from '@connectrpc/connect'
+import { type Selectable, sql } from 'kysely'
 import { keyBy } from '@atproto/common'
 import { parseJsonBytes } from '../../../hydration/util.js'
 import { app, chat } from '../../../lexicons/index.js'
-import { Service } from '../../../proto/bsky_connect.js'
+import type { Service } from '../../../proto/bsky_connect.js'
 import {
   ParaActorStatus,
   ParaProfileStats,
   ParaProfileStatsContributions,
-  VerificationMeta,
+  type VerificationMeta,
 } from '../../../proto/bsky_pb.js'
 import { mapActorCabildeoLive } from '../cabildeo-live.js'
-import { Database } from '../db/index.js'
-import { Verification } from '../db/tables/verification.js'
+import type { Database } from '../db/index.js'
+import type { Verification } from '../db/tables/verification.js'
 import { getRecords } from './records.js'
 
 type VerifiedBy = {
@@ -96,10 +96,8 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     ] = await Promise.all([
       db.db
         .selectFrom('actor')
-        .leftJoin('actor_state', 'actor_state.did', 'actor.did')
         .where('actor.did', 'in', dids)
         .selectAll('actor')
-        .select('actor_state.priorityNotifs')
         .select([
           db.db
             .selectFrom('labeler')
@@ -253,7 +251,6 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
             : undefined,
         upstreamStatus: row?.upstreamStatus ?? '',
         createdAt: profiles.records[i].createdAt, // @NOTE profile creation date not trusted in production
-        priorityNotifications: row?.priorityNotifs ?? false,
         trustedVerifier: row?.trustedVerifier ?? false,
         verifiedBy,
         statusRecord: status,
