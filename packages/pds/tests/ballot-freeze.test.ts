@@ -13,7 +13,7 @@ import { com } from '../src/lexicons.js'
 // assertions key on, so a reworded message fails here once rather than in a
 // dozen places.
 const FROZEN = /is frozen and will not be written/
-const NOT_A_CABILDEO_BALLOT = /accepted only as a cabildeo ballot/
+const NOT_A_PUBLIC_BALLOT = /accepted only as a cabildeo or policy ballot/
 const PROOF_ON_REACTION = /is a public reaction and must not carry/
 
 const frozenRkey = TID.nextStr()
@@ -29,6 +29,7 @@ describe('PARA ballot policy', () => {
   let proposal: string
   let community: string
   let cabildeo: string
+  let policy: string
 
   const voteRecord = () => ({
     $type: 'com.para.community.vote',
@@ -61,6 +62,13 @@ describe('PARA ballot policy', () => {
           claim.selectedOption === 1 &&
           claim.voteNullifier === 'a'.repeat(64) &&
           claim.eligibilityProofRef === 'm8:cabildeo:v1:' + 'b'.repeat(43)
+        const validPolicy =
+          claim.actorDid === did &&
+          claim.subjectUri === policy &&
+          claim.signal === 2 &&
+          claim.selectedOption === undefined &&
+          claim.voteNullifier === 'c'.repeat(64) &&
+          claim.eligibilityProofRef === 'm8:policy:v1:' + 'd'.repeat(43)
         const validDelegation =
           claim.actorDid === did &&
           claim.mode === 'active' &&
@@ -69,7 +77,9 @@ describe('PARA ballot policy', () => {
           claim.eligibilityProofRef ===
             'm8:delegation:v1:11111111-1111-4111-8111-111111111111:' +
               'a'.repeat(43)
-        res.writeHead(validVote || validDelegation ? 204 : 422).end()
+        res
+          .writeHead(validVote || validPolicy || validDelegation ? 204 : 422)
+          .end()
       })
     })
     await new Promise<void>((resolve) =>
@@ -89,6 +99,7 @@ describe('PARA ballot policy', () => {
     proposal = `at://${did}/com.para.community.proposal/${TID.nextStr()}`
     community = `at://${did}/com.para.community.board/${TID.nextStr()}`
     cabildeo = `at://${did}/com.para.civic.cabildeo/${TID.nextStr()}`
+    policy = `at://${did}/app.bsky.feed.post/${TID.nextStr()}`
   })
 
   afterAll(async () => {
@@ -193,7 +204,7 @@ describe('PARA ballot policy', () => {
     expect(data.uri).toContain('com.para.community.delegation')
   })
 
-  describe('com.para.civic.vote is narrowed to cabildeo ballots', () => {
+  describe('com.para.civic.vote is narrowed to cabildeo and policy ballots', () => {
     // Not frozen: a cabildeo ballot is public and attributable, and that has
     // been accepted for cabildeo votes and only for those (OD-7 §5c). The
     // shapes refused below are the ones that would publish a -3..+3 position or
@@ -236,7 +247,7 @@ describe('PARA ballot policy', () => {
             record: cabildeoBallot(extra),
             validate: false,
           }),
-        ).rejects.toThrow(/valid cabildeo vote proof/)
+        ).rejects.toThrow(/valid civic vote proof/)
       },
     )
 
@@ -249,7 +260,7 @@ describe('PARA ballot policy', () => {
           record: cabildeoBallot({ voteNullifier: undefined }),
           validate: false,
         }),
-      ).rejects.toThrow(/valid cabildeo vote proof/)
+      ).rejects.toThrow(/valid civic vote proof/)
       await expect(
         agent.com.atproto.repo.applyWrites({
           repo: did,
@@ -262,20 +273,61 @@ describe('PARA ballot policy', () => {
             },
           ],
         }),
-      ).rejects.toThrow(/valid cabildeo vote proof/)
+      ).rejects.toThrow(/valid civic vote proof/)
     })
 
-    it('refuses a policy ballot', async () => {
+    // Policy ballots are public under the casting identity (PARA
+    // revocable-mandates-spec §4.0), and m8 binds their signal.
+    const policyBallot = (extra: Record<string, unknown> = {}) => ({
+      $type: com.para.civic.vote.$type,
+      subject: policy,
+      subjectType: 'policy',
+      signal: 2,
+      isDirect: true,
+      voteNullifier: 'c'.repeat(64),
+      eligibilityProofRef: 'm8:policy:v1:' + 'd'.repeat(43),
+      createdAt: new Date().toISOString(),
+      ...extra,
+    })
+
+    it('accepts a policy ballot with a valid authorization', async () => {
+      const { data } = await agent.com.atproto.repo.createRecord({
+        repo: did,
+        collection: com.para.civic.vote.$type,
+        record: policyBallot(),
+      })
+      expect(data.uri).toContain(com.para.civic.vote.$type)
+    })
+
+    it('refuses a policy ballot rewritten to another signal', async () => {
       const attempt = agent.com.atproto.repo.createRecord({
         repo: did,
         collection: com.para.civic.vote.$type,
-        record: cabildeoBallot({
-          subjectType: 'policy',
-          selectedOption: undefined,
-          signal: 2,
-        }),
+        record: policyBallot({ signal: 3 }),
       })
-      await expect(attempt).rejects.toThrow(NOT_A_CABILDEO_BALLOT)
+      await expect(attempt).rejects.toThrow(/valid civic vote proof/)
+    })
+
+    it.each([4, -4])(
+      'refuses a policy signal outside -3..+3: %s',
+      async (signal) => {
+        const attempt = agent.com.atproto.repo.createRecord({
+          repo: did,
+          collection: com.para.civic.vote.$type,
+          validate: false,
+          record: policyBallot({ signal }),
+        })
+        await expect(attempt).rejects.toThrow(NOT_A_PUBLIC_BALLOT)
+      },
+    )
+
+    it('refuses a policy ballot carrying an option', async () => {
+      const attempt = agent.com.atproto.repo.createRecord({
+        repo: did,
+        collection: com.para.civic.vote.$type,
+        record: policyBallot({ selectedOption: 1 }),
+      })
+      await expect(attempt).rejects.toThrow(NOT_A_PUBLIC_BALLOT)
     })
 
     it('refuses a cabildeo ballot carrying a signal', async () => {
@@ -284,7 +336,7 @@ describe('PARA ballot policy', () => {
         collection: com.para.civic.vote.$type,
         record: cabildeoBallot({ signal: -3 }),
       })
-      await expect(attempt).rejects.toThrow(NOT_A_CABILDEO_BALLOT)
+      await expect(attempt).rejects.toThrow(NOT_A_PUBLIC_BALLOT)
     })
 
     it('refuses a ballot naming delegators', async () => {
@@ -293,7 +345,7 @@ describe('PARA ballot policy', () => {
         collection: com.para.civic.vote.$type,
         record: cabildeoBallot({ delegatedFrom: [did], isDirect: false }),
       })
-      await expect(attempt).rejects.toThrow(NOT_A_CABILDEO_BALLOT)
+      await expect(attempt).rejects.toThrow(NOT_A_PUBLIC_BALLOT)
     })
 
     it('refuses a ballot with no subject type at all', async () => {
@@ -302,7 +354,7 @@ describe('PARA ballot policy', () => {
         collection: com.para.civic.vote.$type,
         record: cabildeoBallot({ subjectType: undefined }),
       })
-      await expect(attempt).rejects.toThrow(NOT_A_CABILDEO_BALLOT)
+      await expect(attempt).rejects.toThrow(NOT_A_PUBLIC_BALLOT)
     })
   })
 

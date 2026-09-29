@@ -4,7 +4,7 @@ import {
   reactionWriteRefusal,
   repostWriteRefusal,
   verifyCabildeoDelegation,
-  verifyCabildeoProof,
+  verifyPublicBallotProof,
 } from '@atproto/common'
 import { RecordSchema, walk } from '@atproto/lex'
 import { encode } from '@atproto/lex-cbor'
@@ -170,10 +170,8 @@ async function prepareWrite(opts: {
     if (repostRefusal) throw new UnsupportedRecordError(repostRefusal)
     if (opts.collection === 'com.para.civic.vote') {
       try {
-        if (!(await verifyCabildeoProof(opts.did, opts.record))) {
-          throw new BallotRefusedError(
-            'A valid cabildeo vote proof is required',
-          )
+        if (!(await verifyPublicBallotProof(opts.did, opts.record))) {
+          throw new BallotRefusedError('A valid civic vote proof is required')
         }
       } catch (error) {
         if (error instanceof BallotRefusedError) throw error

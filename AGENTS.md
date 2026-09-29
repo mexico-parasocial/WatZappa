@@ -67,8 +67,9 @@ For working with that SDK, invoke the focused skills under [.agents/skills/](.ag
 
 ## Architecture notes
 
-- Public cabildeo votes require `verifyCabildeoProof` before PDS preparation and
-  AppView indexing, including foreign repositories. `PARA_CIVIC_VOTE_VERIFIER_URL`
+- Public cabildeo and policy votes require `verifyPublicBallotProof` before PDS
+  preparation and AppView indexing, including foreign repositories. A policy
+  ballot's `signal` is bound by its `m8:policy:v1` authorization. `PARA_CIVIC_VOTE_VERIFIER_URL`
   is operator configuration; absent/unavailable verification must never fall
   back to account-only deduplication. This MAC authorization is not anonymous
   voting. `civic.delegation` carrying `signal` is also refused by the shared policy.
