@@ -67,6 +67,15 @@ export const buildDevEnvRuntimeConfig = (
         ),
         dataDirectory: envStr(env, 'DEV_ENV_PDS_DATA_DIRECTORY'),
         blobstoreDiskLocation: envStr(env, 'DEV_ENV_PDS_BLOBSTORE_DIRECTORY'),
+        ...(envStr(env, 'DEV_ENV_PDS_REPO_BACKFILL_LIMIT_MS')
+          ? {
+              repoBackfillLimitMs: envInt(
+                env,
+                'DEV_ENV_PDS_REPO_BACKFILL_LIMIT_MS',
+                0,
+              ),
+            }
+          : {}),
       },
       bsky: {
         port: bskyPort,

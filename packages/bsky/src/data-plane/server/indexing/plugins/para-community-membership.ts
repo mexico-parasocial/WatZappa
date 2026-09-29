@@ -1,13 +1,17 @@
 // @ts-nocheck
-import { Selectable, sql } from 'kysely'
-import { CID } from 'multiformats/cid'
+import { type Selectable, sql } from 'kysely'
+import type { CID } from 'multiformats/cid'
 import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
-// eslint-disable-next-line import/no-unresolved
-import { ParaCacheService } from '../../../cache/para-cache.js'
-import { BackgroundQueue } from '../../background.js'
-import { Database } from '../../db/index.js'
-import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
+import type { ParaCacheService } from '../../../../cache/para-cache.js'
+import type { BackgroundQueue } from '../../background.js'
+import type {
+  DatabaseSchema,
+  DatabaseSchemaType,
+} from '../../db/database-schema.js'
+import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
+import { finalizeDueCabildeos } from './finalize-cabildeos.js'
+import { recomputeCabildeoAggregates } from './recompute-cabildeo-aggregates.js'
 
 interface ParaCommunityMembershipRecord {
   community: string
@@ -32,6 +36,7 @@ const insertFn = async (
   obj: ParaCommunityMembershipRecord,
   timestamp: string,
 ): Promise<IndexedParaCommunityMembership | null> => {
+  await finalizeDueCabildeos(db)
   const inserted = await db
     .insertInto('para_community_membership')
     .values({
@@ -81,6 +86,7 @@ const deleteFn = async (
   db: DatabaseSchema,
   uri: AtUri,
 ): Promise<IndexedParaCommunityMembership | null> => {
+  await finalizeDueCabildeos(db)
   const deleted = await db
     .deleteFrom('para_community_membership')
     .where('uri', '=', uri.toString())
@@ -105,6 +111,25 @@ const invalidateCache = async (
   return keys
 }
 
+const updateAggregates = async (
+  db: DatabaseSchema,
+  membership: IndexedParaCommunityMembership,
+) => {
+  const grant = await db
+    .selectFrom('cabildeo_delegation')
+    .where('creator', '=', membership.creator)
+    .select('uri')
+    .limit(1)
+    .executeTakeFirst()
+  if (!grant) return
+  const open = await db
+    .selectFrom('cabildeo_cabildeo')
+    .where('phase', '=', 'voting')
+    .select('uri')
+    .execute()
+  for (const row of open) await recomputeCabildeoAggregates(db, row.uri)
+}
+
 export type PluginType = RecordProcessor<
   ParaCommunityMembershipRecord,
   IndexedParaCommunityMembership
@@ -125,6 +150,7 @@ export const makePlugin = (
       deleteFn,
       notifsForInsert,
       notifsForDelete,
+      updateAggregates,
       invalidateCache: paraCache ? invalidateCache : undefined,
     },
     paraCache,

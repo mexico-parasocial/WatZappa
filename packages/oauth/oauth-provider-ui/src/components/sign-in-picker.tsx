@@ -1,12 +1,16 @@
 import { Trans, useLingui } from '@lingui/react/macro'
-import { AtIcon, CaretRightIcon } from '@phosphor-icons/react'
-import { clsx } from 'clsx'
-import { JSX, ReactNode } from 'react'
+import { AtSignIcon, ChevronRightIcon } from 'lucide-react'
+import type { JSX, ReactNode } from 'react'
 import type { Session } from '@atproto/oauth-provider-api'
-import { Override } from '#/lib/util.ts'
-import { Button } from './forms/button.tsx'
-import { InputContainer } from './forms/input-container.tsx'
-import { AccountCard } from './utils/account-card.tsx'
+import { ActionButton } from '#/components/forms/form-shell.tsx'
+import { ItemActions, ItemContent, ItemTitle } from '#/components/ui/item.tsx'
+import type { Override } from '#/lib/util.ts'
+import { cn } from '#/lib/utils.ts'
+import {
+  AccountCard,
+  AccountRow,
+  AccountRowMedia,
+} from './utils/account-card.tsx'
 import { stringifyHandle } from './utils/handle.tsx'
 
 export type SignInPickerProps = Override<
@@ -39,18 +43,14 @@ export function SignInPicker({
   ...props
 }: SignInPickerProps) {
   const { t } = useLingui()
-  return (
-    <div {...props} className={clsx('flex flex-col gap-4', className)}>
-      <p className="text-text-light text-sm font-medium">
-        <Trans>Sign in as...</Trans>
-      </p>
 
+  return (
+    <div {...props} className={cn('flex flex-col gap-4', className)}>
       {sessions.map((session) => (
         <AccountCard
           key={session.account.did}
           account={session.account}
-          append={<CaretRightIcon aria-hidden className="h-4" />}
-          onAction={(event) => {
+          onClick={(event) => {
             event.preventDefault()
             event.stopPropagation()
 
@@ -60,34 +60,58 @@ export function SignInPicker({
         />
       ))}
 
+      {/* @NOTE Built on the same `Item` primitive as `AccountCard` above and
+        sharing its row utilities, so the two rows keep the same height,
+        padding and surface. The icon sits in a disc the size of the avatar so
+        the text column lines up with the account rows. */}
       {onOther && (
-        <InputContainer
+        <AccountRow
           key="other"
-          onAction={onOther}
+          variant="outline"
+          render={<button type="button" />}
+          onClick={onOther}
           aria-label={t`Sign in to an account that is not listed`}
-          append={<CaretRightIcon aria-hidden className="h-4" />}
-          icon={<AtIcon aria-hidden weight="bold" className="h-4 w-6" />}
         >
-          <span className="text-text-light flex-1 truncate">
-            <Trans>Another account</Trans>
-          </span>
-        </InputContainer>
+          {/* @NOTE Bordered like `Avatar`, which draws a hairline ring around
+            every account picture, so the disc reads as the same object. */}
+          <AccountRowMedia disc>
+            {/* Same box as the avatar fallback's user glyph. */}
+            <AtSignIcon aria-hidden className="m-[10%] size-[80%]" />
+          </AccountRowMedia>
+          <ItemContent className="min-w-0">
+            <ItemTitle className="w-full text-lg leading-tight">
+              <span className="text-muted-foreground block min-w-0 truncate font-medium">
+                <Trans>Another account</Trans>
+              </span>
+            </ItemTitle>
+          </ItemContent>
+          <ItemActions>
+            <ChevronRightIcon
+              aria-hidden
+              className="text-muted-foreground size-5 shrink-0"
+            />
+          </ItemActions>
+        </AccountRow>
       )}
 
       {children}
 
-      <div
-        key="actions"
-        className="flex flex-row-reverse flex-wrap items-center justify-start gap-2"
-      >
+      <div key="actions" className="flex flex-col gap-2 pt-2">
         {onSignUp && (
-          <Button onClick={onSignUp} color="primary" transparent>
-            <Trans>Sign up</Trans>
-          </Button>
+          <>
+            <p className="text-muted-foreground pb-1 text-center text-base">
+              <Trans>Need an account?</Trans>
+            </p>
+            <ActionButton className="w-full" onClick={onSignUp}>
+              <Trans>Sign up</Trans>
+            </ActionButton>
+          </>
         )}
-        <div className="flex-auto" />
+
         {onBack && (
-          <Button onClick={onBack}>{backLabel || <Trans>Back</Trans>}</Button>
+          <ActionButton variant="secondary" className="w-full" onClick={onBack}>
+            {backLabel || <Trans>Back</Trans>}
+          </ActionButton>
         )}
       </div>
     </div>

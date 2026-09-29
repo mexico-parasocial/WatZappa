@@ -3,6 +3,8 @@ import {
   DAY,
   HOUR,
   ballotWriteRefusal,
+  repostWriteRefusal,
+  verifyCabildeoDelegation,
   verifyCabildeoProof,
 } from '@atproto/common'
 import { type IdResolver, getPds } from '@atproto/identity'
@@ -251,10 +253,24 @@ export class IndexingService {
       )
       return
     }
+    const repostRefusal = repostWriteRefusal(uri.collection)
+    if (repostRefusal) {
+      subLogger.debug(
+        { uri: uri.toString(), reason: repostRefusal },
+        'skipping indexing of refused repost record',
+      )
+      return
+    }
     this.db.assertNotTransaction()
     if (
       uri.collection === 'com.para.civic.vote' &&
       !(await verifyCabildeoProof(uri.host, obj))
+    ) {
+      return
+    }
+    if (
+      uri.collection === 'com.para.civic.delegation' &&
+      !(await verifyCabildeoDelegation(uri.host, obj))
     ) {
       return
     }

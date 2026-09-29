@@ -140,3 +140,17 @@ export const createDidAndKey = async (opts: {
     did: did as DidString,
   }
 }
+
+/**
+ * PARA refuses reposts unless PARA_REPOSTS_ENABLED=1 (`@atproto/common`
+ * para-repost-policy.ts). The upstream test suites seed reposts, so test
+ * networks allow them unless the caller chose otherwise; tests of the PARA
+ * policy set the variable to 0. Returns a function restoring the previous value.
+ */
+export const allowRepostsUnlessConfigured = (): (() => void) => {
+  if (process.env.PARA_REPOSTS_ENABLED !== undefined) return () => {}
+  process.env.PARA_REPOSTS_ENABLED = '1'
+  return () => {
+    delete process.env.PARA_REPOSTS_ENABLED
+  }
+}

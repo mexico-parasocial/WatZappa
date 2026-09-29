@@ -8,6 +8,7 @@ import {
   createCabildeoPositionRecord,
   createCabildeoRecord,
   createCabildeoVoteRecord,
+  setCabildeoPhase,
   createCommunityBoardRecord,
   createCommunityGovernanceRecord,
   createCommunityMembershipRecord,
@@ -697,7 +698,7 @@ describe('para feed views', () => {
       title: 'Cabildeo de agua',
       description: 'Debate sobre abastecimiento regional.',
       community: 'mx-federal',
-      phase: 'resolved',
+      phase: 'voting',
       options: [{ label: 'Invertir' }, { label: 'Mantener' }],
     })
     await network.processAll()
@@ -734,6 +735,8 @@ describe('para feed views', () => {
       delegateTo: bob,
     })
     await network.processAll()
+    // Ballots count only while voting; resolving freezes the final tally.
+    await setCabildeoPhase(sc, alice, cabildeo.uri, 'resolved')
     await network.processAll()
     const list = await callPara<ParaListCabildeosOutput>(
       network,
@@ -828,7 +831,17 @@ describe('para feed views', () => {
     expect(detail.cabildeo.voteTotals.direct).toBe(1)
     expect(detail.cabildeo.optionSummary[0]?.votes).toBe(0)
     expect(detail.cabildeo.optionSummary[1]?.votes).toBe(1)
-    expect(detail.cabildeo.outcomeSummary?.winningOption).toBe(1)
+    // The outcome is published only once the cabildeo is resolved.
+    expect(detail.cabildeo.outcomeSummary).toBeUndefined()
+    await setCabildeoPhase(sc, alice, cabildeo.uri, 'resolved')
+    await network.processAll()
+    const resolved = await callPara<ParaGetCabildeoOutput>(
+      network,
+      'com.para.civic.getCabildeo',
+      { cabildeo: cabildeo.uri },
+      bob,
+    )
+    expect(resolved.cabildeo.outcomeSummary?.winningOption).toBe(1)
 
     const draft = await createCabildeoRecord(sc, alice, {
       title: 'Draft vote guardrail',
@@ -874,23 +887,22 @@ describe('para feed views', () => {
     })
     await network.processAll()
 
-    const voteNullifier = 'm8-test-nullifier-shared-person'
-    await createNullifiedCabildeoVoteRecord(sc, bob, {
+    // m8 issues the same nullifier to one person, whichever account votes.
+    const voteNullifier = 'e'.repeat(64)
+    await createCabildeoVoteRecord(sc, bob, {
       cabildeo: cabildeo.uri,
       selectedOption: 0,
       isDirect: true,
       voteNullifier,
-      eligibilityProofRef: 'm8:civic-vote-proof:test-bob',
     })
     await network.processAll()
     await network.processAll()
 
-    await createNullifiedCabildeoVoteRecord(sc, carol, {
+    await createCabildeoVoteRecord(sc, carol, {
       cabildeo: cabildeo.uri,
       selectedOption: 1,
       isDirect: true,
       voteNullifier,
-      eligibilityProofRef: 'm8:civic-vote-proof:test-carol',
     })
     await network.processAll()
     await network.processAll()
@@ -1391,42 +1403,6 @@ const callParaRaw = async (
     status: res.statusCode,
     body: await res.body.json(),
   }
-}
-
-const createNullifiedCabildeoVoteRecord = async (
-  sc: SeedClient,
-  by: string,
-  opts: {
-    cabildeo: string
-    selectedOption: number
-    isDirect: boolean
-    voteNullifier: string
-    eligibilityProofRef: string
-  },
-) => {
-  const { data } = await sc.agent.com.atproto.repo.createRecord(
-    {
-      repo: by,
-      collection: 'com.para.civic.vote',
-      record: {
-        $type: 'com.para.civic.vote',
-        subject: opts.cabildeo,
-        subjectType: 'cabildeo',
-        cabildeo: opts.cabildeo,
-        selectedOption: opts.selectedOption,
-        isDirect: opts.isDirect,
-        voteNullifier: opts.voteNullifier,
-        eligibilityProofRef: opts.eligibilityProofRef,
-        createdAt: new Date().toISOString(),
-      },
-    },
-    {
-      encoding: 'application/json',
-      headers: sc.getHeaders(by),
-    },
-  )
-
-  return { uri: data.uri, cid: data.cid }
 }
 
 const callParaProcedure = async <T>(

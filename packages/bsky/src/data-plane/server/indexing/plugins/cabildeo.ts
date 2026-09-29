@@ -1,11 +1,15 @@
 // @ts-nocheck
-import { Selectable, sql } from 'kysely'
-import { CID } from 'multiformats/cid'
-import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
-import { BackgroundQueue } from '../../background.js'
-import { Database } from '../../db/index.js'
-import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
+import { type Selectable, sql } from 'kysely'
+import type { CID } from 'multiformats/cid'
+import { type AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
+import type { BackgroundQueue } from '../../background.js'
+import type {
+  DatabaseSchema,
+  DatabaseSchemaType,
+} from '../../db/database-schema.js'
+import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
+import { finalizeDueCabildeos } from './finalize-cabildeos.js'
 import { recomputeCabildeoAggregates } from './recompute-cabildeo-aggregates.js'
 
 interface CabildeoRecord {
@@ -79,6 +83,28 @@ const insertFn = async (
   obj: CabildeoRecord,
   timestamp: string,
 ): Promise<IndexedCabildeo | null> => {
+  const suppliedDeadline = obj.phaseDeadline
+    ? normalizeDatetimeAlways(obj.phaseDeadline)
+    : null
+  if (obj.phase === 'voting') {
+    const defaultDeadline = new Date(
+      Date.parse(timestamp) + 7 * 24 * 60 * 60_000,
+    ).toISOString()
+    await db
+      .insertInto('cabildeo_close_policy')
+      .values({
+        cabildeo: uri.toString(),
+        deadline: suppliedDeadline ?? defaultDeadline,
+        openedAt: timestamp,
+      })
+      .onConflict((oc) => oc.doNothing())
+      .execute()
+  }
+  const closePolicy = await db
+    .selectFrom('cabildeo_close_policy')
+    .where('cabildeo', '=', uri.toString())
+    .select('deadline')
+    .executeTakeFirst()
   const normalizedGeo = normalizeRecordGeo(obj.geoScope, obj.geo)
   const record = {
     uri: uri.toString(),
@@ -101,7 +127,7 @@ const insertFn = async (
     minQuorum: obj.minQuorum || null,
     voteVisibility: normalizeVoteVisibility(obj.voteVisibility),
     phase: obj.phase,
-    phaseDeadline: obj.phaseDeadline || null,
+    phaseDeadline: closePolicy?.deadline ?? suppliedDeadline,
     createdAt: normalizeDatetimeAlways(obj.createdAt),
     positionCount: 0,
     positionForCount: 0,
@@ -112,6 +138,8 @@ const insertFn = async (
     delegatedVoteCount: 0,
     delegationCount: 0,
     optionVoteCounts: sql<number[]>`'[]'::jsonb`,
+    optionEffectivePowerMicros: sql<number[]>`'[]'::jsonb`,
+    effectiveTotalPowerMicros: '0',
     optionPositionCounts: sql<number[]>`'[]'::jsonb`,
     winningOption: null,
     isTie: 0 as 0 | 1,
@@ -127,6 +155,12 @@ const insertFn = async (
 
   if (!inserted) {
     return null
+  }
+
+  // A resolution is the closing event. Capture the accepted inputs before a
+  // later deletion or replacement can change the in-memory tally.
+  if (obj.phase === 'resolved') {
+    await recomputeCabildeoAggregates(db, uri.toString())
   }
 
   return { record: inserted }
@@ -147,6 +181,7 @@ const deleteFn = async (
   db: DatabaseSchema,
   uri: AtUri,
 ): Promise<IndexedCabildeo | null> => {
+  await finalizeDueCabildeos(db)
   const deleted = await db
     .deleteFrom('cabildeo_cabildeo')
     .where('uri', '=', uri.toString())

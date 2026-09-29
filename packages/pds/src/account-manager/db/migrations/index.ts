@@ -5,6 +5,7 @@ import * as mig004 from './004-oauth.js'
 import * as mig005 from './005-oauth-account-management.js'
 import * as mig006 from './006-oauth-permission-sets.js'
 import * as mig007 from './007-lexicon-failures-index.js'
+import * as mig008 from './008-account-email-auth-factor.js'
 import * as mig009 from './009-alpha-rollout.js'
 import * as mig010 from './010-auth-factor-type.js'
 
@@ -16,6 +17,7 @@ export default {
   '005': mig005,
   '006': mig006,
   '007': mig007,
+  '008': mig008,
   '009': mig009,
   '010': mig010,
 }

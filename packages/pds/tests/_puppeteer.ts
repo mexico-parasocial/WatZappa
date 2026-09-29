@@ -1,6 +1,12 @@
 // @ts-nocheck
 import assert from 'node:assert'
-import { type Browser, Handler, type Page, Target, TargetType } from 'puppeteer'
+import {
+  type Browser,
+  type Handler,
+  type Page,
+  type Target,
+  TargetType,
+} from 'puppeteer'
 
 export class PageHelper implements AsyncDisposable {
   constructor(protected readonly page: Page) {}
@@ -94,6 +100,10 @@ export class PageHelper implements AsyncDisposable {
 
   async typeInInput(name: string, text: string) {
     return this.typeIn(`input[name=${JSON.stringify(name)}]`, text)
+  }
+
+  async waitForHidden(selector: string, timeout = 5_000) {
+    await this.page.waitForSelector(selector, { hidden: true, timeout })
   }
 
   async ensureTextVisibility(text: string, tag = 'p', timeout = 5_000) {

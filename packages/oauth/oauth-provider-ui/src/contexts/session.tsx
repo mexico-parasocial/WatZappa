@@ -1,6 +1,6 @@
 import { msg } from '@lingui/core/macro'
 import {
-  ReactNode,
+  type ReactNode,
   createContext,
   useCallback,
   useContext,
@@ -9,10 +9,11 @@ import {
   useState,
 } from 'react'
 import { useErrorBoundary } from 'react-error-boundary'
-import type { Account, Session } from '@atproto/oauth-provider-api'
+import type { Account, DidString, Session } from '@atproto/oauth-provider-api'
 import { Api, UnauthorizedError, UnknownRequestUriError } from '#/lib/api.ts'
 import { upsert } from '#/lib/util.ts'
 import { useCurrentLocale } from '#/locales/locale-provider.jsx'
+import { useCustomizationData } from './customization.js'
 import { useNotificationsContext } from './notifications.js'
 
 export type { Session }
@@ -56,10 +57,18 @@ SessionContext.displayName = 'SessionContext'
 
 type SessionState = {
   sessions: readonly SessionWithToken[]
-  current: string | null
+  current: DidString | null
 }
 
-export enum InitialSelectedSession {
+function findSession(
+  sessions: readonly SessionWithToken[],
+  current: DidString | null,
+): SessionWithToken | null {
+  if (!current) return null
+  return sessions.find((s) => s.account.did === current) ?? null
+}
+
+export const enum InitialSelectedSession {
   First,
   Only,
 }
@@ -67,18 +76,10 @@ export enum InitialSelectedSession {
 export type SessionProviderProps = {
   children: ReactNode
   initialSessions: readonly Session[]
-  initialSelected?: string | InitialSelectedSession
+  initialSelected?: DidString | InitialSelectedSession
   disableRemember?: boolean
   forcedIdentifier?: string
   leave?: () => void | Promise<void>
-}
-
-function findSession(
-  sessions: readonly SessionWithToken[],
-  current: string | null,
-): SessionWithToken | null {
-  if (!current) return null
-  return sessions.find((s) => s.account.did === current) ?? null
 }
 
 export function SessionProvider({
@@ -90,9 +91,9 @@ export function SessionProvider({
   leave = undefined,
 }: SessionProviderProps) {
   const locale = useCurrentLocale()
-  const { showBoundary } = useErrorBoundary<UnknownRequestUriError>()
+  const { availableUserDomains } = useCustomizationData()
+  const { showBoundary } = useErrorBoundary()
   const { notifyError } = useNotificationsContext()
-
   const [state, setState] = useState<SessionState>(() => {
     const initialSession: Session | undefined = forcedIdentifier
       ? initialSessions.find(
@@ -106,7 +107,9 @@ export function SessionProvider({
           ? initialSessions.length === 1
             ? initialSessions[0]
             : undefined
-          : undefined
+          : initialSelected != null
+            ? initialSessions.find((s) => s.account.did === initialSelected)
+            : undefined
 
     return {
       sessions: initialSessions,
@@ -218,6 +221,8 @@ export function SessionProvider({
         '/delete-account-confirm': ({ input }) => removeSession(input.did),
 
         // Account updates
+        '/enable-email-otp': ({ output }) => upsertAccount(output.account),
+        '/disable-email-otp': ({ output }) => upsertAccount(output.account),
         '/update-handle': ({ output }) => upsertAccount(output.account),
         '/update-email-confirm': ({ output }) => upsertAccount(output.account),
         '/verify-email-confirm': ({ output }) => upsertAccount(output.account),
@@ -238,7 +243,8 @@ export function SessionProvider({
     notifyError,
   ])
 
-  const canSignUp = !forcedIdentifier
+  const hasDomains = !!availableUserDomains?.length
+  const canSignUp = hasDomains && !forcedIdentifier
   const canSwitchAccounts = !forcedIdentifier
 
   const store = useMemo(

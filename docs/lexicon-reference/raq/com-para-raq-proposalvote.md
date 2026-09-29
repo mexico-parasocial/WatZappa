@@ -21,8 +21,8 @@ A like/dislike vote on a proposed RAQ question.
 |------|------|----------|-------------|-------------|
 | `subject` | `string` | ✅  | URI of the com.para.raq.proposal being voted on | Format: `at-uri` |
 | `value` | `integer` | ✅  | Vote direction: -1 downvote, 1 upvote | Min: -1<br/>Max: 1 |
-| `voteNullifier` | `string` | ❌  | One-person-one-vote nullifier for this RAQ proposal, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a. | Max Length: 128 |
-| `eligibilityProofRef` | `string` | ❌  | Opaque reference to the m8 eligibility/nullifier proof used to cast this vote. | Max Length: 512 |
+| `voteNullifier` | `string` | ❌  | DEPRECATED 2026-09-22 (OD-7 §5h): this collection is a public reaction and its count decides nothing, so no m8 nullifier is requested. The PDS refuses any write of this record that carries this field; do not set it. When reactions did request one, issuance made m8 derive the value server-side from a stable person identifier and store a durable (person, subject) row beside it. | Max Length: 128 |
+| `eligibilityProofRef` | `string` | ❌  | DEPRECATED 2026-09-22 (OD-7 §5h): this reaction carries no m8 proof. The PDS refuses any write of this record that carries this field; do not set it. | Max Length: 512 |
 | `createdAt` | `string` | ✅  |  | Format: `datetime` |
 
 ---
@@ -59,12 +59,12 @@ A like/dislike vote on a proposed RAQ question.
           "voteNullifier": {
             "type": "string",
             "maxLength": 128,
-            "description": "One-person-one-vote nullifier for this RAQ proposal, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a."
+            "description": "DEPRECATED 2026-09-22 (OD-7 §5h): this collection is a public reaction and its count decides nothing, so no m8 nullifier is requested. The PDS refuses any write of this record that carries this field; do not set it. When reactions did request one, issuance made m8 derive the value server-side from a stable person identifier and store a durable (person, subject) row beside it."
           },
           "eligibilityProofRef": {
             "type": "string",
             "maxLength": 512,
-            "description": "Opaque reference to the m8 eligibility/nullifier proof used to cast this vote."
+            "description": "DEPRECATED 2026-09-22 (OD-7 §5h): this reaction carries no m8 proof. The PDS refuses any write of this record that carries this field; do not set it."
           },
           "createdAt": {
             "type": "string",

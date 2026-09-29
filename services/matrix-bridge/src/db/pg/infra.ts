@@ -1,12 +1,4 @@
-import { randomUUID } from 'node:crypto'
-import type {
-  AiConsentRecord,
-  CommunityRoomKind,
-  CommunityRoomSummary,
-  CommunitySpaceMap,
-  SyncLogEntry,
-  UserPushToken,
-} from '../interface.js'
+import type { SyncLogEntry, UserPushToken } from '../interface.js'
 import { IdentityMatrixArea } from './identity-matrix.js'
 
 export class InfraArea extends IdentityMatrixArea {
@@ -27,7 +19,10 @@ export class InfraArea extends IdentityMatrixArea {
 
   async getFailedSyncs(limit = 100): Promise<SyncLogEntry[]> {
     return this.queryAll<SyncLogEntry>(
-      'SELECT * FROM sync_log WHERE success = 0 ORDER BY created_at DESC LIMIT $1',
+      `SELECT id, event_type AS "eventType", community_uri AS "communityUri",
+        did, space_id AS "spaceId", success, retry_count AS "retryCount",
+        error, created_at::text AS "createdAt"
+       FROM sync_log WHERE success = 0 ORDER BY created_at DESC, id DESC LIMIT $1`,
       [limit],
     )
   }
@@ -67,6 +62,21 @@ export class InfraArea extends IdentityMatrixArea {
       `INSERT INTO sync_cursor (id, cursor) VALUES (1, $1)
        ON CONFLICT (id) DO UPDATE SET cursor = EXCLUDED.cursor`,
       [cursor],
+    )
+  }
+
+  async getSyncSource(): Promise<string | undefined> {
+    const row = await this.queryOne<{ source_id: string }>(
+      'SELECT source_id FROM sync_source WHERE id = 1',
+    )
+    return row?.source_id
+  }
+
+  async setSyncSource(sourceId: string): Promise<void> {
+    await this.run(
+      `INSERT INTO sync_source (id, source_id) VALUES (1, $1)
+       ON CONFLICT (id) DO UPDATE SET source_id = EXCLUDED.source_id`,
+      [sourceId],
     )
   }
 

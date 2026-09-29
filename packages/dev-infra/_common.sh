@@ -103,9 +103,9 @@ main_native() {
     fi
   }
 
-  # trap SIGINT and performs cleanup
-  trap "on_sigint ${services}" INT
-  on_sigint() {
+  # Clean up on Ctrl-C and supervisor termination.
+  trap "on_signal ${services}" INT TERM
+  on_signal() {
     cleanup $@
     exit $?
   }
@@ -128,40 +128,36 @@ main_docker() {
   dir=$(dirname $0)
   compose_file="${dir}/docker-compose.yaml"
 
-  # whether this particular script started the container(s)
-  started_container=false
+  # Stop only the services this invocation actually started.
+  started_services=""
 
   # performs cleanup as necessary, i.e. taking down containers
   # if this script started them
   cleanup() {
     local services=$@
     echo # newline
-    if $started_container; then
-      docker compose --file $compose_file rm --force --stop --volumes ${services}
+    if [ -n "$started_services" ]; then
+      docker compose --file $compose_file rm --force --stop --volumes ${started_services}
     fi
   }
 
-  # trap SIGINT and performs cleanup
-  trap "on_sigint ${services}" INT
-  on_sigint() {
+  # Clean up on Ctrl-C and supervisor termination.
+  trap "on_signal ${services}" INT TERM
+  on_signal() {
     cleanup $@
     exit $?
   }
 
   # check if all services are running already
-  not_running=false
   for service in $services; do
     container_id=$(get_container_id $compose_file $service)
     if [ -z $container_id ]; then
-      not_running=true
-      break
+      started_services="$started_services $service"
     fi
   done
 
-  # if any are missing, recreate all services
-  if $not_running; then
-    started_container=true
-    docker compose --file $compose_file up --wait --force-recreate ${services}
+  if [ -n "$started_services" ]; then
+    docker compose --file $compose_file up --wait ${started_services}
   else
     echo "all services ${services} are already running"
   fi

@@ -21,6 +21,8 @@ const frozenRkey = TID.nextStr()
 describe('PARA ballot policy', () => {
   let verifier: Server
   const previousVerifier = process.env.PARA_CIVIC_VOTE_VERIFIER_URL
+  const previousDelegationVerifier =
+    process.env.PARA_CIVIC_DELEGATION_VERIFIER_URL
   let network: TestNetworkNoAppView
   let agent: AtpAgent
   let did: string
@@ -54,18 +56,28 @@ describe('PARA ballot policy', () => {
       })
       req.on('end', () => {
         const claim = JSON.parse(body)
-        const valid =
+        const validVote =
           claim.actorDid === did &&
           claim.selectedOption === 1 &&
           claim.voteNullifier === 'a'.repeat(64) &&
           claim.eligibilityProofRef === 'm8:cabildeo:v1:' + 'b'.repeat(43)
-        res.writeHead(valid ? 204 : 422).end()
+        const validDelegation =
+          claim.actorDid === did &&
+          claim.mode === 'active' &&
+          claim.delegateTo === 'did:plc:delegate' &&
+          claim.cabildeo === cabildeo &&
+          claim.eligibilityProofRef ===
+            'm8:delegation:v1:11111111-1111-4111-8111-111111111111:' +
+              'a'.repeat(43)
+        res.writeHead(validVote || validDelegation ? 204 : 422).end()
       })
     })
     await new Promise<void>((resolve) =>
       verifier.listen(0, '127.0.0.1', resolve),
     )
     process.env.PARA_CIVIC_VOTE_VERIFIER_URL = `http://127.0.0.1:${(verifier.address() as AddressInfo).port}/verify`
+    process.env.PARA_CIVIC_DELEGATION_VERIFIER_URL =
+      process.env.PARA_CIVIC_VOTE_VERIFIER_URL
     network = await TestNetworkNoAppView.create({})
     agent = network.pds.getAgent()
     const { data } = await agent.createAccount({
@@ -87,6 +99,11 @@ describe('PARA ballot policy', () => {
     if (previousVerifier === undefined)
       delete process.env.PARA_CIVIC_VOTE_VERIFIER_URL
     else process.env.PARA_CIVIC_VOTE_VERIFIER_URL = previousVerifier
+    if (previousDelegationVerifier === undefined)
+      delete process.env.PARA_CIVIC_DELEGATION_VERIFIER_URL
+    else
+      process.env.PARA_CIVIC_DELEGATION_VERIFIER_URL =
+        previousDelegationVerifier
   })
 
   it('refuses to create a com.para.community.vote', async () => {
@@ -330,6 +347,39 @@ describe('PARA ballot policy', () => {
       ).rejects.toThrow(/cannot publish a signal/)
     },
   )
+
+  it('writes a verified public delegation and refuses changed claims', async () => {
+    const record = {
+      $type: 'com.para.civic.delegation',
+      mode: 'active',
+      cabildeo,
+      delegateTo: 'did:plc:delegate',
+      eligibilityProofRef:
+        'm8:delegation:v1:11111111-1111-4111-8111-111111111111:' +
+        'a'.repeat(43),
+      createdAt: new Date().toISOString(),
+    }
+    const accepted = await agent.com.atproto.repo.createRecord({
+      repo: did,
+      collection: record.$type,
+      record,
+    })
+    expect(accepted.data.uri).toContain(record.$type)
+    for (const change of [
+      { delegateTo: 'did:plc:other' },
+      { eligibilityProofRef: undefined },
+      { eligibilityProofRef: 'invented' },
+    ]) {
+      await expect(
+        agent.com.atproto.repo.createRecord({
+          repo: did,
+          collection: record.$type,
+          record: { ...record, ...change },
+          validate: false,
+        }),
+      ).rejects.toThrow(/valid civic delegation proof/)
+    }
+  })
 
   describe('box 1: a -3..+3 answer and a dead stance record are frozen', () => {
     const records = (): Record<string, Record<string, unknown>> => ({

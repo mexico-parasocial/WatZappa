@@ -1,75 +1,69 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ═════════════════════════════════════════════════════════════════════════════
-# PARA dev-env — PERSISTENT variant
-#
-# The normal `make run-dev-env` / restart-dev.sh path is deliberately
-# throwaway: it runs against `db_test` (:5433) and `redis_test` (:6380), which
-# have no volumes, and dev-env itself puts the PDS data directory, the
-# blobstore and the PLC database under random `os.tmpdir()` paths. Every
-# restart mints new DIDs, so a test account cannot outlive a session.
-#
-# This variant keeps them. Accounts, repos, blobs and DIDs survive a restart:
-#
-#   postgres   `db` on :5434      (volume atp_db)     — AppView + Ozone
-#   redis      `redis` on :6381   (volume atp_redis)
-#   PDS data   .dev-env-data/pds       — account sqlite + repos
-#   blobs      .dev-env-data/blobs
-#   PLC        .dev-env-data/plc       — plc.json, the local DID registry
-#
-# DIDs are minted on the LOCAL PLC, never plc.directory. Nothing here is
-# public and nothing is permanent: delete .dev-env-data to start over.
-#
-# Seed accounts with ./scripts/seed-test-accounts.sh once this is up.
-# ═════════════════════════════════════════════════════════════════════════════
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DATA_DIR="${PARA_DEV_ENV_DATA:-$ROOT/.dev-env-data}"
+INFRA="$ROOT/packages/dev-infra"
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-INFRA_DIR="$REPO_ROOT/packages/dev-infra"
-DEV_ENV_DIR="$REPO_ROOT/packages/dev-env"
-DATA_DIR="${PARA_DEV_ENV_DATA:-$REPO_ROOT/.dev-env-data}"
+# A persistent profile is one storage unit. Mixing directories breaks DID and cursor identity.
+for name in DEV_ENV_PDS_DATA_DIRECTORY DEV_ENV_PDS_BLOBSTORE_DIRECTORY DEV_ENV_PLC_DIRECTORY BRIDGE_DB_PATH; do
+  if [[ -n "${!name:-}" ]]; then
+    echo "$name cannot override the persistent profile; set PARA_DEV_ENV_DATA instead" >&2
+    exit 2
+  fi
+done
 
-echo "═══════════════════════════════════════════════"
-echo "  PARA dev-env (persistent)"
-echo "  data: $DATA_DIR"
-echo "═══════════════════════════════════════════════"
-
-# ── Stop a stale dev-env so it releases the ports ────────────────────────────
-if pkill -f "dist/bin.js" 2>/dev/null; then
-  echo "🛑  Stopped a stale dev-env process."
-  sleep 2
-fi
-if pkill -f "matrix-bridge/dist/index.js" 2>/dev/null; then
-  echo "🛑  Stopped a stale matrix-bridge."
-  sleep 1
+if ! command -v docker >/dev/null || ! docker info >/dev/null 2>&1; then
+  echo 'Docker must be running for persistent PostgreSQL and Redis.' >&2
+  exit 2
 fi
 
-mkdir -p "$DATA_DIR/pds" "$DATA_DIR/blobs" "$DATA_DIR/plc"
+for port in 2581 2582 2583 2584 2587 2590 "${BRIDGE_PORT:-3001}"; do
+  if command -v lsof >/dev/null && lsof -nP -tiTCP:"$port" -sTCP:LISTEN | grep -q .; then
+    echo "Port $port is already in use. Stop that dev stack before starting another." >&2
+    exit 2
+  fi
+done
 
-# ── Bring up the PERSISTENT services ─────────────────────────────────────────
-# Started here, deliberately, rather than by with-redis-and-db.sh: that script
-# tears down whatever it started with `docker compose rm --force --stop
-# --volumes`, which would delete the very volumes this script exists to keep.
-# Because they are already running when it looks, it leaves them alone.
-echo ""
-echo "🐳  Ensuring persistent db (:5434) and redis (:6381) are up…"
-docker compose -f "$INFRA_DIR/docker-compose.yaml" up -d --wait db redis
-echo "    Healthy ✓"
+mkdir -p "$DATA_DIR/pds" "$DATA_DIR/blobs" "$DATA_DIR/plc" "$DATA_DIR/bridge"
+SOURCE_FILE="$DATA_DIR/pds/instance-id"
+if [[ ! -f "$SOURCE_FILE" ]]; then
+  umask 077
+  uuidgen > "$SOURCE_FILE"
+fi
 
-# ── Launch ───────────────────────────────────────────────────────────────────
-# Mock setup and the demo seed are skipped: both write fixtures on every boot,
-# which against persistent storage means duplicates piling up run after run.
-# Use seed-test-accounts.sh instead — it is idempotent.
-echo ""
-echo "🚀  Starting dev-env (Ctrl-C to stop)…"
-echo ""
-cd "$DEV_ENV_DIR"
-LOG_ENABLED=true \
-NODE_ENV=development \
-DEV_ENV_PDS_DATA_DIRECTORY="$DATA_DIR/pds" \
-DEV_ENV_PDS_BLOBSTORE_DIRECTORY="$DATA_DIR/blobs" \
-DEV_ENV_PLC_DIRECTORY="$DATA_DIR/plc" \
-DEV_ENV_SKIP_MOCK_SETUP="${DEV_ENV_SKIP_MOCK_SETUP:-1}" \
-DEV_ENV_SKIP_PARA_DEMO_SEED="${DEV_ENV_SKIP_PARA_DEMO_SEED:-1}" \
-  exec "$INFRA_DIR/with-redis-and-db.sh" \
+cd "$ROOT/packages/dev-env"
+pnpm run build
+node --enable-source-maps dist/local-doctor.js "$DATA_DIR"
+
+# Force regeneration of the migration registry; incremental builds can leave
+# an obsolete dist/index.js after a migration was renamed on another branch.
+cd "$ROOT/packages/bsky"
+../../node_modules/.bin/tsc --build tsconfig.build.json --force
+
+# The durable db and redis containers are deliberately left running on exit.
+docker compose -f "$INFRA/docker-compose.yaml" up -d --wait db redis
+node "$ROOT/scripts/check-dev-migrations.mjs"
+
+cd "$ROOT/packages/dev-env"
+
+export NODE_ENV=development
+export DB_POSTGRES_URL=postgresql://pg:password@127.0.0.1:5434/postgres
+export REDIS_HOST=127.0.0.1:6381
+export DB_POSTGRES_SCHEMA=para_local
+export DEV_ENV_PDS_DATA_DIRECTORY="$DATA_DIR/pds"
+export DEV_ENV_PDS_BLOBSTORE_DIRECTORY="$DATA_DIR/blobs"
+export DEV_ENV_PLC_DIRECTORY="$DATA_DIR/plc"
+export DEV_ENV_PDS_REPO_BACKFILL_LIMIT_MS=315360000000
+export DEV_ENV_SKIP_MOCK_SETUP=1
+export DEV_ENV_SKIP_PARA_DEMO_SEED=1
+export BRIDGE_DB_PATH="$DATA_DIR/bridge/bridge.db"
+export BRIDGE_PDS_SOURCE_ID="$(cat "$SOURCE_FILE")"
+export BRIDGE_BACKFILL_FROM_START=1
+export DEV_ENV_M8_URL="${DEV_ENV_M8_URL:-http://localhost:8787/v1}"
+MUBEZ_ENV="${MUBEZ_DIR:-$ROOT/../mubEZ}/.env"
+export DEV_ENV_M8_RESOLVER_SECRET="${DEV_ENV_M8_RESOLVER_SECRET:-$(sed -n 's/^CIVIC_DELEGATION_RESOLVER_SECRET=//p' "$MUBEZ_ENV" 2>/dev/null | tail -n1)}"
+
+echo "Persistent dev profile: $DATA_DIR (PostgreSQL schema: $DB_POSTGRES_SCHEMA)"
+exec "$ROOT/scripts/with-matrix-bridge.sh" \
   node --enable-source-maps dist/bin.js

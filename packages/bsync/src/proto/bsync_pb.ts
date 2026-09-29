@@ -4,7 +4,7 @@
 // @ts-nocheck
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
-import { Message, proto3 } from "@bufbuild/protobuf";
+import { Message, proto3, Timestamp } from "@bufbuild/protobuf";
 
 /**
  * @generated from enum bsync.Method
@@ -62,6 +62,19 @@ export class MuteOperation extends Message<MuteOperation> {
    */
   subject = "";
 
+  /**
+   * scope restrictions: when any is set, just the scoped content is muted;
+   * when none are set, the subject is fully muted.
+   *
+   * @generated from field: bool only_reposts = 5;
+   */
+  onlyReposts = false;
+
+  /**
+   * @generated from field: bool only_quoteposts = 6;
+   */
+  onlyQuoteposts = false;
+
   constructor(data?: PartialMessage<MuteOperation>) {
     super();
     proto3.util.initPartial(data, this);
@@ -74,6 +87,8 @@ export class MuteOperation extends Message<MuteOperation> {
     { no: 2, name: "type", kind: "enum", T: proto3.getEnumType(MuteOperation_Type) },
     { no: 3, name: "actor_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 4, name: "subject", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "only_reposts", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 6, name: "only_quoteposts", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): MuteOperation {
@@ -144,6 +159,20 @@ export class AddMuteOperationRequest extends Message<AddMuteOperationRequest> {
    */
   subject = "";
 
+  /**
+   * scope restrictions: when any is set, just the scoped content is muted;
+   * when none are set, the subject is fully muted. On an add for an
+   * already-muted subject, the stored scope is replaced with this one.
+   *
+   * @generated from field: bool only_reposts = 4;
+   */
+  onlyReposts = false;
+
+  /**
+   * @generated from field: bool only_quoteposts = 5;
+   */
+  onlyQuoteposts = false;
+
   constructor(data?: PartialMessage<AddMuteOperationRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -155,6 +184,8 @@ export class AddMuteOperationRequest extends Message<AddMuteOperationRequest> {
     { no: 1, name: "type", kind: "enum", T: proto3.getEnumType(MuteOperation_Type) },
     { no: 2, name: "actor_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "subject", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "only_reposts", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 5, name: "only_quoteposts", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AddMuteOperationRequest {
@@ -840,6 +871,80 @@ export class DeleteOperationsByActorAndNamespaceResponse extends Message<DeleteO
 
   static equals(a: DeleteOperationsByActorAndNamespaceResponse | PlainMessage<DeleteOperationsByActorAndNamespaceResponse> | undefined, b: DeleteOperationsByActorAndNamespaceResponse | PlainMessage<DeleteOperationsByActorAndNamespaceResponse> | undefined): boolean {
     return proto3.util.equals(DeleteOperationsByActorAndNamespaceResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message bsync.FanoutNotificationSeenRequest
+ */
+export class FanoutNotificationSeenRequest extends Message<FanoutNotificationSeenRequest> {
+  /**
+   * @generated from field: string actor_did = 1;
+   */
+  actorDid = "";
+
+  /**
+   * @generated from field: google.protobuf.Timestamp timestamp = 2;
+   */
+  timestamp?: Timestamp;
+
+  constructor(data?: PartialMessage<FanoutNotificationSeenRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsync.FanoutNotificationSeenRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "actor_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "timestamp", kind: "message", T: Timestamp },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): FanoutNotificationSeenRequest {
+    return new FanoutNotificationSeenRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): FanoutNotificationSeenRequest {
+    return new FanoutNotificationSeenRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): FanoutNotificationSeenRequest {
+    return new FanoutNotificationSeenRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: FanoutNotificationSeenRequest | PlainMessage<FanoutNotificationSeenRequest> | undefined, b: FanoutNotificationSeenRequest | PlainMessage<FanoutNotificationSeenRequest> | undefined): boolean {
+    return proto3.util.equals(FanoutNotificationSeenRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsync.FanoutNotificationSeenResponse
+ */
+export class FanoutNotificationSeenResponse extends Message<FanoutNotificationSeenResponse> {
+  constructor(data?: PartialMessage<FanoutNotificationSeenResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsync.FanoutNotificationSeenResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): FanoutNotificationSeenResponse {
+    return new FanoutNotificationSeenResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): FanoutNotificationSeenResponse {
+    return new FanoutNotificationSeenResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): FanoutNotificationSeenResponse {
+    return new FanoutNotificationSeenResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: FanoutNotificationSeenResponse | PlainMessage<FanoutNotificationSeenResponse> | undefined, b: FanoutNotificationSeenResponse | PlainMessage<FanoutNotificationSeenResponse> | undefined): boolean {
+    return proto3.util.equals(FanoutNotificationSeenResponse, a, b);
   }
 }
 

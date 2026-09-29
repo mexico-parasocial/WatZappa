@@ -13,3 +13,5 @@ export { default as usersSeed } from './users.js'
 export { default as paraDemoSeed } from './para-demo.js'
 export { createParaFeedGens } from './para-feed-gens.js'
 export { default as verificationsSeed } from './verifications.js'
+
+export { seedDemoMemes } from './para-memes.js'

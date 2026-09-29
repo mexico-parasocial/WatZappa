@@ -1,18 +1,17 @@
 import { msg } from '@lingui/core/macro'
-import {
-  DevicesIcon,
-  GlobeIcon,
-  HouseSimpleIcon,
-  QuestionIcon,
-  UserIcon,
-} from '@phosphor-icons/react'
 import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
-import { FunctionComponent, useMemo } from 'react'
-import { IconProps } from '@phosphor-icons/react'
 import {
-  LayoutPage,
-  LayoutPageLink,
-} from '#/components/layouts/layout-page.tsx'
+  CircleQuestionMarkIcon,
+  GlobeIcon,
+  HouseIcon,
+  MonitorSmartphoneIcon,
+  UserIcon,
+} from 'lucide-react'
+import { useMemo } from 'react'
+import {
+  AccountShell,
+  type AccountShellLink,
+} from '#/components/layouts/account-shell.tsx'
 import { ProvideAuthenticatedSession } from '#/contexts/authentication.tsx'
 import { useSessionContext } from '#/contexts/session.tsx'
 
@@ -40,70 +39,50 @@ export const Route = createFileRoute('/account/u/$accountId')({
   component: AccountLayout,
 })
 
-type SubPage = {
-  title: string | ReturnType<typeof msg>
-  icon?: FunctionComponent<IconProps>
-  hidden?: boolean
-  position?: number
-  description?: string | ReturnType<typeof msg>
-}
-
-const DEFAULT_PAGES: Record<string, SubPage> = {
-  '/': {
-    icon: HouseSimpleIcon,
-    position: 0,
-    title: msg`Home`,
-  },
-  '/manage': {
-    icon: UserIcon,
-    position: 10,
-    title: msg`Account`,
-    description: msg`Manage your account`,
-  },
-  '/devices': {
-    icon: DevicesIcon,
-    position: 20,
-    title: msg`Devices`,
-    description: msg`Manage your active sessions`,
-  },
-  '/apps': {
-    icon: GlobeIcon,
-    position: 30,
-    title: msg`Apps`,
-    description: msg`Manage applications that have access to your account`,
-  },
-  '/about': {
-    icon: QuestionIcon,
-    position: 50,
-    title: msg`About`,
-    description: msg`What is an Atmosphere Account?`,
-  },
-}
-
 function AccountLayout() {
   const { accountId } = Route.useParams()
   const { session } = Route.useRouteContext()
   const { sessions, api, canSwitchAccounts } = useSessionContext()
 
-  const basePath = `/account/u/${accountId}` as const
-
-  const links = useMemo<readonly LayoutPageLink[]>(() => {
-    return Object.entries(DEFAULT_PAGES)
-      .sort(([, a], [, b]) => {
-        if (a.position != null && b.position != null) {
-          const diff = a.position - b.position
-          if (diff !== 0) return diff
-        }
-        return 0
-      })
-      .map(([subPath, page]): LayoutPageLink => ({
-        to: subPath === '/' ? basePath : `${basePath}${subPath}`,
-        title: page.title,
-        description: page.description,
-        hidden: page.hidden,
-        icon: page.icon,
-      }))
-  }, [basePath])
+  const links = useMemo(
+    (): AccountShellLink[] => [
+      {
+        to: '/account/u/$accountId',
+        params: { accountId },
+        Icon: HouseIcon,
+        title: msg`Home`,
+      },
+      {
+        to: '/account/u/$accountId/manage',
+        params: { accountId },
+        Icon: UserIcon,
+        title: msg`Account`,
+        description: msg`Manage your account`,
+      },
+      {
+        to: '/account/u/$accountId/devices',
+        params: { accountId },
+        Icon: MonitorSmartphoneIcon,
+        title: msg`Devices`,
+        description: msg`Manage your active sessions`,
+      },
+      {
+        to: '/account/u/$accountId/apps',
+        params: { accountId },
+        Icon: GlobeIcon,
+        title: msg`Apps`,
+        description: msg`Manage applications that have access to your account`,
+      },
+      {
+        to: '/account/u/$accountId/about',
+        params: { accountId },
+        Icon: CircleQuestionMarkIcon,
+        title: msg`About`,
+        description: msg`What is an Atmosphere Account?`,
+      },
+    ],
+    [accountId],
+  )
 
   const value = useMemo(
     () => ({ session, sessions, canSwitchAccounts, api }),
@@ -112,13 +91,14 @@ function AccountLayout() {
 
   return (
     <ProvideAuthenticatedSession value={value}>
-      <LayoutPage
+      {/* @NOTE `links[0]` is the account home. */}
+      <AccountShell
         title={msg`My Atmosphere Account`}
-        basePath={basePath}
+        base={links[0]}
         links={links}
       >
         <Outlet />
-      </LayoutPage>
+      </AccountShell>
     </ProvideAuthenticatedSession>
   )
 }

@@ -1,15 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
-import { randomUUID } from 'node:crypto'
 import pg from 'pg'
 import type { QueryResult } from 'pg'
-import type {
-  AiConsentRecord,
-  CommunityRoomKind,
-  CommunityRoomSummary,
-  CommunitySpaceMap,
-  SyncLogEntry,
-  UserPushToken,
-} from '../interface.js'
 
 // cjs-module-lexer cannot statically enumerate pg's named exports, so the
 // compiled ESM build crashes on `import { Pool } from 'pg'` at instantiation.
@@ -115,6 +106,11 @@ export class PgBase {
       CREATE TABLE IF NOT EXISTS sync_cursor (
         id INTEGER PRIMARY KEY CHECK (id = 1),
         cursor INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS sync_source (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        source_id TEXT NOT NULL
       );
 
       CREATE TABLE IF NOT EXISTS user_push_tokens (

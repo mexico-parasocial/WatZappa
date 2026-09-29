@@ -1,5 +1,178 @@
 # @atproto/oauth-provider-ui
 
+## 0.10.4
+
+### Patch Changes
+
+- [#5482](https://github.com/bluesky-social/atproto/pull/5482) [`1f639d9`](https://github.com/bluesky-social/atproto/commit/1f639d97498981eea3553b9a20a8538437af9658) Thanks [@abcbrookie](https://github.com/abcbrookie)! - Tighter auth and account screens: one shared button and input size, less copy, error pages shaped like the other auth cards.
+
+## 0.10.3
+
+### Patch Changes
+
+- [#5488](https://github.com/bluesky-social/atproto/pull/5488) [`fe4087e`](https://github.com/bluesky-social/atproto/commit/fe4087ecb7a7cc53c7081c9f97d49121e5251c36) Thanks [@dependabot](https://github.com/apps/dependabot)! - Bump the dev-dependencies group across 1 directory with 30 updates
+
+- [#5463](https://github.com/bluesky-social/atproto/pull/5463) [`9c35046`](https://github.com/bluesky-social/atproto/commit/9c35046f17ac577fc64f8b5caccb8521d3b2584a) Thanks [@bigmoves](https://github.com/bigmoves)! - Restore live normalization of the one-time code input (uppercase, strip characters outside the base32 alphabet, insert the hyphen) and refocus the input after requesting a new code.
+
+- Updated dependencies [[`fe4087e`](https://github.com/bluesky-social/atproto/commit/fe4087ecb7a7cc53c7081c9f97d49121e5251c36)]:
+  - @atproto/oauth-provider-api@0.8.3
+
+## 0.10.2
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-provider-api@0.8.2
+
+## 0.10.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-provider-api@0.8.1
+
+## 0.10.0
+
+### Minor Changes
+
+- [#5347](https://github.com/bluesky-social/atproto/pull/5347) [`6631add`](https://github.com/bluesky-social/atproto/commit/6631add612d9bfd40413ca4e0a0c170f1eb40fca) Thanks [@bigmoves](https://github.com/bigmoves)! - Account manager: make the selected account and the authentication step part of
+  the router instead of in-component state.
+
+  The account manager now uses real routes for authentication (`/account/sign-in`,
+  `/account/sign-up`) and encodes the active account in the URL
+  (`/account/u/<handle-or-did>/…`). A reload now restores both the current
+  sub-page and the selected account from the URL, so a device with several
+  remembered accounts no longer drops back to the account picker on refresh. This
+  replaces the previous `#step=` URL-fragment state machine (still used by the
+  third-party consent flow) for the account-manager entry.
+
+  Routing is now file-based: `src/routes/` is the route tree and
+  `@tanstack/router-plugin` generates it, code-splitting each page so it is only
+  downloaded when visited. Access checks run in `beforeLoad` and redirect before a
+  page renders, rather than in the page itself, and the devices and apps pages
+  load their data through the route's `loader`.
+
+### Patch Changes
+
+- [#5401](https://github.com/bluesky-social/atproto/pull/5401) [`674e4e8`](https://github.com/bluesky-social/atproto/commit/674e4e8328251f286d50adfd0cae02f8e9127304) Thanks [@nilaallj](https://github.com/nilaallj)! - Update Swedish translations
+
+- [#5366](https://github.com/bluesky-social/atproto/pull/5366) [`f5a0af4`](https://github.com/bluesky-social/atproto/commit/f5a0af4465b469203a2a0804e9611474fde50feb) Thanks [@bigmoves](https://github.com/bigmoves)! - Simplify the sign-up username step. The domain is no longer a listbox nested inside the text input: with several domains available it becomes a list of radio rows under the input, and with only one it becomes a preview of the resulting username. The two validation rows collapse into a single hint, and the terms-of-service disclaimer moves to the final step, which is the step that creates the account.
+
+- [#5400](https://github.com/bluesky-social/atproto/pull/5400) [`5db35fc`](https://github.com/bluesky-social/atproto/commit/5db35fc18a92959d81b89c8984fbcfc0a4b8e843) Thanks [@bigmoves](https://github.com/bigmoves)! - The reset-password confirmation screen no longer says "your password was
+  updated" three times over — as a card title, a subtitle and a heading — before
+  telling the user what to do next.
+
+- [#5394](https://github.com/bluesky-social/atproto/pull/5394) [`7d83e7d`](https://github.com/bluesky-social/atproto/commit/7d83e7d27ecef5f42f5e3d8d86239eb04df106a3) Thanks [@Laszlo19](https://github.com/Laszlo19)! - Add Romanian (`ro`) translations.
+
+- [#5377](https://github.com/bluesky-social/atproto/pull/5377) [`795f2c1`](https://github.com/bluesky-social/atproto/commit/795f2c1f5663c1fd1d03577aae86e7bc5d4e1a23) Thanks [@bigmoves](https://github.com/bigmoves)! - Show the current email address and username on the account management screen at every viewport width. They were previously hidden below the `sm` breakpoint, so on mobile the rows gave no indication of what the setting was currently set to. The update-email dialog now names the address it is replacing, and email addresses quoted in dialog copy wrap instead of overflowing the dialog.
+
+## 0.9.2
+
+### Patch Changes
+
+- [#5361](https://github.com/bluesky-social/atproto/pull/5361) [`b47f379`](https://github.com/bluesky-social/atproto/commit/b47f3799adc6ce6fc6435b6009c39044266894b1) Thanks [@bigmoves](https://github.com/bigmoves)! - Center the "You are being redirected..." copy on the post-authorization screen.
+
+- [#5387](https://github.com/bluesky-social/atproto/pull/5387) [`4e18a00`](https://github.com/bluesky-social/atproto/commit/4e18a00b2de97e36b9b00a7fcb8713efd87964d1) Thanks [@bigmoves](https://github.com/bigmoves)! - Internal clean-up of the OAuth provider API surface: the UI now imports the
+  CSRF cookie/header names and the API endpoint prefix from
+  `@atproto/oauth-provider-api` instead of re-declaring them, and optional GET
+  parameters are omitted from the query string rather than sent as the literal
+  string `"undefined"`.
+- Updated dependencies [[`4e18a00`](https://github.com/bluesky-social/atproto/commit/4e18a00b2de97e36b9b00a7fcb8713efd87964d1)]:
+  - @atproto/oauth-provider-api@0.8.0
+
+## 0.9.1
+
+### Patch Changes
+
+- [#5334](https://github.com/bluesky-social/atproto/pull/5334) [`b4d71fc`](https://github.com/bluesky-social/atproto/commit/b4d71fc24f1c907daa67460251f2a8dc904359f9) Thanks [@dependabot](https://github.com/apps/dependabot)! - Bump react-error-boundary from 5.0.0 to 6.1.2
+
+## 0.9.0
+
+### Minor Changes
+
+- [#5305](https://github.com/bluesky-social/atproto/pull/5305) [`fca9bd8`](https://github.com/bluesky-social/atproto/commit/fca9bd8fd3384a1f45f9540654edac8db774aecb) Thanks [@bigmoves](https://github.com/bigmoves)! - Rebuild the OAuth provider UI on shadcn/ui (Base UI, `base-nova`). Same flows,
+  steps and copy; the UX patterns are recomposed for shadcn. Forms use the
+  browser's native constraint validation on Base UI (no form library), icons move
+  to Lucide, and toasts to the Base UI toast. Branding colours configured on the
+  provider apply at runtime, with a neutral fallback when none are set.
+
+### Patch Changes
+
+- [#5305](https://github.com/bluesky-social/atproto/pull/5305) [`fca9bd8`](https://github.com/bluesky-social/atproto/commit/fca9bd8fd3384a1f45f9540654edac8db774aecb) Thanks [@bigmoves](https://github.com/bigmoves)! - Add an optional per-scheme background image to the authorization screens via `branding.background`. The provider paints the configured light and dark image behind the auth card (`cover` / `center` over the neutral base), chosen by `prefers-color-scheme`. On the PDS, configure it with `PDS_BACKGROUND_LIGHT_URL` and `PDS_BACKGROUND_DARK_URL`.
+
+- [#5311](https://github.com/bluesky-social/atproto/pull/5311) [`16bfd80`](https://github.com/bluesky-social/atproto/commit/16bfd80750e389b58a634226a24c4ae93a7c95c4) Thanks [@dolciss](https://github.com/dolciss)! - Update Japanese translations
+
+## 0.8.11
+
+### Patch Changes
+
+- [#5310](https://github.com/bluesky-social/atproto/pull/5310) [`2021690`](https://github.com/bluesky-social/atproto/commit/2021690f281bcee7178a040bf9fa6baadff06f82) Thanks [@nilaallj](https://github.com/nilaallj)! - Updated Swedish translations
+
+- [#5296](https://github.com/bluesky-social/atproto/pull/5296) [`aad541b`](https://github.com/bluesky-social/atproto/commit/aad541bb0577cefecdc2af315dd1ad216912b1ad) Thanks [@nilaallj](https://github.com/nilaallj)! - l10n: Plural formatting + string concatenation fixes
+
+- Updated dependencies []:
+  - @atproto/oauth-provider-api@0.7.9
+
+## 0.8.10
+
+### Patch Changes
+
+- [#5295](https://github.com/bluesky-social/atproto/pull/5295) [`6a3d607`](https://github.com/bluesky-social/atproto/commit/6a3d6073cb66c527b5b109242049c85c36b9658c) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Update lingui dependency
+
+- [#5295](https://github.com/bluesky-social/atproto/pull/5295) [`6a3d607`](https://github.com/bluesky-social/atproto/commit/6a3d6073cb66c527b5b109242049c85c36b9658c) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Update vitest dependencies
+
+- [#5295](https://github.com/bluesky-social/atproto/pull/5295) [`6a3d607`](https://github.com/bluesky-social/atproto/commit/6a3d6073cb66c527b5b109242049c85c36b9658c) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Update Vite to version 8
+
+- [#5301](https://github.com/bluesky-social/atproto/pull/5301) [`8c07338`](https://github.com/bluesky-social/atproto/commit/8c07338232aa69427aa65322a555f70e0211d6d7) Thanks [@43081j](https://github.com/43081j)! - Switch from destructured default imports to named imports of CommonJS dependencies.
+
+- Updated dependencies []:
+  - @atproto/oauth-provider-api@0.7.8
+
+## 0.8.9
+
+### Patch Changes
+
+- [#5286](https://github.com/bluesky-social/atproto/pull/5286) [`6866a5d`](https://github.com/bluesky-social/atproto/commit/6866a5d40be652bd83177332183ef346223f6012) Thanks [@dolciss](https://github.com/dolciss)! - Add Japanese (ja) translations
+
+## 0.8.8
+
+### Patch Changes
+
+- [#5220](https://github.com/bluesky-social/atproto/pull/5220) [`5d2943e`](https://github.com/bluesky-social/atproto/commit/5d2943ea2ab1eea1f0d522d38ca5a047c3380c79) Thanks [@AG0708](https://github.com/AG0708)! - Show each connected app's granted OAuth permissions before access is revoked.
+
+- [#5280](https://github.com/bluesky-social/atproto/pull/5280) [`9556dcb`](https://github.com/bluesky-social/atproto/commit/9556dcb5855a1a1b9a2dc119e0fd4abbb8b27198) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Remove redundent `vitest.config.ts` file
+
+- [#5273](https://github.com/bluesky-social/atproto/pull/5273) [`87e6a95`](https://github.com/bluesky-social/atproto/commit/87e6a95c39f199e53b6a68b7d1fa23fbe8459753) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Fix a bug that would cause oauth session not recently refreshed not to be listed in the UI.
+
+- [#5274](https://github.com/bluesky-social/atproto/pull/5274) [`0e773f3`](https://github.com/bluesky-social/atproto/commit/0e773f33468c5ecf14c5e999512b86fa697d4bff) Thanks [@bigmoves](https://github.com/bigmoves)! - Fix missing list bullets on the account "About" page at mobile widths, where the base `prose` class was only applied from the `md` breakpoint up.
+
+- [#5275](https://github.com/bluesky-social/atproto/pull/5275) [`d692128`](https://github.com/bluesky-social/atproto/commit/d6921289c2c537c8d1cead65e7ad4f81f11299f6) Thanks [@bigmoves](https://github.com/bigmoves)! - Remove the `↗` marker appended to external links.
+
+- [#5268](https://github.com/bluesky-social/atproto/pull/5268) [`602f4a8`](https://github.com/bluesky-social/atproto/commit/602f4a8199d5db0cf98bb6fe09010c0a375c8554) Thanks [@bigmoves](https://github.com/bigmoves)! - Restore the current authorization flow step on page refresh by encoding it in the URL fragment (`#step=<slug>`)
+
+- [#5188](https://github.com/bluesky-social/atproto/pull/5188) [`28caa70`](https://github.com/bluesky-social/atproto/commit/28caa70dd4c4406eccce35d72adee23354c377ae) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Update react dependency
+
+- [#5269](https://github.com/bluesky-social/atproto/pull/5269) [`df27599`](https://github.com/bluesky-social/atproto/commit/df275998ad56b21a49e102b2fc1a2e5ee9e5bfc3) Thanks [@bigmoves](https://github.com/bigmoves)! - Use "sign in" terminology consistently in the OAuth authorization flow: the post-authorization redirect screen now says "Sign-in complete" / "Sign-in canceled" (previously "Login complete" / "Login canceled"), and the account picker's "Another account" option is labeled "Sign in to an account that is not listed"
+
+- Updated dependencies [[`87e6a95`](https://github.com/bluesky-social/atproto/commit/87e6a95c39f199e53b6a68b7d1fa23fbe8459753)]:
+  - @atproto/oauth-provider-api@0.7.7
+
+## 0.8.7
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-provider-api@0.7.6
+
+## 0.8.6
+
+### Patch Changes
+
+- [#5197](https://github.com/bluesky-social/atproto/pull/5197) [`a0c49d9`](https://github.com/bluesky-social/atproto/commit/a0c49d9e8bc685c5a747a8d3b2775c73c63fdb6f) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Rewrite import statements to be compatible with TypeScript's `verbatimModuleSyntax` config.
+
+- Updated dependencies []:
+  - @atproto/oauth-provider-api@0.7.5
+
 ## 0.8.5
 
 ### Patch Changes

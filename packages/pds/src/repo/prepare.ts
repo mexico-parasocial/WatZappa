@@ -2,6 +2,8 @@ import {
   TID,
   ballotWriteRefusal,
   reactionWriteRefusal,
+  repostWriteRefusal,
+  verifyCabildeoDelegation,
   verifyCabildeoProof,
 } from '@atproto/common'
 import { RecordSchema, walk } from '@atproto/lex'
@@ -38,6 +40,7 @@ import {
   type PreparedDelete,
   type PreparedUpdate,
   type PreparedWrite,
+  UnsupportedRecordError,
   type ValidationStatus,
 } from './types.js'
 
@@ -163,6 +166,8 @@ async function prepareWrite(opts: {
       ballotWriteRefusal(opts.collection, opts.record) ??
       reactionWriteRefusal(opts.collection, opts.record)
     if (refusal) throw new BallotRefusedError(refusal)
+    const repostRefusal = repostWriteRefusal(opts.collection)
+    if (repostRefusal) throw new UnsupportedRecordError(repostRefusal)
     if (opts.collection === 'com.para.civic.vote') {
       try {
         if (!(await verifyCabildeoProof(opts.did, opts.record))) {
@@ -174,6 +179,20 @@ async function prepareWrite(opts: {
         if (error instanceof BallotRefusedError) throw error
         throw new BallotRefusedError(
           'Civic vote verification is unavailable; no vote was written',
+        )
+      }
+    }
+    if (opts.collection === 'com.para.civic.delegation') {
+      try {
+        if (!(await verifyCabildeoDelegation(opts.did, opts.record))) {
+          throw new BallotRefusedError(
+            'A valid civic delegation proof is required',
+          )
+        }
+      } catch (error) {
+        if (error instanceof BallotRefusedError) throw error
+        throw new BallotRefusedError(
+          'Civic delegation verification is unavailable; no delegation was written',
         )
       }
     }

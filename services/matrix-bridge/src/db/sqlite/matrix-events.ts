@@ -65,6 +65,15 @@ export class MatrixEventsArea extends ConsentPrefsArea {
     return !!row
   }
 
+  getEventSender(roomId: string, eventId: string): string | undefined {
+    const row = this.db
+      .prepare(
+        'SELECT sender FROM matrix_events WHERE room_id = ? AND event_id = ?',
+      )
+      .get(roomId, eventId) as { sender: string } | undefined
+    return row?.sender
+  }
+
   getRecentEvents(roomId: string, limit = 100): any[] {
     return this.db
       .prepare(

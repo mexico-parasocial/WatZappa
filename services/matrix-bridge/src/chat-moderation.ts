@@ -14,6 +14,75 @@ import type { EventBus } from './events/bus.js'
 
 export type BadgeSeverity = 'info' | 'warning' | 'critical'
 
+/**
+ * Reasons a chat message can be reported for. A fixed set, not free text: a
+ * free-text reason is a channel for pasting the reported message, which F4
+ * and D2 rule out (the message stays in the room; moderators read it there).
+ */
+export const MESSAGE_REPORT_REASONS = [
+  'spam',
+  'harassment',
+  'hate',
+  'violence',
+  'impersonation',
+  'other',
+] as const
+export type MessageReportReason = (typeof MESSAGE_REPORT_REASONS)[number]
+
+export function isMessageReportReason(
+  value: unknown,
+): value is MessageReportReason {
+  return (MESSAGE_REPORT_REASONS as readonly unknown[]).includes(value)
+}
+
+/**
+ * What moderators see of the reports against one message (or, for member
+ * reports with no event, against one member).
+ *
+ * Deliberately no reporter identity: `reporterCount` says how many distinct
+ * people reported, not who. A moderator in conflict with a reporter cannot use
+ * the queue to find them. The message text is not here either (F4, D2): the
+ * moderator opens `matrixEventId` in the room from their own client.
+ */
+export interface ModerationReportGroup {
+  reportedDid: string
+  matrixRoomId: string | null
+  matrixEventId: string | null
+  reportCount: number
+  reporterCount: number
+  reasons: Record<string, number>
+  firstReportedAt: string
+  lastReportedAt: string
+}
+
+/**
+ * Report times as ISO-8601 UTC for every driver. Postgres returns a Date;
+ * SQLite's datetime('now') returns 'YYYY-MM-DD HH:MM:SS' in UTC without a zone,
+ * which some JS engines (Hermes) parse inconsistently.
+ */
+function toIsoUtc(value: unknown): string {
+  if (value instanceof Date) return value.toISOString()
+  const text = String(value)
+  const sqlite = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}(?:\.\d+)?)$/.exec(
+    text,
+  )
+  if (sqlite) return new Date(`${sqlite[1]}T${sqlite[2]}Z`).toISOString()
+  const parsed = new Date(text)
+  return Number.isNaN(parsed.getTime()) ? text : parsed.toISOString()
+}
+
+export type ReportedMessageResolution =
+  | { ok: true; reportedDid: string }
+  | {
+      ok: false
+      code:
+        | 'RoomNotInCommunity'
+        | 'EventNotFound'
+        | 'SenderNotAttributable'
+        | 'ReportedDidMismatch'
+        | 'SelfReport'
+    }
+
 export interface ChatBadge {
   type: string
   label: string
@@ -85,6 +154,45 @@ export class ChatModerationEngine {
    * There is deliberately no `context` parameter: an excerpt that cannot be
    * passed in cannot be persisted by a later caller who has not read this.
    */
+  /**
+   * Who sent a reported chat message, resolved on the bridge rather than taken
+   * from the client.
+   *
+   * The reporter only knows the sender's MXID, and since CD-M1 an MXID does not
+   * reveal a DID to clients, so the app cannot and should not name one. The
+   * bridge resolves it from its own ingested events and minted sessions, and a
+   * client-supplied `reportedDid`, if any, must agree: otherwise anyone could
+   * pin a report on anyone by naming a DID beside an unrelated event.
+   */
+  async resolveReportedMessage(params: {
+    reporterDid: string
+    communityUri: string
+    matrixRoomId: string
+    matrixEventId: string
+    reportedDid?: string
+  }): Promise<ReportedMessageResolution> {
+    const community = await this.db.getCommunityByRoomId(params.matrixRoomId)
+    if (!community || community.communityUri !== params.communityUri) {
+      return { ok: false, code: 'RoomNotInCommunity' }
+    }
+    const sender = await this.db.getEventSender(
+      params.matrixRoomId,
+      params.matrixEventId,
+    )
+    if (!sender) return { ok: false, code: 'EventNotFound' }
+    // An MXID without a bridge-minted session (e.g. a MAS-native login) has no
+    // DID here. That is the CD-M1 boundary holding, not a lookup miss.
+    const reportedDid = await this.db.getDidForMxid(sender)
+    if (!reportedDid) return { ok: false, code: 'SenderNotAttributable' }
+    if (params.reportedDid && params.reportedDid !== reportedDid) {
+      return { ok: false, code: 'ReportedDidMismatch' }
+    }
+    if (reportedDid === params.reporterDid) {
+      return { ok: false, code: 'SelfReport' }
+    }
+    return { ok: true, reportedDid }
+  }
+
   async ingestReport(params: {
     reportedDid: string
     reporterDid: string
@@ -420,7 +528,6 @@ export class ChatModerationEngine {
     reportedThisWeek: number
     sanctionedNow: number
     riskDistribution: { low: number; warning: number; critical: number }
-    recentEvents: any[]
   }> {
     const stats = await this.db.getParticipationStatsByCommunity(communityUri)
     const summary = await this.db.getCommunityBadgeSummary(communityUri)
@@ -459,8 +566,58 @@ export class ChatModerationEngine {
         warning: summary.warning,
         critical: summary.critical,
       },
-      recentEvents: recentReports.slice(0, 20),
     }
+  }
+
+  /**
+   * The community's report queue, grouped by reported message (or by member
+   * for reports with no event), newest activity first.
+   */
+  async listReports(
+    communityUri: string,
+    opts: { days?: number; limit?: number } = {},
+  ): Promise<ModerationReportGroup[]> {
+    const rows = await this.db.getRecentReportsForCommunity(
+      communityUri,
+      opts.days ?? 30,
+    )
+    const groups = new Map<
+      string,
+      ModerationReportGroup & { reporters: Set<string> }
+    >()
+    for (const row of rows) {
+      const eventId: string | null = row.reported_event_id ?? null
+      const key = eventId ? `event:${eventId}` : `member:${row.did}`
+      const createdAt = toIsoUtc(row.created_at)
+      let group = groups.get(key)
+      if (!group) {
+        group = {
+          reportedDid: row.did,
+          matrixRoomId: row.matrix_room_id ?? null,
+          matrixEventId: eventId,
+          reportCount: 0,
+          reporterCount: 0,
+          reasons: {},
+          firstReportedAt: createdAt,
+          lastReportedAt: createdAt,
+          reporters: new Set(),
+        }
+        groups.set(key, group)
+      }
+      group.reportCount++
+      if (row.reporter_did) group.reporters.add(row.reporter_did)
+      const reason = row.report_reason ?? 'other'
+      group.reasons[reason] = (group.reasons[reason] ?? 0) + 1
+      if (createdAt < group.firstReportedAt) group.firstReportedAt = createdAt
+      if (createdAt > group.lastReportedAt) group.lastReportedAt = createdAt
+    }
+    return [...groups.values()]
+      .map(({ reporters, ...group }) => ({
+        ...group,
+        reporterCount: reporters.size,
+      }))
+      .sort((a, b) => (a.lastReportedAt < b.lastReportedAt ? 1 : -1))
+      .slice(0, opts.limit ?? 50)
   }
 
   /**

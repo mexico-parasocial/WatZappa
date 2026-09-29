@@ -33,7 +33,12 @@ const container = document.getElementById('root')!
  */
 const { searchParams } = new URL(window.location.href)
 
+// This is what enables the "single account" mode. If present, the user is
+// constrained to the account with this handle or DID. If absent, the user can
+// switch between any of the sessions on the device. If missing, the display,
+// nonce and redirect_uri params are ignored.
 const forcedIdentifier = searchParams.get('login_hint') || undefined
+
 const nonce = searchParams.get('nonce') || undefined
 const callbackUrl = searchParams.get('redirect_uri') || undefined
 const isPopup = searchParams.get('display') === 'popup'
@@ -47,6 +52,8 @@ const done = forcedIdentifier
       }
     : isPopup
       ? () => {
+          // Posted on several targets because the opener may be on a different
+          // origin (mobile webview, browser popup, ...).
           window.opener?.postMessage({ nonce, event: 'done' }, '*')
           window.postMessage({ nonce, event: 'done' }, '*')
           window.close()

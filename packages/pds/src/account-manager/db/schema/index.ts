@@ -1,22 +1,24 @@
-import * as account from './account.js'
-import * as accountDevice from './account-device.js'
-import * as actor from './actor.js'
-import * as alphaRollout from './alpha-rollout.js'
-import * as appPassword from './app-password.js'
-import * as oauthRequest from './authorization-request.js'
-import * as authorizedClient from './authorized-client.js'
-import * as device from './device.js'
-import * as emailToken from './email-token.js'
-import * as inviteCode from './invite-code.js'
-import * as lexicon from './lexicon.js'
-import * as refreshToken from './refresh-token.js'
-import * as repoRoot from './repo-root.js'
-import * as token from './token.js'
-import * as usedRefreshToken from './used-refresh-token.js'
+import type * as accountDevice from './account-device.js'
+import type * as accountEmailAuthFactor from './account-email-auth-factor.js'
+import type * as account from './account.js'
+import type * as actor from './actor.js'
+import type * as alphaRollout from './alpha-rollout.js'
+import type * as appPassword from './app-password.js'
+import type * as oauthRequest from './authorization-request.js'
+import type * as authorizedClient from './authorized-client.js'
+import type * as device from './device.js'
+import type * as emailToken from './email-token.js'
+import type * as inviteCode from './invite-code.js'
+import type * as lexicon from './lexicon.js'
+import type * as refreshToken from './refresh-token.js'
+import type * as repoRoot from './repo-root.js'
+import type * as token from './token.js'
+import type * as usedRefreshToken from './used-refresh-token.js'
 
 export type DatabaseSchema = actor.PartialDB &
   account.PartialDB &
   accountDevice.PartialDB &
+  accountEmailAuthFactor.PartialDB &
   authorizedClient.PartialDB &
   device.PartialDB &
   oauthRequest.PartialDB &

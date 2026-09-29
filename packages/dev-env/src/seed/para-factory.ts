@@ -1,6 +1,11 @@
 import { request } from 'undici'
 import type { DidString } from '@atproto/syntax'
 import { AppBskyEmbedExternal } from '@atproto/api'
+import {
+  type DevDelegationClaim,
+  devCabildeoVoteProof,
+  devDelegationProof,
+} from '../civic-verifier.js'
 import { SeedClient } from './client.js'
 
 export type ParaStrongRef = {
@@ -410,6 +415,34 @@ export const createCabildeoRecord = async (
   return { uri: data.uri, cid: data.cid }
 }
 
+/** Advances a cabildeo's phase the way PARA does: the author rewrites it. */
+export const setCabildeoPhase = async (
+  sc: SeedClient,
+  by: DidString,
+  cabildeoUri: string,
+  phase: CabildeoPhase,
+): Promise<ParaStrongRef> => {
+  const rkey = cabildeoUri.split('/').pop()!
+  const { data: current } = await sc.agent.com.atproto.repo.getRecord({
+    repo: by,
+    collection: COM_PARA_CIVIC_CABILDEO,
+    rkey,
+  })
+  const { data } = await sc.agent.com.atproto.repo.putRecord(
+    {
+      repo: by,
+      collection: COM_PARA_CIVIC_CABILDEO,
+      rkey,
+      record: { ...(current.value as Record<string, unknown>), phase },
+    },
+    {
+      encoding: 'application/json',
+      headers: sc.getHeaders(by),
+    },
+  )
+  return { uri: data.uri, cid: data.cid }
+}
+
 export const createCabildeoPositionRecord = async (
   sc: SeedClient,
   by: DidString,
@@ -464,8 +497,19 @@ export const createCabildeoVoteRecord = async (
         cabildeo: opts.cabildeo,
         selectedOption: opts.selectedOption,
         isDirect: opts.isDirect,
-        voteNullifier: opts.voteNullifier,
-        eligibilityProofRef: opts.eligibilityProofRef,
+        // Unless the caller supplies its own, mint a proof the dev-env m8
+        // stand-in accepts (see civic-verifier.ts).
+        ...(opts.eligibilityProofRef
+          ? {
+              voteNullifier: opts.voteNullifier,
+              eligibilityProofRef: opts.eligibilityProofRef,
+            }
+          : devCabildeoVoteProof(
+              by,
+              opts.cabildeo,
+              opts.selectedOption,
+              opts.voteNullifier,
+            )),
         createdAt: new Date().toISOString(),
       },
     },
@@ -481,19 +525,36 @@ export const createCabildeoVoteRecord = async (
 export const createCabildeoDelegationRecord = async (
   sc: SeedClient,
   by: DidString,
-  opts: {
-    cabildeo?: string
-    delegateTo: string
-  },
+  opts:
+    | { cabildeo: string; delegateTo: string; eligibilityProofRef?: string }
+    | {
+        cabildeo?: undefined
+        delegateTo: string
+        party: string
+        community: string
+        scopeFlairs: string[]
+        eligibilityProofRef?: string
+      },
 ): Promise<ParaStrongRef> => {
+  const claim: DevDelegationClaim =
+    opts.cabildeo !== undefined
+      ? { mode: 'active', delegateTo: opts.delegateTo, cabildeo: opts.cabildeo }
+      : {
+          mode: 'passive',
+          delegateTo: opts.delegateTo,
+          party: opts.party,
+          community: opts.community,
+          scopeFlairs: opts.scopeFlairs,
+        }
   const { data } = await sc.agent.com.atproto.repo.createRecord(
     {
       repo: by,
       collection: COM_PARA_CIVIC_DELEGATION,
       record: {
         $type: COM_PARA_CIVIC_DELEGATION,
-        cabildeo: opts.cabildeo,
-        delegateTo: opts.delegateTo,
+        ...claim,
+        eligibilityProofRef:
+          opts.eligibilityProofRef ?? devDelegationProof(by, claim),
         createdAt: new Date().toISOString(),
       },
     },

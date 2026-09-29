@@ -1,5 +1,7 @@
 export interface Config {
   pdsFirehoseUrl: string
+  pdsSourceId?: string
+  backfillFromStart: boolean
   /**
    * DID PLC directory used to resolve firehose commits. Defaults to the public
    * directory; a local dev-env mints DIDs on its own PLC (:2582), and without
@@ -63,6 +65,8 @@ function firehoseServiceBase(url: string): string {
 
 export function loadConfig(): Config {
   return {
+    pdsSourceId: process.env.BRIDGE_PDS_SOURCE_ID || undefined,
+    backfillFromStart: process.env.BRIDGE_BACKFILL_FROM_START === '1',
     plcUrl: process.env.PLC_URL || undefined,
     pdsFirehoseUrl: firehoseServiceBase(
       env('PDS_FIREHOSE_URL', 'wss://pds.para.social'),

@@ -155,95 +155,120 @@ export function createMatrixProjection(
     return 0
   }
 
-  /** Join one member into the right rooms with the right power levels. */
-  const joinMemberRooms = async (
+  const isModerator = (roles: string[]): boolean =>
+    roles.includes('owner') || roles.includes('moderator')
+
+  type RoleOpts = {
+    roles: string[]
+    chamber: 'A' | 'B' | null
+    isObserver: boolean
+  }
+
+  /**
+   * The rooms a member is entitled to, with the power level to hold in each
+   * (`undefined`: join, leave power levels as they are).
+   *
+   * Moderators and owners are entitled to every room of the community, both
+   * chambers and the observer room included, at their moderator level. They
+   * read reported messages in the room from their own client (D2, PARA
+   * docs/MATRIX-D2-*), and in an encrypted room a member cannot decrypt what
+   * was sent before they joined: a moderator outside a chamber cannot review
+   * it, and one who joins late cannot review its past. So they join all rooms
+   * at their first verified join, and on promotion.
+   */
+  const entitledRooms = (
     space: CommunitySpaceMap,
-    did: string,
-    mxid: string,
-    opts: { roles: string[]; chamber: 'A' | 'B' | null; isObserver: boolean },
-  ): Promise<string[]> => {
-    const joined: string[] = []
-    await ensureUserExists(mxid)
-
-    // Everyone gets the main space (announcements + votes).
-    joined.push(await matrix.joinUser(space.spaceId, mxid))
-
+    opts: RoleOpts,
+  ): Array<{ roomId: string; powerLevel?: number }> => {
+    const level = powerLevelForRoles(opts.roles)
+    const rooms: Array<{ roomId: string; powerLevel?: number }> = [
+      { roomId: space.spaceId, powerLevel: level },
+    ]
+    const chambers = [space.chamberA_RoomId, space.chamberB_RoomId].filter(
+      (roomId): roomId is string => Boolean(roomId),
+    )
+    if (isModerator(opts.roles)) {
+      for (const roomId of chambers) rooms.push({ roomId, powerLevel: level })
+      if (space.observerRoomId) {
+        rooms.push({ roomId: space.observerRoomId, powerLevel: level })
+      }
+      return rooms
+    }
     if (opts.isObserver) {
       // Observers join both chambers read-only (PL = -1) and participate
       // fully in the observer room.
-      for (const roomId of [space.chamberA_RoomId, space.chamberB_RoomId]) {
-        if (!roomId) continue
-        joined.push(await matrix.joinUser(roomId, mxid))
-        await matrix.setPowerLevel(roomId, mxid, -1)
-      }
-      if (space.observerRoomId) {
-        joined.push(await matrix.joinUser(space.observerRoomId, mxid))
-      }
-      await matrix.setPowerLevel(
-        space.spaceId,
-        mxid,
-        powerLevelForRoles(opts.roles),
-      )
-      return joined
+      for (const roomId of chambers) rooms.push({ roomId, powerLevel: -1 })
+      if (space.observerRoomId) rooms.push({ roomId: space.observerRoomId })
+      return rooms
     }
-
     if (space.chamberMode === 'bicameral' && opts.chamber) {
       const chamberRoomId =
         opts.chamber === 'A' ? space.chamberA_RoomId : space.chamberB_RoomId
       if (!chamberRoomId) {
         throw new Error(`Chamber ${opts.chamber} room not found for community`)
       }
-      joined.push(await matrix.joinUser(chamberRoomId, mxid))
-      await matrix.setPowerLevel(
-        chamberRoomId,
-        mxid,
-        powerLevelForRoles(opts.roles),
-      )
+      rooms.push({ roomId: chamberRoomId, powerLevel: level })
+    }
+    return rooms
+  }
+
+  /** Join one member into the right rooms with the right power levels. */
+  const joinMemberRooms = async (
+    space: CommunitySpaceMap,
+    did: string,
+    mxid: string,
+    opts: RoleOpts,
+  ): Promise<string[]> => {
+    const rooms = entitledRooms(space, opts)
+    await ensureUserExists(mxid)
+    const joined: string[] = []
+    for (const { roomId, powerLevel } of rooms) {
+      joined.push(await matrix.joinUser(roomId, mxid))
+      if (powerLevel !== undefined) {
+        await matrix.setPowerLevel(roomId, mxid, powerLevel)
+      }
+    }
+    if (space.chamberMode === 'bicameral' && opts.chamber) {
       log.info(
         { communityUri: space.communityUri, did, chamber: opts.chamber },
         'Verified join placed member in chamber',
       )
     }
-
-    await matrix.setPowerLevel(
-      space.spaceId,
-      mxid,
-      powerLevelForRoles(opts.roles),
-    )
     return joined
   }
 
-  /** Write the member's current roles as power levels for specific accounts. */
+  /**
+   * Write the member's current roles onto specific accounts: join the rooms
+   * they are now entitled to (a promotion to moderator reaches every room),
+   * set their power levels, and remove them from rooms they no longer are (a
+   * demotion or chamber change), so new room keys stop reaching them. What
+   * they already decrypted stays on their devices.
+   */
   const projectRolesToMxids = async (
     space: CommunitySpaceMap,
     mxids: string[],
-    opts: { roles: string[]; chamber: 'A' | 'B' | null; isObserver: boolean },
+    opts: RoleOpts,
   ): Promise<void> => {
     if (mxids.length === 0) return
-    const chamberRoomId =
-      opts.isObserver || !opts.chamber
-        ? null
-        : opts.chamber === 'A'
-          ? space.chamberA_RoomId
-          : space.chamberB_RoomId
+    const rooms = entitledRooms(space, opts)
+    const entitled = new Set(rooms.map((room) => room.roomId))
+    const notEntitled = communityRoomIds(space).filter(
+      (roomId) => !entitled.has(roomId),
+    )
     for (const mxid of mxids) {
-      if (opts.isObserver) {
-        for (const roomId of [space.chamberA_RoomId, space.chamberB_RoomId]) {
-          if (!roomId) continue
-          await matrix.setPowerLevel(roomId, mxid, -1)
+      for (const { roomId, powerLevel } of rooms) {
+        // Force-join is idempotent for a member already in the room.
+        if (roomId !== space.spaceId) await matrix.joinUser(roomId, mxid)
+        if (powerLevel !== undefined) {
+          await matrix.setPowerLevel(roomId, mxid, powerLevel)
         }
-      } else if (chamberRoomId) {
-        await matrix.setPowerLevel(
-          chamberRoomId,
-          mxid,
-          powerLevelForRoles(opts.roles),
-        )
       }
-      await matrix.setPowerLevel(
-        space.spaceId,
-        mxid,
-        powerLevelForRoles(opts.roles),
-      )
+      for (const roomId of notEntitled) {
+        const members = await matrix.getRoomMembers(roomId)
+        if (members.some((member) => member.user_id === mxid)) {
+          await matrix.kickUser(roomId, mxid, 'Role no longer covers this room')
+        }
+      }
     }
   }
 

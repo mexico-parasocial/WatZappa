@@ -13,6 +13,12 @@ export interface MatrixEventsStore {
 
   eventExists(eventId: string): Promise<boolean>
 
+  /**
+   * The MXID that sent `eventId` in `roomId`, from ingested events. Bound to
+   * the room so an event ID from another room resolves to nothing.
+   */
+  getEventSender(roomId: string, eventId: string): Promise<string | undefined>
+
   getRecentEvents(roomId: string, limit?: number): Promise<any[]>
 
   setReadMarker(did: string, roomId: string, eventId: string): Promise<void>

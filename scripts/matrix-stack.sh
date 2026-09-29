@@ -20,6 +20,7 @@
 #   scripts/matrix-stack.sh status
 #   scripts/matrix-stack.sh logs      [service] [-f]
 #   scripts/matrix-stack.sh doctor
+#   scripts/matrix-stack.sh element-local
 #
 # The bridge is NOT started by default: in local dev it runs on the host under
 # scripts/with-matrix-bridge.sh (which owns :3001 and the on-disk bridge.db).
@@ -188,6 +189,12 @@ cmd_logs() {
 }
 
 case "${1:-}" in
+  element-local)
+    preflight
+    docker compose -p "$PROJECT" -f "$COMPOSE_FILE" \
+      -f "$ROOT/deploy/matrix/compose.element-local.yaml" \
+      up -d --no-deps element-web
+    ;;
   up)      shift; cmd_up "$@" ;;
   down)    shift; cmd_down "$@" ;;
   restart) shift; cmd_down; cmd_up "$@" ;;

@@ -18,6 +18,9 @@ const run = async () => {
 
 [ created by Bluesky ]`)
 
+  // The local dev stack behaves like a PARA deployment: no reposts. (Test
+  // networks allow them for the upstream suites; see util.ts.)
+  process.env.PARA_REPOSTS_ENABLED ??= '0'
   const runtimeConfig = buildDevEnvRuntimeConfig()
   // Local stand-in for the private IRIS/suggestions/topics agents so the
   // unspecced suggestion & trending endpoints return seeded data instead of 501

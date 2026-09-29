@@ -6,6 +6,8 @@ import type {
   ConfirmEmailVerificationInput,
   ConfirmResetPasswordInput,
   DeactivateAccountInput,
+  DisableEmailAuthFactorInput,
+  EnableEmailAuthFactorInput,
   InitiateAccountDeletionInput,
   InitiateEmailUpdateInput,
   InitiateEmailUpdateOutput,
@@ -17,42 +19,32 @@ import type {
 import type { OAuthScope } from '@atproto/oauth-types'
 import type { DatetimeString, HandleString } from '@atproto/syntax'
 import type { ClientId } from '../client/client-id.js'
+import type { DeviceData } from '../device/device-data.js'
 import type { DeviceId } from '../device/device-id.js'
-import type { DeviceData } from '../device/device-store.js'
+import type { SessionId } from '../device/session-id.js'
+import type { HandleUnavailableReason } from '../errors/handle-unavailable-error.js'
 import type { HcaptchaVerifyResult } from '../lib/hcaptcha.js'
 import type { Awaitable } from '../lib/util/type.js'
 import { buildInterfaceChecker } from '../lib/util/type.js'
-import type {
-  HandleUnavailableError,
-  InvalidCredentialsError,
-  InvalidRequestError,
-  SecondAuthenticationFactorRequiredError,
-} from '../oauth-errors.js'
 import type { InviteCode } from '../types/invite-code.js'
 import type { SignUpInput } from './sign-up-input.js'
 
 // Export all types needed to implement the AccountStore interface
-
-export * from '../client/client-id.js'
-export * from '../device/device-data.js'
-export * from '../device/device-id.js'
-export * from '../request/request-id.js'
-
 export type {
   Account,
+  ClientId,
+  DeviceData,
+  DeviceId,
   Did,
+  DisableEmailAuthFactorInput,
+  EnableEmailAuthFactorInput,
   HandleString,
+  HandleUnavailableReason,
   HcaptchaVerifyResult,
   InviteCode,
   OAuthScope,
+  SessionId,
   SignUpInput,
-}
-
-export {
-  HandleUnavailableError,
-  InvalidCredentialsError,
-  InvalidRequestError,
-  SecondAuthenticationFactorRequiredError,
 }
 
 export type ResetPasswordRequestInput = InitiatePasswordResetInput
@@ -203,8 +195,7 @@ export interface AccountStore {
   removeDeviceAccount(deviceId: DeviceId, did: Did): Awaitable<void>
 
   /**
-   * @returns **all** the device accounts that match the {@link requestId}
-   * criteria and given {@link filter}.
+   * @returns **all** the device accounts matching the given `filter`.
    */
   listDeviceAccounts(
     filter: { did: Did } | { deviceId: DeviceId },
@@ -231,6 +222,41 @@ export interface AccountStore {
 
   verifyEmailRequest(data: VerifyEmailRequestInput): Awaitable<void>
   verifyEmailConfirm(data: VerifyEmailConfirmInput): Awaitable<Account | null>
+
+  /**
+   * Enables the email auth factor on the account.
+   *
+   * @returns the updated account, or `null` when the factor was already enabled
+   * (no-op).
+   *
+   * @note when `null` is returned (no-op), the "confirmed" hook is skipped, so
+   *  a repeat request is not counted as a fresh opt-in.
+   *
+   * @throws {InvalidRequestError} - To indicate enabling cannot take place due
+   * to mismatch of email or email not being verified.
+   */
+  enableEmailAuthFactor(data: EnableEmailAuthFactorInput): Awaitable<Account>
+
+  /**
+   * Two-phase disable flow. When `token` is undefined and the factor is still
+   * enabled, an email-based OTP isÒ dispatched and `{ tokenRequired: true }` is
+   * returned (the account is unchanged, nothing has been disabled yet). Calling
+   * again with a valid `token` disables the factor and returns
+   * `{ tokenRequired: false }`. Disabling an already-disabled factor is an
+   * idempotent no-op that returns `{ tokenRequired: false }` without
+   * dispatching an email.
+   *
+   * `updatedAccount` is `null` in both cases where nothing changed — the
+   * OTP-dispatch phase and the already-disabled no-op — and an `Account` only
+   * once the factor has actually been turned off. Callers pair it with
+   * `tokenRequired` to decide whether to fire the "confirmed" hook.
+   *
+   * @throws {InvalidRequestError} - To indicate disabling cannot take place due
+   * to mismatch of email or email not being verified.
+   * @throws {SecondAuthenticationFactorRequiredError} - To indicate that a
+   * second authentication factor is required to complete the action.
+   */
+  disableEmailAuthFactor(data: DisableEmailAuthFactorInput): Awaitable<Account>
 
   /**
    * @throws {HandleUnavailableError} - To indicate that the handle is already taken
@@ -286,6 +312,8 @@ export const isAccountStore = buildInterfaceChecker<AccountStore>([
   'deactivateAccount',
   'deleteAccountConfirm',
   'deleteAccountRequest',
+  'disableEmailAuthFactor',
+  'enableEmailAuthFactor',
   'getAccount',
   'getDeviceAccount',
   'listDeviceAccounts',

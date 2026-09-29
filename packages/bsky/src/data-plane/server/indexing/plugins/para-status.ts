@@ -1,11 +1,16 @@
 // @ts-nocheck
-import { Selectable } from 'kysely'
-import { CID } from 'multiformats/cid'
-import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
-import { BackgroundQueue } from '../../background.js'
-import { Database } from '../../db/index.js'
-import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
+import type { Selectable } from 'kysely'
+import type { CID } from 'multiformats/cid'
+import { type AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
+import type { BackgroundQueue } from '../../background.js'
+import type {
+  DatabaseSchema,
+  DatabaseSchemaType,
+} from '../../db/database-schema.js'
+import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
+import { finalizeDueCabildeos } from './finalize-cabildeos.js'
+import { recomputeCabildeoAggregates } from './recompute-cabildeo-aggregates.js'
 
 interface ParaStatusRecord {
   status: string
@@ -26,6 +31,7 @@ const insertFn = async (
   timestamp: string,
 ): Promise<IndexedParaStatus | null> => {
   if (uri.rkey !== 'self') return null
+  await finalizeDueCabildeos(db)
 
   const inserted = await db
     .insertInto('para_status')
@@ -69,6 +75,7 @@ const deleteFn = async (
   uri: AtUri,
 ): Promise<IndexedParaStatus | null> => {
   if (uri.rkey !== 'self') return null
+  await finalizeDueCabildeos(db)
   const deleted = await db
     .deleteFrom('para_status')
     .where('did', '=', uri.host)
@@ -79,6 +86,26 @@ const deleteFn = async (
 
 const notifsForDelete = () => {
   return { notifs: [], toDelete: [] }
+}
+
+const updateAggregates = async (
+  db: DatabaseSchema,
+  status: IndexedParaStatus,
+) => {
+  const standing = await db
+    .selectFrom('cabildeo_delegation')
+    .where('mode', '=', 'passive')
+    .where('delegateTo', '=', status.did)
+    .select('uri')
+    .limit(1)
+    .executeTakeFirst()
+  if (!standing) return
+  const open = await db
+    .selectFrom('cabildeo_cabildeo')
+    .where('phase', '=', 'voting')
+    .select('uri')
+    .execute()
+  for (const row of open) await recomputeCabildeoAggregates(db, row.uri)
 }
 
 export type PluginType = RecordProcessor<ParaStatusRecord, IndexedParaStatus>
@@ -94,6 +121,7 @@ export const makePlugin = (
     deleteFn,
     notifsForInsert,
     notifsForDelete,
+    updateAggregates,
   })
 }
 

@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AddMuteOperationRequest, AddMuteOperationResponse, AddNotifOperationRequest, AddNotifOperationResponse, DeleteOperationsByActorAndNamespaceRequest, DeleteOperationsByActorAndNamespaceResponse, PingRequest, PingResponse, PutOperationRequest, PutOperationResponse, ScanMuteOperationsRequest, ScanMuteOperationsResponse, ScanNotifOperationsRequest, ScanNotifOperationsResponse, ScanOperationsRequest, ScanOperationsResponse } from "./bsync_pb.js";
+import { AddMuteOperationRequest, AddMuteOperationResponse, DeleteOperationsByActorAndNamespaceRequest, DeleteOperationsByActorAndNamespaceResponse, FanoutNotificationSeenRequest, FanoutNotificationSeenResponse, PingRequest, PingResponse, PutOperationRequest, PutOperationResponse, ScanMuteOperationsRequest, ScanMuteOperationsResponse, ScanNotifOperationsRequest, ScanNotifOperationsResponse, ScanOperationsRequest, ScanOperationsResponse } from "./bsync_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -30,15 +30,6 @@ export const Service = {
       name: "ScanMuteOperations",
       I: ScanMuteOperationsRequest,
       O: ScanMuteOperationsResponse,
-      kind: MethodKind.Unary,
-    },
-    /**
-     * @generated from rpc bsync.Service.AddNotifOperation
-     */
-    addNotifOperation: {
-      name: "AddNotifOperation",
-      I: AddNotifOperationRequest,
-      O: AddNotifOperationResponse,
       kind: MethodKind.Unary,
     },
     /**
@@ -75,6 +66,15 @@ export const Service = {
       name: "DeleteOperationsByActorAndNamespace",
       I: DeleteOperationsByActorAndNamespaceRequest,
       O: DeleteOperationsByActorAndNamespaceResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc bsync.Service.FanoutNotificationSeen
+     */
+    fanoutNotificationSeen: {
+      name: "FanoutNotificationSeen",
+      I: FanoutNotificationSeenRequest,
+      O: FanoutNotificationSeenResponse,
       kind: MethodKind.Unary,
     },
     /**

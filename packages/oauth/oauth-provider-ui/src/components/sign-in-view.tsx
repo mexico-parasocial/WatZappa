@@ -1,10 +1,10 @@
 import { msg } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
-import { ReactNode, useCallback, useEffect, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import type { Session } from '@atproto/oauth-provider-api'
 import { useCustomizationData } from '#/contexts/customization.tsx'
-import { LayoutTitle } from './layouts/layout-title.tsx'
-import { SignInData, SignInForm } from './sign-in-form.tsx'
+import { AuthShell } from './layouts/auth-shell.tsx'
+import { type SignInData, SignInForm } from './sign-in-form.tsx'
 import { SignInPicker } from './sign-in-picker.tsx'
 
 export type SignInViewProps = {
@@ -40,6 +40,13 @@ export function SignInView({
   const [showSignInForm, setShowSignInForm] = useState(sessions.length === 0)
 
   const title = msg({ message: 'Sign in', context: 'AuthenticationPage' })
+  // @NOTE The newline is part of the message so the heading always breaks
+  // after "with"; translators place their own break. `AuthShell` renders the
+  // title with `whitespace-pre-line`.
+  const pickerTitle = msg({
+    message: 'Continue with\nan existing account',
+    context: 'AuthenticationPage',
+  })
 
   useEffect(() => {
     // Make sure the "back" action shows the account picker instead of the
@@ -50,7 +57,7 @@ export function SignInView({
 
   if (session) {
     return (
-      <LayoutTitle
+      <AuthShell
         title={title}
         subtitle={<Trans>Confirm your password to continue</Trans>}
       >
@@ -64,13 +71,13 @@ export function SignInView({
           usernameReadonly={true}
           rememberDefault={true}
         />
-      </LayoutTitle>
+      </AuthShell>
     )
   }
 
   if (forcedIdentifier) {
     return (
-      <LayoutTitle title={title} subtitle={<Trans>Enter your password</Trans>}>
+      <AuthShell title={title} subtitle={<Trans>Enter your password</Trans>}>
         <SignInForm
           domains={availableUserDomains}
           disableRemember={disableRemember}
@@ -81,16 +88,13 @@ export function SignInView({
           usernameDefault={forcedIdentifier}
           usernameReadonly={true}
         />
-      </LayoutTitle>
+      </AuthShell>
     )
   }
 
   if (sessions.length === 0) {
     return (
-      <LayoutTitle
-        title={title}
-        subtitle={<Trans>Enter your username and password</Trans>}
-      >
+      <AuthShell title={title}>
         <SignInForm
           domains={availableUserDomains}
           disableRemember={disableRemember}
@@ -99,16 +103,13 @@ export function SignInView({
           onBack={onBack}
           backLabel={backLabel}
         />
-      </LayoutTitle>
+      </AuthShell>
     )
   }
 
   if (showSignInForm) {
     return (
-      <LayoutTitle
-        title={title}
-        subtitle={<Trans>Enter your username and password</Trans>}
-      >
+      <AuthShell title={title}>
         <SignInForm
           domains={availableUserDomains}
           disableRemember={disableRemember}
@@ -116,15 +117,12 @@ export function SignInView({
           onForgotPassword={onForgotPassword}
           onBack={() => setShowSignInForm(false)}
         />
-      </LayoutTitle>
+      </AuthShell>
     )
   }
 
   return (
-    <LayoutTitle
-      title={title}
-      subtitle={<Trans>Select from an existing account</Trans>}
-    >
+    <AuthShell title={pickerTitle} documentTitle={title}>
       <SignInPicker
         sessions={sessions}
         onSession={setSession}
@@ -133,6 +131,6 @@ export function SignInView({
         backLabel={backLabel}
         onSignUp={onSignUp}
       />
-    </LayoutTitle>
+    </AuthShell>
   )
 }

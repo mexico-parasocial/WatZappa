@@ -1,0 +1,7 @@
+# Paths are relative to the root docker-compose.matrix.yaml.
+# This override is only for the local simulator acceptance environment.
+services:
+  element-web:
+    volumes:
+      - ./deploy/matrix/element-config.local.json:/app/config.json:ro
+      - ./deploy/matrix/element-local.conf:/etc/nginx/templates/default.conf.template:ro

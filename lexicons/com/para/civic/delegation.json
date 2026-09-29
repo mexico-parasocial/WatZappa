@@ -16,6 +16,11 @@
             "knownValues": ["active", "passive"]
           },
           "delegateTo": { "type": "string", "format": "did" },
+          "eligibilityProofRef": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "m8 authorization binding the delegator's DID, recipient and scope. Required for new writes; older records are not counted."
+          },
           "party": { "type": "string", "maxLength": 100 },
           "community": { "type": "string", "maxLength": 100 },
           "scopeFlairs": {

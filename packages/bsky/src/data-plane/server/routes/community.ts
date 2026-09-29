@@ -1032,7 +1032,7 @@ const selectMembers = async (
   const role = opts.role?.trim()
   if (role) {
     builder = builder.where(
-      sql<boolean>`${role} = any(coalesce("membership"."roles", array[]::text[]))`,
+      sql<boolean>`coalesce("membership"."roles", '[]'::jsonb) ? ${role}`,
     )
   }
 

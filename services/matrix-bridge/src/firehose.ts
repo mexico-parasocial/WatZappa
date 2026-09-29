@@ -31,6 +31,7 @@ export class FirehoseConsumer {
   private log: Logger
   private lastSeq: number | undefined
   private initialCursor: number | undefined
+  private pdsSourceId: string | undefined
   private cursorSaveTimer: NodeJS.Timeout | null = null
 
   private events?: EventBus
@@ -50,6 +51,7 @@ export class FirehoseConsumer {
     this.chatMod = chatMod
     this.metrics = metrics
     this.log = log
+    this.pdsSourceId = config.pdsSourceId
 
     // PLC_URL is a dev-mode escape hatch: local PLCs (http://localhost:2582)
     // are unreachable through the SSRF-guarded default fetch (allowHttp off,
@@ -73,6 +75,16 @@ export class FirehoseConsumer {
       handleEvent: (evt) => this.handleEvent(evt),
       onError: (err) => {
         this.log.error({ err }, 'Firehose error')
+        const cause = (err as Error & { cause?: unknown }).cause
+        if (
+          cause instanceof Error &&
+          cause.message.includes('Cursor in the future')
+        ) {
+          throw new Error(
+            'Bridge firehose cursor is ahead of this PDS. Check BRIDGE_PDS_SOURCE_ID and BRIDGE_DB_PATH; refusing to retry.',
+            { cause: err },
+          )
+        }
       },
       // Connection failures never reach onError: without this, a wrong URL or
       // an unreachable PDS retries forever with zero log output (exactly the
@@ -83,7 +95,10 @@ export class FirehoseConsumer {
           'Firehose connection failed, reconnecting',
         )
       },
-      getCursor: () => this.initialCursor ?? undefined,
+      getCursor: () =>
+        this.lastSeq ??
+        this.initialCursor ??
+        (config.backfillFromStart ? 0 : undefined),
     })
   }
 
@@ -97,7 +112,7 @@ export class FirehoseConsumer {
       { url: this.firehose.opts.service },
       'Starting firehose consumer',
     )
-    this.initialCursor = await this.db.getSyncCursor()
+    this.initialCursor = await prepareFirehoseCursor(this.db, this.pdsSourceId)
     if (this.initialCursor) {
       this.log.info(
         { cursor: this.initialCursor },
@@ -548,6 +563,31 @@ export class FirehoseConsumer {
       createdAt,
     )
   }
+}
+
+/** Refuse to reuse a cursor against a different PDS data generation. */
+export async function prepareFirehoseCursor(
+  db: Pick<
+    IBridgeDatabase,
+    'getSyncCursor' | 'getSyncSource' | 'setSyncSource'
+  >,
+  sourceId?: string,
+): Promise<number | undefined> {
+  const cursor = await db.getSyncCursor()
+  if (!sourceId) return cursor
+  const storedSource = await db.getSyncSource()
+  if (storedSource && storedSource !== sourceId) {
+    throw new Error(
+      `Bridge database belongs to PDS source ${storedSource}, not ${sourceId}`,
+    )
+  }
+  if (!storedSource && cursor !== undefined) {
+    throw new Error(
+      'Bridge database has a cursor without a PDS source. Use a new bridge database for this dev profile.',
+    )
+  }
+  if (!storedSource) await db.setSyncSource(sourceId)
+  return cursor
 }
 
 export function signalToChoice(

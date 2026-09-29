@@ -5,11 +5,11 @@ import getPort from 'get-port'
 import * as ui8 from 'uint8arrays'
 import { AtpAgent } from '@atproto/api'
 import { Secp256k1Keypair, randomStr } from '@atproto/crypto'
-import { Client, UriString } from '@atproto/lex'
+import { Client, type UriString } from '@atproto/lex'
 import * as pds from '@atproto/pds'
 import { createSecretKeyObject } from '@atproto/pds'
 import { ADMIN_PASSWORD, EXAMPLE_LABELER, JWT_SECRET } from './const.js'
-import { PdsConfig } from './types.js'
+import type { PdsConfig } from './types.js'
 
 export class TestPds {
   constructor(
@@ -24,9 +24,13 @@ export class TestPds {
       blobstoreDiskLocation: configuredBlobstoreDiskLocation,
       ...restConfig
     } = config
-    const plcRotationKey = await Secp256k1Keypair.create({ exportable: true })
+    const plcRotationKey = configuredDataDirectory
+      ? await persistentKeypair(configuredDataDirectory, 'plc-rotation.key')
+      : await Secp256k1Keypair.create({ exportable: true })
     const plcRotationPriv = ui8.toString(await plcRotationKey.export(), 'hex')
-    const recoveryKey = (await Secp256k1Keypair.create()).did()
+    const recoveryKey = configuredDataDirectory
+      ? (await persistentKeypair(configuredDataDirectory, 'recovery.key')).did()
+      : (await Secp256k1Keypair.create()).did()
 
     const port = config.port || (await getPort())
     const url: UriString = `http://localhost:${port}`
@@ -121,5 +125,33 @@ export class TestPds {
 
   async close() {
     await this.server.destroy()
+  }
+}
+
+async function persistentKeypair(
+  directory: string,
+  filename: string,
+): Promise<Secp256k1Keypair> {
+  await fs.mkdir(directory, { recursive: true })
+  const file = path.join(directory, filename)
+  try {
+    return Secp256k1Keypair.import(await fs.readFile(file), {
+      exportable: true,
+    })
+  } catch (err: any) {
+    if (err?.code !== 'ENOENT') throw err
+  }
+  const keypair = await Secp256k1Keypair.create({ exportable: true })
+  try {
+    await fs.writeFile(file, await keypair.export(), {
+      flag: 'wx',
+      mode: 0o600,
+    })
+    return keypair
+  } catch (err: any) {
+    if (err?.code !== 'EEXIST') throw err
+    return Secp256k1Keypair.import(await fs.readFile(file), {
+      exportable: true,
+    })
   }
 }

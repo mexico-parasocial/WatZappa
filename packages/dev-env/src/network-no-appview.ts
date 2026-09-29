@@ -4,10 +4,11 @@ import { TestPds } from './pds.js'
 import { TestPlc } from './plc.js'
 import { SeedClient } from './seed/client.js'
 import { TestServerParams } from './types.js'
-import { mockNetworkUtilities } from './util.js'
+import { allowRepostsUnlessConfigured, mockNetworkUtilities } from './util.js'
 
 export class TestNetworkNoAppView {
   feedGens: TestFeedGen[] = []
+  restoreReposts: () => void = () => {}
   constructor(
     public plc: TestPlc,
     public pds: TestPds,
@@ -16,6 +17,7 @@ export class TestNetworkNoAppView {
   static async create(
     params: Partial<TestServerParams> = {},
   ): Promise<TestNetworkNoAppView> {
+    const restoreReposts = allowRepostsUnlessConfigured()
     const plc = await TestPlc.create(params.plc ?? {})
     const pds = await TestPds.create({
       didPlcUrl: plc.url,
@@ -24,7 +26,9 @@ export class TestNetworkNoAppView {
 
     mockNetworkUtilities(pds)
 
-    return new TestNetworkNoAppView(plc, pds)
+    const network = new TestNetworkNoAppView(plc, pds)
+    network.restoreReposts = restoreReposts
+    return network
   }
 
   async createFeedGen(
@@ -49,5 +53,6 @@ export class TestNetworkNoAppView {
     await Promise.all(this.feedGens.map((fg) => fg.close()))
     await this.pds.close()
     await this.plc.close()
+    this.restoreReposts()
   }
 }

@@ -1,6 +1,6 @@
-import { AtpAgent } from '@atproto/api'
-import { DidString } from '@atproto/lex'
-import { TestPds } from './pds.js'
+import type { AtpAgent } from '@atproto/api'
+import { type DidString, asStringFormat } from '@atproto/lex'
+import type { TestPds } from './pds.js'
 
 export type ServiceUserDetails = {
   email: string
@@ -27,6 +27,25 @@ export class ServiceProfile {
 
   async migrateTo(newPds: TestPds, options: ServiceMigrationOptions = {}) {
     const newAgent = newPds.getAgent()
+
+    const existing = await newPds.ctx.accountManager.getAccount(
+      asStringFormat(this.userDetails.handle, 'handle'),
+      { includeDeactivated: true },
+    )
+    if (existing) {
+      await newAgent.login({
+        identifier: this.userDetails.handle,
+        password: this.userDetails.password,
+      })
+      if (newAgent.assertDid !== existing.did) {
+        throw new Error(
+          `Service account DID changed for ${this.userDetails.handle}`,
+        )
+      }
+      this.pds = newPds
+      this.agent = newAgent
+      return
+    }
 
     const newPdsDesc = await newAgent.com.atproto.server.describeServer()
     const serviceAuth = await this.agent.com.atproto.server.getServiceAuth({

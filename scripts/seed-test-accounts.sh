@@ -54,6 +54,14 @@ for entry in "${ACCOUNTS[@]}"; do
         2>/dev/null | jq -r '.did // empty' || true)
 
   if [ -n "$did" ]; then
+    login_body=$(jq -nc --arg h "$handle" --arg p "$password" \
+      '{identifier:$h, password:$p}')
+    login_did=$(curl -sS -X POST "$PDS_URL/xrpc/com.atproto.server.createSession" \
+      -H 'Content-Type: application/json' -d "$login_body" | jq -r '.did // empty')
+    if [ "$login_did" != "$did" ]; then
+      echo "❌ $handle exists but its password does not match this seed. No account was changed." >&2
+      exit 1
+    fi
     echo "✅ $handle already exists ($did)"
   else
     body=$(jq -nc --arg h "$handle" --arg e "$email" --arg p "$password" \

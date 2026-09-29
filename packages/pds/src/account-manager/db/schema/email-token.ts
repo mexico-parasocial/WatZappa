@@ -1,4 +1,4 @@
-import { DidString } from '@atproto/syntax'
+import type { DidString } from '@atproto/syntax'
 
 export type EmailTokenPurpose =
   | 'confirm_email'
@@ -6,6 +6,7 @@ export type EmailTokenPurpose =
   | 'reset_password'
   | 'delete_account'
   | 'plc_operation'
+  | 'auth_factor'
 
 export interface EmailToken {
   purpose: EmailTokenPurpose

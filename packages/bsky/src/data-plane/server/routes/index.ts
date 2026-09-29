@@ -1,6 +1,7 @@
-import { ConnectRouter } from '@connectrpc/connect'
+import { ConnectError, ConnectRouter } from '@connectrpc/connect'
 import { IdResolver } from '@atproto/identity'
 import { Service } from '../../../proto/bsky_connect.js'
+import { dataplaneLogger } from '../../../logger.js'
 import { Database } from '../db/index.js'
 import activitySubscription from './activity-subscription.js'
 import blocks from './blocks.js'
@@ -46,9 +47,34 @@ import suggestions from './suggestions.js'
 import sync from './sync.js'
 import threads from './threads.js'
 
+/**
+ * Connect turns any non-ConnectError thrown by a handler into a bare
+ * "internal error" and logs nothing, so a failing query leaves no trace.
+ * Log those before they are rethrown. ConnectErrors are deliberate responses
+ * (not found, permission denied) and pass through silently.
+ */
+const logUnexpectedErrors = <T extends Record<string, unknown>>(impl: T): T =>
+  Object.fromEntries(
+    Object.entries(impl).map(([method, handler]) => [
+      method,
+      typeof handler === 'function'
+        ? async (...args: unknown[]) => {
+            try {
+              return await handler(...args)
+            } catch (err) {
+              if (!(err instanceof ConnectError)) {
+                dataplaneLogger.error({ err, method }, 'dataplane handler failed')
+              }
+              throw err
+            }
+          }
+        : handler,
+    ]),
+  ) as T
+
 export default (db: Database, idResolver: IdResolver) =>
   (router: ConnectRouter) => {
-    router.service(Service, {
+    router.service(Service, logUnexpectedErrors({
       ...activitySubscription(db),
       ...blocks(db),
       ...bookmarks(db),
@@ -96,5 +122,5 @@ export default (db: Database, idResolver: IdResolver) =>
       async ping() {
         return {}
       },
-    })
+    }))
   }

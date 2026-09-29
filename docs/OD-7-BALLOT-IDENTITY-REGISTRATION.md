@@ -715,12 +715,17 @@ told people their votes would make a proposed question "official" or
 hard-coded `false`. The copy now says what the vote does. If promotion is ever
 built, `proposalVote` starts deciding something and moves to box 2.
 
+**The lexicons stop describing the proof as accepted.** Corrected 2026-09-22:
+the `voteNullifier` and `eligibilityProofRef` descriptions on the three
+reaction records now mark both fields DEPRECATED and refused on write, instead
+of explaining how m8 issues them. PARA's vendored copies were corrected with
+them; the `indigo-main` set there had drifted further and still carried the
+pre-§5a "privacy-preserving" wording.
+
 **What this does not do.** The reactions stay signed by the account the person
 signed in with, which m8 knows from its session table; that is §5g's open work,
 not this section's. The nullifiers m8 already issued for reactions are still in
-`civic_vote_nullifiers` and need their own retention decision. The lexicon
-descriptions of `voteNullifier` on the three reaction records still describe a
-field their collections now refuse.
+`civic_vote_nullifiers` and need their own retention decision.
 
 ## 6. Why this is on the critical path
 

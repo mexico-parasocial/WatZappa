@@ -7,7 +7,7 @@ import {
 } from '../src/config.js'
 
 describe('persistent dev-env plumbing', () => {
-  it('keeps the persistent Make target on durable infra wrappers', () => {
+  it('starts the persistent profile with isolated durable storage', () => {
     const makefile = fs.readFileSync(
       path.join(import.meta.dirname, '../../../Makefile'),
       'utf8',
@@ -17,10 +17,22 @@ describe('persistent dev-env plumbing', () => {
     const target = makefile.slice(targetStart, targetEnd)
 
     expect(targetStart).toBeGreaterThanOrEqual(0)
-    expect(target).toContain('../dev-infra/with-redis-and-db.sh')
-    expect(target).toContain('.paramx-demo/pds')
-    expect(target).toContain('.paramx-demo/blobstore')
-    expect(target).not.toContain('with-test-redis-and-db.sh')
+    expect(target).toContain('./scripts/dev-env-persistent.sh')
+
+    const launcher = fs.readFileSync(
+      path.join(import.meta.dirname, '../../../scripts/dev-env-persistent.sh'),
+      'utf8',
+    )
+    expect(launcher).toContain('.dev-env-data')
+    expect(launcher).toContain(
+      'DB_POSTGRES_URL=postgresql://pg:password@127.0.0.1:5434/postgres',
+    )
+    expect(launcher).toContain('REDIS_HOST=127.0.0.1:6381')
+    expect(launcher).toContain('DB_POSTGRES_SCHEMA=para_local')
+    expect(launcher).toContain('DEV_ENV_SKIP_PARA_DEMO_SEED=1')
+    expect(launcher).toContain('BRIDGE_DB_PATH="$DATA_DIR/bridge/bridge.db"')
+    expect(launcher).toContain('tsconfig.build.json --force')
+    expect(launcher).toContain('check-dev-migrations.mjs')
   })
 
   it('builds the default local network contract', () => {

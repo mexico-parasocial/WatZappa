@@ -1,6 +1,8 @@
-import { RecordRef, SeedClient } from './client.js'
 import type { HandleString } from '@atproto/syntax'
+import { RecordRef, type SeedClient } from './client.js'
 import { ParaSeedCheckpointRunner } from './para-checkpoints.js'
+import { seedDemoMemes } from './para-memes.js'
+import { seedTid } from './seed-tid.js'
 
 export default async (sc: SeedClient) => {
   const checkpoints = new ParaSeedCheckpointRunner(sc.network)
@@ -405,7 +407,7 @@ export default async (sc: SeedClient) => {
         { repo: from.did },
         { subject: to.did, createdAt: createdAt() },
       )
-    } catch (e) {
+    } catch {
       // ignore duplicate follows
     }
   }
@@ -630,7 +632,7 @@ export default async (sc: SeedClient) => {
       } else {
         try {
           await user.agent.com.para.community.join({ communityUri: pb.uri })
-        } catch (e) {
+        } catch {
           /* ignore */
         }
       }
@@ -829,7 +831,7 @@ export default async (sc: SeedClient) => {
       if (user.did !== comm.creatorDid) {
         try {
           await user.agent.com.para.community.join({ communityUri: comm.uri })
-        } catch (e) {
+        } catch {
           /* ignore */
         }
       }
@@ -1945,7 +1947,7 @@ export default async (sc: SeedClient) => {
           createdAt: createdAt(),
         },
       })
-    } catch (e) {
+    } catch {
       /* ignore duplicates */
     }
   }
@@ -1976,7 +1978,7 @@ export default async (sc: SeedClient) => {
           createdAt: createdAt(),
         },
       })
-    } catch (e) {
+    } catch {
       /* ignore duplicates */
     }
   }
@@ -2039,224 +2041,13 @@ export default async (sc: SeedClient) => {
   await checkpoints.flush('votes')
 
   // ═══════════════════════════════════════════════════════════════════════
-  //  DELEGATIONS  (25 — complex graph)
+  //  DELEGATIONS  (requires verified eligibility)
   // ═══════════════════════════════════════════════════════════════════════
 
-  const delegationDefs = [
-    {
-      from: 'dan',
-      to: 'alice',
-      cabIdx: null,
-      scope: ['||#PresupuestoParticipativo', '||#MedioAmbiente'],
-      reason:
-        'Confío en el criterio de Alice respecto a infraestructura verde y espacios públicos.',
-    },
-    {
-      from: 'eva',
-      to: 'carla',
-      cabIdx: null,
-      scope: ['||#EducacionLaica', '||#DerechosLaborales'],
-      reason:
-        'Carla tiene amplia experiencia en políticas educativas y laborales. Le delego mi voz en estos temas.',
-    },
-    {
-      from: 'rodrigo',
-      to: 'eva',
-      cabIdx: null,
-      scope: ['||#DerechosLaborales', '||#TransportePublico'],
-      reason:
-        'Eva ha defendido a transportistas por décadas. Mi voto en temas laborales va con ella.',
-    },
-    {
-      from: 'karla',
-      to: 'eva',
-      cabIdx: null,
-      scope: ['||#EducacionLaica', '||#EducacionIndigena'],
-      reason:
-        'Eva entiende la educación rural. Delego para que mi voz cuente donde yo no puedo estar.',
-    },
-    {
-      from: 'luis',
-      to: 'alice',
-      cabIdx: null,
-      scope: ['||#SaludPublica', '||#PresupuestoParticipativo'],
-      reason:
-        'Alice ha impulsado clínicas móviles. En salud comunitaria, confío en su juicio.',
-    },
-    {
-      from: 'tomas',
-      to: 'alice',
-      cabIdx: null,
-      scope: ['||#SaludPublica', '||#DerechosHumanos'],
-      reason:
-        'Como jubilado, necesito representación que entienda pensiones y salud. Alice ha demostrado sensibilidad.',
-    },
-    {
-      from: 'pablo',
-      to: 'bob',
-      cabIdx: null,
-      scope: ['||#TransportePublico', '||#Innovacion'],
-      reason:
-        'Bob entiende de infraestructura. En movilidad y tecnología, prefiero delegar a quien sabe.',
-    },
-    {
-      from: 'isabel',
-      to: 'mariana',
-      cabIdx: null,
-      scope: ['||#DerechosHumanos', '||#Seguridad'],
-      reason:
-        'Mariana litiga casos de violencia de género. En temas de justicia, su criterio es invaluable.',
-    },
-    {
-      from: 'olivia',
-      to: 'isabel',
-      cabIdx: null,
-      scope: ['||#DerechosHumanos', '||#Cultura'],
-      reason:
-        'Isabel une arte y activismo. En temas culturales con perspectiva feminista, delego en ella.',
-    },
-    {
-      from: 'nicolas',
-      to: 'bob',
-      cabIdx: null,
-      scope: ['||#TransportePublico', '||#MovilidadSostenible'],
-      reason:
-        'Bob y yo compartimos visión de movilidad inteligente. Delego para fortalecer nuestro bloque.',
-    },
-    {
-      from: 'jorge',
-      to: 'fernando',
-      cabIdx: null,
-      scope: ['||#Innovacion', '||#Transparencia'],
-      reason:
-        'Fernando entiende tecnología y gobernanza. En innovación cívica, su voz es la más informada.',
-    },
-    {
-      from: 'fernando',
-      to: 'mariana',
-      cabIdx: null,
-      scope: ['||#Transparencia', '||#Anticorrupcion'],
-      reason:
-        'Mariana ha destapado casos que yo no podría. En anticorrupción, delego sin dudar.',
-    },
-    {
-      from: 'gabriela',
-      to: 'mariana',
-      cabIdx: null,
-      scope: ['||#Seguridad', '||#Transparencia'],
-      reason:
-        'Como periodista, necesito delegar en alguien con rigor legal. Mariana es esa persona.',
-    },
-    {
-      from: 'hector',
-      to: 'gabriela',
-      cabIdx: null,
-      scope: ['||#Economia', '||#Innovacion'],
-      reason:
-        'Gaby aplica evidencia empírica a sus análisis. En políticas basadas en datos, delego en ella.',
-    },
-    {
-      from: 'sofia',
-      to: 'quetzali',
-      cabIdx: null,
-      scope: ['||#SoberaniaAlimentaria', '||#EconomiaLocal'],
-      reason:
-        'Quetzali conoce la cadena alimentaria desde la sierra. En soberanía alimentaria, es mi referente.',
-    },
-    {
-      from: 'dan',
-      to: 'fernando',
-      cabIdx: 1,
-      scope: ['||#Economia'],
-      reason:
-        'En este cabildeo específico sobre impuesto al carbono, prefiero la visión económica de Fernando.',
-    },
-    {
-      from: 'eva',
-      to: 'rodrigo',
-      cabIdx: 6,
-      scope: ['||#DerechosLaborales'],
-      reason:
-        'Rodrigo es quien más sabe de condiciones laborales reales. En este cabildeo de salario, delego en él.',
-    },
-    {
-      from: 'bob',
-      to: 'nicolas',
-      cabIdx: 14,
-      scope: ['||#TransportePublico'],
-      reason:
-        'Nico es el ingeniero. En el tren eléctrico, su voto técnico pesa más que el mío político.',
-    },
-    {
-      from: 'carla',
-      to: 'karla',
-      cabIdx: 10,
-      scope: ['||#EducacionIndigena'],
-      reason:
-        'Karla vive la educación intercultural. En este cabildeo específico, su experiencia es insustituible.',
-    },
-    {
-      from: 'alice',
-      to: 'olivia',
-      cabIdx: 15,
-      scope: ['||#Cultura'],
-      reason:
-        'Olivia es la artista. En el cabildeo de murales, delego mi voto en quien entiende el impacto cultural.',
-    },
-    {
-      from: 'mariana',
-      to: 'fernando',
-      cabIdx: 7,
-      scope: ['||#Transparencia'],
-      reason:
-        'Fernando diseñó sistemas de contratos abiertos. En este cabildeo, su expertise es clave.',
-    },
-    {
-      from: 'pablo',
-      to: 'karla',
-      cabIdx: 16,
-      scope: ['||#Educacion'],
-      reason:
-        'Karla entiende la barrera del transporte escolar. Como estudiante, delego en quien conoce la problemática.',
-    },
-    {
-      from: 'tomas',
-      to: 'luis',
-      cabIdx: 12,
-      scope: ['||#SaludPublica'],
-      reason:
-        'Luis es médico comunitario. En salud preventiva, su voto es el más informado.',
-    },
-    {
-      from: 'jorge',
-      to: 'hector',
-      cabIdx: 9,
-      scope: ['||#Innovacion'],
-      reason:
-        'Hector analiza políticas tecnológicas con rigor académico. En identidad digital, prefiero su criterio.',
-    },
-  ]
-
-  for (const d of delegationDefs) {
-    const from = users.find((u) => u.short === d.from)!
-    const to = users.find((u) => u.short === d.to)!
-    try {
-      await from.agent.com.atproto.repo.createRecord({
-        repo: from.did,
-        collection: 'com.para.civic.delegation',
-        record: {
-          $type: 'com.para.civic.delegation',
-          cabildeo: d.cabIdx !== null ? cabildeos[d.cabIdx].uri : undefined,
-          delegateTo: to.did,
-          scopeFlairs: d.scope,
-          reason: d.reason,
-          createdAt: createdAt(),
-        },
-      })
-    } catch (e) {
-      /* ignore */
-    }
-  }
+  // @NOTE demo accounts have no eligibility proof; never fabricate civic power.
+  console.log(
+    '  [para-demo] Skipping delegations: verified eligibility required',
+  )
 
   await checkpoints.flush('delegations')
 
@@ -2775,7 +2566,7 @@ export default async (sc: SeedClient) => {
   await checkpoints.flush('posts')
 
   // ═══════════════════════════════════════════════════════════════════════
-  //  ENGAGEMENT  (likes, reposts, replies, bookmarks)
+  //  ENGAGEMENT  (likes, replies, bookmarks; PARA has no reposts)
   // ═══════════════════════════════════════════════════════════════════════
 
   // Likes on posts (weighted by post quality/polarity)
@@ -2788,27 +2579,7 @@ export default async (sc: SeedClient) => {
       if (liker.did !== post.did) {
         try {
           await sc.like(liker.did, new RecordRef(post.uri, post.cid))
-        } catch (e) {
-          /* ignore */
-        }
-      }
-    }
-  }
-
-  // Reposts (more selective)
-  const repostablePosts = createdPosts.filter(
-    (_, i) => i % 5 === 0 || i % 7 === 0,
-  )
-  for (const post of repostablePosts) {
-    const numReposts = 1 + Math.floor(Math.random() * 4)
-    const reposters = [...users]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, numReposts)
-    for (const reposter of reposters) {
-      if (reposter.did !== post.did) {
-        try {
-          await sc.repost(reposter.did, new RecordRef(post.uri, post.cid))
-        } catch (e) {
+        } catch {
           /* ignore */
         }
       }
@@ -2940,7 +2711,7 @@ export default async (sc: SeedClient) => {
           new RecordRef(post.uri, post.cid),
           r.text,
         )
-      } catch (e) {
+      } catch {
         /* ignore */
       }
     }
@@ -2965,7 +2736,7 @@ export default async (sc: SeedClient) => {
               createdAt: createdAt(),
             },
           })
-        } catch (e) {
+        } catch {
           /* ignore */
         }
       }
@@ -3110,7 +2881,7 @@ export default async (sc: SeedClient) => {
             createdAt: createdAt(),
           },
         })
-      } catch (e) {
+      } catch {
         /* ignore */
       }
     }
@@ -3143,7 +2914,7 @@ export default async (sc: SeedClient) => {
           createdAt: createdAt(),
         },
       })
-    } catch (e) {
+    } catch {
       /* ignore */
     }
   }
@@ -3235,7 +3006,7 @@ export default async (sc: SeedClient) => {
           sessionId: `live-${cab.uri.split('/').pop()!}`,
           present: true,
         })
-      } catch (e) {
+      } catch {
         /* ignore */
       }
     }
@@ -3292,7 +3063,7 @@ export default async (sc: SeedClient) => {
 
   for (const l of listDefs) {
     const creator = users.find((u) => u.short === l.creator)!
-    const listRkey = `seed-curate-list-${seedRkeySlug(l.name)}`
+    const listRkey = seedTid(`curate-list:${l.name}`)
     const listUri = `at://${creator.did}/app.bsky.graph.list/${listRkey}`
     try {
       await cleanupDuplicateSeedLists({
@@ -3321,7 +3092,7 @@ export default async (sc: SeedClient) => {
             await creator.agent.com.atproto.repo.putRecord({
               repo: creator.did,
               collection: 'app.bsky.graph.listitem',
-              rkey: `seed-curate-listitem-${seedRkeySlug(l.name)}-${seedRkeySlug(memberShort)}`,
+              rkey: seedTid(`curate-listitem:${l.name}:${memberShort}`),
               record: {
                 $type: 'app.bsky.graph.listitem',
                 list: listUri,
@@ -3329,12 +3100,12 @@ export default async (sc: SeedClient) => {
                 createdAt: createdAt(),
               },
             })
-          } catch (e) {
+          } catch {
             /* ignore */
           }
         }
       }
-    } catch (e) {
+    } catch {
       /* ignore */
     }
   }
@@ -3351,11 +3122,6 @@ export default async (sc: SeedClient) => {
     if (!VALID_POSTMETA_TYPES.includes(p.postType)) continue
     const rkey = p.uri.split('/').pop()
     if (!rkey) continue
-    const partyBoard = partyBoards.find(
-      (pb) =>
-        pb.name === p.party ||
-        (p.party === 'Independiente' && pb.name === 'Independientes'),
-    )
     try {
       await p.agent.com.atproto.repo.createRecord({
         repo: p.did,
@@ -3365,19 +3131,19 @@ export default async (sc: SeedClient) => {
           $type: 'com.para.social.postMeta',
           post: p.uri,
           postType: p.postType,
-          party:
-            p.party === 'Independiente' ? 'p/Independientes' : `p/${p.party}`,
-          community: partyBoard ? partyBoard.slug : undefined,
+          party: p.party,
+          community: p.community,
           official: i % 3 === 0,
           voteScore: 30 + Math.floor(Math.random() * 70),
           createdAt: createdAt(),
         },
       })
-    } catch (e) {
+    } catch {
       /* ignore */
     }
   }
 
+  await seedDemoMemes(alice)
   await checkpoints.flush('postMeta')
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -3520,7 +3286,7 @@ export default async (sc: SeedClient) => {
           version: '1.0',
         },
       })
-    } catch (e) {
+    } catch {
       /* ignore */
     }
   }
@@ -3545,7 +3311,7 @@ export default async (sc: SeedClient) => {
         },
       })
       if (res.data.uri) proposalUris.push(res.data.uri)
-    } catch (e) {
+    } catch {
       /* ignore */
     }
   }
@@ -3571,38 +3337,13 @@ export default async (sc: SeedClient) => {
             createdAt: createdAt(),
           },
         })
-      } catch (e) {
+      } catch {
         /* ignore */
       }
     }
   }
 
-  // RAQ proposal answers (-3 to 3)
-  if (proposalUris.length >= 1) {
-    const answerData = [
-      { voter: users[0], subject: proposalUris[0], value: 2 },
-      { voter: users[1], subject: proposalUris[0], value: -1 },
-      { voter: users[2], subject: proposalUris[0], value: 3 },
-      { voter: users[0], subject: proposalUris[1], value: -2 },
-      { voter: users[3], subject: proposalUris[1], value: 1 },
-    ]
-    for (const a of answerData) {
-      try {
-        await a.voter.agent.com.atproto.repo.createRecord({
-          repo: a.voter.did,
-          collection: 'com.para.raq.proposalAnswer',
-          record: {
-            $type: 'com.para.raq.proposalAnswer',
-            subject: a.subject,
-            value: a.value,
-            createdAt: createdAt(),
-          },
-        })
-      } catch (e) {
-        /* ignore */
-      }
-    }
-  }
+  // @NOTE proposalAnswer is frozen by the shared ballot privacy policy.
 
   // RAQ axis votes
   const axisVoters = [users[1], users[2], users[4]]
@@ -3623,7 +3364,7 @@ export default async (sc: SeedClient) => {
           createdAt: createdAt(),
         },
       })
-    } catch (e) {
+    } catch {
       /* ignore */
     }
   }
@@ -3666,13 +3407,13 @@ export default async (sc: SeedClient) => {
     `║  Votes:              ${totalVotes.toString().padEnd(3)} (weighted realistic turnout)                ║`,
   )
   console.log(
-    `║  Delegations:        25  (global + cabildeo-specific)                ║`,
+    `║  Delegations:        0   (verified eligibility required)            ║`,
   )
   console.log(
     `║  Posts:              ${createdPosts.length.toString().padEnd(2)} (policy/matter/raq/meme/meta)      ║`,
   )
   console.log(
-    `║  Engagement:         likes, reposts, replies, bookmarks              ║`,
+    `║  Engagement:         likes, replies, bookmarks                       ║`,
   )
   console.log(
     `║  Highlights:         12  (public/private annotations)                ║`,
@@ -3717,19 +3458,6 @@ export default async (sc: SeedClient) => {
     })),
     alice,
   }
-}
-
-function seedRkeySlug(value: string) {
-  return (
-    value
-      .trim()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 80) || 'item'
-  )
 }
 
 async function cleanupDuplicateSeedLists({
