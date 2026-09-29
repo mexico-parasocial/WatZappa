@@ -9,14 +9,8 @@ export const Route = createFileRoute('/account/sign-in')({
 })
 
 function SignInPage() {
-  const {
-    sessions,
-    api,
-    canSignUp,
-    disableRemember,
-    forcedIdentifier,
-    leave,
-  } = useSessionContext()
+  const { sessions, api, canSignUp, disableRemember, forcedIdentifier, leave } =
+    useSessionContext()
   const navigate = useNavigate()
 
   // The account awaiting password confirmation — a `loginRequired` session
@@ -57,10 +51,7 @@ function SignInPage() {
       }}
       onSignUp={goToSignUp}
       onForgotPassword={(email) =>
-        navigate({
-          to: '/account/reset-password',
-          search: { email },
-        })
+        navigate({ to: '/account/reset-password', search: { email } })
       }
       // @NOTE Only the popup/webview embedding has somewhere to go back to:
       // this is the account manager's entry point. While confirming a password,

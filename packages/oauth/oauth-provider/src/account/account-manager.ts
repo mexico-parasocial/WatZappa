@@ -1,25 +1,27 @@
-import { Did } from '@atproto/did'
+import type { Did } from '@atproto/did'
 import {
-  OAuthIssuerIdentifier,
+  type OAuthIssuerIdentifier,
   isOAuthClientIdLoopback,
 } from '@atproto/oauth-types'
-import { ClientId } from '../client/client-id.js'
-import { Client } from '../client/client.js'
-import { DeviceId } from '../device/device-id.js'
+import type { ClientId } from '../client/client-id.js'
+import type { Client } from '../client/client.js'
+import type { DeviceId } from '../device/device-id.js'
 import { InvalidCredentialsError } from '../errors/invalid-credentials-error.js'
 import { InvalidRequestError } from '../errors/invalid-request-error.js'
-import { HCaptchaClient, HcaptchaVerifyResult } from '../lib/hcaptcha.js'
+import { HCaptchaClient, type HcaptchaVerifyResult } from '../lib/hcaptcha.js'
 import { callAsync } from '../lib/util/function.js'
 import { constantTime } from '../lib/util/time.js'
-import { OAuthHooks, RequestMetadata } from '../oauth-hooks.js'
-import { Customization } from '../oauth-provider.js'
-import {
+import type { OAuthHooks, RequestMetadata } from '../oauth-hooks.js'
+import type { Customization } from '../oauth-provider.js'
+import type {
   Account,
   AccountStore,
   AuthorizedClientData,
   DeleteAccountConfirmInput,
   DeleteAccountRequestInput,
   DeviceAccount,
+  DisableEmailAuthFactorInput,
+  EnableEmailAuthFactorInput,
   HandleString,
   ResetPasswordConfirmInput,
   ResetPasswordRequestInput,
@@ -30,8 +32,8 @@ import {
   VerifyEmailConfirmInput,
   VerifyEmailRequestInput,
 } from './account-store.js'
-import { SignInData } from './sign-in-data.js'
-import { SignUpInput } from './sign-up-input.js'
+import type { SignInData } from './sign-in-data.js'
+import type { SignUpInput } from './sign-up-input.js'
 
 const TIMING_ATTACK_MITIGATION_DELAY = 400
 const BRUTE_FORCE_MITIGATION_DELAY = 300
@@ -186,8 +188,14 @@ export class AccountManager {
       ).catch(async (err) => {
         // Only notify for credential failures (e.g. unknown identifier, wrong
         // password). Server errors and flows that require an additional factor
-        // (e.g. SecondAuthenticationFactorRequiredError) are not "failed
-        // sign-ins" and do not trigger the hook.
+        // are not "failed sign-ins" and do not trigger the hook.
+        //
+        // @NOTE That exclusion rests on the error hierarchy rather than an
+        // explicit guard: `SecondAuthenticationFactorRequiredError` extends
+        // `OAuthError` directly, so it misses this branch and falls through to
+        // the rethrow below. Re-parenting it under `InvalidRequestError` would
+        // silently start reporting second-factor challenges as failed
+        // sign-ins.
         if (err instanceof InvalidRequestError) {
           // Stores that throw the more specific `InvalidCredentialsError`
           // can attach the matched subject identifier to distinguish
@@ -195,7 +203,7 @@ export class AccountManager {
           // This information is only exposed to the hook and is never
           // surfaced to the client.
           const isCredentialsError = err instanceof InvalidCredentialsError
-          const did = isCredentialsError ? err.did ?? null : null
+          const did = isCredentialsError ? (err.did ?? null) : null
 
           // Swallow any error from the hook itself so that it does not mask
           // the underlying authentication failure being reported.
@@ -457,6 +465,66 @@ export class AccountManager {
       account: updatedAccount,
       input,
     })
+
+    return updatedAccount
+  }
+
+  public async enableEmailAuthFactor(
+    deviceId: DeviceId,
+    deviceMetadata: RequestMetadata,
+    input: EnableEmailAuthFactorInput,
+    account: Account,
+  ): Promise<Account> {
+    // Already enabled
+    if (account.emailAuthFactor) return account
+
+    await this.hooks.onEnableEmailAuthFactor?.call(null, {
+      deviceId,
+      deviceMetadata,
+      input,
+      account,
+    })
+
+    const updatedAccount = await this.store.enableEmailAuthFactor(input)
+
+    if (updatedAccount.emailAuthFactor !== account.emailAuthFactor) {
+      await this.hooks.onEnabledEmailAuthFactor?.call(null, {
+        deviceId,
+        deviceMetadata,
+        input,
+        account: updatedAccount,
+      })
+    }
+
+    return updatedAccount
+  }
+
+  public async disableEmailAuthFactor(
+    deviceId: DeviceId,
+    deviceMetadata: RequestMetadata,
+    input: DisableEmailAuthFactorInput,
+    account: Account,
+  ): Promise<Account> {
+    // Already disabled
+    if (!account.emailAuthFactor) return account
+
+    await this.hooks.onDisableEmailAuthFactor?.call(null, {
+      deviceId,
+      deviceMetadata,
+      input,
+      account,
+    })
+
+    const updatedAccount = await this.store.disableEmailAuthFactor(input)
+
+    if (updatedAccount.emailAuthFactor !== account.emailAuthFactor) {
+      await this.hooks.onDisabledEmailAuthFactor?.call(null, {
+        deviceId,
+        deviceMetadata,
+        input,
+        account: updatedAccount,
+      })
+    }
 
     return updatedAccount
   }

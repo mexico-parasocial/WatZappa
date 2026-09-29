@@ -1,12 +1,12 @@
 import {
-  RgbColor,
+  type RgbColor,
   extractHue,
   hslToRgb,
   pickContrastColor,
 } from '../lib/util/color.js'
-import { Branding } from './branding.js'
+import type { Branding } from './branding.js'
 import { COLOR_NAMES } from './colors.js'
-import { Customization } from './customization.js'
+import type { Customization } from './customization.js'
 
 export function buildCustomizationCss({
   branding,
@@ -20,6 +20,9 @@ function* buildCustomizationVars(branding?: Branding): Generator<string> {
     const contrastSaturation = branding.colors.contrastSaturation ?? 30
     yield `--contrast-sat: ${contrastSaturation.toFixed(2)}%;`
 
+    // Contrast candidates for colours without an explicit `${name}Contrast`:
+    // tinted extremes derived from the primary hue (or the configured
+    // light/dark bases), rather than plain black/white.
     const contrastLight: RgbColor =
       branding.colors.light ??
       // Corresponds to color-contrast-975
@@ -44,7 +47,6 @@ function* buildCustomizationVars(branding?: Branding): Generator<string> {
       const contrast =
         branding.colors[`${name}Contrast`] ??
         pickContrastColor(value, contrastLight, contrastDark)
-
       const hue = branding.colors[`${name}Hue`] ?? extractHue(value)
 
       yield `--branding-color-${name}: ${value.r} ${value.g} ${value.b};`
@@ -52,4 +54,20 @@ function* buildCustomizationVars(branding?: Branding): Generator<string> {
       yield `--branding-color-${name}-hue: ${hue};`
     }
   }
+
+  if (branding?.background) {
+    const { light, dark } = branding.background
+    if (light) {
+      yield `--branding-background-light-image: url("${escapeCssUrl(light)}");`
+    }
+    if (dark) {
+      yield `--branding-background-dark-image: url("${escapeCssUrl(dark)}");`
+    }
+  }
+}
+
+// The value is a validated URL, so escaping the two characters that could break
+// out of the url("…") literal is enough.
+function escapeCssUrl(url: string): string {
+  return url.replace(/["\\]/g, (char) => `\\${char}`)
 }

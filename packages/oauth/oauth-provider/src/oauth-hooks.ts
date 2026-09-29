@@ -1,7 +1,7 @@
-import { Did } from '@atproto/did'
-import { Jwks } from '@atproto/jwk'
+import type { Did } from '@atproto/did'
+import type { Jwks } from '@atproto/jwk'
 import type { Account } from '@atproto/oauth-provider-api'
-import {
+import type {
   OAuthAccessToken,
   OAuthAuthorizationDetails,
   OAuthAuthorizationRequestParameters,
@@ -9,8 +9,10 @@ import {
   OAuthTokenResponse,
   OAuthTokenType,
 } from '@atproto/oauth-types'
-import {
+import type {
   DeleteAccountConfirmInput,
+  DisableEmailAuthFactorInput,
+  EnableEmailAuthFactorInput,
   ResetPasswordConfirmInput,
   ResetPasswordRequestInput,
   SignUpData,
@@ -20,29 +22,29 @@ import {
   VerifyEmailConfirmInput,
   VerifyEmailRequestInput,
 } from './account/account-store.js'
-import { SignInData } from './account/sign-in-data.js'
-import { SignUpInput } from './account/sign-up-input.js'
-import { ClientAuth } from './client/client-auth.js'
-import { ClientId } from './client/client-id.js'
-import { ClientInfo } from './client/client-info.js'
+import type { SignInData } from './account/sign-in-data.js'
+import type { SignUpInput } from './account/sign-up-input.js'
+import type { ClientAuth } from './client/client-auth.js'
+import type { ClientId } from './client/client-id.js'
+import type { ClientInfo } from './client/client-info.js'
 import { Client } from './client/client.js'
-import { DeviceId } from './device/device-id.js'
-import { DpopProof } from './dpop/dpop-proof.js'
+import type { DeviceId } from './device/device-id.js'
+import type { DpopProof } from './dpop/dpop-proof.js'
 import { AccessDeniedError } from './errors/access-denied-error.js'
 import { AuthorizationError } from './errors/authorization-error.js'
 import { InvalidCredentialsError } from './errors/invalid-credentials-error.js'
 import { InvalidRequestError } from './errors/invalid-request-error.js'
 import { OAuthError } from './errors/oauth-error.js'
-import {
+import type {
   HcaptchaClientTokens,
   HcaptchaConfig,
   HcaptchaVerifyResult,
 } from './lib/hcaptcha.js'
-import { RequestMetadata } from './lib/http/request.js'
-import { Awaitable, OmitKey } from './lib/util/type.js'
-import { RequestId } from './request/request-id.js'
-import { AccessTokenPayload } from './signer/access-token-payload.js'
-import { TokenClaims } from './token/token-claims.js'
+import type { RequestMetadata } from './lib/http/request.js'
+import type { Awaitable, OmitKey } from './lib/util/type.js'
+import type { RequestId } from './request/request-id.js'
+import type { AccessTokenPayload } from './signer/access-token-payload.js'
+import type { TokenClaims } from './token/token-claims.js'
 
 // Make sure all types needed to implement the OAuthHooks are exported
 export {
@@ -182,6 +184,65 @@ export type OAuthHooks = {
    */
   onVerifyEmailConfirmed?: (data: {
     input: VerifyEmailConfirmInput
+    deviceId: DeviceId
+    deviceMetadata: RequestMetadata
+    account: Account
+  }) => Awaitable<void>
+
+  /**
+   * This hook is called whenever a user is trying to enable their email auth
+   * factor (OTP), before the change is saved to the account store.
+   */
+  onEnableEmailAuthFactor?: (data: {
+    input: EnableEmailAuthFactorInput
+    deviceId: DeviceId
+    deviceMetadata: RequestMetadata
+    account: Account
+  }) => Awaitable<void>
+
+  /**
+   * This hook is called only after the email auth factor was actually enabled
+   * on the account store. This follows
+   * {@link OAuthHooks.onEnableEmailAuthFactor} and is triggered only if the
+   * change succeeded and actually occurred.
+   */
+  onEnabledEmailAuthFactor?: (data: {
+    input: EnableEmailAuthFactorInput
+    deviceId: DeviceId
+    deviceMetadata: RequestMetadata
+    account: Account
+  }) => Awaitable<void>
+
+  /**
+   * This hook is called when a user requests that their email auth factor (OTP)
+   * be disabled, before the change is saved to the account store.
+   *
+   * @note Disabling is two-phase:
+   * - First no {@link DisableEmailAuthFactorInput.token} is provided and the
+   * store implementation is expected to trigger an email confirmation. When
+   * that happens, {@link OAuthHooks.onDisabledEmailAuthFactor} will not be
+   * called during the processing of the first HTTP request.
+   * - In the second request, which follows the email confirmation, the
+   * {@link DisableEmailAuthFactorInput.token} is provided and the store
+   * implementation is expected to actually disable the email auth factor. At
+   * this point, {@link OAuthHooks.onDisabledEmailAuthFactor} will be called
+   * after the store has successfully processed the request.
+   */
+  onDisableEmailAuthFactor?: (data: {
+    input: DisableEmailAuthFactorInput
+    deviceId: DeviceId
+    deviceMetadata: RequestMetadata
+    account: Account
+  }) => Awaitable<void>
+
+  /**
+   * This hook is called only after the email auth factor was actually disabled
+   * on the account store. This follows
+   * {@link OAuthHooks.onDisableEmailAuthFactor} and is triggered only if the
+   * change succeeded and actually occurred.
+   */
+  onDisabledEmailAuthFactor?: (data: {
+    input: DisableEmailAuthFactorInput
     deviceId: DeviceId
     deviceMetadata: RequestMetadata
     account: Account

@@ -1,12 +1,15 @@
+/// <reference types="vitest/config" />
+
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { linguiMacroSwcPlugin } from '@lingui/swc-plugin/options'
 import { lingui } from '@lingui/vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react-swc'
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from 'vite'
 import { ASSETS_ENDPOINT_PREFIX } from '@atproto/oauth-provider-api'
-import { bundleManifest } from '@atproto-labs/rollup-plugin-bundle-manifest'
+import { bundleManifest } from '@atproto-labs/rolldown-plugin-bundle-manifest'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -56,7 +59,7 @@ export default defineConfig({
       generatedRouteTree: './src/routeTree.gen.ts',
     }),
     react({
-      plugins: [['@lingui/swc-plugin', {}]],
+      plugins: [linguiMacroSwcPlugin({}, { cwd: __dirname })],
     }),
     lingui({ cwd: __dirname }),
     tailwindcss(),
@@ -66,7 +69,7 @@ export default defineConfig({
     emptyOutDir: false,
     outDir: './dist',
     sourcemap: true,
-    rollupOptions: {
+    rolldownOptions: {
       input: [
         './src/account-page.tsx',
         './src/authorization-page.tsx',

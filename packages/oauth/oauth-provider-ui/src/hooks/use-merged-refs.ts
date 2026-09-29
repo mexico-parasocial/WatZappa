@@ -1,21 +1,19 @@
-import { Ref, useMemo } from 'react'
+import { type Ref, useMemo } from 'react'
 
 function mergeRefs<T>(...refs: Array<Ref<T> | undefined>): Ref<T> {
   return (value) => {
-    const cleanups = refs.map((r) => {
-      if (typeof r === 'function') return r(value)
-      if (r) {
-        r.current = value
+    const cleanups = refs.map((ref) => {
+      if (typeof ref === 'function') return ref(value)
+      if (ref) {
+        ref.current = value
         return () => {
-          r.current = null
+          ref.current = null
         }
       }
     })
 
     return () => {
-      for (const cleanup of cleanups) {
-        cleanup?.()
-      }
+      for (const cleanup of cleanups) cleanup?.()
     }
   }
 }

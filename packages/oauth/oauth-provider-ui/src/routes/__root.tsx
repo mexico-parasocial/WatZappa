@@ -1,13 +1,14 @@
 import { msg } from '@lingui/core/macro'
-import { useLingui } from '@lingui/react/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import type { QueryClient } from '@tanstack/react-query'
 import {
   Link,
   Outlet,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
+import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { ErrorView } from '#/components/error-view.tsx'
-import { Button } from '#/components/forms/button.tsx'
+import { ActionButton } from '#/components/forms/form-shell.tsx'
 import type { SessionStore } from '#/contexts/session.tsx'
 import type { Api } from '#/lib/api.ts'
 
@@ -28,16 +29,31 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 })
 
 function RootComponent() {
-  return <Outlet />
+  return (
+    <>
+      <Outlet />
+      {/* @NOTE `import.meta.env.DEV` is statically false in a production
+      build, so the devtools are dropped from the bundle rather than shipped.
+      bottom-right: the default corner sits on top of the account shell's
+      account menu and swallows clicks meant for it. */}
+      {import.meta.env.DEV && (
+        <TanStackRouterDevtools position="bottom-right" />
+      )}
+    </>
+  )
 }
 
 function NotFoundComponent() {
   const { t } = useLingui()
   return (
     <ErrorView title={msg`Page not found`}>
-      <Button>
-        <Link to="/account">{t`Back`}</Link>
-      </Button>
+      <ActionButton
+        aria-label={t`Back`}
+        className="w-full"
+        render={<Link to="/account" />}
+      >
+        <Trans>Back</Trans>
+      </ActionButton>
     </ErrorView>
   )
 }

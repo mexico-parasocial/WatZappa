@@ -1,19 +1,19 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import createHttpError from 'http-errors'
 import { z } from 'zod'
-import { Did, didSchema } from '@atproto/did'
+import { type Did, didSchema } from '@atproto/did'
 import { signedJwtSchema } from '@atproto/jwk'
 import {
   API_ENDPOINT_PREFIX,
-  ActiveAccountSession,
-  ActiveOAuthSession,
-  ApiEndpoints,
-  Session,
+  type ActiveAccountSession,
+  type ActiveOAuthSession,
+  type ApiEndpoints,
+  type Session,
 } from '@atproto/oauth-provider-api'
 import {
-  OAuthAuthorizationRequestParameters,
-  OAuthRedirectUri,
-  OAuthResponseMode,
+  type OAuthAuthorizationRequestParameters,
+  type OAuthRedirectUri,
+  type OAuthResponseMode,
   oauthRedirectUriSchema,
   oauthResponseModeSchema,
   oauthScopeSchema,
@@ -21,22 +21,22 @@ import {
 import type { ISODatetimeString } from '@atproto/syntax'
 import { signInDataSchema } from '../account/sign-in-data.js'
 import { signUpInputSchema } from '../account/sign-up-input.js'
-import { DeviceId, deviceIdSchema } from '../device/device-id.js'
+import { type DeviceId, deviceIdSchema } from '../device/device-id.js'
 import { AuthorizationError } from '../errors/authorization-error.js'
 import {
-  ErrorPayload,
+  type ErrorPayload,
   buildErrorPayload,
   buildErrorStatus,
 } from '../errors/error-parser.js'
 import { InvalidRequestError } from '../errors/invalid-request-error.js'
 import { WWWAuthenticateError } from '../errors/www-authenticate-error.js'
 import {
-  JsonResponse,
-  Middleware,
-  RequestMetadata,
+  type JsonResponse,
+  type Middleware,
+  type RequestMetadata,
   Router,
-  RouterCtx,
-  SubCtx,
+  type RouterCtx,
+  type SubCtx,
   flushStream,
   jsonHandler,
   parseHttpRequest,
@@ -46,13 +46,13 @@ import {
   validateOrigin,
   validateReferrer,
 } from '../lib/http/index.js'
-import { RouteCtx, createRoute } from '../lib/http/route.js'
+import { type RouteCtx, createRoute } from '../lib/http/route.js'
 import { asArray } from '../lib/util/cast.js'
 import { localeSchema } from '../lib/util/locale.js'
 import type { Awaitable } from '../lib/util/type.js'
 import type { OAuthProvider } from '../oauth-provider.js'
-import { RequestUri, requestUriSchema } from '../request/request-uri.js'
-import { AuthorizationRedirectParameters } from '../result/authorization-redirect-parameters.js'
+import { type RequestUri, requestUriSchema } from '../request/request-uri.js'
+import type { AuthorizationRedirectParameters } from '../result/authorization-redirect-parameters.js'
 import { tokenIdSchema } from '../token/token-id.js'
 import { emailOtpSchema } from '../types/email-otp.js'
 import { emailSchema } from '../types/email.js'
@@ -61,8 +61,8 @@ import { newPasswordSchema, oldPasswordSchema } from '../types/password.js'
 import { validateCsrfToken } from './assets/csrf.js'
 import {
   ERROR_REDIRECT_KEYS,
-  OAuthRedirectOptions,
-  OAuthRedirectQueryParameter,
+  type OAuthRedirectOptions,
+  type OAuthRedirectQueryParameter,
   SUCCESS_REDIRECT_KEYS,
   buildRedirectMode,
   buildRedirectParams,
@@ -341,6 +341,61 @@ export function createApiMiddleware<
         let { account } = await authenticate.call(this, req, res)
 
         account = await server.accountManager.verifyEmailConfirm(
+          this.deviceId,
+          this.deviceMetadata,
+          this.input,
+          account,
+        )
+
+        return { json: { account } }
+      },
+    }),
+  )
+
+  router.use(
+    apiRoute({
+      method: 'POST',
+      endpoint: '/enable-email-otp',
+      schema: z
+        .object({
+          did: didSchema,
+          locale: localeSchema.optional(),
+        })
+        .strict(),
+      async handler(req, res) {
+        let { account } = await authenticate.call(this, req, res)
+
+        account = await server.accountManager.enableEmailAuthFactor(
+          this.deviceId,
+          this.deviceMetadata,
+          this.input,
+          account,
+        )
+
+        return { json: { account } }
+      },
+    }),
+  )
+
+  router.use(
+    apiRoute({
+      method: 'POST',
+      endpoint: '/disable-email-otp',
+      schema: z
+        .object({
+          did: didSchema,
+          token: emailOtpSchema.optional(),
+          locale: localeSchema.optional(),
+        })
+        .strict(),
+      async handler(req, res) {
+        let { account } = await authenticate.call(this, req, res)
+
+        // @NOTE Phase 1 (no token provided) will cause an
+        // SecondAuthenticationFactorRequiredError to be thrown, prompting the
+        // client to provide the required token. Phase 2 (with a valid token)
+        // will then disable the factor.
+        account = await server.accountManager.disableEmailAuthFactor(
           this.deviceId,
           this.deviceMetadata,
           this.input,
@@ -891,11 +946,11 @@ export function createApiMiddleware<
           : never
       }[keyof ApiEndpoints],
     S extends // A schema that validates the POST input or GET params
-      ApiEndpoints[E] extends { method: 'POST'; input: infer I }
+      (ApiEndpoints[E] extends { method: 'POST'; input: infer I }
         ? z.ZodType<I, z.ZodTypeDef, unknown>
         : ApiEndpoints[E] extends { method: 'GET'; params: infer P }
           ? z.ZodType<P, z.ZodTypeDef, unknown>
-          : void,
+          : void),
   >(options: {
     method: M
     endpoint: E
