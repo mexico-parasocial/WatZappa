@@ -1,14 +1,18 @@
 import { DAY, MINUTE } from '@atproto/common'
-import { DidString, HandleString, INVALID_HANDLE } from '@atproto/syntax'
+import {
+  type DidString,
+  type HandleString,
+  INVALID_HANDLE,
+} from '@atproto/syntax'
 import {
   AuthRequiredError,
-  MethodRateLimit,
-  Server,
+  type MethodRateLimit,
+  type Server,
 } from '@atproto/xrpc-server'
 import { formatAccountStatus } from '../../../../account-manager/account-manager.js'
-import { OLD_PASSWORD_MAX_LENGTH } from '../../../../account-manager/helpers/scrypt.js'
 import { validateIm8Token } from '../../../../account-manager/helpers/im8-token.js'
-import { AppContext } from '../../../../context.js'
+import { OLD_PASSWORD_MAX_LENGTH } from '../../../../account-manager/helpers/scrypt.js'
+import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 import { didDocForSession } from './util.js'
 
@@ -55,8 +59,15 @@ export default function (server: Server, ctx: AppContext) {
           )
         }
 
+        // @TODO get the locale somehow (either by adding a field in the request
+        // body, or by using the `Accept-Language` header).
+        const locale = undefined
+
+        // @NOTE No translation needed for the second-factor challenge: `login()`
+        // throws `AuthFactorRequiredError`, already an `AuthRequiredError`
+        // carrying this method's declared `AuthFactorTokenRequired` error name.
         const { user, isSoftDeleted, appPassword } =
-          await ctx.accountManager.login(body)
+          await ctx.accountManager.login({ ...body, locale })
 
         // Auth factor check: if account requires 2FA and no token provided
         if (user.authFactorType && !body.authFactorToken) {
@@ -76,7 +87,10 @@ export default function (server: Server, ctx: AppContext) {
             )
           }
           try {
-            const session = await validateIm8Token(m8BaseUrl, body.authFactorToken)
+            const session = await validateIm8Token(
+              m8BaseUrl,
+              body.authFactorToken,
+            )
             if (session.did !== user.did) {
               throw new AuthRequiredError(
                 'Auth factor token does not match account',
@@ -121,7 +135,7 @@ export default function (server: Server, ctx: AppContext) {
             handle: (user.handle ?? INVALID_HANDLE) as HandleString,
             email: user.email ?? undefined,
             emailConfirmed: !!user.emailConfirmedAt,
-            emailAuthFactor: user.authFactorType === 'email',
+            emailAuthFactor: !!user.emailAuthFactorAt,
             active,
             status,
           },

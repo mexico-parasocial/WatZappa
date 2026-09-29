@@ -1,15 +1,15 @@
 import { DAY } from '@atproto/common'
 import {
-  AtIdentifierString,
-  DatetimeString,
-  DidString,
-  HandleString,
+  type AtIdentifierString,
+  type DatetimeString,
+  type DidString,
+  type HandleString,
   currentDatetimeString,
   isDidIdentifier,
 } from '@atproto/lex'
 import { isErrUniqueViolation, notSoftDeletedClause } from '../../db/index.js'
-import { com } from '../../lexicons/index.js'
-import { AccountDb, ActorEntry } from '../db/index.js'
+import type { com } from '../../lexicons/index.js'
+import type { AccountDb, ActorEntry } from '../db/index.js'
 
 export class UserAlreadyExistsError extends Error {
   name = 'UserAlreadyExistsError'
@@ -24,6 +24,7 @@ export class UserAlreadyExistsError extends Error {
 export type ActorAccount = ActorEntry & {
   email: string | null
   emailConfirmedAt: string | null
+  emailAuthFactorAt: string | null
   invitesDisabled: 0 | 1 | null
   authFactorType: 'email' | 'im8' | null
 }
@@ -47,6 +48,11 @@ export const selectAccountQB = (db: AccountDb, flags?: AvailabilityFlags) => {
   return db.db
     .selectFrom('actor')
     .leftJoin('account', 'actor.did', 'account.did')
+    .leftJoin(
+      'account_email_auth_factor',
+      'actor.did',
+      'account_email_auth_factor.did',
+    )
     .$if(!includeTakenDown, (qb) =>
       qb.where(notSoftDeletedClause(ref('actor'))),
     )
@@ -63,6 +69,7 @@ export const selectAccountQB = (db: AccountDb, flags?: AvailabilityFlags) => {
       'account.email',
       'account.emailConfirmedAt',
       'account.invitesDisabled',
+      'account_email_auth_factor.emailAuthFactorEnabledAt as emailAuthFactorAt',
       'account.authFactorType',
     ])
 }
@@ -184,6 +191,9 @@ export const deleteAccount = async (
     db.db.deleteFrom('email_token').where('did', '=', did),
   )
   await db.executeWithRetry(
+    db.db.deleteFrom('account_email_auth_factor').where('did', '=', did),
+  )
+  await db.executeWithRetry(
     db.db.deleteFrom('refresh_token').where('did', '=', did),
   )
   await db.executeWithRetry(
@@ -267,10 +277,7 @@ export const updateAuthFactorType = async (
   authFactorType: 'email' | 'im8' | null,
 ) => {
   await db.executeWithRetry(
-    db.db
-      .updateTable('account')
-      .set({ authFactorType })
-      .where('did', '=', did),
+    db.db.updateTable('account').set({ authFactorType }).where('did', '=', did),
   )
 }
 
@@ -300,7 +307,7 @@ export const updateAccountTakedownStatus = async (
   takedown: com.atproto.admin.defs.StatusAttr,
 ) => {
   const takedownRef = takedown.applied
-    ? takedown.ref ?? currentDatetimeString()
+    ? (takedown.ref ?? currentDatetimeString())
     : null
   await db.executeWithRetry(
     db.db.updateTable('actor').set({ takedownRef }).where('did', '=', did),

@@ -1,6 +1,6 @@
-import { ForbiddenError, Server } from '@atproto/xrpc-server'
+import { ForbiddenError, type Server } from '@atproto/xrpc-server'
 import { ACCESS_FULL } from '../../../../auth-scope.js'
-import { AppContext } from '../../../../context.js'
+import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 
 export default function (server: Server, ctx: AppContext) {
@@ -8,9 +8,11 @@ export default function (server: Server, ctx: AppContext) {
 
   const auth = ctx.authVerifier.authorization({
     scopes: ACCESS_FULL,
+    // OAuth authorization flows are refused for deactivated accounts, so a
+    // client cannot obtain fresh credentials to reactivate an account with.
     authorize: () => {
       throw new ForbiddenError(
-        'OAuth credentials are not supported for this endpoint',
+        'Account reactivation is not available with OAuth credentials. Sign in to your account management page to reactivate.',
       )
     },
   })
