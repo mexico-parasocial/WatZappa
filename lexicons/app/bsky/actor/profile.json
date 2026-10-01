@@ -26,7 +26,10 @@
             "maxGraphemes": 20,
             "maxLength": 200
           },
-          "website": { "type": "string", "format": "uri" },
+          "website": {
+            "type": "string",
+            "format": "uri"
+          },
           "avatar": {
             "type": "blob",
             "description": "Small image to be displayed next to posts from account. AKA, 'profile picture'",
@@ -52,7 +55,14 @@
             "type": "ref",
             "ref": "com.atproto.repo.strongRef"
           },
-          "createdAt": { "type": "string", "format": "datetime" }
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "revealInfluence": {
+            "type": "boolean",
+            "description": "Whether to display the global Influence score to other viewers. Defaults to false when absent."
+          }
         }
       }
     }

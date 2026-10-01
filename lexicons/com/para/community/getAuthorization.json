@@ -1,0 +1,31 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.getAuthorization",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Resolve effective roles, capabilities, and authorization for one community action.",
+      "parameters": {
+        "type": "params",
+        "required": ["community", "action"],
+        "properties": {
+          "community": { "type": "string", "format": "at-uri" },
+          "action": { "type": "string", "maxLength": 128 },
+          "subject": { "type": "string", "format": "did" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["roles", "capabilities", "authorization"],
+          "properties": {
+            "roles": { "type": "array", "items": { "type": "string", "knownValues": ["member", "moderator", "owner"] } },
+            "capabilities": { "type": "array", "items": { "type": "string", "maxLength": 128 } },
+            "authorization": { "type": "ref", "ref": "com.para.community.defs#availableAction" }
+          }
+        }
+      }
+    }
+  }
+}

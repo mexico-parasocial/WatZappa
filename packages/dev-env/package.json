@@ -17,6 +17,7 @@
     "./tsconfig.json",
     "./tsconfig.build.json",
     "./dist",
+    "./assets/memes",
     "./README.md",
     "./CHANGELOG.md"
   ],

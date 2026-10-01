@@ -34,6 +34,11 @@
               "type": "string",
               "knownValues": ["hierarchical", "horizontal"],
               "description": "Governance model for this community. Hierarchical uses owner/moderator roles. Horizontal uses rotating facilitators and assembly votes. Defaults to hierarchical."
+            },
+            "admissionMode": {
+              "type": "string",
+              "knownValues": ["open", "assembly_approval"],
+              "description": "Open communities admit immediately; assembly approval communities create a pending membership request."
             }
           }
         }

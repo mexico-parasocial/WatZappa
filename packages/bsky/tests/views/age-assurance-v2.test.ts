@@ -3,7 +3,7 @@ import { vi } from 'vitest'
 import crypto from 'node:crypto'
 import { once } from 'node:events'
 import { Server, createServer } from 'node:http'
-import { AddressInfo } from 'node:net'
+import type { AddressInfo } from 'node:net'
 import express, { Application, json } from 'express'
 import {
   afterAll,

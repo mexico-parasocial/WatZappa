@@ -23,6 +23,7 @@ Implementation split follows the standard atproto topology:
 | com.para.actor.exportCivicTree | `bsky/tests/views/para-civic-tree-export.test.ts` |
 | com.para.agent.getConversation / sendMessage | external (frontend) |
 | com.para.alpha.getAccess / getRolloutStatus | external (frontend); PDS mirrors read-only |
+| com.para.book.searchBooks | external (frontend); proxies Open Library, see `book/open-library.ts` |
 | com.para.civic.getCabildeo, getOpenQuestionThread, getPolicyTally, listCabildeos, listCabildeoPositions, listDelegationCandidates | external (frontend); getCabildeo/getBoard also called by PDS `civic/castVote` |
 | com.para.civic.putLivePresence | `bsky/tests/data-plane/post-subscriptions.test.ts` |
 | com.para.collection.* (5 methods) | external (frontend) |

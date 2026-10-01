@@ -60,6 +60,7 @@ export type ThreadContexts = HydrationMap<AtUriString, ThreadContext>
 
 export type PostAgg = {
   likes: number
+  voteScore: number
   replies: number
   reposts: number
   quotes: number
@@ -309,6 +310,7 @@ export class FeedHydrator {
     for (let i = 0; i < refs.length; i++) {
       map.set(refs[i].uri, {
         likes: counts.likes[i] ?? 0,
+        voteScore: counts.voteScores[i] ?? counts.likes[i] ?? 0,
         replies: counts.replies[i] ?? 0,
         reposts: counts.reposts[i] ?? 0,
         quotes: counts.quotes[i] ?? 0,

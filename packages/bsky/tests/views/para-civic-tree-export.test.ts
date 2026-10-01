@@ -2,7 +2,7 @@
 import { request } from 'undici'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
-  SeedClient,
+  type SeedClient,
   TestNetwork,
   createCommunityBoardRecord,
   createCommunityMembershipRecord,

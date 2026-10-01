@@ -406,6 +406,8 @@ message GetInteractionCountsResponse {
   repeated int32 replies = 3;
   repeated int32 quotes = 4;
   repeated int32 bookmarks = 5;
+  // Net public reactions (signed votes override likes), parallel to refs.
+  repeated int32 vote_scores = 6;
 }
 
 message GetCountsForUsersRequest {
@@ -897,12 +899,6 @@ message GetNotificationPreferencesResponse {
 // - list recent notifications for a user
 //     - notifications should include a uri for the record that caused the notif & a “reason” for the notification (reply, like, quotepost, etc)
 //     - this should include both read & unread notifs
-message GetNotificationsRequest {
-  string actor_did = 1;
-  int32 limit = 2;
-  string cursor = 3;
-  bool priority = 4;
-}
 
 message Notification {
   string recipient_did = 1;
@@ -913,7 +909,35 @@ message Notification {
   bool priority = 6;
 }
 
+message GetNotificationsRequest {
+  string actor_did = 1;
+  int32 limit = 2;
+  string cursor = 3;
+  reserved 4; // was "priority", deprecated
+}
+
 message GetNotificationsResponse {
+  repeated Notification notifications = 1;
+  string cursor = 2;
+}
+
+enum NotificationFeed {
+  NOTIFICATION_FEED_UNSPECIFIED = 0;
+  NOTIFICATION_FEED_ALL = 1;
+  NOTIFICATION_FEED_PEOPLE_I_FOLLOW = 2;
+  NOTIFICATION_FEED_CONVERSATIONS = 3;
+  NOTIFICATION_FEED_FOLLOWERS = 4;
+  NOTIFICATION_FEED_ACTIVITY = 5;
+}
+
+message GetNotificationsV2Request {
+  string actor_did = 1;
+  int32 limit = 2;
+  string cursor = 3;
+  NotificationFeed feed = 4;
+}
+
+message GetNotificationsV2Response {
   repeated Notification notifications = 1;
   string cursor = 2;
 }
@@ -1083,11 +1107,13 @@ message GetTimelineRequest {
   bool exclude_replies = 4;
   bool exclude_reposts = 5;
   bool exclude_quotes = 6;
+  string since = 7;
 }
 
 message GetTimelineResponse {
   repeated TimelineFeedItem items = 1;
   string cursor = 2;
+  string start_cursor = 3;
 }
 
 message TimelineFeedItem {
@@ -1110,11 +1136,13 @@ message GetListFeedRequest {
   bool exclude_replies = 4;
   bool exclude_reposts = 5;
   bool exclude_quotes = 6;
+  string since = 7;
 }
 
 message GetListFeedResponse {
   repeated TimelineFeedItem items = 1;
   string cursor = 2;
+  string start_cursor = 3;
 }
 
 //
@@ -2211,6 +2239,27 @@ message ParaCommunityGovernanceSummary {
   int32 deputy_role_count = 3;
   string last_published_at = 4;
 }
+message ParaAvailableAction {
+  string action = 1;
+  string status = 2;
+  string policy = 3;
+  string reason = 4;
+  string evidence = 5;
+}
+message ParaRoleDefinition {
+  string role = 1;
+  string how_to_obtain = 2;
+  repeated string responsibilities = 3;
+  repeated string actions = 4;
+  repeated string permissions = 5;
+}
+message ParaRoleHolder {
+  string did = 1;
+  string role = 2;
+  string effective_at = 3;
+  string expires_at = 4;
+  string evidence = 5;
+}
 message ParaCommunityBoardView {
   string uri = 1;
   string cid = 2;
@@ -2234,6 +2283,8 @@ message ParaCommunityBoardView {
   repeated string parent_community_uris = 20;
   int32 child_community_count = 21;
   int32 shared_content_count = 22;
+  string governance_mode = 23;
+  string admission_mode = 24;
 }
 message GetParaCommunityBoardRequest {
   string community_id = 1;
@@ -2243,6 +2294,19 @@ message GetParaCommunityBoardRequest {
 message GetParaCommunityBoardResponse {
   ParaCommunityBoardView board = 1;
   ParaCommunityGovernanceSummary governance_summary = 2;
+  repeated string viewer_capabilities = 3;
+  repeated ParaAvailableAction available_actions = 4;
+}
+message GetParaCommunityAuthorizationRequest {
+  string community = 1;
+  string viewer_did = 2;
+  string action = 3;
+  string subject = 4;
+}
+message GetParaCommunityAuthorizationResponse {
+  repeated string roles = 1;
+  repeated string capabilities = 2;
+  ParaAvailableAction authorization = 3;
 }
 message GetParaCommunityBoardsRequest {
   string viewer_did = 1;
@@ -2388,6 +2452,11 @@ message GetParaCommunityGovernanceResponse {
   string computed_at = 6;
   ParaCommunityGovernanceMetadata metadata = 7;
   repeated ParaCommunityGovernanceHistoryEntry edit_history = 8;
+  string organization_standard = 9;
+  string admission_mode = 10;
+  int32 authority_event_version = 11;
+  repeated ParaRoleDefinition role_definitions = 12;
+  repeated ParaRoleHolder role_holders = 13;
 }
 message GetParaCommunityPostsRequest {
   string community = 1;
@@ -2584,6 +2653,7 @@ service Service {
   // Notifications
   rpc GetNotificationPreferences(GetNotificationPreferencesRequest) returns (GetNotificationPreferencesResponse);
   rpc GetNotifications(GetNotificationsRequest) returns (GetNotificationsResponse);
+  rpc GetNotificationsV2(GetNotificationsV2Request) returns (GetNotificationsV2Response);
   rpc GetNotificationSeen(GetNotificationSeenRequest) returns (GetNotificationSeenResponse);
   rpc GetUnreadNotificationCount(GetUnreadNotificationCountRequest) returns (GetUnreadNotificationCountResponse);
   rpc GetActivitySubscriptionDids(GetActivitySubscriptionDidsRequest) returns (GetActivitySubscriptionDidsResponse);
@@ -2701,6 +2771,7 @@ service Service {
   rpc GetParaDiscourseSentiment(GetParaDiscourseSentimentRequest) returns (GetParaDiscourseSentimentResponse);
   rpc GetParaTrendingTopics(GetParaTrendingTopicsRequest) returns (GetParaTrendingTopicsResponse);
   rpc GetParaCommunityBoard(GetParaCommunityBoardRequest) returns (GetParaCommunityBoardResponse);
+  rpc GetParaCommunityAuthorization(GetParaCommunityAuthorizationRequest) returns (GetParaCommunityAuthorizationResponse);
   rpc GetParaCommunityBoards(GetParaCommunityBoardsRequest) returns (GetParaCommunityBoardsResponse);
   rpc GetParaCommunityMembers(GetParaCommunityMembersRequest) returns (GetParaCommunityMembersResponse);
   rpc GetParaCommunityGovernance(GetParaCommunityGovernanceRequest) returns (GetParaCommunityGovernanceResponse);

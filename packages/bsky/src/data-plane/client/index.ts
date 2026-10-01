@@ -3,7 +3,7 @@ import { randomInt } from 'node:crypto'
 import {
   Code,
   ConnectError,
-  PromiseClient,
+  type PromiseClient,
   createPromiseClient,
   makeAnyClient,
 } from '@connectrpc/connect'

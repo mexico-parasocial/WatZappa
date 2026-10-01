@@ -54,6 +54,8 @@ export interface DeliberationStatement {
   agreeCount: number
   disagreeCount: number
   passCount: number
+  /** How the requesting viewer already weighed this argument, if they did. Absent for a logged-out viewer. */
+  viewerDirection?: 'agree' | 'disagree' | 'pass' | (string & {})
   createdAt: string
 }
 

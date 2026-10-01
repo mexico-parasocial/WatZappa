@@ -1,7 +1,7 @@
 // @ts-nocheck
 import assert from 'node:assert'
-import { AppBskyFeedDefs, AtpAgent, ids } from '@atproto/api'
-import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import { AppBskyFeedDefs, type AtpAgent, ids } from '@atproto/api'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 import { forSnapshot } from '../_util.js'
 
 describe('views with thread gating', () => {

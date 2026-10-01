@@ -2,7 +2,7 @@
 import { jest } from '@jest/globals'
 import assert from 'node:assert'
 import * as http from 'node:http'
-import { AddressInfo } from 'node:net'
+import type { AddressInfo } from 'node:net'
 import { Readable } from 'node:stream'
 import { brotliCompressSync, deflateSync, gzipSync } from 'node:zlib'
 import { cidForCbor } from '@atproto/common'

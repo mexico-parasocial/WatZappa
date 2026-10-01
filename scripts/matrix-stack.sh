@@ -159,7 +159,7 @@ cmd_status() {
 
 # Reports where the pipeline actually stands, which container health cannot.
 cmd_doctor() {
-  local db="${BRIDGE_DB_PATH:-$ROOT/data/bridge/bridge.db}"
+  local db="${BRIDGE_DB_PATH:-${PARA_DEV_ENV_DATA:-$ROOT/.dev-env-data}/bridge/bridge.db}"
   echo "bridge db: $db"
   if [ ! -f "$db" ]; then
     red "  not found — the bridge has never run against this path"
@@ -170,13 +170,12 @@ cmd_doctor() {
     return 0
   fi
   local t
-  for t in community_membership_state community_space_map user_matrix_map matrix_events device_sessions; do
+  for t in community_membership_state community_space_map matrix_events device_sessions; do
     printf '  %-28s %s\n' "$t" "$(sqlite3 "$db" "select count(*) from $t;" 2>/dev/null || echo '?')"
   done
   echo
   echo "Read it like this:"
   echo "  community_space_map = 0  → no community was ever projected into Matrix"
-  echo "  user_matrix_map     = 0  → no DID has an MXID; /api/matrix-identity 404s"
   echo "  matrix_events       = 0  → no room event ever reached the bridge"
 }
 

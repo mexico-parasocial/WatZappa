@@ -36,6 +36,10 @@ cd "$ROOT/packages/dev-env"
 pnpm run build
 node --enable-source-maps dist/local-doctor.js "$DATA_DIR"
 
+cd "$ROOT/packages/pds"
+../../node_modules/.bin/tsc --build tsconfig.build.json --force
+node "$ROOT/scripts/repair-dev-pds-migrations.mjs" "$DATA_DIR"
+
 # Force regeneration of the migration registry; incremental builds can leave
 # an obsolete dist/index.js after a migration was renamed on another branch.
 cd "$ROOT/packages/bsky"
@@ -57,6 +61,8 @@ export DEV_ENV_PLC_DIRECTORY="$DATA_DIR/plc"
 export DEV_ENV_PDS_REPO_BACKFILL_LIMIT_MS=315360000000
 export DEV_ENV_SKIP_MOCK_SETUP=1
 export DEV_ENV_SKIP_PARA_DEMO_SEED=1
+export DEV_ENV_SEED_MEMES_ON_START=1
+export SEED_PASSWORD="${SEED_PASSWORD:-para-test-pw}"
 export BRIDGE_DB_PATH="$DATA_DIR/bridge/bridge.db"
 export BRIDGE_PDS_SOURCE_ID="$(cat "$SOURCE_FILE")"
 export BRIDGE_BACKFILL_FROM_START=1

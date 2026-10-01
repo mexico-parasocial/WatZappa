@@ -29,37 +29,52 @@ Create a new user.
 
 Get the `ServiceClient` for the given user.
 
+## Local PARA development
+
+Run `make run-dev-env` from the repository root for everyday development.
+It keeps the PDS, PLC, blobs, and bridge cursor together in `.dev-env-data`
+and uses the `para_local` PostgreSQL namespace. Do not mix these with another
+profile's database. The existing `run-dev-env-persistent` target is an alias.
+The full demo seed does not run in this profile.
+
+Use `make run-demo-env` only for a disposable full demo. It starts a fresh PDS
+and does not start the Matrix bridge, so its demo communities do not create
+rooms in the durable Synapse stack. Demo accounts have no civic eligibility
+proof: the seed skips cabildeo votes and delegations instead of reporting
+rejected writes as successes.
+
 ## Image memes for PARA UI development
 
-The disposable `make run-dev-env` keeps its demo seed and uses a fresh Matrix
-bridge database on every run. For sessions that must survive restarts, use
-`make run-dev-env-persistent` from the repository root. It uses the coherent
-`.dev-env-data` PDS, PLC, blob store, and a separate bridge database and
-PostgreSQL namespace. It does not run the full demo seed at startup.
+The persistent profile imports images from `assets/memes/` into `alice.test`
+at startup. Add `.jpg`, `.jpeg`, `.png`, or `.webp` files there and restart
+to populate the Memes screen with your own images.
 Stopping it releases the PDS and bridge ports; the durable PostgreSQL and
 Redis containers stay up so their volumes remain available.
 
 The persistent demo accounts `alice.test`, `bob.test`, and `carla.test` use
-`para-test-pw`; internal service accounts keep their own passwords. Run
-`make seed-memes-persistent` to upsert the image fixtures into Alice's account.
-Repeating that target updates the same eight records. For the disposable mode,
-the `seed:memes` command below still defaults to `hunter2`.
+`para-test-pw`; internal service accounts keep their own passwords. A fresh
+profile creates Alice with `para-test-pw` for these fixtures. The optional
+`make seed-memes-persistent` target refreshes the images without restarting.
+For the disposable demo, `seed:memes` still defaults to `hunter2`.
 
-The persistent launcher checks account signing keys against the local PLC
-before starting. If it reports missing DIDs, check that the PDS and PLC came
-from the same data directory; do not point the bridge at a different profile's
-SQLite database. Previously used `~/.paramx-demo` data is not part of this
-profile.
+The persistent launcher checks account signing keys against the local PLC and
+verifies the migration order before starting. It repairs the known PDS account
+migration `008` gap after saving an SQLite backup under `.dev-env-data/backups/`;
+other unexpected orders stop with an error. Keep the PDS, PLC, and bridge data
+together. Previously used `~/.paramx-demo` data is not part of this profile.
 
-With the local dev environment running, from this package directory:
+For the disposable `make run-demo-env` profile, or to refresh images without
+restarting the persistent profile, run this from the package directory while
+the PDS is running:
 
 ```sh
 pnpm run build
 pnpm run seed:memes
 ```
 
-The command signs in as `alice.test` (`hunter2`) on `http://127.0.0.1:2583`,
-uploads bundled images from `assets/`, and upserts eight `com.para.post`
+The command signs in as `alice.test` (`hunter2` by default) on
+`http://127.0.0.1:2583`,
+uploads images from `assets/memes/`, and upserts `com.para.post`
 records with `postType: meme` and matching metadata. Repeating the command
 updates the same records. To use another development account, set
 `SEED_PDS_URL`, `SEED_IDENTIFIER`, and `SEED_PASSWORD`.
@@ -67,8 +82,8 @@ updates the same records. To use another development account, set
 The full PARA demo seed includes these images automatically. After changing
 backend code, restart the dev environment to load the compiled changes.
 Refresh the Memes screen in board mode, then select deck mode. Clear active
-compass filters to see the unscoped demo memes. Edit `src/seed/para-memes.ts`
-to change the captions and local image filenames.
+compass filters to see the unscoped demo memes. Add images to `assets/memes/`
+and restart to see them in the persistent profile.
 
 ## License
 

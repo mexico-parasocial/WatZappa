@@ -1,0 +1,60 @@
+{
+  "lexicon": 1,
+  "id": "com.para.collection.applyOps",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Apply edits to a collection. Unlike updateCollection, which replaces the whole collection and so erases anything written since the caller last read it, each edit here is applied to the collection's current state in the order the server receives it. Edits from different devices merge instead of overwriting. The edits are applied asynchronously; the response confirms they were accepted, not that they are readable yet.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "id",
+            "ops"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "ops": {
+              "type": "array",
+              "minLength": 1,
+              "maxLength": 50,
+              "items": {
+                "type": "ref",
+                "ref": "com.para.collection.defs#collectionOp"
+              }
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "opId"
+          ],
+          "properties": {
+            "opId": {
+              "type": "string",
+              "description": "Identifies this batch in the operation log."
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "NotFound",
+          "description": "No collection with this id belongs to the caller."
+        },
+        {
+          "name": "LimitExceeded",
+          "description": "The edits would take the collection past its item, relation or size limit."
+        }
+      ]
+    }
+  }
+}

@@ -1,10 +1,14 @@
-import { Selectable } from 'kysely'
-import { Cid } from '@atproto/lex'
+import type { Selectable } from 'kysely'
+import type { Cid } from '@atproto/lex'
 import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
+import { NOTIFICATION_REASON } from '../../../../api/app/bsky/notification/constants.js'
 import { app } from '../../../../lexicons.js'
-import { BackgroundQueue } from '../../background.js'
-import { Database } from '../../db/index.js'
-import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
+import type { BackgroundQueue } from '../../background.js'
+import type {
+  DatabaseSchema,
+  DatabaseSchemaType,
+} from '../../db/database-schema.js'
+import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
 
 type IndexedVerification = Selectable<DatabaseSchemaType['verification']>
@@ -56,7 +60,7 @@ const notifsForInsert = (obj: IndexedVerification) => {
       author: obj.creator,
       recordUri: obj.uri,
       recordCid: obj.cid,
-      reason: 'verified' as const,
+      reason: NOTIFICATION_REASON.VERIFIED,
       reasonSubject: null,
       sortAt: obj.sortedAt,
     },
@@ -86,7 +90,7 @@ const notifsForDelete = (
         author: deleted.creator,
         recordUri: deleted.uri,
         recordCid: deleted.cid,
-        reason: 'unverified' as const,
+        reason: NOTIFICATION_REASON.UNVERIFIED,
         reasonSubject: null,
         sortAt: new Date().toISOString(),
       },

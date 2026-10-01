@@ -1,16 +1,16 @@
-// @ts-nocheck
+import { toDatetimeString } from '@atproto/syntax'
 import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { DataPlaneClient } from '../../../../data-plane/index.js'
-import { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
-import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/actor/getProfileStats.js'
-import { Views } from '../../../../views/index.js'
+import type { AppContext } from '../../../../context.js'
+import type { DataPlaneClient } from '../../../../data-plane/index.js'
+import type { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
+import { parseJsonBytes, parseString } from '../../../../hydration/util.js'
+import type { Server } from '../../../../lexicon/index.js'
+import { app, com } from '../../../../lexicons/index.js'
+import type { Views } from '../../../../views/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.actor.getProfileStats({
+  server.xrpc.add(com.para.actor.getProfileStats, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer, includeTakedowns } = ctx.authVerifier.parseCreds(auth)
@@ -30,10 +30,10 @@ export default function (server: Server, ctx: AppContext) {
       return {
         encoding: 'application/json' as const,
         body: result,
-        headers: resHeaders({
-          repoRev,
-          labelers: hydrateCtx.labelers,
-        }),
+        headers: {
+          ...resHeaders({ repoRev, labelers: hydrateCtx.labelers }),
+          'cache-control': 'private, no-store',
+        },
       }
     },
   })
@@ -81,22 +81,27 @@ const getProfileStats = async (inputs: { ctx: Context; params: Params }) => {
     )
   }
 
-  const cache = ctx.paraCache
-  const cacheKey = cache?.profileStatsKey(did)
-  if (cache && cacheKey) {
-    const cached = await cache.get(cacheKey, 'profileStats')
-    if (cached) return cached
-  }
-
   const res = await ctx.dataplane.getParaProfileStats({ actorDid: did })
   const computedAt =
     parseString(res.stats?.computedAt) ?? new Date().toISOString()
 
-  const result = {
+  const profiles = await ctx.dataplane.getProfileRecords({
+    uris: [`at://${did}/${app.bsky.actor.profile.$type}/self`],
+  })
+  const profile = profiles.records[0]
+    ? parseJsonBytes(app.bsky.actor.profile.main, profiles.records[0].record)
+    : undefined
+  const influenceVisible = profile?.revealInfluence === true
+  const canSeeInfluence = influenceVisible || params.hydrateCtx.viewer === did
+
+  const result: com.para.actor.getProfileStats.$OutputBody = {
     actor: did,
+    influenceVisible,
     stats: {
-      influence: res.stats?.influence ?? 0,
-      votesReceivedAllTime: res.stats?.votesReceivedAllTime ?? 0,
+      influence: canSeeInfluence ? (res.stats?.influence ?? 0) : 0,
+      votesReceivedAllTime: canSeeInfluence
+        ? (res.stats?.votesReceivedAllTime ?? 0)
+        : 0,
       votesCastAllTime: res.stats?.votesCastAllTime ?? 0,
       contributions: {
         policies: res.stats?.contributions?.policies ?? 0,
@@ -104,21 +109,18 @@ const getProfileStats = async (inputs: { ctx: Context; params: Params }) => {
         comments: res.stats?.contributions?.comments ?? 0,
       },
       activeIn: res.stats?.activeIn ?? [],
-      computedAt,
+      computedAt: toDatetimeString(computedAt),
     },
     status: res.status
       ? {
           status: res.status.status,
           party: parseString(res.status.party),
           community: parseString(res.status.community),
-          createdAt: res.status.createdAt,
+          createdAt: toDatetimeString(res.status.createdAt),
         }
       : undefined,
   }
 
-  if (cache && cacheKey) {
-    await cache.set(cacheKey, 'profileStats', result)
-  }
   return result
 }
 
@@ -126,9 +128,8 @@ type Context = {
   dataplane: DataPlaneClient
   hydrator: Hydrator
   views: Views
-  paraCache?: import('../../../../cache/para-cache.js').ParaCacheService
 }
 
-type Params = QueryParams & {
+type Params = com.para.actor.getProfileStats.$Params & {
   hydrateCtx: HydrateCtx
 }

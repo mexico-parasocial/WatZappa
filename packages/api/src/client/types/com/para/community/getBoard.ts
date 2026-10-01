@@ -11,6 +11,7 @@ import {
   is$typed as _is$typed,
   type OmitKey,
 } from '../../../../util.js'
+import type * as ComParaCommunityDefs from './defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -78,11 +79,13 @@ export interface BoardView {
     | 'left'
     | 'removed'
     | 'blocked'
+    | 'suspended'
     | (string & {})
   viewerRoles?: string[]
   status?: 'draft' | 'active' | (string & {})
   founderStarterPackUri?: string
   governanceMode?: 'hierarchical' | 'horizontal' | (string & {})
+  admissionMode?: 'open' | 'assembly_approval' | (string & {})
   createdAt: string
   governanceSummary?: GovernanceSummary
 }
@@ -101,6 +104,7 @@ export interface Output {
   $type?: 'com.para.community.getBoard#output'
   board: BoardView
   viewerCapabilities: string[]
+  availableActions?: ComParaCommunityDefs.AvailableAction[]
 }
 
 const hashOutput = 'output'

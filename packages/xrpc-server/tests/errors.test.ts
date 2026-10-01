@@ -1,6 +1,6 @@
 // @ts-nocheck
 import * as http from 'node:http'
-import { AddressInfo } from 'node:net'
+import type { AddressInfo } from 'node:net'
 import { LexiconDoc } from '@atproto/lexicon'
 import { XRPCError, XRPCInvalidResponseError, XrpcClient } from '@atproto/xrpc'
 import * as xrpcServer from '../src/index.js'

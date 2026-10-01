@@ -1,6 +1,6 @@
 // @ts-nocheck
 import assert from 'node:assert'
-import { AddressInfo } from 'node:net'
+import type { AddressInfo } from 'node:net'
 import { getPdsEndpoint, isValidDidDoc } from '@atproto/common-web'
 import { TestNetworkNoAppView } from '@atproto/dev-env'
 import {

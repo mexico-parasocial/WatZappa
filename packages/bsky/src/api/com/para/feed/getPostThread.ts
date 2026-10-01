@@ -79,7 +79,9 @@ const getPostThread = async (inputs: { ctx: Context; params: Params }) => {
     throw new InvalidRequestError(`Post not found: ${anchor}`, 'NotFound')
   }
 
-  const rootUri = thread.post.replyRoot ?? thread.post.uri
+  // Proto strings default to '' rather than undefined, so `??` would keep an
+  // empty root for top-level posts and filter out every reply below.
+  const rootUri = thread.post.replyRoot || thread.post.uri
   const isOnRoot = (item: { uri: string; replyRoot?: string }) =>
     item.uri === rootUri || item.replyRoot === rootUri
 

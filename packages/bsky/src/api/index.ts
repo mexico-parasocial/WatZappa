@@ -1,6 +1,9 @@
-import { Server } from '@atproto/xrpc-server'
-import { AppContext } from '../context.js'
-import { ComParaNS, Server as ParaLexiconServer } from '../lexicon/index.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../context.js'
+import {
+  ComParaNS,
+  type Server as ParaLexiconServer,
+} from '../lexicon/index.js'
 import { schemas as paraSchemas } from '../lexicon/lexicons.js'
 import getProfile from './app/bsky/actor/getProfile.js'
 import getProfiles from './app/bsky/actor/getProfiles.js'
@@ -67,6 +70,7 @@ import unmuteActor from './app/bsky/graph/unmuteActor.js'
 import unmuteActorList from './app/bsky/graph/unmuteActorList.js'
 import unmuteThread from './app/bsky/graph/unmuteThread.js'
 import getLabelerServices from './app/bsky/labeler/getServices.js'
+import getGroupedNotifications from './app/bsky/notification/getGroupedNotifications.js'
 import getPreferences from './app/bsky/notification/getPreferences.js'
 import getUnreadCount from './app/bsky/notification/getUnreadCount.js'
 import listActivitySubscriptions from './app/bsky/notification/listActivitySubscriptions.js'
@@ -114,21 +118,26 @@ import listParaCabildeoPositions from './com/para/civic/listCabildeoPositions.js
 import listParaCabildeos from './com/para/civic/listCabildeos.js'
 import listParaDelegationCandidates from './com/para/civic/listDelegationCandidates.js'
 import putParaLivePresence from './com/para/civic/putLivePresence.js'
+import applyParaCollectionOps, {
+  applyOpsSchema,
+} from './com/para/collection/applyOps.js'
 import createParaCollection from './com/para/collection/createCollection.js'
 import deleteParaCollection from './com/para/collection/deleteCollection.js'
 import getParaCollection from './com/para/collection/getCollection.js'
 import listParaCollections from './com/para/collection/listCollections.js'
 import updateParaCollection from './com/para/collection/updateCollection.js'
+import createParaCivicTreeRelationship from './com/para/community/civicTree/createRelationship.js'
+import listParaCivicTreeContributions from './com/para/community/civicTree/listContributions.js'
+import { civicTreeProcedureSchemas } from './com/para/community/civicTree/schemas.js'
+import { bookSchemas } from './com/para/book/schemas.js'
+import searchParaBooks from './com/para/book/searchBooks.js'
+import submitParaCivicTreeContribution from './com/para/community/civicTree/submitContribution.js'
+import voteParaCivicTreeContribution from './com/para/community/civicTree/voteContribution.js'
 import exportParaObsidianVault from './com/para/community/exportObsidianVault.js'
 import getParaAuditTrail from './com/para/community/getAuditTrail.js'
 import getParaCommunityBoard from './com/para/community/getBoard.js'
 import getParaBriefingPack from './com/para/community/getBriefingPack.js'
 import getParaCivicTree from './com/para/community/getCivicTree.js'
-import createParaCivicTreeRelationship from './com/para/community/civicTree/createRelationship.js'
-import listParaCivicTreeContributions from './com/para/community/civicTree/listContributions.js'
-import submitParaCivicTreeContribution from './com/para/community/civicTree/submitContribution.js'
-import voteParaCivicTreeContribution from './com/para/community/civicTree/voteContribution.js'
-import { civicTreeProcedureSchemas } from './com/para/community/civicTree/schemas.js'
 import getParaCommunityGovernance from './com/para/community/getGovernance.js'
 import getParaTallySimulation from './com/para/community/getTallySimulation.js'
 import listParaCommunityBoards from './com/para/community/listBoards.js'
@@ -138,16 +147,16 @@ import listParaCivicTreeVotes from './com/para/community/listCivicTreeVotes.js'
 import listParaCivicTrees from './com/para/community/listCivicTrees.js'
 import listParaCommunityRelations from './com/para/community/listCommunityRelations.js'
 import listParaDelegations from './com/para/community/listDelegations.js'
+import listParaDeliberations from './com/para/community/listDeliberations.js'
 import listParaIntensities from './com/para/community/listIntensities.js'
 import listParaCommunityMembers from './com/para/community/listMembers.js'
 import listParaParentCommunities from './com/para/community/listParentCommunities.js'
 import listParaCommunityPosts from './com/para/community/listPosts.js'
 import listParaCommunitySharedContent from './com/para/community/listSharedContent.js'
-import listParaDeliberations from './com/para/community/listDeliberations.js'
 import listParaVotes from './com/para/community/listVotes.js'
 import getParaDiscourseSnapshot from './com/para/discourse/getSnapshot.js'
-import getParaDiscourseTopology from './com/para/discourse/getTopology.js'
 import getParaDiscourseTopics from './com/para/discourse/getTopics.js'
+import getParaDiscourseTopology from './com/para/discourse/getTopology.js'
 import getParaAuthorFeed from './com/para/feed/getAuthorFeed.js'
 import getParaMemes from './com/para/feed/getMemes.js'
 import getParaPostThread from './com/para/feed/getPostThread.js'
@@ -177,6 +186,8 @@ export default function (server: Server, ctx: AppContext) {
   server.addLexicons(paraSchemas)
   // The civicTree procedure lexicons postdate the frozen generated registry.
   server.addLexicons(civicTreeProcedureSchemas)
+  server.addLexicons(bookSchemas)
+  server.addLexicons([applyOpsSchema])
 
   const paraServer = { xrpc: server } as unknown as ParaLexiconServer
   const para = new ComParaNS(paraServer)
@@ -267,6 +278,7 @@ export default function (server: Server, ctx: AppContext) {
   getUnreadCount(server, ctx)
   listActivitySubscriptions(server, ctx)
   listNotifications(server, ctx)
+  getGroupedNotifications(server, ctx)
   putActivitySubscription(server, ctx)
   updateSeen(server, ctx)
   putPreferences(server, ctx)
@@ -305,6 +317,7 @@ export default function (server: Server, ctx: AppContext) {
   getParaCommunityGovernance(paraServer, ctx)
   getParaAuditTrail(paraServer, ctx)
   getParaCivicTree(paraServer, ctx)
+  searchParaBooks(paraServer, ctx)
   listParaCivicTreeContributions(paraServer, ctx)
   submitParaCivicTreeContribution(paraServer, ctx)
   voteParaCivicTreeContribution(paraServer, ctx)
@@ -345,6 +358,7 @@ export default function (server: Server, ctx: AppContext) {
   getParaCollection(paraServer, ctx)
   createParaCollection(paraServer, ctx)
   updateParaCollection(paraServer, ctx)
+  applyParaCollectionOps(paraServer, ctx)
   deleteParaCollection(paraServer, ctx)
   getParaDiscourseTopics(paraServer, ctx)
   getParaUserAlignment(paraServer, ctx)

@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { Server as XrpcServer } from '@atproto/xrpc-server'
 import { describe, expect, it } from 'vitest'
+import { Server as XrpcServer } from '@atproto/xrpc-server'
 
 // Ensures the com.para.* XRPC surface stays coherent:
 //  - every method lexicon under lexicons/com/para is either served by this
@@ -68,7 +68,6 @@ describe('com.para lexicon parity', () => {
   }
   server.method = ((nsid: string, cfg: unknown) =>
     record(nsid, () =>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (XrpcServer.prototype.method as any).call(server, nsid, cfg),
     ) as void) as typeof server.method
   server.add = (
@@ -76,12 +75,10 @@ describe('com.para lexicon parity', () => {
     cfg: unknown,
   ) =>
     record(String(schema?.$lxm ?? schema?.id ?? schema?.$id ?? ''), () =>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (XrpcServer.prototype.add as any).call(server, schema, cfg),
     ) as void
   server.addStreamMethod = ((nsid: string, cfg: unknown) =>
     record(nsid, () =>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (XrpcServer.prototype.addStreamMethod as any).call(server, nsid, cfg),
     ) as void) as typeof server.addStreamMethod
 

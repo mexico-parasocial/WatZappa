@@ -1,5 +1,5 @@
 import http from 'node:http'
-import { AddressInfo } from 'node:net'
+import type { AddressInfo } from 'node:net'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { CID } from 'multiformats/cid'
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'

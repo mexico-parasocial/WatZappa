@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { AtpAgent, ids } from '@atproto/api'
-import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import { type AtpAgent, ids } from '@atproto/api'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 
 describe('profile views w/ debug field', () => {
   let network: TestNetwork

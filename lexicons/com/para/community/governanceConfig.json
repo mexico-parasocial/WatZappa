@@ -18,6 +18,22 @@
             "type": "string",
             "description": "Semver of this config. Changes only by direct flat vote (no delegation)."
           },
+          "organizationStandard": {
+            "type": "string",
+            "knownValues": ["hierarchical", "horizontal"]
+          },
+          "admissionMode": {
+            "type": "string",
+            "knownValues": ["open", "assembly_approval"]
+          },
+          "authorityEventVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "foundingTransitionEndsAt": {
+            "type": "string",
+            "format": "datetime"
+          },
           "metaRules": {
             "type": "ref",
             "ref": "#metaRules"

@@ -18,6 +18,7 @@ import {
 } from '../../../../repo/index.js'
 import {
   BOARD_COLLECTION,
+  AUTHORITY_EVENT_COLLECTION,
   GOVERNANCE_COLLECTION,
   LIST_COLLECTION,
   LIST_ITEM_COLLECTION,
@@ -31,6 +32,7 @@ import {
   normalizeCommunityName,
   normalizeQuadrant,
 } from './util.js'
+import { assertCommunityNameAvailable } from './name-uniqueness.js'
 
 const OWNER_ROLES = ['owner', 'moderator']
 
@@ -58,6 +60,10 @@ export default function (server: Server, ctx: AppContext) {
         auth.credentials.permissions.assertRepo({
           action: 'create',
           collection: GOVERNANCE_COLLECTION,
+        })
+        auth.credentials.permissions.assertRepo({
+          action: 'create',
+          collection: AUTHORITY_EVENT_COLLECTION,
         })
         auth.credentials.permissions.assertRepo({
           action: 'update',
@@ -91,6 +97,7 @@ export default function (server: Server, ctx: AppContext) {
       const founderStarterPackName =
         input.body.founderStarterPackName?.trim() || undefined
       const governanceMode = input.body.governanceMode || 'hierarchical'
+      const admissionMode = input.body.admissionMode || 'open'
 
       if (!name) {
         throw new InvalidRequestError('Community name is required.')
@@ -104,6 +111,15 @@ export default function (server: Server, ctx: AppContext) {
           findMatchingBoardByIdentity({ store, name, quadrant }),
         )
 
+        // Names are unique across communities. Re-submitting the creator's own
+        // board (same name and quadrant) is an idempotent replay, not a clash.
+        await assertCommunityNameAvailable({
+          ctx,
+          did,
+          name,
+          ownBoardUri: existing?.uri,
+        })
+
         const result = await ensureBoardRecords({
           ctx,
           did,
@@ -112,6 +128,7 @@ export default function (server: Server, ctx: AppContext) {
           description,
           founderStarterPackName,
           governanceMode,
+          admissionMode,
           existingUri: existing?.uri,
           existingCid: existing?.cid,
           existingCreatedAt: existing?.record.createdAt,
@@ -143,6 +160,7 @@ const ensureBoardRecords = async ({
   description,
   founderStarterPackName,
   governanceMode,
+  admissionMode,
   existingUri,
   existingCid,
   existingCreatedAt,
@@ -158,6 +176,7 @@ const ensureBoardRecords = async ({
   description?: string
   founderStarterPackName?: string
   governanceMode?: string
+  admissionMode?: string
   existingUri?: string
   existingCid?: string
   existingCreatedAt?: string
@@ -193,6 +212,7 @@ const ensureBoardRecords = async ({
     status: 'draft',
     founderStarterPackUri,
     governanceMode,
+    admissionMode,
     createdAt: now,
   } as const
 
@@ -236,6 +256,47 @@ const ensureBoardRecords = async ({
     governanceMode,
   })
 
+  const boardRecordUri = AtUri.make(
+    did,
+    BOARD_COLLECTION,
+    boardRkey,
+  ).toString()
+  const membershipAuthorityRkey = boardRkey
+  const officeAuthorityRkey = TID.nextStr()
+  const membershipAuthorityUri = AtUri.make(
+    did,
+    AUTHORITY_EVENT_COLLECTION,
+    membershipAuthorityRkey,
+  ).toString()
+  const membershipAuthorityRecord = {
+    $type: AUTHORITY_EVENT_COLLECTION,
+    community: boardRecordUri,
+    subject: did,
+    action: 'member.activate',
+    issuer: did,
+    effectiveAt: now,
+    version: 1,
+    basis: 'foundingTransition',
+    createdAt: now,
+  } as const
+  const officeAuthorityRecord = {
+    $type: AUTHORITY_EVENT_COLLECTION,
+    community: boardRecordUri,
+    subject: did,
+    action:
+      governanceMode === 'horizontal' ? 'moderator.grant' : 'owner.grant',
+    issuer: did,
+    effectiveAt: now,
+    expiresAt:
+      governanceMode === 'horizontal'
+        ? new Date(Date.parse(now) + 90 * 86400000).toISOString()
+        : undefined,
+    predecessor: membershipAuthorityUri,
+    version: 2,
+    basis: 'foundingTransition',
+    createdAt: now,
+  } as const
+
   const { commit, boardWrite, replayed } = await ctx.actorStore.transact(
     did,
     async (actorTxn) => {
@@ -270,6 +331,23 @@ const ensureBoardRecords = async ({
         record: governanceRecord,
       })
 
+      const membershipAuthorityWrite = !existingUri
+        ? await prepareCreate({
+            did,
+            collection: AUTHORITY_EVENT_COLLECTION,
+            rkey: membershipAuthorityRkey,
+            record: membershipAuthorityRecord,
+          })
+        : null
+      const officeAuthorityWrite = !existingUri
+        ? await prepareCreate({
+            did,
+            collection: AUTHORITY_EVENT_COLLECTION,
+            rkey: officeAuthorityRkey,
+            record: officeAuthorityRecord,
+          })
+        : null
+
       const listWrite = !existingUri
         ? await prepareCreate({
             did,
@@ -301,6 +379,8 @@ const ensureBoardRecords = async ({
         boardWrite,
         membershipWrite,
         governanceWrite,
+        membershipAuthorityWrite,
+        officeAuthorityWrite,
         listWrite,
         starterPackWrite,
         listItemWrite,

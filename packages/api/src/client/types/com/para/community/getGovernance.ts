@@ -42,6 +42,11 @@ export interface OutputSchema {
   counters: ComParaCommunityDefs.Summary
   summary: ComParaCommunityDefs.Summary
   computedAt: string
+  organizationStandard?: 'hierarchical' | 'horizontal' | (string & {})
+  admissionMode?: 'open' | 'assembly_approval' | (string & {})
+  authorityEventVersion?: number
+  roleDefinitions?: ComParaCommunityDefs.RoleDefinition[]
+  roleHolders?: ComParaCommunityDefs.RoleHolder[]
 }
 
 export interface CallOptions {

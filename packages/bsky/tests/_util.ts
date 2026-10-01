@@ -1,13 +1,13 @@
 // @ts-nocheck
-import { Server } from 'node:http'
-import { AddressInfo } from 'node:net'
-import { type Express } from 'express'
+import type { Server } from 'node:http'
+import type { AddressInfo } from 'node:net'
+import type { Express } from 'express'
 import {
-  $Typed,
+  type $Typed,
   AppBskyEmbedRecord,
   AppBskyEmbedRecordWithMedia,
   AppBskyFeedDefs,
-  AppBskyFeedGetPostThread,
+  type AppBskyFeedGetPostThread,
   AppBskyLabelerDefs,
   lexToJson,
 } from '@atproto/api'

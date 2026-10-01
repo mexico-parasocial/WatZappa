@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { once } from 'node:events'
 import http from 'node:http'
-import { AddressInfo } from 'node:net'
+import type { AddressInfo } from 'node:net'
 import { setTimeout as sleep } from 'node:timers/promises'
 import * as plc from '@did-plc/lib'
 import express from 'express'

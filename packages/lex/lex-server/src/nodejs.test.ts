@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { AddressInfo } from 'node:net'
+import type { AddressInfo } from 'node:net'
 import { scheduler } from 'node:timers/promises'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Server, serve } from './nodejs.js'

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import * as http from 'node:http'
-import { AddressInfo } from 'node:net'
+import type { AddressInfo } from 'node:net'
 import { MINUTE } from '@atproto/common'
 import { LexiconDoc } from '@atproto/lexicon'
 import { XrpcClient } from '@atproto/xrpc'

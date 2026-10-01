@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { request } from 'undici'
 import {
-  SeedClient,
+  type SeedClient,
   TestNetwork,
   createCabildeoRecord,
   createCabildeoVoteRecord,

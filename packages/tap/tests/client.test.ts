@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { once } from 'node:events'
 import * as http from 'node:http'
-import { AddressInfo } from 'node:net'
+import type { AddressInfo } from 'node:net'
 import { default as express } from 'express'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { Tap } from '../src/client.js'

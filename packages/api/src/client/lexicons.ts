@@ -1149,6 +1149,11 @@ export const schemaDict = {
               type: 'string',
               format: 'datetime',
             },
+            revealInfluence: {
+              type: 'boolean',
+              description:
+                'Whether to display the global Influence score to other viewers. Defaults to false when absent.',
+            },
           },
         },
       },
@@ -3593,6 +3598,16 @@ export const schemaDict = {
             type: 'ref',
             ref: 'lex:app.bsky.feed.defs#replyRef',
           },
+          opThreadPostIndex: {
+            type: 'integer',
+            description:
+              'The 1-indexed position of this post within the contiguous OP thread. Only present when this post is part of the OP thread.',
+          },
+          opThreadPostCount: {
+            type: 'integer',
+            description:
+              'The total number of posts in the contiguous OP thread that this post belongs to. Only present when this post is part of the OP thread.',
+          },
           reason: {
             type: 'union',
             refs: [
@@ -4595,6 +4610,11 @@ export const schemaDict = {
             cursor: {
               type: 'string',
             },
+            since: {
+              type: 'string',
+              description:
+                'Return only items newer than the position identified by this cursor value, newest first. Use the startCursor from a previous response. The item at that position is not returned because the caller already holds it. When the bounded range is exhausted, the returned cursor equals this value so that pagination continues below the boundary.',
+            },
           },
         },
         output: {
@@ -4605,6 +4625,11 @@ export const schemaDict = {
             properties: {
               cursor: {
                 type: 'string',
+              },
+              startCursor: {
+                type: 'string',
+                description:
+                  'Cursor identifying the newest item in this page. Pass it as since on a later request to fetch only newer content.',
               },
               feed: {
                 type: 'array',
@@ -4760,6 +4785,12 @@ export const schemaDict = {
             },
             cursor: {
               type: 'string',
+            },
+            sort: {
+              type: 'string',
+              knownValues: ['latest', 'top'],
+              description:
+                "Ordering of results. 'latest' (default when unset) is newest first; 'top' orders quotes by their like count.",
             },
           },
         },
@@ -4925,6 +4956,11 @@ export const schemaDict = {
             cursor: {
               type: 'string',
             },
+            since: {
+              type: 'string',
+              description:
+                'Return only items newer than the position identified by this cursor value, newest first. Use the startCursor from a previous response. The item at that position is not returned because the caller already holds it. When the bounded range is exhausted, the returned cursor equals this value so that pagination continues below the boundary.',
+            },
           },
         },
         output: {
@@ -4933,8 +4969,10 @@ export const schemaDict = {
             type: 'object',
             required: ['feed'],
             properties: {
-              cursor: {
+              startCursor: {
                 type: 'string',
+                description:
+                  'Cursor identifying the newest item in this page. Pass it as since on a later request to fetch only newer content.',
               },
               feed: {
                 type: 'array',
@@ -7782,6 +7820,502 @@ export const schemaDict = {
       },
     },
   },
+  AppBskyNotificationGetGroupedNotifications: {
+    lexicon: 1,
+    id: 'app.bsky.notification.getGroupedNotifications',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          '[UNSTABLE - DO NOT USE THIS ENDPOINT WHILE THIS NOTE IS HERE] Enumerate notifications for the requesting account, pre-grouped for rendering. Supersedes listNotifications. Requires auth.',
+        parameters: {
+          type: 'params',
+          properties: {
+            feed: {
+              type: 'string',
+              description:
+                "Which notification feed to return. Grouping behavior varies by feed: notifications about follows might be grouped in 'all' and ungrouped (or rather, in single-item groups) in 'followers'.",
+              maxLength: 32,
+              knownValues: [
+                'all',
+                'people-i-follow',
+                'conversations',
+                'followers',
+                'activity',
+              ],
+              default: 'all',
+            },
+            utcOffset: {
+              type: 'integer',
+              description:
+                'Offset from UTC in minutes, positive east, used to determine local day boundaries when grouping. Groups never span the current day boundary. Defaults to UTC.',
+              minimum: -720,
+              maximum: 840,
+              default: 0,
+            },
+            limit: {
+              type: 'integer',
+              description: 'Maximum number of groups to return.',
+              minimum: 1,
+              maximum: 50,
+              default: 30,
+            },
+            cursor: {
+              type: 'string',
+              maxLength: 1024,
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['groups'],
+            properties: {
+              cursor: {
+                type: 'string',
+                maxLength: 1024,
+              },
+              groups: {
+                type: 'array',
+                description:
+                  'Notification groups or individual notifications, newest first. Clients should ignore kinds they do not recognize. Grouping behavior depends on the kind and selected feed.',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:app.bsky.notification.getGroupedNotifications#group',
+                },
+              },
+              seenAt: {
+                type: 'string',
+                format: 'datetime',
+              },
+              relatedProfileViews: {
+                type: 'unknown',
+                description:
+                  'A map of actor DID to app.bsky.actor.defs#profileViewDetailed. Typed dictionary values are unsupported by this lexicon version.',
+              },
+              relatedRecordViews: {
+                type: 'unknown',
+                description:
+                  'A map of AT URI to reusable app.bsky.feed.defs#postView, app.bsky.feed.defs#notFoundPost, app.bsky.feed.defs#blockedPost, app.bsky.graph.defs#starterPackView, or app.bsky.feed.defs#generatorView. Views shared across notifications appear once to avoid duplication. Typed dictionary values are unsupported by this lexicon version.',
+              },
+            },
+          },
+        },
+      },
+      group: {
+        type: 'object',
+        description:
+          'Contains common metadata and kind-specific data for a notification group or individual notification.',
+        required: ['id', 'isRead', 'indexedAt', 'count', 'kind'],
+        properties: {
+          id: {
+            type: 'string',
+            maxLength: 256,
+          },
+          isRead: {
+            type: 'boolean',
+          },
+          indexedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          count: {
+            type: 'integer',
+            minimum: 1,
+          },
+          kind: {
+            type: 'union',
+            refs: [
+              'lex:app.bsky.notification.getGroupedNotifications#likeGroup',
+              'lex:app.bsky.notification.getGroupedNotifications#multiPostLikeGroup',
+              'lex:app.bsky.notification.getGroupedNotifications#repostGroup',
+              'lex:app.bsky.notification.getGroupedNotifications#likeViaRepostGroup',
+              'lex:app.bsky.notification.getGroupedNotifications#repostViaRepostGroup',
+              'lex:app.bsky.notification.getGroupedNotifications#followGroup',
+              'lex:app.bsky.notification.getGroupedNotifications#subscribedPostGroup',
+              'lex:app.bsky.notification.getGroupedNotifications#generatorLikeGroup',
+              'lex:app.bsky.notification.getGroupedNotifications#replyNotification',
+              'lex:app.bsky.notification.getGroupedNotifications#quoteNotification',
+              'lex:app.bsky.notification.getGroupedNotifications#mentionNotification',
+              'lex:app.bsky.notification.getGroupedNotifications#followBackNotification',
+              'lex:app.bsky.notification.getGroupedNotifications#verifiedNotification',
+              'lex:app.bsky.notification.getGroupedNotifications#unverifiedNotification',
+              'lex:app.bsky.notification.getGroupedNotifications#starterPackJoinedNotification',
+              'lex:app.bsky.notification.getGroupedNotifications#contactMatchNotification',
+            ],
+          },
+        },
+      },
+      likeGroup: {
+        type: 'object',
+        description: 'Group of likes by different actors on the same post.',
+        required: ['post', 'items'],
+        properties: {
+          post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          items: {
+            type: 'array',
+            minLength: 1,
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.notification.getGroupedNotifications#likeItem',
+            },
+          },
+        },
+      },
+      likeItem: {
+        type: 'object',
+        description: "One actor who liked the group's post.",
+        required: ['actor'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+        },
+      },
+      multiPostLikeGroup: {
+        type: 'object',
+        description: 'Group of likes by the same actor on different posts.',
+        required: ['actor', 'items'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+          items: {
+            type: 'array',
+            minLength: 2,
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.notification.getGroupedNotifications#multiPostLikeItem',
+            },
+          },
+        },
+      },
+      multiPostLikeItem: {
+        type: 'object',
+        description: "One post which was liked by the group's actor.",
+        required: ['post'],
+        properties: {
+          post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+      repostGroup: {
+        type: 'object',
+        description: 'Group of reposts by different actors of the same post.',
+        required: ['post', 'items'],
+        properties: {
+          post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          items: {
+            type: 'array',
+            minLength: 1,
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.notification.getGroupedNotifications#repostItem',
+            },
+          },
+        },
+      },
+      repostItem: {
+        type: 'object',
+        description: "One actor who reposted the group's post.",
+        required: ['actor'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+        },
+      },
+      likeViaRepostGroup: {
+        type: 'object',
+        description:
+          "Group of likes by different actors on the same post via the requesting account's repost.",
+        required: ['post', 'viaRepost', 'items'],
+        properties: {
+          post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          viaRepost: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          items: {
+            type: 'array',
+            minLength: 1,
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.notification.getGroupedNotifications#likeViaRepostItem',
+            },
+          },
+        },
+      },
+      likeViaRepostItem: {
+        type: 'object',
+        description:
+          "One actor who liked the group's post via the requesting account's repost.",
+        required: ['actor'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+        },
+      },
+      repostViaRepostGroup: {
+        type: 'object',
+        description:
+          "Group of reposts by different actors of the same post via the requesting account's repost.",
+        required: ['post', 'viaRepost', 'items'],
+        properties: {
+          post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          viaRepost: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          items: {
+            type: 'array',
+            minLength: 1,
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.notification.getGroupedNotifications#repostViaRepostItem',
+            },
+          },
+        },
+      },
+      repostViaRepostItem: {
+        type: 'object',
+        description:
+          "One actor who reposted the group's post via the requesting account's repost.",
+        required: ['actor'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+        },
+      },
+      followGroup: {
+        type: 'object',
+        description: 'Group of actors who followed the requesting account.',
+        required: ['items'],
+        properties: {
+          items: {
+            type: 'array',
+            minLength: 1,
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.notification.getGroupedNotifications#followItem',
+            },
+          },
+        },
+      },
+      followItem: {
+        type: 'object',
+        description:
+          'An actor who followed the requesting account, possibly via a starter pack.',
+        required: ['actor'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+          starterPack: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+      subscribedPostGroup: {
+        type: 'object',
+        description:
+          'Group of new posts by actors the requesting account subscribes to.',
+        required: ['items'],
+        properties: {
+          items: {
+            type: 'array',
+            minLength: 1,
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.notification.getGroupedNotifications#subscribedPostItem',
+            },
+          },
+        },
+      },
+      subscribedPostItem: {
+        type: 'object',
+        description:
+          'One new post by an actor the requesting account subscribes to.',
+        required: ['actor', 'post'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+          post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+      generatorLikeGroup: {
+        type: 'object',
+        description:
+          'Group of likes by different actors on the same feed generator.',
+        required: ['generator', 'items'],
+        properties: {
+          generator: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          items: {
+            type: 'array',
+            minLength: 1,
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.notification.getGroupedNotifications#generatorLikeItem',
+            },
+          },
+        },
+      },
+      generatorLikeItem: {
+        type: 'object',
+        description: 'One actor who liked the feed generator in the group.',
+        required: ['actor'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+        },
+      },
+      replyNotification: {
+        type: 'object',
+        description:
+          'A reply to a post by the requesting account or to a thread they are participating in.',
+        required: ['post', 'parent'],
+        properties: {
+          post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          parent: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+      quoteNotification: {
+        type: 'object',
+        description: 'A post quoting a post by the requesting account.',
+        required: ['post'],
+        properties: {
+          post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          parent: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+      mentionNotification: {
+        type: 'object',
+        description: 'A post mentioning the requesting account.',
+        required: ['post'],
+        properties: {
+          post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          parent: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+      followBackNotification: {
+        type: 'object',
+        description:
+          'An actor followed the requesting account back, possibly via a starter pack.',
+        required: ['actor'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+          starterPack: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+      verifiedNotification: {
+        type: 'object',
+        description: 'An actor verified the requesting account.',
+        required: ['actor'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+        },
+      },
+      unverifiedNotification: {
+        type: 'object',
+        description: 'A verification of the requesting account was removed.',
+        required: ['actor'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+        },
+      },
+      starterPackJoinedNotification: {
+        type: 'object',
+        description:
+          'An actor joined Bluesky via a starter pack created by the requesting account.',
+        required: ['actor', 'starterPack'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+          starterPack: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+      contactMatchNotification: {
+        type: 'object',
+        description: 'A contact of the requesting account joined Bluesky.',
+        required: ['actor'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+        },
+      },
+    },
+  },
   AppBskyNotificationGetPreferences: {
     lexicon: 1,
     id: 'app.bsky.notification.getPreferences',
@@ -7823,6 +8357,7 @@ export const schemaDict = {
           properties: {
             priority: {
               type: 'boolean',
+              description: 'Deprecated: this parameter is ignored.',
             },
             seenAt: {
               type: 'string',
@@ -7917,6 +8452,7 @@ export const schemaDict = {
             },
             priority: {
               type: 'boolean',
+              description: 'Deprecated: this parameter is ignored.',
             },
             cursor: {
               type: 'string',
@@ -7924,6 +8460,8 @@ export const schemaDict = {
             seenAt: {
               type: 'string',
               format: 'datetime',
+              description:
+                'Deprecated: this parameter is unsupported and will cause an error.',
             },
           },
         },
@@ -7945,6 +8483,7 @@ export const schemaDict = {
               },
               priority: {
                 type: 'boolean',
+                description: 'Deprecated: this field is no longer populated.',
               },
               seenAt: {
                 type: 'string',
@@ -21535,12 +22074,12 @@ export const schemaDict = {
           influence: {
             type: 'integer',
             description:
-              'All-time influence score (Para equivalent of cumulative karma).',
+              'Net public reactions received across all authored content: upvotes minus downvotes. Changed and removed reactions adjust the score.',
           },
           votesReceivedAllTime: {
             type: 'integer',
             description:
-              "Total support received by this actor's Para posts across all time.",
+              'Net public reactions received across all authored content (the Influence score).',
           },
           votesCastAllTime: {
             type: 'integer',
@@ -21745,6 +22284,11 @@ export const schemaDict = {
               status: {
                 type: 'ref',
                 ref: 'lex:com.para.actor.defs#statusView',
+              },
+              influenceVisible: {
+                type: 'boolean',
+                description:
+                  'Whether the actor displays Influence publicly. The owner can always read their score; hidden scores are withheld from other viewers.',
               },
             },
           },
@@ -22488,6 +23032,10 @@ export const schemaDict = {
             type: 'integer',
             minimum: 0,
           },
+          effectivePowerMicros: {
+            type: 'integer',
+            minimum: 0,
+          },
           positions: {
             type: 'integer',
             minimum: 0,
@@ -22580,6 +23128,10 @@ export const schemaDict = {
             minimum: 0,
           },
           effectiveTotalPower: {
+            type: 'integer',
+            minimum: 0,
+          },
+          effectiveTotalPowerMicros: {
             type: 'integer',
             minimum: 0,
           },
@@ -23055,6 +23607,12 @@ export const schemaDict = {
             delegateTo: {
               type: 'string',
               format: 'did',
+            },
+            eligibilityProofRef: {
+              type: 'string',
+              maxLength: 512,
+              description:
+                "m8 authorization binding the delegator's DID, recipient and scope. Required for new writes; older records are not counted.",
             },
             party: {
               type: 'string',
@@ -23564,7 +24122,7 @@ export const schemaDict = {
               type: 'string',
               maxLength: 128,
               description:
-                "DEPRECATED 2026-09-22 (OD-7 §5h): this collection is a public reaction and its count decides nothing, so no m8 nullifier is requested. The PDS refuses any write of this record that carries this field; do not set it. When reactions did request one, issuance made m8 derive the value server-side from a stable person identifier and store a durable (person, subject) row beside it.",
+                'DEPRECATED 2026-09-22 (OD-7 §5h): this collection is a public reaction and its count decides nothing, so no m8 nullifier is requested. The PDS refuses any write of this record that carries this field; do not set it. When reactions did request one, issuance made m8 derive the value server-side from a stable person identifier and store a durable (person, subject) row beside it.',
             },
             eligibilityProofRef: {
               type: 'string',
@@ -23698,7 +24256,7 @@ export const schemaDict = {
       main: {
         type: 'record',
         description:
-          'A signed civic vote. Cabildeo option votes use selectedOption; policy consensus votes use signal from -3 to +3.',
+          'A cabildeo ballot. PUBLIC AND ATTRIBUTABLE: the record is written to the voter\'s own repo, signed by their DID and sequenced to the firehose permanently, so who voted which option is published and cannot be unpublished. That is accepted for cabildeo votes and only for those (OD-7 §5c), which the PDS enforces: a write is refused unless `subjectType` is "cabildeo" and `selectedOption` is set, and refused outright if it carries `signal` or `delegatedFrom`. Those two fields remain defined for the records already written; a signal ballot or a named delegation needs the replacement ballot of OD-7 §5a/§5b, not this record.',
         key: 'tid',
         record: {
           type: 'object',
@@ -23713,7 +24271,8 @@ export const schemaDict = {
             subjectType: {
               type: 'string',
               knownValues: ['cabildeo', 'policy', 'matter', 'governance'],
-              description: 'Optional semantic type for clients and indexers.',
+              description:
+                'Semantic type for clients and indexers. Only "cabildeo" is accepted on write; the other values are carried by records written before OD-7 §5c.',
             },
             cabildeo: {
               type: 'string',
@@ -23728,7 +24287,7 @@ export const schemaDict = {
               minimum: -3,
               maximum: 3,
               description:
-                'Weighted consensus signal for policy-style votes: -3 strong opposition, 0 neutral/abstain, +3 strong support.',
+                "NOT ACCEPTED ON WRITE (OD-7 §5c). Weighted consensus signal for policy-style votes: -3 strong opposition, 0 neutral/abstain, +3 strong support. Publishing it here would put the voter's -3..+3 position in their own public repo, which §5b rules out until the replacement ballot exists.",
             },
             reason: {
               type: 'string',
@@ -23745,6 +24304,8 @@ export const schemaDict = {
                 format: 'did',
               },
               maxLength: 10000,
+              description:
+                "NOT ACCEPTED ON WRITE (OD-7 §5c). Publishing it here would put the delegation graph in the delegate's own public repo, which §5b names as more re-identifying than the ballots themselves.",
             },
             voteNullifier: {
               type: 'string',
@@ -23764,6 +24325,63 @@ export const schemaDict = {
             },
           },
         },
+      },
+    },
+  },
+  ComParaCollectionApplyOps: {
+    lexicon: 1,
+    id: 'com.para.collection.applyOps',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          "Apply edits to a collection. Unlike updateCollection, which replaces the whole collection and so erases anything written since the caller last read it, each edit here is applied to the collection's current state in the order the server receives it. Edits from different devices merge instead of overwriting. The edits are applied asynchronously; the response confirms they were accepted, not that they are readable yet.",
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['id', 'ops'],
+            properties: {
+              id: {
+                type: 'string',
+                maxLength: 200,
+              },
+              ops: {
+                type: 'array',
+                minLength: 1,
+                maxLength: 50,
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.collection.defs#collectionOp',
+                },
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['opId'],
+            properties: {
+              opId: {
+                type: 'string',
+                description: 'Identifies this batch in the operation log.',
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'NotFound',
+            description: 'No collection with this id belongs to the caller.',
+          },
+          {
+            name: 'LimitExceeded',
+            description:
+              'The edits would take the collection past its item, relation or size limit.',
+          },
+        ],
       },
     },
   },
@@ -23866,9 +24484,10 @@ export const schemaDict = {
               'note',
               'evidence',
               'topic',
+              'book',
             ],
             description:
-              'What the item is. All kinds except `topic` reference an artifact with a URI or URL; a `topic` is a subject the artifacts are about, and carries no target of its own.',
+              'What the item is. All kinds except `topic` reference an artifact with a URI or URL; a `topic` is a subject the artifacts are about, and carries no target of its own. A `book` is a private reading entry: `title` is the book and `sourceLabel` its author.',
           },
           title: {
             type: 'string',
@@ -23949,7 +24568,6 @@ export const schemaDict = {
               'opposes',
               'evidence_for',
               'context_for',
-              'duplicates',
               'depends_on',
               'related_to',
             ],
@@ -23999,6 +24617,164 @@ export const schemaDict = {
             format: 'datetime',
           },
           updatedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      itemPatch: {
+        type: 'object',
+        description:
+          'Fields to change on an existing item. Only the fields present are changed. To clear an optional field, send an empty string.',
+        properties: {
+          kind: {
+            type: 'string',
+            knownValues: [
+              'policy',
+              'post',
+              'link',
+              'note',
+              'evidence',
+              'topic',
+              'book',
+            ],
+            description:
+              'What the item is. All kinds except `topic` reference an artifact with a URI or URL; a `topic` is a subject the artifacts are about, and carries no target of its own. A `book` is a private reading entry: `title` is the book and `sourceLabel` its author.',
+          },
+          title: {
+            type: 'string',
+            maxLength: 500,
+          },
+          description: {
+            type: 'string',
+            maxLength: 2000,
+          },
+          url: {
+            type: 'string',
+            format: 'uri',
+            maxLength: 2000,
+          },
+          sourceUri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          sourceLabel: {
+            type: 'string',
+            maxLength: 500,
+          },
+          policyUri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          policyCid: {
+            type: 'string',
+            format: 'cid',
+          },
+          policyTitle: {
+            type: 'string',
+            maxLength: 500,
+          },
+          policyCategory: {
+            type: 'string',
+            maxLength: 200,
+          },
+          policyColor: {
+            type: 'string',
+            maxLength: 7,
+          },
+          note: {
+            type: 'string',
+            maxLength: 1000,
+          },
+          flairId: {
+            type: 'string',
+            description:
+              "For a topic drawn from PARA's shared flair vocabulary, the flair id. Absent on a free-text topic.",
+          },
+        },
+      },
+      detailsPatch: {
+        type: 'object',
+        description:
+          "Changes to a collection's own fields. Only the fields present are changed; an empty description clears it.",
+        properties: {
+          name: {
+            type: 'string',
+            maxLength: 200,
+          },
+          description: {
+            type: 'string',
+            maxLength: 2000,
+          },
+          color: {
+            type: 'string',
+            maxLength: 7,
+          },
+        },
+      },
+      collectionOp: {
+        type: 'object',
+        description:
+          'One edit to a collection. `type` selects which of the other fields apply: addItem(item), updateItem(itemKey, patch), removeItem(itemKey), addRelation(relation), removeRelation(relationId), updateDetails(fields).',
+        required: ['type'],
+        properties: {
+          type: {
+            type: 'string',
+            maxLength: 32,
+            knownValues: [
+              'addItem',
+              'updateItem',
+              'removeItem',
+              'addRelation',
+              'removeRelation',
+              'updateDetails',
+            ],
+          },
+          item: {
+            type: 'ref',
+            ref: 'lex:com.para.collection.defs#civicTreeItem',
+          },
+          itemKey: {
+            type: 'string',
+            maxLength: 200,
+          },
+          patch: {
+            type: 'ref',
+            ref: 'lex:com.para.collection.defs#itemPatch',
+          },
+          relation: {
+            type: 'ref',
+            ref: 'lex:com.para.collection.defs#civicTreeRelation',
+          },
+          relationId: {
+            type: 'string',
+            maxLength: 200,
+          },
+          fields: {
+            type: 'ref',
+            ref: 'lex:com.para.collection.defs#detailsPatch',
+          },
+        },
+      },
+      collectionOps: {
+        type: 'object',
+        description:
+          "A batch of edits to one collection, as stored in the operation log. The appview applies these in log order to the collection's current state.",
+        required: ['collection', 'ops', 'createdAt'],
+        properties: {
+          collection: {
+            type: 'string',
+            maxLength: 200,
+          },
+          ops: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.collection.defs#collectionOp',
+            },
+            maxLength: 50,
+          },
+          createdAt: {
             type: 'string',
             format: 'datetime',
           },
@@ -24178,6 +24954,97 @@ export const schemaDict = {
       },
     },
   },
+  ComParaCommunityAuthorityEvent: {
+    lexicon: 1,
+    id: 'com.para.community.authorityEvent',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          'An append-only, verifiable change to community membership or organizational authority. A later event is required to reverse an event.',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: [
+            'community',
+            'subject',
+            'action',
+            'issuer',
+            'effectiveAt',
+            'version',
+            'basis',
+            'createdAt',
+          ],
+          properties: {
+            community: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            subject: {
+              type: 'string',
+              format: 'did',
+            },
+            action: {
+              type: 'string',
+              knownValues: [
+                'member.activate',
+                'member.suspend',
+                'member.reinstate',
+                'member.remove',
+                'member.block',
+                'moderator.grant',
+                'moderator.revoke',
+                'moderator.resign',
+                'owner.grant',
+                'owner.revoke',
+              ],
+            },
+            issuer: {
+              type: 'string',
+              format: 'did',
+            },
+            effectiveAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            expiresAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            predecessor: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            version: {
+              type: 'integer',
+              minimum: 1,
+            },
+            basis: {
+              type: 'string',
+              knownValues: [
+                'openAdmission',
+                'assemblyDecision',
+                'ownerAppointment',
+                'ownerTransfer',
+                'foundingTransition',
+                'resignation',
+                'expiry',
+                'migration',
+              ],
+            },
+            evidence: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
   ComParaCommunityBoard: {
     lexicon: 1,
     id: 'com.para.community.board',
@@ -24256,6 +25123,12 @@ export const schemaDict = {
               description: 'Governance model for this community.',
               knownValues: ['hierarchical', 'horizontal'],
               default: 'hierarchical',
+            },
+            admissionMode: {
+              type: 'string',
+              description: 'How an account becomes an active member.',
+              knownValues: ['open', 'assembly_approval'],
+              default: 'open',
             },
             createdAt: {
               type: 'string',
@@ -24624,6 +25497,12 @@ export const schemaDict = {
                 description:
                   'Governance model for this community. Hierarchical uses owner/moderator roles. Horizontal uses rotating facilitators and assembly votes. Defaults to hierarchical.',
               },
+              admissionMode: {
+                type: 'string',
+                knownValues: ['open', 'assembly_approval'],
+                description:
+                  'Open communities admit immediately; assembly approval communities create a pending membership request.',
+              },
             },
           },
         },
@@ -24801,6 +25680,28 @@ export const schemaDict = {
             budgetAllocated: {
               type: 'string',
               description: 'If budget proposal, amount approved',
+            },
+            protectedAction: {
+              type: 'ref',
+              ref: 'lex:com.para.community.defs#protectedAction',
+            },
+            proposalCid: {
+              type: 'string',
+              format: 'cid',
+              description:
+                'CID of the proposal whose exact protected action was tallied.',
+            },
+            eligibleVoters: {
+              type: 'integer',
+              minimum: 0,
+            },
+            verifiedAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            authorityEventVersion: {
+              type: 'integer',
+              minimum: 1,
             },
             createdAt: {
               type: 'string',
@@ -25154,6 +26055,137 @@ export const schemaDict = {
             format: 'at-uri',
             description:
               'Reference to an approved assembly decision that authorized this change.',
+          },
+        },
+      },
+      protectedAction: {
+        type: 'object',
+        required: ['action', 'subject'],
+        properties: {
+          action: {
+            type: 'string',
+            knownValues: [
+              'membership.approve',
+              'member.remove',
+              'member.block',
+              'moderator.elect',
+              'moderator.recall',
+              'moderation.appeal',
+              'governance.amend',
+              'organization.change',
+              'admission.change',
+              'owner.recover',
+              'budget.approve',
+            ],
+          },
+          subject: {
+            type: 'string',
+            format: 'did',
+          },
+          payloadHash: {
+            type: 'string',
+            maxLength: 128,
+          },
+        },
+      },
+      roleDefinition: {
+        type: 'object',
+        required: [
+          'role',
+          'howToObtain',
+          'responsibilities',
+          'actions',
+          'permissions',
+        ],
+        properties: {
+          role: {
+            type: 'string',
+            knownValues: [
+              'visitor',
+              'member',
+              'moderator',
+              'owner',
+              'assembly',
+            ],
+          },
+          howToObtain: {
+            type: 'string',
+            maxGraphemes: 300,
+            maxLength: 2000,
+          },
+          responsibilities: {
+            type: 'array',
+            items: {
+              type: 'string',
+              maxLength: 256,
+            },
+          },
+          actions: {
+            type: 'array',
+            items: {
+              type: 'string',
+              maxLength: 128,
+            },
+          },
+          permissions: {
+            type: 'array',
+            items: {
+              type: 'string',
+              maxLength: 128,
+            },
+          },
+        },
+      },
+      roleHolder: {
+        type: 'object',
+        required: ['did', 'role', 'effectiveAt', 'evidence'],
+        properties: {
+          did: {
+            type: 'string',
+            format: 'did',
+          },
+          role: {
+            type: 'string',
+            knownValues: ['member', 'moderator', 'owner'],
+          },
+          effectiveAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          expiresAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          evidence: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+      availableAction: {
+        type: 'object',
+        required: ['action', 'status', 'policy'],
+        properties: {
+          action: {
+            type: 'string',
+            maxLength: 128,
+          },
+          status: {
+            type: 'string',
+            knownValues: ['allowed', 'requires_approval', 'denied'],
+          },
+          policy: {
+            type: 'string',
+            maxLength: 128,
+          },
+          reason: {
+            type: 'string',
+            maxGraphemes: 300,
+            maxLength: 2000,
+          },
+          evidence: {
+            type: 'string',
+            format: 'at-uri',
           },
         },
       },
@@ -25535,6 +26567,103 @@ export const schemaDict = {
             type: 'string',
             format: 'at-uri',
             description: 'Required for proposal mode',
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityDeliberation: {
+    lexicon: 1,
+    id: 'com.para.community.deliberation',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "An argument made about a proposal, under the author's own name. Deliberation is deliberately attributable — debate is meant to be owned by whoever makes it — which is why it is not covered by the ballot freeze of OD-7 §5c.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['proposal', 'author', 'body', 'createdAt'],
+          properties: {
+            proposal: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'The proposal this argument is about.',
+            },
+            community: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            author: {
+              type: 'string',
+              format: 'did',
+              description:
+                'DID of whoever makes the argument. The record lives in their own repo, so it is attributable to them regardless.',
+            },
+            body: {
+              type: 'string',
+              maxLength: 3000,
+              maxGraphemes: 300,
+              description: 'The argument itself.',
+            },
+            stance: {
+              type: 'string',
+              knownValues: ['for', 'against', 'amendment', 'question'],
+              description: 'What the argument does to the proposal.',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityDeliberationVote: {
+    lexicon: 1,
+    id: 'com.para.community.deliberationVote',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "Whether a person agrees with one argument in a debate. Deliberately unweighted: a position here is for or against, with no magnitude, so no one can press harder than anyone else on an argument. ATTRIBUTABLE BY DESIGN: the record lives in the voter's own repo and is signed by their DID, which is the point — debate is meant to be owned. It is NOT a ballot: it confers no voting power over the proposal, and is not covered by the ballot freeze of OD-7 §5c.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['deliberation', 'voter', 'direction', 'createdAt'],
+          properties: {
+            deliberation: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'The argument being weighed.',
+            },
+            voter: {
+              type: 'string',
+              format: 'did',
+            },
+            direction: {
+              type: 'string',
+              knownValues: ['agree', 'disagree', 'pass'],
+              description:
+                'Which way the voter leans on this argument. `pass` records having read it without taking a side.',
+            },
+            voteNullifier: {
+              type: 'string',
+              maxLength: 128,
+              description:
+                'One-person-one-argument nullifier issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier. This record is attributable to its author anyway, by design. See OD-7 §5a.',
+            },
+            eligibilityProofRef: {
+              type: 'string',
+              maxLength: 512,
+              description:
+                'Opaque reference to the m8 eligibility/nullifier proof used.',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
           },
         },
       },
@@ -25949,6 +27078,62 @@ export const schemaDict = {
       },
     },
   },
+  ComParaCommunityGetAuthorization: {
+    lexicon: 1,
+    id: 'com.para.community.getAuthorization',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Resolve effective roles, capabilities, and authorization for one community action.',
+        parameters: {
+          type: 'params',
+          required: ['community', 'action'],
+          properties: {
+            community: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            action: {
+              type: 'string',
+              maxLength: 128,
+            },
+            subject: {
+              type: 'string',
+              format: 'did',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['roles', 'capabilities', 'authorization'],
+            properties: {
+              roles: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  knownValues: ['member', 'moderator', 'owner'],
+                },
+              },
+              capabilities: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  maxLength: 128,
+                },
+              },
+              authorization: {
+                type: 'ref',
+                ref: 'lex:com.para.community.defs#availableAction',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   ComParaCommunityGetBoard: {
     lexicon: 1,
     id: 'com.para.community.getBoard',
@@ -26078,6 +27263,7 @@ export const schemaDict = {
               'left',
               'removed',
               'blocked',
+              'suspended',
             ],
           },
           viewerRoles: {
@@ -26099,6 +27285,10 @@ export const schemaDict = {
           governanceMode: {
             type: 'string',
             knownValues: ['hierarchical', 'horizontal'],
+          },
+          admissionMode: {
+            type: 'string',
+            knownValues: ['open', 'assembly_approval'],
           },
           createdAt: {
             type: 'string',
@@ -26124,6 +27314,13 @@ export const schemaDict = {
               type: 'string',
               maxGraphemes: 64,
               maxLength: 128,
+            },
+          },
+          availableActions: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.community.defs#availableAction',
             },
           },
         },
@@ -26320,6 +27517,32 @@ export const schemaDict = {
               computedAt: {
                 type: 'string',
                 format: 'datetime',
+              },
+              organizationStandard: {
+                type: 'string',
+                knownValues: ['hierarchical', 'horizontal'],
+              },
+              admissionMode: {
+                type: 'string',
+                knownValues: ['open', 'assembly_approval'],
+              },
+              authorityEventVersion: {
+                type: 'integer',
+                minimum: 1,
+              },
+              roleDefinitions: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.community.defs#roleDefinition',
+                },
+              },
+              roleHolders: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.community.defs#roleHolder',
+                },
               },
             },
           },
@@ -26553,6 +27776,22 @@ export const schemaDict = {
               type: 'string',
               description:
                 'Semver of this config. Changes only by direct flat vote (no delegation).',
+            },
+            organizationStandard: {
+              type: 'string',
+              knownValues: ['hierarchical', 'horizontal'],
+            },
+            admissionMode: {
+              type: 'string',
+              knownValues: ['open', 'assembly_approval'],
+            },
+            authorityEventVersion: {
+              type: 'integer',
+              minimum: 1,
+            },
+            foundingTransitionEndsAt: {
+              type: 'string',
+              format: 'datetime',
             },
             metaRules: {
               type: 'ref',
@@ -27703,6 +28942,12 @@ export const schemaDict = {
             type: 'integer',
             minimum: 0,
           },
+          viewerDirection: {
+            type: 'string',
+            knownValues: ['agree', 'disagree', 'pass'],
+            description:
+              'How the requesting viewer already weighed this argument, if they did. Absent for a logged-out viewer.',
+          },
           createdAt: {
             type: 'string',
             format: 'datetime',
@@ -28330,6 +29575,10 @@ export const schemaDict = {
               type: 'string',
               description: 'If type=budget, amount requested',
             },
+            protectedAction: {
+              type: 'ref',
+              ref: 'lex:com.para.community.defs#protectedAction',
+            },
             createdAt: {
               type: 'string',
               format: 'datetime',
@@ -28497,6 +29746,44 @@ export const schemaDict = {
           action: {
             type: 'ref',
             ref: 'lex:com.para.community.defs#sharedContentActionView',
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityRoleAcceptance: {
+    lexicon: 1,
+    id: 'com.para.community.roleAcceptance',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "A member's explicit acceptance of an offered community role.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['community', 'role', 'subject', 'offer', 'createdAt'],
+          properties: {
+            community: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            role: {
+              type: 'string',
+              knownValues: ['moderator', 'owner'],
+            },
+            subject: {
+              type: 'string',
+              format: 'did',
+            },
+            offer: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
           },
         },
       },
@@ -30859,7 +32146,7 @@ export const schemaDict = {
               type: 'string',
               maxLength: 128,
               description:
-                "DEPRECATED 2026-09-22 (OD-7 §5h): this collection is a public reaction and its count decides nothing, so no m8 nullifier is requested. The PDS refuses any write of this record that carries this field; do not set it. When reactions did request one, issuance made m8 derive the value server-side from a stable person identifier and store a durable (person, subject) row beside it.",
+                'DEPRECATED 2026-09-22 (OD-7 §5h): this collection is a public reaction and its count decides nothing, so no m8 nullifier is requested. The PDS refuses any write of this record that carries this field; do not set it. When reactions did request one, issuance made m8 derive the value server-side from a stable person identifier and store a durable (person, subject) row beside it.',
             },
             eligibilityProofRef: {
               type: 'string',
@@ -31404,7 +32691,7 @@ export const schemaDict = {
               type: 'string',
               maxLength: 128,
               description:
-                "DEPRECATED 2026-09-22 (OD-7 §5h): this collection is a public reaction and its count decides nothing, so no m8 nullifier is requested. The PDS refuses any write of this record that carries this field; do not set it. When reactions did request one, issuance made m8 derive the value server-side from a stable person identifier and store a durable (person, subject) row beside it.",
+                'DEPRECATED 2026-09-22 (OD-7 §5h): this collection is a public reaction and its count decides nothing, so no m8 nullifier is requested. The PDS refuses any write of this record that carries this field; do not set it. When reactions did request one, issuance made m8 derive the value server-side from a stable person identifier and store a durable (person, subject) row beside it.',
             },
             eligibilityProofRef: {
               type: 'string',
@@ -39218,6 +40505,8 @@ export const ids = {
   AppBskyLabelerService: 'app.bsky.labeler.service',
   AppBskyNotificationDeclaration: 'app.bsky.notification.declaration',
   AppBskyNotificationDefs: 'app.bsky.notification.defs',
+  AppBskyNotificationGetGroupedNotifications:
+    'app.bsky.notification.getGroupedNotifications',
   AppBskyNotificationGetPreferences: 'app.bsky.notification.getPreferences',
   AppBskyNotificationGetUnreadCount: 'app.bsky.notification.getUnreadCount',
   AppBskyNotificationListActivitySubscriptions:
@@ -39509,6 +40798,7 @@ export const ids = {
   ComParaCivicPosition: 'com.para.civic.position',
   ComParaCivicPutLivePresence: 'com.para.civic.putLivePresence',
   ComParaCivicVote: 'com.para.civic.vote',
+  ComParaCollectionApplyOps: 'com.para.collection.applyOps',
   ComParaCollectionCreateCollection: 'com.para.collection.createCollection',
   ComParaCollectionDefs: 'com.para.collection.defs',
   ComParaCollectionDeleteCollection: 'com.para.collection.deleteCollection',
@@ -39516,6 +40806,7 @@ export const ids = {
   ComParaCollectionListCollections: 'com.para.collection.listCollections',
   ComParaCollectionUpdateCollection: 'com.para.collection.updateCollection',
   ComParaCommunityAcceptDraftInvite: 'com.para.community.acceptDraftInvite',
+  ComParaCommunityAuthorityEvent: 'com.para.community.authorityEvent',
   ComParaCommunityBoard: 'com.para.community.board',
   ComParaCommunityBriefingPack: 'com.para.community.briefingPack',
   ComParaCommunityCivicTree: 'com.para.community.civicTree',
@@ -39526,9 +40817,12 @@ export const ids = {
   ComParaCommunityDecision: 'com.para.community.decision',
   ComParaCommunityDefs: 'com.para.community.defs',
   ComParaCommunityDelegation: 'com.para.community.delegation',
+  ComParaCommunityDeliberation: 'com.para.community.deliberation',
+  ComParaCommunityDeliberationVote: 'com.para.community.deliberationVote',
   ComParaCommunityEigenstate: 'com.para.community.eigenstate',
   ComParaCommunityExportObsidianVault: 'com.para.community.exportObsidianVault',
   ComParaCommunityGetAuditTrail: 'com.para.community.getAuditTrail',
+  ComParaCommunityGetAuthorization: 'com.para.community.getAuthorization',
   ComParaCommunityGetBoard: 'com.para.community.getBoard',
   ComParaCommunityGetBriefingPack: 'com.para.community.getBriefingPack',
   ComParaCommunityGetCivicTree: 'com.para.community.getCivicTree',
@@ -39562,6 +40856,7 @@ export const ids = {
   ComParaCommunityRemoveSharedContent: 'com.para.community.removeSharedContent',
   ComParaCommunityRestoreSharedContent:
     'com.para.community.restoreSharedContent',
+  ComParaCommunityRoleAcceptance: 'com.para.community.roleAcceptance',
   ComParaCommunityShareContent: 'com.para.community.shareContent',
   ComParaCommunitySharedContent: 'com.para.community.sharedContent',
   ComParaCommunitySharedContentAction: 'com.para.community.sharedContentAction',

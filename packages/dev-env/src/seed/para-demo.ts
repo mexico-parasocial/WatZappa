@@ -1955,90 +1955,11 @@ export default async (sc: SeedClient) => {
   await checkpoints.flush('positions')
 
   // ═══════════════════════════════════════════════════════════════════════
-  //  VOTES  (200+ — realistic weighted distributions)
+  //  VOTES
   // ═══════════════════════════════════════════════════════════════════════
 
-  const castVote = async (
-    agent: any,
-    did: string,
-    cabUri: string,
-    optionIndex: number,
-  ) => {
-    try {
-      await agent.com.atproto.repo.createRecord({
-        repo: did,
-        collection: 'com.para.civic.vote',
-        record: {
-          $type: 'com.para.civic.vote',
-          subject: cabUri,
-          subjectType: 'cabildeo',
-          cabildeo: cabUri,
-          selectedOption: optionIndex,
-          isDirect: true,
-          createdAt: createdAt(),
-        },
-      })
-    } catch {
-      /* ignore duplicates */
-    }
-  }
-
-  // Weighted random vote generator
-  const weightedVote = (weights: number[]) => {
-    const total = weights.reduce((a, b) => a + b, 0)
-    let r = Math.random() * total
-    for (let i = 0; i < weights.length; i++) {
-      r -= weights[i]
-      if (r <= 0) return i
-    }
-    return weights.length - 1
-  }
-
-  // Vote distributions per cabildeo (option weights)
-  const voteDistributions = [
-    /* 0 draft  */ [5, 3, 2], // Centro cultural
-    /* 1 draft  */ [4, 4, 2], // Carbono
-    /* 2 open   */ [6, 3, 1], // Ciclovía
-    /* 3 open   */ [5, 4, 1], // Becas
-    /* 4 open   */ [5, 3, 2], // Reforestación
-    /* 5 open   */ [6, 3, 1], // Refugios
-    /* 6 delib  */ [7, 2, 1], // Salario
-    /* 7 delib  */ [6, 3, 1], // Contratos
-    /* 8 delib  */ [4, 3, 3], // Policía
-    /* 9 delib  */ [5, 3, 2], // Identidad
-    /* 10 delib */ [6, 3, 1], // Bilingües
-    /* 11 vote  */ [7, 2, 1], // Parques
-    /* 12 vote  */ [6, 2, 2], // Clínicas
-    /* 13 vote  */ [5, 3, 2], // Fiscalía
-    /* 14 vote  */ [4, 3, 3], // Tren
-    /* 15 vote  */ [5, 3, 2], // Murales
-    /* 16 vote  */ [6, 3, 1], // Transporte estudiantil
-    /* 17 resol */ [3, 2], // Energía
-    /* 18 resol */ [4, 2, 1], // Taxistas
-    /* 19 resol */ [5, 3, 2], // Mercados
-  ]
-
-  // Not everyone votes on everything — realistic turnout
-  const voterTurnout = [
-    0.6, 0.5, 0.7, 0.8, 0.6, 0.9, 0.8, 0.7, 0.5, 0.6, 0.5, 0.9, 0.8, 0.7, 0.6,
-    0.5, 0.8, 0.7, 0.6, 0.5,
-  ]
-
-  let totalVotes = 0
-  for (let cabIdx = 0; cabIdx < cabildeos.length; cabIdx++) {
-    const weights = voteDistributions[cabIdx]
-    const turnout = voterTurnout[cabIdx]
-    const shuffled = [...users].sort(() => Math.random() - 0.5)
-    const numVoters = Math.max(3, Math.floor(shuffled.length * turnout))
-    for (let i = 0; i < numVoters; i++) {
-      const voter = shuffled[i]
-      const option = weightedVote(weights)
-      await castVote(voter.agent, voter.did, cabildeos[cabIdx].uri, option)
-      totalVotes++
-    }
-  }
-
-  await checkpoints.flush('votes')
+  // @NOTE demo accounts have no eligibility proof; never fabricate civic votes.
+  console.log('  [para-demo] Skipping votes: verified eligibility required')
 
   // ═══════════════════════════════════════════════════════════════════════
   //  DELEGATIONS  (requires verified eligibility)
@@ -3404,7 +3325,7 @@ export default async (sc: SeedClient) => {
     `║  Positions:          60+ (for/against/amendment/neutral)             ║`,
   )
   console.log(
-    `║  Votes:              ${totalVotes.toString().padEnd(3)} (weighted realistic turnout)                ║`,
+    `║  Votes:              0   (verified eligibility required)            ║`,
   )
   console.log(
     `║  Delegations:        0   (verified eligibility required)            ║`,

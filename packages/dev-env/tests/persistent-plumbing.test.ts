@@ -12,12 +12,16 @@ describe('persistent dev-env plumbing', () => {
       path.join(import.meta.dirname, '../../../Makefile'),
       'utf8',
     )
-    const targetStart = makefile.indexOf('run-dev-env-persistent:')
-    const targetEnd = makefile.indexOf('.PHONY: run-dev-env-persistent-logged')
+    const targetStart = makefile.indexOf('run-dev-env:')
+    const targetEnd = makefile.indexOf('.PHONY: run-dev-env-logged')
     const target = makefile.slice(targetStart, targetEnd)
 
     expect(targetStart).toBeGreaterThanOrEqual(0)
     expect(target).toContain('./scripts/dev-env-persistent.sh')
+    expect(makefile).toContain('run-demo-env:')
+    expect(makefile).toContain(
+      'NODE_ENV=development pnpm --filter @atproto/dev-env run start',
+    )
 
     const launcher = fs.readFileSync(
       path.join(import.meta.dirname, '../../../scripts/dev-env-persistent.sh'),
@@ -30,6 +34,8 @@ describe('persistent dev-env plumbing', () => {
     expect(launcher).toContain('REDIS_HOST=127.0.0.1:6381')
     expect(launcher).toContain('DB_POSTGRES_SCHEMA=para_local')
     expect(launcher).toContain('DEV_ENV_SKIP_PARA_DEMO_SEED=1')
+    expect(launcher).toContain('DEV_ENV_SEED_MEMES_ON_START=1')
+    expect(launcher).toContain('repair-dev-pds-migrations.mjs')
     expect(launcher).toContain('BRIDGE_DB_PATH="$DATA_DIR/bridge/bridge.db"')
     expect(launcher).toContain('tsconfig.build.json --force')
     expect(launcher).toContain('check-dev-migrations.mjs')
@@ -62,6 +68,7 @@ describe('persistent dev-env plumbing', () => {
       },
       skipMockSetup: false,
       skipParaDemoSeed: false,
+      seedMemesOnStart: false,
     })
   })
 
@@ -80,6 +87,7 @@ describe('persistent dev-env plumbing', () => {
       DEV_ENV_PDS_BLOBSTORE_DIRECTORY: '/srv/para/blobs',
       DEV_ENV_SKIP_MOCK_SETUP: '1',
       DEV_ENV_SKIP_PARA_DEMO_SEED: 'true',
+      DEV_ENV_SEED_MEMES_ON_START: '1',
       DB_POSTGRES_SCHEMA: 'shared_demo',
     })
 
@@ -106,6 +114,7 @@ describe('persistent dev-env plumbing', () => {
     })
     expect(cfg.skipMockSetup).toBe(true)
     expect(cfg.skipParaDemoSeed).toBe(true)
+    expect(cfg.seedMemesOnStart).toBe(true)
   })
 
   it('fails fast on malformed port overrides', () => {

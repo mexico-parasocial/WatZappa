@@ -59,9 +59,10 @@
             "link",
             "note",
             "evidence",
-            "topic"
+            "topic",
+            "book"
           ],
-          "description": "What the item is. All kinds except `topic` reference an artifact with a URI or URL; a `topic` is a subject the artifacts are about, and carries no target of its own."
+          "description": "What the item is. All kinds except `topic` reference an artifact with a URI or URL; a `topic` is a subject the artifacts are about, and carries no target of its own. A `book` is a private reading entry: `title` is the book and `sourceLabel` its author."
         },
         "title": {
           "type": "string",
@@ -115,6 +116,12 @@
         "flairId": {
           "type": "string",
           "description": "For a topic drawn from PARA's shared flair vocabulary, the flair id. Absent on a free-text topic."
+        },
+        "publishedYear": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 3000,
+          "description": "For a `book`, the year it was first published."
         }
       }
     },
@@ -147,7 +154,6 @@
             "opposes",
             "evidence_for",
             "context_for",
-            "duplicates",
             "depends_on",
             "related_to"
           ]
@@ -203,6 +209,170 @@
           "format": "datetime"
         },
         "updatedAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    },
+    "itemPatch": {
+      "type": "object",
+      "description": "Fields to change on an existing item. Only the fields present are changed. To clear an optional field, send an empty string.",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "knownValues": [
+            "policy",
+            "post",
+            "link",
+            "note",
+            "evidence",
+            "topic",
+            "book"
+          ],
+          "description": "What the item is. All kinds except `topic` reference an artifact with a URI or URL; a `topic` is a subject the artifacts are about, and carries no target of its own. A `book` is a private reading entry: `title` is the book and `sourceLabel` its author."
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2000
+        },
+        "sourceUri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "sourceLabel": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "policyUri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "policyCid": {
+          "type": "string",
+          "format": "cid"
+        },
+        "policyTitle": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "policyCategory": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "policyColor": {
+          "type": "string",
+          "maxLength": 7
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "flairId": {
+          "type": "string",
+          "description": "For a topic drawn from PARA's shared flair vocabulary, the flair id. Absent on a free-text topic."
+        },
+        "publishedYear": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 3000,
+          "description": "For a `book`, the year it was first published."
+        }
+      }
+    },
+    "detailsPatch": {
+      "type": "object",
+      "description": "Changes to a collection's own fields. Only the fields present are changed; an empty description clears it.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "color": {
+          "type": "string",
+          "maxLength": 7
+        }
+      }
+    },
+    "collectionOp": {
+      "type": "object",
+      "description": "One edit to a collection. `type` selects which of the other fields apply: addItem(item), updateItem(itemKey, patch), removeItem(itemKey), addRelation(relation), removeRelation(relationId), updateDetails(fields).",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "maxLength": 32,
+          "knownValues": [
+            "addItem",
+            "updateItem",
+            "removeItem",
+            "addRelation",
+            "removeRelation",
+            "updateDetails"
+          ]
+        },
+        "item": {
+          "type": "ref",
+          "ref": "#civicTreeItem"
+        },
+        "itemKey": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "patch": {
+          "type": "ref",
+          "ref": "#itemPatch"
+        },
+        "relation": {
+          "type": "ref",
+          "ref": "#civicTreeRelation"
+        },
+        "relationId": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "fields": {
+          "type": "ref",
+          "ref": "#detailsPatch"
+        }
+      }
+    },
+    "collectionOps": {
+      "type": "object",
+      "description": "A batch of edits to one collection, as stored in the operation log. The appview applies these in log order to the collection's current state.",
+      "required": [
+        "collection",
+        "ops",
+        "createdAt"
+      ],
+      "properties": {
+        "collection": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "ops": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "#collectionOp"
+          },
+          "maxLength": 50
+        },
+        "createdAt": {
           "type": "string",
           "format": "datetime"
         }

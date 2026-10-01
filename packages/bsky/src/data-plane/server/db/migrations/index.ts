@@ -103,3 +103,5 @@ export * as _20260920T230000000Z from './20260920T230000000Z-add-para-deliberati
 export * as _20260924T120000000Z from './20260924T120000000Z-cabildeo-delegation-tally.js'
 export * as _20260925T120000000Z from './20260925T120000000Z-drop-para-reposts.js'
 export * as _20260926T120000000Z from './20260926T120000000Z-remove-priority-notifs.js'
+export * as _20260929T120000000Z from './20260929T120000000Z-add-community-authority-events.js'
+export * as _20260930T120000000Z from './20260930T120000000Z-backfill-collections.js'

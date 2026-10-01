@@ -69,6 +69,12 @@
             "knownValues": ["hierarchical", "horizontal"],
             "default": "hierarchical"
           },
+          "admissionMode": {
+            "type": "string",
+            "description": "How an account becomes an active member.",
+            "knownValues": ["open", "assembly_approval"],
+            "default": "open"
+          },
           "createdAt": {
             "type": "string",
             "format": "datetime"

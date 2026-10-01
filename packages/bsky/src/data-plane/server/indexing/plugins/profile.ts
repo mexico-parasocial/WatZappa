@@ -1,9 +1,13 @@
-import { Cid, getBlobCidString } from '@atproto/lex'
+import { type Cid, getBlobCidString } from '@atproto/lex'
 import { AtUri } from '@atproto/syntax'
+import { NOTIFICATION_REASON } from '../../../../api/app/bsky/notification/constants.js'
 import { app } from '../../../../lexicons.js'
-import { BackgroundQueue } from '../../background.js'
-import { Database } from '../../db/index.js'
-import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
+import type { BackgroundQueue } from '../../background.js'
+import type {
+  DatabaseSchema,
+  DatabaseSchemaType,
+} from '../../db/database-schema.js'
+import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
 
 type IndexedProfile = DatabaseSchemaType['profile']
@@ -49,7 +53,7 @@ const notifsForInsert = (obj: IndexedProfile) => {
       author: obj.creator,
       recordUri: obj.uri,
       recordCid: obj.cid,
-      reason: 'starterpack-joined' as const,
+      reason: NOTIFICATION_REASON.STARTERPACK_JOINED,
       reasonSubject: obj.joinedViaStarterPackUri,
       sortAt: obj.indexedAt,
     },

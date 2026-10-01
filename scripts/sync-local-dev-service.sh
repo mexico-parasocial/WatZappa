@@ -19,7 +19,7 @@
 # - Point the local m8 broker (mubEZ/.env) at the local PLC and PDS, and give
 #   it the civic secrets it needs to issue cabildeo vote and delegation proofs.
 #   Secrets are generated once and never overwritten; dev-env reads the shared
-#   resolver secret back from mubEZ/.env (see `make run-dev-env-persistent`).
+#   resolver secret back from mubEZ/.env (see `make run-dev-env`).
 #
 # Overrides (mainly for testing): DEV_ENV_INTROSPECT_URL, DEV_ENV_PLC_URL,
 # PARA_ENV, WATX_ENV_LOCAL and MUBEZ_ENV (the files written).

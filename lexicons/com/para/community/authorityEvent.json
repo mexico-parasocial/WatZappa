@@ -1,0 +1,34 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.authorityEvent",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "An append-only, verifiable change to community membership or organizational authority. A later event is required to reverse an event.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["community", "subject", "action", "issuer", "effectiveAt", "version", "basis", "createdAt"],
+        "properties": {
+          "community": { "type": "string", "format": "at-uri" },
+          "subject": { "type": "string", "format": "did" },
+          "action": {
+            "type": "string",
+            "knownValues": ["member.activate", "member.suspend", "member.reinstate", "member.remove", "member.block", "moderator.grant", "moderator.revoke", "moderator.resign", "owner.grant", "owner.revoke"]
+          },
+          "issuer": { "type": "string", "format": "did" },
+          "effectiveAt": { "type": "string", "format": "datetime" },
+          "expiresAt": { "type": "string", "format": "datetime" },
+          "predecessor": { "type": "string", "format": "at-uri" },
+          "version": { "type": "integer", "minimum": 1 },
+          "basis": {
+            "type": "string",
+            "knownValues": ["openAdmission", "assemblyDecision", "ownerAppointment", "ownerTransfer", "foundingTransition", "resignation", "expiry", "migration"]
+          },
+          "evidence": { "type": "string", "format": "at-uri" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

@@ -1,16 +1,16 @@
 // @ts-nocheck
-import { vi } from 'vitest'
 import assert from 'node:assert'
 import fs from 'node:fs/promises'
 import { Timestamp } from '@bufbuild/protobuf'
+import { vi } from 'vitest'
 import {
-  AppBskyEmbedExternal,
-  AtpAgent,
-  ComGermnetworkDeclaration,
+  type AppBskyEmbedExternal,
+  type AtpAgent,
+  type ComGermnetworkDeclaration,
   ids,
 } from '@atproto/api'
 import { HOUR, MINUTE } from '@atproto/common'
-import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
 import { forSnapshot, stripViewer } from '../_util.js'
 

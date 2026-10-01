@@ -18,9 +18,9 @@ const id = 'com.para.actor.defs'
 /** Aggregated Para profile statistics. */
 export interface ProfileStats {
   $type?: 'com.para.actor.defs#profileStats'
-  /** All-time influence score (Para equivalent of cumulative karma). */
+  /** Net public reactions received across all authored content: upvotes minus downvotes. Changed and removed reactions adjust the score. */
   influence: number
-  /** Total support received by this actor's Para posts across all time. */
+  /** Net public reactions received across all authored content (the Influence score). */
   votesReceivedAllTime: number
   /** Total votes/interactions cast by this actor across all time. */
   votesCastAllTime: number

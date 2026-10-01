@@ -28,7 +28,7 @@ const REPORTER = { did: 'did:plc:reporter', mxid: '@reporter:para' }
 const UNATTRIBUTABLE_MXID = '@mas-native:para'
 
 /*
- * D2 (PARA/docs/MATRIX-D2-ENCRYPTED-REPORTS-DECISION-2026-09-23.md): a message
+ * D2 (PARA/docs/MATRIX-COMMUNITY-CHAT-IMPLEMENTATION.md): a message
  * report carries IDs only, and the client never names the sender's DID. The
  * bridge resolves the sender from its own ingested events and minted sessions.
  */

@@ -18,17 +18,17 @@ build: codegen ## Compile all modules
 test: ## Run all tests
 	pnpm test
 
-.PHONY: restart-dev-env
-restart-dev-env: ## Kill any stale dev-env process, ensure db_test/redis_test are healthy, and relaunch with pretty logs
-	bash ./scripts/restart-dev.sh
-
 .PHONY: run-dev-env
-run-dev-env: ## Run a "development environment" shell (incl. matrix-bridge on :3001)
-	NODE_ENV=development ./scripts/with-matrix-bridge.sh pnpm --filter @atproto/dev-env run start
+run-dev-env: ## Run the persistent PARA development stack (PDS, AppView, Matrix bridge)
+	./scripts/dev-env-persistent.sh
 
 .PHONY: run-dev-env-logged
-run-dev-env-logged: ## Run a "development environment" shell (with logging)
-	cd packages/dev-env; LOG_ENABLED=true NODE_ENV=development pnpm run start | pnpm exec pino-pretty
+run-dev-env-logged: ## Run the persistent PARA development stack with logging
+	LOG_ENABLED=true ./scripts/dev-env-persistent.sh
+
+.PHONY: run-demo-env
+run-demo-env: ## Run the disposable full demo without provisioning Matrix rooms
+	NODE_ENV=development pnpm --filter @atproto/dev-env run start
 
 .PHONY: matrix-smoke
 matrix-smoke: ## Boot Synapse+bridge and smoke-test the appservice paths
@@ -63,15 +63,14 @@ matrix-logs: ## Tail the Matrix stack logs (make matrix-logs SERVICE=synapse)
 	./scripts/matrix-stack.sh logs $(SERVICE)
 
 .PHONY: run-dev-env-persistent
-run-dev-env-persistent: ## Run a persistent development environment shell
-	./scripts/dev-env-persistent.sh
+run-dev-env-persistent: run-dev-env ## Compatibility alias for run-dev-env
 
 .PHONY: run-dev-env-persistent-logged
-run-dev-env-persistent-logged: ## Run a persistent development environment shell (with logging)
-	LOG_ENABLED=true ./scripts/dev-env-persistent.sh
+run-dev-env-persistent-logged: run-dev-env-logged ## Compatibility alias for run-dev-env-logged
 
 .PHONY: seed-memes-persistent
 seed-memes-persistent: ## Upsert meme image fixtures into the persistent local PDS
+	@curl -sf http://127.0.0.1:2583/xrpc/_health >/dev/null || { echo 'Persistent PDS is not running; make run-dev-env already seeds memes on startup.' >&2; exit 2; }
 	cd packages/dev-env && pnpm run build && SEED_PASSWORD=$${SEED_PASSWORD:-para-test-pw} pnpm run seed:memes
 
 .PHONY: codegen

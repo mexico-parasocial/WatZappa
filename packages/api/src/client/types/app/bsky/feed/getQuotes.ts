@@ -24,6 +24,8 @@ export type QueryParams = {
   cid?: string
   limit?: number
   cursor?: string
+  /** Ordering of results. 'latest' (default when unset) is newest first; 'top' orders quotes by their like count. */
+  sort?: 'latest' | 'top' | (string & {})
 }
 export type InputSchema = undefined
 

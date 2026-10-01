@@ -23,8 +23,10 @@ export type QueryParams = {
   /** Notification reasons to include in response. */
   reasons?: string[]
   limit?: number
+  /** Deprecated: this parameter is ignored. */
   priority?: boolean
   cursor?: string
+  /** Deprecated: this parameter is unsupported and will cause an error. */
   seenAt?: string
 }
 export type InputSchema = undefined
@@ -32,6 +34,7 @@ export type InputSchema = undefined
 export interface OutputSchema {
   cursor?: string
   notifications: Notification[]
+  /** Deprecated: this field is no longer populated. */
   priority?: boolean
   seenAt?: string
 }

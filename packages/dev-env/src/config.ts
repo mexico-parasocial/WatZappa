@@ -4,6 +4,7 @@ export type DevEnvRuntimeConfig = {
   networkParams: Partial<TestServerParams>
   skipMockSetup: boolean
   skipParaDemoSeed: boolean
+  seedMemesOnStart: boolean
 }
 
 type Env = Record<string, string | undefined>
@@ -94,5 +95,6 @@ export const buildDevEnvRuntimeConfig = (
     },
     skipMockSetup: envBool(env, 'DEV_ENV_SKIP_MOCK_SETUP', false),
     skipParaDemoSeed: envBool(env, 'DEV_ENV_SKIP_PARA_DEMO_SEED', false),
+    seedMemesOnStart: envBool(env, 'DEV_ENV_SEED_MEMES_ON_START', false),
   }
 }

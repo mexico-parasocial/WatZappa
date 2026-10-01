@@ -24,7 +24,10 @@ import {
   prepareCreate,
   prepareUpdate,
 } from '../../../../repo/index.js'
-import { assertHorizontalGovernanceWrite } from '../../../com/para/community/util.js'
+import {
+  assertAuthorityEventWrite,
+  assertHorizontalGovernanceWrite,
+} from '../../../com/para/community/util.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.add(com.atproto.repo.putRecord, {
@@ -139,6 +142,15 @@ export default function (server: Server, ctx: AppContext) {
           if (collection === 'com.para.community.governance') {
             await assertHorizontalGovernanceWrite({
               actorTxn,
+              did,
+              record: record as Record<string, unknown>,
+            })
+          }
+          if (collection === 'com.para.community.authorityEvent') {
+            if (current) {
+              throw new InvalidRequestError('Authority events are immutable.')
+            }
+            assertAuthorityEventWrite({
               did,
               record: record as Record<string, unknown>,
             })

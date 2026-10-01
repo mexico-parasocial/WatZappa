@@ -1,0 +1,62 @@
+{
+  "lexicon": 1,
+  "id": "com.para.book.searchBooks",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Autocomplete for books: matches a partial title or author against Open Library and returns title, authors and first publication year. The lookup runs on the AppView so the client never sends the viewer's searches to a third party. Not cached per viewer and never stored.",
+      "parameters": {
+        "type": "params",
+        "required": ["q"],
+        "properties": {
+          "q": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200,
+            "description": "Partial title and/or author."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "default": 8
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["books"],
+          "properties": {
+            "books": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "#bookSuggestion" }
+            }
+          }
+        }
+      }
+    },
+    "bookSuggestion": {
+      "type": "object",
+      "required": ["key", "title", "authors"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Open Library work key, e.g. /works/OL123W."
+        },
+        "title": { "type": "string", "maxLength": 500 },
+        "authors": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 300 },
+          "maxLength": 3
+        },
+        "firstPublishYear": {
+          "type": "integer",
+          "description": "Year the work was first published, when known."
+        }
+      }
+    }
+  }
+}

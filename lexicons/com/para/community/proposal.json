@@ -34,6 +34,10 @@
             "type": "string",
             "description": "If type=budget, amount requested"
           },
+          "protectedAction": {
+            "type": "ref",
+            "ref": "com.para.community.defs#protectedAction"
+          },
           "createdAt": {
             "type": "string",
             "format": "datetime"

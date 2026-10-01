@@ -192,6 +192,93 @@ export function validateHistoryEntry<V>(v: V) {
   return validate<HistoryEntry & V>(v, id, hashHistoryEntry)
 }
 
+export interface ProtectedAction {
+  $type?: 'com.para.community.defs#protectedAction'
+  action:
+    | 'membership.approve'
+    | 'member.remove'
+    | 'member.block'
+    | 'moderator.elect'
+    | 'moderator.recall'
+    | 'moderation.appeal'
+    | 'governance.amend'
+    | 'organization.change'
+    | 'admission.change'
+    | 'owner.recover'
+    | 'budget.approve'
+    | (string & {})
+  subject: string
+  payloadHash?: string
+}
+
+const hashProtectedAction = 'protectedAction'
+
+export function isProtectedAction<V>(v: V) {
+  return is$typed(v, id, hashProtectedAction)
+}
+
+export function validateProtectedAction<V>(v: V) {
+  return validate<ProtectedAction & V>(v, id, hashProtectedAction)
+}
+
+export interface RoleDefinition {
+  $type?: 'com.para.community.defs#roleDefinition'
+  role:
+    'visitor' | 'member' | 'moderator' | 'owner' | 'assembly' | (string & {})
+  howToObtain: string
+  responsibilities: string[]
+  actions: string[]
+  permissions: string[]
+}
+
+const hashRoleDefinition = 'roleDefinition'
+
+export function isRoleDefinition<V>(v: V) {
+  return is$typed(v, id, hashRoleDefinition)
+}
+
+export function validateRoleDefinition<V>(v: V) {
+  return validate<RoleDefinition & V>(v, id, hashRoleDefinition)
+}
+
+export interface RoleHolder {
+  $type?: 'com.para.community.defs#roleHolder'
+  did: string
+  role: 'member' | 'moderator' | 'owner' | (string & {})
+  effectiveAt: string
+  expiresAt?: string
+  evidence: string
+}
+
+const hashRoleHolder = 'roleHolder'
+
+export function isRoleHolder<V>(v: V) {
+  return is$typed(v, id, hashRoleHolder)
+}
+
+export function validateRoleHolder<V>(v: V) {
+  return validate<RoleHolder & V>(v, id, hashRoleHolder)
+}
+
+export interface AvailableAction {
+  $type?: 'com.para.community.defs#availableAction'
+  action: string
+  status: 'allowed' | 'requires_approval' | 'denied' | (string & {})
+  policy: string
+  reason?: string
+  evidence?: string
+}
+
+const hashAvailableAction = 'availableAction'
+
+export function isAvailableAction<V>(v: V) {
+  return is$typed(v, id, hashAvailableAction)
+}
+
+export function validateAvailableAction<V>(v: V) {
+  return validate<AvailableAction & V>(v, id, hashAvailableAction)
+}
+
 export interface SharedContentView {
   $type?: 'com.para.community.defs#sharedContentView'
   uri: string

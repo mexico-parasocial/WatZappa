@@ -11,6 +11,7 @@ import * as ComParaCommunityMembership from '../../../../lexicon/types/com/para/
 export const BOARD_COLLECTION = 'com.para.community.board'
 export const MEMBERSHIP_COLLECTION = 'com.para.community.membership'
 export const GOVERNANCE_COLLECTION = 'com.para.community.governance'
+export const AUTHORITY_EVENT_COLLECTION = 'com.para.community.authorityEvent'
 export const SHARED_CONTENT_COLLECTION = 'com.para.community.sharedContent'
 export const SHARED_CONTENT_ACTION_COLLECTION =
   'com.para.community.sharedContentAction'
@@ -255,6 +256,53 @@ export const assertCommunityBoardUri = (value: string) => {
     throw new Error(`communityUri must reference a ${BOARD_COLLECTION} record.`)
   }
   return uri
+}
+
+export const assertAuthorityEventWrite = ({
+  did,
+  record,
+}: {
+  did: string
+  record: Record<string, unknown>
+}) => {
+  if (record.issuer !== did) {
+    throw new InvalidRequestError('Authority event issuer must match the repository owner.')
+  }
+  if (record.basis === 'migration') {
+    throw new InvalidRequestError('Migration authority events are service generated.')
+  }
+  const effectiveAt = Date.parse(String(record.effectiveAt || ''))
+  const createdAt = Date.parse(String(record.createdAt || ''))
+  if (!Number.isFinite(effectiveAt) || !Number.isFinite(createdAt)) {
+    throw new InvalidRequestError('Authority events require valid timestamps.')
+  }
+  if (!Number.isInteger(record.version) || Number(record.version) < 1) {
+    throw new InvalidRequestError('Authority event version must be a positive integer.')
+  }
+  const action = String(record.action || '')
+  const basis = String(record.basis || '')
+  const subject = String(record.subject || '')
+  if (
+    (basis === 'openAdmission' || basis === 'resignation') &&
+    subject !== did
+  ) {
+    throw new InvalidRequestError('This authority event must be authored by its subject.')
+  }
+  if (
+    ['assemblyDecision', 'ownerAppointment', 'ownerTransfer'].includes(basis) &&
+    !record.evidence
+  ) {
+    throw new InvalidRequestError('This authority event requires verifiable evidence.')
+  }
+  if (basis === 'resignation' && action !== 'moderator.resign') {
+    throw new InvalidRequestError('A resignation event may only resign a moderator role.')
+  }
+  if (action === 'moderator.grant' && record.expiresAt) {
+    const expiresAt = Date.parse(String(record.expiresAt))
+    if (!Number.isFinite(expiresAt) || expiresAt <= effectiveAt) {
+      throw new InvalidRequestError('Moderator expiry must be after its effective time.')
+    }
+  }
 }
 
 export const isActiveMembership = (

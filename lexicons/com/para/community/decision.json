@@ -54,6 +54,18 @@
             "type": "string",
             "description": "If budget proposal, amount approved"
           },
+          "protectedAction": {
+            "type": "ref",
+            "ref": "com.para.community.defs#protectedAction"
+          },
+          "proposalCid": {
+            "type": "string",
+            "format": "cid",
+            "description": "CID of the proposal whose exact protected action was tallied."
+          },
+          "eligibleVoters": { "type": "integer", "minimum": 0 },
+          "verifiedAt": { "type": "string", "format": "datetime" },
+          "authorityEventVersion": { "type": "integer", "minimum": 1 },
           "createdAt": {
             "type": "string",
             "format": "datetime"
