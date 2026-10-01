@@ -5,7 +5,7 @@ import {
   ballotWriteRefusal,
   repostWriteRefusal,
   verifyCabildeoDelegation,
-  verifyCabildeoProof,
+  verifyPublicBallotProof,
 } from '@atproto/common'
 import { type IdResolver, getPds } from '@atproto/identity'
 import { type Cid, l, parseCid, xrpc, xrpcSafe } from '@atproto/lex'
@@ -270,7 +270,7 @@ export class IndexingService {
     this.db.assertNotTransaction()
     if (
       uri.collection === 'com.para.civic.vote' &&
-      !(await verifyCabildeoProof(uri.host, obj))
+      !(await verifyPublicBallotProof(uri.host, obj))
     ) {
       return
     }
