@@ -115,6 +115,24 @@ const getGovernance = async (inputs: { ctx: Context; params: QueryParams }) => {
       matterPosts: res.summary?.matterPosts ?? 0,
       badgeHolders: res.summary?.badgeHolders ?? 0,
     },
+    organizationStandard:
+      parseString(res.organizationStandard) || 'hierarchical',
+    admissionMode: parseString(res.admissionMode) || 'open',
+    authorityEventVersion: res.authorityEventVersion || 1,
+    roleDefinitions: res.roleDefinitions.map((definition) => ({
+      role: definition.role,
+      howToObtain: definition.howToObtain,
+      responsibilities: definition.responsibilities,
+      actions: definition.actions,
+      permissions: definition.permissions,
+    })),
+    roleHolders: res.roleHolders.map((holder) => ({
+      did: holder.did,
+      role: holder.role,
+      effectiveAt: holder.effectiveAt,
+      expiresAt: parseString(holder.expiresAt),
+      evidence: holder.evidence,
+    })),
     computedAt,
   }
 }

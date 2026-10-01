@@ -1,7 +1,7 @@
 // @ts-nocheck
 import assert from 'node:assert'
 import * as http from 'node:http'
-import { AddressInfo } from 'node:net'
+import type { AddressInfo } from 'node:net'
 import { CID } from 'multiformats/cid'
 import { LexiconDoc } from '@atproto/lexicon'
 import { XrpcClient } from '@atproto/xrpc'

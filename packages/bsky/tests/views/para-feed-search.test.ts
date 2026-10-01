@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { RecordRef, SeedClient, TestNetwork } from '@atproto/dev-env'
+import { RecordRef, type SeedClient, TestNetwork } from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
 
 describe('com.para.feed.searchPosts', () => {

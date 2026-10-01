@@ -5,7 +5,7 @@ set -euo pipefail
 # Seed persistent test accounts on the local dev-env PDS.
 #
 # Idempotent: an account whose handle already resolves is left alone, so this
-# is safe to re-run after every restart of scripts/dev-env-persistent.sh.
+# is safe to re-run after every restart of make run-dev-env.
 #
 # Accounts are created on the LOCAL PDS against the LOCAL PLC — the DIDs are
 # not on plc.directory, nothing is public, and deleting .dev-env-data removes
@@ -25,7 +25,7 @@ OUT="${TEST_ACCOUNTS_FILE:-$REPO_ROOT/test-accounts.json}"
 command -v jq >/dev/null || { echo "❌ jq is required"; exit 1; }
 
 if ! curl -sf "$PDS_URL/xrpc/_health" >/dev/null; then
-  echo "❌ No PDS at $PDS_URL — start ./scripts/dev-env-persistent.sh first."
+  echo "❌ No PDS at $PDS_URL — run make run-dev-env first."
   exit 1
 fi
 

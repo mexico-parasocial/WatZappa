@@ -1,9 +1,14 @@
 import './env.js'
+import { asStringFormat } from '@atproto/lex'
 import { buildDevEnvRuntimeConfig } from './config.js'
 import { createDevEnvManifest } from './manifest.js'
 import { generateMinimalMockSetup } from './mock/minimal.js'
 import { TestNetwork } from './network.js'
-import { createParaFeedGens, paraDemoSeed } from './seed/index.js'
+import {
+  createParaFeedGens,
+  paraDemoSeed,
+  seedDemoMemes,
+} from './seed/index.js'
 import { SuggestionsAgentStub } from './suggestions-stub.js'
 import { mockMailer } from './util.js'
 
@@ -69,8 +74,30 @@ const run = async () => {
     const seedData = await paraDemoSeed(sc)
     await createParaFeedGens(network, seedData)
     suggestionsStub.setUsers(
-      seedData.users.map(({did, name, party}) => ({did, name, party})),
+      seedData.users.map(({ did, name, party }) => ({ did, name, party })),
     )
+  }
+
+  if (runtimeConfig.seedMemesOnStart) {
+    const agent = network.pds.getAgent()
+    const existing = await network.pds.ctx.accountManager.getAccount(
+      asStringFormat('alice.test', 'handle'),
+      { includeDeactivated: true },
+    )
+    if (existing) {
+      await agent.login({
+        identifier: 'alice.test',
+        password: process.env.SEED_PASSWORD ?? 'para-test-pw',
+      })
+    } else {
+      await agent.createAccount({
+        handle: 'alice.test',
+        email: 'alice@test.com',
+        password: process.env.SEED_PASSWORD ?? 'para-test-pw',
+      })
+    }
+    await seedDemoMemes(agent)
+    await network.processAll()
   }
 
   console.log('✅ Dev environment is ready')

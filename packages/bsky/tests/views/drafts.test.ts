@@ -3,12 +3,12 @@ import { vi } from 'vitest'
 import {
   AppBskyDraftCreateDraft,
   AppBskyDraftDefs,
-  AppBskyDraftGetDrafts,
-  AtpAgent,
+  type AppBskyDraftGetDrafts,
+  type AtpAgent,
   ids,
 } from '@atproto/api'
 import { TID } from '@atproto/common'
-import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 import { paginateAll } from '../_util.js'
 
 type Database = TestNetwork['bsky']['db']

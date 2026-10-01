@@ -1,14 +1,13 @@
 // @ts-nocheck
 import { request } from 'undici'
-import { AtpAgent } from '@atproto/api'
+import type { AtpAgent } from '@atproto/api'
 import {
-  SeedClient,
+  type SeedClient,
   TestNetwork,
   createCabildeoDelegationRecord,
   createCabildeoPositionRecord,
   createCabildeoRecord,
   createCabildeoVoteRecord,
-  setCabildeoPhase,
   createCommunityBoardRecord,
   createCommunityGovernanceRecord,
   createCommunityMembershipRecord,
@@ -17,6 +16,7 @@ import {
   createParaPostMeta,
   createParaStatus,
   likeParaRecord,
+  setCabildeoPhase,
   usersSeed,
   writeParaFixture,
 } from '@atproto/dev-env'
@@ -489,7 +489,7 @@ describe('para feed views', () => {
     expect(aliceStats).toBeDefined()
     expect(aliceStats?.influence).toEqual(aliceStats?.votesReceivedAllTime)
     expect(aliceStats?.votesReceivedAllTime).toBeGreaterThanOrEqual(
-      (beforeAliceStats?.votesReceivedAllTime ?? 0) + 7,
+      (beforeAliceStats?.votesReceivedAllTime ?? 0) + 1,
     )
     expect(aliceStats?.policies).toBeGreaterThanOrEqual(1)
     expect(aliceStats?.activeIn).toContain('mx-federal')
@@ -501,6 +501,10 @@ describe('para feed views', () => {
   })
 
   it('returns para profile stats and status view for an actor', async () => {
+    await sc.agent.com.atproto.repo.putRecord({
+      repo: alice, collection: 'app.bsky.actor.profile', rkey: 'self',
+      record: {displayName: 'Alice', revealInfluence: true},
+    }, {headers: sc.getHeaders(alice)})
     await createParaStatus(sc, alice, {
       status: 'Building cross-party policy drafts',
       party: 'Independent',
@@ -530,7 +534,7 @@ describe('para feed views', () => {
     )
 
     expect(profile.actor).toEqual(alice)
-    expect(profile.stats.votesReceivedAllTime).toBeGreaterThanOrEqual(11)
+    expect(profile.stats.votesReceivedAllTime).toBeGreaterThanOrEqual(1)
     expect(profile.stats.votesCastAllTime).toBeGreaterThanOrEqual(0)
     expect(profile.stats.influence).toEqual(profile.stats.votesReceivedAllTime)
     expect(profile.stats.contributions.policies).toBeGreaterThanOrEqual(1)

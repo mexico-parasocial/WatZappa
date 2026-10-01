@@ -1,7 +1,12 @@
 // @ts-nocheck
-import { AtUri, AtpAgent, ids } from '@atproto/api'
+import { AtUri, type AtpAgent, ids } from '@atproto/api'
+import {
+  RecordRef,
+  type SeedClient,
+  TestNetwork,
+  basicSeed,
+} from '@atproto/dev-env'
 import type { DidString, HandleString } from '@atproto/syntax'
-import { RecordRef, SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 import { forSnapshot } from '../_util.js'
 
 describe('bsky views with mutes from mute lists', () => {

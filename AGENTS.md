@@ -91,7 +91,7 @@ For working with that SDK, invoke the focused skills under [.agents/skills/](.ag
 - ([packages/bsky](packages/bsky)) — read-side service for `app.bsky.*` queries (timelines, profiles, feed generators, hydration pipeline, GraphQL-like view composition). Talks to PDSes via XRPC and to `bsync` via Connect-RPC (protobuf in `packages/bsky/proto`). Runtime entry point in [services/bsky](services/bsky).
 - ([packages/bsync](packages/bsync)) — internal service for cross-AppView synchronization (mutes, notifications). Connect-RPC interface.
 - ([packages/ozone](packages/ozone)) — moderation service for `tools.ozone.*`.
-- ([packages/dev-env](packages/dev-env)) — boots a full PDS + AppView + bsync + plc + ozone constellation in-process for tests and the `make run-dev-env` REPL. Most integration tests in `pds`/`bsky`/`ozone` use it as a fixture builder.
+- ([packages/dev-env](packages/dev-env)) — boots a full PDS + AppView + bsync + plc + ozone constellation in-process for tests. `make run-dev-env` is the persistent PARA development profile; `make run-demo-env` runs the disposable full demo without Matrix provisioning. Most integration tests in `pds`/`bsky`/`ozone` use it as a fixture builder.
 
 ## Conventions
 
@@ -118,3 +118,12 @@ Agent files — this `AGENTS.md`, the skills under [.agents/skills/](.agents/ski
 - **Codegen ran but produced stale output.** Codegen relies on `pnpm build:tooling` to build the `@atproto/lex-cli` and `@atproto/lex-builder` packages first. If you see a codegen failure, run `pnpm build:tooling` from the root, then re-run codegen.
 - **End-to-end test fails with stale infra.** If docker containers persist across test runs, reset them with `cd packages/dev-infra && docker compose down --volumes`.
 - **Nothing else worked.** `make clean` wipes every installed dependency (`node_modules`), build artifact (`dist`, `*.tsbuildinfo`), and prebuild/codegen output across all packages; follow it with `pnpm install && pnpm run build` to restore a clean state.
+
+## Influence
+
+- Influence counts indexed public reactions across authored content, never post
+  metadata scores or identity-service Karma awards. Signed reactions override
+  a legacy like by the same actor on the same subject; neutral cancels it.
+- `getProfileStats` reads current totals and profile `revealInfluence` (default
+  false). Owners can always read their score. Do not cache its response by actor
+  alone: it withholds Influence and received totals from other viewers when hidden.

@@ -4,10 +4,10 @@ import * as nodeCrypto from 'node:crypto'
 import { secp256k1 } from '@noble/curves/secp256k1'
 import * as jose from 'jose'
 import * as ui8 from 'uint8arrays'
-import { AtUri, AtpAgent } from '@atproto/api'
+import { AtUri, type AtpAgent } from '@atproto/api'
 import { MINUTE } from '@atproto/common'
 import * as crypto from '@atproto/crypto'
-import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 
 const derivePrivKey = async (
   keypair: crypto.ExportableKeypair,

@@ -1,5 +1,5 @@
-import { LexMap, TypedObjectSchema, lexStringify } from '@atproto/lex'
-import { BsyncClient } from './bsync.js'
+import { type LexMap, type TypedObjectSchema, lexStringify } from '@atproto/lex'
+import type { BsyncClient } from './bsync.js'
 import { app, com } from './lexicons/index.js'
 import { Method } from './proto/bsync_pb.js'
 
@@ -14,6 +14,7 @@ export const Namespaces = {
   AppBskyUnspeccedDefsAgeAssuranceEvent:
     app.bsky.unspecced.defs.ageAssuranceEvent,
   ComParaCollectionDefsCollection: com.para.collection.defs.collection,
+  ComParaCollectionDefsCollectionOps: com.para.collection.defs.collectionOps,
 } as const satisfies Record<string, TypedObjectSchema>
 
 export const createStashClient = (bsyncClient: BsyncClient): StashClient => {

@@ -10,6 +10,7 @@ import {
   is$typed as _is$typed,
   type OmitKey,
 } from '../../../../util.js'
+import type * as ComParaCommunityDefs from './defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -24,6 +25,7 @@ export interface Main {
   type: 'general' | 'budget' | 'amendment' | 'moderation'
   /** If type=budget, amount requested */
   budgetRequest?: string
+  protectedAction?: ComParaCommunityDefs.ProtectedAction
   createdAt?: string
   [k: string]: unknown
 }

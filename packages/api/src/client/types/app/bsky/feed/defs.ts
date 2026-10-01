@@ -122,6 +122,10 @@ export interface FeedViewPost {
   $type?: 'app.bsky.feed.defs#feedViewPost'
   post: PostView
   reply?: ReplyRef
+  /** The 1-indexed position of this post within the contiguous OP thread. Only present when this post is part of the OP thread. */
+  opThreadPostIndex?: number
+  /** The total number of posts in the contiguous OP thread that this post belongs to. Only present when this post is part of the OP thread. */
+  opThreadPostCount?: number
   reason?: $Typed<ReasonRepost> | $Typed<ReasonPin> | { $type: string }
   /** Context provided by feed generator that may be passed back alongside interactions. */
   feedContext?: string

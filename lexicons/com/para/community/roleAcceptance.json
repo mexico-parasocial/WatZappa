@@ -1,0 +1,22 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.roleAcceptance",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A member's explicit acceptance of an offered community role.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["community", "role", "subject", "offer", "createdAt"],
+        "properties": {
+          "community": { "type": "string", "format": "at-uri" },
+          "role": { "type": "string", "knownValues": ["moderator", "owner"] },
+          "subject": { "type": "string", "format": "did" },
+          "offer": { "type": "string", "format": "at-uri" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

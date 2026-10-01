@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { wait } from '@atproto/common'
-import { Redis } from '../src/index.js'
 import { ReadThroughCache } from '../src/cache/read-through.js'
+import { Redis } from '../src/index.js'
 
 describe('redis cache', () => {
   let redis: Redis

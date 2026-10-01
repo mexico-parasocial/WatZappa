@@ -2,7 +2,7 @@
 import assert from 'node:assert'
 import { AtpAgent } from '@atproto/api'
 import { MINUTE } from '@atproto/common'
-import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
 
 describe('label hydration', () => {

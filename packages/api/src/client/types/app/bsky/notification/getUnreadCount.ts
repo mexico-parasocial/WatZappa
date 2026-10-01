@@ -17,6 +17,7 @@ const is$typed = _is$typed,
 const id = 'app.bsky.notification.getUnreadCount'
 
 export type QueryParams = {
+  /** Deprecated: this parameter is ignored. */
   priority?: boolean
   seenAt?: string
 }

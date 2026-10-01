@@ -1,7 +1,7 @@
 // @ts-nocheck
-import AtpAgent from '@atproto/api'
+import type AtpAgent from '@atproto/api'
 import {
-  SeedClient,
+  type SeedClient,
   TestNetwork,
   createQvlDelegationRecord,
   createQvlIntensityRecord,

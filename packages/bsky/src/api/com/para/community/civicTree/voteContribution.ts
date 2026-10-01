@@ -6,7 +6,9 @@ import { forwardDataplaneErrors, parseDataplaneJson } from './util.js'
 export default function (server: Server, ctx: AppContext) {
   server.xrpc.method('com.para.community.civicTree.voteContribution', {
     auth: ctx.authVerifier.standard,
-    handler: async ({ input, auth }) => {
+    handler: async ({ input: { body: input }, auth }) => {
+      // xrpc-server hands procedures `{ encoding, body }`; reading the fields
+      // off `input` itself left every one undefined (CommunityNotFound).
       // Same anti-spoof rule as submitContribution: votes are cast by the
       // authenticated account, never by a DID from the payload.
       const voterDid = auth.credentials.iss

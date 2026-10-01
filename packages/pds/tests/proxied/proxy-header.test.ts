@@ -2,7 +2,7 @@
 import assert from 'node:assert'
 import { once } from 'node:events'
 import http from 'node:http'
-import { AddressInfo } from 'node:net'
+import type { AddressInfo } from 'node:net'
 import * as plc from '@did-plc/lib'
 import express from 'express'
 import { Keypair } from '@atproto/crypto'

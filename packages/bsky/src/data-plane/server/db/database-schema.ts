@@ -29,6 +29,7 @@ import * as notificationPushToken from './tables/notification-push-token.js'
 import * as notification from './tables/notification.js'
 import * as paraCommunityBoard from './tables/para-community-board.js'
 import * as paraCommunityBriefingPack from './tables/para-community-briefing-pack.js'
+import * as paraCommunityAuthorityEvent from './tables/para-community-authority-event.js'
 import * as paraCommunityCivicTreeCard from './tables/para-community-civic-tree-card.js'
 import * as paraCommunityCivicTreeContributionVote from './tables/para-community-civic-tree-contribution-vote.js'
 import * as paraCommunityCivicTreeContribution from './tables/para-community-civic-tree-contribution.js'
@@ -124,6 +125,7 @@ export type DatabaseSchemaType = duplicateRecord.PartialDB &
   bookmark.PartialDB &
   draft.PartialDB &
   paraCommunityBoard.PartialDB &
+  paraCommunityAuthorityEvent.PartialDB &
   paraCommunityBriefingPack.PartialDB &
   paraCommunityMembership.PartialDB &
   paraCommunityGovernance.PartialDB &

@@ -1,11 +1,11 @@
 // @ts-nocheck
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
-  SeedClient,
+  type SeedClient,
   TestNetwork,
   usersSeed,
   writeParaFixture,
 } from '@atproto/dev-env'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
 

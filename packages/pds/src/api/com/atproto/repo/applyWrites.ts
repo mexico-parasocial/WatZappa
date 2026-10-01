@@ -16,7 +16,10 @@ import {
   prepareDelete,
   prepareUpdate,
 } from '../../../../repo/index.js'
-import { assertHorizontalGovernanceWrite } from '../../../com/para/community/util.js'
+import {
+  assertAuthorityEventWrite,
+  assertHorizontalGovernanceWrite,
+} from '../../../com/para/community/util.js'
 
 const ratelimitPoints = ({
   input,
@@ -169,6 +172,15 @@ export default function (server: Server, ctx: AppContext) {
 
       const commit = await ctx.actorStore.transact(did, async (actorTxn) => {
         for (const write of preparedWrites) {
+          if (write.uri.collection === 'com.para.community.authorityEvent') {
+            if (write.action !== WriteOpAction.Create) {
+              throw new InvalidRequestError('Authority events are immutable.')
+            }
+            assertAuthorityEventWrite({
+              did,
+              record: write.record as Record<string, unknown>,
+            })
+          }
           if (
             (write.action === WriteOpAction.Create ||
               write.action === WriteOpAction.Update) &&

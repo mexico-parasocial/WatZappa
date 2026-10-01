@@ -4,6 +4,22 @@ import { AppContext } from '../../../../context.js'
 import { Server } from '../../../../lexicon/index.js'
 import { resHeaders } from '../../../util.js'
 
+const isCompassPosition = (
+  value: unknown,
+): value is { x: number; y: number; ninth: string } => {
+  if (!value || typeof value !== 'object') return false
+  const { x, y, ninth } = value as Record<string, unknown>
+  return (
+    Number.isInteger(x) &&
+    Number.isInteger(y) &&
+    Math.abs(x as number) <= 1000 &&
+    Math.abs(y as number) <= 1000 &&
+    typeof ninth === 'string' &&
+    ninth.length > 0 &&
+    ninth.length <= 64
+  )
+}
+
 export default function (server: Server, ctx: AppContext) {
   server.com.para.raq.getCommunityAlignment({
     auth: ctx.authVerifier.optionalStandardOrRole,
@@ -44,7 +60,10 @@ export default function (server: Server, ctx: AppContext) {
         encoding: 'application/json' as const,
         body: {
           axes: Array.isArray(axes) ? axes : [],
-          compass: compass || { x: 0, y: 0, ninth: 'center' },
+          // `compass` is optional. The data plane sends `{}` when a community has
+          // no answers yet, which is not a valid position, and inventing a
+          // "center" would present no data as a real result.
+          ...(isCompassPosition(compass) ? { compass } : {}),
           participantCount: res.participantCount,
           cursor: res.cursor,
         },

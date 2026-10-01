@@ -10,6 +10,7 @@ import {
   is$typed as _is$typed,
   type OmitKey,
 } from '../../../../util.js'
+import type * as ComParaCommunityDefs from './defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -30,6 +31,12 @@ export interface Main {
   constitutionVersion?: number
   /** If budget proposal, amount approved */
   budgetAllocated?: string
+  protectedAction?: ComParaCommunityDefs.ProtectedAction
+  /** CID of the proposal whose exact protected action was tallied. */
+  proposalCid?: string
+  eligibleVoters?: number
+  verifiedAt?: string
+  authorityEventVersion?: number
   createdAt?: string
   [k: string]: unknown
 }

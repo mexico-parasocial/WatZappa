@@ -1,7 +1,7 @@
 // @ts-nocheck
 import assert from 'node:assert'
-import { AppBskyFeedDefs, AtUri, AtpAgent, ids } from '@atproto/api'
-import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import { AppBskyFeedDefs, AtUri, type AtpAgent, ids } from '@atproto/api'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
 
 /**

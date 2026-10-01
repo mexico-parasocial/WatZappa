@@ -43,6 +43,7 @@ import * as NotifDeclaration from './plugins/notif-declaration.js'
 import * as OpenQuestionVote from './plugins/open-question-vote.js'
 import * as OpenQuestion from './plugins/open-question.js'
 import * as ParaCommunityBoard from './plugins/para-community-board.js'
+import * as ParaCommunityAuthorityEvent from './plugins/para-community-authority-event.js'
 import * as ParaCommunityBriefingPack from './plugins/para-community-briefing-pack.js'
 import * as ParaCommunityGovernance from './plugins/para-community-governance.js'
 import * as ParaCommunityMembership from './plugins/para-community-membership.js'
@@ -98,6 +99,7 @@ export class IndexingService {
     openQuestionVote: OpenQuestionVote.PluginType
     paraPost: ParaPost.PluginType
     paraCommunityBoard: ParaCommunityBoard.PluginType
+    paraCommunityAuthorityEvent: ParaCommunityAuthorityEvent.PluginType
     paraCommunityBriefingPack: ParaCommunityBriefingPack.PluginType
     paraCommunityGovernance: ParaCommunityGovernance.PluginType
     paraCommunityMembership: ParaCommunityMembership.PluginType
@@ -155,6 +157,10 @@ export class IndexingService {
       openQuestionVote: OpenQuestionVote.makePlugin(this.db, this.background),
       paraPost: ParaPost.makePlugin(this.db, this.background),
       paraCommunityBoard: ParaCommunityBoard.makePlugin(
+        this.db,
+        this.background,
+      ),
+      paraCommunityAuthorityEvent: ParaCommunityAuthorityEvent.makePlugin(
         this.db,
         this.background,
       ),

@@ -1,17 +1,17 @@
 // @ts-nocheck
 import { once } from 'node:events'
-import { Server, createServer } from 'node:http'
-import { AddressInfo } from 'node:net'
-import express, { Application } from 'express'
+import { type Server, createServer } from 'node:http'
+import type { AddressInfo } from 'node:net'
+import express, { type Application } from 'express'
 import {
-  AppBskyUnspeccedGetSuggestedStarterPacksSkeleton,
-  AtpAgent,
+  type AppBskyUnspeccedGetSuggestedStarterPacksSkeleton,
+  type AtpAgent,
   ids,
 } from '@atproto/api'
-import { SeedClient, TestNetwork } from '@atproto/dev-env'
+import { type SeedClient, TestNetwork } from '@atproto/dev-env'
 import {
-  StarterPacks,
-  Users,
+  type StarterPacks,
+  type Users,
   starterPacksSeed,
 } from '../seed/get-suggested-starter-packs.js'
 

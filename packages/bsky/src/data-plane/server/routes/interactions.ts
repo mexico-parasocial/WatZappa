@@ -3,12 +3,13 @@ import { DAY, keyBy } from '@atproto/common'
 import { Service } from '../../../proto/bsky_connect.js'
 import { Database } from '../db/index.js'
 import { countAll } from '../db/util.js'
+import { getParaVoteScores } from './para-vote-score.js'
 
 export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   async getInteractionCounts(req) {
     const uris = req.refs.map((ref) => ref.uri)
     if (uris.length === 0) {
-      return { likes: [], replies: [], reposts: [], quotes: [] }
+      return { likes: [], replies: [], reposts: [], quotes: [], voteScores: [] }
     }
     const res = await db.db
       .selectFrom('post_agg')
@@ -16,12 +17,17 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       .selectAll()
       .execute()
     const byUri = keyBy(res, 'uri')
+    const voteScores = await getParaVoteScores(db, uris)
     return {
       likes: uris.map((uri) => byUri.get(uri)?.likeCount ?? 0),
       replies: uris.map((uri) => byUri.get(uri)?.replyCount ?? 0),
       reposts: uris.map((uri) => byUri.get(uri)?.repostCount ?? 0),
       quotes: uris.map((uri) => byUri.get(uri)?.quoteCount ?? 0),
       bookmarks: uris.map((uri) => byUri.get(uri)?.bookmarkCount ?? 0),
+      // Reactions are not part of post_agg: a signed vote overrides a like.
+      voteScores: uris.map(
+        (uri) => voteScores.get(uri) ?? byUri.get(uri)?.likeCount ?? 0,
+      ),
     }
   },
   async getCountsForUsers(req) {

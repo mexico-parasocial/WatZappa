@@ -14,6 +14,7 @@ import {
 import { mapActorCabildeoLive } from '../cabildeo-live.js'
 import type { Database } from '../db/index.js'
 import type { Verification } from '../db/tables/verification.js'
+import { getParaInfluence } from '../indexing/plugins/para-influence.js'
 import { getRecords } from './records.js'
 
 type VerifiedBy = {
@@ -25,7 +26,7 @@ type VerifiedBy = {
 
 export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   async getParaProfileStats(req) {
-    const [stats, status] = await Promise.all([
+    const [stats, status, reactions] = await Promise.all([
       db.db
         .selectFrom('para_profile_stats')
         .where('did', '=', req.actorDid)
@@ -36,21 +37,22 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         .where('did', '=', req.actorDid)
         .selectAll()
         .executeTakeFirst(),
+      getParaInfluence(db.db, req.actorDid),
     ])
 
     return {
       actorDid: req.actorDid,
       stats: new ParaProfileStats({
-        influence: stats?.influence ?? 0,
-        votesReceivedAllTime: stats?.votesReceivedAllTime ?? 0,
-        votesCastAllTime: stats?.votesCastAllTime ?? 0,
+        influence: reactions.influence,
+        votesReceivedAllTime: reactions.influence,
+        votesCastAllTime: reactions.votesCastAllTime,
         contributions: new ParaProfileStatsContributions({
           policies: stats?.policies ?? 0,
           matters: stats?.matters ?? 0,
           comments: stats?.comments ?? 0,
         }),
         activeIn: parseActiveIn(stats?.activeIn),
-        computedAt: stats?.computedAt ?? '',
+        computedAt: new Date().toISOString(),
       }),
       status: status
         ? new ParaActorStatus({

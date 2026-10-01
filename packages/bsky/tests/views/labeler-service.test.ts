@@ -3,11 +3,16 @@ import assert from 'node:assert'
 import {
   AppBskyEmbedRecord,
   AppBskyLabelerDefs,
-  AtpAgent,
+  type AtpAgent,
   ComAtprotoModerationDefs,
   ids,
 } from '@atproto/api'
-import { RecordRef, SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import {
+  RecordRef,
+  type SeedClient,
+  TestNetwork,
+  basicSeed,
+} from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
 import { forSnapshot, stripViewerFromLabeler } from '../_util.js'
 

@@ -7,7 +7,6 @@ export type ParaSeedCheckpointName =
   | 'civicCommunities'
   | 'cabildeos'
   | 'positions'
-  | 'votes'
   | 'delegations'
   | 'posts'
   | 'engagement'

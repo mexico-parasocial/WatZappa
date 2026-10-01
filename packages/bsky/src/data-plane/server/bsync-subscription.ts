@@ -7,6 +7,11 @@ import {
   createBsyncClient,
 } from '../../bsync.js'
 import type { ServerConfig } from '../../config.js'
+import {
+  type CollectionOp,
+  type CollectionPayload,
+  applyCollectionOps,
+} from '../../api/com/para/collection/ops.js'
 import { app } from '../../lexicons/index.js'
 import { subLogger as log } from '../../logger.js'
 import {
@@ -272,6 +277,14 @@ export class BsyncSubscription {
           await handleBookmarkOperation(this.db, op, now)
         } else if (namespace === Namespaces.AppBskyDraftDefsDraftWithId.$type) {
           await handleDraftOperation(this.db, op, now)
+        } else if (
+          namespace === Namespaces.ComParaCollectionDefsCollection.$type
+        ) {
+          await handleCollectionOperation(this.db, op, now)
+        } else if (
+          namespace === Namespaces.ComParaCollectionDefsCollectionOps.$type
+        ) {
+          await handleCollectionOpsOperation(this.db, op, now)
         }
       } catch (err) {
         log.warn({ err, namespace }, 'bsync put operation indexing failed')
@@ -560,3 +573,117 @@ const wait = (ms: number, signal?: AbortSignal) =>
     const timer = setTimeout(done, ms)
     signal?.addEventListener('abort', done, { once: true })
   })
+
+/*
+ * Personal civic tree collections. Without this branch a collection is stored
+ * in `private_data` by the generic handler but never reaches the `collection`
+ * table the read routes query, so a freshly created collection disappears on
+ * the next fetch.
+ *
+ * CREATE is an upsert because bsync replays operations from a cursor; a replay
+ * must not fail on the primary key or reset `createdAt`.
+ */
+const handleCollectionOperation: HandleOperation = async (
+  db: Database,
+  op: Operation,
+  now: string,
+) => {
+  const { actorDid, key, method, payload } = op
+
+  if (method === Method.DELETE) {
+    await db.db
+      .deleteFrom('collection')
+      .where('creator', '=', actorDid)
+      .where('key', '=', key)
+      .execute()
+    return
+  }
+
+  const payloadString = Buffer.from(payload).toString('utf8')
+
+  if (method === Method.CREATE) {
+    await db.db
+      .insertInto('collection')
+      .values({
+        creator: actorDid,
+        key,
+        createdAt: now,
+        updatedAt: now,
+        payload: payloadString,
+      })
+      .onConflict((oc) =>
+        oc.columns(['creator', 'key']).doUpdateSet({
+          payload: excluded(db.db, 'payload'),
+          updatedAt: excluded(db.db, 'updatedAt'),
+        }),
+      )
+      .execute()
+    return
+  }
+
+  await db.db
+    .updateTable('collection')
+    .where('creator', '=', actorDid)
+    .where('key', '=', key)
+    .set({ updatedAt: now, payload: payloadString })
+    .execute()
+}
+
+/*
+ * A batch of edits to one collection (`applyOps`). Applied to the collection's
+ * current row, in log order, so edits from different devices merge. The fold is
+ * deterministic and every op is idempotent, which matters because the
+ * subscription replays the whole log after a restart.
+ *
+ * An op whose collection is missing is dropped: the log always starts a
+ * collection with its CREATE, so a missing row means it was deleted.
+ */
+const handleCollectionOpsOperation: HandleOperation = async (
+  db: Database,
+  op: Operation,
+  now: string,
+) => {
+  const { actorDid, key, method, payload } = op
+  if (method !== Method.CREATE) return
+
+  const batch = lexParse(Buffer.from(payload).toString('utf8')) as unknown as {
+    collection: string
+    ops: CollectionOp[]
+  }
+
+  const row = await db.db
+    .selectFrom('collection')
+    .where('creator', '=', actorDid)
+    .where('key', '=', batch.collection)
+    .select('payload')
+    .executeTakeFirst()
+
+  if (row) {
+    const current = JSON.parse(row.payload) as CollectionPayload
+    const { collection, skipped } = applyCollectionOps(current, batch.ops, key)
+    if (skipped.length) {
+      log.warn(
+        { actorDid, collection: batch.collection, skipped },
+        'collection ops skipped',
+      )
+    }
+    const next = JSON.stringify(collection)
+    if (next !== JSON.stringify(current)) {
+      await db.db
+        .updateTable('collection')
+        .where('creator', '=', actorDid)
+        .where('key', '=', batch.collection)
+        .set({ updatedAt: now, payload: next })
+        .execute()
+    }
+  }
+
+  // Nothing reads an op batch back from private_data, so don't let the generic
+  // handler's copy accumulate one row per edit forever.
+  await db.db
+    .deleteFrom('private_data')
+    .where('actorDid', '=', actorDid)
+    .where('namespace', '=', Namespaces.ComParaCollectionDefsCollectionOps.$type)
+    .where('key', '=', key)
+    .execute()
+}

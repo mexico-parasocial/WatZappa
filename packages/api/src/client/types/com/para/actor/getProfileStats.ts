@@ -27,6 +27,8 @@ export interface OutputSchema {
   actor: string
   stats: ComParaActorDefs.ProfileStats
   status?: ComParaActorDefs.StatusView
+  /** Whether the actor displays Influence publicly. The owner can always read their score; hidden scores are withheld from other viewers. */
+  influenceVisible?: boolean
 }
 
 export interface CallOptions {

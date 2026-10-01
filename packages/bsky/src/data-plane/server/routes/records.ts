@@ -15,6 +15,7 @@ import {
   Record,
 } from '../../../proto/bsky_pb.js'
 import { Database } from '../db/index.js'
+import { getParaVoteScores } from './para-vote-score.js'
 
 export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   getBlockRecords: getRecords(db, app.bsky.graph.block),
@@ -41,7 +42,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   getStatusRecords: getRecords(db, app.bsky.actor.status),
 
   async getParaPostMeta(req) {
-    const [post, meta, agg] = await Promise.all([
+    const [post, meta, voteScore] = await Promise.all([
       db.db
         .selectFrom('para_post')
         .selectAll()
@@ -52,11 +53,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         .selectAll()
         .where('postUri', '=', req.postUri)
         .executeTakeFirst(),
-      db.db
-        .selectFrom('post_agg')
-        .selectAll()
-        .where('uri', '=', req.postUri)
-        .executeTakeFirst(),
+      getParaPostVoteScore(db, req.postUri),
     ])
 
     if (!post) {
@@ -74,7 +71,9 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         category: meta?.category ?? undefined,
         tags: meta?.tags ?? post.tags ?? [],
         flairs: meta?.flairs ?? post.flairs ?? [],
-        voteScore: meta?.voteScore ?? agg?.likeCount ?? 0,
+        // Public reactions, not the author's metadata: metadata never
+        // awards points (see para-influence.ts).
+        voteScore,
         interactionMode:
           (meta?.postType ?? post.postType) === 'policy'
             ? 'policy_ballot'
@@ -387,3 +386,8 @@ const buildSignalBreakdown = (
 
 const normalizeCommunity = (value: string | undefined) =>
   value?.trim().toLowerCase().replace(/^p\//, '') || ''
+
+async function getParaPostVoteScore(db: Database, postUri: string) {
+  const scores = await getParaVoteScores(db, [postUri])
+  return scores.get(postUri) ?? 0
+}

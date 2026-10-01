@@ -1,4 +1,4 @@
-import { Redis } from '../redis.js'
+import type { Redis } from '../redis.js'
 
 const MINUTE = 60 * 1000
 

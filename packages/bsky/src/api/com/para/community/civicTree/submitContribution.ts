@@ -6,7 +6,9 @@ import { forwardDataplaneErrors, parseDataplaneJson } from './util.js'
 export default function (server: Server, ctx: AppContext) {
   server.xrpc.method('com.para.community.civicTree.submitContribution', {
     auth: ctx.authVerifier.standard,
-    handler: async ({ input, auth }) => {
+    handler: async ({ input: { body: input }, auth }) => {
+      // xrpc-server hands procedures `{ encoding, body }`; reading the fields
+      // off `input` itself left every one undefined (CommunityNotFound).
       /*
        * The author is the authenticated account. The lexicon carries authorDid
        * so clients can state intent, but trusting the payload would let one

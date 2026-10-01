@@ -213,6 +213,7 @@ export class TestNetwork extends TestNetworkNoAppView {
       networkParams: params,
       skipMockSetup: false,
       skipParaDemoSeed: false,
+      seedMemesOnStart: false,
     })
     return network
   }

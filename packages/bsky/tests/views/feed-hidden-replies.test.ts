@@ -1,8 +1,11 @@
 // @ts-nocheck
-import { AtpAgent, ids } from '@atproto/api'
+import { type AtpAgent, ids } from '@atproto/api'
+import { type SeedClient, TestNetwork } from '@atproto/dev-env'
 import type { DidString, HandleString } from '@atproto/syntax'
-import { SeedClient, TestNetwork } from '@atproto/dev-env'
-import { Users, feedHiddenRepliesSeed } from '../seed/feed-hidden-replies.js'
+import {
+  type Users,
+  feedHiddenRepliesSeed,
+} from '../seed/feed-hidden-replies.js'
 
 describe('feed hidden replies', () => {
   let network: TestNetwork

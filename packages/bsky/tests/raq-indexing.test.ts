@@ -251,6 +251,20 @@ maybeDescribe('RAQ indexing and queries', () => {
     expect(res.status).toBe(400)
   })
 
+  it('omits compass for a community with no RAQ data instead of returning {}', async () => {
+    const qs = new URLSearchParams({ community: 'no-such-community' }).toString()
+    const res = await fetch(
+      `${network.bsky.url}/xrpc/com.para.raq.getCommunityAlignment?${qs}`,
+    )
+    expect(res.status).toBe(200)
+    const body = await res.json()
+
+    expect(body.axes).toEqual([])
+    expect(body.participantCount).toBe(0)
+    // `{}` is not a valid compassPosition and fails client validation.
+    expect(body).not.toHaveProperty('compass')
+  })
+
   it('lets the viewer read their own private assessment', async () => {
     const qs = new URLSearchParams({ did: sc.dids.bob }).toString()
     const res = await fetch(

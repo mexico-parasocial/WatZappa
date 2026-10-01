@@ -1,9 +1,9 @@
 // @ts-nocheck
 import assert from 'node:assert'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import AtpAgent from '@atproto/api'
+import type AtpAgent from '@atproto/api'
 import {
-  SeedClient,
+  type SeedClient,
   TestNetwork,
   createQvlDelegationRecord,
   createQvlDeliberationRecord,

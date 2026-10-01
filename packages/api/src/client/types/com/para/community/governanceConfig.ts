@@ -21,6 +21,10 @@ export interface Main {
   community: string
   /** Semver of this config. Changes only by direct flat vote (no delegation). */
   version: string
+  organizationStandard?: 'hierarchical' | 'horizontal' | (string & {})
+  admissionMode?: 'open' | 'assembly_approval' | (string & {})
+  authorityEventVersion?: number
+  foundingTransitionEndsAt?: string
   metaRules: MetaRules
   deliberation?: DeliberationRules
   delegation?: DelegationRules

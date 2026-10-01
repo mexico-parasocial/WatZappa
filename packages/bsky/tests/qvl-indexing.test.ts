@@ -1,11 +1,9 @@
 // @ts-nocheck
-import AtpAgent from '@atproto/api'
-import { TID, cidForCbor } from '@atproto/common'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { WriteOpAction } from '@atproto/repo'
-import { AtUri } from '@atproto/syntax'
+import type AtpAgent from '@atproto/api'
+import { TID, cidForCbor } from '@atproto/common'
 import {
-  SeedClient,
+  type SeedClient,
   TestNetwork,
   createQvlDelegationRecord,
   createQvlDeliberationRecord,
@@ -15,6 +13,8 @@ import {
   usersSeed,
   writeParaFixture,
 } from '@atproto/dev-env'
+import { WriteOpAction } from '@atproto/repo'
+import { AtUri } from '@atproto/syntax'
 
 const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
 

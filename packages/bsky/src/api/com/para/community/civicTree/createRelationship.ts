@@ -6,7 +6,9 @@ import { forwardDataplaneErrors, parseDataplaneJson } from './util.js'
 export default function (server: Server, ctx: AppContext) {
   server.xrpc.method('com.para.community.civicTree.createRelationship', {
     auth: ctx.authVerifier.standard,
-    handler: async ({ input, auth }) => {
+    handler: async ({ input: { body: input }, auth }) => {
+      // xrpc-server hands procedures `{ encoding, body }`; reading the fields
+      // off `input` itself left every one undefined (CommunityNotFound).
       // Relationships are attributed to the authenticated account.
       const authorDid = auth.credentials.iss
 

@@ -1,6 +1,7 @@
 import { Code, ConnectError, ServiceImpl } from '@connectrpc/connect'
 import { Service } from '../../../proto/bsky_connect.js'
 import { Database } from '../db/index.js'
+import { getAuthoritySnapshot } from '../community-authority.js'
 import { tableName as cardTableName } from '../db/tables/para-community-civic-tree-card.js'
 import { tableName as voteTableName } from '../db/tables/para-community-civic-tree-contribution-vote.js'
 import { tableName as contributionTableName } from '../db/tables/para-community-civic-tree-contribution.js'
@@ -14,7 +15,7 @@ import { tableName as relationshipTableName } from '../db/tables/para-community-
 const APPROVAL_THRESHOLD = 3
 
 /** Roles that may settle a contribution on their own under `moderator_gate`. */
-const MODERATOR_ROLES = new Set(['moderator', 'admin', 'creator'])
+const MODERATOR_ROLES = new Set(['moderator', 'owner'])
 
 type MembershipRow = {
   membershipState: string
@@ -32,13 +33,11 @@ const getMembership = async (
   did: string,
 ): Promise<MembershipRow | undefined> => {
   if (!did) return undefined
-  const row = await db.db
-    .selectFrom('para_community_membership')
-    .select(['membershipState', 'roles'])
-    .where('communityUri', '=', communityUri)
-    .where('creator', '=', did)
-    .executeTakeFirst()
-  return row as MembershipRow | undefined
+  const authority = await getAuthoritySnapshot(db, communityUri, did)
+  return {
+    membershipState: authority.membershipState,
+    roles: authority.roles,
+  }
 }
 
 const isActiveMember = (membership?: MembershipRow) =>

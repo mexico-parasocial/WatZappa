@@ -1,12 +1,14 @@
 import assert from 'node:assert'
 import { SECOND, noUndefinedVals } from '@atproto/common'
-import { DidString, isDidString } from '@atproto/lex'
+import { type DidString, isDidString } from '@atproto/lex'
 import { subLogger as log } from './logger.js'
 
 type LiveNowConfig = {
   did: DidString
   domains: string[]
 }[]
+
+export type NotificationsV2Algorithm = 'algoGravity' | 'algoLookback'
 
 export interface KwsConfig {
   apiKey: string
@@ -102,6 +104,7 @@ export interface ServerConfigValues {
   visibilityTagRankPrefix: string
   // notifications
   notificationsDelayMs?: number
+  notificationsV2Algorithm?: NotificationsV2Algorithm
   // client config
   clientCheckEmailConfirmed?: boolean
   topicsEnabled?: boolean
@@ -286,6 +289,10 @@ export class ServerConfig {
     const notificationsDelayMs = process.env.BSKY_NOTIFICATIONS_DELAY_MS
       ? parseInt(process.env.BSKY_NOTIFICATIONS_DELAY_MS || '', 10)
       : 0
+    const notificationsV2Algorithm =
+      process.env.BSKY_NOTIFICATIONS_V2_ALGORITHM === 'algoLookback'
+        ? 'algoLookback'
+        : 'algoGravity'
 
     const disableSsrfProtection = process.env.BSKY_DISABLE_SSRF_PROTECTION
       ? process.env.BSKY_DISABLE_SSRF_PROTECTION === 'true'
@@ -445,6 +452,7 @@ export class ServerConfig {
       visibilityTagHide,
       visibilityTagRankPrefix,
       notificationsDelayMs,
+      notificationsV2Algorithm,
       disableSsrfProtection,
       proxyAllowHTTP2,
       proxyConnectTimeout,
@@ -719,6 +727,10 @@ export class ServerConfig {
 
   get notificationsDelayMs() {
     return this.cfg.notificationsDelayMs ?? 0
+  }
+
+  get notificationsV2Algorithm(): NotificationsV2Algorithm {
+    return this.cfg.notificationsV2Algorithm ?? 'algoGravity'
   }
 
   get disableSsrfProtection(): boolean {

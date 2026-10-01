@@ -1,6 +1,6 @@
 // @ts-nocheck
 import {
-  PostSearchQuery,
+  type PostSearchQuery,
   parsePostSearchQuery,
 } from '../src/data-plane/server/util.js'
 

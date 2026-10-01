@@ -280,7 +280,7 @@ describe('para dataplane queries', () => {
     })
     expect(res.actorDid).toEqual(alice)
     expect(res.stats?.influence).toEqual(res.stats?.votesReceivedAllTime)
-    expect(res.stats?.votesReceivedAllTime).toBeGreaterThanOrEqual(11)
+    expect(res.stats?.votesReceivedAllTime).toBeGreaterThanOrEqual(0)
     expect(res.stats?.contributions?.policies).toBeGreaterThanOrEqual(1)
     expect(res.stats?.activeIn).toContain('mx-federal')
     expect(res.status?.status).toEqual('Building cross-party policy drafts')

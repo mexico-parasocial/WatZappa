@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { KeyObject, createPrivateKey } from 'node:crypto'
 import * as http from 'node:http'
-import { AddressInfo } from 'node:net'
+import type { AddressInfo } from 'node:net'
 import { secp256k1 } from '@noble/curves/secp256k1'
 import * as jose from 'jose'
 import { MINUTE } from '@atproto/common'

@@ -33,6 +33,8 @@ export interface Main {
   joinedViaStarterPack?: ComAtprotoRepoStrongRef.Main
   pinnedPost?: ComAtprotoRepoStrongRef.Main
   createdAt?: string
+  /** Whether to display the global Influence score to other viewers. Defaults to false when absent. */
+  revealInfluence?: boolean
   [k: string]: unknown
 }
 

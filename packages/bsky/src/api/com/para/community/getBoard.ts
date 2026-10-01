@@ -70,13 +70,22 @@ const getBoard = async ({
 
     return {
       board,
-      viewerCapabilities: getViewerCapabilities({
-        viewer,
-        creatorDid: res.board.creatorDid,
-        viewerRoles: res.board.viewerRoles,
-        viewerMembershipState: res.board.viewerMembershipState || 'none',
-        canCreateCommunity: true,
-      }),
+      viewerCapabilities: res.viewerCapabilities.length
+        ? res.viewerCapabilities
+        : getViewerCapabilities({
+            viewer,
+            creatorDid: res.board.creatorDid,
+            viewerRoles: res.board.viewerRoles,
+            viewerMembershipState: res.board.viewerMembershipState || 'none',
+            canCreateCommunity: true,
+          }),
+      availableActions: res.availableActions.map((action) => ({
+        action: action.action,
+        status: action.status,
+        policy: action.policy,
+        reason: parseString(action.reason),
+        evidence: parseString(action.evidence),
+      })),
     }
   } catch (err) {
     console.error('[getBoard API] FATAL ERROR during getBoard execution:', err)
@@ -117,6 +126,12 @@ const mapBoardView = (
   founderStarterPackUri: parseString(
     (board as { founderStarterPackUri?: string }).founderStarterPackUri,
   ),
+  governanceMode: (parseString(board.governanceMode) || 'hierarchical') as
+    | 'hierarchical'
+    | 'horizontal',
+  admissionMode: (parseString(board.admissionMode) || 'open') as
+    | 'open'
+    | 'assembly_approval',
   createdAt: board.createdAt,
   governanceSummary: governanceSummary
     ? {

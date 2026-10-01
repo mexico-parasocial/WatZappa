@@ -171,7 +171,7 @@ export function createMatrixProjection(
    * Moderators and owners are entitled to every room of the community, both
    * chambers and the observer room included, at their moderator level. They
    * read reported messages in the room from their own client (D2, PARA
-   * docs/MATRIX-D2-*), and in an encrypted room a member cannot decrypt what
+   * docs/MATRIX-COMMUNITY-CHAT-IMPLEMENTATION.md), and in an encrypted room a member cannot decrypt what
    * was sent before they joined: a moderator outside a chamber cannot review
    * it, and one who joins late cannot review its past. So they join all rooms
    * at their first verified join, and on promotion.

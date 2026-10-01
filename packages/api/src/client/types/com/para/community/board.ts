@@ -36,6 +36,8 @@ export interface Main {
   chamberMode: 'unicameral' | 'bicameral' | (string & {})
   /** Governance model for this community. */
   governanceMode: 'hierarchical' | 'horizontal' | (string & {})
+  /** How an account becomes an active member. */
+  admissionMode: 'open' | 'assembly_approval' | (string & {})
   createdAt: string
   [k: string]: unknown
 }

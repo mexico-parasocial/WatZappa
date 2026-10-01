@@ -1,6 +1,6 @@
 // @ts-nocheck
 import * as http from 'node:http'
-import { AddressInfo } from 'node:net'
+import type { AddressInfo } from 'node:net'
 import { WebSocket, createWebSocketStream } from 'ws'
 import { wait } from '@atproto/common'
 import { LexiconDoc, Lexicons } from '@atproto/lexicon'

@@ -33,14 +33,24 @@
             "status": {
               "type": "ref",
               "ref": "com.para.actor.defs#statusView"
+            },
+            "influenceVisible": {
+              "type": "boolean",
+              "description": "Whether the actor displays Influence publicly. The owner can always read their score; hidden scores are withheld from other viewers."
             }
           }
         }
       },
       "errors": [
-        { "name": "NotFound" },
-        { "name": "BlockedActor" },
-        { "name": "BlockedByActor" }
+        {
+          "name": "NotFound"
+        },
+        {
+          "name": "BlockedActor"
+        },
+        {
+          "name": "BlockedByActor"
+        }
       ]
     }
   }

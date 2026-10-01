@@ -1,16 +1,24 @@
 import { Code, ConnectError, ServiceImpl } from '@connectrpc/connect'
 import { sql } from 'kysely'
+import {
+  AUTHORITY_EVENT_VERSION,
+  deriveEffectiveAuthority,
+  getRoleDefinitions,
+  resolveAvailableAction,
+} from '@atproto/common'
 import * as ComParaCommunityGovernance from '../../../lexicon/types/com/para/community/governance.js'
 import { Service } from '../../../proto/bsky_connect.js'
 import {
   GetParaCommunityBoardResponse,
   GetParaCommunityBoardsResponse,
+  GetParaCommunityAuthorizationResponse,
   GetParaCommunityGovernanceResponse,
   GetParaCommunityMembersResponse,
   GetParaCommunityPostsResponse,
   GetParaCommunityRelationsResponse,
   GetParaCommunitySharedContentResponse,
   ParaAuthorFeedItem,
+  ParaAvailableAction,
   ParaCommunityBoardView,
   ParaCommunityDeputyRole,
   ParaCommunityGovernanceHistoryEntry,
@@ -23,9 +31,12 @@ import {
   ParaCommunityRelationView,
   ParaCommunitySharedContentView,
   ParaCommunitySummary,
+  ParaRoleDefinition,
+  ParaRoleHolder,
   ParaSharedContentActionView,
   ParaStrongRef,
 } from '../../../proto/bsky_pb.js'
+import { getAuthoritySnapshot } from '../community-authority.js'
 import { Database } from '../db/index.js'
 import {
   CreatedAtCidKeyset,
@@ -57,6 +68,8 @@ type BoardRow = {
   officialCount: number | null
   deputyRoleCount: number | null
   lastPublishedAt: string | null
+  governanceMode: string | null
+  admissionMode: string
 }
 
 type MembershipRow = {
@@ -70,7 +83,48 @@ type MembershipRow = {
 
 type GovernanceRecord = ComParaCommunityGovernance.Record
 
+const AUTHORIZATION_ACTIONS = [
+  'content.create',
+  'content.share',
+  'proposal.create',
+  'content.moderate',
+  'member.suspendTemporary',
+  'member.remove',
+  'member.block',
+  'moderator.elect',
+  'moderator.recall',
+  'governance.amend',
+  'budget.approve',
+]
+
 export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
+  async getParaCommunityAuthorization(req) {
+    const board = await selectBoard(db, undefined, req.community)
+    if (!board || !req.viewerDid) {
+      return new GetParaCommunityAuthorizationResponse({
+        authorization: new ParaAvailableAction({
+          action: req.action,
+          status: 'denied',
+          policy: 'authentication_required',
+          reason: 'Authentication is required for this action.',
+        }),
+      })
+    }
+    const snapshot = await getAuthoritySnapshot(db, board.uri, req.viewerDid)
+    const authorization = resolveAvailableAction(
+      req.action,
+      snapshot.roles,
+      (board.governanceMode || 'hierarchical') as
+        | 'hierarchical'
+        | 'horizontal',
+    )
+    return new GetParaCommunityAuthorizationResponse({
+      roles: snapshot.roles,
+      capabilities: snapshot.capabilities,
+      authorization: new ParaAvailableAction(authorization),
+    })
+  },
+
   async getParaCommunityBoard(req) {
     try {
       const board = await selectBoard(db, req.communityId, req.uri)
@@ -98,6 +152,12 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         getSharedContentCounts(db, [board.uri]),
         getParentCommunityUris(db, [board.uri]),
       ])
+      const snapshot = req.viewerDid
+        ? await getAuthoritySnapshot(db, board.uri, req.viewerDid)
+        : undefined
+      const standard = (board.governanceMode || 'hierarchical') as
+        | 'hierarchical'
+        | 'horizontal'
 
       return new GetParaCommunityBoardResponse({
         board: toBoardView(board, memberCount, viewerMembership, {
@@ -106,6 +166,15 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
           parentCommunityUris: parentUris.get(board.uri) ?? [],
         }),
         governanceSummary: governanceSummary ?? undefined,
+        viewerCapabilities: snapshot?.capabilities ?? [],
+        availableActions: snapshot
+          ? AUTHORIZATION_ACTIONS.map(
+              (action) =>
+                new ParaAvailableAction(
+                  resolveAvailableAction(action, snapshot.roles, standard),
+                ),
+            )
+          : [],
       })
     } catch (err) {
       throw err
@@ -211,6 +280,59 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       return true
     }
 
+    const board = await selectBoard(db, community, undefined)
+    const standard = (board?.governanceMode || 'hierarchical') as
+      | 'hierarchical'
+      | 'horizontal'
+    const admissionMode = (board?.admissionMode || 'open') as
+      | 'open'
+      | 'assembly_approval'
+    const authorityRows = board
+      ? await db.db
+          .selectFrom('para_community_authority_event')
+          .where('communityUri', '=', board.uri)
+          .selectAll()
+          .execute()
+      : []
+    const eventsBySubject = new Map<string, typeof authorityRows>()
+    for (const row of authorityRows) {
+      const rows = eventsBySubject.get(row.subject) ?? []
+      rows.push(row)
+      eventsBySubject.set(row.subject, rows)
+    }
+    const roleHolders: ParaRoleHolder[] = []
+    for (const [did, rows] of eventsBySubject) {
+      const authority = deriveEffectiveAuthority(
+        rows.map((row) => ({
+          uri: row.uri,
+          creator: row.creator,
+          community: row.communityUri,
+          subject: row.subject,
+          action: row.action as any,
+          issuer: row.issuer,
+          effectiveAt: row.effectiveAt,
+          expiresAt: row.expiresAt,
+          predecessor: row.predecessor,
+          version: row.version,
+          basis: row.basis as any,
+          evidence: row.evidence,
+        })),
+      )
+      for (const role of authority.roles) {
+        const evidence = authority.evidence[role]
+        if (!evidence) continue
+        roleHolders.push(
+          new ParaRoleHolder({
+            did,
+            role,
+            effectiveAt: evidence.effectiveAt,
+            expiresAt: evidence.expiresAt ?? '',
+            evidence: evidence.evidence || evidence.uri,
+          }),
+        )
+      }
+    }
+
     return new GetParaCommunityGovernanceResponse({
       community,
       summary: new ParaCommunitySummary(counters),
@@ -285,6 +407,13 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
               summary: entry.summary,
             }),
         ) ?? [],
+      organizationStandard: standard,
+      admissionMode,
+      authorityEventVersion: AUTHORITY_EVENT_VERSION,
+      roleDefinitions: getRoleDefinitions(standard, admissionMode).map(
+        (definition) => new ParaRoleDefinition(definition),
+      ),
+      roleHolders,
     })
   },
 
@@ -642,6 +771,8 @@ const boardBaseQuery = (db: Database) =>
       'board.quadrant',
       'board.delegatesChatId',
       'board.subdelegatesChatId',
+      'board.governanceMode',
+      'board.admissionMode',
       'board.createdAt',
       'board.indexedAt',
       'gov.state',
@@ -847,26 +978,21 @@ const getViewerMemberships = async (
     return new Map<string, MembershipRow>()
   }
 
-  const rows = await db.db
-    .selectFrom('para_community_membership')
-    .where('creator', '=', viewerDid)
-    .where('communityUri', 'in', communityUris)
-    .select([
-      'communityUri',
-      'creator',
-      'membershipState',
-      'roles',
-      'roleAssignments',
-      'joinedAt',
-    ])
-    .execute()
-
+  const snapshots = await Promise.all(
+    communityUris.map(async (communityUri) => [
+      communityUri,
+      await getAuthoritySnapshot(db, communityUri, viewerDid),
+    ] as const),
+  )
   return new Map(
-    rows.map((row) => [
-      row.communityUri,
+    snapshots.map(([communityUri, snapshot]) => [
+      communityUri,
       {
-        ...row,
-        roles: filterValidRoles(row.roles, row.roleAssignments),
+        communityUri,
+        creator: viewerDid,
+        membershipState: snapshot.membershipState,
+        roles: snapshot.roles,
+        roleAssignments: null,
       },
     ]),
   )
@@ -887,15 +1013,12 @@ const assertActiveCommunityViewer = async (
       Code.PermissionDenied,
     )
   }
-  const membership = await db.db
-    .selectFrom('para_community_membership')
-    .where('creator', '=', opts.viewerDid)
-    .where('communityUri', '=', opts.communityUri)
-    .where('membershipState', '=', 'active')
-    .select(['uri'])
-    .executeTakeFirst()
-
-  if (!membership) {
+  const authority = await getAuthoritySnapshot(
+    db,
+    opts.communityUri,
+    opts.viewerDid,
+  )
+  if (authority.membershipState !== 'active') {
     throw new ConnectError(
       'Active community membership is required',
       Code.PermissionDenied,
@@ -914,20 +1037,13 @@ const assertCommunitySteward = async (
     )
   }
 
-  const membership = await db.db
-    .selectFrom('para_community_membership')
-    .where('creator', '=', opts.viewerDid)
-    .where('communityUri', '=', opts.communityUri)
-    .where('membershipState', '=', 'active')
-    .select(['roles', 'roleAssignments'])
-    .executeTakeFirst()
-
-  const roles = filterValidRoles(
-    membership?.roles ?? null,
-    membership?.roleAssignments ?? null,
+  const authority = await getAuthoritySnapshot(
+    db,
+    opts.communityUri,
+    opts.viewerDid,
   )
-  const isSteward = roles.some((role) =>
-    ['owner', 'moderator', 'steward', 'official'].includes(role),
+  const isSteward = authority.roles.some((role) =>
+    ['owner', 'moderator'].includes(role),
   )
   if (!isSteward) {
     throw new ConnectError(
@@ -998,6 +1114,8 @@ const toBoardView = (
     parentCommunityUris: summary?.parentCommunityUris ?? [],
     childCommunityCount: summary?.childCommunityCount ?? 0,
     sharedContentCount: summary?.sharedContentCount ?? 0,
+    governanceMode: board.governanceMode ?? 'hierarchical',
+    admissionMode: board.admissionMode,
   })
 
 const selectMembers = async (
@@ -1031,9 +1149,34 @@ const selectMembers = async (
 
   const role = opts.role?.trim()
   if (role) {
-    builder = builder.where(
-      sql<boolean>`coalesce("membership"."roles", '[]'::jsonb) ? ${role}`,
-    )
+    if (role === 'member') {
+      builder = builder.where('membership.membershipState', '=', 'active')
+    } else if (role === 'moderator' || role === 'owner') {
+      const grant = `${role}.grant`
+      const terminal =
+        role === 'moderator'
+          ? ['moderator.revoke', 'moderator.resign']
+          : ['owner.revoke']
+      builder = builder.where(
+        sql<boolean>`exists (
+          select 1 from para_community_authority_event grant
+          where grant."communityUri" = "membership"."communityUri"
+            and grant.subject = "membership".creator
+            and grant.action = ${grant}
+            and grant."effectiveAt"::timestamptz <= now()
+            and (grant."expiresAt" is null or grant."expiresAt"::timestamptz > now())
+            and not exists (
+              select 1 from para_community_authority_event terminal
+              where terminal."communityUri" = grant."communityUri"
+                and terminal.subject = grant.subject
+                and terminal.action in (${sql.join(terminal)})
+                and terminal.version > grant.version
+            )
+        )`,
+      )
+    } else {
+      builder = builder.where(sql<boolean>`false`)
+    }
   }
 
   // Subquery-based sorts (participation) cannot use keyset cursors efficiently.
@@ -1063,11 +1206,18 @@ const selectMembers = async (
       .execute()
     const page = rows.slice(0, opts.limit)
     const dids = page.map((row) => row.did)
-    const [voteCounts, delegationCounts, postCounts] = await Promise.all([
+    const [voteCounts, delegationCounts, postCounts, authorities] = await Promise.all([
       getVoteCounts(db, dids),
       getDelegationCounts(db, dids),
       getCommunityPostCounts(db, dids, communityUri),
+      Promise.all(
+        dids.map(async (did) => [
+          did,
+          await getAuthoritySnapshot(db, communityUri, did),
+        ] as const),
+      ),
     ])
+    const authorityByDid = new Map(authorities)
 
     return {
       members: page.map((row) => {
@@ -1077,8 +1227,11 @@ const selectMembers = async (
           handle: row.handle ?? '',
           displayName: row.displayName ?? '',
           avatar: '',
-          membershipState: row.membershipState,
-          roles: filterValidRoles(row.roles ?? null, row.roleAssignments ?? null),
+          membershipState:
+            authorityByDid.get(row.did)?.membershipState ?? row.membershipState,
+          roles:
+            authorityByDid.get(row.did)?.roles ??
+            filterValidRoles(row.roles ?? null, row.roleAssignments ?? null),
           joinedAt: row.joinedAt,
           votesCast: voteCounts.get(row.did) ?? 0,
           delegationsReceived: delegationCounts.get(row.did) ?? 0,
@@ -1113,11 +1266,18 @@ const selectMembers = async (
   const rows = await builder.execute()
   const page = rows.slice(0, opts.limit)
   const dids = page.map((row) => row.did)
-  const [voteCounts, delegationCounts, postCounts] = await Promise.all([
+  const [voteCounts, delegationCounts, postCounts, authorities] = await Promise.all([
     getVoteCounts(db, dids),
     getDelegationCounts(db, dids),
     getCommunityPostCounts(db, dids, communityUri),
+    Promise.all(
+      dids.map(async (did) => [
+        did,
+        await getAuthoritySnapshot(db, communityUri, did),
+      ] as const),
+    ),
   ])
+  const authorityByDid = new Map(authorities)
 
   return {
     members: page.map((row) => {
@@ -1127,8 +1287,11 @@ const selectMembers = async (
         handle: row.handle ?? '',
         displayName: row.displayName ?? '',
         avatar: '',
-        membershipState: row.membershipState,
-        roles: filterValidRoles(row.roles ?? null, row.roleAssignments ?? null),
+        membershipState:
+          authorityByDid.get(row.did)?.membershipState ?? row.membershipState,
+        roles:
+          authorityByDid.get(row.did)?.roles ??
+          filterValidRoles(row.roles ?? null, row.roleAssignments ?? null),
         joinedAt: row.joinedAt,
         votesCast: voteCounts.get(row.did) ?? 0,
         delegationsReceived: delegationCounts.get(row.did) ?? 0,

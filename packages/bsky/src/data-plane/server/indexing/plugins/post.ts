@@ -1,18 +1,22 @@
-import { Insertable, Selectable, sql } from 'kysely'
-import { $Typed, Cid, getBlobCidString, lexParse } from '@atproto/lex'
+import { type Insertable, type Selectable, sql } from 'kysely'
+import { type $Typed, type Cid, getBlobCidString, lexParse } from '@atproto/lex'
 import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
+import { NOTIFICATION_REASON } from '../../../../api/app/bsky/notification/constants.js'
 import { app } from '../../../../lexicons.js'
 import {
   postUriToPostgateUri,
   postUriToThreadgateUri,
   uriToDid,
 } from '../../../../util/uris.js'
-import { RecordWithMedia } from '../../../../views/types.js'
+import type { RecordWithMedia } from '../../../../views/types.js'
 import { parsePostgate } from '../../../../views/util.js'
-import { BackgroundQueue } from '../../background.js'
-import { Database } from '../../db/index.js'
-import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
-import { Notification } from '../../db/tables/notification.js'
+import type { BackgroundQueue } from '../../background.js'
+import type {
+  DatabaseSchema,
+  DatabaseSchemaType,
+} from '../../db/database-schema.js'
+import type { Database } from '../../db/index.js'
+import type { Notification } from '../../db/tables/notification.js'
 import { countAll, excluded } from '../../db/util.js'
 import {
   getAncestorsAndSelfQb,
@@ -44,10 +48,7 @@ type IndexedPost = {
   post: Post
   facets?: { type: 'mention' | 'link'; value: string }[]
   embeds?: (
-    | PostEmbedImage[]
-    | PostEmbedExternal
-    | PostEmbedRecord
-    | PostEmbedVideo
+    PostEmbedImage[] | PostEmbedExternal | PostEmbedRecord | PostEmbedVideo
   )[]
   ancestors?: PostAncestor[]
   descendents?: PostDescendent[]
@@ -142,10 +143,7 @@ const insertFn = async (
     })
   // Embed indices
   const embeds: (
-    | PostEmbedImage[]
-    | PostEmbedExternal
-    | PostEmbedRecord
-    | PostEmbedVideo
+    PostEmbedImage[] | PostEmbedExternal | PostEmbedRecord | PostEmbedVideo
   )[] = []
   const postEmbeds = separateEmbeds(obj.embed)
   for (const postEmbed of postEmbeds) {
@@ -304,7 +302,7 @@ const notifsForInsert = (obj: IndexedPost) => {
     if (facet.type === 'mention') {
       maybeNotify({
         did: facet.value,
-        reason: 'mention',
+        reason: NOTIFICATION_REASON.MENTION,
         author: obj.post.creator,
         recordUri: obj.post.uri,
         recordCid: obj.post.cid,
@@ -320,7 +318,7 @@ const notifsForInsert = (obj: IndexedPost) => {
         if (embedUri.collection === app.bsky.feed.post.$type) {
           maybeNotify({
             did: embedUri.host,
-            reason: 'quote',
+            reason: NOTIFICATION_REASON.QUOTE,
             reasonSubject: embedUri.toString(),
             author: obj.post.creator,
             recordUri: obj.post.uri,
@@ -364,7 +362,7 @@ const notifsForInsert = (obj: IndexedPost) => {
       const ancestorUri = new AtUri(ancestor.uri)
       maybeNotify({
         did: ancestorUri.host,
-        reason: 'reply',
+        reason: NOTIFICATION_REASON.REPLY,
         reasonSubject: ancestorUri.toString(),
         author: obj.post.creator,
         recordUri: obj.post.uri,
@@ -402,7 +400,7 @@ const notifsForInsert = (obj: IndexedPost) => {
         const ancestorUri = new AtUri(ancestor.uri)
         maybeNotify({
           did: ancestorUri.host,
-          reason: 'reply',
+          reason: NOTIFICATION_REASON.REPLY,
           reasonSubject: ancestorUri.toString(),
           author: descendent.creator,
           recordUri: descendent.uri,
@@ -431,9 +429,7 @@ const deleteFn = async (
   ])
   await db.deleteFrom('quote').where('subject', '=', uriStr).execute()
   const deletedEmbeds: (
-    | PostEmbedImage[]
-    | PostEmbedExternal
-    | PostEmbedRecord
+    PostEmbedImage[] | PostEmbedExternal | PostEmbedRecord
   )[] = []
   const [deletedImgs, deletedExternals, deletedPosts] = await Promise.all([
     db
