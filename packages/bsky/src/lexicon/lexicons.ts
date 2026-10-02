@@ -21631,6 +21631,13 @@ export const schemaDict = {
                 'Spatial mapping token indicating the nonant or 25th block.',
               maxLength: 64,
             },
+            region: {
+              type: 'string',
+              description:
+                "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
+              maxLength: 128,
+              maxGraphemes: 64,
+            },
             geo: {
               type: 'ref',
               ref: 'lex:com.para.community.board#geoPoint',
@@ -22024,6 +22031,13 @@ export const schemaDict = {
               quadrant: {
                 type: 'string',
                 maxLength: 64,
+              },
+              region: {
+                type: 'string',
+                description:
+                  "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
+                maxLength: 128,
+                maxGraphemes: 64,
               },
               description: {
                 type: 'string',
@@ -23477,6 +23491,13 @@ export const schemaDict = {
             maxGraphemes: 64,
             maxLength: 128,
           },
+          region: {
+            type: 'string',
+            description:
+              "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
+            maxLength: 128,
+            maxGraphemes: 64,
+          },
           delegatesChatId: {
             type: 'string',
           },
@@ -24415,6 +24436,12 @@ export const schemaDict = {
               description:
                 'Optional territory quadrant to filter communities by',
             },
+            region: {
+              type: 'string',
+              description: 'Optional Mexican state to filter communities by',
+              maxLength: 128,
+              maxGraphemes: 64,
+            },
           },
         },
         output: {
@@ -24487,6 +24514,13 @@ export const schemaDict = {
             type: 'string',
             maxGraphemes: 64,
             maxLength: 128,
+          },
+          region: {
+            type: 'string',
+            description:
+              "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
+            maxLength: 128,
+            maxGraphemes: 64,
           },
           delegatesChatId: {
             type: 'string',

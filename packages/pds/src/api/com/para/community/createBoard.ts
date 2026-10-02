@@ -94,6 +94,7 @@ export default function (server: Server, ctx: AppContext) {
       const name = normalizeCommunityName(input.body.name)
       const quadrant = normalizeQuadrant(input.body.quadrant)
       const description = input.body.description?.trim() || undefined
+      const region = input.body.region?.trim() || undefined
       const founderStarterPackName =
         input.body.founderStarterPackName?.trim() || undefined
       const governanceMode = input.body.governanceMode || 'hierarchical'
@@ -125,6 +126,7 @@ export default function (server: Server, ctx: AppContext) {
           did,
           name,
           quadrant,
+          region,
           description,
           founderStarterPackName,
           governanceMode,
@@ -157,6 +159,7 @@ const ensureBoardRecords = async ({
   did,
   name,
   quadrant,
+  region,
   description,
   founderStarterPackName,
   governanceMode,
@@ -173,6 +176,7 @@ const ensureBoardRecords = async ({
   did: string
   name: string
   quadrant: string
+  region?: string
   description?: string
   founderStarterPackName?: string
   governanceMode?: string
@@ -207,6 +211,7 @@ const ensureBoardRecords = async ({
     name,
     description,
     quadrant,
+    region,
     delegatesChatId,
     subdelegatesChatId,
     status: 'draft',

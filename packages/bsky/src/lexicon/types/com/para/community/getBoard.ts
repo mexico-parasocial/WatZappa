@@ -66,6 +66,8 @@ export interface BoardView {
   name: string
   description?: string
   quadrant: string
+  /** Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state. */
+  region?: string
   delegatesChatId: string
   subdelegatesChatId: string
   memberCount: number

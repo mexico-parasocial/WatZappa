@@ -99,11 +99,12 @@ export class ParaCacheService {
     participationKind: string
     flairId: string
     quadrant?: string
+    region?: string
     query: string
     limit: number
     cursor: string
   }): string {
-    return `${params.viewerDid}:${params.sort}:${params.state}:${params.participationKind}:${params.flairId}:${params.quadrant ?? ''}:${params.query}:${params.limit}:${params.cursor}`
+    return `${params.viewerDid}:${params.sort}:${params.state}:${params.participationKind}:${params.flairId}:${params.quadrant ?? ''}:${params.region ?? ''}:${params.query}:${params.limit}:${params.cursor}`
   }
 
   membersKey(params: {

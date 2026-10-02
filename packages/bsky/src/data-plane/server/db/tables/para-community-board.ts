@@ -8,6 +8,7 @@ export interface ParaCommunityBoard {
   name: string
   description: string | null
   quadrant: string
+  region: string | null
   slug: string
   delegatesChatId: string
   subdelegatesChatId: string

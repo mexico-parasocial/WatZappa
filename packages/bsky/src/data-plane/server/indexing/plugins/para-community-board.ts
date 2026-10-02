@@ -11,6 +11,7 @@ interface ParaCommunityBoardRecord {
   name: string
   description?: string
   quadrant: string
+  region?: string
   delegatesChatId: string
   subdelegatesChatId: string
   governanceMode?: string
@@ -41,6 +42,7 @@ const insertFn = async (
       name: obj.name,
       description: obj.description ?? null,
       quadrant: obj.quadrant,
+      region: obj.region?.trim() || null,
       slug: deriveBoardSlug(uri, obj.name),
       delegatesChatId: obj.delegatesChatId,
       subdelegatesChatId: obj.subdelegatesChatId,

@@ -55,6 +55,7 @@ type BoardRow = {
   name: string
   description: string | null
   quadrant: string
+  region: string | null
   delegatesChatId: string
   subdelegatesChatId: string
   createdAt: string
@@ -191,6 +192,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       flairId: req.flairId,
       sort: req.sort,
       quadrant: req.quadrant,
+      region: req.region,
     })
     if (result.boards.length === 0) {
       return new GetParaCommunityBoardsResponse({ boards: [] })
@@ -658,12 +660,18 @@ const selectBoards = async (
     flairId?: string
     sort?: string
     quadrant?: string
+    region?: string
   },
 ): Promise<{ boards: BoardRow[]; cursor: string }> => {
   let builder = boardBaseQuery(db)
 
   if (opts.quadrant) {
     builder = builder.where('board.quadrant', '=', opts.quadrant)
+  }
+
+  const region = opts.region?.trim()
+  if (region) {
+    builder = builder.where('board.region', '=', region)
   }
 
   const state = opts.state?.trim()
@@ -769,6 +777,7 @@ const boardBaseQuery = (db: Database) =>
       'board.name',
       'board.description',
       'board.quadrant',
+      'board.region',
       'board.delegatesChatId',
       'board.subdelegatesChatId',
       'board.governanceMode',
@@ -1116,6 +1125,7 @@ const toBoardView = (
     sharedContentCount: summary?.sharedContentCount ?? 0,
     governanceMode: board.governanceMode ?? 'hierarchical',
     admissionMode: board.admissionMode,
+    region: board.region ?? '',
   })
 
 const selectMembers = async (

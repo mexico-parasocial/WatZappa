@@ -16787,6 +16787,11 @@ export class ParaCommunityBoardView extends Message<ParaCommunityBoardView> {
    */
   admissionMode = "";
 
+  /**
+   * @generated from field: string region = 25;
+   */
+  region = "";
+
   constructor(data?: PartialMessage<ParaCommunityBoardView>) {
     super();
     proto3.util.initPartial(data, this);
@@ -16819,6 +16824,7 @@ export class ParaCommunityBoardView extends Message<ParaCommunityBoardView> {
     { no: 22, name: "shared_content_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
     { no: 23, name: "governance_mode", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 24, name: "admission_mode", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 25, name: "region", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ParaCommunityBoardView {
@@ -17095,6 +17101,11 @@ export class GetParaCommunityBoardsRequest extends Message<GetParaCommunityBoard
    */
   quadrant = "";
 
+  /**
+   * @generated from field: string region = 10;
+   */
+  region = "";
+
   constructor(data?: PartialMessage<GetParaCommunityBoardsRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -17112,6 +17123,7 @@ export class GetParaCommunityBoardsRequest extends Message<GetParaCommunityBoard
     { no: 7, name: "flair_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 8, name: "sort", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 9, name: "quadrant", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 10, name: "region", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaCommunityBoardsRequest {

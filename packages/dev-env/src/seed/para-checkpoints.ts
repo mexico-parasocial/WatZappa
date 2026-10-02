@@ -15,6 +15,7 @@ export type ParaSeedCheckpointName =
   | 'lists'
   | 'postMeta'
   | 'raq'
+  | 'civicTrees'
 
 export type ParaSeedCheckpoint = {
   name: ParaSeedCheckpointName

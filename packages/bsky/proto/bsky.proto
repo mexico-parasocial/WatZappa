@@ -2285,6 +2285,7 @@ message ParaCommunityBoardView {
   int32 shared_content_count = 22;
   string governance_mode = 23;
   string admission_mode = 24;
+  string region = 25;
 }
 message GetParaCommunityBoardRequest {
   string community_id = 1;
@@ -2318,6 +2319,7 @@ message GetParaCommunityBoardsRequest {
   string flair_id = 7;
   string sort = 8;
   string quadrant = 9;
+  string region = 10;
 }
 message GetParaCommunityBoardsResponse {
   repeated ParaCommunityBoardView boards = 1;

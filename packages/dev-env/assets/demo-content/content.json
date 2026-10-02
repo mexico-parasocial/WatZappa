@@ -1,0 +1,1288 @@
+{
+  "version": "1",
+  "memes": [
+    {
+      "alias": "meme-bache",
+      "author": "hector.test",
+      "caption": "Yo esperando que tapen el bache que reportamos en 2019",
+      "image": "04-landscape-small.jpg",
+      "category": "humor",
+      "community": "Presupuesto Participativo Centro",
+      "createdAt": "2026-09-24T14:05:00.000Z"
+    },
+    {
+      "alias": "meme-agua",
+      "author": "gabriela.test",
+      "caption": "Cuando el pronóstico dice lluvia y la colonia sigue con tandeo",
+      "image": "01-landscape.jpg",
+      "category": "humor",
+      "community": "Medio Ambiente y Clima",
+      "createdAt": "2026-09-24T18:40:00.000Z"
+    },
+    {
+      "alias": "meme-ciclovia",
+      "author": "pablo.test",
+      "caption": "La ciclovía nueva vs. el coche estacionado encima de la ciclovía nueva",
+      "image": "07-landscape-again.jpg",
+      "category": "humor",
+      "community": "Movilidad Sostenible Norte",
+      "createdAt": "2026-09-25T09:15:00.000Z"
+    },
+    {
+      "alias": "meme-asamblea",
+      "author": "sofia.test",
+      "caption": "La asamblea vecinal: tres horas de debate, dos minutos de votación",
+      "image": "00-portrait.jpg",
+      "category": "humor",
+      "community": "Presupuesto Participativo Centro",
+      "createdAt": "2026-09-25T20:30:00.000Z"
+    },
+    {
+      "alias": "meme-camion",
+      "author": "luis.test",
+      "caption": "El camión de las 7:10 pasando a las 7:09 justo cuando llego a la parada",
+      "image": "05-portrait-small.jpg",
+      "category": "humor",
+      "community": "Movilidad Sostenible Norte",
+      "createdAt": "2026-09-26T13:00:00.000Z"
+    },
+    {
+      "alias": "meme-transparencia",
+      "author": "karla.test",
+      "caption": "Pedí la información por transparencia y me llegó un PDF escaneado de lado",
+      "image": "03-alt.jpg",
+      "category": "humor",
+      "createdAt": "2026-09-27T11:20:00.000Z"
+    },
+    {
+      "alias": "meme-arbolado",
+      "author": "olivia.test",
+      "caption": "Plantamos 500 árboles. El informe oficial: «se entregaron 500 hoyos»",
+      "image": "02-at.png",
+      "category": "humor",
+      "community": "Medio Ambiente y Clima",
+      "createdAt": "2026-09-28T16:45:00.000Z"
+    },
+    {
+      "alias": "meme-consulta",
+      "author": "rodrigo.test",
+      "caption": "Yo leyendo las 40 páginas de la consulta ciudadana antes de votar (mentira, leí el resumen)",
+      "image": "06-hd.jpg",
+      "category": "humor",
+      "createdAt": "2026-09-29T10:10:00.000Z"
+    }
+  ],
+  "memeComments": [
+    {
+      "alias": "c-bache-1",
+      "author": "bob.test",
+      "parent": "meme-bache",
+      "text": "El mío ya tiene nombre y le llevamos pastel en su cumpleaños.",
+      "createdAt": "2026-09-24T14:30:00.000Z"
+    },
+    {
+      "alias": "c-bache-2",
+      "author": "mariana.test",
+      "parent": "meme-bache",
+      "text": "Ojalá lo metan en el presupuesto participativo de este año. Ya lo propuse en la asamblea.",
+      "createdAt": "2026-09-24T15:02:00.000Z"
+    },
+    {
+      "alias": "c-bache-3",
+      "author": "hector.test",
+      "parent": "c-bache-2",
+      "text": "Si lo subes como propuesta te apoyo con fotos del antes y después (bueno, solo del antes).",
+      "createdAt": "2026-09-24T15:20:00.000Z"
+    },
+    {
+      "alias": "c-bache-4",
+      "author": "tomas.test",
+      "parent": "c-bache-3",
+      "text": "Cuenten conmigo para juntar firmas en la cuadra.",
+      "createdAt": "2026-09-24T16:05:00.000Z"
+    },
+    {
+      "alias": "c-agua-1",
+      "author": "isabel.test",
+      "parent": "meme-agua",
+      "text": "Llueve en toda la ciudad menos en la tubería de mi casa.",
+      "createdAt": "2026-09-24T19:00:00.000Z"
+    },
+    {
+      "alias": "c-agua-2",
+      "author": "fernando.test",
+      "parent": "meme-agua",
+      "text": "Por eso hay que empujar la captación de lluvia en escuelas y mercados.",
+      "createdAt": "2026-09-24T19:25:00.000Z"
+    },
+    {
+      "alias": "c-agua-3",
+      "author": "gabriela.test",
+      "parent": "c-agua-2",
+      "text": "Justo lo subimos al árbol de Medio Ambiente, ¡pásense a votarlo!",
+      "createdAt": "2026-09-24T19:40:00.000Z"
+    },
+    {
+      "alias": "c-ciclovia-1",
+      "author": "sofia.test",
+      "parent": "meme-ciclovia",
+      "text": "Clásico. Luego dicen que nadie usa la ciclovía.",
+      "createdAt": "2026-09-25T09:40:00.000Z"
+    },
+    {
+      "alias": "c-ciclovia-2",
+      "author": "jorge.test",
+      "parent": "meme-ciclovia",
+      "text": "Con bolardos esto no pasaría. Hay estudios de ITDP sobre ciclovías protegidas.",
+      "createdAt": "2026-09-25T10:05:00.000Z"
+    },
+    {
+      "alias": "c-ciclovia-3",
+      "author": "pablo.test",
+      "parent": "c-ciclovia-2",
+      "text": "¿Tienes el enlace? Lo agrego a mi colección de movilidad.",
+      "createdAt": "2026-09-25T10:30:00.000Z"
+    },
+    {
+      "alias": "c-ciclovia-4",
+      "author": "jorge.test",
+      "parent": "c-ciclovia-3",
+      "text": "Ya lo subí como fuente al árbol de Movilidad Sostenible Norte.",
+      "createdAt": "2026-09-25T11:00:00.000Z"
+    },
+    {
+      "alias": "c-ciclovia-5",
+      "author": "dan.test",
+      "parent": "meme-ciclovia",
+      "text": "Yo manejo y aun así me da coraje. Esa banqueta también es de todos.",
+      "createdAt": "2026-09-25T12:15:00.000Z"
+    },
+    {
+      "alias": "c-asamblea-1",
+      "author": "eva.test",
+      "parent": "meme-asamblea",
+      "text": "Y al final se vota lo que ya se había decidido en el grupo de WhatsApp.",
+      "createdAt": "2026-09-25T21:00:00.000Z"
+    },
+    {
+      "alias": "c-asamblea-2",
+      "author": "nicolas.test",
+      "parent": "c-asamblea-1",
+      "text": "Por eso está bueno que ahora se pueda votar aquí con más tiempo.",
+      "createdAt": "2026-09-25T21:22:00.000Z"
+    },
+    {
+      "alias": "c-asamblea-3",
+      "author": "quetzali.test",
+      "parent": "meme-asamblea",
+      "text": "Tres horas de debate y el micrófono nunca funcionó.",
+      "createdAt": "2026-09-25T22:10:00.000Z"
+    },
+    {
+      "alias": "c-camion-1",
+      "author": "karla.test",
+      "parent": "meme-camion",
+      "text": "Y el de las 7:25 no pasa nunca.",
+      "createdAt": "2026-09-26T13:30:00.000Z"
+    },
+    {
+      "alias": "c-camion-2",
+      "author": "rodrigo.test",
+      "parent": "meme-camion",
+      "text": "Un carril exclusivo haría que por fin respetaran los horarios.",
+      "createdAt": "2026-09-26T13:55:00.000Z"
+    },
+    {
+      "alias": "c-camion-3",
+      "author": "luis.test",
+      "parent": "c-camion-2",
+      "text": "Hay una propuesta de carril bus en Av. Constitución, está en el árbol de la comunidad.",
+      "createdAt": "2026-09-26T14:20:00.000Z"
+    },
+    {
+      "alias": "c-transparencia-1",
+      "author": "carla.test",
+      "parent": "meme-transparencia",
+      "text": "A mí me mandaron el Excel impreso y escaneado. Nivel experto.",
+      "createdAt": "2026-09-27T11:45:00.000Z"
+    },
+    {
+      "alias": "c-transparencia-2",
+      "author": "mariana.test",
+      "parent": "meme-transparencia",
+      "text": "Se puede presentar un recurso de revisión si no viene en formato abierto.",
+      "createdAt": "2026-09-27T12:10:00.000Z"
+    },
+    {
+      "alias": "c-transparencia-3",
+      "author": "karla.test",
+      "parent": "c-transparencia-2",
+      "text": "¡No sabía! ¿Cuánto tarda en responder el instituto?",
+      "createdAt": "2026-09-27T12:30:00.000Z"
+    },
+    {
+      "alias": "c-transparencia-4",
+      "author": "mariana.test",
+      "parent": "c-transparencia-3",
+      "text": "Depende, pero suele ser de unas semanas. Vale la pena.",
+      "createdAt": "2026-09-27T12:55:00.000Z"
+    },
+    {
+      "alias": "c-arbolado-1",
+      "author": "hector.test",
+      "parent": "meme-arbolado",
+      "text": "Técnicamente cumplieron con los hoyos.",
+      "createdAt": "2026-09-28T17:00:00.000Z"
+    },
+    {
+      "alias": "c-arbolado-2",
+      "author": "fernando.test",
+      "parent": "meme-arbolado",
+      "text": "La pregunta de quién da mantenimiento a los árboles ya está en el árbol de Medio Ambiente.",
+      "createdAt": "2026-09-28T17:35:00.000Z"
+    },
+    {
+      "alias": "c-arbolado-3",
+      "author": "olivia.test",
+      "parent": "c-arbolado-2",
+      "text": "Y el 12 de octubre hay jornada de reforestación, ahora sí con árboles.",
+      "createdAt": "2026-09-28T18:00:00.000Z"
+    },
+    {
+      "alias": "c-consulta-1",
+      "author": "tomas.test",
+      "parent": "meme-consulta",
+      "text": "El resumen también tenía 12 páginas.",
+      "createdAt": "2026-09-29T10:40:00.000Z"
+    },
+    {
+      "alias": "c-consulta-2",
+      "author": "isabel.test",
+      "parent": "meme-consulta",
+      "text": "Deberían poner una versión de una página con lo esencial.",
+      "createdAt": "2026-09-29T11:05:00.000Z"
+    },
+    {
+      "alias": "c-consulta-3",
+      "author": "rodrigo.test",
+      "parent": "c-consulta-2",
+      "text": "Eso sí lo votaría sin leer. Ah, no, espera.",
+      "createdAt": "2026-09-29T11:20:00.000Z"
+    }
+  ],
+  "memeReactions": [
+    {
+      "meme": "meme-bache",
+      "up": [
+        "bob.test",
+        "carla.test",
+        "dan.test",
+        "eva.test",
+        "mariana.test",
+        "nicolas.test",
+        "tomas.test",
+        "sofia.test",
+        "luis.test"
+      ],
+      "down": ["jorge.test"]
+    },
+    {
+      "meme": "meme-agua",
+      "up": [
+        "isabel.test",
+        "fernando.test",
+        "olivia.test",
+        "hector.test",
+        "karla.test",
+        "pablo.test"
+      ],
+      "down": ["dan.test", "rodrigo.test"]
+    },
+    {
+      "meme": "meme-ciclovia",
+      "up": [
+        "sofia.test",
+        "jorge.test",
+        "luis.test",
+        "karla.test",
+        "quetzali.test",
+        "gabriela.test",
+        "tomas.test",
+        "eva.test",
+        "isabel.test",
+        "mariana.test",
+        "bob.test",
+        "carla.test"
+      ],
+      "down": ["dan.test"]
+    },
+    {
+      "meme": "meme-asamblea",
+      "up": [
+        "eva.test",
+        "nicolas.test",
+        "quetzali.test",
+        "hector.test",
+        "bob.test"
+      ],
+      "down": ["carla.test", "fernando.test", "gabriela.test"]
+    },
+    {
+      "meme": "meme-camion",
+      "up": [
+        "karla.test",
+        "rodrigo.test",
+        "pablo.test",
+        "jorge.test",
+        "olivia.test",
+        "tomas.test",
+        "nicolas.test"
+      ],
+      "down": []
+    },
+    {
+      "meme": "meme-transparencia",
+      "up": [
+        "carla.test",
+        "mariana.test",
+        "bob.test",
+        "dan.test",
+        "eva.test",
+        "fernando.test",
+        "gabriela.test",
+        "hector.test",
+        "isabel.test",
+        "jorge.test",
+        "luis.test",
+        "nicolas.test",
+        "olivia.test",
+        "pablo.test"
+      ],
+      "down": ["quetzali.test", "rodrigo.test"]
+    },
+    {
+      "meme": "meme-arbolado",
+      "up": ["hector.test", "fernando.test", "gabriela.test", "isabel.test"],
+      "down": ["bob.test", "tomas.test", "sofia.test", "luis.test", "dan.test"]
+    },
+    {
+      "meme": "meme-consulta",
+      "up": ["tomas.test", "isabel.test", "karla.test"],
+      "down": ["mariana.test"]
+    }
+  ],
+  "personalTree": {
+    "owner": "alice.test",
+    "collections": [
+      {
+        "name": "Agua para la colonia",
+        "description": "Cómo garantizar agua suficiente en el centro: captación, gestión pública y datos.",
+        "color": "#0EA5E9",
+        "items": [
+          {
+            "itemId": "demo-agua-topic-empresa",
+            "kind": "topic",
+            "title": "Empresa pública de agua",
+            "flairId": "policy_empresa_publica_agua",
+            "note": "El tema central de la colección."
+          },
+          {
+            "itemId": "demo-agua-topic-industria",
+            "kind": "topic",
+            "title": "Industria hídrica",
+            "flairId": "matter_industria_hidrica"
+          },
+          {
+            "itemId": "demo-agua-link-conagua",
+            "kind": "link",
+            "title": "CONAGUA: estadísticas del agua",
+            "url": "https://www.gob.mx/conagua",
+            "sourceLabel": "gob.mx"
+          },
+          {
+            "itemId": "demo-agua-evidence-inegi",
+            "kind": "evidence",
+            "title": "INEGI: disponibilidad de agua en viviendas",
+            "url": "https://www.inegi.org.mx/temas/agua/",
+            "sourceLabel": "INEGI",
+            "note": "Datos por municipio para comparar colonias."
+          },
+          {
+            "itemId": "demo-agua-note-captacion",
+            "kind": "note",
+            "title": "Captación de lluvia en escuelas",
+            "note": "Proponer un piloto en tres primarias del centro antes de la temporada de lluvias."
+          },
+          {
+            "itemId": "demo-agua-book",
+            "kind": "book",
+            "title": "Governing the Commons",
+            "sourceLabel": "Elinor Ostrom",
+            "publishedYear": 1990
+          },
+          {
+            "itemId": "demo-agua-note-tandeo",
+            "kind": "note",
+            "title": "Calendario de tandeo actual",
+            "note": "Martes y viernes sin servicio en la zona norte de la colonia."
+          },
+          {
+            "itemId": "demo-source-agua",
+            "kind": "policy",
+            "title": "Captación de lluvia en escuelas",
+            "sourceRef": "agua",
+            "flairId": "policy_empresa_publica_agua",
+            "policyCategory": "||#EmpresaPublicaDeAgua"
+          },
+          {
+            "itemId": "demo-highlight-agua",
+            "kind": "evidence",
+            "title": "Subrayado: Captación de lluvia en escuelas",
+            "sourceRef": "agua",
+            "highlightRef": "highlight-agua"
+          },
+          {
+            "itemId": "demo-source-tandeo",
+            "kind": "post",
+            "title": "Tandeo y acceso al agua",
+            "sourceRef": "tandeo",
+            "flairId": "matter_industria_hidrica",
+            "policyCategory": "||#IndustriaHidrica"
+          }
+        ],
+        "relations": [
+          {
+            "id": "demo-agua-r1",
+            "from": "demo-agua-evidence-inegi",
+            "to": "demo-agua-topic-empresa",
+            "kind": "evidence_for",
+            "note": "Muestra la brecha de acceso entre colonias."
+          },
+          {
+            "id": "demo-agua-r2",
+            "from": "demo-agua-note-captacion",
+            "to": "demo-agua-topic-empresa",
+            "kind": "supports"
+          },
+          {
+            "id": "demo-agua-r3",
+            "from": "demo-agua-link-conagua",
+            "to": "demo-agua-topic-industria",
+            "kind": "context_for"
+          },
+          {
+            "id": "demo-agua-r4",
+            "from": "demo-agua-topic-empresa",
+            "to": "demo-agua-topic-industria",
+            "kind": "depends_on",
+            "note": "La gestión pública depende de la infraestructura existente."
+          },
+          {
+            "id": "demo-agua-r5",
+            "from": "demo-agua-book",
+            "to": "demo-agua-topic-empresa",
+            "kind": "related_to"
+          },
+          {
+            "id": "demo-agua-r6",
+            "from": "demo-agua-note-tandeo",
+            "to": "demo-agua-note-captacion",
+            "kind": "context_for",
+            "note": "El tandeo es la razón del piloto."
+          },
+          {
+            "id": "demo-source-rel-agua",
+            "from": "demo-source-agua",
+            "to": "demo-agua-topic-empresa",
+            "kind": "supports"
+          },
+          {
+            "id": "demo-highlight-rel-agua",
+            "from": "demo-highlight-agua",
+            "to": "demo-source-agua",
+            "kind": "context_for"
+          },
+          {
+            "id": "demo-source-rel-tandeo",
+            "from": "demo-source-tandeo",
+            "to": "demo-agua-topic-industria",
+            "kind": "context_for"
+          }
+        ]
+      },
+      {
+        "name": "Movilidad y aire limpio",
+        "description": "Transporte público, bici y emisiones: lo que funciona y lo que no.",
+        "color": "#22C55E",
+        "items": [
+          {
+            "itemId": "demo-mov-topic-transporte",
+            "kind": "topic",
+            "title": "Transporte público",
+            "flairId": "policy_transporte_publico_pol"
+          },
+          {
+            "itemId": "demo-mov-topic-carril",
+            "kind": "topic",
+            "title": "Carril bus",
+            "flairId": "matter_carril_bus"
+          },
+          {
+            "itemId": "demo-mov-topic-emisiones",
+            "kind": "topic",
+            "title": "Emisiones de CO2",
+            "flairId": "matter_emisiones_co2"
+          },
+          {
+            "itemId": "demo-mov-topic-trafico",
+            "kind": "topic",
+            "title": "Congestión de tráfico",
+            "flairId": "matter_congestion_trafico"
+          },
+          {
+            "itemId": "demo-mov-link-itdp",
+            "kind": "link",
+            "title": "ITDP México: estudios de movilidad",
+            "url": "https://mexico.itdp.org/",
+            "sourceLabel": "ITDP"
+          },
+          {
+            "itemId": "demo-mov-evidence-sinaica",
+            "kind": "evidence",
+            "title": "SINAICA: calidad del aire en tiempo real",
+            "url": "https://sinaica.inecc.gob.mx/",
+            "sourceLabel": "INECC"
+          },
+          {
+            "itemId": "demo-mov-note-comercios",
+            "kind": "note",
+            "title": "Preocupación de los comercios",
+            "note": "Temen perder estacionamiento con el carril bus; buscar datos de ventas en corredores similares."
+          },
+          {
+            "itemId": "demo-source-bus",
+            "kind": "policy",
+            "title": "Carril exclusivo de transporte público",
+            "sourceRef": "bus",
+            "flairId": "policy_transporte_publico_pol",
+            "policyCategory": "||#TransportePublico"
+          },
+          {
+            "itemId": "demo-highlight-bus",
+            "kind": "evidence",
+            "title": "Subrayado: Carril exclusivo de transporte público",
+            "sourceRef": "bus",
+            "highlightRef": "highlight-bus"
+          },
+          {
+            "itemId": "demo-source-aire",
+            "kind": "post",
+            "title": "Emisiones y congestión del corredor",
+            "sourceRef": "aire",
+            "flairId": "matter_emisiones_co2",
+            "policyCategory": "||#EmisionesCO2"
+          }
+        ],
+        "relations": [
+          {
+            "id": "demo-mov-r1",
+            "from": "demo-mov-topic-carril",
+            "to": "demo-mov-topic-transporte",
+            "kind": "supports",
+            "note": "Un carril exclusivo mejora la puntualidad."
+          },
+          {
+            "id": "demo-mov-r2",
+            "from": "demo-mov-topic-carril",
+            "to": "demo-mov-topic-trafico",
+            "kind": "related_to"
+          },
+          {
+            "id": "demo-mov-r3",
+            "from": "demo-mov-note-comercios",
+            "to": "demo-mov-topic-carril",
+            "kind": "opposes"
+          },
+          {
+            "id": "demo-mov-r4",
+            "from": "demo-mov-link-itdp",
+            "to": "demo-mov-topic-carril",
+            "kind": "evidence_for"
+          },
+          {
+            "id": "demo-mov-r5",
+            "from": "demo-mov-evidence-sinaica",
+            "to": "demo-mov-topic-emisiones",
+            "kind": "evidence_for"
+          },
+          {
+            "id": "demo-mov-r6",
+            "from": "demo-mov-topic-trafico",
+            "to": "demo-mov-topic-emisiones",
+            "kind": "context_for",
+            "note": "Más congestión, más emisiones."
+          },
+          {
+            "id": "demo-source-rel-bus",
+            "from": "demo-source-bus",
+            "to": "demo-mov-topic-transporte",
+            "kind": "supports"
+          },
+          {
+            "id": "demo-highlight-rel-bus",
+            "from": "demo-highlight-bus",
+            "to": "demo-source-bus",
+            "kind": "context_for"
+          },
+          {
+            "id": "demo-source-rel-aire",
+            "from": "demo-source-aire",
+            "to": "demo-mov-topic-emisiones",
+            "kind": "context_for"
+          }
+        ]
+      },
+      {
+        "name": "Presupuesto participativo 2027",
+        "description": "Qué proponer y cómo vigilar el gasto del presupuesto participativo del centro.",
+        "color": "#F59E0B",
+        "items": [
+          {
+            "itemId": "demo-pp-topic-transparencia",
+            "kind": "topic",
+            "title": "Transparencia fiscal",
+            "flairId": "matter_transparencia_fiscal"
+          },
+          {
+            "itemId": "demo-pp-topic-corrupcion",
+            "kind": "topic",
+            "title": "Corrupción",
+            "flairId": "matter_corrupcion"
+          },
+          {
+            "itemId": "demo-pp-note-bache",
+            "kind": "note",
+            "title": "Propuesta: bacheo de la calle Hidalgo",
+            "note": "Reportado desde 2019. Juntar fotos y firmas de la cuadra."
+          },
+          {
+            "itemId": "demo-pp-link-portal",
+            "kind": "link",
+            "title": "Portal de transparencia presupuestaria",
+            "url": "https://www.transparenciapresupuestaria.gob.mx/",
+            "sourceLabel": "SHCP"
+          },
+          {
+            "itemId": "demo-pp-evidence-informe",
+            "kind": "evidence",
+            "title": "Informe de avance del ejercicio anterior",
+            "url": "https://www.transparenciapresupuestaria.gob.mx/es/PTP/Datos_Abiertos",
+            "sourceLabel": "Datos abiertos"
+          },
+          {
+            "itemId": "demo-mov-topic-transporte",
+            "kind": "topic",
+            "title": "Transporte público",
+            "flairId": "policy_transporte_publico_pol",
+            "note": "También pesa en el presupuesto: paradas y banquetas."
+          },
+          {
+            "itemId": "demo-source-presupuesto",
+            "kind": "policy",
+            "title": "Seguimiento público del presupuesto vecinal",
+            "sourceRef": "presupuesto",
+            "flairId": "matter_transparencia_fiscal",
+            "policyCategory": "||#TransparenciaFiscal"
+          },
+          {
+            "itemId": "demo-highlight-presupuesto",
+            "kind": "evidence",
+            "title": "Subrayado: Seguimiento público del presupuesto vecinal",
+            "sourceRef": "presupuesto",
+            "highlightRef": "highlight-presupuesto"
+          },
+          {
+            "itemId": "demo-source-bache",
+            "kind": "post",
+            "title": "Bacheo pendiente en la calle Hidalgo",
+            "sourceRef": "bache",
+            "flairId": "matter_corrupcion",
+            "policyCategory": "||#Corrupcion"
+          }
+        ],
+        "relations": [
+          {
+            "id": "demo-pp-r1",
+            "from": "demo-pp-evidence-informe",
+            "to": "demo-pp-topic-transparencia",
+            "kind": "evidence_for"
+          },
+          {
+            "id": "demo-pp-r2",
+            "from": "demo-pp-link-portal",
+            "to": "demo-pp-topic-transparencia",
+            "kind": "context_for"
+          },
+          {
+            "id": "demo-pp-r3",
+            "from": "demo-pp-topic-transparencia",
+            "to": "demo-pp-topic-corrupcion",
+            "kind": "opposes",
+            "note": "Más transparencia, menos margen para desvíos."
+          },
+          {
+            "id": "demo-pp-r4",
+            "from": "demo-pp-note-bache",
+            "to": "demo-pp-topic-transparencia",
+            "kind": "depends_on",
+            "note": "Para vigilar que el bacheo se haga de verdad."
+          },
+          {
+            "id": "demo-pp-r5",
+            "from": "demo-mov-topic-transporte",
+            "to": "demo-pp-note-bache",
+            "kind": "related_to"
+          },
+          {
+            "id": "demo-source-rel-presupuesto",
+            "from": "demo-source-presupuesto",
+            "to": "demo-pp-topic-transparencia",
+            "kind": "supports"
+          },
+          {
+            "id": "demo-highlight-rel-presupuesto",
+            "from": "demo-highlight-presupuesto",
+            "to": "demo-source-presupuesto",
+            "kind": "context_for"
+          },
+          {
+            "id": "demo-source-rel-bache",
+            "from": "demo-source-bache",
+            "to": "demo-pp-topic-corrupcion",
+            "kind": "context_for"
+          }
+        ]
+      }
+    ]
+  },
+  "communityTrees": [
+    {
+      "community": "Medio Ambiente y Clima",
+      "cards": [
+        {
+          "key": "t-agua",
+          "author": "gabriela.test",
+          "sourceType": "topic",
+          "title": "Gestión pública del agua",
+          "content": "Cómo asegurar agua suficiente y de calidad para todas las colonias.",
+          "metadata": {
+            "flairId": "policy_empresa_publica_agua"
+          }
+        },
+        {
+          "key": "t-arbolado",
+          "author": "olivia.test",
+          "sourceType": "topic",
+          "title": "Arbolado urbano y emisiones",
+          "content": "Reforestación, sombra y captura de CO2 en la ciudad.",
+          "metadata": {
+            "flairId": "matter_emisiones_co2"
+          }
+        },
+        {
+          "key": "t-plastico",
+          "author": "fernando.test",
+          "sourceType": "topic",
+          "title": "Plásticos de un solo uso",
+          "content": "Reducción, reciclaje y quién paga los costos.",
+          "metadata": {
+            "flairId": "policy_impuesto_plastico"
+          }
+        },
+        {
+          "key": "claim-captacion",
+          "author": "fernando.test",
+          "sourceType": "claim",
+          "title": "La captación de lluvia en escuelas reduce el tandeo",
+          "content": "Un sistema por escuela puede cubrir sanitarios y riego durante la temporada de lluvias."
+        },
+        {
+          "key": "research-inegi",
+          "author": "isabel.test",
+          "sourceType": "research",
+          "title": "INEGI: disponibilidad de agua en viviendas",
+          "content": "Datos por municipio sobre acceso diario al agua.",
+          "sourceUrl": "https://www.inegi.org.mx/temas/agua/"
+        },
+        {
+          "key": "question-mantenimiento",
+          "author": "hector.test",
+          "sourceType": "question",
+          "title": "¿Quién da mantenimiento a los árboles plantados?",
+          "content": "Sin riego los primeros dos años, la mitad de los árboles no sobrevive."
+        },
+        {
+          "key": "event-jornada",
+          "author": "olivia.test",
+          "sourceType": "event",
+          "title": "Jornada de reforestación — 12 de octubre",
+          "content": "Parque del centro, 9:00. Traer guantes y agua."
+        },
+        {
+          "key": "link-semarnat",
+          "author": "alice.test",
+          "sourceType": "link",
+          "title": "SEMARNAT: programas de reforestación",
+          "content": "Información oficial sobre especies recomendadas y apoyos.",
+          "sourceUrl": "https://www.gob.mx/semarnat"
+        },
+        {
+          "key": "claim-impuesto",
+          "author": "karla.test",
+          "sourceType": "claim",
+          "title": "Un impuesto al plástico debe financiar el reciclaje local",
+          "content": "Lo recaudado se etiqueta para centros de acopio en cada colonia."
+        },
+        {
+          "key": "claim-tienditas",
+          "author": "dan.test",
+          "sourceType": "claim",
+          "title": "El impuesto al plástico pega más a las tienditas",
+          "content": "Los pequeños comercios no pueden absorber el costo como las cadenas."
+        },
+        {
+          "key": "source-agua",
+          "author": "gabriela.test",
+          "sourceType": "article",
+          "title": "Captación de lluvia en escuelas",
+          "content": "Proponemos instalar captación de lluvia en tres escuelas. El piloto debe publicar costos, litros recuperados y mantenimiento.",
+          "sourceRef": "agua",
+          "metadata": {
+            "flairId": "demo-agua-topic-empresa",
+            "postType": "policy"
+          }
+        },
+        {
+          "key": "source-tandeo",
+          "author": "hector.test",
+          "sourceType": "article",
+          "title": "Tandeo y acceso al agua",
+          "content": "El calendario de tandeo afecta a las familias del centro. Necesitamos datos por colonia antes de priorizar inversiones.",
+          "sourceRef": "tandeo",
+          "metadata": {
+            "flairId": "demo-agua-topic-industria",
+            "postType": "matter"
+          }
+        },
+        {
+          "key": "highlight-agua",
+          "author": "alice.test",
+          "sourceType": "social",
+          "title": "Subrayado: Captación de lluvia en escuelas",
+          "sourceRef": "agua",
+          "highlightRef": "highlight-agua"
+        },
+        {
+          "key": "book-demo",
+          "author": "fernando.test",
+          "sourceType": "book",
+          "title": "Governing the Commons",
+          "content": "Lectura compartida para discutir las propuestas de la comunidad.",
+          "metadata": {
+            "author": "Elinor Ostrom",
+            "publishedYear": 1990
+          }
+        }
+      ],
+      "relationships": [
+        {
+          "from": "claim-captacion",
+          "to": "t-agua",
+          "type": "addresses",
+          "author": "fernando.test"
+        },
+        {
+          "from": "research-inegi",
+          "to": "claim-captacion",
+          "type": "supports",
+          "author": "isabel.test"
+        },
+        {
+          "from": "research-inegi",
+          "to": "t-agua",
+          "type": "helpful",
+          "author": "gabriela.test"
+        },
+        {
+          "from": "question-mantenimiento",
+          "to": "t-arbolado",
+          "type": "addresses",
+          "author": "hector.test"
+        },
+        {
+          "from": "event-jornada",
+          "to": "t-arbolado",
+          "type": "helpful",
+          "author": "olivia.test"
+        },
+        {
+          "from": "link-semarnat",
+          "to": "t-arbolado",
+          "type": "explainer",
+          "author": "alice.test"
+        },
+        {
+          "from": "link-semarnat",
+          "to": "question-mantenimiento",
+          "type": "addresses",
+          "author": "olivia.test"
+        },
+        {
+          "from": "claim-impuesto",
+          "to": "t-plastico",
+          "type": "addresses",
+          "author": "karla.test"
+        },
+        {
+          "from": "claim-tienditas",
+          "to": "claim-impuesto",
+          "type": "opposes",
+          "author": "dan.test"
+        },
+        {
+          "from": "claim-tienditas",
+          "to": "t-plastico",
+          "type": "addresses",
+          "author": "dan.test"
+        },
+        {
+          "from": "claim-captacion",
+          "to": "claim-impuesto",
+          "type": "compares_to",
+          "author": "fernando.test"
+        },
+        {
+          "from": "source-agua",
+          "to": "t-agua",
+          "type": "references",
+          "author": "gabriela.test"
+        },
+        {
+          "from": "source-tandeo",
+          "to": "t-agua",
+          "type": "references",
+          "author": "hector.test"
+        },
+        {
+          "from": "highlight-agua",
+          "to": "source-agua",
+          "type": "helpful",
+          "author": "alice.test"
+        },
+        {
+          "from": "book-demo",
+          "to": "t-agua",
+          "type": "references",
+          "author": "fernando.test"
+        }
+      ]
+    },
+    {
+      "community": "Movilidad Sostenible Norte",
+      "cards": [
+        {
+          "key": "t-transporte",
+          "author": "luis.test",
+          "sourceType": "topic",
+          "title": "Transporte público",
+          "content": "Rutas, horarios y calidad del servicio en la zona norte.",
+          "metadata": {
+            "flairId": "policy_transporte_publico_pol"
+          }
+        },
+        {
+          "key": "t-carril",
+          "author": "rodrigo.test",
+          "sourceType": "topic",
+          "title": "Carril exclusivo de autobús",
+          "content": "Dónde tiene sentido un carril bus y cómo implementarlo.",
+          "metadata": {
+            "flairId": "matter_carril_bus"
+          }
+        },
+        {
+          "key": "t-bici",
+          "author": "pablo.test",
+          "sourceType": "topic",
+          "title": "Congestión y movilidad en bici",
+          "content": "Ciclovías, estacionamiento de bicis y seguridad vial.",
+          "metadata": {
+            "flairId": "matter_congestion_trafico"
+          }
+        },
+        {
+          "key": "claim-constitucion",
+          "author": "rodrigo.test",
+          "sourceType": "claim",
+          "title": "Un carril bus en Av. Constitución ahorraría 15 minutos por trayecto",
+          "content": "En hora pico el autobús tarda más que caminar en el tramo centro."
+        },
+        {
+          "key": "claim-comercios",
+          "author": "dan.test",
+          "sourceType": "claim",
+          "title": "Los comercios temen perder estacionamiento",
+          "content": "Varios locales dependen de clientes que llegan en coche."
+        },
+        {
+          "key": "research-itdp",
+          "author": "jorge.test",
+          "sourceType": "research",
+          "title": "ITDP: ciclovías protegidas y uso de la bici",
+          "content": "Estudios de corredores con y sin separación física.",
+          "sourceUrl": "https://mexico.itdp.org/"
+        },
+        {
+          "key": "question-nocturno",
+          "author": "karla.test",
+          "sourceType": "question",
+          "title": "¿Puede haber rutas nocturnas para los turnos de fábrica?",
+          "content": "Muchos trabajadores salen a las 23:00 y no hay transporte."
+        },
+        {
+          "key": "event-rodada",
+          "author": "pablo.test",
+          "sourceType": "event",
+          "title": "Rodada ciclista mensual — primer domingo",
+          "content": "Salida del parque norte a las 8:00. Ritmo tranquilo."
+        },
+        {
+          "key": "claim-ciclovia",
+          "author": "sofia.test",
+          "sourceType": "claim",
+          "title": "Las ciclovías protegidas aumentan el uso de la bici",
+          "content": "Con bolardos, más personas se animan a rodar todos los días."
+        },
+        {
+          "key": "video-bolardos",
+          "author": "alice.test",
+          "sourceType": "video",
+          "title": "Así funciona una ciclovía con bolardos",
+          "content": "Video corto de una implementación en otra ciudad.",
+          "sourceUrl": "https://www.youtube.com/results?search_query=ciclovia+bolardos"
+        },
+        {
+          "key": "source-bus",
+          "author": "jorge.test",
+          "sourceType": "article",
+          "title": "Carril exclusivo de transporte público",
+          "content": "Proponemos un carril exclusivo con paradas accesibles. El piloto medirá tiempos de viaje y acceso a los comercios.",
+          "sourceRef": "bus",
+          "metadata": {
+            "flairId": "demo-mov-topic-transporte",
+            "postType": "policy"
+          }
+        },
+        {
+          "key": "source-aire",
+          "author": "sofia.test",
+          "sourceType": "article",
+          "title": "Emisiones y congestión del corredor",
+          "content": "Comparemos emisiones y congestión antes y después del carril bus. Los datos deben incluir las horas de mayor tráfico.",
+          "sourceRef": "aire",
+          "metadata": {
+            "flairId": "demo-mov-topic-emisiones",
+            "postType": "matter"
+          }
+        },
+        {
+          "key": "highlight-bus",
+          "author": "alice.test",
+          "sourceType": "social",
+          "title": "Subrayado: Carril exclusivo de transporte público",
+          "sourceRef": "bus",
+          "highlightRef": "highlight-bus"
+        },
+        {
+          "key": "book-demo",
+          "author": "jorge.test",
+          "sourceType": "book",
+          "title": "The Death and Life of Great American Cities",
+          "content": "Lectura compartida para discutir las propuestas de la comunidad.",
+          "metadata": {
+            "author": "Jane Jacobs",
+            "publishedYear": 1961
+          }
+        }
+      ],
+      "relationships": [
+        {
+          "from": "claim-constitucion",
+          "to": "t-carril",
+          "type": "addresses",
+          "author": "rodrigo.test"
+        },
+        {
+          "from": "claim-comercios",
+          "to": "claim-constitucion",
+          "type": "opposes",
+          "author": "dan.test"
+        },
+        {
+          "from": "t-carril",
+          "to": "t-transporte",
+          "type": "supports",
+          "author": "luis.test"
+        },
+        {
+          "from": "question-nocturno",
+          "to": "t-transporte",
+          "type": "addresses",
+          "author": "karla.test"
+        },
+        {
+          "from": "research-itdp",
+          "to": "claim-ciclovia",
+          "type": "supports",
+          "author": "jorge.test"
+        },
+        {
+          "from": "claim-ciclovia",
+          "to": "t-bici",
+          "type": "addresses",
+          "author": "sofia.test"
+        },
+        {
+          "from": "event-rodada",
+          "to": "t-bici",
+          "type": "helpful",
+          "author": "pablo.test"
+        },
+        {
+          "from": "video-bolardos",
+          "to": "claim-ciclovia",
+          "type": "explainer",
+          "author": "alice.test"
+        },
+        {
+          "from": "t-bici",
+          "to": "t-carril",
+          "type": "compares_to",
+          "author": "pablo.test"
+        },
+        {
+          "from": "research-itdp",
+          "to": "claim-constitucion",
+          "type": "helpful",
+          "author": "jorge.test"
+        },
+        {
+          "from": "source-bus",
+          "to": "t-transporte",
+          "type": "references",
+          "author": "jorge.test"
+        },
+        {
+          "from": "source-aire",
+          "to": "t-transporte",
+          "type": "references",
+          "author": "sofia.test"
+        },
+        {
+          "from": "highlight-bus",
+          "to": "source-bus",
+          "type": "helpful",
+          "author": "alice.test"
+        },
+        {
+          "from": "book-demo",
+          "to": "t-transporte",
+          "type": "references",
+          "author": "jorge.test"
+        }
+      ]
+    }
+  ],
+  "posts": [
+    {
+      "alias": "agua",
+      "author": "gabriela.test",
+      "postType": "policy",
+      "title": "Captación de lluvia en escuelas",
+      "text": "Proponemos instalar captación de lluvia en tres escuelas. El piloto debe publicar costos, litros recuperados y mantenimiento.",
+      "flair": "||#EmpresaPublicaDeAgua",
+      "createdAt": "2026-09-30T10:00:00.000Z"
+    },
+    {
+      "alias": "tandeo",
+      "author": "hector.test",
+      "postType": "matter",
+      "title": "Tandeo y acceso al agua",
+      "text": "El calendario de tandeo afecta a las familias del centro. Necesitamos datos por colonia antes de priorizar inversiones.",
+      "flair": "||#IndustriaHidrica",
+      "createdAt": "2026-09-30T10:05:00.000Z"
+    },
+    {
+      "alias": "bus",
+      "author": "jorge.test",
+      "postType": "policy",
+      "title": "Carril exclusivo de transporte público",
+      "text": "Proponemos un carril exclusivo con paradas accesibles. El piloto medirá tiempos de viaje y acceso a los comercios.",
+      "flair": "||#TransportePublico",
+      "createdAt": "2026-09-30T10:10:00.000Z"
+    },
+    {
+      "alias": "aire",
+      "author": "sofia.test",
+      "postType": "matter",
+      "title": "Emisiones y congestión del corredor",
+      "text": "Comparemos emisiones y congestión antes y después del carril bus. Los datos deben incluir las horas de mayor tráfico.",
+      "flair": "||#EmisionesCO2",
+      "createdAt": "2026-09-30T10:15:00.000Z"
+    },
+    {
+      "alias": "presupuesto",
+      "author": "mariana.test",
+      "postType": "policy",
+      "title": "Seguimiento público del presupuesto vecinal",
+      "text": "Proponemos publicar contratos y avances del presupuesto vecinal. Cada obra debe tener un responsable y un calendario visible.",
+      "flair": "||#TransparenciaFiscal",
+      "createdAt": "2026-09-30T10:20:00.000Z"
+    },
+    {
+      "alias": "bache",
+      "author": "bob.test",
+      "postType": "matter",
+      "title": "Bacheo pendiente en la calle Hidalgo",
+      "text": "El bache de la calle Hidalgo sigue pendiente. Reunamos fotografías y reportes para revisar el presupuesto de mantenimiento.",
+      "flair": "||#Corrupcion",
+      "createdAt": "2026-09-30T10:25:00.000Z"
+    }
+  ],
+  "highlights": [
+    {
+      "alias": "highlight-agua",
+      "author": "alice.test",
+      "subject": "agua",
+      "text": "Proponemos instalar captación de lluvia en tres escuelas.",
+      "color": "#efe7d6",
+      "createdAt": "2026-09-30T10:00:00.000Z"
+    },
+    {
+      "alias": "highlight-bus",
+      "author": "alice.test",
+      "subject": "bus",
+      "text": "Proponemos un carril exclusivo con paradas accesibles.",
+      "color": "#efe7d6",
+      "createdAt": "2026-09-30T10:10:00.000Z"
+    },
+    {
+      "alias": "highlight-presupuesto",
+      "author": "alice.test",
+      "subject": "presupuesto",
+      "text": "Proponemos publicar contratos y avances del presupuesto vecinal.",
+      "color": "#efe7d6",
+      "createdAt": "2026-09-30T10:20:00.000Z"
+    }
+  ]
+}

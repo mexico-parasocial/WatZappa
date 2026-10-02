@@ -21,6 +21,8 @@ export interface Main {
   description?: string
   /** Spatial mapping token indicating the nonant or 25th block. */
   quadrant: string
+  /** Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state. */
+  region?: string
   geo?: GeoPoint
   /** Reference to the 270-member bounded bsky group chat. */
   delegatesChatId: string

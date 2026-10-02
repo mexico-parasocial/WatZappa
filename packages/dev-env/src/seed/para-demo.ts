@@ -604,6 +604,13 @@ export default async (sc: SeedClient) => {
     })
   }
 
+  // The official parties deliberate in two chambers, so the bridge gives each
+  // one a Cámara A, a Cámara B and an observer council besides the main room.
+  // `createBoard` does not take `chamberMode`; it is set on the record, as
+  // `status` is below. The other parties and all topic communities stay
+  // unicameral (main room only).
+  const bicameralParties = new Set(['Morena', 'PAN', 'PRI', 'PVEM', 'PT', 'MC'])
+
   // Activate boards
   for (const pb of partyBoards) {
     const creator = users.find((u) => u.did === pb.creatorDid)!
@@ -616,7 +623,11 @@ export default async (sc: SeedClient) => {
       repo: pb.creatorDid,
       collection: 'com.para.community.board',
       rkey: pb.rkey,
-      record: { ...(current.data.value as any), status: 'active' },
+      record: {
+        ...(current.data.value as any),
+        status: 'active',
+        ...(bicameralParties.has(pb.name) && { chamberMode: 'bicameral' }),
+      },
       swapRecord: current.data.cid,
     })
   }
@@ -719,7 +730,7 @@ export default async (sc: SeedClient) => {
   await checkpoints.flush('partyCommunities')
 
   // ═══════════════════════════════════════════════════════════════════════
-  //  CIVIC COMMUNITIES  (12 topic-based)
+  //  CIVIC COMMUNITIES  (12 topic-based, 4 state-based)
   // ═══════════════════════════════════════════════════════════════════════
 
   const communityCreators = [
@@ -807,14 +818,75 @@ export default async (sc: SeedClient) => {
       description:
         'Acceso a servicios de salud, medicamentos, prevención y atención primaria.',
     },
+    // Communities tied to one state: these set `region`, so they list under
+    // that state in the app. Keep them after the topic communities above;
+    // cabildeos refer to communities by index.
+    {
+      creator: 'gabriela',
+      name: 'Agua y Presas de Jalisco',
+      quadrant: 'centro',
+      region: 'Jalisco',
+      description:
+        'Gestión del agua, saneamiento del Lerma-Santiago y abasto metropolitano en Jalisco.',
+    },
+    {
+      creator: 'fernando',
+      name: 'Calidad del Aire Nuevo León',
+      quadrant: 'norte',
+      region: 'Nuevo León',
+      description:
+        'Monitoreo de contaminación, industria y transporte en el área metropolitana de Monterrey.',
+    },
+    {
+      creator: 'eva',
+      name: 'Pueblos Mixtecos de Oaxaca',
+      quadrant: 'sur',
+      region: 'Oaxaca',
+      description:
+        'Territorio, lengua y autonomía de las comunidades mixtecas de Oaxaca.',
+    },
+    {
+      creator: 'dan',
+      name: 'Vivienda Digna CDMX',
+      quadrant: 'centro',
+      region: 'Ciudad de México',
+      description:
+        'Acceso a vivienda, renta justa y desarrollo urbano en la Ciudad de México.',
+    },
   ]
+
+  // Only these five are created: a demo with sixteen unofficial communities
+  // buries the official ones. Cabildeos still carry their original
+  // `communityIdx`; `rehome` maps a removed community onto a kept one.
+  const KEPT_COMMUNITIES = [
+    'Presupuesto Participativo Centro',
+    'Movilidad Sostenible Norte',
+    'Medio Ambiente y Clima',
+    'Vivienda Digna CDMX',
+    'Agua y Presas de Jalisco',
+  ]
+  const rehome: Record<string, string> = {
+    'Educación y Cultura Sur': 'Presupuesto Participativo Centro',
+    'Derechos Laborales': 'Vivienda Digna CDMX',
+    'Transparencia y Anticorrupción': 'Presupuesto Participativo Centro',
+    'Seguridad Ciudadana': 'Vivienda Digna CDMX',
+    'Economía y Desarrollo': 'Presupuesto Participativo Centro',
+    'Derechos Humanos': 'Vivienda Digna CDMX',
+    'Innovación y Tecnología': 'Movilidad Sostenible Norte',
+    'Cultura Indígena': 'Medio Ambiente y Clima',
+    'Salud Pública': 'Vivienda Digna CDMX',
+    'Calidad del Aire Nuevo León': 'Medio Ambiente y Clima',
+    'Pueblos Mixtecos de Oaxaca': 'Medio Ambiente y Clima',
+  }
 
   const communities: any[] = []
   for (const c of communityCreators) {
+    if (!KEPT_COMMUNITIES.includes(c.name)) continue
     const creator = users.find((u) => u.short === c.creator)!
     const board = await creator.agent.com.para.community.createBoard({
       name: c.name,
       quadrant: c.quadrant as any,
+      region: c.region,
       description: c.description,
     })
     communities.push({
@@ -843,6 +915,12 @@ export default async (sc: SeedClient) => {
   // ═══════════════════════════════════════════════════════════════════════
   //  CABILDEOS  (20 — rich variety across all phases)
   // ═══════════════════════════════════════════════════════════════════════
+
+  const communityForCabildeo = (originalIdx: number): string => {
+    const name = communityCreators[originalIdx].name
+    const keptName = KEPT_COMMUNITIES.includes(name) ? name : rehome[name]
+    return communities.find((c) => c.name === keptName)!.uri
+  }
 
   const cabildeoDefs = [
     // DRAFT (2)
@@ -1367,7 +1445,7 @@ export default async (sc: SeedClient) => {
         $type: 'com.para.civic.cabildeo',
         title: c.title,
         description: c.description,
-        community: communities[c.communityIdx].uri,
+        community: communityForCabildeo(c.communityIdx),
         options: c.options,
         phase: c.phase,
         phaseDeadline: deadline,
@@ -3291,6 +3369,20 @@ export default async (sc: SeedClient) => {
   }
 
   await checkpoints.flush('raq')
+
+  // Share the standalone add-on's fixtures; the meme seed already ran above.
+  const { seedDemoContent } = await import(
+    new URL('../../assets/demo-content/seed.mjs', import.meta.url).href
+  )
+  await checkpoints.run('civicTrees', () =>
+    seedDemoContent({
+      service: sc.network.pds.url,
+      appviewDid: sc.network.pds.ctx.cfg.bskyAppView?.did,
+      password: 'hunter2',
+      includeMemes: false,
+      sync: () => sc.network.processAll(),
+    }),
+  )
 
   // ═══════════════════════════════════════════════════════════════════════
   //  SUMMARY

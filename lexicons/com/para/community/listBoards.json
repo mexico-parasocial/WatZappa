@@ -44,6 +44,12 @@
           "quadrant": {
             "type": "string",
             "description": "Optional territory quadrant to filter communities by"
+          },
+          "region": {
+            "type": "string",
+            "description": "Optional Mexican state to filter communities by",
+            "maxGraphemes": 64,
+            "maxLength": 128
           }
         }
       },
@@ -103,6 +109,12 @@
         },
         "quadrant": {
           "type": "string",
+          "maxGraphemes": 64,
+          "maxLength": 128
+        },
+        "region": {
+          "type": "string",
+          "description": "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
           "maxGraphemes": 64,
           "maxLength": 128
         },
