@@ -105,3 +105,4 @@ export * as _20260925T120000000Z from './20260925T120000000Z-drop-para-reposts.j
 export * as _20260926T120000000Z from './20260926T120000000Z-remove-priority-notifs.js'
 export * as _20260929T120000000Z from './20260929T120000000Z-add-community-authority-events.js'
 export * as _20260930T120000000Z from './20260930T120000000Z-backfill-collections.js'
+export * as _20261003T120000000Z from './20261003T120000000Z-add-community-activities.js'

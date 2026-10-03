@@ -5,6 +5,7 @@ export type ParaSeedCheckpointName =
   | 'verifications'
   | 'partyCommunities'
   | 'civicCommunities'
+  | 'communityActivities'
   | 'cabildeos'
   | 'positions'
   | 'delegations'

@@ -15844,6 +15844,193 @@ export class ParaCommunityCivicTreeRelationshipResponse extends Message<ParaComm
 }
 
 /**
+ * Community activities, ledgers and wiki pages (PARA). Items are JSON views;
+ * only records by the community's current organizers are returned.
+ *
+ * @generated from message bsky.GetParaCommunityActivitiesRequest
+ */
+export class GetParaCommunityActivitiesRequest extends Message<GetParaCommunityActivitiesRequest> {
+  /**
+   * @generated from field: string community_uri = 1;
+   */
+  communityUri = "";
+
+  /**
+   * @generated from field: string category = 2;
+   */
+  category = "";
+
+  /**
+   * @generated from field: string time = 3;
+   */
+  time = "";
+
+  /**
+   * @generated from field: int32 limit = 4;
+   */
+  limit = 0;
+
+  /**
+   * @generated from field: string cursor = 5;
+   */
+  cursor = "";
+
+  constructor(data?: PartialMessage<GetParaCommunityActivitiesRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaCommunityActivitiesRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "community_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "category", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "time", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 5, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaCommunityActivitiesRequest {
+    return new GetParaCommunityActivitiesRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaCommunityActivitiesRequest {
+    return new GetParaCommunityActivitiesRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaCommunityActivitiesRequest {
+    return new GetParaCommunityActivitiesRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaCommunityActivitiesRequest | PlainMessage<GetParaCommunityActivitiesRequest> | undefined, b: GetParaCommunityActivitiesRequest | PlainMessage<GetParaCommunityActivitiesRequest> | undefined): boolean {
+    return proto3.util.equals(GetParaCommunityActivitiesRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetParaCommunityActivityRequest
+ */
+export class GetParaCommunityActivityRequest extends Message<GetParaCommunityActivityRequest> {
+  /**
+   * @generated from field: string uri = 1;
+   */
+  uri = "";
+
+  constructor(data?: PartialMessage<GetParaCommunityActivityRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaCommunityActivityRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaCommunityActivityRequest {
+    return new GetParaCommunityActivityRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaCommunityActivityRequest {
+    return new GetParaCommunityActivityRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaCommunityActivityRequest {
+    return new GetParaCommunityActivityRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaCommunityActivityRequest | PlainMessage<GetParaCommunityActivityRequest> | undefined, b: GetParaCommunityActivityRequest | PlainMessage<GetParaCommunityActivityRequest> | undefined): boolean {
+    return proto3.util.equals(GetParaCommunityActivityRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetParaCommunityActivityResponse
+ */
+export class GetParaCommunityActivityResponse extends Message<GetParaCommunityActivityResponse> {
+  /**
+   * @generated from field: string activity_json = 1;
+   */
+  activityJson = "";
+
+  /**
+   * @generated from field: string ledger_json = 2;
+   */
+  ledgerJson = "";
+
+  constructor(data?: PartialMessage<GetParaCommunityActivityResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaCommunityActivityResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "activity_json", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "ledger_json", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaCommunityActivityResponse {
+    return new GetParaCommunityActivityResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaCommunityActivityResponse {
+    return new GetParaCommunityActivityResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaCommunityActivityResponse {
+    return new GetParaCommunityActivityResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaCommunityActivityResponse | PlainMessage<GetParaCommunityActivityResponse> | undefined, b: GetParaCommunityActivityResponse | PlainMessage<GetParaCommunityActivityResponse> | undefined): boolean {
+    return proto3.util.equals(GetParaCommunityActivityResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetParaCommunityWikiPagesRequest
+ */
+export class GetParaCommunityWikiPagesRequest extends Message<GetParaCommunityWikiPagesRequest> {
+  /**
+   * @generated from field: string community_uri = 1;
+   */
+  communityUri = "";
+
+  /**
+   * @generated from field: string kind = 2;
+   */
+  kind = "";
+
+  constructor(data?: PartialMessage<GetParaCommunityWikiPagesRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaCommunityWikiPagesRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "community_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "kind", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaCommunityWikiPagesRequest {
+    return new GetParaCommunityWikiPagesRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaCommunityWikiPagesRequest {
+    return new GetParaCommunityWikiPagesRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaCommunityWikiPagesRequest {
+    return new GetParaCommunityWikiPagesRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaCommunityWikiPagesRequest | PlainMessage<GetParaCommunityWikiPagesRequest> | undefined, b: GetParaCommunityWikiPagesRequest | PlainMessage<GetParaCommunityWikiPagesRequest> | undefined): boolean {
+    return proto3.util.equals(GetParaCommunityWikiPagesRequest, a, b);
+  }
+}
+
+/**
  * @generated from message bsky.ParaDiscourseSnapshot
  */
 export class ParaDiscourseSnapshot extends Message<ParaDiscourseSnapshot> {

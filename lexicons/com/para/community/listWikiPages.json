@@ -1,0 +1,79 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.listWikiPages",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Lists a community's wiki pages and megathreads, as published by its current organizers. When several organizers publish the same slug, the most recently updated page wins.",
+      "parameters": {
+        "type": "params",
+        "required": [
+          "community"
+        ],
+        "properties": {
+          "community": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "kind": {
+            "type": "string",
+            "knownValues": [
+              "page",
+              "megathread"
+            ]
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "pages"
+          ],
+          "properties": {
+            "pages": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "#wikiPageView"
+              }
+            }
+          }
+        }
+      }
+    },
+    "wikiPageView": {
+      "type": "object",
+      "required": [
+        "uri",
+        "cid",
+        "author",
+        "record",
+        "indexedAt"
+      ],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "cid": {
+          "type": "string",
+          "format": "cid"
+        },
+        "author": {
+          "type": "string",
+          "format": "did"
+        },
+        "record": {
+          "type": "unknown",
+          "description": "The com.para.community.wikiPage record."
+        },
+        "indexedAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    }
+  }
+}
