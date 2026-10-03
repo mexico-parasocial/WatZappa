@@ -131,6 +131,10 @@ import listParaCivicTreeContributions from './com/para/community/civicTree/listC
 import { civicTreeProcedureSchemas } from './com/para/community/civicTree/schemas.js'
 import { bookSchemas } from './com/para/book/schemas.js'
 import searchParaBooks from './com/para/book/searchBooks.js'
+import getParaCommunityActivity from './com/para/community/activities/getActivity.js'
+import listParaCommunityActivities from './com/para/community/activities/listActivities.js'
+import listParaCommunityWikiPages from './com/para/community/activities/listWikiPages.js'
+import { communityActivitySchemas } from './com/para/community/activities/schemas.js'
 import submitParaCivicTreeContribution from './com/para/community/civicTree/submitContribution.js'
 import voteParaCivicTreeContribution from './com/para/community/civicTree/voteContribution.js'
 import exportParaObsidianVault from './com/para/community/exportObsidianVault.js'
@@ -187,6 +191,7 @@ export default function (server: Server, ctx: AppContext) {
   // The civicTree procedure lexicons postdate the frozen generated registry.
   server.addLexicons(civicTreeProcedureSchemas)
   server.addLexicons(bookSchemas)
+  server.addLexicons(communityActivitySchemas)
   server.addLexicons([applyOpsSchema])
 
   const paraServer = { xrpc: server } as unknown as ParaLexiconServer
@@ -318,6 +323,9 @@ export default function (server: Server, ctx: AppContext) {
   getParaAuditTrail(paraServer, ctx)
   getParaCivicTree(paraServer, ctx)
   searchParaBooks(paraServer, ctx)
+  listParaCommunityActivities(paraServer, ctx)
+  getParaCommunityActivity(paraServer, ctx)
+  listParaCommunityWikiPages(paraServer, ctx)
   listParaCivicTreeContributions(paraServer, ctx)
   submitParaCivicTreeContribution(paraServer, ctx)
   voteParaCivicTreeContribution(paraServer, ctx)

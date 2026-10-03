@@ -8,6 +8,7 @@ import blocks from './blocks.js'
 import bookmarks from './bookmarks.js'
 import briefingPack from './briefing-pack.js'
 import cabildeo from './cabildeo.js'
+import communityActivities from './community-activities.js'
 import collections from './collections.js'
 import community from './community.js'
 import civicTree from './civic-tree.js'
@@ -82,6 +83,7 @@ export default (db: Database, idResolver: IdResolver) =>
       ...cabildeo(db),
       ...collections(db),
       ...community(db),
+      ...communityActivities(db),
       ...civicTree(db),
       ...communityCivicTree(db),
       ...discourse(db),

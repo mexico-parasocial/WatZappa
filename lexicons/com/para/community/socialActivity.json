@@ -1,0 +1,147 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.socialActivity",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A dated civic activity that involves no money: a peaceful march, a signature drive for a bill or law, an assembly, a cabildeo (a recorded conversation). Economic activities use com.para.community.economicActivity instead.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "communityUri",
+          "title",
+          "startsAt",
+          "status",
+          "details",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "communityUri": {"type": "string", "format": "at-uri"},
+          "title": {"type": "string", "maxLength": 300},
+          "description": {"type": "string", "maxLength": 5000},
+          "startsAt": {"type": "string", "format": "datetime"},
+          "endsAt": {"type": "string", "format": "datetime"},
+          "location": {"type": "string", "maxLength": 300},
+          "status": {
+            "type": "string",
+            "maxLength": 32,
+            "knownValues": ["planned", "active", "completed", "cancelled"]
+          },
+          "details": {
+            "type": "union",
+            "refs": ["#peacefulMarch", "#signatureDrive", "#assembly", "#cabildeo"]
+          },
+          "links": {
+            "type": "array",
+            "items": {"type": "string", "format": "uri"},
+            "maxLength": 20
+          },
+          "createdBy": {"type": "string", "format": "did"},
+          "createdAt": {"type": "string", "format": "datetime"},
+          "updatedAt": {"type": "string", "format": "datetime"}
+        }
+      }
+    },
+    "peacefulMarch": {
+      "type": "object",
+      "required": ["meetingPoint", "permitStatus"],
+      "properties": {
+        "meetingPoint": {"type": "string", "maxLength": 300},
+        "route": {"type": "string", "maxLength": 2000},
+        "destination": {"type": "string", "maxLength": 300},
+        "permitStatus": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Status of the notice or permit before local authorities.",
+          "knownValues": ["not_required", "requested", "granted", "denied"]
+        },
+        "permitReference": {"type": "string", "maxLength": 300},
+        "expectedAttendance": {"type": "integer", "minimum": 0},
+        "safetyContact": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Public contact of the safety or logistics team (never a personal phone without consent)."
+        },
+        "accessibilityNotes": {"type": "string", "maxLength": 1000}
+      }
+    },
+    "signatureDrive": {
+      "type": "object",
+      "required": ["instrumentType", "instrumentTitle", "targetSignatures"],
+      "properties": {
+        "instrumentType": {
+          "type": "string",
+          "maxLength": 32,
+          "knownValues": [
+            "bill",
+            "law",
+            "citizen_initiative",
+            "referendum",
+            "petition"
+          ]
+        },
+        "instrumentTitle": {"type": "string", "maxLength": 300},
+        "instrumentUrl": {"type": "string", "format": "uri"},
+        "targetSignatures": {"type": "integer", "minimum": 1},
+        "signaturesCollected": {"type": "integer", "minimum": 0},
+        "deadline": {"type": "string", "format": "datetime"},
+        "collectionPoints": {
+          "type": "array",
+          "items": {"type": "string", "maxLength": 300},
+          "maxLength": 50
+        },
+        "signerRequirements": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "What signers must bring or meet, e.g. a voter ID from the district."
+        }
+      }
+    },
+    "assembly": {
+      "type": "object",
+      "required": ["format"],
+      "properties": {
+        "format": {
+          "type": "string",
+          "maxLength": 32,
+          "knownValues": ["in_person", "online", "hybrid"]
+        },
+        "meetingUrl": {"type": "string", "format": "uri"},
+        "agenda": {
+          "type": "array",
+          "items": {"type": "string", "maxLength": 300},
+          "maxLength": 30
+        },
+        "quorumRequired": {"type": "integer", "minimum": 0}
+      }
+    },
+    "cabildeo": {
+      "type": "object",
+      "description": "A conversation held over a period of time: who took part, what each side argued, and where it landed. Voting and delegation are optional extras attached elsewhere, not part of this record.",
+      "required": ["format"],
+      "properties": {
+        "format": {
+          "type": "string",
+          "maxLength": 32,
+          "knownValues": ["in_person", "online", "hybrid"]
+        },
+        "meetingUrl": {"type": "string", "format": "uri"},
+        "recordingUrl": {"type": "string", "format": "uri"},
+        "participants": {
+          "type": "array",
+          "items": {"type": "string", "maxLength": 200},
+          "maxLength": 100
+        },
+        "arguments": {
+          "type": "array",
+          "items": {"type": "string", "maxLength": 500},
+          "maxLength": 50
+        },
+        "outcome": {"type": "string", "maxLength": 2000}
+      }
+    }
+  }
+}

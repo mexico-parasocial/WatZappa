@@ -1,0 +1,83 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.getActivity",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Gets one community activity and, for economic activities, its ledger entries recorded by the community's current organizers.",
+      "parameters": {
+        "type": "params",
+        "required": [
+          "uri"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "activity",
+            "ledger"
+          ],
+          "properties": {
+            "activity": {
+              "type": "ref",
+              "ref": "com.para.community.listActivities#activityView"
+            },
+            "ledger": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "#ledgerEntryView"
+              }
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "NotFound",
+          "description": "No such activity, or its author is not an organizer of the community."
+        }
+      ]
+    },
+    "ledgerEntryView": {
+      "type": "object",
+      "required": [
+        "uri",
+        "cid",
+        "author",
+        "record",
+        "indexedAt"
+      ],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "cid": {
+          "type": "string",
+          "format": "cid"
+        },
+        "author": {
+          "type": "string",
+          "format": "did"
+        },
+        "record": {
+          "type": "unknown",
+          "description": "The com.para.community.activityLedgerEntry record."
+        },
+        "indexedAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    }
+  }
+}
