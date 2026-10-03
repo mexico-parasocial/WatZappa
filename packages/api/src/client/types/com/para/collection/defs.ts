@@ -62,6 +62,8 @@ export interface CivicTreeItem {
   addedAt: string
   /** For a topic drawn from PARA's shared flair vocabulary, the flair id. Absent on a free-text topic. */
   flairId?: string
+  /** For a `book`, the year it was first published. */
+  publishedYear?: number
 }
 
 const hashCivicTreeItem = 'civicTreeItem'
@@ -149,6 +151,8 @@ export interface ItemPatch {
   note?: string
   /** For a topic drawn from PARA's shared flair vocabulary, the flair id. Absent on a free-text topic. */
   flairId?: string
+  /** For a `book`, the year it was first published. */
+  publishedYear?: number
 }
 
 const hashItemPatch = 'itemPatch'

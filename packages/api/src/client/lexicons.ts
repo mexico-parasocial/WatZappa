@@ -3492,6 +3492,11 @@ export const schemaDict = {
           likeCount: {
             type: 'integer',
           },
+          voteScore: {
+            type: 'integer',
+            description:
+              "PARA: net public reactions (up minus down). A viewer's signed vote overrides their like.",
+          },
           quoteCount: {
             type: 'integer',
           },
@@ -22685,6 +22690,78 @@ export const schemaDict = {
       },
     },
   },
+  ComParaBookSearchBooks: {
+    lexicon: 1,
+    id: 'com.para.book.searchBooks',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          "Autocomplete for books: matches a partial title or author against Open Library and returns title, authors and first publication year. The lookup runs on the AppView so the client never sends the viewer's searches to a third party. Not cached per viewer and never stored.",
+        parameters: {
+          type: 'params',
+          required: ['q'],
+          properties: {
+            q: {
+              type: 'string',
+              minLength: 2,
+              maxLength: 200,
+              description: 'Partial title and/or author.',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 10,
+              default: 8,
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['books'],
+            properties: {
+              books: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.book.searchBooks#bookSuggestion',
+                },
+              },
+            },
+          },
+        },
+      },
+      bookSuggestion: {
+        type: 'object',
+        required: ['key', 'title', 'authors'],
+        properties: {
+          key: {
+            type: 'string',
+            maxLength: 100,
+            description: 'Open Library work key, e.g. /works/OL123W.',
+          },
+          title: {
+            type: 'string',
+            maxLength: 500,
+          },
+          authors: {
+            type: 'array',
+            items: {
+              type: 'string',
+              maxLength: 300,
+            },
+            maxLength: 3,
+          },
+          firstPublishYear: {
+            type: 'integer',
+            description: 'Year the work was first published, when known.',
+          },
+        },
+      },
+    },
+  },
   ComParaCivicAmendment: {
     lexicon: 1,
     id: 'com.para.civic.amendment',
@@ -24543,6 +24620,12 @@ export const schemaDict = {
             description:
               "For a topic drawn from PARA's shared flair vocabulary, the flair id. Absent on a free-text topic.",
           },
+          publishedYear: {
+            type: 'integer',
+            minimum: 1000,
+            maximum: 3000,
+            description: 'For a `book`, the year it was first published.',
+          },
         },
       },
       civicTreeRelation: {
@@ -24690,6 +24773,12 @@ export const schemaDict = {
             type: 'string',
             description:
               "For a topic drawn from PARA's shared flair vocabulary, the flair id. Absent on a free-text topic.",
+          },
+          publishedYear: {
+            type: 'integer',
+            minimum: 1000,
+            maximum: 3000,
+            description: 'For a `book`, the year it was first published.',
           },
         },
       },
@@ -24948,6 +25037,114 @@ export const schemaDict = {
               memberCount: {
                 type: 'integer',
               },
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityActivityLedgerEntry: {
+    lexicon: 1,
+    id: 'com.para.community.activityLedgerEntry',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "One money movement of a com.para.community.economicActivity, written by the activity's organizer into their own repo.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: [
+            'activityUri',
+            'communityUri',
+            'termsDigest',
+            'entryType',
+            'amountMinor',
+            'currency',
+            'description',
+            'occurredAt',
+            'createdAt',
+          ],
+          properties: {
+            activityUri: {
+              type: 'string',
+              format: 'at-uri',
+              description:
+                'The com.para.community.economicActivity this entry belongs to.',
+            },
+            communityUri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            termsDigest: {
+              type: 'string',
+              maxLength: 128,
+              description:
+                "sha256 hex of the activity's committed terms (financialPlan plus pricing details) when the entry was booked.",
+            },
+            entryType: {
+              type: 'string',
+              maxLength: 32,
+              description:
+                'income: money received; expense: money spent running the activity; donation: proceeds delivered to an allocation recipient.',
+              knownValues: ['income', 'expense', 'donation'],
+            },
+            amountMinor: {
+              type: 'integer',
+              minimum: 1,
+            },
+            quantity: {
+              type: 'integer',
+              minimum: 1,
+              description:
+                'Units or tickets this income entry covers, when applicable.',
+            },
+            currency: {
+              type: 'string',
+              minLength: 3,
+              maxLength: 3,
+            },
+            description: {
+              type: 'string',
+              maxLength: 1000,
+            },
+            category: {
+              type: 'string',
+              maxLength: 64,
+              knownValues: [
+                'materials',
+                'permits',
+                'transport',
+                'venue',
+                'prizes',
+                'fees',
+                'sales',
+                'tickets',
+                'other',
+              ],
+            },
+            recipient: {
+              type: 'string',
+              maxLength: 32,
+              description:
+                'For donation entries: the allocation recipient that received the funds.',
+            },
+            receiptUrl: {
+              type: 'string',
+              format: 'uri',
+            },
+            occurredAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            itemName: {
+              type: 'string',
+              maxLength: 120,
+              description: 'For sale income: which item was sold.',
             },
           },
         },
@@ -26669,6 +26866,297 @@ export const schemaDict = {
       },
     },
   },
+  ComParaCommunityEconomicActivity: {
+    lexicon: 1,
+    id: 'com.para.community.economicActivity',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          'A community activity that moves money: a sale, a raffle, a fundraiser. The business model (financialPlan) and the pricing terms in `details` are committed before publishing; ledger entries pin a digest of both, so later changes are publicly detectable.',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: [
+            'communityUri',
+            'title',
+            'startsAt',
+            'status',
+            'details',
+            'financialPlan',
+            'createdBy',
+            'createdAt',
+            'updatedAt',
+          ],
+          properties: {
+            communityUri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            title: {
+              type: 'string',
+              maxLength: 300,
+            },
+            description: {
+              type: 'string',
+              maxLength: 5000,
+            },
+            startsAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            endsAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            location: {
+              type: 'string',
+              maxLength: 300,
+            },
+            status: {
+              type: 'string',
+              maxLength: 32,
+              knownValues: ['planned', 'active', 'completed', 'cancelled'],
+            },
+            details: {
+              type: 'union',
+              refs: [
+                'lex:com.para.community.economicActivity#sale',
+                'lex:com.para.community.economicActivity#raffle',
+                'lex:com.para.community.economicActivity#fundraiser',
+              ],
+            },
+            financialPlan: {
+              type: 'ref',
+              ref: 'lex:com.para.community.economicActivity#financialPlan',
+            },
+            links: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'uri',
+              },
+              maxLength: 20,
+            },
+            createdBy: {
+              type: 'string',
+              format: 'did',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+      sale: {
+        type: 'object',
+        required: ['items', 'channel'],
+        properties: {
+          items: {
+            type: 'array',
+            minLength: 1,
+            maxLength: 50,
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.community.economicActivity#saleItem',
+            },
+          },
+          channel: {
+            type: 'string',
+            maxLength: 32,
+            knownValues: ['in_person', 'online', 'mixed'],
+          },
+        },
+      },
+      saleItem: {
+        type: 'object',
+        required: ['name', 'unitPriceMinor'],
+        properties: {
+          name: {
+            type: 'string',
+            maxLength: 120,
+          },
+          unitPriceMinor: {
+            type: 'integer',
+            minimum: 0,
+          },
+          quantityAvailable: {
+            type: 'integer',
+            minimum: 0,
+          },
+        },
+      },
+      raffle: {
+        type: 'object',
+        required: [
+          'ticketPriceMinor',
+          'ticketsAvailable',
+          'prizes',
+          'drawAt',
+          'drawMethod',
+        ],
+        properties: {
+          ticketPriceMinor: {
+            type: 'integer',
+            minimum: 0,
+          },
+          ticketsAvailable: {
+            type: 'integer',
+            minimum: 1,
+          },
+          prizes: {
+            type: 'array',
+            minLength: 1,
+            maxLength: 20,
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.community.economicActivity#prize',
+            },
+          },
+          drawAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          drawMethod: {
+            type: 'string',
+            maxLength: 1000,
+          },
+          permitReference: {
+            type: 'string',
+            maxLength: 300,
+            description:
+              'Authorization number for the raffle where the law requires one.',
+          },
+          winningTickets: {
+            type: 'array',
+            description:
+              'Published after the draw; the only field of `details` excluded from the terms digest.',
+            items: {
+              type: 'string',
+              maxLength: 100,
+            },
+            maxLength: 20,
+          },
+        },
+      },
+      prize: {
+        type: 'object',
+        required: ['description'],
+        properties: {
+          description: {
+            type: 'string',
+            maxLength: 300,
+          },
+          estimatedValueMinor: {
+            type: 'integer',
+            minimum: 0,
+          },
+        },
+      },
+      fundraiser: {
+        type: 'object',
+        required: ['purpose'],
+        properties: {
+          purpose: {
+            type: 'string',
+            maxLength: 1000,
+          },
+          beneficiary: {
+            type: 'string',
+            maxLength: 300,
+          },
+          suggestedDonationMinor: {
+            type: 'integer',
+            minimum: 0,
+          },
+          donationChannels: {
+            type: 'array',
+            description:
+              "Public ways to give, e.g. the organization's account or a collection box location.",
+            items: {
+              type: 'string',
+              maxLength: 300,
+            },
+            maxLength: 10,
+          },
+        },
+      },
+      financialPlan: {
+        type: 'object',
+        description:
+          "Where the money goes, committed before any money moves. Amounts are integers in the currency's minor unit (e.g. centavos).",
+        required: ['currency', 'allocationBase', 'allocations', 'committedAt'],
+        properties: {
+          currency: {
+            type: 'string',
+            minLength: 3,
+            maxLength: 3,
+          },
+          allocationBase: {
+            type: 'string',
+            maxLength: 32,
+            description:
+              'Whether allocation shares apply to net proceeds (income minus expenses) or to gross income.',
+            knownValues: ['net_proceeds', 'gross_income'],
+          },
+          fundingGoalMinor: {
+            type: 'integer',
+            minimum: 0,
+          },
+          expenseBudgetMinor: {
+            type: 'integer',
+            minimum: 0,
+          },
+          allocations: {
+            type: 'array',
+            minLength: 1,
+            maxLength: 10,
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.community.economicActivity#allocation',
+            },
+          },
+          committedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      allocation: {
+        type: 'object',
+        required: ['recipient', 'label', 'shareBps'],
+        properties: {
+          recipient: {
+            type: 'string',
+            maxLength: 32,
+            knownValues: [
+              'community',
+              'party',
+              'cause',
+              'organizers',
+              'reinvestment',
+            ],
+          },
+          label: {
+            type: 'string',
+            maxLength: 120,
+          },
+          shareBps: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 10000,
+            description:
+              'Share in basis points; all allocations must sum to 10000.',
+          },
+        },
+      },
+    },
+  },
   ComParaCommunityEigenstate: {
     lexicon: 1,
     id: 'com.para.community.eigenstate',
@@ -26811,6 +27299,80 @@ export const schemaDict = {
                 },
               },
             },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityGetActivity: {
+    lexicon: 1,
+    id: 'com.para.community.getActivity',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          "Gets one community activity and, for economic activities, its ledger entries recorded by the community's current organizers.",
+        parameters: {
+          type: 'params',
+          required: ['uri'],
+          properties: {
+            uri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['activity', 'ledger'],
+            properties: {
+              activity: {
+                type: 'ref',
+                ref: 'lex:com.para.community.listActivities#activityView',
+              },
+              ledger: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.community.getActivity#ledgerEntryView',
+                },
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'NotFound',
+            description:
+              'No such activity, or its author is not an organizer of the community.',
+          },
+        ],
+      },
+      ledgerEntryView: {
+        type: 'object',
+        required: ['uri', 'cid', 'author', 'record', 'indexedAt'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          author: {
+            type: 'string',
+            format: 'did',
+          },
+          record: {
+            type: 'unknown',
+            description: 'The com.para.community.activityLedgerEntry record.',
+          },
+          indexedAt: {
+            type: 'string',
+            format: 'datetime',
           },
         },
       },
@@ -28190,6 +28752,116 @@ export const schemaDict = {
       },
     },
   },
+  ComParaCommunityListActivities: {
+    lexicon: 1,
+    id: 'com.para.community.listActivities',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          "Lists community activities published by each community's current organizers. Records written by anyone else are not listed.",
+        parameters: {
+          type: 'params',
+          properties: {
+            community: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'Board URI. Omit to list across all communities.',
+            },
+            category: {
+              type: 'string',
+              knownValues: ['social', 'economic'],
+            },
+            time: {
+              type: 'string',
+              knownValues: ['upcoming', 'past', 'any'],
+              default: 'any',
+              description:
+                'upcoming: not completed or cancelled, and in progress or not yet ended. past: everything else.',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 25,
+            },
+            cursor: {
+              type: 'string',
+              maxLength: 512,
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['activities'],
+            properties: {
+              activities: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.community.listActivities#activityView',
+                },
+              },
+              cursor: {
+                type: 'string',
+              },
+            },
+          },
+        },
+      },
+      activityView: {
+        type: 'object',
+        description:
+          "An activity published for a community by one of its current organizers (its board's creator, or an owner or moderator by verified authority events).",
+        required: [
+          'uri',
+          'cid',
+          'author',
+          'category',
+          'communityUri',
+          'record',
+          'indexedAt',
+        ],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          author: {
+            type: 'string',
+            format: 'did',
+          },
+          category: {
+            type: 'string',
+            knownValues: ['social', 'economic'],
+          },
+          communityUri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          communityName: {
+            type: 'string',
+            maxLength: 640,
+          },
+          record: {
+            type: 'unknown',
+            description:
+              'The com.para.community.socialActivity or economicActivity record.',
+          },
+          indexedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+    },
+  },
   ComParaCommunityListBoards: {
     lexicon: 1,
     id: 'com.para.community.listBoards',
@@ -29446,6 +30118,73 @@ export const schemaDict = {
       },
     },
   },
+  ComParaCommunityListWikiPages: {
+    lexicon: 1,
+    id: 'com.para.community.listWikiPages',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          "Lists a community's wiki pages and megathreads, as published by its current organizers. When several organizers publish the same slug, the most recently updated page wins.",
+        parameters: {
+          type: 'params',
+          required: ['community'],
+          properties: {
+            community: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            kind: {
+              type: 'string',
+              knownValues: ['page', 'megathread'],
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['pages'],
+            properties: {
+              pages: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.community.listWikiPages#wikiPageView',
+                },
+              },
+            },
+          },
+        },
+      },
+      wikiPageView: {
+        type: 'object',
+        required: ['uri', 'cid', 'author', 'record', 'indexedAt'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          author: {
+            type: 'string',
+            format: 'did',
+          },
+          record: {
+            type: 'unknown',
+            description: 'The com.para.community.wikiPage record.',
+          },
+          indexedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+    },
+  },
   ComParaCommunityMembership: {
     lexicon: 1,
     id: 'com.para.community.membership',
@@ -29990,6 +30729,253 @@ export const schemaDict = {
       },
     },
   },
+  ComParaCommunitySocialActivity: {
+    lexicon: 1,
+    id: 'com.para.community.socialActivity',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          'A dated civic activity that involves no money: a peaceful march, a signature drive for a bill or law, an assembly, a cabildeo (a recorded conversation). Economic activities use com.para.community.economicActivity instead.',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: [
+            'communityUri',
+            'title',
+            'startsAt',
+            'status',
+            'details',
+            'createdBy',
+            'createdAt',
+            'updatedAt',
+          ],
+          properties: {
+            communityUri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            title: {
+              type: 'string',
+              maxLength: 300,
+            },
+            description: {
+              type: 'string',
+              maxLength: 5000,
+            },
+            startsAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            endsAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            location: {
+              type: 'string',
+              maxLength: 300,
+            },
+            status: {
+              type: 'string',
+              maxLength: 32,
+              knownValues: ['planned', 'active', 'completed', 'cancelled'],
+            },
+            details: {
+              type: 'union',
+              refs: [
+                'lex:com.para.community.socialActivity#peacefulMarch',
+                'lex:com.para.community.socialActivity#signatureDrive',
+                'lex:com.para.community.socialActivity#assembly',
+                'lex:com.para.community.socialActivity#cabildeo',
+              ],
+            },
+            links: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'uri',
+              },
+              maxLength: 20,
+            },
+            createdBy: {
+              type: 'string',
+              format: 'did',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+      peacefulMarch: {
+        type: 'object',
+        required: ['meetingPoint', 'permitStatus'],
+        properties: {
+          meetingPoint: {
+            type: 'string',
+            maxLength: 300,
+          },
+          route: {
+            type: 'string',
+            maxLength: 2000,
+          },
+          destination: {
+            type: 'string',
+            maxLength: 300,
+          },
+          permitStatus: {
+            type: 'string',
+            maxLength: 32,
+            description:
+              'Status of the notice or permit before local authorities.',
+            knownValues: ['not_required', 'requested', 'granted', 'denied'],
+          },
+          permitReference: {
+            type: 'string',
+            maxLength: 300,
+          },
+          expectedAttendance: {
+            type: 'integer',
+            minimum: 0,
+          },
+          safetyContact: {
+            type: 'string',
+            maxLength: 300,
+            description:
+              'Public contact of the safety or logistics team (never a personal phone without consent).',
+          },
+          accessibilityNotes: {
+            type: 'string',
+            maxLength: 1000,
+          },
+        },
+      },
+      signatureDrive: {
+        type: 'object',
+        required: ['instrumentType', 'instrumentTitle', 'targetSignatures'],
+        properties: {
+          instrumentType: {
+            type: 'string',
+            maxLength: 32,
+            knownValues: [
+              'bill',
+              'law',
+              'citizen_initiative',
+              'referendum',
+              'petition',
+            ],
+          },
+          instrumentTitle: {
+            type: 'string',
+            maxLength: 300,
+          },
+          instrumentUrl: {
+            type: 'string',
+            format: 'uri',
+          },
+          targetSignatures: {
+            type: 'integer',
+            minimum: 1,
+          },
+          signaturesCollected: {
+            type: 'integer',
+            minimum: 0,
+          },
+          deadline: {
+            type: 'string',
+            format: 'datetime',
+          },
+          collectionPoints: {
+            type: 'array',
+            items: {
+              type: 'string',
+              maxLength: 300,
+            },
+            maxLength: 50,
+          },
+          signerRequirements: {
+            type: 'string',
+            maxLength: 1000,
+            description:
+              'What signers must bring or meet, e.g. a voter ID from the district.',
+          },
+        },
+      },
+      assembly: {
+        type: 'object',
+        required: ['format'],
+        properties: {
+          format: {
+            type: 'string',
+            maxLength: 32,
+            knownValues: ['in_person', 'online', 'hybrid'],
+          },
+          meetingUrl: {
+            type: 'string',
+            format: 'uri',
+          },
+          agenda: {
+            type: 'array',
+            items: {
+              type: 'string',
+              maxLength: 300,
+            },
+            maxLength: 30,
+          },
+          quorumRequired: {
+            type: 'integer',
+            minimum: 0,
+          },
+        },
+      },
+      cabildeo: {
+        type: 'object',
+        description:
+          'A conversation held over a period of time: who took part, what each side argued, and where it landed. Voting and delegation are optional extras attached elsewhere, not part of this record.',
+        required: ['format'],
+        properties: {
+          format: {
+            type: 'string',
+            maxLength: 32,
+            knownValues: ['in_person', 'online', 'hybrid'],
+          },
+          meetingUrl: {
+            type: 'string',
+            format: 'uri',
+          },
+          recordingUrl: {
+            type: 'string',
+            format: 'uri',
+          },
+          participants: {
+            type: 'array',
+            items: {
+              type: 'string',
+              maxLength: 200,
+            },
+            maxLength: 100,
+          },
+          arguments: {
+            type: 'array',
+            items: {
+              type: 'string',
+              maxLength: 500,
+            },
+            maxLength: 50,
+          },
+          outcome: {
+            type: 'string',
+            maxLength: 2000,
+          },
+        },
+      },
+    },
+  },
   ComParaCommunityUpdateBriefingPack: {
     lexicon: 1,
     id: 'com.para.community.updateBriefingPack',
@@ -30136,6 +31122,79 @@ export const schemaDict = {
                 'Opaque reference to the m8 eligibility/nullifier proof used to cast this vote.',
             },
             createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityWikiPage: {
+    lexicon: 1,
+    id: 'com.para.community.wikiPage',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          'A community wiki page or megathread shown in the community menu. The body may link to other pages as [[slug]] or [[slug|label]].',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: [
+            'communityUri',
+            'kind',
+            'slug',
+            'title',
+            'body',
+            'createdBy',
+            'createdAt',
+            'updatedAt',
+          ],
+          properties: {
+            communityUri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            kind: {
+              type: 'string',
+              maxLength: 32,
+              knownValues: ['page', 'megathread'],
+            },
+            slug: {
+              type: 'string',
+              maxLength: 80,
+            },
+            title: {
+              type: 'string',
+              maxLength: 300,
+            },
+            body: {
+              type: 'string',
+              maxLength: 50000,
+            },
+            threadUri: {
+              type: 'string',
+              format: 'at-uri',
+              description:
+                'For megathreads: the post that hosts the discussion.',
+            },
+            pinned: {
+              type: 'boolean',
+            },
+            sortOrder: {
+              type: 'integer',
+              minimum: 0,
+            },
+            createdBy: {
+              type: 'string',
+              format: 'did',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            updatedAt: {
               type: 'string',
               format: 'datetime',
             },
@@ -40781,6 +41840,7 @@ export const ids = {
   ComParaAlphaGetAccess: 'com.para.alpha.getAccess',
   ComParaAlphaGetRolloutStatus: 'com.para.alpha.getRolloutStatus',
   ComParaAlphaRequestAccess: 'com.para.alpha.requestAccess',
+  ComParaBookSearchBooks: 'com.para.book.searchBooks',
   ComParaCivicAmendment: 'com.para.civic.amendment',
   ComParaCivicCabildeo: 'com.para.civic.cabildeo',
   ComParaCivicCastVote: 'com.para.civic.castVote',
@@ -40806,6 +41866,7 @@ export const ids = {
   ComParaCollectionListCollections: 'com.para.collection.listCollections',
   ComParaCollectionUpdateCollection: 'com.para.collection.updateCollection',
   ComParaCommunityAcceptDraftInvite: 'com.para.community.acceptDraftInvite',
+  ComParaCommunityActivityLedgerEntry: 'com.para.community.activityLedgerEntry',
   ComParaCommunityAuthorityEvent: 'com.para.community.authorityEvent',
   ComParaCommunityBoard: 'com.para.community.board',
   ComParaCommunityBriefingPack: 'com.para.community.briefingPack',
@@ -40819,8 +41880,10 @@ export const ids = {
   ComParaCommunityDelegation: 'com.para.community.delegation',
   ComParaCommunityDeliberation: 'com.para.community.deliberation',
   ComParaCommunityDeliberationVote: 'com.para.community.deliberationVote',
+  ComParaCommunityEconomicActivity: 'com.para.community.economicActivity',
   ComParaCommunityEigenstate: 'com.para.community.eigenstate',
   ComParaCommunityExportObsidianVault: 'com.para.community.exportObsidianVault',
+  ComParaCommunityGetActivity: 'com.para.community.getActivity',
   ComParaCommunityGetAuditTrail: 'com.para.community.getAuditTrail',
   ComParaCommunityGetAuthorization: 'com.para.community.getAuthorization',
   ComParaCommunityGetBoard: 'com.para.community.getBoard',
@@ -40833,6 +41896,7 @@ export const ids = {
   ComParaCommunityIntensity: 'com.para.community.intensity',
   ComParaCommunityJoin: 'com.para.community.join',
   ComParaCommunityLeave: 'com.para.community.leave',
+  ComParaCommunityListActivities: 'com.para.community.listActivities',
   ComParaCommunityListBoards: 'com.para.community.listBoards',
   ComParaCommunityListBriefingPacks: 'com.para.community.listBriefingPacks',
   ComParaCommunityListChildCommunities:
@@ -40850,6 +41914,7 @@ export const ids = {
   ComParaCommunityListPosts: 'com.para.community.listPosts',
   ComParaCommunityListSharedContent: 'com.para.community.listSharedContent',
   ComParaCommunityListVotes: 'com.para.community.listVotes',
+  ComParaCommunityListWikiPages: 'com.para.community.listWikiPages',
   ComParaCommunityMembership: 'com.para.community.membership',
   ComParaCommunityProposal: 'com.para.community.proposal',
   ComParaCommunityRelation: 'com.para.community.relation',
@@ -40860,8 +41925,10 @@ export const ids = {
   ComParaCommunityShareContent: 'com.para.community.shareContent',
   ComParaCommunitySharedContent: 'com.para.community.sharedContent',
   ComParaCommunitySharedContentAction: 'com.para.community.sharedContentAction',
+  ComParaCommunitySocialActivity: 'com.para.community.socialActivity',
   ComParaCommunityUpdateBriefingPack: 'com.para.community.updateBriefingPack',
   ComParaCommunityVote: 'com.para.community.vote',
+  ComParaCommunityWikiPage: 'com.para.community.wikiPage',
   ComParaDiscourseGetAnalysis: 'com.para.discourse.getAnalysis',
   ComParaDiscourseGetSnapshot: 'com.para.discourse.getSnapshot',
   ComParaDiscourseGetTopics: 'com.para.discourse.getTopics',
