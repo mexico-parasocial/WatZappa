@@ -6,6 +6,7 @@ import {
   TestNetwork,
   createCommunityBoardRecord,
   createCommunityMembershipRecord,
+  seedCommunityActivities,
   usersSeed,
 } from '@atproto/dev-env'
 import { communityActivitySchemas } from '../src/api/com/para/community/activities/schemas.js'
@@ -104,7 +105,7 @@ maybeDescribe('community activities (AppView)', () => {
       details: {
         $type: 'com.para.community.socialActivity#peacefulMarch',
         meetingPoint: 'Zócalo',
-        permitStatus: 'notRequired',
+        permitStatus: 'not_required',
       },
       createdBy: by,
       createdAt: new Date().toISOString(),
@@ -127,7 +128,7 @@ maybeDescribe('community activities (AppView)', () => {
       },
       financialPlan: {
         currency: 'MXN',
-        allocationBase: 'netProceeds',
+        allocationBase: 'net_proceeds',
         allocations: [
           { recipient: 'community', label: 'Fondo común', shareBps: 10000 },
         ],
@@ -417,6 +418,60 @@ maybeDescribe('community activities (AppView)', () => {
     // alice's older page for the slug takes over.
     expect(body.pages.map((p) => p.record.title)).toContain(
       'Acerca de (viejo)',
+    )
+  })
+
+  it('serves the demo seed: two communities, a settled raffle and wiki', async () => {
+    const owner = await createCommunityBoardRecord(sc, dan, {
+      name: 'Demo Board',
+      quadrant: 'sur',
+    })
+    await network.processAll()
+    const agents = await Promise.all(
+      [alice, dan].map(async (did) => {
+        const agent = network.pds.getAgent()
+        await agent.login({
+          identifier: sc.accounts[did].handle,
+          password: sc.accounts[did].password,
+        })
+        return { did, agent }
+      }),
+    )
+    await seedCommunityActivities({
+      users: agents as any,
+      communities: [
+        { uri: board, name: 'Activities Board', creatorDid: alice },
+        { uri: owner.uri, name: 'Demo Board', creatorDid: dan },
+      ],
+    })
+    await network.processAll()
+
+    const first = await listActivities({ community: board })
+    expect(titles(first.activities)).toEqual(
+      expect.arrayContaining([
+        'Marcha pacífica por el agua limpia',
+        'Recolección de firmas: iniciativa de presupuesto abierto',
+      ]),
+    )
+    const second = await listActivities({ community: owner.uri })
+    expect(titles(second.activities)).toEqual([
+      'Rifa para el comedor comunitario',
+      'Venta de tamales para la brigada de salud',
+    ])
+    const raffleUri = second.activities.find((a) =>
+      a.record.title.startsWith('Rifa'),
+    )!.uri
+    const { body } = await xrpc<{ ledger: unknown[] }>(
+      'com.para.community.getActivity',
+      { uri: raffleUri },
+    )
+    expect(body.ledger).toHaveLength(5)
+    const wiki = await xrpc<{ pages: Array<{ record: { slug: string } }> }>(
+      'com.para.community.listWikiPages',
+      { community: board },
+    )
+    expect(wiki.body.pages.map((p) => p.record.slug)).toEqual(
+      expect.arrayContaining(['acerca-de', 'marcha-agua']),
     )
   })
 })

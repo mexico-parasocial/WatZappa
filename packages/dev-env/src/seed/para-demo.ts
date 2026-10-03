@@ -1,6 +1,7 @@
 import type { HandleString } from '@atproto/syntax'
 import { RecordRef, type SeedClient } from './client.js'
 import { ParaSeedCheckpointRunner } from './para-checkpoints.js'
+import { seedCommunityActivities } from './para-community-activities.js'
 import { seedDemoMemes } from './para-memes.js'
 import { seedTid } from './seed-tid.js'
 
@@ -839,6 +840,10 @@ export default async (sc: SeedClient) => {
   }
 
   await checkpoints.flush('civicCommunities')
+
+  // Activities, ledgers and wiki pages published by the community owners.
+  await seedCommunityActivities({ users, communities })
+  await checkpoints.flush('communityActivities')
 
   // ═══════════════════════════════════════════════════════════════════════
   //  CABILDEOS  (20 — rich variety across all phases)
