@@ -37,7 +37,7 @@ the next agent starts from the next task, not a new whole-repository audit.
 
 Read-only inspection of PARA `1f3e7ed3f`, WatZappa `9b57aa634`, mubEZ `afc4308`
 and the worktrees below. PARA has unrelated local UI edits, including Messages.
-That baseline inspection did not run runtime suites. Subsequent P0 implementation
+That baseline inspection did not run runtime suites. Subsequent P0/P1 implementation
 and local validation are recorded below; no staging/production acceptance is claimed.
 
 | Former task / claim         | What is actually present                                                                                                                                                                                                                                                                                                   | Remaining acceptance                                                                                                                                                                                 |
@@ -46,7 +46,7 @@ and local validation are recorded below; no staging/production acceptance is cla
 | S1 upstream backlog         | Current WatZappa history includes `7131b165d` (upstream sync/build work) and `9b57aa634` (lazy `natural` import).                                                                                                                                                                                                          | Validate the selected release revision. The old "20 commits behind" count is not current evidence.                                                                                                   |
 | S2 Gate D                   | `../PARA/src/components/chat/ChatEncryptionNotice.tsx` is used by `ChatCivicContext.tsx` and explains operator access for unencrypted chat.                                                                                                                                                                                | Check it in supported release clients against actual room encryption.                                                                                                                                |
 | S2 chat SDK pipeline        | `../PARA/scripts/build-chat-bundle.js` and `pnpm build:chat-bundle` exist.                                                                                                                                                                                                                                                 | Regenerate/compare assets when selecting the release SDK; do not invent a new pipeline.                                                                                                              |
-| S3 M8 broker vs client      | mubEZ has OAuth callback handoff and `POST /sessions/exchange` in `../mubEZ/app/controllers/sessions_controller.ts` / `start/routes.ts`. PARA `ensureSession.ts` still returns `pending_oauth`; `api.ts` does not complete that exchange.                                                                                  | Finish PARA's grant, verify broker feature/return-URL configuration, and prove login without dev bootstrap.                                                                                          |
+| S3 M8 broker vs client | PARA `b303625db` and mubEZ `061dc23` now implement DID/attempt/PKCE-bound native and web callbacks, token exchange, rotated refresh and logout. Quiet background `pending_oauth` is intentional; the explicit Connect flow completes the grant. See [P1 evidence](./M8-LOGIN-EXECUTION-2026-10-05.md). | Deploy the paired broker migration/config, resolve full release build blockers, and prove actual supported-client login without dev bootstrap. Web reconnects after reload; persistence is an open pilot requirement. |
 | S3 MAS / para-idp           | Prototype and local acceptance are recorded in `MATRIX_V2.md` §8 and [local acceptance](./MATRIX-LOCAL-ACCEPTANCE-2026-09-26.md). `deploy/matrix/setup-mas.sh` generates the stable `matrix_authentication_service` integration and removes obsolete MSC3861 config. PARA web has `webOidc.ts` / `useMatrixWebSession.ts`. | Prove the complete grant/join/refresh path on an identified staging deployment. **Do not enable the obsolete `msc3861` flag or rebuild the existing prototype.**                                     |
 | S3 QVL regression coverage  | `packages/bsky/tests/qvl-{voting,indexing,queries}.test.ts` and the delegation regression exist. G1 has targeted results in its execution record.                                                                                                                                                                          | Run relevant suites on the release revision; existence and historical targeted passes do not mean binding voting is safe or enabled.                                                                 |
 | S4 OD-6 / identity boundary | CD-M6 is closed. Both `services/matrix-bridge/src/db/{sqlite,pg}/base.ts` drop `user_matrix_map`; `identity-boundary.test.ts` exists; `deploy/matrix/hardening.yaml` disables passwords.                                                                                                                                   | Staging acceptance and eventual legacy production cleanup. **Do not redesign OD-6 or schedule table deletion again.** The drop statement is cleanup, not proof that an active mapping store remains. |
@@ -84,6 +84,25 @@ The creator-only interim bridge patch has been replaced; do not implement it aga
 Main feature checkouts still contain the old role source until this candidate
 is integrated. Existing unrelated PARA UI edits remain separate.
 
+### P1 implementation evidence (2026-10-05)
+
+[Implementation, validation and rollout record](./M8-LOGIN-EXECUTION-2026-10-05.md).
+The native/web callback engineering is committed; do not rebuild it.
+
+- PARA candidate `b303625db` (`feat/personal-civic-tree-revamp`); broker candidate
+  `061dc23` (`feat/nullifier-v2`). Neither is deployed or release-integrated here.
+- PARA: **60 focused tests, 8 files**, login-core type checks for all three
+  platforms, changed-file lint without errors, and bskyweb compilation pass.
+- Broker: **26 distinct focused tests**, including seeded exchange/refresh/logout
+  and real HTTP failure-redirect cases; full broker build passes with migrations 040–041.
+- No successful live-provider login, native-device/browser acceptance or staging
+  acceptance is claimed. PARA's full-app type checks encounter separate AtCard/
+  OTA working-tree errors; resolve selected release edits and rerun them.
+- Web credentials are held in memory and require reconnecting after reload.
+  Decide whether the pilot requires persistent web sessions before closing P1.
+  Native release credentials require SecureStore. Refresh-family revocation
+  does not immediately revoke access JWTs.
+
 ## Remaining execution queue (ordered)
 
 ### P0 — integrate and accept trusted community roles
@@ -115,17 +134,23 @@ Exit: integrated release revision plus recorded staging acceptance and explicit
 supported-role scope. Do not repeat the role-source audit or recreate the fix.
 P1 can proceed while staging/operator inputs are being obtained.
 
-### P1 — real M8 login from PARA
+### P1 — accept the implemented M8 login candidate
 
-Complete `pending_oauth` in PARA using the broker's existing contract. Native
-handoff uses `platform: 'mobile'`, allowlisted `returnTo`, single-use
-`exchange_code` and `/sessions/exchange`; inspect the controller and feature
-flags before implementing. Web needs its supported callback flow too. Keep
-tokens out of redirect URLs and bind the stored session to the active DID.
+**Engineering is committed and focused local checks pass; supported-client
+acceptance remains open.** Use the paired PARA/broker revisions above and
+[the execution record](./M8-LOGIN-EXECUTION-2026-10-05.md). Do not restart the
+completed callback/token-exchange implementation.
 
-Exit: fresh login without dev bootstrap, cancel/expiry/replay handling, account
-switching and refresh/logout verified on the supported pilot clients. This is
-M8 broker auth; it does not replace Matrix's own MAS/OIDC client session.
+Select release revisions and resolve full-app build blockers. Deploy broker
+migrations 040–041 and effective handoff/return-URL/CORS/HTTPS configuration, with
+dev bootstrap off. Then prove fresh real-provider login, cancel/back,
+expiry/replay, account switching, refresh and logout on the supported native
+and web clients. Verify native SecureStore and access JWT lifetime semantics.
+Confirm whether reconnecting after a web reload meets the pilot requirement;
+persistent web sessions need implementation and acceptance if required.
+
+Exit: recorded configuration, exact revisions and supported-client results.
+M8 broker auth does not replace Matrix's separate MAS/OIDC client session.
 
 ### P2 — staging identity/chat acceptance
 
@@ -195,10 +220,10 @@ governance gates before a binding platform ballot is claimed.
 
 ## October sequencing and governance dependency
 
-- **October 5–10 target:** finish P0; prepare P1 from the existing broker
-  contract and gather operator/domain/media inputs. Close items by evidence,
+- **October 5–10 target:** integrate/accept P0; configure and test the
+  committed P1 candidate and gather operator/domain/media inputs. Close items by evidence,
   not by reaching the end of the week.
-- **October 13–24 target:** P1, then P2. Move to P3 only when the preceding
+- **October 13–24 target:** close P1 acceptance, then P2. Move to P3 only when the preceding
   gates close. Staging setup is required; a production server is not assumed.
 - **October 27 onward:** P3/P4, then P5 when evidence permits. November pilot
   timing is conditional; do not carry the old S5/S6 dates forward as commitments.

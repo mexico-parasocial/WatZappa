@@ -8,6 +8,11 @@ of deployment. OD-6/table deletion and local MAS are implemented. F9's route
 checks do not close the separate self-declared-role ingestion defect; finish
 the recorded bridge/AppView fixes before claiming trusted authorization.
 
+The paired PARA/M8 login candidate is now committed and locally tested; see
+[implementation and remaining acceptance](./M8-LOGIN-EXECUTION-2026-10-05.md).
+Real-provider and supported-client staging evidence remain open. This login
+session is distinct from the client's Matrix MAS/OIDC session.
+
 Status: **Phase 1 in progress.** This document is the reference for the Matrix
 v2 upgrade described in `para-matrix-v2-plan.md`. It records what v1 actually
 is (§1–2), what we do and do not guarantee (§3), the derivation the whole
