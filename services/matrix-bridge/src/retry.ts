@@ -15,6 +15,11 @@ export class RetryWorker {
     private projection: MatrixProjectionPort,
     private metrics: BridgeMetrics,
     private log: Logger,
+    private refreshAuthority: (
+      community: string,
+      did: string,
+      force?: boolean,
+    ) => Promise<void>,
   ) {}
 
   start(): void {
@@ -67,31 +72,8 @@ export class RetryWorker {
             entry.communityUri &&
             entry.did
           ) {
-            // Handover projection: re-apply the member's current governance
-            // roles as room power levels. Reading the current state (not the
-            // state at failure time) is what makes the retry safe.
-            const space = await this.db.getSpaceForCommunity(entry.communityUri)
-            const membership = await this.db.getCommunityMembership(
-              entry.did,
-              entry.communityUri,
-            )
-            if (!space || !membership || membership.state !== 'active') {
-              await this.db.markSyncSuccess(entry.id)
-              continue
-            }
-            const roles = membership.roles ?? []
-            const isObserver = roles.includes('observer')
-            const assigned = await this.db.getChamberAssignment(
-              entry.communityUri,
-              entry.did,
-            )
-            const chamber =
-              assigned === 'A' || assigned === 'B' ? assigned : null
-            await this.projection.applyMemberRoles(space, entry.did, {
-              roles,
-              chamber,
-              isObserver,
-            })
+            // @NOTE resolve authority again; cached roles may have been revoked.
+            await this.refreshAuthority(entry.communityUri, entry.did, true)
             await this.db.markSyncSuccess(entry.id)
             this.metrics.retryAttemptsTotal.inc({
               event_type: entry.eventType,

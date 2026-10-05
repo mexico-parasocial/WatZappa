@@ -66,6 +66,8 @@ function makeStubDeps() {
       return true
     },
     getMembershipsForDid: async () => memberships,
+    getCommunityMembership: async (_did: string, uri: string) =>
+      memberships.find((m) => m.communityUri === uri),
     getSpaceForCommunity: async (uri: string) => spaceByUri[uri],
     getChamberAssignment: async (uri: string) => chamberByUri[uri],
     upsertCommunityMembershipLease: async (
@@ -415,6 +417,32 @@ describe('reconcileMemberAccess (interaction-time settlement)', () => {
       op: 'power',
       args: ['!main:para', '@anon:matrix.example', 50],
     })
+  })
+
+  it('refreshes authority before projecting cached powers to a native account', async () => {
+    const { calls, memberships, matrix, db } = makeStubDeps()
+    spaceByUri[space.communityUri] = space
+    memberships.push({
+      communityUri: space.communityUri,
+      state: 'active',
+      roles: ['owner'],
+    })
+    const projection = createMatrixProjection(
+      config,
+      db,
+      matrix,
+      log,
+      async () => {
+        memberships[0] = {
+          communityUri: space.communityUri,
+          state: 'removed',
+          roles: [],
+        }
+      },
+    )
+    await projection.reconcileMemberAccess('did:plc:gone', presented)
+    expect(calls.some((c) => c.op === 'power')).toBe(false)
+    expect(calls).toContainEqual({ op: 'ban', args: ['!main:para', presented] })
   })
 
   it('bans the presented account from communities the DID was removed from, MAS-native or not', async () => {

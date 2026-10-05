@@ -1,6 +1,6 @@
-import type { RouteContext } from './routes/context.js'
 import type { ServerResponse } from 'node:http'
 import { HttpError } from './m8-auth.js'
+import type { RouteContext } from './routes/context.js'
 import { writeJson } from './routes/http.js'
 
 /**
@@ -86,6 +86,8 @@ export function decideRoom(
   if (!base.allowed || !membership) return base
 
   const roles = membership.roles
+  if (roles.includes('moderator') || roles.includes('owner'))
+    return { allowed: true }
   if (roles.includes('observer')) {
     // Observers read the observers room and the main room only.
     return roomKind === 'observers' || roomKind === 'main'
@@ -146,6 +148,7 @@ export async function authorize(
   resource: AuthzResource,
 ): Promise<void> {
   if (resource.kind === 'community') {
+    await ctx.firehose.refreshMembership(resource.communityUri, actor)
     const membership = await ctx.db.getCommunityMembership(
       actor,
       resource.communityUri,
@@ -164,6 +167,7 @@ export async function authorize(
   if (!room) {
     throw new AuthzError('Room does not belong to a known community')
   }
+  await ctx.firehose.refreshMembership(room.communityUri, actor)
   const membership = await ctx.db.getCommunityMembership(
     actor,
     room.communityUri,
@@ -236,6 +240,7 @@ export async function authorizeUserRead(
   communityUri: string,
 ): Promise<void> {
   if (actor === targetDid) return
+  await ctx.firehose.refreshMembership(communityUri, actor)
   const membership = await ctx.db.getCommunityMembership(actor, communityUri)
   const verdict = decideCommunity(membership, 'community.moderate')
   if (!verdict.allowed) {

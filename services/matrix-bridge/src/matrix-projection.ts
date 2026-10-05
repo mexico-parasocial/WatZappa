@@ -113,6 +113,7 @@ export function createMatrixProjection(
   db: IBridgeDatabase,
   matrix: MatrixAdminClient,
   log: Logger,
+  refreshAuthority?: (community: string, did: string) => Promise<void>,
 ): MatrixProjectionPort {
   // The homeserver's own server_name, not the host we reach it on. Those are
   // the same only in production; anywhere else this minted MXIDs Synapse
@@ -383,18 +384,22 @@ export function createMatrixProjection(
 
     async reconcileMemberAccess(did, presentedMxid) {
       const memberships = await db.getMembershipsForDid(did)
-      for (const membership of memberships) {
-        const space = await db.getSpaceForCommunity(membership.communityUri)
+      for (const cached of memberships) {
+        await refreshAuthority?.(cached.communityUri, did)
+        const membership = await db.getCommunityMembership(
+          did,
+          cached.communityUri,
+        )
+        if (!membership) continue
+        const communityUri = cached.communityUri
+        const space = await db.getSpaceForCommunity(communityUri)
         if (!space) continue
         if (membership.state === 'active') {
           // Catch-up for role changes that arrived while offline. The
           // presented account is included: it is entitled by membership,
           // even if this interaction is its first under this community.
           const roles = membership.roles ?? []
-          const assigned = await db.getChamberAssignment(
-            membership.communityUri,
-            did,
-          )
+          const assigned = await db.getChamberAssignment(communityUri, did)
           const chamber: 'A' | 'B' | null =
             assigned === 'A' || assigned === 'B' ? assigned : null
           const opts = {
@@ -410,11 +415,7 @@ export function createMatrixProjection(
           // actively holds for this community.
           const nowIso = new Date().toISOString()
           for (const mxid of entitled) {
-            await db.upsertCommunityMembershipLease(
-              membership.communityUri,
-              mxid,
-              nowIso,
-            )
+            await db.upsertCommunityMembershipLease(communityUri, mxid, nowIso)
           }
         } else {
           // Removal that arrived while offline. The presented account is

@@ -2,6 +2,7 @@ import { createServer } from 'node:http'
 import pino from 'pino'
 import { ChallengeStore } from './challenge.js'
 import { ChatModerationEngine } from './chat-moderation.js'
+import { createAuthorityResolver } from './community-authority.js'
 import { loadConfig } from './config.js'
 import { createDatabase } from './db/index.js'
 import { EventBus } from './events/bus.js'
@@ -9,8 +10,8 @@ import { FirehoseConsumer } from './firehose.js'
 import { HttpError } from './m8-auth.js'
 import { createMatrixProjection } from './matrix-projection.js'
 import { MatrixSyncPoller } from './matrix-sync.js'
-import { sweepExpiredMembershipLeases } from './membership-lease.js'
 import { MatrixAdminClient } from './matrix.js'
+import { sweepExpiredMembershipLeases } from './membership-lease.js'
 import { BridgeMetrics } from './metrics.js'
 import { ProposalEngine } from './proposals.js'
 import { RetryWorker } from './retry.js'
@@ -21,6 +22,7 @@ import { createSortitionEngine } from './sortition-runs.js'
 
 async function main() {
   const config = loadConfig()
+  const authority = createAuthorityResolver(config)
 
   const log = pino({
     level: config.logLevel,
@@ -46,7 +48,13 @@ async function main() {
 
   const matrix = new MatrixAdminClient(config)
   const metrics = new BridgeMetrics()
-  const projection = createMatrixProjection(config, db, matrix, log)
+  const projection = createMatrixProjection(
+    config,
+    db,
+    matrix,
+    log,
+    (community, did) => firehose.refreshMembership(community, did),
+  )
   const challenges = new ChallengeStore()
   const chatMod = new ChatModerationEngine(db, log)
   const events = new EventBus(db, log)
@@ -59,10 +67,18 @@ async function main() {
     chatMod,
     metrics,
     log,
+    authority,
   )
   firehose.setEventBus(events)
   proposals.setEventBus(events)
-  const retryWorker = new RetryWorker(db, projection, metrics, log)
+  const retryWorker = new RetryWorker(
+    db,
+    projection,
+    metrics,
+    log,
+    (community, did, force) =>
+      firehose.refreshMembership(community, did, force),
+  )
   const syncPoller = new MatrixSyncPoller(config, db, matrix, chatMod, log)
 
   chatMod.setEventBus(events)
@@ -83,6 +99,21 @@ async function main() {
     sortition,
     events,
   }
+
+  // @NOTE sanitize/project persisted authority before accepting API traffic.
+  await firehose.reconcileAuthorities(true)
+  let authoritySweepRunning = false
+  const authoritySweep = setInterval(async () => {
+    if (authoritySweepRunning) return
+    authoritySweepRunning = true
+    try {
+      await firehose.reconcileAuthorities()
+    } catch (err) {
+      log.error({ err }, 'Verified authority reconciliation failed')
+    } finally {
+      authoritySweepRunning = false
+    }
+  }, 60_000)
 
   // Update gauge metrics periodically
   setInterval(() => {
@@ -180,6 +211,7 @@ async function main() {
     retryWorker.stop()
     syncPoller.stop()
     await firehose.stop()
+    clearInterval(authoritySweep)
     clearInterval(proposalCron)
     clearInterval(badgeCron)
     clearInterval(eventPruneCron)

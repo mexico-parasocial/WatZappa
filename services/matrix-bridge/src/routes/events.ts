@@ -12,6 +12,13 @@ export async function mayReceiveEvent(
   event: BridgeEvent,
 ): Promise<boolean> {
   if (event.audienceDids && !event.audienceDids.includes(did)) return false
+  // @NOTE lifecycle notices may explain removal; room data requires fresh authority.
+  const roomScoped =
+    event.type === 'chat.unread' ||
+    typeof (event.payload as { roomId?: unknown } | null)?.roomId === 'string'
+  if (event.communityUri && (roomScoped || !event.audienceDids)) {
+    await ctx.firehose.refreshMembership(event.communityUri, did)
+  }
   const payload = event.payload as { roomId?: unknown } | null
   if (
     event.type === 'chat.unread' ||
@@ -58,12 +65,12 @@ export async function apiEventsSseHandler(
   let draining = false
   let dirty = false
   let unsubscribe = () => {}
-  let heartbeat: NodeJS.Timeout | undefined
+  const timers: { heartbeat?: NodeJS.Timeout } = {}
   let authenticatedAt = Date.now()
   const cleanup = () => {
     if (closed) return
     closed = true
-    if (heartbeat) clearInterval(heartbeat)
+    if (timers.heartbeat) clearInterval(timers.heartbeat)
     unsubscribe()
     res.end()
   }
@@ -139,10 +146,10 @@ export async function apiEventsSseHandler(
     unsubscribe()
     return
   }
-  heartbeat = setInterval(() => {
+  timers.heartbeat = setInterval(() => {
     write(': heartbeat\n\n')
     void drain()
   }, 25_000)
-  heartbeat.unref()
+  timers.heartbeat.unref()
   await drain()
 }

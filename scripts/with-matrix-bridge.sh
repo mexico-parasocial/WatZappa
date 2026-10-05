@@ -87,6 +87,10 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
+# Dedicated local-only credential shared with the dev AppView, never a client token.
+export BRIDGE_AUTHORITY_APPVIEW_URL="${BRIDGE_AUTHORITY_APPVIEW_URL:-http://localhost:${DEV_ENV_BSKY_PORT:-2584}}"
+export PARA_AUTHORITY_SERVICE_TOKEN="${PARA_AUTHORITY_SERVICE_TOKEN:-$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")}"
+
 # The backend itself (the dev-env, normally).
 "$@" &
 BACKEND_PID=$!

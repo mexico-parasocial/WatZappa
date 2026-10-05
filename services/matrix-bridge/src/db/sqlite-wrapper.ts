@@ -711,6 +711,13 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     )
   }
 
+  listCommunityMemberships(
+    limit: number,
+    offset: number,
+  ): Promise<Array<{ did: string; communityUri: string }>> {
+    return this.wrap(() => this.inner.listCommunityMemberships(limit, offset))
+  }
+
   async getCommunityMembership(
     did: string,
     communityUri: string,

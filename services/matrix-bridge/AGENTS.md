@@ -17,3 +17,10 @@
 - Start the local Matrix stack with `make matrix-up` (`scripts/matrix-stack.sh`), never a bare `docker compose` from an arbitrary directory: the compose file mounts config by relative path, so the wrong cwd silently creates empty mounts and boots a configless Synapse and MAS.
 - Chat message reports (`POST /api/moderation-report` with `matrixEventId`) carry room, event and a reason from `MESSAGE_REPORT_REASONS` only. The bridge resolves the sender itself (`getEventSender` → `getDidForMxid`), rejects a client `reportedDid` that disagrees, never returns the resolved DID, and never stores message text (F4, D2 in PARA `docs/MATRIX-COMMUNITY-CHAT-IMPLEMENTATION.md`): moderators read the message in the room from their own client. The moderator queue (`GET /api/moderation-reports`, `listReports`) groups reports per message and returns `reporterCount`, never reporter DIDs or text; don't reintroduce raw `chat_moderation_events` rows in responses.
 - Room placement goes through `entitledRooms` in `matrix-projection.ts`, shared by the verified join and role projection. Moderators and owners are entitled to every room of the community (both chambers and the observer room) because they review reports in-room and an encrypted room cannot be decrypted before one joined; projection joins newly entitled rooms and kicks from rooms a role no longer covers.
+
+- Resolve membership/roles only through `createAuthorityResolver` and the scoped
+  AppView service credential. No creator or membership-record role fallback.
+  Run initial authority reconciliation before serving and refresh at joins,
+  authorization, SSE delivery, native interaction and retry; periodic reconciliation
+  catches expiry/indexing lag. Verification failure suspends access and invokes
+  device/room revocation; deployment requires both service revisions and the secret.

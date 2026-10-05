@@ -1,12 +1,7 @@
-import { randomUUID } from 'node:crypto'
 import type {
-  AiConsentRecord,
-  CommunityRoomKind,
   CommunityRoomSummary,
   CommunitySpaceMap,
   DeviceSession,
-  SyncLogEntry,
-  UserPushToken,
 } from '../interface.js'
 import { SqliteBase } from './base.js'
 
@@ -128,6 +123,17 @@ export class IdentityMatrixArea extends SqliteBase {
          VALUES (?, ?, ?, ?, datetime('now'))`,
       )
       .run(did, communityUri, membershipState, JSON.stringify(roles))
+  }
+
+  listCommunityMemberships(
+    limit: number,
+    offset: number,
+  ): Array<{ did: string; communityUri: string }> {
+    return this.db
+      .prepare(
+        'SELECT did, community_uri AS communityUri FROM community_membership_state ORDER BY community_uri, did LIMIT ? OFFSET ?',
+      )
+      .all(limit, offset) as Array<{ did: string; communityUri: string }>
   }
 
   getCommunityMembership(
@@ -267,6 +273,23 @@ export class IdentityMatrixArea extends SqliteBase {
       }
 
       const roles = JSON.parse(row.roles_json || '[]') as string[]
+      // @NOTE verified moderators/owners review every room, matching Matrix projection.
+      if (roles.includes('moderator') || roles.includes('owner')) {
+        for (const [roomId, kind] of [
+          [row.chamber_a_room_id, 'chamber-a'],
+          [row.chamber_b_room_id, 'chamber-b'],
+          [row.observer_room_id, 'observers'],
+        ] as const) {
+          if (roomId)
+            rooms.push({
+              roomId,
+              communityUri: row.community_uri,
+              slug: row.slug,
+              kind,
+            })
+        }
+        return rooms
+      }
       const isObserver = roles.includes('observer')
       if (isObserver && row.observer_room_id) {
         rooms.push({

@@ -37,6 +37,8 @@ export interface Config {
   matrixBotUserId?: string
   matrixEnableEncryption: boolean
   m8BaseUrl: string
+  authorityAppviewUrl?: string
+  authorityServiceToken?: string
   pushGatewayUrl: string
   dbPath: string
   databaseUrl?: string
@@ -97,6 +99,9 @@ export function loadConfig(): Config {
     matrixEnableEncryption:
       process.env.MATRIX_ENABLE_ENCRYPTION === 'true' || false,
     m8BaseUrl: env('M8_BASE_URL', 'http://localhost:8787/v1'),
+    authorityAppviewUrl: process.env.BRIDGE_AUTHORITY_APPVIEW_URL || undefined,
+    authorityServiceToken:
+      process.env.PARA_AUTHORITY_SERVICE_TOKEN || undefined,
     pushGatewayUrl: env(
       'PUSH_GATEWAY_URL',
       'http://para-matrix-bridge:3001/_matrix/push/v1/notify',

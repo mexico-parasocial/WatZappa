@@ -3,10 +3,12 @@ import { IdResolver } from '@atproto/identity'
 import { Firehose } from '@atproto/sync'
 import type { CommitEvt, Event } from '@atproto/sync'
 import type { ChatModerationEngine } from './chat-moderation.js'
+import type { AuthorityResolver } from './community-authority.js'
 import type { Config } from './config.js'
 import { parseConstitution } from './constitution.js'
 import type { IBridgeDatabase } from './db/index.js'
 import type { EventBus } from './events/bus.js'
+import { HttpError } from './m8-auth.js'
 import type { MatrixProjectionPort } from './matrix-projection.js'
 import type { BridgeMetrics } from './metrics.js'
 import type { ProposalEngine } from './proposals.js'
@@ -35,6 +37,7 @@ export class FirehoseConsumer {
   private cursorSaveTimer: NodeJS.Timeout | null = null
 
   private events?: EventBus
+  private authorityWork = new Map<string, Promise<void>>()
 
   constructor(
     config: Config,
@@ -44,6 +47,7 @@ export class FirehoseConsumer {
     chatMod: ChatModerationEngine,
     metrics: BridgeMetrics,
     log: Logger,
+    private authority?: AuthorityResolver,
   ) {
     this.db = db
     this.projection = projection
@@ -67,6 +71,7 @@ export class FirehoseConsumer {
       filterCollections: [
         'com.para.community.board',
         'com.para.community.membership',
+        'com.para.community.authorityEvent',
         'com.para.community.constitution',
         'com.para.community.proposal',
         'com.para.community.vote',
@@ -168,7 +173,14 @@ export class FirehoseConsumer {
         evt.rkey,
       )
     } else if (collection === 'com.para.community.membership') {
-      await this.handleMembershipChange(did, evt.record, evt.event)
+      if (typeof evt.record.community === 'string')
+        await this.refreshMembership(evt.record.community, did)
+    } else if (collection === 'com.para.community.authorityEvent') {
+      if (
+        typeof evt.record.community === 'string' &&
+        typeof evt.record.subject === 'string'
+      )
+        await this.refreshMembership(evt.record.community, evt.record.subject)
     } else if (collection === 'com.para.community.constitution') {
       await this.handleConstitutionUpdate(did, evt.record)
     } else if (
@@ -258,9 +270,7 @@ export class FirehoseConsumer {
       // recorded here (governance) and the owner joins by presenting a
       // verified proof of possession (CD-M6 verified join), like every other
       // member.
-      await this.db.setCommunityMembership(creatorDid, communityUri, 'active', [
-        'owner',
-      ])
+      await this.refreshMembership(communityUri, creatorDid)
       await this.db.logSync(
         'create_space',
         communityUri,
@@ -287,6 +297,75 @@ export class FirehoseConsumer {
     }
   }
 
+  /** Refresh from verified authority; self-authored roles are never an input. */
+  async refreshMembership(
+    communityUri: string,
+    did: string,
+    force = false,
+  ): Promise<void> {
+    const key = JSON.stringify([communityUri, did])
+    const previous = this.authorityWork.get(key) ?? Promise.resolve()
+    const work = previous
+      .catch(() => {})
+      .then(async () => {
+        try {
+          await this.handleMembershipChange(
+            did,
+            { community: communityUri, force },
+            'update',
+          )
+        } catch (err) {
+          // @NOTE availability never preserves a cached privileged grant.
+          await this.db.setCommunityMembership(
+            did,
+            communityUri,
+            'suspended',
+            [],
+          )
+          await this.db.setParticipationRoles(did, communityUri, {
+            isModerator: false,
+            isDelegate: false,
+            chamber: null,
+          })
+          const space = await this.db.getSpaceForCommunity(communityUri)
+          if (space)
+            await this.projection.revokeMemberAccess(
+              space,
+              did,
+              'Verified authority unavailable',
+            )
+          throw new HttpError(503, 'Verified community authority unavailable')
+        }
+      })
+    this.authorityWork.set(key, work)
+    try {
+      await work
+    } finally {
+      if (this.authorityWork.get(key) === work) this.authorityWork.delete(key)
+    }
+  }
+
+  /** Reconcile existing state, including stale grants, delayed indexing and expiry. */
+  async reconcileAuthorities(force = false): Promise<void> {
+    let offset = 0
+    while (true) {
+      const rows = await this.db.listCommunityMemberships(100, offset)
+      let failed = false
+      for (const row of rows) {
+        try {
+          await this.refreshMembership(row.communityUri, row.did, force)
+        } catch (err) {
+          failed = true
+          this.log.error({ err, did: row.did }, 'Authority refresh failed')
+        }
+      }
+      if (failed && force)
+        throw new Error('Initial verified authority reconciliation failed')
+      if (rows.length < 100) break
+      offset += rows.length
+    }
+  }
+
   private async handleMembershipChange(
     userDid: string,
     record: any,
@@ -294,8 +373,17 @@ export class FirehoseConsumer {
   ): Promise<void> {
     if (!record) return
     const communityUri = record.community as string
-    const state = record.membershipState as string
-    const roles = (record.roles ?? []) as string[]
+    if (!this.authority)
+      throw new Error('Verified authority resolver is required')
+    const { state, roles } = await this.authority(communityUri, userDid)
+    const previous = await this.db.getCommunityMembership(userDid, communityUri)
+    if (
+      !record.force &&
+      previous?.state === state &&
+      JSON.stringify([...previous.roles].sort()) ===
+        JSON.stringify([...roles].sort())
+    )
+      return
     const isObserver = roles.includes('observer')
     await this.db.setCommunityMembership(userDid, communityUri, state, roles)
     if (this.events) {
@@ -319,9 +407,7 @@ export class FirehoseConsumer {
 
     const isJoin =
       state === 'active' && (action === 'create' || action === 'update')
-    const isRemoval =
-      (state === 'left' || state === 'removed' || state === 'blocked') &&
-      action === 'update'
+    const isRemoval = state !== 'active'
     const end = this.metrics.syncLatency.startTimer({
       event_type: isJoin ? 'join_deferred' : isRemoval ? 'revoke' : 'noop',
     })
@@ -384,6 +470,11 @@ export class FirehoseConsumer {
           )
         }
       } else if (isRemoval) {
+        await this.db.setParticipationRoles(userDid, communityUri, {
+          isModerator: false,
+          isDelegate: false,
+          chamber: null,
+        })
         // The bridge cannot kick a DID it cannot name; it revokes what it
         // holds: every device session minted for that DID is deactivated and
         // banned from the community's rooms. Re-entry fails at the next
@@ -423,6 +514,7 @@ export class FirehoseConsumer {
         false,
         err.message,
       )
+      throw err
     } finally {
       end()
     }

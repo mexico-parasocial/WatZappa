@@ -1,19 +1,12 @@
 import { randomUUID } from 'node:crypto'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { AI_CONSENT_POLICY_VERSION } from '../ai-consent.js'
 import { authorize, resolveRoom } from '../authz.js'
-import { fetchBeacon, fetchLatestBeacon } from '../drand.js'
-import { extractFromText, persistExtractedCard } from '../extraction.js'
 import {
   BRIDGE_AUDIENCES,
   mxidFromVerifiedAssertion,
 } from '../identity-proof.js'
 import { HttpError, authenticateM8 } from '../m8-auth.js'
 import { MatrixLoginUnavailableError } from '../matrix-login-error.js'
-import { OpenAIClient } from '../openai-client.js'
-import { sendExpoNotifications } from '../push.js'
-import type { SortitionRunRow } from '../sortition-runs.js'
-import { summarizeCommunityDeliberation } from '../summarize.js'
 import type { RouteContext } from './context.js'
 import { readBody, writeJson } from './http.js'
 
@@ -30,6 +23,7 @@ export async function apiSpaceForCommunityHandler(
     writeJson(res, 400, { error: 'Missing uri parameter' })
     return
   }
+  await ctx.firehose.refreshMembership(communityUri, auth.did)
   if (!(await ctx.db.isActiveCommunityMember(auth.did, communityUri))) {
     writeJson(res, 403, { error: 'Not an active community member' })
     return
@@ -411,6 +405,7 @@ export async function apiCommunityJoinHandler(
     writeJson(res, 404, { error: 'Space not found for community' })
     return
   }
+  await ctx.firehose.refreshMembership(communityUri, auth.did)
   const membership = await ctx.db.getCommunityMembership(auth.did, communityUri)
   if (!membership || membership.state !== 'active') {
     writeJson(res, 403, { error: 'Not an active community member' })
@@ -565,6 +560,16 @@ export async function apiMarkReadHandler(
   writeJson(res, 200, { ok: true })
 }
 
+async function refreshUserCommunities(
+  ctx: RouteContext,
+  did: string,
+): Promise<void> {
+  const memberships = await ctx.db.getMembershipsForDid(did)
+  for (const membership of memberships) {
+    await ctx.firehose.refreshMembership(membership.communityUri, did)
+  }
+}
+
 /** GET /api/unread (prefix) */
 export async function apiUnreadHandler(
   req: IncomingMessage,
@@ -573,6 +578,7 @@ export async function apiUnreadHandler(
 ): Promise<void> {
   const auth = await authenticateM8(req, ctx.config)
   const did = auth.did
+  await refreshUserCommunities(ctx, did)
   const communities = await ctx.db.getUnreadCountsForDid(did)
   const total = communities.reduce((sum, c) => sum + c.unread, 0)
   writeJson(res, 200, { unread: total, communities })
@@ -585,6 +591,7 @@ export async function apiRoomsHandler(
   ctx: RouteContext,
 ): Promise<void> {
   const auth = await authenticateM8(req, ctx.config)
+  await refreshUserCommunities(ctx, auth.did)
   const rooms = await ctx.db.getUnreadCountsForDid(auth.did)
   writeJson(res, 200, { rooms })
 }

@@ -51,6 +51,11 @@ describe('decideRoom (chamber scoping)', () => {
     expect(decideRoom(member, 'observers', undefined).allowed).toBe(true)
   })
 
+  it('verified moderators and owners can review both chambers', () => {
+    expect(decideRoom(moderator, 'chamber-b', 'A').allowed).toBe(true)
+    expect(decideRoom(owner, 'chamber-a', undefined).allowed).toBe(true)
+  })
+
   it('observers cannot access chamber rooms', () => {
     expect(decideRoom(observer, 'observers', 'B').allowed).toBe(true)
     expect(decideRoom(observer, 'main', undefined).allowed).toBe(true)
