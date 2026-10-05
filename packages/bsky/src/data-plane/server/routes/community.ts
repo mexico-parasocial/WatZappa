@@ -40,6 +40,8 @@ import { getAuthoritySnapshot } from '../community-authority.js'
 import {
   type GovernanceBoard,
   getTrustedGovernanceRecordJson,
+  governanceSlugMatchSql,
+  isTrustedBoardGovernanceSql,
 } from '../community-governance.js'
 import { Database } from '../db/index.js'
 import {
@@ -768,10 +770,18 @@ const boardBaseQuery = (db: Database) =>
   db.db
     .selectFrom('para_community_board as board')
     .leftJoin('actor as actor', 'actor.did', 'board.creator')
-    .leftJoin(
-      'para_community_governance as gov',
-      'gov.communityUri',
-      'board.uri',
+    // The board's trusted governance record only: see community-governance.ts.
+    .leftJoinLateral(
+      (eb) =>
+        eb
+          .selectFrom('para_community_governance as candidate')
+          .where(isTrustedBoardGovernanceSql('candidate', 'board'))
+          .orderBy(governanceSlugMatchSql('candidate', 'board'), 'desc')
+          .orderBy('candidate.indexedAt', 'desc')
+          .limit(1)
+          .selectAll('candidate')
+          .as('gov'),
+      (join) => join.onTrue(),
     )
     .select([
       'board.uri',

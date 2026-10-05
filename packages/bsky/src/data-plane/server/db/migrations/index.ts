@@ -107,3 +107,4 @@ export * as _20260929T120000000Z from './20260929T120000000Z-add-community-autho
 export * as _20260930T120000000Z from './20260930T120000000Z-backfill-collections.js'
 export * as _20261001T120000000Z from './20261001T120000000Z-add-community-region.js'
 export * as _20261004T120000000Z from './20261004T120000000Z-drop-self-declared-community-roles.js'
+export * as _20261005T120000000Z from './20261005T120000000Z-reindex-para-community-governance.js'

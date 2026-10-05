@@ -72,9 +72,13 @@ const findDuplicate = async (
   uri: AtUri,
   obj: GovernanceRecord,
 ): Promise<AtUri | null> => {
+  // Per author: anyone can publish a record naming any community, so an
+  // earlier record from another repo must not block the one the community
+  // trusts (see community-governance.ts).
   const found = await db
     .selectFrom('para_community_governance')
     .select('uri')
+    .where('uri', 'like', `at://${uri.host}/%`)
     .where('communityUri', '=', (obj.community as string) || '')
     .where('uri', '!=', uri.toString())
     .executeTakeFirst()

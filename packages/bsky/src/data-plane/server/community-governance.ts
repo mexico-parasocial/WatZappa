@@ -1,4 +1,4 @@
-import { sql } from 'kysely'
+import { type Expression, sql } from 'kysely'
 import {
   type CommunityAuthorityEvent,
   deriveEffectiveAuthority,
@@ -32,9 +32,85 @@ const normalizeCommunityKey = (value?: string | null) =>
     .trim()
     .replace(/^p\//i, '')
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '')
+
+/** `normalizeCommunityKey` in SQL, up to the accents in the translation table. */
+const normalizedCommunityKeySql = (value: Expression<unknown>) =>
+  sql<string>`regexp_replace(lower(translate(regexp_replace(coalesce(${value}, ''), '^p/', '', 'i'), ${COMMUNITY_TRANSLATION_SOURCE}, ${COMMUNITY_TRANSLATION_TARGET})), '[^a-z0-9]+', '', 'g')`
+
+/** An authority event that applies now: effective, and not expired. */
+const appliesNow = (alias: string) =>
+  sql.raw(
+    `${alias}."effectiveAt"::timestamptz <= now() and (${alias}."expiresAt" is null or ${alias}."expiresAt"::timestamptz > now())`,
+  )
+
+/**
+ * The SQL twin of `deriveEffectiveAuthority(events).roles.includes('owner')`:
+ * `did` holds an owner grant that applies now, was made while an active
+ * member, and has not since been ended by a revocation, suspension, removal
+ * or block.
+ */
+export const isCommunityOwnerSql = (
+  community: Expression<unknown>,
+  did: Expression<unknown>,
+) => sql<boolean>`exists (
+  select 1 from para_community_authority_event granted
+  where granted."communityUri" = ${community}
+    and granted.subject = ${did}
+    and granted.action = 'owner.grant'
+    and ${appliesNow('granted')}
+    and not exists (
+      select 1 from para_community_authority_event ended
+      where ended."communityUri" = granted."communityUri"
+        and ended.subject = granted.subject
+        and ended.action in ('owner.revoke', 'member.suspend', 'member.remove', 'member.block')
+        and ended.version > granted.version
+        and ${appliesNow('ended')}
+    )
+    and exists (
+      select 1 from para_community_authority_event joined
+      where joined."communityUri" = granted."communityUri"
+        and joined.subject = granted.subject
+        and joined.action in ('member.activate', 'member.reinstate')
+        and joined.version < granted.version
+        and ${appliesNow('joined')}
+        and not exists (
+          select 1 from para_community_authority_event cleared
+          where cleared."communityUri" = granted."communityUri"
+            and cleared.subject = granted.subject
+            and cleared.action in ('member.suspend', 'member.remove', 'member.block')
+            and cleared.version > joined.version
+            and cleared.version < granted.version
+            and ${appliesNow('cleared')}
+        )
+    )
+)`
+
+/**
+ * For a `para_community_governance` row (`row`) and a `para_community_board`
+ * row (`board`): the row's record is one `getTrustedGovernanceRecordJson`
+ * would return for the board, by a governance author and under the board's
+ * slug or name. Order matches with `governanceSlugMatchSql` first, then by
+ * `indexedAt`, to pick the same record.
+ */
+export const isTrustedBoardGovernanceSql = (row: string, board: string) => {
+  const author = sql`split_part(${sql.ref(`${row}.uri`)}, '/', 3)`
+  const boardName = normalizedCommunityKeySql(sql.ref(`${board}.name`))
+  return sql<boolean>`(
+    (${author} = ${sql.ref(`${board}.creator`)}
+      or ${isCommunityOwnerSql(sql.ref(`${board}.uri`), author)})
+    and (
+      ${governanceSlugMatchSql(row, board)}
+      or (${boardName} <> '' and ${normalizedCommunityKeySql(sql.ref(`${row}.communityUri`))} = ${boardName})
+    )
+  )`
+}
+
+/** The governance row's rkey is the board's slug. */
+export const governanceSlugMatchSql = (row: string, board: string) =>
+  sql<boolean>`split_part(${sql.ref(`${row}.uri`)}, '/', 5) = coalesce(nullif(${sql.ref(`${board}.slug`)}, ''), 'community')`
 
 /** The board's creator and its current owners by verified authority events. */
 export const getGovernanceAuthors = async (
@@ -116,7 +192,7 @@ export const getTrustedGovernanceRecordJson = async (
     .where('did', 'in', authors)
     .where('uri', 'like', `%/${GOVERNANCE_COLLECTION}/%`)
     .where(
-      sql`regexp_replace(lower(translate(regexp_replace(coalesce(("record"."json"::jsonb ->> 'community'), ''), '^p/', '', 'i'), ${COMMUNITY_TRANSLATION_SOURCE}, ${COMMUNITY_TRANSLATION_TARGET})), '[^a-z0-9]+', '', 'g')`,
+      normalizedCommunityKeySql(sql`"record"."json"::jsonb ->> 'community'`),
       '=',
       normalizedCommunity,
     )

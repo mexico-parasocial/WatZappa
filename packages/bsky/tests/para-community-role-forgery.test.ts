@@ -1,3 +1,4 @@
+import { sql } from 'kysely'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   type SeedClient,
@@ -6,7 +7,12 @@ import {
   createCommunityMembershipRecord,
   usersSeed,
 } from '@atproto/dev-env'
+import {
+  getGovernanceAuthors,
+  isCommunityOwnerSql,
+} from '../src/data-plane/server/community-governance.js'
 import { up as dropSelfDeclaredRoles } from '../src/data-plane/server/db/migrations/20261004T120000000Z-drop-self-declared-community-roles.js'
+import { up as reindexGovernance } from '../src/data-plane/server/db/migrations/20261005T120000000Z-reindex-para-community-governance.js'
 
 const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
 
@@ -116,6 +122,7 @@ maybeDescribe('community role forgery (AppView)', () => {
     rkey: string,
     community: string,
     moderators: string[],
+    metadata?: Record<string, unknown>,
   ) => {
     const now = new Date().toISOString()
     return write(
@@ -138,6 +145,7 @@ maybeDescribe('community role forgery (AppView)', () => {
           mandate: 'Indefinido',
         })),
         deputies: [],
+        ...(metadata ? { metadata } : {}),
       },
       rkey,
     )
@@ -324,6 +332,156 @@ maybeDescribe('community role forgery (AppView)', () => {
       expect((await getGovernance(slug)).moderators.map((m) => m.did)).toEqual([
         carol,
       ])
+    })
+
+    it('finds the same owners in SQL as deriveEffectiveAuthority', async () => {
+      const db = network.bsky.db
+      const ownersBySql = async () => {
+        const owners: string[] = []
+        for (const did of [alice, bob, carol, dan]) {
+          const { rows } = await sql<{
+            owner: boolean
+          }>`select ${isCommunityOwnerSql(sql`${board}`, sql`${did}`)} as owner`.execute(
+            db.db,
+          )
+          if (rows[0].owner) owners.push(did)
+        }
+        return owners.sort()
+      }
+      // A creator who never appears in the events, so only owners remain.
+      const ownersByEvents = async () =>
+        (
+          await getGovernanceAuthors(db, {
+            uri: board,
+            creator: 'did:example:nobody',
+          })
+        )
+          .filter((did) => did !== 'did:example:nobody')
+          .sort()
+
+      expect(await ownersBySql()).toEqual([alice, bob].sort())
+      expect(await ownersByEvents()).toEqual([alice, bob].sort())
+
+      // bob, now an owner, revokes alice's ownership.
+      await authorityEvent(bob, {
+        subject: alice,
+        action: 'owner.revoke',
+        basis: 'ownerTransfer',
+        version: 3,
+        predecessor: aliceOwner,
+        evidence: `at://${bob}/com.para.community.decision/revoke-alice`,
+      })
+      await network.processAll()
+      expect(await ownersBySql()).toEqual([bob])
+      expect(await ownersByEvents()).toEqual([bob])
+    })
+  })
+
+  describe('board views', () => {
+    const summaryName = 'Summary Board'
+    let summaryBoard: string
+    let summarySlug: string
+
+    type BoardView = {
+      uri: string
+      status?: string
+      governanceSummary?: { moderatorCount: number }
+    }
+    const listBoards = async (params: Record<string, string>) => {
+      const { status, body } = await xrpc<{ boards: BoardView[] }>(
+        'com.para.community.listBoards',
+        { query: summaryName, ...params },
+        alice,
+      )
+      expect({ status, body }).toMatchObject({ status: 200 })
+      return body.boards
+    }
+
+    it('summarize the trusted governance record only', async () => {
+      summaryBoard = (
+        await createCommunityBoardRecord(sc, alice, {
+          name: summaryName,
+          quadrant: 'centro',
+        })
+      ).uri
+      await network.processAll()
+      summarySlug = await boardSlug(summaryBoard)
+      const forged = {
+        state: 'active',
+        matterFlairIds: ['||#Forged'],
+      }
+      // Published before alice's: carol names the board as alice will, and
+      // dan names it by its URI.
+      await governanceRecord(
+        carol,
+        'summary-board',
+        `p/${summaryName}`,
+        [carol, dan, bob],
+        forged,
+      )
+      await governanceRecord(
+        dan,
+        'summary-board-uri',
+        summaryBoard,
+        [dan, carol, bob],
+        forged,
+      )
+      await network.processAll()
+      await governanceRecord(alice, summarySlug, `p/${summaryName}`, [alice], {
+        state: 'draft',
+        matterFlairIds: ['||#Real'],
+      })
+      await network.processAll()
+
+      const [view, ...rest] = await listBoards({})
+      expect(rest).toEqual([])
+      expect(view.uri).toBe(summaryBoard)
+      expect(view.status).toBe('draft')
+      expect(view.governanceSummary?.moderatorCount).toBe(1)
+
+      const uris = (boards: BoardView[]) => boards.map((b) => b.uri)
+      expect(uris(await listBoards({ state: 'active' }))).toEqual([])
+      expect(uris(await listBoards({ state: 'draft' }))).toEqual([summaryBoard])
+      const flair = (flairId: string) =>
+        listBoards({ participationKind: 'matter', flairId })
+      expect(uris(await flair('||#Forged'))).toEqual([])
+      expect(uris(await flair('||#Real'))).toEqual([summaryBoard])
+    })
+
+    it('re-index a record the old duplicate check kept out', async () => {
+      const db = network.bsky.db.db
+      const aliceRecord = `at://${alice}/com.para.community.governance/${summarySlug}`
+      const carolRecord = `at://${carol}/com.para.community.governance/summary-board`
+      // What the old check did: alice's record named the same community as
+      // carol's earlier one, so it was indexed only as a duplicate.
+      await db
+        .deleteFrom('para_community_governance')
+        .where('uri', '=', aliceRecord)
+        .execute()
+      await db
+        .insertInto('duplicate_record')
+        .values({
+          uri: aliceRecord,
+          cid: 'bafyreidummy',
+          duplicateOf: carolRecord,
+          indexedAt: new Date().toISOString(),
+        })
+        .execute()
+
+      await reindexGovernance(db)
+
+      const row = await db
+        .selectFrom('para_community_governance')
+        .where('uri', '=', aliceRecord)
+        .select(['moderatorCount', 'state'])
+        .executeTakeFirst()
+      expect(row).toEqual({ moderatorCount: 1, state: 'draft' })
+      const duplicate = await db
+        .selectFrom('duplicate_record')
+        .where('uri', '=', aliceRecord)
+        .select('uri')
+        .executeTakeFirst()
+      expect(duplicate).toBeUndefined()
     })
   })
 
