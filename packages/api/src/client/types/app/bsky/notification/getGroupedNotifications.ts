@@ -11,6 +11,9 @@ import {
   is$typed as _is$typed,
   type OmitKey,
 } from '../../../../util.js'
+import type * as AppBskyActorDefs from '../actor/defs.js'
+import type * as AppBskyFeedDefs from '../feed/defs.js'
+import type * as AppBskyGraphDefs from '../graph/defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -25,8 +28,6 @@ export type QueryParams = {
     | 'followers'
     | 'activity'
     | (string & {})
-  /** Offset from UTC in minutes, positive east, used to determine local day boundaries when grouping. Groups never span the current day boundary. Defaults to UTC. */
-  utcOffset?: number
   /** Maximum number of groups to return. */
   limit?: number
   cursor?: string
@@ -38,10 +39,16 @@ export interface OutputSchema {
   /** Notification groups or individual notifications, newest first. Clients should ignore kinds they do not recognize. Grouping behavior depends on the kind and selected feed. */
   groups: Group[]
   seenAt?: string
-  /** A map of actor DID to app.bsky.actor.defs#profileViewDetailed. Typed dictionary values are unsupported by this lexicon version. */
-  relatedProfileViews?: { [_ in string]: unknown }
-  /** A map of AT URI to reusable app.bsky.feed.defs#postView, app.bsky.feed.defs#notFoundPost, app.bsky.feed.defs#blockedPost, app.bsky.graph.defs#starterPackView, or app.bsky.feed.defs#generatorView. Views shared across notifications appear once to avoid duplication. Typed dictionary values are unsupported by this lexicon version. */
-  relatedRecordViews?: { [_ in string]: unknown }
+  /** Reusable views referenced by notifications. Views shared across notifications appear once to avoid duplication. Each group contributes only its first 10 of each related view to this array. Ex: for a group containing likes in a post, we might have a large number of likeItem (e.g., 50) in a group, but only the profile views for the newest 10 items will be included here. */
+  relatedViews?: (
+    | $Typed<AppBskyActorDefs.ProfileViewDetailed>
+    | $Typed<AppBskyFeedDefs.BlockedPost>
+    | $Typed<AppBskyFeedDefs.GeneratorView>
+    | $Typed<AppBskyFeedDefs.NotFoundPost>
+    | $Typed<AppBskyFeedDefs.PostView>
+    | $Typed<AppBskyGraphDefs.StarterPackView>
+    | { $type: string }
+  )[]
 }
 
 export interface CallOptions {

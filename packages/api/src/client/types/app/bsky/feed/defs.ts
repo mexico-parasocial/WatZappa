@@ -43,6 +43,8 @@ export interface PostView {
   replyCount?: number
   repostCount?: number
   likeCount?: number
+  /** PARA: net public reactions (up minus down). A viewer's signed vote overrides their like. */
+  voteScore?: number
   quoteCount?: number
   indexedAt: string
   viewer?: ViewerState

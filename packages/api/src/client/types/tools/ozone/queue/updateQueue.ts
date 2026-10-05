@@ -30,6 +30,8 @@ export interface InputSchema {
   description?: string
   /** Policy keys to recommend when actioning reports in this queue */
   recommendedPolicies?: string[]
+  /** Labels to recommend for this queue and use as fallback appeal routing mappings */
+  recommendedLabels?: string[]
 }
 
 export interface OutputSchema {
@@ -55,10 +57,17 @@ export class InvalidRecommendedPoliciesError extends XRPCError {
   }
 }
 
+export class ConflictingQueueError extends XRPCError {
+  constructor(src: XRPCError) {
+    super(src.status, src.error, src.message, src.headers, { cause: src })
+  }
+}
+
 export function toKnownErr(e: any) {
   if (e instanceof XRPCError) {
     if (e.error === 'InvalidRecommendedPolicies')
       return new InvalidRecommendedPoliciesError(e)
+    if (e.error === 'ConflictingQueue') return new ConflictingQueueError(e)
   }
 
   return e

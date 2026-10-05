@@ -34,6 +34,8 @@ export interface QueueView {
   description?: string
   /** Policy keys recommended when actioning reports in this queue */
   recommendedPolicies?: string[]
+  /** Labels recommended for this queue and used as a fallback when routing label appeals */
+  recommendedLabels?: string[]
   /** DID of moderator who created this queue */
   createdBy: string
   createdAt: string

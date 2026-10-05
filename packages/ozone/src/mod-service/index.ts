@@ -485,6 +485,7 @@ export class ModerationService {
     createdAt?: Date
     modTool?: NonNullable<ModerationEvent['modTool']>
     externalId?: string
+    eventMeta?: Record<string, string | number | boolean>
   }): Promise<{
     event: ModerationEventRow
     subjectStatus: ModerationSubjectStatusRow | null
@@ -497,6 +498,7 @@ export class ModerationService {
       externalId,
       createdAt = new Date(),
       modTool,
+      eventMeta,
     } = info
 
     const createLabelVals =
@@ -510,7 +512,9 @@ export class ModerationService {
         ? event.negateLabelVals.join(' ')
         : undefined
 
-    const meta: Record<string, string | number | boolean> = {}
+    const meta: Record<string, string | number | boolean> = {
+      ...eventMeta,
+    }
 
     const addedTags = tools.ozone.moderation.defs.modEventTag.$isTypeOf(event)
       ? jsonb(event.add)
@@ -1081,6 +1085,7 @@ export class ModerationService {
     reportedBy: DidString
     createdAt?: Date
     modTool?: NonNullable<ModerationEvent['modTool']>
+    eventMeta?: Record<string, string | number | boolean>
   }): Promise<{
     event: ModerationEventRow
     subjectStatus: ModerationSubjectStatusRow | null
@@ -1092,6 +1097,7 @@ export class ModerationService {
       createdAt = new Date(),
       subject,
       modTool,
+      eventMeta,
     } = info
 
     return await this.logEvent({
@@ -1103,6 +1109,7 @@ export class ModerationService {
       subject,
       createdAt,
       modTool,
+      eventMeta,
     })
   }
 

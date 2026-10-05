@@ -1,13 +1,13 @@
-import stream from 'node:stream'
+import type stream from 'node:stream'
 import { byteIterableToStream, coalesceByteStream } from '@atproto/common'
-import { InvalidRequestError, Server } from '@atproto/xrpc-server'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import {
   RepoRootNotFoundError,
   SqlRepoReader,
 } from '../../../../actor-store/repo/sql-repo-reader.js'
 import { AuthScope } from '../../../../auth-scope.js'
 import { isUserOrAdmin } from '../../../../auth-verifier.js'
-import { AppContext } from '../../../../context.js'
+import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 import { assertRepoAvailability } from './util.js'
 
@@ -48,12 +48,14 @@ export const getCarStream = async (
   did: string,
   since?: string,
 ): Promise<stream.Readable> => {
+  // @TODO *not* using "await using" so that we can manually control when the DB
+  // is closed. This should be implemented using an AsyncDisposableStack.
   const actorDb = await ctx.actorStore.openDb(did)
   try {
     const storage = new SqlRepoReader(actorDb)
     const carIter = await storage.getCarStream(since)
     const carStream = byteIterableToStream(carIter)
-    const closeDb = () => actorDb.close()
+    const closeDb = () => void actorDb.close()
     carStream.on('error', closeDb)
     carStream.on('close', closeDb)
     return carStream

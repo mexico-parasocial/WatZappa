@@ -1,3 +1,4 @@
+import type { AtUriString } from '@atproto/lex'
 import type { Server } from '@atproto/xrpc-server'
 import { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
@@ -27,7 +28,12 @@ export default function (server: Server, ctx: AppContext) {
               | 'denied',
             policy: authorization?.policy || 'role_required',
             reason: authorization?.reason || undefined,
-            evidence: authorization?.evidence || undefined,
+            // The lexicon types evidence as an at-uri, and the dataplane
+            // returns the plain column. Same cast as the sibling PARA routes
+            // make on dataplane uris (see feed/getMemes.ts).
+            evidence: (authorization?.evidence || undefined) as
+              | AtUriString
+              | undefined,
           },
         },
       }

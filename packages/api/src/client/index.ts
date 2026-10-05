@@ -351,6 +351,7 @@ import * as ComParaAlphaCreateInvite from './types/com/para/alpha/createInvite.j
 import * as ComParaAlphaGetAccess from './types/com/para/alpha/getAccess.js'
 import * as ComParaAlphaGetRolloutStatus from './types/com/para/alpha/getRolloutStatus.js'
 import * as ComParaAlphaRequestAccess from './types/com/para/alpha/requestAccess.js'
+import * as ComParaBookSearchBooks from './types/com/para/book/searchBooks.js'
 import * as ComParaCivicAmendment from './types/com/para/civic/amendment.js'
 import * as ComParaCivicCabildeo from './types/com/para/civic/cabildeo.js'
 import * as ComParaCivicCastVote from './types/com/para/civic/castVote.js'
@@ -471,6 +472,8 @@ import * as ToolsOzoneHistoryGetAccountActions from './types/tools/ozone/history
 import * as ToolsOzoneHistoryGetReportedSubjects from './types/tools/ozone/history/getReportedSubjects.js'
 import * as ToolsOzoneHistoryGetSubjectHistory from './types/tools/ozone/history/getSubjectHistory.js'
 import * as ToolsOzoneHostingGetAccountHistory from './types/tools/ozone/hosting/getAccountHistory.js'
+import * as ToolsOzoneInboxAppealActionedSubject from './types/tools/ozone/inbox/appealActionedSubject.js'
+import * as ToolsOzoneInboxDefs from './types/tools/ozone/inbox/defs.js'
 import * as ToolsOzoneModerationCancelScheduledActions from './types/tools/ozone/moderation/cancelScheduledActions.js'
 import * as ToolsOzoneModerationDefs from './types/tools/ozone/moderation/defs.js'
 import * as ToolsOzoneModerationEmitEvent from './types/tools/ozone/moderation/emitEvent.js'
@@ -885,6 +888,7 @@ export * as ComParaAlphaCreateInvite from './types/com/para/alpha/createInvite.j
 export * as ComParaAlphaGetAccess from './types/com/para/alpha/getAccess.js'
 export * as ComParaAlphaGetRolloutStatus from './types/com/para/alpha/getRolloutStatus.js'
 export * as ComParaAlphaRequestAccess from './types/com/para/alpha/requestAccess.js'
+export * as ComParaBookSearchBooks from './types/com/para/book/searchBooks.js'
 export * as ComParaCivicAmendment from './types/com/para/civic/amendment.js'
 export * as ComParaCivicCabildeo from './types/com/para/civic/cabildeo.js'
 export * as ComParaCivicCastVote from './types/com/para/civic/castVote.js'
@@ -1005,6 +1009,8 @@ export * as ToolsOzoneHistoryGetAccountActions from './types/tools/ozone/history
 export * as ToolsOzoneHistoryGetReportedSubjects from './types/tools/ozone/history/getReportedSubjects.js'
 export * as ToolsOzoneHistoryGetSubjectHistory from './types/tools/ozone/history/getSubjectHistory.js'
 export * as ToolsOzoneHostingGetAccountHistory from './types/tools/ozone/hosting/getAccountHistory.js'
+export * as ToolsOzoneInboxAppealActionedSubject from './types/tools/ozone/inbox/appealActionedSubject.js'
+export * as ToolsOzoneInboxDefs from './types/tools/ozone/inbox/defs.js'
 export * as ToolsOzoneModerationCancelScheduledActions from './types/tools/ozone/moderation/cancelScheduledActions.js'
 export * as ToolsOzoneModerationDefs from './types/tools/ozone/moderation/defs.js'
 export * as ToolsOzoneModerationEmitEvent from './types/tools/ozone/moderation/emitEvent.js'
@@ -6334,6 +6340,7 @@ export class ComParaNS {
   actor: ComParaActorNS
   agent: ComParaAgentNS
   alpha: ComParaAlphaNS
+  book: ComParaBookNS
   civic: ComParaCivicNS
   collection: ComParaCollectionNS
   community: ComParaCommunityNS
@@ -6353,6 +6360,7 @@ export class ComParaNS {
     this.actor = new ComParaActorNS(client)
     this.agent = new ComParaAgentNS(client)
     this.alpha = new ComParaAlphaNS(client)
+    this.book = new ComParaBookNS(client)
     this.civic = new ComParaCivicNS(client)
     this.collection = new ComParaCollectionNS(client)
     this.community = new ComParaCommunityNS(client)
@@ -6521,6 +6529,26 @@ export class ComParaAlphaNS {
       'com.para.alpha.requestAccess',
       opts?.qp,
       data,
+      opts,
+    )
+  }
+}
+
+export class ComParaBookNS {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  searchBooks(
+    params?: ComParaBookSearchBooks.QueryParams,
+    opts?: ComParaBookSearchBooks.CallOptions,
+  ): Promise<ComParaBookSearchBooks.Response> {
+    return this._client.call(
+      'com.para.book.searchBooks',
+      params,
+      undefined,
       opts,
     )
   }
@@ -10901,6 +10929,7 @@ export class ToolsOzoneNS {
   communication: ToolsOzoneCommunicationNS
   history: ToolsOzoneHistoryNS
   hosting: ToolsOzoneHostingNS
+  inbox: ToolsOzoneInboxNS
   moderation: ToolsOzoneModerationNS
   queue: ToolsOzoneQueueNS
   report: ToolsOzoneReportNS
@@ -10917,6 +10946,7 @@ export class ToolsOzoneNS {
     this.communication = new ToolsOzoneCommunicationNS(client)
     this.history = new ToolsOzoneHistoryNS(client)
     this.hosting = new ToolsOzoneHostingNS(client)
+    this.inbox = new ToolsOzoneInboxNS(client)
     this.moderation = new ToolsOzoneModerationNS(client)
     this.queue = new ToolsOzoneQueueNS(client)
     this.report = new ToolsOzoneReportNS(client)
@@ -11045,6 +11075,25 @@ export class ToolsOzoneHostingNS {
       undefined,
       opts,
     )
+  }
+}
+
+export class ToolsOzoneInboxNS {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  appealActionedSubject(
+    data?: ToolsOzoneInboxAppealActionedSubject.InputSchema,
+    opts?: ToolsOzoneInboxAppealActionedSubject.CallOptions,
+  ): Promise<ToolsOzoneInboxAppealActionedSubject.Response> {
+    return this._client
+      .call('tools.ozone.inbox.appealActionedSubject', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ToolsOzoneInboxAppealActionedSubject.toKnownErr(e)
+      })
   }
 }
 

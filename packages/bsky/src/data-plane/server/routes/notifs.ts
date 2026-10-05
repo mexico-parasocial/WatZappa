@@ -20,7 +20,7 @@ import { countAll, notSoftDeletedClause } from '../db/util.js'
 
 export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   async getNotifications(req) {
-    const { actorDid, limit, cursor, priority } = req
+    const { actorDid, limit, cursor } = req
     const { ref } = db.db.dynamic
     const priorityFollowQb = db.db
       .selectFrom('follow')
@@ -43,7 +43,6 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
           ),
         ]),
       )
-      .$if(priority, (qb) => qb.where(({ exists }) => exists(priorityFollowQb)))
       .select([
         'notif.author as authorDid',
         'notif.recordUri as uri',
@@ -143,17 +142,20 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     }
 
     const key = new IsoSortAtKey(ref('notif.sortAt'))
-    builder = key.paginate(builder, { cursor, limit })
-    const page = key.page(await builder.execute(), limit)
+    builder = key.paginate(builder, { cursor, limit: limit + 1 })
+    const rows = await builder.execute()
+    const items = rows.slice(0, limit)
     return {
-      notifications: page.items.map((notif) => ({
+      notifications: items.map((notif) => ({
         recipientDid: actorDid,
         uri: notif.uri,
         reason: notif.reason,
         reasonSubject: notif.reasonSubject ?? undefined,
         timestamp: Timestamp.fromDate(new Date(notif.sortAt)),
       })),
-      cursor: page.cursor,
+      // Over-fetch by one so an exhausted page reports no cursor, rather than
+      // handing out a cursor that returns an empty page.
+      cursor: rows.length > limit ? key.packFromResult(items) : undefined,
     }
   },
 

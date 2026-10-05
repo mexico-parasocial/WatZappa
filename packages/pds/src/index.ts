@@ -5,15 +5,15 @@
 import 'express-async-errors'
 
 import events from 'node:events'
-import http from 'node:http'
+import type http from 'node:http'
 import { PlcClientError } from '@did-plc/lib'
 import cors from 'cors'
 import express from 'express'
-import { HttpTerminator, createHttpTerminator } from 'http-terminator'
+import { type HttpTerminator, createHttpTerminator } from 'http-terminator'
 import { DAY, HOUR, MINUTE, SECOND } from '@atproto/common'
 import {
   MemoryRateLimiter,
-  MethodHandler,
+  type MethodHandler,
   RedisRateLimiter,
   ResponseType,
   XRPCError,
@@ -22,19 +22,31 @@ import {
 import apiRoutes from './api/index.js'
 import * as authRoutes from './auth-routes.js'
 import * as basicRoutes from './basic-routes.js'
-import { ServerConfig, ServerSecrets } from './config/index.js'
-import { AppContext, AppContextOptions } from './context.js'
+import {
+  type ServerConfig,
+  type ServerEnvironment,
+  type ServerSecrets,
+  envToCfg,
+  envToSecrets,
+  readEnv,
+} from './config/index.js'
+import { AppContext, type AppContextOptions } from './context.js'
 import * as error from './error.js'
-import { app } from './lexicons.js'
+import type { app } from './lexicons.js'
 import { loggerMiddleware } from './logger.js'
 import { proxyHandler } from './pipethrough.js'
 import compression from './util/compression.js'
 import * as wellKnown from './well-known.js'
 
 export * from './lexicons.js'
-export { createSecretKeyObject } from './auth-verifier.js'
+export {
+  type KeyObject,
+  bearerTokenFromReq,
+  createPublicKeyObject,
+  createSecretKeyObject,
+} from './auth-verifier.js'
 export * from './config/index.js'
-export { AppContext } from './context.js'
+export { AppContext, type AppContextOptions } from './context.js'
 export { Database } from './db/index.js'
 export { DiskBlobStore } from './disk-blobstore.js'
 export { createServer as createLexiconServer } from './lexicon/index.js'
@@ -65,6 +77,16 @@ export class PDS {
   constructor(opts: { ctx: AppContext; app: express.Application }) {
     this.ctx = opts.ctx
     this.app = opts.app
+  }
+
+  /** Creates a PDS from environment configuration and optional context overrides. */
+  static async fromEnv(
+    env: ServerEnvironment = readEnv(),
+    overrides?: Partial<AppContextOptions>,
+  ): Promise<PDS> {
+    const cfg = envToCfg(env)
+    const secrets = envToSecrets(env)
+    return PDS.create(cfg, secrets, overrides)
   }
 
   static async create(

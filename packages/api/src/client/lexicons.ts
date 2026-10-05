@@ -3492,6 +3492,11 @@ export const schemaDict = {
           likeCount: {
             type: 'integer',
           },
+          voteScore: {
+            type: 'integer',
+            description:
+              "PARA: net public reactions (up minus down). A viewer's signed vote overrides their like.",
+          },
           quoteCount: {
             type: 'integer',
           },
@@ -7845,14 +7850,6 @@ export const schemaDict = {
               ],
               default: 'all',
             },
-            utcOffset: {
-              type: 'integer',
-              description:
-                'Offset from UTC in minutes, positive east, used to determine local day boundaries when grouping. Groups never span the current day boundary. Defaults to UTC.',
-              minimum: -720,
-              maximum: 840,
-              default: 0,
-            },
             limit: {
               type: 'integer',
               description: 'Maximum number of groups to return.',
@@ -7889,15 +7886,21 @@ export const schemaDict = {
                 type: 'string',
                 format: 'datetime',
               },
-              relatedProfileViews: {
-                type: 'unknown',
+              relatedViews: {
+                type: 'array',
                 description:
-                  'A map of actor DID to app.bsky.actor.defs#profileViewDetailed. Typed dictionary values are unsupported by this lexicon version.',
-              },
-              relatedRecordViews: {
-                type: 'unknown',
-                description:
-                  'A map of AT URI to reusable app.bsky.feed.defs#postView, app.bsky.feed.defs#notFoundPost, app.bsky.feed.defs#blockedPost, app.bsky.graph.defs#starterPackView, or app.bsky.feed.defs#generatorView. Views shared across notifications appear once to avoid duplication. Typed dictionary values are unsupported by this lexicon version.',
+                  'Reusable views referenced by notifications. Views shared across notifications appear once to avoid duplication. Each group contributes only its first 10 of each related view to this array. Ex: for a group containing likes in a post, we might have a large number of likeItem (e.g., 50) in a group, but only the profile views for the newest 10 items will be included here.',
+                items: {
+                  type: 'union',
+                  refs: [
+                    'lex:app.bsky.actor.defs#profileViewDetailed',
+                    'lex:app.bsky.feed.defs#blockedPost',
+                    'lex:app.bsky.feed.defs#generatorView',
+                    'lex:app.bsky.feed.defs#notFoundPost',
+                    'lex:app.bsky.feed.defs#postView',
+                    'lex:app.bsky.graph.defs#starterPackView',
+                  ],
+                },
               },
             },
           },
@@ -22685,6 +22688,78 @@ export const schemaDict = {
       },
     },
   },
+  ComParaBookSearchBooks: {
+    lexicon: 1,
+    id: 'com.para.book.searchBooks',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          "Autocomplete for books: matches a partial title or author against Open Library and returns title, authors and first publication year. The lookup runs on the AppView so the client never sends the viewer's searches to a third party. Not cached per viewer and never stored.",
+        parameters: {
+          type: 'params',
+          required: ['q'],
+          properties: {
+            q: {
+              type: 'string',
+              minLength: 2,
+              maxLength: 200,
+              description: 'Partial title and/or author.',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 10,
+              default: 8,
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['books'],
+            properties: {
+              books: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.book.searchBooks#bookSuggestion',
+                },
+              },
+            },
+          },
+        },
+      },
+      bookSuggestion: {
+        type: 'object',
+        required: ['key', 'title', 'authors'],
+        properties: {
+          key: {
+            type: 'string',
+            maxLength: 100,
+            description: 'Open Library work key, e.g. /works/OL123W.',
+          },
+          title: {
+            type: 'string',
+            maxLength: 500,
+          },
+          authors: {
+            type: 'array',
+            items: {
+              type: 'string',
+              maxLength: 300,
+            },
+            maxLength: 3,
+          },
+          firstPublishYear: {
+            type: 'integer',
+            description: 'Year the work was first published, when known.',
+          },
+        },
+      },
+    },
+  },
   ComParaCivicAmendment: {
     lexicon: 1,
     id: 'com.para.civic.amendment',
@@ -24543,6 +24618,12 @@ export const schemaDict = {
             description:
               "For a topic drawn from PARA's shared flair vocabulary, the flair id. Absent on a free-text topic.",
           },
+          publishedYear: {
+            type: 'integer',
+            minimum: 1000,
+            maximum: 3000,
+            description: 'For a `book`, the year it was first published.',
+          },
         },
       },
       civicTreeRelation: {
@@ -24690,6 +24771,12 @@ export const schemaDict = {
             type: 'string',
             description:
               "For a topic drawn from PARA's shared flair vocabulary, the flair id. Absent on a free-text topic.",
+          },
+          publishedYear: {
+            type: 'integer',
+            minimum: 1000,
+            maximum: 3000,
+            description: 'For a `book`, the year it was first published.',
           },
         },
       },
@@ -25085,8 +25172,8 @@ export const schemaDict = {
               type: 'string',
               description:
                 "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
-              maxLength: 128,
               maxGraphemes: 64,
+              maxLength: 128,
             },
             geo: {
               type: 'ref',
@@ -25492,8 +25579,8 @@ export const schemaDict = {
                 type: 'string',
                 description:
                   "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
-                maxLength: 128,
                 maxGraphemes: 64,
+                maxLength: 128,
               },
               description: {
                 type: 'string',
@@ -27263,8 +27350,8 @@ export const schemaDict = {
             type: 'string',
             description:
               "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
-            maxLength: 128,
             maxGraphemes: 64,
+            maxLength: 128,
           },
           delegatesChatId: {
             type: 'string',
@@ -28263,8 +28350,8 @@ export const schemaDict = {
             region: {
               type: 'string',
               description: 'Optional Mexican state to filter communities by',
-              maxLength: 128,
               maxGraphemes: 64,
+              maxLength: 128,
             },
           },
         },
@@ -28343,8 +28430,8 @@ export const schemaDict = {
             type: 'string',
             description:
               "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
-            maxLength: 128,
             maxGraphemes: 64,
+            maxLength: 128,
           },
           delegatesChatId: {
             type: 'string',
@@ -33624,6 +33711,276 @@ export const schemaDict = {
       },
     },
   },
+  ToolsOzoneInboxAppealActionedSubject: {
+    lexicon: 1,
+    id: 'tools.ozone.inbox.appealActionedSubject',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          "Appeal a moderation action affecting the user's account or content.",
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['subject'],
+            properties: {
+              action: {
+                type: 'union',
+                refs: [
+                  'lex:tools.ozone.inbox.appealActionedSubject#actionRef',
+                  'lex:tools.ozone.inbox.appealActionedSubject#labelRef',
+                  'lex:tools.ozone.inbox.appealActionedSubject#takedownRef',
+                ],
+                closed: true,
+                description: 'Moderation action being appealed.',
+              },
+              subject: {
+                type: 'union',
+                refs: [
+                  'lex:com.atproto.admin.defs#repoRef',
+                  'lex:com.atproto.repo.strongRef',
+                ],
+                description: 'Subject being appealed.',
+              },
+              reason: {
+                type: 'string',
+                maxGraphemes: 2000,
+                maxLength: 20000,
+                description: 'Optional explanation supplied by the user.',
+              },
+              modTool: {
+                type: 'ref',
+                ref: 'lex:com.atproto.moderation.createReport#modTool',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'ref',
+            ref: 'lex:tools.ozone.inbox.defs#subjectView',
+          },
+        },
+        errors: [
+          {
+            name: 'InvalidAppealSubject',
+            description: 'Invalid appeal subject input.',
+          },
+          {
+            name: 'AlreadyAppealed',
+            description: 'An active appeal already exists for this action.',
+          },
+          {
+            name: 'NotAppealable',
+            description: 'The subject cannot be appealed.',
+          },
+          {
+            name: 'AppealWindowExpired',
+            description: 'The appeal window for this action has closed.',
+          },
+        ],
+      },
+      actionRef: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+          id: {
+            type: 'integer',
+            minimum: 1,
+            description:
+              'ID of the moderation action being appealed, available via actions in mod inbox.',
+          },
+        },
+      },
+      labelRef: {
+        type: 'object',
+        required: ['val'],
+        properties: {
+          val: {
+            type: 'string',
+            minLength: 1,
+            description: 'Label being appealed.',
+          },
+        },
+      },
+      takedownRef: {
+        type: 'object',
+        properties: {},
+      },
+    },
+  },
+  ToolsOzoneInboxDefs: {
+    lexicon: 1,
+    id: 'tools.ozone.inbox.defs',
+    defs: {
+      subjectView: {
+        type: 'object',
+        description:
+          'A subject belonging to the viewer that has moderation actions against it.',
+        required: ['src', 'subject', 'enforcement', 'createdAt', 'updatedAt'],
+        properties: {
+          src: {
+            type: 'string',
+            format: 'did',
+            description: 'DID of the moderation service that took the actions.',
+          },
+          subject: {
+            type: 'union',
+            refs: [
+              'lex:com.atproto.admin.defs#repoRef',
+              'lex:com.atproto.repo.strongRef',
+            ],
+          },
+          enforcement: {
+            type: 'ref',
+            ref: 'lex:tools.ozone.inbox.defs#enforcementView',
+          },
+          appeal: {
+            type: 'ref',
+            ref: 'lex:tools.ozone.inbox.defs#appealView',
+          },
+          availableActions: {
+            type: 'array',
+            items: {
+              type: 'string',
+              knownValues: ['appeal'],
+            },
+          },
+          latestAction: {
+            type: 'ref',
+            ref: 'lex:tools.ozone.inbox.defs#actionView',
+          },
+          actionCount: {
+            type: 'integer',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          updatedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      enforcementView: {
+        type: 'object',
+        description: 'The current enforcement state of a subject.',
+        required: ['state'],
+        properties: {
+          state: {
+            type: 'string',
+            knownValues: [
+              'none',
+              'labeled',
+              'removed',
+              'suspended',
+              'takendown',
+            ],
+          },
+          scope: {
+            type: 'string',
+            knownValues: ['network', 'app', 'labelOnly'],
+          },
+          expiresAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          labels: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+            description:
+              'Active label values on the subject, excluding negated and expired labels.',
+          },
+        },
+      },
+      appealView: {
+        type: 'object',
+        description:
+          "The state of the viewer's appeal against the actions on a subject.",
+        required: ['state'],
+        properties: {
+          state: {
+            type: 'string',
+            knownValues: [
+              'none',
+              'pending',
+              'resolved',
+              'superseded',
+              'expired',
+            ],
+          },
+          appealedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          resolvedAt: {
+            type: 'string',
+            format: 'datetime',
+            description: "When the appeal's report was closed.",
+          },
+          note: {
+            type: 'string',
+            description:
+              'Moderator explanation, from the publicNote on the closing activity. Absent if none was written.',
+          },
+          appealableUntil: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      actionView: {
+        type: 'object',
+        description: 'A single moderation action taken against a subject.',
+        required: ['id', 'type', 'createdAt'],
+        properties: {
+          id: {
+            type: 'integer',
+            description: 'Action ID (moderation event ID).',
+          },
+          type: {
+            type: 'string',
+            description: 'Public action type.',
+          },
+          scope: {
+            type: 'string',
+            knownValues: ['network', 'app', 'labelOnly'],
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          reversedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          expiresAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          labels: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+            description: 'Label values, for labelApplied/labelRemoved.',
+          },
+          policies: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+            description: 'Policies that were applied in this action.',
+          },
+        },
+      },
+    },
+  },
   ToolsOzoneModerationCancelScheduledActions: {
     lexicon: 1,
     id: 'tools.ozone.moderation.cancelScheduledActions',
@@ -36614,6 +36971,14 @@ export const schemaDict = {
                 description:
                   'Policy keys to recommend when actioning reports in this queue',
               },
+              recommendedLabels: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+                description:
+                  'Labels to recommend for this queue and use as fallback appeal routing mappings',
+              },
             },
           },
         },
@@ -36702,6 +37067,14 @@ export const schemaDict = {
             },
             description:
               'Policy keys recommended when actioning reports in this queue',
+          },
+          recommendedLabels: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+            description:
+              'Labels recommended for this queue and used as a fallback when routing label appeals',
           },
           createdBy: {
             type: 'string',
@@ -37105,6 +37478,14 @@ export const schemaDict = {
                 description:
                   'Policy keys to recommend when actioning reports in this queue',
               },
+              recommendedLabels: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+                description:
+                  'Labels to recommend for this queue and use as fallback appeal routing mappings',
+              },
             },
           },
         },
@@ -37126,6 +37507,11 @@ export const schemaDict = {
             name: 'InvalidRecommendedPolicies',
             description:
               'One or more recommended policy keys do not exist in the configured policy list',
+          },
+          {
+            name: 'ConflictingQueue',
+            description:
+              'The queue configuration conflicts with an existing queue',
           },
         ],
       },
@@ -37648,7 +38034,7 @@ export const schemaDict = {
               type: 'integer',
             },
             description:
-              'Array of moderation event IDs representing actions taken on this report (sorted DESC, most recent first)',
+              'Array of moderation event IDs representing actions taken on this report, in append order (most recently linked event last)',
           },
           actions: {
             type: 'array',
@@ -37720,6 +38106,25 @@ export const schemaDict = {
           },
         },
       },
+      unassignmentActivity: {
+        type: 'object',
+        description:
+          'Activity recording a moderator being unassigned from a report.',
+        properties: {
+          previousStatus: {
+            type: 'string',
+            knownValues: ['open', 'closed', 'escalated', 'queued', 'assigned'],
+            description:
+              "The report's status immediately before the moderator was unassigned. May be absent on older activities.",
+          },
+          nextStatus: {
+            type: 'string',
+            knownValues: ['open', 'closed', 'escalated', 'queued', 'assigned'],
+            description:
+              "The report's status immediately after the moderator was unassigned. May equal previousStatus if unassignment did not change the report's status, or be absent on older activities.",
+          },
+        },
+      },
       escalationActivity: {
         type: 'object',
         description: 'Activity recording a report being escalated.',
@@ -37788,6 +38193,7 @@ export const schemaDict = {
             refs: [
               'lex:tools.ozone.report.defs#queueActivity',
               'lex:tools.ozone.report.defs#assignmentActivity',
+              'lex:tools.ozone.report.defs#unassignmentActivity',
               'lex:tools.ozone.report.defs#escalationActivity',
               'lex:tools.ozone.report.defs#closeActivity',
               'lex:tools.ozone.report.defs#reopenActivity',
@@ -37848,27 +38254,73 @@ export const schemaDict = {
             type: 'integer',
             description: 'Number of reports currently not closed.',
           },
+          closedCount: {
+            type: 'integer',
+            description: 'Number of close transitions.',
+          },
           actionedCount: {
             type: 'integer',
-            description: 'Number of reports closed today.',
+            description:
+              'Number of closures whose last report action is label, tag, or takedown.',
+          },
+          acknowledgedCount: {
+            type: 'integer',
+            description:
+              'Number of closures whose last report action is not label, tag, or takedown.',
           },
           escalatedCount: {
             type: 'integer',
-            description: 'Number of reports escalated today.',
+            description: 'Number of reports escalated.',
           },
           inboundCount: {
             type: 'integer',
-            description: 'Reports received today.',
+            description: 'Reports received.',
+          },
+          labelActionCount: {
+            type: 'integer',
+            description: 'Closures whose last report action is a label event.',
+          },
+          tagActionCount: {
+            type: 'integer',
+            description: 'Closures whose last report action is a tag event.',
+          },
+          takedownActionCount: {
+            type: 'integer',
+            description:
+              'Closures whose last report action is a takedown event.',
+          },
+          ahtDurationSec: {
+            type: 'integer',
+            description: 'Sum of report assignment-to-close seconds.',
+          },
+          ahtSampleCount: {
+            type: 'integer',
+            description:
+              'Number of assigned closed-report samples in ahtDurationSec.',
+          },
+          resolutionDurationSec: {
+            type: 'integer',
+            description: 'Sum of report creation-to-close seconds.',
+          },
+          resolutionSampleCount: {
+            type: 'integer',
+            description:
+              'Number of closed-report samples in resolutionDurationSec.',
           },
           actionRate: {
             type: 'integer',
             description:
-              'Percentage of reports actioned (actionedCount / inboundCount * 100), rounded to nearest integer.',
+              'Percentage of closures actioned (actionedCount / closedCount * 100), rounded to nearest integer.',
           },
           avgHandlingTimeSec: {
             type: 'integer',
             description:
-              'Average time in seconds from report creation (or moderator assignment) to close.',
+              'Average handling time in seconds from report assignment to close.',
+          },
+          avgResolutionTimeSec: {
+            type: 'integer',
+            description:
+              'Average resolution time in seconds from report creation to close.',
           },
           lastUpdated: {
             type: 'string',
@@ -37896,9 +38348,19 @@ export const schemaDict = {
             type: 'integer',
             description: 'Number of reports not closed at time of computation.',
           },
+          closedCount: {
+            type: 'integer',
+            description: 'Number of close transitions during this day.',
+          },
           actionedCount: {
             type: 'integer',
-            description: 'Number of reports closed during this day.',
+            description:
+              'Number of closures whose last report action is label, tag, or takedown during this day.',
+          },
+          acknowledgedCount: {
+            type: 'integer',
+            description:
+              'Number of closures whose last report action is not label, tag, or takedown during this day.',
           },
           escalatedCount: {
             type: 'integer',
@@ -37908,15 +38370,55 @@ export const schemaDict = {
             type: 'integer',
             description: 'Reports received during this day.',
           },
+          labelActionCount: {
+            type: 'integer',
+            description:
+              'Closures whose last report action is a label event during this day.',
+          },
+          tagActionCount: {
+            type: 'integer',
+            description:
+              'Closures whose last report action is a tag event during this day.',
+          },
+          takedownActionCount: {
+            type: 'integer',
+            description:
+              'Closures whose last report action is a takedown event during this day.',
+          },
+          ahtDurationSec: {
+            type: 'integer',
+            description:
+              "Sum of report assignment-to-close seconds for this day's samples.",
+          },
+          ahtSampleCount: {
+            type: 'integer',
+            description:
+              'Number of assigned closed-report samples in ahtDurationSec.',
+          },
+          resolutionDurationSec: {
+            type: 'integer',
+            description:
+              "Sum of report creation-to-close seconds for this day's samples.",
+          },
+          resolutionSampleCount: {
+            type: 'integer',
+            description:
+              'Number of closed-report samples in resolutionDurationSec.',
+          },
           actionRate: {
             type: 'integer',
             description:
-              'Percentage of reports actioned (actionedCount / inboundCount * 100), rounded to nearest integer.',
+              'Percentage of closures actioned (actionedCount / closedCount * 100), rounded to nearest integer.',
           },
           avgHandlingTimeSec: {
             type: 'integer',
             description:
-              'Average time in seconds from report creation (or moderator assignment) to close.',
+              'Average handling time in seconds from report assignment to close.',
+          },
+          avgResolutionTimeSec: {
+            type: 'integer',
+            description:
+              'Average resolution time in seconds from report creation to close.',
           },
         },
       },
@@ -40815,6 +41317,7 @@ export const ids = {
   ComParaAlphaGetAccess: 'com.para.alpha.getAccess',
   ComParaAlphaGetRolloutStatus: 'com.para.alpha.getRolloutStatus',
   ComParaAlphaRequestAccess: 'com.para.alpha.requestAccess',
+  ComParaBookSearchBooks: 'com.para.book.searchBooks',
   ComParaCivicAmendment: 'com.para.civic.amendment',
   ComParaCivicCabildeo: 'com.para.civic.cabildeo',
   ComParaCivicCastVote: 'com.para.civic.castVote',
@@ -40947,6 +41450,9 @@ export const ids = {
     'tools.ozone.history.getReportedSubjects',
   ToolsOzoneHistoryGetSubjectHistory: 'tools.ozone.history.getSubjectHistory',
   ToolsOzoneHostingGetAccountHistory: 'tools.ozone.hosting.getAccountHistory',
+  ToolsOzoneInboxAppealActionedSubject:
+    'tools.ozone.inbox.appealActionedSubject',
+  ToolsOzoneInboxDefs: 'tools.ozone.inbox.defs',
   ToolsOzoneModerationCancelScheduledActions:
     'tools.ozone.moderation.cancelScheduledActions',
   ToolsOzoneModerationDefs: 'tools.ozone.moderation.defs',

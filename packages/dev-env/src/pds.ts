@@ -6,28 +6,39 @@ import * as ui8 from 'uint8arrays'
 import { AtpAgent } from '@atproto/api'
 import { Secp256k1Keypair, randomStr } from '@atproto/crypto'
 import { Client, type UriString } from '@atproto/lex'
-import * as pds from '@atproto/pds'
-import { createSecretKeyObject } from '@atproto/pds'
+import {
+  type AppContext,
+  type AppContextOptions,
+  type KeyObject,
+  PDS,
+  type ServerEnvironment,
+  createSecretKeyObject,
+} from '@atproto/pds'
 import { ADMIN_PASSWORD, EXAMPLE_LABELER, JWT_SECRET } from './const.js'
 import type { PdsConfig } from './types.js'
+
+export { AtpAgent, Client, PDS }
+export type { AppContextOptions, KeyObject, PdsConfig, UriString }
 
 export class TestPds {
   constructor(
     public url: UriString,
     public port: number,
-    public server: pds.PDS,
+    public server: PDS,
   ) {}
 
-  static async create(config: PdsConfig): Promise<TestPds> {
+  static async create(
+    config: PdsConfig,
+    overrides?: Partial<AppContextOptions>,
+  ): Promise<TestPds> {
     const {
       dataDirectory: configuredDataDirectory,
       blobstoreDiskLocation: configuredBlobstoreDiskLocation,
       ...restConfig
     } = config
-    const plcRotationKey = configuredDataDirectory
-      ? await persistentKeypair(configuredDataDirectory, 'plc-rotation.key')
-      : await Secp256k1Keypair.create({ exportable: true })
-    const plcRotationPriv = ui8.toString(await plcRotationKey.export(), 'hex')
+    const plcRotationPriv = overrides?.plcRotationKey
+      ? undefined // @NOTE Overrides may not be exportable.
+      : await createRotationKey(configuredDataDirectory)
     const recoveryKey = configuredDataDirectory
       ? (await persistentKeypair(configuredDataDirectory, 'recovery.key')).did()
       : (await Secp256k1Keypair.create()).did()
@@ -35,11 +46,7 @@ export class TestPds {
     const port = config.port || (await getPort())
     const url: UriString = `http://localhost:${port}`
 
-    const blobstoreLoc = path.join(os.tmpdir(), randomStr(8, 'base32'))
-    const dataDirectory = path.join(os.tmpdir(), randomStr(8, 'base32'))
-    await fs.mkdir(dataDirectory, { recursive: true })
-
-    const env: pds.ServerEnvironment = {
+    const env: ServerEnvironment = {
       devMode: true,
       port,
       recoveryDidKey: recoveryKey,
@@ -70,20 +77,18 @@ export class TestPds {
       privacyPolicyUrl: 'https://bsky.social/about/support/privacy-policy',
       supportUrl: 'https://blueskyweb.zendesk.com/hc/en-us',
       ...restConfig,
-      dataDirectory: configuredDataDirectory ?? dataDirectory,
-      blobstoreDiskLocation: configuredBlobstoreDiskLocation ?? blobstoreLoc,
+      dataDirectory: configuredDataDirectory ?? (await mkTmpdir()),
+      blobstoreDiskLocation:
+        configuredBlobstoreDiskLocation ?? (await mkTmpdir()),
     }
-    const cfg = pds.envToCfg(env)
-    const secrets = pds.envToSecrets(env)
-
-    const server = await pds.PDS.create(cfg, secrets)
+    const server = await PDS.fromEnv(env, overrides)
 
     await server.start()
 
     return new TestPds(url, port, server)
   }
 
-  get ctx(): pds.AppContext {
+  get ctx(): AppContext {
     return this.server.ctx
   }
 
@@ -154,4 +159,17 @@ async function persistentKeypair(
       exportable: true,
     })
   }
+}
+
+async function createRotationKey(directory?: string): Promise<string> {
+  const keypair = directory
+    ? await persistentKeypair(directory, 'plc-rotation.key')
+    : await Secp256k1Keypair.create({ exportable: true })
+  return Buffer.from(await keypair.export()).toString('hex')
+}
+
+async function mkTmpdir(): Promise<string> {
+  const location = path.join(os.tmpdir(), randomStr(8, 'base32'))
+  await fs.mkdir(location, { recursive: true })
+  return location
 }

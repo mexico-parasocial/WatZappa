@@ -151,7 +151,7 @@ const updateAggregates = async (db: DatabaseSchema, like: IndexedLike) => {
 export type PluginType = ReturnType<typeof makePlugin>
 export const makePlugin = (
   db: Database,
-  background: BackgroundQueue<Database>,
+  background: BackgroundQueue,
 ) => {
   return new RecordProcessor(db, background, {
     schema: app.bsky.feed.like.main,
