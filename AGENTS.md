@@ -67,6 +67,13 @@ For working with that SDK, invoke the focused skills under [.agents/skills/](.ag
 
 ## Architecture notes
 
+- Pilot planning: read [docs/QUARTER_PLAN_2026Q4.md](docs/QUARTER_PLAN_2026Q4.md)
+  and its evidence before auditing or scheduling work. It is the canonical
+  remaining-work queue, re-baselined 2026-10-05; the old sprint calendars are
+  superseded. Inspect only relevant changes, distinguish implemented/tested/
+  merged/deployed, and remove closed actions from active roadmaps while retaining
+  linked evidence. Continue the recorded role-fix worktrees before rewriting fixes.
+
 - Public cabildeo votes require `verifyCabildeoProof` before PDS preparation and
   AppView indexing, including foreign repositories. `PARA_CIVIC_VOTE_VERIFIER_URL`
   is operator configuration; absent/unavailable verification must never fall
