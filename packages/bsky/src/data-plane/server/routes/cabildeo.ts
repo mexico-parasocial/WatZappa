@@ -9,6 +9,10 @@ import {
   isLiveCabildeoPhase,
   presenceExpiry,
 } from '../cabildeo-live.js'
+import {
+  getAuthoritySnapshot,
+  getAuthoritySnapshots,
+} from '../community-authority.js'
 import { getTrustedGovernanceRecordJson } from '../community-governance.js'
 import type { Database } from '../db/index.js'
 import { TimeCidKeyset, paginate } from '../db/pagination.js'
@@ -179,20 +183,20 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         viewerDid: req.viewerDid,
         viewerIsAdmin: req.viewerIsAdmin,
       })
-      const [governance, members] = await Promise.all([
+      const [governance, moderators, nominees] = await Promise.all([
         getTrustedGovernanceRecordJson(db, board).then((json) =>
           json ? parseCandidateGovernance(json) : null,
         ),
-        selectDelegateLikeMembers(db, board.uri),
+        selectVerifiedModerators(db, board.uri),
+        selectSelfNominatedDelegates(db, board.uri),
       ])
 
       addGovernanceCandidates(rolesByDid, governance)
-      for (const member of members) {
-        const set = ensureRoleSet(rolesByDid, member.creator)
-        for (const role of member.roles ?? []) {
-          set.add(role)
-        }
-        if (set.size === 0) set.add('member')
+      for (const did of moderators) {
+        ensureRoleSet(rolesByDid, did).add('moderator')
+      }
+      for (const did of nominees) {
+        ensureRoleSet(rolesByDid, did).add(SELF_NOMINATED_ROLE)
       }
     }
 
@@ -440,27 +444,72 @@ const selectCandidateCommunityBoard = async (
     .executeTakeFirst()
 }
 
-const selectDelegateLikeMembers = async (db: Database, communityUri: string) =>
-  db.db
+/*
+ * Delegation candidates and the roles reported for them.
+ *
+ * A member may nominate themselves as a delegate candidate: the membership
+ * record they write themselves can say so, and is reported only as
+ * `delegate`. Offices cannot be self-declared. Moderators come from verified
+ * authority events, and moderators, officials and deputies from the trusted
+ * governance record (`getTrustedGovernanceRecordJson`). Any other role in a
+ * membership record (`moderator`, `official`, `deputy`, `representative`, ...)
+ * is ignored.
+ *
+ * Being listed, by nomination or office, is not proof of electoral weight.
+ */
+const SELF_NOMINATED_ROLE = 'delegate'
+
+// Membership-record roles that opt a member in as a delegate candidate.
+const SELF_NOMINATION_ROLES = ['delegate', 'delegado', 'subdelegate', 'agent']
+
+/** Members holding the moderator role by verified authority events. */
+const selectVerifiedModerators = async (db: Database, communityUri: string) => {
+  const rows = await db.db
+    .selectFrom('para_community_authority_event')
+    .where('communityUri', '=', communityUri)
+    .where('action', '=', 'moderator.grant')
+    .select('subject')
+    .distinct()
+    .execute()
+  const snapshots = await getAuthoritySnapshots(
+    db,
+    communityUri,
+    rows.map((row) => row.subject),
+  )
+  return [...snapshots]
+    .filter(([, snapshot]) => snapshot.roles.includes('moderator'))
+    .map(([did]) => did)
+}
+
+/**
+ * Members whose own membership record nominates them as a delegate, and who
+ * are active members by `getAuthoritySnapshot`.
+ */
+const selectSelfNominatedDelegates = async (
+  db: Database,
+  communityUri: string,
+) => {
+  const rows = await db.db
     .selectFrom('para_community_membership')
     .where('communityUri', '=', communityUri)
     .where('membershipState', '=', 'active')
     .where(
       // `roles` is a jsonb array: `?|` is true when it holds any listed role.
-      sql<boolean>`coalesce("roles", '[]'::jsonb) ?| array[
-        'delegate',
-        'delegado',
-        'representative',
-        'representante',
-        'moderator',
-        'official',
-        'deputy',
-        'subdelegate',
-        'agent'
-      ]::text[]`,
+      sql<boolean>`coalesce("roles", '[]'::jsonb) ?| array[${sql.join(
+        SELF_NOMINATION_ROLES.map((role) => sql`${role}`),
+      )}]::text[]`,
     )
-    .select(['creator', 'roles'])
+    .select('creator')
     .execute()
+  const snapshots = await getAuthoritySnapshots(
+    db,
+    communityUri,
+    rows.map((row) => row.creator),
+  )
+  return [...snapshots]
+    .filter(([, snapshot]) => snapshot.membershipState === 'active')
+    .map(([did]) => did)
+}
 
 const assertActiveCommunityViewer = async (
   db: Database,
@@ -477,15 +526,12 @@ const assertActiveCommunityViewer = async (
       Code.PermissionDenied,
     )
   }
-  const membership = await db.db
-    .selectFrom('para_community_membership')
-    .where('creator', '=', opts.viewerDid)
-    .where('communityUri', '=', opts.communityUri)
-    .where('membershipState', '=', 'active')
-    .select(['uri'])
-    .executeTakeFirst()
-
-  if (!membership) {
+  const authority = await getAuthoritySnapshot(
+    db,
+    opts.communityUri,
+    opts.viewerDid,
+  )
+  if (authority.membershipState !== 'active') {
     throw new ConnectError(
       'Active community membership is required',
       Code.PermissionDenied,

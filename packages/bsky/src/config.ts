@@ -86,6 +86,7 @@ export interface ServerConfigValues {
   // moderation and administration
   modServiceDid: DidString
   adminPasswords: string[]
+  paraAuthorityServiceToken?: string
   labelsFromIssuerDids?: DidString[]
   indexedAtEpoch?: Date
   // misc/dev
@@ -436,6 +437,8 @@ export class ServerConfig {
       blobRateLimitBypassKey,
       blobRateLimitBypassHostname,
       adminPasswords,
+      paraAuthorityServiceToken:
+        process.env.PARA_AUTHORITY_SERVICE_TOKEN || undefined,
       modServiceDid,
       eventProxyTrackingEndpoint,
       growthBookApiHost,
@@ -651,6 +654,10 @@ export class ServerConfig {
 
   get handleResolveNameservers() {
     return this.cfg.handleResolveNameservers
+  }
+
+  get paraAuthorityServiceToken() {
+    return this.cfg.paraAuthorityServiceToken
   }
 
   get adminPasswords() {

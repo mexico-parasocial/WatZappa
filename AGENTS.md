@@ -67,6 +67,12 @@ For working with that SDK, invoke the focused skills under [.agents/skills/](.ag
 
 ## Architecture notes
 
+- Community authority comes from verified authority-event chains; self-authored
+  membership roles never grant offices. `PARA_AUTHORITY_SERVICE_TOKEN` is a
+  dedicated read credential for the bridge's specified-subject authorization
+  query; redact its header, disable caching, and never reuse admin/M8 credentials.
+  Assembly-decision grants stay closed until a trusted tally verifier exists.
+
 - Pilot planning: read [docs/QUARTER_PLAN_2026Q4.md](docs/QUARTER_PLAN_2026Q4.md)
   and its evidence before auditing or scheduling work. It is the canonical
   remaining-work queue, re-baselined 2026-10-05; the old sprint calendars are

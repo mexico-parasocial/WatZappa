@@ -111,6 +111,8 @@ import getParaAgentConversation from './com/para/agent/getConversation.js'
 import sendParaAgentMessage from './com/para/agent/sendMessage.js'
 import getParaAlphaAccess from './com/para/alpha/getAccess.js'
 import getParaAlphaRolloutStatus from './com/para/alpha/getRolloutStatus.js'
+import { bookSchemas } from './com/para/book/schemas.js'
+import searchParaBooks from './com/para/book/searchBooks.js'
 import getParaCabildeo from './com/para/civic/getCabildeo.js'
 import getParaOpenQuestionThread from './com/para/civic/getOpenQuestionThread.js'
 import getParaPolicyTally from './com/para/civic/getPolicyTally.js'
@@ -129,12 +131,11 @@ import updateParaCollection from './com/para/collection/updateCollection.js'
 import createParaCivicTreeRelationship from './com/para/community/civicTree/createRelationship.js'
 import listParaCivicTreeContributions from './com/para/community/civicTree/listContributions.js'
 import { civicTreeProcedureSchemas } from './com/para/community/civicTree/schemas.js'
-import { bookSchemas } from './com/para/book/schemas.js'
-import searchParaBooks from './com/para/book/searchBooks.js'
 import submitParaCivicTreeContribution from './com/para/community/civicTree/submitContribution.js'
 import voteParaCivicTreeContribution from './com/para/community/civicTree/voteContribution.js'
 import exportParaObsidianVault from './com/para/community/exportObsidianVault.js'
 import getParaAuditTrail from './com/para/community/getAuditTrail.js'
+import getParaCommunityAuthorization from './com/para/community/getAuthorization.js'
 import getParaCommunityBoard from './com/para/community/getBoard.js'
 import getParaBriefingPack from './com/para/community/getBriefingPack.js'
 import getParaCivicTree from './com/para/community/getCivicTree.js'
@@ -313,6 +314,7 @@ export default function (server: Server, ctx: AppContext) {
   listParaCabildeoPositions(paraServer, ctx)
   listParaDelegationCandidates(paraServer, ctx)
   putParaLivePresence(paraServer, ctx)
+  getParaCommunityAuthorization(server, ctx)
   getParaCommunityBoard(paraServer, ctx)
   getParaCommunityGovernance(paraServer, ctx)
   getParaAuditTrail(paraServer, ctx)

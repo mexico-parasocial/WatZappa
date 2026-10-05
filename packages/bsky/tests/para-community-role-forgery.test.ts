@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { sql } from 'kysely'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
@@ -13,6 +14,7 @@ import {
 } from '../src/data-plane/server/community-governance.js'
 import { up as dropSelfDeclaredRoles } from '../src/data-plane/server/db/migrations/20261004T120000000Z-drop-self-declared-community-roles.js'
 import { up as reindexGovernance } from '../src/data-plane/server/db/migrations/20261005T120000000Z-reindex-para-community-governance.js'
+import { up as revalidateAuthority } from '../src/data-plane/server/db/migrations/20261005T130000000Z-revalidate-community-authority.js'
 
 const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
 
@@ -162,7 +164,16 @@ maybeDescribe('community role forgery (AppView)', () => {
 
   beforeAll(async () => {
     network = await TestNetwork.create({
-      dbPostgresSchema: 'para_community_role_forgery_test',
+      dbPostgresSchema:
+        'para_role_forgery_' +
+        randomUUID()
+          .replaceAll('-', '')
+          .replace(/[0-9]/g, (digit) =>
+            String.fromCharCode(103 + Number(digit)),
+          ),
+      bsky: {
+        paraAuthorityServiceToken: 'test-authority-service-token-32-characters',
+      },
     })
     sc = network.getSeedClient()
     await usersSeed(sc)
@@ -377,6 +388,161 @@ maybeDescribe('community role forgery (AppView)', () => {
     })
   })
 
+  describe('authority event forgery', () => {
+    it('cannot self-grant ownership using expiry', async () => {
+      await authorityEvent(carol, {
+        subject: carol,
+        action: 'owner.grant',
+        basis: 'expiry',
+        version: 1,
+      })
+      await network.processAll()
+      expect(await rolesOf(carol)).toEqual(['member'])
+    })
+    it('cannot regain ownership by repeating the founding transition after handover', async () => {
+      const latest = await network.bsky.db.db
+        .selectFrom('para_community_authority_event')
+        .where('communityUri', '=', board)
+        .where('subject', '=', alice)
+        .orderBy('version', 'desc')
+        .select(['uri', 'version'])
+        .executeTakeFirstOrThrow()
+      await authorityEvent(alice, {
+        subject: alice,
+        action: 'owner.grant',
+        basis: 'foundingTransition',
+        version: latest.version + 1,
+        predecessor: latest.uri,
+      })
+      await network.processAll()
+      expect(await rolesOf(alice)).toEqual(['member'])
+    })
+    it('cannot manufacture assembly authority with a self-published verifiedAt field', async () => {
+      const evidence = await write(carol, 'com.para.community.decision', {
+        community: board,
+        proposal: `at://${carol}/com.para.community.proposal/forged`,
+        proposalCid:
+          'bafyreihvr7gszsux4yimekpc23kr5wnqbwplx6knods6fxftti57dxzcim',
+        result: 'approved',
+        votesFor: 1,
+        votesAgainst: 0,
+        votesAbstain: 0,
+        verifiedAt: new Date().toISOString(),
+        protectedAction: { action: 'owner.recover', subject: carol },
+      })
+      await network.processAll()
+      await authorityEvent(carol, {
+        subject: carol,
+        action: 'owner.grant',
+        basis: 'assemblyDecision',
+        version: 1,
+        evidence,
+      })
+      await network.processAll()
+      expect(await rolesOf(carol)).toEqual(['member'])
+    })
+  })
+
+  describe('authority service reads', () => {
+    const nsid = 'com.para.community.getAuthorization'
+    const serviceRead = async (subject: string, credential: string) => {
+      const url = new URL(`/xrpc/${nsid}`, network.bsky.url)
+      url.searchParams.set('community', board)
+      url.searchParams.set('action', 'content.create')
+      url.searchParams.set('subject', subject)
+      const res = await fetch(url, {
+        headers: { 'x-para-authority-service-token': credential },
+      })
+      return {
+        status: res.status,
+        headers: res.headers,
+        body: (await res.json()) as {
+          roles?: string[]
+          authorization?: { policy: string }
+        },
+      }
+    }
+    it('reports verified member roles to the scoped service', async () => {
+      const result = await serviceRead(
+        bob,
+        'test-authority-service-token-32-characters',
+      )
+      expect(result.status).toBe(200)
+      expect(result.body.authorization?.policy).toBe(
+        'verified_authority_service',
+      )
+      expect(result.body.roles).toEqual(['member', 'moderator', 'owner'])
+      expect(result.headers.get('cache-control')).toBe('no-store')
+    })
+    it('rejects an incorrect service credential', async () => {
+      expect((await serviceRead(alice, 'wrong-service-token')).status).toBe(401)
+    })
+    it('does not let an ordinary user read another member authority', async () => {
+      const result = await xrpc<{ roles: string[] }>(
+        nsid,
+        { community: board, action: 'content.create', subject: alice },
+        carol,
+      )
+      expect(result.status).toBe(200)
+      expect(result.body.roles).toEqual(['member'])
+    })
+  })
+
+  it('revalidates historical forged grants and grants issued under forged authority', async () => {
+    const rows = await network.bsky.db.db
+      .selectFrom('para_community_authority_event')
+      .where('communityUri', '=', board)
+      .selectAll()
+      .execute()
+    const template = rows[0]
+    const forgedUri = `at://${carol}/com.para.community.authorityEvent/old-expiry-forgery`
+    const dependentUri = `at://${carol}/com.para.community.authorityEvent/old-dependent-grant`
+    const now = new Date().toISOString()
+    await network.bsky.db.db
+      .insertInto('para_community_authority_event')
+      .values([
+        {
+          ...template,
+          id: forgedUri,
+          uri: forgedUri,
+          creator: carol,
+          subject: carol,
+          issuer: carol,
+          action: 'owner.grant',
+          basis: 'expiry',
+          version: 1,
+          predecessor: null,
+          indexedAt: now,
+        },
+        {
+          ...template,
+          id: dependentUri,
+          uri: dependentUri,
+          creator: carol,
+          subject: dan,
+          issuer: carol,
+          action: 'moderator.grant',
+          basis: 'ownerAppointment',
+          version: 1,
+          predecessor: null,
+          evidence: `at://${carol}/com.para.community.decision/forged-appointment`,
+          indexedAt: now,
+        },
+      ])
+      .execute()
+    await network.bsky.db.db
+      .transaction()
+      .execute(async (tx) => revalidateAuthority(tx))
+    const poisoned = await network.bsky.db.db
+      .selectFrom('para_community_authority_event')
+      .where('uri', 'in', [forgedUri, dependentUri])
+      .select('uri')
+      .execute()
+    expect(poisoned).toEqual([])
+    expect(await rolesOf(bob)).toEqual(['member', 'moderator', 'owner'])
+    expect(await rolesOf(alice)).toEqual(['member'])
+  })
+
   describe('board views', () => {
     const summaryName = 'Summary Board'
     let summaryBoard: string
@@ -552,3 +718,5 @@ maybeDescribe('community role forgery (AppView)', () => {
     })
   })
 })
+
+// Service-path checks use the real AppView authentication and data-plane route.

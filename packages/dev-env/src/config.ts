@@ -82,6 +82,7 @@ export const buildDevEnvRuntimeConfig = (
       bsky: {
         port: bskyPort,
         publicUrl: bskyPublicUrl,
+        paraAuthorityServiceToken: envStr(env, 'PARA_AUTHORITY_SERVICE_TOKEN'),
       },
       plc: {
         port: plcPort,
