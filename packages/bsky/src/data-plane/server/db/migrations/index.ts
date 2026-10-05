@@ -106,3 +106,4 @@ export * as _20260926T120000000Z from './20260926T120000000Z-remove-priority-not
 export * as _20260929T120000000Z from './20260929T120000000Z-add-community-authority-events.js'
 export * as _20260930T120000000Z from './20260930T120000000Z-backfill-collections.js'
 export * as _20261001T120000000Z from './20261001T120000000Z-add-community-region.js'
+export * as _20261004T120000000Z from './20261004T120000000Z-drop-self-declared-community-roles.js'

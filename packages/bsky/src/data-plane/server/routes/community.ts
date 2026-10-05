@@ -37,6 +37,10 @@ import {
   ParaStrongRef,
 } from '../../../proto/bsky_pb.js'
 import { getAuthoritySnapshot } from '../community-authority.js'
+import {
+  type GovernanceBoard,
+  getTrustedGovernanceRecordJson,
+} from '../community-governance.js'
 import { Database } from '../db/index.js'
 import {
   CreatedAtCidKeyset,
@@ -148,7 +152,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         getMemberCounts(db, [board.uri]).then(
           (counts) => counts.get(board.uri) ?? 0,
         ),
-        getGovernanceSummary(db, board.name, board.slug).catch(() => null),
+        getGovernanceSummary(db, board).catch(() => null),
         getChildCommunityCounts(db, [board.uri]),
         getSharedContentCounts(db, [board.uri]),
         getParentCommunityUris(db, [board.uri]),
@@ -261,8 +265,9 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
 
   async getParaCommunityGovernance(req) {
     const community = normalizeCommunitySlug(req.community)
+    const board = await selectBoard(db, community, undefined)
     const [record, counters] = await Promise.all([
-      getPublishedGovernanceRecord(db, req.community, community),
+      board ? getPublishedGovernanceRecord(db, board) : null,
       getCommunityCounters(db, community),
     ])
 
@@ -282,7 +287,6 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       return true
     }
 
-    const board = await selectBoard(db, community, undefined)
     const standard = (board?.governanceMode || 'hierarchical') as
       | 'hierarchical'
       | 'horizontal'
@@ -1062,30 +1066,6 @@ const assertCommunitySteward = async (
   }
 }
 
-const filterValidRoles = (
-  roles: string[] | null,
-  roleAssignments: Record<string, unknown>[] | null,
-): string[] => {
-  if (roleAssignments && roleAssignments.length > 0) {
-    const now = Date.now()
-    return roleAssignments
-      .filter((assignment) => {
-        const validFrom = assignment.validFrom
-          ? Date.parse(assignment.validFrom as string)
-          : 0
-        const validUntil = assignment.validUntil
-          ? Date.parse(assignment.validUntil as string)
-          : Infinity
-        if (validFrom > now) return false
-        if (validUntil <= now) return false
-        return true
-      })
-      .map((assignment) => (assignment.role as string) || '')
-      .filter(Boolean)
-  }
-  return roles ?? []
-}
-
 const toBoardView = (
   board: BoardRow,
   memberCount: number,
@@ -1150,8 +1130,6 @@ const selectMembers = async (
       'membership.creator as did',
       'membership.cid',
       'membership.membershipState',
-      'membership.roles',
-      'membership.roleAssignments',
       'membership.joinedAt',
       'actor.handle as handle',
       'profile.displayName as displayName',
@@ -1169,18 +1147,18 @@ const selectMembers = async (
           : ['owner.revoke']
       builder = builder.where(
         sql<boolean>`exists (
-          select 1 from para_community_authority_event grant
-          where grant."communityUri" = "membership"."communityUri"
-            and grant.subject = "membership".creator
-            and grant.action = ${grant}
-            and grant."effectiveAt"::timestamptz <= now()
-            and (grant."expiresAt" is null or grant."expiresAt"::timestamptz > now())
+          select 1 from para_community_authority_event granted
+          where granted."communityUri" = "membership"."communityUri"
+            and granted.subject = "membership".creator
+            and granted.action = ${grant}
+            and granted."effectiveAt"::timestamptz <= now()
+            and (granted."expiresAt" is null or granted."expiresAt"::timestamptz > now())
             and not exists (
               select 1 from para_community_authority_event terminal
-              where terminal."communityUri" = grant."communityUri"
-                and terminal.subject = grant.subject
+              where terminal."communityUri" = granted."communityUri"
+                and terminal.subject = granted.subject
                 and terminal.action in (${sql.join(terminal)})
-                and terminal.version > grant.version
+                and terminal.version > granted.version
             )
         )`,
       )
@@ -1239,9 +1217,7 @@ const selectMembers = async (
           avatar: '',
           membershipState:
             authorityByDid.get(row.did)?.membershipState ?? row.membershipState,
-          roles:
-            authorityByDid.get(row.did)?.roles ??
-            filterValidRoles(row.roles ?? null, row.roleAssignments ?? null),
+          roles: authorityByDid.get(row.did)?.roles ?? [],
           joinedAt: row.joinedAt,
           votesCast: voteCounts.get(row.did) ?? 0,
           delegationsReceived: delegationCounts.get(row.did) ?? 0,
@@ -1299,9 +1275,7 @@ const selectMembers = async (
         avatar: '',
         membershipState:
           authorityByDid.get(row.did)?.membershipState ?? row.membershipState,
-        roles:
-          authorityByDid.get(row.did)?.roles ??
-          filterValidRoles(row.roles ?? null, row.roleAssignments ?? null),
+        roles: authorityByDid.get(row.did)?.roles ?? [],
         joinedAt: row.joinedAt,
         votesCast: voteCounts.get(row.did) ?? 0,
         delegationsReceived: delegationCounts.get(row.did) ?? 0,
@@ -1396,10 +1370,9 @@ const getCommunityPostCounts = async (
 
 const getGovernanceSummary = async (
   db: Database,
-  community: string,
-  slug: string,
+  board: GovernanceBoard,
 ): Promise<ParaCommunityGovernanceSummary | null> => {
-  const record = await getPublishedGovernanceRecord(db, community, slug)
+  const record = await getPublishedGovernanceRecord(db, board)
   if (!record) return null
 
   return new ParaCommunityGovernanceSummary({
@@ -1516,42 +1489,12 @@ const toGovernanceMember = (person: {
     avatar: person.avatar ?? undefined,
   })
 
-const COMMUNITY_TRANSLATION_SOURCE =
-  'ÁÀÄÂÃáàäâãÉÈËÊéèëêÍÌÏÎíìïîÓÒÖÔÕóòöôõÚÙÜÛúùüûÑñÇç'
-const COMMUNITY_TRANSLATION_TARGET =
-  'AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuNnCc'
-
 const getPublishedGovernanceRecord = async (
   db: Database,
-  community: string,
-  slug: string,
+  board: GovernanceBoard,
 ): Promise<GovernanceRecord | null> => {
-  const suffix = `/com.para.community.governance/${slug || 'community'}`
-
-  const slugMatch = await db.db
-    .selectFrom('record')
-    .select(['json'])
-    .where('uri', 'like', `%${suffix}`)
-    .orderBy('indexedAt', 'desc')
-    .executeTakeFirst()
-  if (slugMatch) {
-    return parseGovernanceRecord(slugMatch.json)
-  }
-
-  const normalizedCommunity = normalizeCommunityKey(community)
-  const recordMatch = await db.db
-    .selectFrom('record')
-    .select(['json'])
-    .where('uri', 'like', '%/com.para.community.governance/%')
-    .where(
-      sql`regexp_replace(lower(translate(regexp_replace(coalesce(("record"."json"::jsonb ->> 'community'), ''), '^p/', '', 'i'), ${COMMUNITY_TRANSLATION_SOURCE}, ${COMMUNITY_TRANSLATION_TARGET})), '[^a-z0-9]+', '', 'g')`,
-      '=',
-      normalizedCommunity,
-    )
-    .orderBy('indexedAt', 'desc')
-    .executeTakeFirst()
-
-  return recordMatch ? parseGovernanceRecord(recordMatch.json) : null
+  const json = await getTrustedGovernanceRecordJson(db, board)
+  return json ? parseGovernanceRecord(json) : null
 }
 
 const parseGovernanceRecord = (json: string): GovernanceRecord | null => {
@@ -1573,15 +1516,6 @@ const parseGovernanceRecord = (json: string): GovernanceRecord | null => {
     return null
   }
 }
-
-const normalizeCommunityKey = (value?: string | null) =>
-  (value || '')
-    .trim()
-    .replace(/^p\//i, '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '')
 
 const normalizeCommunitySlug = (value?: string | null) =>
   (value || '')

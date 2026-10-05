@@ -52,23 +52,18 @@ export async function getAuthoritySnapshot(
     }
   }
 
+  // Subjects without authority events fall back to their legacy membership
+  // record. The member writes that record themselves, so it can establish
+  // membership but never a role above `member`: roles or role assignments in
+  // it are ignored.
   const legacy = await db.db
     .selectFrom('para_community_membership')
     .where('communityUri', '=', communityUri)
     .where('creator', '=', subject)
-    .select(['membershipState', 'roles', 'roleAssignments', 'uri', 'joinedAt'])
+    .select(['membershipState'])
     .executeTakeFirst()
-  const roles: CommunityRole[] = []
-  if (legacy?.membershipState === 'active') {
-    roles.push('member')
-    const legacyRoles = validLegacyRoles(
-      legacy.roles,
-      legacy.roleAssignments,
-      now,
-    )
-    if (legacyRoles.includes('moderator')) roles.push('moderator')
-    if (legacyRoles.includes('owner')) roles.push('owner')
-  }
+  const roles: CommunityRole[] =
+    legacy?.membershipState === 'active' ? ['member'] : []
   return {
     membershipState:
       legacy?.membershipState === 'active'
@@ -133,17 +128,11 @@ export async function verifyAuthorityEvent(
     return event.action === 'moderator.grant' && hasNinetyDayLimit(event)
   }
   if (event.basis === 'resignation') {
-    return (
-      event.action === 'moderator.resign' && event.subject === event.issuer
-    )
+    return event.action === 'moderator.resign' && event.subject === event.issuer
   }
   if (event.basis === 'ownerAppointment') {
     if (board.governanceMode !== 'hierarchical') return false
-    const issuer = await getAuthoritySnapshot(
-      db,
-      event.community,
-      event.issuer,
-    )
+    const issuer = await getAuthoritySnapshot(db, event.community, event.issuer)
     return (
       issuer.roles.includes('owner') &&
       (event.action === 'moderator.grant' ||
@@ -153,11 +142,7 @@ export async function verifyAuthorityEvent(
   }
   if (event.basis === 'ownerTransfer') {
     if (board.governanceMode !== 'hierarchical' || !event.evidence) return false
-    const issuer = await getAuthoritySnapshot(
-      db,
-      event.community,
-      event.issuer,
-    )
+    const issuer = await getAuthoritySnapshot(db, event.community, event.issuer)
     return (
       issuer.roles.includes('owner') &&
       (event.action === 'owner.grant' || event.action === 'owner.revoke')
@@ -197,9 +182,9 @@ async function verifyDecisionEvidence(
     return false
   }
   const protectedAction = decision.protectedAction as
-    | Record<string, unknown>
-    | undefined
-  if (!protectedAction || protectedAction.subject !== event.subject) return false
+    Record<string, unknown> | undefined
+  if (!protectedAction || protectedAction.subject !== event.subject)
+    return false
   const expected = new Map<string, string[]>([
     ['member.activate', ['membership.approve']],
     ['member.remove', ['member.remove']],
@@ -226,23 +211,4 @@ function hasNinetyDayLimit(
     expires > effective &&
     expires - effective <= 90 * 24 * 60 * 60 * 1000
   )
-}
-
-function validLegacyRoles(
-  roles: string[] | null,
-  assignments: Record<string, unknown>[] | null,
-  now: number,
-) {
-  if (!assignments?.length) return roles ?? []
-  return assignments.flatMap((assignment) => {
-    const start = assignment.validFrom
-      ? Date.parse(String(assignment.validFrom))
-      : 0
-    const end = assignment.validUntil
-      ? Date.parse(String(assignment.validUntil))
-      : Infinity
-    return start <= now && end > now && typeof assignment.role === 'string'
-      ? [assignment.role]
-      : []
-  })
 }

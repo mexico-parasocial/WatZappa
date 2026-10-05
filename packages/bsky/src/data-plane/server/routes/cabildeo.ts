@@ -9,6 +9,7 @@ import {
   isLiveCabildeoPhase,
   presenceExpiry,
 } from '../cabildeo-live.js'
+import { getTrustedGovernanceRecordJson } from '../community-governance.js'
 import type { Database } from '../db/index.js'
 import { TimeCidKeyset, paginate } from '../db/pagination.js'
 
@@ -179,7 +180,9 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         viewerIsAdmin: req.viewerIsAdmin,
       })
       const [governance, members] = await Promise.all([
-        getCandidateGovernanceRecord(db, board.name, board.slug),
+        getTrustedGovernanceRecordJson(db, board).then((json) =>
+          json ? parseCandidateGovernance(json) : null,
+        ),
         selectDelegateLikeMembers(db, board.uri),
       ])
 
@@ -420,7 +423,7 @@ const selectCandidateCommunityBoard = async (
     const byUri = await db.db
       .selectFrom('para_community_board')
       .where('uri', '=', communityId)
-      .select(['uri', 'name', 'slug'])
+      .select(['uri', 'creator', 'name', 'slug'])
       .executeTakeFirst()
     if (byUri) return byUri
   }
@@ -433,7 +436,7 @@ const selectCandidateCommunityBoard = async (
         or regexp_replace(lower(coalesce("name", '')), '[^a-z0-9]+', '-', 'g') = ${normalizedSlug}
       )`,
     )
-    .select(['uri', 'name', 'slug'])
+    .select(['uri', 'creator', 'name', 'slug'])
     .executeTakeFirst()
 }
 
@@ -488,37 +491,6 @@ const assertActiveCommunityViewer = async (
       Code.PermissionDenied,
     )
   }
-}
-
-const getCandidateGovernanceRecord = async (
-  db: Database,
-  community: string,
-  slug: string,
-): Promise<CandidateGovernanceRecord | null> => {
-  const suffix = `/com.para.community.governance/${slug || 'community'}`
-  const slugMatch = await db.db
-    .selectFrom('record')
-    .select(['json'])
-    .where('uri', 'like', `%${suffix}`)
-    .orderBy('indexedAt', 'desc')
-    .executeTakeFirst()
-
-  if (slugMatch) return parseCandidateGovernance(slugMatch.json)
-
-  const normalizedCommunity = normalizeCommunityKey(community)
-  const recordMatch = await db.db
-    .selectFrom('record')
-    .select(['json'])
-    .where('uri', 'like', '%/com.para.community.governance/%')
-    .where(
-      sql`regexp_replace(lower(translate(regexp_replace(coalesce(("record"."json"::jsonb ->> 'community'), ''), '^p/', '', 'i'), ${COMMUNITY_TRANSLATION_SOURCE}, ${COMMUNITY_TRANSLATION_TARGET})), '[^a-z0-9]+', '', 'g')`,
-      '=',
-      normalizedCommunity,
-    )
-    .orderBy('indexedAt', 'desc')
-    .executeTakeFirst()
-
-  return recordMatch ? parseCandidateGovernance(recordMatch.json) : null
 }
 
 const parseCandidateGovernance = (
@@ -977,20 +949,6 @@ const asNumberArray = (value: unknown, length: number): number[] => {
 const normalizeCommunity = (value: string | undefined) => {
   return value?.trim().toLowerCase().replace(/^p\//, '') || ''
 }
-
-const COMMUNITY_TRANSLATION_SOURCE =
-  'ÁÀÄÂÃáàäâãÉÈËÊéèëêÍÌÏÎíìïîÓÒÖÔÕóòöôõÚÙÜÛúùüûÑñÇç'
-const COMMUNITY_TRANSLATION_TARGET =
-  'AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuNnCc'
-
-const normalizeCommunityKey = (value: string) =>
-  value
-    .trim()
-    .replace(/^p\//i, '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '')
 
 const normalizeCommunitySlug = (value: string) =>
   value
