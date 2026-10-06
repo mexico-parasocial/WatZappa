@@ -90,11 +90,17 @@ is integrated. Existing unrelated PARA UI edits remain separate.
 The native/web callback engineering is committed; do not rebuild it.
 
 - PARA candidate `b303625db` (`feat/personal-civic-tree-revamp`); broker candidate
-  `061dc23` (`feat/nullifier-v2`). Neither is deployed or release-integrated here.
+  `2003f6f` (`feat/nullifier-v2`, login implementation through `061dc23`).
+  Platform configuration/preflight wrapper: `7da45d0`. These are local commits;
+  no deployment or release integration is established here.
 - PARA: **60 focused tests, 8 files**, login-core type checks for all three
   platforms, changed-file lint without errors, and bskyweb compilation pass.
 - Broker: **26 distinct focused tests**, including seeded exchange/refresh/logout
   and real HTTP failure-redirect cases; full broker build passes with migrations 040–041.
+  **6 additional deployment-preflight tests pass**; 4 existing handoff tests
+  also pass in that follow-up run. Source and compiled preflight pass all 10
+  configuration checks against a migrated copy of the populated local database.
+  This is configuration-only evidence; the source database was not migrated.
 - No successful live-provider login, native-device/browser acceptance or staging
   acceptance is claimed. PARA's full-app type checks encounter separate AtCard/
   OTA working-tree errors; resolve selected release edits and rerun them.
@@ -102,6 +108,12 @@ The native/web callback engineering is committed; do not rebuild it.
   Decide whether the pilot requires persistent web sessions before closing P1.
   Native release credentials require SecureStore. Refresh-family revocation
   does not immediately revoke access JWTs.
+- Current environment blockers are recorded in the execution record: local
+  PDS/broker/bridge are stopped, the public example broker did not resolve from
+  this machine, platform deployment configuration is absent, and local migration
+  041 is missing. The ignored local native callback was corrected, but real-login
+  acceptance still needs bootstrap off and exact web callback/CORS. Latest web
+  type check still reports the separate Attie import and OTA API errors.
 
 ## Remaining execution queue (ordered)
 
@@ -141,9 +153,13 @@ acceptance remains open.** Use the paired PARA/broker revisions above and
 [the execution record](./M8-LOGIN-EXECUTION-2026-10-05.md). Do not restart the
 completed callback/token-exchange implementation.
 
-Select release revisions and resolve full-app build blockers. Deploy broker
+Establish an actual acceptance target and select paired release revisions;
+resolve full-app build blockers. The local/example settings above are not a
+working staging target. Deploy broker
 migrations 040–041 and effective handoff/return-URL/CORS/HTTPS configuration, with
-dev bootstrap off. Then prove fresh real-provider login, cancel/back,
+dev bootstrap off. Run `make login-preflight WEB_ORIGIN=https://ACTUAL_PARA_ORIGIN`
+from para-platform inside the deployed broker, including its public probes, and
+record the deployed revisions separately. Then prove fresh real-provider login, cancel/back,
 expiry/replay, account switching, refresh and logout on the supported native
 and web clients. Verify native SecureStore and access JWT lifetime semantics.
 Confirm whether reconnecting after a web reload meets the pilot requirement;

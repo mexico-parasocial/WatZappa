@@ -8,7 +8,8 @@ Updated 2026-10-05. This records P1 evidence for
 | Repository | Local candidate | Status |
 | --- | --- | --- |
 | PARA | `b303625db`, `feat/personal-civic-tree-revamp` | Committed; focused local checks pass. Full-app type checks remain blocked by separate working-tree edits. |
-| mubEZ | `061dc23`, `feat/nullifier-v2` | Committed; broker build and focused tests pass. |
+| mubEZ | `2003f6f`, `feat/nullifier-v2` | Committed; broker build, focused tests and deployment preflight pass locally. |
+| para-platform | `7da45d0`, `main` | Production handoff template and container preflight command committed; no deployment configured here. |
 
 No push, release-branch integration, staging deployment, live PDS login or
 native-device acceptance was performed. PARA's unrelated Map/Messages/tree,
@@ -17,7 +18,8 @@ WatZappa's unrelated Ozone changes remain outside this documentation update.
 P0's role candidate and rollout status are unchanged. PARA's implementation
 commit is `798cf7e78`, followed by credential-read serialization at `b303625db`;
 broker implementation `ff47821` is followed by immutable code binding and its
-upgrade migration at `061dc23`.
+upgrade migration at `061dc23`. Deployment preflight follows at `2003f6f`;
+this does not change the previously tested login contract.
 
 ## Implemented
 
@@ -107,14 +109,70 @@ NODE_ENV=test HOST=127.0.0.1 PORT=25437 ./node_modules/.bin/tsx \
   tests/integration/oauth-gated-start.test.ts tests/integration/sessions.test.ts
 ```
 
+## Environment and deployment preflight (2026-10-05)
+
+The next step is configuring and accepting an actual environment. It is not
+another implementation audit. The read-only `login:preflight` now checks its
+own effective flags, exact native/web callbacks, explicit CORS and both recorded
+migrations/binding columns. Public probes cover health, OAuth metadata, CORS
+OPTIONS and HTML on `/m8-auth`. No app boot, token issuance or migrations occur.
+The command cannot attest the running server's flags/revision; execute it inside
+the target broker and separately record the deployed revisions.
+
+Observed on this machine:
+
+| Check | Observed result / remaining action |
+| --- | --- |
+| Local services | PDS `localhost:2583`, broker `localhost:8787` and bridge `localhost:3001` refused connections. Start an identified acceptance stack before attempting a real grant. |
+| Public example broker | `mubez.para-g0v.site` did not resolve from this machine. This example is not evidence of a working staging target. |
+| Platform deployment configuration | `para-platform/.env` and `env/identity.env` are absent. No actual deployment origin/configuration is established. The production example now includes explicit handoff on, bootstrap off and the current native callback. |
+| Local callback | Added `para://m8-auth` to ignored `mubEZ/.env`, preserving its existing callbacks. The old callback was insufficient. No native/browser grant was attempted. |
+| Local acceptance settings | Dev bootstrap remains on; CORS is `*`; no exact web callback is configured. The `localhost:8081` preflight probe is a local diagnostic candidate, not a selected pilot web origin. |
+| Local migration | 040 is recorded; 041 is missing. The original database was not migrated. |
+| Latest PARA web type check | Two remaining errors: unresolved `#/components/icons/Attie` and missing `revertToEmbedded` at `Settings.tsx:399`. The earlier unresolved `#/lib/at-card` error is absent from this run. Native checks were not repeated in this follow-up. |
+
+Validation added:
+
+- **6 preflight tests pass**, including missing-schema/database handling, old
+  callbacks, bootstrap/flag/CORS failures, read-only behavior and sanitized public
+  endpoint failures. The existing 4 handoff tests also pass in the same run.
+  These add to the earlier 26 distinct broker tests; the provider login remains
+  untested against a live PDS.
+- `node ace build` passes and includes the compiled preflight entry point.
+- Rehearsed the normal migration runner against a SQLite backup copy of the
+  current populated local database: only 041 applied. The code-binding column
+  was present afterward; the original migration history remained unchanged.
+  Temporary copies were removed after checking.
+- With explicit acceptance flags/callback/CORS on that copy, both source and
+  compiled preflight entry points passed all **10 configuration checks**. This
+  was `--config-only`; no live connectivity or client acceptance is claimed.
+- Platform `make login-preflight` dry run selects the container entry point;
+  missing `WEB_ORIGIN` exits before contacting Docker. No container was deployed.
+
+Commands for the next identified target:
+
+```sh
+# mubEZ, using the actual target's environment/database:
+pnpm login:preflight --web-origin https://ACTUAL_PARA_ORIGIN
+# para-platform, inside the already deployed broker container:
+make login-preflight WEB_ORIGIN=https://ACTUAL_PARA_ORIGIN
+```
+
+Use `--local` only for loopback HTTP; `--config-only` skips public probes. Preserve
+the report's scope when recording outcomes. See the broker rollout notes for
+the exact configuration and the separate real-provider/client checklist.
+
 ## Next work; do not repeat this audit
 
 1. Select the paired release revisions and resolve full-app release build
    blockers. Establish the actual staging broker/PARA/Matrix/bridge origins;
-   the previously checked production DNS did not establish a working target.
+   the checks above did not establish a working target. Populate the platform's
+   actual configuration; do not deploy its default WatZappa checkout before P0's
+   trusted-role candidate is integrated into the selected release.
 2. Back up and migrate the broker; set effective handoff on, dev bootstrap off,
    exact native/web callbacks, HTTPS service/metadata origin and web CORS origin.
-   Build PARA with the selected broker origin and confirm the SPA callback route.
+   Build PARA with the selected broker origin and run the target's read-only
+   preflight, including public probes. Confirm the deployed SPA revision.
 3. Run fresh real-provider login on iOS, Android and the supported web client.
    Record cancellation/back, expired/replayed code, wrong account, account switch,
    refresh, local/remote logout and SecureStore behavior. Confirm the configured

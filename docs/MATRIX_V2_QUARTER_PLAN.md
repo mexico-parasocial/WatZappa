@@ -26,12 +26,16 @@ and results. Main/release integration and actual homeserver acceptance remain
 open. The creator-only interim patch has been replaced. See P0 in the canonical
 queue; do not restart implementation from that obsolete patch.
 
-PARA's M8 grant candidate is committed at `b303625db` with broker `061dc23`.
+PARA's M8 grant candidate is committed at `b303625db` with broker `2003f6f`
+(login implementation through `061dc23`). Platform template/preflight wrapper
+is `7da45d0`; deployment is not established.
 [Its execution record](./M8-LOGIN-EXECUTION-2026-10-05.md) distinguishes focused
 local tests from missing real-provider/staging acceptance and records full-app
 build blockers. Web M8 credentials are in memory and reconnect after reload;
 that behavior must meet the pilot requirement before P1 closes. Continue with
-configuration and acceptance rather than reimplementing the callback.
+configuration and acceptance rather than reimplementing the callback. The
+record now includes read-only preflight commands, a migration rehearsal on a
+database copy and the actual environment blockers; do not rediscover them.
 
 ## Remaining acceptance gates
 
