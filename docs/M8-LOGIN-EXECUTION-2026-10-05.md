@@ -1,6 +1,6 @@
 # M8 login — implementation and remaining acceptance
 
-Updated 2026-10-05. This records P1 evidence for
+Updated 2026-10-06. This records P1 evidence for
 [the canonical pilot queue](./QUARTER_PLAN_2026Q4.md); it is not a second roadmap.
 
 ## Revisions and status
@@ -9,13 +9,14 @@ Updated 2026-10-05. This records P1 evidence for
 | --- | --- | --- |
 | PARA | `b303625db`, `feat/personal-civic-tree-revamp` | Committed; focused local checks pass. Full-app type checks remain blocked by separate working-tree edits. |
 | mubEZ | `2003f6f`, `feat/nullifier-v2` | Committed; broker build, focused tests and deployment preflight pass locally. |
-| para-platform | `7da45d0`, `main` | Production handoff template and container preflight command committed; no deployment configured here. |
+| para-platform | `d6c23de`, `main` (P1 wrapper at `7da45d0`) | Production handoff template, paired authority settings and container preflight command committed; no deployment configured here. |
 
 No push, release-branch integration, staging deployment, live PDS login or
 native-device acceptance was performed. PARA's unrelated Map/Messages/tree,
 AtCard, OTA, native-screen patch and dependency edits remain outside this commit.
 WatZappa's unrelated Ozone changes remain outside this documentation update.
-P0's role candidate and rollout status are unchanged. PARA's implementation
+P0's 2026-10-06 development integration is recorded separately in the authority
+execution record; no homeserver acceptance is claimed. PARA's implementation
 commit is `798cf7e78`, followed by credential-read serialization at `b303625db`;
 broker implementation `ff47821` is followed by immutable code binding and its
 upgrade migration at `061dc23`. Deployment preflight follows at `2003f6f`;
@@ -162,13 +163,41 @@ Use `--local` only for loopback HTTP; `--config-only` skips public probes. Prese
 the report's scope when recording outcomes. See the broker rollout notes for
 the exact configuration and the separate real-provider/client checklist.
 
+## Latest environment follow-up (2026-10-06)
+
+These observations supersede the previous local state; they are read-only
+checks of the environment, not live-provider/client acceptance:
+
+- Local PDS, broker and bridge health return HTTP 200.
+- The broker database now records both 040 and 041, and both binding columns
+  are present. This follow-up did not apply migrations to that database.
+- Running `login:preflight --web-origin http://localhost:8081 --local` passes
+  health, OAuth metadata and browser CORS response checks. The native callback
+  remains correctly configured. The command still exits blocked: bootstrap is
+  enabled, the exact web callback/explicit CORS configuration is absent, and
+  `/m8-auth` does not serve HTML at that origin. Wildcard CORS can produce a
+  working OPTIONS response but does not pass the explicit-origin config gate.
+  `localhost:8081` is a diagnostic candidate, not a selected pilot host.
+- Platform `.env` / `env/identity.env` remain absent; an actual staging server
+  and public origins have not been established in this chat.
+- PARA's full web type check now reports 14 diagnostics in concurrent feature
+  edits: GrowthBook logger naming, Attie import, API/image-helper call signatures,
+  OTA API, gallery image-manipulator import/context typing, feed `ax`, KnownLikers
+  props and the NewPostsPill Storybook import. No M8 login diagnostic was reported.
+  These working-tree results do not identify a clean release revision; native
+  full-app checks were not rerun. Preserve ongoing changes and validate the
+  selected final feature revisions instead of repeatedly freezing this count.
+- No callback, login, logout or token issuance request was made by this preflight.
+  Running process revisions/effective server flags still need separate operator
+  evidence; the CLI checks its own configuration/database and public responses.
+
 ## Next work; do not repeat this audit
 
 1. Select the paired release revisions and resolve full-app release build
    blockers. Establish the actual staging broker/PARA/Matrix/bridge origins;
    the checks above did not establish a working target. Populate the platform's
-   actual configuration; do not deploy its default WatZappa checkout before P0's
-   trusted-role candidate is integrated into the selected release.
+   actual configuration. P0 is now integrated into the active development branch;
+   select a clean release containing it before deploying the platform.
 2. Back up and migrate the broker; set effective handoff on, dev bootstrap off,
    exact native/web callbacks, HTTPS service/metadata origin and web CORS origin.
    Build PARA with the selected broker origin and run the target's read-only

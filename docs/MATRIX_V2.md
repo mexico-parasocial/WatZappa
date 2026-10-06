@@ -1,12 +1,14 @@
 # Matrix v2
 
-**Planning note — 2026-10-05:** use
+**Planning note — 2026-10-06:** use
 [QUARTER_PLAN_2026Q4.md](./QUARTER_PLAN_2026Q4.md) for current remaining work and
 the inspected branch/worktree baseline. This document retains historical v1
 findings and design decisions; they are not a current sprint backlog or proof
 of deployment. OD-6/table deletion and local MAS are implemented. F9's route
-checks do not close the separate self-declared-role ingestion defect; finish
-the recorded bridge/AppView fixes before claiming trusted authorization.
+checks do not close the separate self-declared-role ingestion defect. The
+recorded bridge/AppView fixes are now integrated into the active development
+branch at `d11fa24f1`; release selection and actual homeserver acceptance remain
+open before claiming deployed trusted authorization.
 
 The paired PARA/M8 login candidate is now committed and locally tested; see
 [implementation and remaining acceptance](./M8-LOGIN-EXECUTION-2026-10-05.md).

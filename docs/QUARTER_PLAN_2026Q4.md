@@ -1,6 +1,6 @@
 # Pilot launch — remaining work, October–November 2026
 
-**Updated: 2026-10-05. This is the canonical cross-repository execution queue.**
+**Updated: 2026-10-06. This is the canonical cross-repository execution queue.**
 It replaces the September sprint calendar and the conflicting calendar in
 [MATRIX_V2_QUARTER_PLAN.md](./MATRIX_V2_QUARTER_PLAN.md). Solo capacity: one
 engineering lane. November is a target horizon, not a verified release date.
@@ -64,7 +64,9 @@ The creator-only interim bridge patch has been replaced; do not implement it aga
 - Integrated local candidate: `/Users/mlv/Desktop/Home/WatZappa-bridge-roles`,
   branch `fix/bridge-self-declared-roles`, code revision `7f485158b`.
   It includes bridge `067c13f28` plus AppView fixes `16725660b`, `49e6f3dbe`
-  and `7f485158b`. These are committed locally, **not merged or deployed**.
+  and `7f485158b`. This original candidate is retained as source history;
+  development integration on 2026-10-06 is recorded below. No remote main merge
+  or deployment is established.
 - AppView source: `/Users/mlv/Desktop/Home/WatZappa-role-forgery`, branch
   `fix/community-role-forgery`, `f033b8d36` (following `84bf20bf9`, `ef3974492`).
   A separate local PARA feed test edit remains uncommitted; do not bundle it
@@ -81,8 +83,25 @@ The creator-only interim bridge patch has been replaced; do not implement it aga
   pagination remain release verification work under P4; no whole-AppView green
   claim. Test-generated snapshot changes were discarded.
 
-Main feature checkouts still contain the old role source until this candidate
-is integrated. Existing unrelated PARA UI edits remain separate.
+### P0 development integration (2026-10-06)
+
+Local integration is complete in the active WatZappa checkout:
+`feat/books-unique-names-and-civic-work`, code revision `d11fa24f1`.
+The four P0 commits were cherry-picked; current schema validation and migration
+ordering were preserved. Existing Ozone edits remain uncommitted and separate.
+The active branch now contains trusted roles; remote main and running services
+were not upgraded by this work.
+
+- AppView, dev-env and bridge builds plus bridge typecheck pass.
+- **30 AppView tests / 3 files** and **59 bridge tests / 4 files** pass on the
+  active branch. Use the execution record's exact package commands and local
+  compiler/config-loader notes; do not rediscover those tool-install issues.
+- Platform `d6c23de` and WatZappa `d11fa24f1` wire the same dedicated credential
+  to AppView and bridge. Full Compose rendering verifies the pair and HTTPS
+  authority origin without starting containers or using a real credential.
+- Local health URLs now respond, superseding yesterday's stopped-service
+  observation. Their health is not deployed-role acceptance. Select a clean
+  release revision and prove the actual homeserver behavior next.
 
 ### P1 implementation evidence (2026-10-05)
 
@@ -108,19 +127,29 @@ The native/web callback engineering is committed; do not rebuild it.
   Decide whether the pilot requires persistent web sessions before closing P1.
   Native release credentials require SecureStore. Refresh-family revocation
   does not immediately revoke access JWTs.
-- Current environment blockers are recorded in the execution record: local
+- The 2026-10-05 environment blockers are recorded in the execution record: local
   PDS/broker/bridge are stopped, the public example broker did not resolve from
   this machine, platform deployment configuration is absent, and local migration
   041 is missing. The ignored local native callback was corrected, but real-login
   acceptance still needs bootstrap off and exact web callback/CORS. Latest web
   type check still reports the separate Attie import and OTA API errors.
 
+### P1 environment follow-up (2026-10-06)
+
+The broker now responds locally; migrations 040–041 are both recorded and their
+binding columns exist. Read-only preflight health, OAuth metadata and browser
+CORS probes pass. Acceptance still fails because dev bootstrap is on, no exact
+selected web callback/CORS configuration is recorded, and `/m8-auth` does not
+serve HTML at the diagnostic `localhost:8081` origin. That origin is not a
+selected pilot target. PARA's concurrent feature edits produce **14 web type
+diagnostics in this run**; no full-app green claim. See the P1 record for scope.
+
 ## Remaining execution queue (ordered)
 
-### P0 — integrate and accept trusted community roles
+### P0 — accept locally integrated trusted community roles
 
-**Engineering implementation is committed and locally tested; rollout acceptance
-is still open.** The candidate resolves member/moderator/owner authority through
+**Engineering and active-branch integration are committed and locally tested;
+release selection and rollout acceptance are still open.** The candidate resolves member/moderator/owner authority through
 service-authenticated AppView queries, rejects self-declared privileges, repairs
 persisted bridge roles before serving and revalidates historical AppView grants.
 It refreshes joins, authorization, SSE room delivery, native interactions and
@@ -128,8 +157,9 @@ retries; authority events and a periodic sweep catch revocation/expiry.
 
 Remaining actions:
 
-1. Review/integrate `7f485158b` into the selected release revision. The main
-   checkout still reads self-authored roles until integration.
+1. Select and publish a clean release revision from the active branch at
+   `d11fa24f1`. Its local P0 integration is complete; remote main/production
+   remain unchanged. Keep unrelated working-tree edits outside this release.
 2. Identify staging. Pause the old bridge during the paired AppView migration /
    bridge upgrade; configure the same dedicated `PARA_AUTHORITY_SERVICE_TOKEN`
    on both services and `BRIDGE_AUTHORITY_APPVIEW_URL` on the bridge.
@@ -155,7 +185,8 @@ completed callback/token-exchange implementation.
 
 Establish an actual acceptance target and select paired release revisions;
 resolve full-app build blockers. The local/example settings above are not a
-working staging target. Deploy broker
+working staging target. Broker migration 041 is now present locally, but
+must still be verified on the selected target. Deploy broker
 migrations 040–041 and effective handoff/return-URL/CORS/HTTPS configuration, with
 dev bootstrap off. Run `make login-preflight WEB_ORIGIN=https://ACTUAL_PARA_ORIGIN`
 from para-platform inside the deployed broker, including its public probes, and

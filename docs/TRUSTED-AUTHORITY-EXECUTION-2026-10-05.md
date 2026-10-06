@@ -1,9 +1,20 @@
 # Trusted community authority — execution and rollout record
 
-Updated 2026-10-05. Local engineering evidence; staging/deployment remains open.
+Updated 2026-10-06. Local development integration is complete;
+release selection and staging/deployment remain open.
 Execution order stays in [QUARTER_PLAN_2026Q4.md](./QUARTER_PLAN_2026Q4.md).
 
 ## Candidate revisions
+
+Current development integration: `d11fa24f1` on
+`feat/books-unique-names-and-civic-work` in
+`/Users/mlv/Desktop/Home/macserver/WatZappa`. The four existing P0 changes were
+cherry-picked as `6601c590a`, `8fdbed7da`, `2c7079c52` and `5d0f052b4`;
+`d11fa24f1` completes deployment credential wiring and import lint.
+The active checkout now contains the trusted-role implementation. No remote
+main merge, push, running-service upgrade or staging acceptance was performed.
+
+Original tested candidate, retained as source history:
 
 Integrated branch `fix/bridge-self-declared-roles`, code revision `7f485158b`,
 worktree `/Users/mlv/Desktop/Home/WatZappa-bridge-roles`:
@@ -76,7 +87,8 @@ above remain visible instead of being treated as build success.
 
 ## Exact next steps
 
-1. Select and review the integrated candidate for the release branch.
+1. Select and publish a clean release revision from the integrated development
+   branch. Do not repeat the completed local integration or role-source audit.
 2. Identify the staging AppView, bridge and homeserver. Stop the old bridge during
    the authority migration/upgrade; do not run the forgeable writer as fallback.
 3. Deploy the paired AppView revision/migration and bridge. Set a dedicated shared
@@ -95,3 +107,62 @@ above remain visible instead of being treated as build success.
 7. Attach staging URLs, exact revisions, observed results and operator evidence.
    Only then close P0. While staging inputs are pending, proceed with P1's
    existing M8 broker exchange contract; do not repeat this source audit.
+
+## Development integration and validation (2026-10-06)
+
+- Kept the active branch's community-region migration before the new authority
+  migrations. Kept its current authority-event schema and explicit known
+  action/basis narrowing, feeding the tightened verifier. Retained current
+  public cabildeo proof instructions; the unrelated policy-ballot branch was
+  not imported as part of the four P0 commits.
+- All nine pre-existing Ozone code/test files were preserved byte-for-byte.
+  Its separate uncommitted AGENTS instruction was restored and remains outside
+  the P0 commits. Shared dev-env builds used the existing working tree; this is
+  local integration evidence, not a clean signed release build.
+- `pnpm build` passes in AppView, dev-env and matrix-bridge;
+  `pnpm typecheck` passes in matrix-bridge.
+- Bridge's four focused files pass **59 tests**: `community-authority`, `authz`,
+  `firehose` and `matrix-projection`. AppView scoped-credential, role-forgery /
+  remediation and delegation-candidate suites pass **30 tests in 3 files**.
+  These are the results of this run; the earlier 261/66 results above remain
+  historical evidence. No broader notification suite was rerun.
+- The current Vite 8 config bundler failed with `sourcemapPathTransform` before
+  executing tests. Both suites passed through their normal package scripts
+  with `--configLoader runner`; AppView still used its disposable PostgreSQL /
+  Redis wrapper, which cleaned up its own test containers afterward.
+- AppView's old per-package `node_modules/.bin/tsc` resolved TypeScript 4.5.2,
+  causing parser/config errors. Removed only that stale generated shim after
+  backing it up outside the repository; package builds now resolve the root
+  TypeScript 7.0.2 compiler. No dependencies or tsconfigs were changed.
+- Resolved-file ESLint, Prettier and `git diff --check` pass.
+- Production Compose now explicitly passes `PARA_AUTHORITY_SERVICE_TOKEN` to
+  AppView. Platform `d6c23de` passes the same variable to the bridge and defaults
+  its authority source to `https://appview.PARA_DOMAIN`. Rendered the complete
+  platform Compose configuration with a test-only credential: both services
+  receive identical values and the bridge uses HTTPS. No containers were started
+  by this configuration check and no real credential was generated or changed.
+- Local PDS, broker and bridge health URLs respond with HTTP 200. Health does
+  not prove which authority revision/configuration their running processes use;
+  those processes were not restarted or reconfigured by this integration.
+
+Repeat only the relevant checks after a new code change. Commands used from
+each package directory with repository Node 22.22.1:
+
+```sh
+# services/matrix-bridge
+pnpm typecheck
+pnpm build
+pnpm test --configLoader runner src/community-authority.test.ts \
+  src/__tests__/authz.test.ts src/__tests__/firehose.test.ts \
+  src/__tests__/matrix-projection.test.ts
+
+# packages/bsky; rebuild before running service integration tests
+pnpm build
+pnpm test --configLoader runner \
+  src/api/com/para/community/getAuthorization.test.ts \
+  tests/para-community-role-forgery.test.ts \
+  tests/para-delegation-candidate-roles.test.ts
+
+# packages/dev-env
+pnpm build
+```

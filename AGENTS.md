@@ -78,7 +78,9 @@ For working with that SDK, invoke the focused skills under [.agents/skills/](.ag
   remaining-work queue, re-baselined 2026-10-05; the old sprint calendars are
   superseded. Inspect only relevant changes, distinguish implemented/tested/
   merged/deployed, and remove closed actions from active roadmaps while retaining
-  linked evidence. Continue the recorded role-fix worktrees before rewriting fixes.
+  linked evidence. Trusted-role fixes are integrated locally in the active branch
+  at `d11fa24f1` (2026-10-06); release selection and homeserver acceptance remain
+  open. Do not re-integrate the old worktrees or repeat the completed source audit.
 
 - Public cabildeo votes require `verifyCabildeoProof` before PDS preparation and
   AppView indexing, including foreign repositories. `PARA_CIVIC_VOTE_VERIFIER_URL`
