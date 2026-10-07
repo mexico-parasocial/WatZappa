@@ -117,6 +117,7 @@ export class TestBsky {
       draftsLimit: 500,
       feedGenSkeletonTimeout: 5 * SECOND,
       ...cfg,
+      bskyFeedgenDids: cfg.bskyFeedgenDids ?? new Set(),
       communityCreatorDids: cfg.communityCreatorDids ?? [],
       adminPasswords: [ADMIN_PASSWORD],
       etcdHosts: [],
