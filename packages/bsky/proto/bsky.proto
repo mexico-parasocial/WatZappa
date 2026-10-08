@@ -2173,6 +2173,27 @@ message ParaCommunityCivicTreeRelationshipResponse {
 }
 
 
+// Community activities, ledgers and wiki pages (PARA). Items are JSON views;
+// only records by the community's current organizers are returned.
+message GetParaCommunityActivitiesRequest {
+  string community_uri = 1;
+  string category = 2;
+  string time = 3;
+  int32 limit = 4;
+  string cursor = 5;
+}
+message GetParaCommunityActivityRequest {
+  string uri = 1;
+}
+message GetParaCommunityActivityResponse {
+  string activity_json = 1;
+  string ledger_json = 2;
+}
+message GetParaCommunityWikiPagesRequest {
+  string community_uri = 1;
+  string kind = 2;
+}
+
 message ParaDiscourseSnapshot {
   string community = 1;
   string bucket = 2;
@@ -2766,6 +2787,9 @@ service Service {
   rpc GetParaCommunityCivicTreeContributions(GetParaCommunityCivicTreeContributionsRequest) returns (ParaJsonPageResponse);
   rpc VoteParaCommunityCivicTreeContribution(VoteParaCommunityCivicTreeContributionRequest) returns (ParaCommunityCivicTreeContributionResponse);
   rpc CreateParaCommunityCivicTreeRelationship(CreateParaCommunityCivicTreeRelationshipRequest) returns (ParaCommunityCivicTreeRelationshipResponse);
+  rpc GetParaCommunityActivities(GetParaCommunityActivitiesRequest) returns (ParaJsonPageResponse);
+  rpc GetParaCommunityActivity(GetParaCommunityActivityRequest) returns (GetParaCommunityActivityResponse);
+  rpc GetParaCommunityWikiPages(GetParaCommunityWikiPagesRequest) returns (ParaJsonPageResponse);
   rpc GetParaDiscourseSnapshot(GetParaDiscourseSnapshotRequest) returns (GetParaDiscourseSnapshotResponse);
   rpc GetParaDiscourseTopics(GetParaDiscourseTopicsRequest) returns (GetParaDiscourseTopicsResponse);
   rpc GetParaDiscourseSentiment(GetParaDiscourseSentimentRequest) returns (GetParaDiscourseSentimentResponse);

@@ -1,0 +1,106 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.activityLedgerEntry",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "One money movement of a com.para.community.economicActivity, written by the activity's organizer into their own repo.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "activityUri",
+          "communityUri",
+          "termsDigest",
+          "entryType",
+          "amountMinor",
+          "currency",
+          "description",
+          "occurredAt",
+          "createdAt"
+        ],
+        "properties": {
+          "activityUri": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The com.para.community.economicActivity this entry belongs to."
+          },
+          "communityUri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "termsDigest": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "sha256 hex of the activity's committed terms (financialPlan plus pricing details) when the entry was booked."
+          },
+          "entryType": {
+            "type": "string",
+            "maxLength": 32,
+            "description": "income: money received; expense: money spent running the activity; donation: proceeds delivered to an allocation recipient.",
+            "knownValues": [
+              "income",
+              "expense",
+              "donation"
+            ]
+          },
+          "amountMinor": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Units or tickets this income entry covers, when applicable."
+          },
+          "currency": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 64,
+            "knownValues": [
+              "materials",
+              "permits",
+              "transport",
+              "venue",
+              "prizes",
+              "fees",
+              "sales",
+              "tickets",
+              "other"
+            ]
+          },
+          "recipient": {
+            "type": "string",
+            "maxLength": 32,
+            "description": "For donation entries: the allocation recipient that received the funds."
+          },
+          "receiptUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "itemName": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "For sale income: which item was sold."
+          }
+        }
+      }
+    }
+  }
+}
