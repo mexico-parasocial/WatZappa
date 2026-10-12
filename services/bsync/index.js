@@ -1,13 +1,6 @@
 /* eslint-env node */
 
-'use strict'
-
-const {
-  default: BsyncService,
-  envToCfg,
-  httpLogger,
-  readEnv,
-} = require('@atproto/bsync')
+import BsyncService, { envToCfg, httpLogger, readEnv } from '@atproto/bsync'
 
 const main = async () => {
   const env = readEnv()
