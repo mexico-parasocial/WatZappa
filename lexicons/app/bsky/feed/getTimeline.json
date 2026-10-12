@@ -31,6 +31,7 @@
           "type": "object",
           "required": ["feed"],
           "properties": {
+            "cursor": { "type": "string" },
             "startCursor": {
               "type": "string",
               "description": "Cursor identifying the newest item in this page. Pass it as since on a later request to fetch only newer content."

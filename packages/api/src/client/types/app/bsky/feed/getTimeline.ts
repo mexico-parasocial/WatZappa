@@ -28,6 +28,7 @@ export type QueryParams = {
 export type InputSchema = undefined
 
 export interface OutputSchema {
+  cursor?: string
   /** Cursor identifying the newest item in this page. Pass it as since on a later request to fetch only newer content. */
   startCursor?: string
   feed: AppBskyFeedDefs.FeedViewPost[]
