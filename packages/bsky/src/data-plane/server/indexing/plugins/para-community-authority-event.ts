@@ -1,13 +1,14 @@
-import { type Selectable } from 'kysely'
-import type { CID } from 'multiformats/cid'
+import type { Selectable } from 'kysely'
 import {
+  AUTHORITY_EVENT_VERSION,
   type AuthorityAction,
   type AuthorityBasis,
-  AUTHORITY_EVENT_VERSION,
 } from '@atproto/common'
-import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
-import { verifyAuthorityEvent } from '../../community-authority.js'
+import type { Cid } from '@atproto/lex'
+import { type AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
+import { com } from '../../../../lexicons.js'
 import type { BackgroundQueue } from '../../background.js'
+import { verifyAuthorityEvent } from '../../community-authority.js'
 import type {
   DatabaseSchema,
   DatabaseSchemaType,
@@ -15,33 +16,53 @@ import type {
 import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
 
-interface AuthorityEventRecord {
-  community: string
-  subject: string
-  action: AuthorityAction
-  issuer: string
-  effectiveAt: string
-  expiresAt?: string
-  predecessor?: string
-  version: number
-  basis: AuthorityBasis
-  evidence?: string
-  createdAt: string
-}
-
 type IndexedAuthorityEvent = Selectable<
   DatabaseSchemaType['para_community_authority_event']
 >
 
-const lexId = 'com.para.community.authorityEvent'
+// The lexicon leaves action and basis open; authority only derives from the
+// ones it defines, so an event with any other value is not indexed.
+const AUTHORITY_ACTIONS: ReadonlySet<string> = new Set<AuthorityAction>([
+  'member.activate',
+  'member.suspend',
+  'member.reinstate',
+  'member.remove',
+  'member.block',
+  'moderator.grant',
+  'moderator.revoke',
+  'moderator.resign',
+  'owner.grant',
+  'owner.revoke',
+])
+const AUTHORITY_BASES: ReadonlySet<string> = new Set<AuthorityBasis>([
+  'openAdmission',
+  'assemblyDecision',
+  'ownerAppointment',
+  'ownerTransfer',
+  'foundingTransition',
+  'resignation',
+  'expiry',
+  'migration',
+])
 
 async function insertFn(
   db: DatabaseSchema,
   uri: AtUri,
-  cid: CID,
-  event: AuthorityEventRecord,
+  cid: Cid,
+  record: com.para.community.authorityEvent.Main,
   timestamp: string,
 ): Promise<IndexedAuthorityEvent | null> {
+  if (
+    !AUTHORITY_ACTIONS.has(record.action) ||
+    !AUTHORITY_BASES.has(record.basis)
+  ) {
+    return null
+  }
+  const event = {
+    ...record,
+    action: record.action as AuthorityAction,
+    basis: record.basis as AuthorityBasis,
+  }
   const database = { db } as Database
   if (
     event.version !== AUTHORITY_EVENT_VERSION &&
@@ -108,7 +129,7 @@ async function deleteFn(
 }
 
 export type PluginType = RecordProcessor<
-  AuthorityEventRecord,
+  typeof com.para.community.authorityEvent.main,
   IndexedAuthorityEvent
 >
 
@@ -117,7 +138,7 @@ export function makePlugin(
   background: BackgroundQueue,
 ): PluginType {
   return new RecordProcessor(db, background, {
-    lexId,
+    schema: com.para.community.authorityEvent.main,
     insertFn,
     findDuplicate,
     deleteFn,
