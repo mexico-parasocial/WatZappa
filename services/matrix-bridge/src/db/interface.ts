@@ -9,6 +9,7 @@ import type {
   ConsentPrefsStore,
   ConstitutionProposalsStore,
   DeliberationStore,
+  DmRequestsStore,
   EventLogStore,
   IdentityMatrixStore,
   InfraStore,
@@ -31,7 +32,8 @@ export interface IBridgeDatabase
     MatrixEventsStore,
     DeliberationStore,
     InstitutionStore,
-    EventLogStore {
+    EventLogStore,
+    DmRequestsStore {
   /** Database-only work: never perform network calls inside this transaction. */
   transaction<T>(work: () => Promise<T>): Promise<T>
   close(): Promise<void>
@@ -41,6 +43,7 @@ export type {
   ConsentPrefsStore,
   ConstitutionProposalsStore,
   DeliberationStore,
+  DmRequestsStore,
   IdentityMatrixStore,
   InfraStore,
   InstitutionStore,
@@ -56,6 +59,8 @@ export type {
   CommunityRoomSummary,
   CommunitySpaceMap,
   DeviceSession,
+  DmRequest,
+  DmRequestSummary,
   SyncLogEntry,
   UserPushToken,
 } from './records.js'
