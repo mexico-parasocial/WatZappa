@@ -22,6 +22,17 @@
 pds.{$PARA_DOMAIN} {
 	encode gzip
 
+	# Operator-only endpoints answer an empty 404 unless the client comes from
+	# loopback or the private network. Operators reach them over the tailnet
+	# or with `docker compose exec`.
+	@operator {
+		path /xrpc/com.atproto.admin.*
+		not remote_ip {$PARA_OPERATOR_CIDRS:127.0.0.1/8 100.64.0.0/10 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16}
+	}
+	handle @operator {
+		respond 404
+	}
+
 	# Blob reads are immutable once written; allow clients/CDN to cache them.
 	handle /xrpc/com.atproto.sync.getBlob* {
 		reverse_proxy pds:2583 {
@@ -29,8 +40,14 @@ pds.{$PARA_DOMAIN} {
 		}
 	}
 
+	# While the PDS restarts (an upgrade, a crash), Caddy keeps retrying the
+	# connection for up to 10 s, so requests wait instead of getting a 502.
+	# It only retries connections the PDS never accepted, so a write cannot
+	# run twice.
 	handle {
-		reverse_proxy pds:2583
+		reverse_proxy pds:2583 {
+			lb_try_duration 10s
+		}
 	}
 
 	header {
@@ -55,8 +72,15 @@ appview.{$PARA_DOMAIN} {
 		}
 	}
 
+	# Every AppView replica (Docker DNS answers with all of them) plus any
+	# workers on other hosts listed in APPVIEW_WORKERS ("host:port ...").
+	# A replica that refuses connections is skipped for 30 s.
 	handle {
-		reverse_proxy bsky:2584
+		reverse_proxy bsky:2584 {$APPVIEW_WORKERS} {
+			lb_policy round_robin
+			lb_try_duration 10s
+			fail_duration 30s
+		}
 	}
 
 	header {
@@ -123,7 +147,8 @@ bridge.{$PARA_DOMAIN} {
 	# address was para-g0v.app so the two hosts differed. Now that PARA_DOMAIN
 	# is para.social, that same redirect would point the domain at itself and
 	# loop. Serve a 404 and let whoever owns the marketing page opt in.
+	# para-platform sets PARA_ROOT_HANDLER to proxy the PARA web app here.
 	handle {
-		respond "Not Found" 404
+		{$PARA_ROOT_HANDLER:respond "Not Found" 404}
 	}
 }

@@ -20,15 +20,17 @@ echo "════════════════════════�
 echo "  PARA Matrix Homeserver Setup"
 echo "═══════════════════════════════════════════════════════════════"
 
-# Validate env file
-if [ ! -f "$ENV_FILE" ]; then
-    echo "❌ $ENV_FILE not found. Create it from .env.example first."
+# Load only MATRIX_* and POSTGRES_* vars from the repo .env when it exists.
+# Without it the values come from the environment (para-platform's
+# `make matrix-init` exports them), as in setup-mas.sh.
+if [ -f "$ENV_FILE" ]; then
+    export $(grep -E '^MATRIX_' "$ENV_FILE" | xargs) || true
+    export $(grep -E '^POSTGRES_' "$ENV_FILE" | xargs) || true
+elif [ -z "${POSTGRES_PASSWORD:-}" ]; then
+    echo "❌ $ENV_FILE not found and POSTGRES_PASSWORD is not exported."
+    echo "   Create it from .env.example, or run para-platform's make matrix-init."
     exit 1
 fi
-
-# Load only MATRIX_* vars
-export $(grep -E '^MATRIX_' "$ENV_FILE" | xargs) || true
-export $(grep -E '^POSTGRES_' "$ENV_FILE" | xargs) || true
 
 MATRIX_SERVER_NAME="${MATRIX_SERVER_NAME:-matrix.para.social}"
 MATRIX_DOMAIN="${MATRIX_DOMAIN:-chat.para.social}"
@@ -128,7 +130,10 @@ fi
 # ─────────────────────────────────────────────────────────────────────────────
 # 2. Generate Element Web config
 # ─────────────────────────────────────────────────────────────────────────────
-ELEMENT_CFG="${SCRIPT_DIR}/element-config.json"
+# para-platform writes it next to the generated Synapse config (gitignored)
+# and mounts it from there, so a server checkout stays clean.
+ELEMENT_CFG="${ELEMENT_CONFIG_OUT:-${SCRIPT_DIR}/element-config.json}"
+PARA_PUBLIC_URL="${PARA_PUBLIC_URL:-https://para.social}"
 
 cat > "$ELEMENT_CFG" <<EOF
 {
@@ -162,11 +167,11 @@ cat > "$ELEMENT_CFG" <<EOF
     },
     "terms_and_conditions_links": [
         {
-            "url": "https://para.social/tos",
+            "url": "${PARA_PUBLIC_URL}/tos",
             "text": "Terms of Service"
         },
         {
-            "url": "https://para.social/privacy",
+            "url": "${PARA_PUBLIC_URL}/privacy",
             "text": "Privacy Policy"
         }
     ]

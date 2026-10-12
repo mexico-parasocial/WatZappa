@@ -1,11 +1,17 @@
 # PARA Production Stack
 # Spin up the full backend with: docker compose -f docker-compose.prod.yaml up -d
 #
-# Prerequisites:
-#   1. Generate signing keys: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-#   2. Create .env from .env.example
-#   3. docker compose -f docker-compose.prod.yaml up -d
-#   4. docker compose -f docker-compose.prod.yaml logs -f
+# The supported way to run this in production is para-platform (`make up`),
+# which adds secrets as files, the shared Postgres, sizing profiles and the
+# edge on top of this file. Running it directly still works for a quick test:
+#   1. Create .env from .env.example
+#   2. docker compose -f docker-compose.prod.yaml up -d
+#
+# Images: each built service also names an image. With WATZAPPA_VERSION unset
+# the tag is `local` and Compose builds it here; with WATZAPPA_VERSION set to a
+# published tag (sha-<commit> or a release), `docker compose pull` fetches the
+# image CI built (.github/workflows/para-images.yaml) and nothing compiles on
+# the server.
 #
 # Security notes:
 #   - Postgres and Redis are NOT exposed to the host. Only services inside this
@@ -54,6 +60,7 @@ services:
   # AT PROTOCOL SERVICES
   # ==========================================================================
   pds:
+    image: ${PARA_REGISTRY:-ghcr.io/mexico-parasocial}/watzappa-pds:${WATZAPPA_VERSION:-local}
     build:
       context: .
       dockerfile: ./services/pds/Dockerfile
@@ -68,7 +75,10 @@ services:
       - .env
     environment:
       PDS_PORT: 2583
-      PDS_DB_POSTGRES_URL: postgres://${POSTGRES_USER:-pg}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-para}
+      # Accounts, the sequencer and one SQLite per repo live here. It must be a
+      # named volume: the image only declares an anonymous one, which a
+      # `down` followed by `up` silently replaces with an empty volume.
+      PDS_DATA_DIRECTORY: ${PDS_DATA_DIRECTORY:-/app/data}
       PDS_BLOBSTORE_S3_BUCKET: ${PDS_BLOBSTORE_S3_BUCKET}
       PDS_BLOBSTORE_S3_REGION: ${PDS_BLOBSTORE_S3_REGION:-auto}
       PDS_BLOBSTORE_S3_ENDPOINT: ${PDS_BLOBSTORE_S3_ENDPOINT}
@@ -83,6 +93,8 @@ services:
       PDS_CRAWLERS: ${PDS_CRAWLERS:-https://bsky.network}
       PDS_INVITE_REQUIRED: ${PDS_INVITE_REQUIRED:-1}
       PDS_DISABLE_SSRF_PROTECTION: '0'
+    volumes:
+      - pds_data:/app/data
     # Internal port only — Caddy routes public traffic here
     expose:
       - '2583'
@@ -93,6 +105,7 @@ services:
       retries: 3
 
   dataplane:
+    image: ${PARA_REGISTRY:-ghcr.io/mexico-parasocial}/watzappa-bsky:${WATZAPPA_VERSION:-local}
     build:
       context: .
       dockerfile: ./services/bsky/Dockerfile
@@ -110,6 +123,7 @@ services:
       - '2585'
 
   bsky:
+    image: ${PARA_REGISTRY:-ghcr.io/mexico-parasocial}/watzappa-bsky:${WATZAPPA_VERSION:-local}
     build:
       context: .
       dockerfile: ./services/bsky/Dockerfile
@@ -147,6 +161,7 @@ services:
       retries: 3
 
   bsync:
+    image: ${PARA_REGISTRY:-ghcr.io/mexico-parasocial}/watzappa-bsync:${WATZAPPA_VERSION:-local}
     build:
       context: .
       dockerfile: ./services/bsync/Dockerfile
@@ -168,6 +183,7 @@ services:
       - '2586'
 
   ozone:
+    image: ${PARA_REGISTRY:-ghcr.io/mexico-parasocial}/watzappa-ozone:${WATZAPPA_VERSION:-local}
     build:
       context: .
       dockerfile: ./services/ozone/Dockerfile
@@ -218,6 +234,7 @@ services:
         condition: service_healthy
 
 volumes:
+  pds_data:
   postgres_data:
   redis_data:
   caddy_data:

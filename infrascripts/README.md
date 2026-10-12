@@ -1,8 +1,12 @@
 # infrascripts
 
-Operational shell scripts. **`ansible/` is the maintained deployment path**;
-what remains here is either a tool ansible does not replace, or part of the
-separate bare-metal track.
+Operational shell scripts. **The maintained deployment path is para-platform**
+(the sibling repo `../para-platform`: `make up` on one host, `deploy/ansible/`
+for provisioning). It replaced the `ansible/` tree and
+`docker-compose.swarm.yml` that used to live here, neither of which had ever
+run against a real host. What remains here is either a tool the platform does
+not replace, or part of the separate bare-metal track. Where the tables below
+say "ansible", read para-platform's kit.
 
 ## What was wrong with all of them
 
@@ -59,13 +63,13 @@ the migration is done and confirmed)
 
 ### Superseded — recommended for deletion, NOT deleted
 
-Nothing here has been removed. Each is replaced by something in `ansible/`:
+Nothing here has been removed. Each is replaced by something in para-platform:
 
 | Script | Replaced by | Delete when |
 | --- | --- | --- |
-| `deploy-production.sh` | `playbooks/site.yml`, `playbooks/deploy.yml` | Ansible has deployed to a real host **at least once**. It is still the only path that has ever produced a running deployment, so it stays until the replacement is proven — not before. |
-| `setup-firewall.sh` | `roles/common` (UFW, fail2ban, sysctl) | Now. Ansible's version also opens port 80, which this one does not — and without 80 the ACME HTTP-01 challenge fails and every hostname serves a TLS error. |
-| `backup-postgres.sh` | `roles/postgres` (systemd timer) | Now. It backs up one database of three — the Synapse and MAS databases are not covered — and connects over `localhost:5432`, which reaches nothing: no Postgres container publishes a port. |
+| `deploy-production.sh` | para-platform `make up` / `deploy/ansible/playbooks/site.yml` | Ansible has deployed to a real host **at least once**. It is still the only path that has ever produced a running deployment, so it stays until the replacement is proven — not before. |
+| `setup-firewall.sh` | para-platform `deploy/ansible/roles/common` (UFW, fail2ban, sysctl) | Now. Ansible's version also opens port 80, which this one does not — and without 80 the ACME HTTP-01 challenge fails and every hostname serves a TLS error. |
+| `backup-postgres.sh` | para-platform's `backup` service (every database, to the bucket) | Now. It backs up one database of three — the Synapse and MAS databases are not covered — and connects over `localhost:5432`, which reaches nothing: no Postgres container publishes a port. |
 
 ---
 

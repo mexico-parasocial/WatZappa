@@ -3,11 +3,11 @@ set -euo pipefail
 
 # PARA Production Deploy Script — Server-Side Build
 #
-# SUPERSEDED by ansible/ (playbooks/site.yml, playbooks/deploy.yml), which does
-# the same thing with health gating, backups and the Matrix stack wired in.
-# Kept because it is the only path that has ever produced a running deployment
-# and the ansible tree has not yet run against a real host. Delete it once
-# ansible has deployed successfully at least once.
+# SUPERSEDED by para-platform (`make up`, deploy/ansible/), which pulls
+# published images instead of building on the server and adds secrets as
+# files, backups to the bucket and health gating. Kept because it is the only
+# path that has ever produced a running deployment. Delete it once
+# para-platform has deployed successfully at least once.
 # Usage: ./infrascripts/deploy-production.sh [--with-matrix] [user@host]
 #
 # This script:

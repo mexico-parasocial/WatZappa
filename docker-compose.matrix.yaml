@@ -121,6 +121,7 @@ services:
   # para-idp — proves the user holds a PARA identity key (CD-M4)
   # ═════════════════════════════════════════════════════════════════════════════
   para-idp:
+    image: ${PARA_REGISTRY:-ghcr.io/mexico-parasocial}/watzappa-para-idp:${WATZAPPA_VERSION:-local}
     build:
       context: .
       dockerfile: ./services/para-idp/Dockerfile
@@ -205,6 +206,7 @@ services:
   # Matrix↔PARA Community Bridge
   # ═════════════════════════════════════════════════════════════════════════════
   matrix-bridge:
+    image: ${PARA_REGISTRY:-ghcr.io/mexico-parasocial}/watzappa-matrix-bridge:${WATZAPPA_VERSION:-local}
     build:
       context: .
       dockerfile: ./services/matrix-bridge/Dockerfile

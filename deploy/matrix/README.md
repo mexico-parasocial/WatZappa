@@ -161,3 +161,26 @@ Both `caddy` (prod compose) and `matrix-bridge` (this stack) attach to it;
 `make matrix-smoke` (repo root) boots Synapse + bridge and proves the
 appservice registration, transaction push/dedup, SSE delivery, and device
 session minting against a real Synapse.
+
+## Production URLs (para-platform)
+
+`setup.sh` and `setup-mas.sh` default to the local stack (`localhost`). For a
+public deployment, export these before running them; para-platform's
+`make matrix-init` does it from `PARA_DOMAIN`:
+
+| Variable | Default | Production |
+| --- | --- | --- |
+| `MAS_PUBLIC_BASE` | `http://localhost:8080/` | `https://auth.<domain>/` |
+| `PARA_IDP_PUBLIC_URL` | `http://localhost:8090` | `https://idp.<domain>` |
+| `ELEMENT_CONFIG_OUT` | `deploy/matrix/element-config.json` (tracked) | a gitignored path |
+| `PARA_PUBLIC_URL` | `https://para.social` | `https://<domain>` (terms links in Element) |
+| `BRIDGE_APPSERVICE_URL` | `http://host.docker.internal:3001` | `http://matrix-bridge:3001` (`setup-appservice.sh`) |
+
+`setup-appservice.sh` writes the bridge's appservice registration (fresh
+tokens, exclusive namespace for the derived localparts on this homeserver)
+and the overlay that loads it. It never overwrites an existing registration.
+
+`services/caddy/Caddyfile.matrix.prod` is the containerized edge for those
+hosts (Synapse with MAS's compat endpoints, MAS, para-idp, Element), with the
+Synapse and MAS admin APIs closed outside the private network.
+`Caddyfile.matrix` here remains the example for a Caddy running on the host.

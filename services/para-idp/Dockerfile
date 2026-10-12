@@ -19,7 +19,9 @@ RUN npx tsc
 
 FROM node:22-alpine
 RUN apk add --update dumb-init wget
-ENTRYPOINT ["dumb-init", "--"]
+# Secrets arrive as NAME_FILE=/run/secrets/... (see services/_shared/env-from-files.sh).
+COPY --chmod=755 services/_shared/env-from-files.sh /usr/local/bin/env-from-files
+ENTRYPOINT ["dumb-init", "--", "env-from-files"]
 WORKDIR /app
 
 RUN npm install -g npm@12

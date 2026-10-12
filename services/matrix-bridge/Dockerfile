@@ -62,7 +62,9 @@ FROM node:22-slim
 RUN apt-get update && apt-get install -y --no-install-recommends dumb-init sqlite3 wget && rm -rf /var/lib/apt/lists/*
 
 # Avoid zombie processes, handle signal forwarding
-ENTRYPOINT ["dumb-init", "--"]
+# Secrets arrive as NAME_FILE=/run/secrets/... (see services/_shared/env-from-files.sh).
+COPY --chmod=755 services/_shared/env-from-files.sh /usr/local/bin/env-from-files
+ENTRYPOINT ["dumb-init", "--", "env-from-files"]
 
 WORKDIR /app/services/matrix-bridge
 COPY --from=build /app /app
