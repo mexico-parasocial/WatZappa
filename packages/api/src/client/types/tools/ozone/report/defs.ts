@@ -174,6 +174,16 @@ export interface ReportView {
     'open' | 'closed' | 'escalated' | 'queued' | 'assigned' | (string & {})
   subject: ToolsOzoneModerationDefs.SubjectView
   reportType: ComAtprotoModerationDefs.ReasonType
+  /** Priority level assigned to the report. */
+  priorityLevel?: string
+  /** Report priority score. Higher scores have higher priority. */
+  priorityScore?: number
+  /** Target resolution duration in minutes. */
+  priorityTargetMinutes?: number
+  /** Time from report creation to its last closure. */
+  resolutionTimeSec?: number
+  /** Whether the current closure occurred within the report's snapshotted target. */
+  priorityTargetMet?: boolean
   /** DID of the user who made the report */
   reportedBy: string
   reporter: ToolsOzoneModerationDefs.SubjectView
@@ -383,8 +393,16 @@ export function validateReportActivityView<V>(v: V) {
 /** Live statistics for reports for the current calendar day, filterable by queue, moderator, or report type. */
 export interface LiveStats {
   $type?: 'tools.ozone.report.defs#liveStats'
-  /** Number of reports currently not closed. */
+  /** Number of unmuted reports currently not closed. */
   pendingCount?: number
+  /** Unmuted pending reports past their closure target. */
+  closureTargetOverdueCount?: number
+  /** Reports whose closure meets their closure target. */
+  closureTargetMetCount?: number
+  /** Reports whose closure exceeds their closure target. */
+  closureTargetMissedCount?: number
+  /** Percent of reports meeting their closure target. */
+  closureTargetMetRate?: number
   /** Number of close transitions. */
   closedCount?: number
   /** Number of closures whose last report action is label, tag, or takedown. */
@@ -436,8 +454,16 @@ export interface HistoricalStats {
   date: string
   /** When this snapshot was last computed. */
   computedAt?: string
-  /** Number of reports not closed at time of computation. */
+  /** Number of unmuted reports not closed at the end of this UTC day, or at computation time for the current day. */
   pendingCount?: number
+  /** Unmuted pending reports past their closure target at the snapshot time. */
+  closureTargetOverdueCount?: number
+  /** Reports whose closure meets their closure target. */
+  closureTargetMetCount?: number
+  /** Reports whose closure exceeds their closure target. */
+  closureTargetMissedCount?: number
+  /** Percent of reports meeting their closure target. */
+  closureTargetMetRate?: number
   /** Number of close transitions during this day. */
   closedCount?: number
   /** Number of closures whose last report action is label, tag, or takedown during this day. */

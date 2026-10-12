@@ -59,8 +59,16 @@ export function validateQueueView<V>(v: V) {
 
 export interface QueueStats {
   $type?: 'tools.ozone.queue.defs#queueStats'
-  /** Number of reports in 'open' status */
+  /** Number of unmuted reports currently not closed. */
   pendingCount?: number
+  /** Unmuted pending reports past their closure target. */
+  closureTargetOverdueCount?: number
+  /** Reports whose closure meets their closure target. */
+  closureTargetMetCount?: number
+  /** Reports whose closure exceeds their closure target. */
+  closureTargetMissedCount?: number
+  /** Percent of reports meeting their closure target. */
+  closureTargetMetRate?: number
   /** Number of reports in 'closed' status */
   actionedCount?: number
   /** Number of reports in 'escalated' status */

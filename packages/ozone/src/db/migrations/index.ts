@@ -46,3 +46,8 @@ export * as _20260617T210022765Z from './20260617T210022765Z-add-report-isautoma
 export * as _20260720T000000000Z from './20260720T000000000Z-add-convo-subjects-to-stats-views.js'
 export * as _20260731T000000000Z from './20260731T000000000Z-add-recommended-policies-to-report-queue.js'
 export * as _20260928T000000000Z from './20260928T000000000Z-inbox-appeal.js'
+export * as _20261002T000000000Z from './20261002T000000000Z-add-report-reporter-did.js'
+export * as _20261005T000000000Z from './20261005T000000000Z-inbox-seen.js'
+export * as _20261005T000000001Z from './20261005T000000001Z-inbox-notifications.js'
+export * as _20261008T000000000Z from './20261008T000000000Z-add-report-priority.js'
+export * as _20261008T000000001Z from './20261008T000000001Z-add-report-closure-target-stats.js'
