@@ -71,6 +71,141 @@ function toIsoUtc(value: unknown): string {
   return Number.isNaN(parsed.getTime()) ? text : parsed.toISOString()
 }
 
+/**
+ * Reasons a member can be reported for when no message is attached. Fixed for
+ * the same reason as message reasons: free text is a channel for pasting what
+ * was said, and moderators see these strings in the queue.
+ */
+export const MEMBER_REPORT_REASONS = [
+  'spam',
+  'abuse',
+  'harassment',
+  'hate',
+  'violence',
+  'impersonation',
+  'other',
+] as const
+
+export function isMemberReportReason(value: unknown): boolean {
+  return (MEMBER_REPORT_REASONS as readonly unknown[]).includes(value)
+}
+
+/**
+ * Badges that say a member is at risk or restricted. Moderators see them; the
+ * member sees their own; nobody else does. Hiding them in the app is not
+ * enough, since the member list is an API any member can call.
+ */
+export const RISK_BADGE_TYPES = [
+  'reported',
+  'contentious',
+  'high_risk',
+  'sanctioned',
+] as const
+
+export type SanctionKind = 'mute' | 'ban'
+
+/** The longest sanction a moderator can set: one year. Longer is permanent. */
+export const MAX_SANCTION_MINUTES = 60 * 24 * 365
+
+/** The longest free-text moderator reason kept with a sanction. */
+export const MAX_SANCTION_REASON_LENGTH = 500
+
+export interface EffectiveSanction {
+  type: SanctionKind
+  since: string
+  /** ISO time the sanction ends; null when it is permanent. */
+  until: string | null
+  reason: string | null
+  byDid: string | null
+}
+
+type SanctionRow = {
+  event_type: string
+  sanction_type?: string | null
+  sanction_duration_minutes?: number | null
+  report_reason?: string | null
+  sanctioned_by_did?: string | null
+  created_at: unknown
+}
+
+/**
+ * Replay a member's mute, ban and lift events (oldest first) into what is in
+ * force: the latest mute and the latest ban, each cleared by a later lift.
+ * Rows other than those three are ignored.
+ */
+function currentSanctions(
+  rows: SanctionRow[],
+): Partial<Record<SanctionKind, EffectiveSanction>> {
+  const current: Partial<Record<SanctionKind, EffectiveSanction>> = {}
+  for (const row of rows) {
+    if (row.event_type === 'mute' || row.event_type === 'ban') {
+      const sinceMs = Date.parse(toIsoUtc(row.created_at))
+      const minutes = row.sanction_duration_minutes
+      current[row.event_type] = {
+        type: row.event_type,
+        since: new Date(sinceMs).toISOString(),
+        until: minutes
+          ? new Date(sinceMs + minutes * 60_000).toISOString()
+          : null,
+        reason: row.report_reason ?? null,
+        byDid: row.sanctioned_by_did ?? null,
+      }
+    } else if (row.event_type === 'sanction_lifted') {
+      // A lift names what it lifted; one that names neither lifts both.
+      if (row.sanction_type === 'mute' || row.sanction_type === 'ban') {
+        delete current[row.sanction_type]
+      } else {
+        delete current.mute
+        delete current.ban
+      }
+    }
+  }
+  return current
+}
+
+function isInForce(s: EffectiveSanction | undefined, now: Date): boolean {
+  return !!s && (s.until === null || Date.parse(s.until) > now.getTime())
+}
+
+/**
+ * What restricts a member right now, or null. A ban outranks a mute. Pass the
+ * full history from `getSanctionEvents`: a permanent ban never ages out.
+ */
+export function effectiveSanction(
+  rows: SanctionRow[],
+  now: Date = new Date(),
+): EffectiveSanction | null {
+  const current = currentSanctions(rows)
+  if (isInForce(current.ban, now)) return current.ban!
+  if (isInForce(current.mute, now)) return current.mute!
+  return null
+}
+
+/** Every kind in force right now: a member can be muted and banned at once. */
+export function sanctionKindsInForce(
+  rows: SanctionRow[],
+  now: Date = new Date(),
+): SanctionKind[] {
+  const current = currentSanctions(rows)
+  return (['ban', 'mute'] as const).filter((kind) =>
+    isInForce(current[kind], now),
+  )
+}
+
+/**
+ * Sanctions that ran out but were never lifted, so Matrix may still hold
+ * them. Lifting records a `sanction_lifted` event, which clears them here.
+ */
+export function expiredSanctionKinds(
+  rows: SanctionRow[],
+  now: Date = new Date(),
+): SanctionKind[] {
+  const current = currentSanctions(rows)
+  return (['ban', 'mute'] as const).filter(
+    (kind) => current[kind] && !isInForce(current[kind], now),
+  )
+}
+
 export type ReportedMessageResolution =
   | { ok: true; reportedDid: string }
   | {
@@ -193,6 +328,12 @@ export class ChatModerationEngine {
     return { ok: true, reportedDid }
   }
 
+  /**
+   * Record a report. One reporter's repeat reports of the same message (or,
+   * with no message, the same member within 30 days) are one report: counting
+   * rows would let a single account push someone to "high risk". Returns
+   * whether a new report was stored.
+   */
   async ingestReport(params: {
     reportedDid: string
     reporterDid: string
@@ -200,7 +341,15 @@ export class ChatModerationEngine {
     reason: string
     matrixEventId?: string
     matrixRoomId?: string
-  }): Promise<void> {
+  }): Promise<boolean> {
+    const repeat = await this.db.hasReportFrom(
+      params.reporterDid,
+      params.reportedDid,
+      params.communityUri,
+      params.matrixEventId ?? null,
+      params.matrixEventId ? 36_500 : 30,
+    )
+    if (repeat) return false
     await this.db.insertModerationEvent({
       did: params.reportedDid,
       communityUri: params.communityUri,
@@ -218,18 +367,21 @@ export class ChatModerationEngine {
       },
       'Report ingested',
     )
+    return true
   }
 
   /**
-   * Ingest a sanction applied by a moderator.
+   * Record a sanction applied by a moderator. The reason is the moderator's
+   * own words about why; it is kept for the audit trail, shown to moderators,
+   * and stored in `report_reason`, which no other non-report event uses.
    */
   async ingestSanction(params: {
     targetDid: string
     communityUri: string
-    sanctionType: 'mute' | 'ban' | 'redact'
-    durationMinutes?: number
+    sanctionType: SanctionKind
+    durationMinutes?: number | null
     sanctionedByDid: string
-    matrixRoomId?: string
+    reason?: string | null
   }): Promise<void> {
     await this.db.insertModerationEvent({
       did: params.targetDid,
@@ -238,12 +390,60 @@ export class ChatModerationEngine {
       sanctionType: params.sanctionType,
       sanctionDurationMinutes: params.durationMinutes ?? null,
       sanctionedByDid: params.sanctionedByDid,
-      matrixRoomId: params.matrixRoomId ?? null,
+      reportReason: params.reason ?? null,
     })
     this.log.debug(
       { target: params.targetDid, type: params.sanctionType },
       'Sanction ingested',
     )
+  }
+
+  /** Record that a moderator lifted a sanction (or the bridge, on expiry). */
+  async ingestLift(params: {
+    targetDid: string
+    communityUri: string
+    sanctionType: SanctionKind | null
+    liftedByDid: string | null
+    reason: string
+  }): Promise<void> {
+    await this.db.insertModerationEvent({
+      did: params.targetDid,
+      communityUri: params.communityUri,
+      eventType: 'sanction_lifted',
+      sanctionType: params.sanctionType,
+      sanctionedByDid: params.liftedByDid,
+      reportReason: params.reason,
+    })
+  }
+
+  /** What restricts this member now, or null. */
+  async getSanction(
+    did: string,
+    communityUri: string,
+  ): Promise<EffectiveSanction | null> {
+    return effectiveSanction(await this.db.getSanctionEvents(did, communityUri))
+  }
+
+  /**
+   * A moderator reviewed the reports against a message (or, with no event,
+   * everything reported about the member so far) and closed them. Dismissed
+   * reports leave the queue and stop counting toward risk badges; a new report
+   * made afterwards opens it again.
+   */
+  async dismissReports(params: {
+    reportedDid: string
+    communityUri: string
+    matrixEventId?: string | null
+    dismissedByDid: string
+  }): Promise<void> {
+    await this.db.insertModerationEvent({
+      did: params.reportedDid,
+      communityUri: params.communityUri,
+      eventType: 'report_dismissed',
+      reportedEventId: params.matrixEventId ?? null,
+      sanctionedByDid: params.dismissedByDid,
+    })
+    await this.recomputeUser(params.reportedDid, params.communityUri)
   }
 
   /**
@@ -302,23 +502,31 @@ export class ChatModerationEngine {
     const badges: ChatBadge[] = []
 
     // --- RISK BADGES (visible in chat by default) ---
-    const reports30d = events.filter(
-      (e: any) =>
-        e.event_type === 'report_received' &&
-        new Date(e.created_at) >
-          new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
-    ).length
+    // Distinct people, not rows, and only reports no moderator has closed
+    // since: a dismissal covers its message, or every earlier report when it
+    // names no message. `id` orders events; timestamps tie within a second.
+    const since30d = now.getTime() - 30 * 24 * 60 * 60 * 1000
+    const dismissals = events.filter(
+      (e: any) => e.event_type === 'report_dismissed',
+    )
+    const reporters = new Set<string>()
+    for (const e of events) {
+      if (e.event_type !== 'report_received') continue
+      if (Date.parse(toIsoUtc(e.created_at)) <= since30d) continue
+      const dismissed = dismissals.some(
+        (d: any) =>
+          d.id > e.id &&
+          (d.reported_event_id == null ||
+            d.reported_event_id === e.reported_event_id),
+      )
+      if (dismissed) continue
+      reporters.add(e.reporter_did ?? `report:${e.id}`)
+    }
+    const reports30d = reporters.size
 
-    const activeSanction = events.find((e: any) => {
-      if (!['mute', 'ban'].includes(e.event_type)) return false
-      // Simple heuristic: if sanction has no duration, assume permanent
-      // if duration exists, check if it's still active
-      if (!e.sanction_duration_minutes) return true
-      const sanctionEnd =
-        new Date(e.created_at).getTime() +
-        e.sanction_duration_minutes * 60 * 1000
-      return sanctionEnd > now.getTime()
-    })
+    // From the full history: a permanent ban does not age out at 90 days, and
+    // a lifted or expired sanction is gone.
+    const activeSanction = await this.getSanction(did, communityUri)
 
     if (activeSanction) {
       badges.push(this.makeBadge('sanctioned', true))
@@ -487,26 +695,42 @@ export class ChatModerationEngine {
 
   /**
    * Get member list with badges for a community.
+   *
+   * Risk and sanction badges are filtered here, by who is asking: moderators
+   * get them all, and with the sanction in force; a member gets only their own.
    */
   async getMemberList(
     communityUri: string,
-    limit = 100,
-    offset = 0,
+    limit: number,
+    offset: number,
+    viewer: { did: string; isModerator: boolean },
   ): Promise<
     Array<{
       did: string
       badges: ChatBadge[]
       participation: ParticipationSummary | null
       lastActiveAt?: string
+      sanction?: Pick<EffectiveSanction, 'type' | 'until'>
     }>
   > {
     const rows = await this.db.getMemberList(communityUri, limit, offset)
+    const isRisk = (type: string) =>
+      (RISK_BADGE_TYPES as readonly string[]).includes(type)
     return Promise.all(
       rows.map(async (row: any) => {
-        const badges = (await this.db.getUserBadges(row.did, communityUri)).map(
-          (b: any) => this.makeBadge(b.badge_type, b.visible_in_chat === 1),
-        )
-        return {
+        const canSeeRisk = viewer.isModerator || row.did === viewer.did
+        const badges = (await this.db.getUserBadges(row.did, communityUri))
+          .filter((b: any) => canSeeRisk || !isRisk(b.badge_type))
+          .map((b: any) =>
+            this.makeBadge(b.badge_type, b.visible_in_chat === 1),
+          )
+        const entry: {
+          did: string
+          badges: ChatBadge[]
+          participation: ParticipationSummary | null
+          lastActiveAt?: string
+          sanction?: Pick<EffectiveSanction, 'type' | 'until'>
+        } = {
           did: row.did,
           badges,
           participation: await this.getParticipationSummary(
@@ -515,6 +739,13 @@ export class ChatModerationEngine {
           ),
           lastActiveAt: row.last_message_at,
         }
+        if (viewer.isModerator && badges.some((b) => b.type === 'sanctioned')) {
+          const sanction = await this.getSanction(row.did, communityUri)
+          if (sanction) {
+            entry.sanction = { type: sanction.type, until: sanction.until }
+          }
+        }
+        return entry
       }),
     )
   }
@@ -577,9 +808,24 @@ export class ChatModerationEngine {
     communityUri: string,
     opts: { days?: number; limit?: number } = {},
   ): Promise<ModerationReportGroup[]> {
-    const rows = await this.db.getRecentReportsForCommunity(
+    const days = opts.days ?? 30
+    const allRows = await this.db.getRecentReportsForCommunity(
       communityUri,
-      opts.days ?? 30,
+      days,
+    )
+    const dismissals = await this.db.getReportDismissalsForCommunity(
+      communityUri,
+      days,
+    )
+    const rows = allRows.filter(
+      (row: any) =>
+        !dismissals.some(
+          (d: any) =>
+            d.id > row.id &&
+            d.did === row.did &&
+            (d.reported_event_id == null ||
+              d.reported_event_id === row.reported_event_id),
+        ),
     )
     const groups = new Map<
       string,
@@ -606,7 +852,9 @@ export class ChatModerationEngine {
       }
       group.reportCount++
       if (row.reporter_did) group.reporters.add(row.reporter_did)
-      const reason = row.report_reason ?? 'other'
+      const raw = row.report_reason
+      const reason =
+        isMessageReportReason(raw) || isMemberReportReason(raw) ? raw : 'other'
       group.reasons[reason] = (group.reasons[reason] ?? 0) + 1
       if (createdAt < group.firstReportedAt) group.firstReportedAt = createdAt
       if (createdAt > group.lastReportedAt) group.lastReportedAt = createdAt
@@ -634,6 +882,49 @@ export class ChatModerationEngine {
       this.log.info({ count }, 'Recomputed badges for expired users')
     }
     return count
+  }
+
+  /**
+   * Lift sanctions whose time ran out. `lift` undoes one in Matrix and reports
+   * whether it is safe to record as lifted: when it is not (the homeserver was
+   * unreachable), the sanction stays open and the next sweep retries, so an
+   * expired mute is never left in force without anyone knowing.
+   */
+  async liftExpiredSanctions(
+    lift: (
+      did: string,
+      communityUri: string,
+      kind: SanctionKind,
+    ) => Promise<boolean>,
+    now: Date = new Date(),
+  ): Promise<number> {
+    const subjects = await this.db.getSubjectsWithTimedSanctions(
+      MAX_SANCTION_MINUTES / (60 * 24) + 1,
+    )
+    let lifted = 0
+    for (const { did, communityUri } of subjects) {
+      const rows = await this.db.getSanctionEvents(did, communityUri)
+      for (const kind of expiredSanctionKinds(rows, now)) {
+        try {
+          if (!(await lift(did, communityUri, kind))) continue
+          await this.ingestLift({
+            targetDid: did,
+            communityUri,
+            sanctionType: kind,
+            liftedByDid: null,
+            reason: 'expired',
+          })
+          lifted++
+        } catch (err) {
+          this.log.warn(
+            { err, did, communityUri, kind },
+            'Could not lift expired sanction; will retry',
+          )
+        }
+      }
+      if (lifted > 0) await this.recomputeUser(did, communityUri)
+    }
+    return lifted
   }
 
   private makeBadge(type: string, visibleInChat: boolean): ChatBadge {

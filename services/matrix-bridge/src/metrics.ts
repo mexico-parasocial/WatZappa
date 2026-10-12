@@ -51,6 +51,12 @@ export class BridgeMetrics {
     registers: [this.registry],
   })
 
+  readonly provisioningRetryBlocked = new Gauge({
+    name: 'para_matrix_provisioning_retry_blocked',
+    help: 'Provisioning jobs in the current retry batch that have failed at least five times (batch limited to 50)',
+    registers: [this.registry],
+  })
+
   readonly activeUsers = new Gauge({
     name: 'para_matrix_active_users',
     help: 'Number of users with Matrix accounts provisioned',

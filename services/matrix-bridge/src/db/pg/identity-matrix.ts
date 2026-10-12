@@ -3,13 +3,33 @@ import { PgBase } from './base.js'
 
 export class IdentityMatrixArea extends PgBase {
   // Community <-> Space mappings
+  /**
+   * The same shape the SQLite driver returns. This used to hand back the raw
+   * snake_case row typed as `CommunitySpaceMap`, so on Postgres every
+   * consumer read `spaceId` and the chamber rooms as undefined and built an
+   * empty list of rooms.
+   */
   async getSpaceForCommunity(
     communityUri: string,
   ): Promise<CommunitySpaceMap | undefined> {
-    return this.queryOne<CommunitySpaceMap>(
+    const row = await this.queryOne<Record<string, any>>(
       'SELECT * FROM community_space_map WHERE community_uri = $1',
       [communityUri],
     )
+    if (!row) return undefined
+    return {
+      communityUri: row.community_uri,
+      spaceId: row.space_id,
+      slug: row.slug,
+      chamberMode: row.chamber_mode,
+      chamberA_RoomId: row.chamber_a_room_id ?? null,
+      chamberB_RoomId: row.chamber_b_room_id ?? null,
+      observerRoomId: row.observer_room_id ?? null,
+      createdAt:
+        row.created_at instanceof Date
+          ? row.created_at.toISOString()
+          : row.created_at,
+    }
   }
 
   async setSpaceForCommunity(

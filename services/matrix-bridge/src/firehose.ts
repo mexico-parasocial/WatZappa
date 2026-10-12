@@ -8,6 +8,7 @@ import type { Config } from './config.js'
 import { parseConstitution } from './constitution.js'
 import type { IBridgeDatabase } from './db/index.js'
 import type { EventBus } from './events/bus.js'
+import { readBoundedJson } from './http-response.js'
 import { HttpError } from './m8-auth.js'
 import type { MatrixProjectionPort } from './matrix-projection.js'
 import type { BridgeMetrics } from './metrics.js'
@@ -40,7 +41,7 @@ export class FirehoseConsumer {
   private authorityWork = new Map<string, Promise<void>>()
 
   constructor(
-    config: Config,
+    private config: Config,
     db: IBridgeDatabase,
     projection: MatrixProjectionPort,
     proposals: ProposalEngine,
@@ -196,6 +197,45 @@ export class FirehoseConsumer {
     }
   }
 
+  /** Retry from the current record at this configured PDS, never a stale payload. */
+  async retryCommunityProvision(
+    communityUri: string,
+    creatorDid: string,
+  ): Promise<void> {
+    const prefix = `at://${creatorDid}/com.para.community.board/`
+    const rkey = communityUri.slice(prefix.length)
+    if (!communityUri.startsWith(prefix) || !/^[a-zA-Z0-9._~:-]+$/.test(rkey))
+      throw new Error('Invalid community provisioning job')
+    const base = this.config.pdsFirehoseUrl.replace(/^ws/, 'http')
+    const url = new URL('/xrpc/com.atproto.repo.getRecord', base)
+    url.searchParams.set('repo', creatorDid)
+    url.searchParams.set('collection', 'com.para.community.board')
+    url.searchParams.set('rkey', rkey)
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(15_000),
+      redirect: 'error',
+    })
+    if (response.status === 400 || response.status === 404) {
+      const error = await readBoundedJson<{ error?: string }>(response, 16_384)
+      if (error.error === 'RecordNotFound') return
+    }
+    if (!response.ok)
+      throw new Error('Community record unavailable for provisioning retry')
+    const record = await readBoundedJson<{ uri: string; value: unknown }>(
+      response,
+      262_144,
+    )
+    if (record.uri !== communityUri)
+      throw new Error('Provisioning record URI mismatch')
+    await this.handleCommunityCreate(
+      creatorDid,
+      record.value,
+      communityUri,
+      rkey,
+      true,
+    )
+  }
+
   /**
    * @param communityUri the board record's real at-uri, as the firehose
    *   reports it. It has to be this and not a reconstruction: membership
@@ -214,6 +254,7 @@ export class FirehoseConsumer {
     record: any,
     communityUri: string,
     rkey: string,
+    retry = false,
   ): Promise<void> {
     if (!record) return
     const slug = rkey
@@ -223,6 +264,7 @@ export class FirehoseConsumer {
     const existing = await this.db.getSpaceForCommunity(communityUri)
     if (existing) {
       this.log.debug({ communityUri }, 'Community space already exists')
+      if (retry) await this.refreshMembership(communityUri, creatorDid, true)
       return
     }
 
@@ -234,21 +276,24 @@ export class FirehoseConsumer {
         name,
         slug,
         chamberMode,
-      })
-      await this.db.setSpaceForCommunity(
         communityUri,
-        provisioned.spaceId,
-        slug,
-        chamberMode,
-      )
-      if (chamberMode === 'bicameral') {
-        await this.db.setChamberRooms(
+      })
+      await this.db.transaction(async () => {
+        await this.db.setSpaceForCommunity(
           communityUri,
-          provisioned.chamberA_RoomId,
-          provisioned.chamberB_RoomId,
-          provisioned.observerRoomId,
+          provisioned.spaceId,
+          slug,
+          chamberMode,
         )
-      }
+        if (chamberMode === 'bicameral') {
+          await this.db.setChamberRooms(
+            communityUri,
+            provisioned.chamberA_RoomId,
+            provisioned.chamberB_RoomId,
+            provisioned.observerRoomId,
+          )
+        }
+      })
       this.metrics.spacesCreatedTotal.inc({ status: 'success' })
       this.log.info(
         { communityUri, spaceId: provisioned.spaceId, name, chamberMode },
@@ -284,6 +329,7 @@ export class FirehoseConsumer {
         { err, communityUri },
         'Failed to create Matrix space for community',
       )
+      if (retry) throw err
       await this.db.logSync(
         'create_space',
         communityUri,

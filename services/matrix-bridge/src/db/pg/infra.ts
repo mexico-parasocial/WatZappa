@@ -27,6 +27,16 @@ export class InfraArea extends IdentityMatrixArea {
     )
   }
 
+  async getProvisioningRetryJobs(limit = 50): Promise<SyncLogEntry[]> {
+    return this.queryAll<SyncLogEntry>(
+      `SELECT id, event_type AS "eventType", community_uri AS "communityUri",
+      did, space_id AS "spaceId", success, retry_count AS "retryCount", error, created_at::text AS "createdAt"
+      FROM sync_log WHERE success = 0 AND event_type = 'create_space'
+      ORDER BY retry_count ASC, id ASC LIMIT $1`,
+      [limit],
+    )
+  }
+
   async getRetryCount(entryId: number): Promise<number> {
     const row = await this.queryOne<{ retry_count: number }>(
       'SELECT retry_count FROM sync_log WHERE id = $1',

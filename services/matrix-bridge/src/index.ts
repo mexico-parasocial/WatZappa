@@ -18,6 +18,7 @@ import { RetryWorker } from './retry.js'
 import type { RouteContext } from './routes/context.js'
 import { writeJson } from './routes/http.js'
 import { routeRequest, writeJsonFallback } from './routes/router.js'
+import { createSanctionEnforcer } from './sanction-enforcement.js'
 import { createSortitionEngine } from './sortition-runs.js'
 
 async function main() {
@@ -78,6 +79,7 @@ async function main() {
     log,
     (community, did, force) =>
       firehose.refreshMembership(community, did, force),
+    (community, did) => firehose.retryCommunityProvision(community, did),
   )
   const syncPoller = new MatrixSyncPoller(config, db, matrix, chatMod, log)
 
@@ -190,6 +192,24 @@ async function main() {
     ).catch((err: any) => log.error({ err }, 'Membership-lease sweep failed'))
   }, 60_000)
 
+  // Time-limited mutes and bans: lift the ones that ran out, in Matrix as well
+  // as in the badge. Without this an expired mute stays in force on the
+  // homeserver forever while the app says it is over.
+  const sanctionEnforcer = createSanctionEnforcer({
+    db,
+    matrix,
+    projection,
+    log,
+  })
+  const sanctionExpiryCron = setInterval(() => {
+    void chatMod
+      .liftExpiredSanctions(async (did, communityUri, kind) => {
+        const outcome = await sanctionEnforcer.lift(did, communityUri, kind)
+        return outcome.status !== 'failed' && outcome.status !== 'partial'
+      })
+      .catch((err: any) => log.error({ err }, 'Sanction expiry sweep failed'))
+  }, 60_000)
+
   // Badge recompute + expiry — runs every 5 minutes
   const badgeCron = setInterval(() => {
     void (async () => {
@@ -214,6 +234,7 @@ async function main() {
     clearInterval(authoritySweep)
     clearInterval(proposalCron)
     clearInterval(badgeCron)
+    clearInterval(sanctionExpiryCron)
     clearInterval(eventPruneCron)
     clearInterval(leaseSweepCron)
     server.close()

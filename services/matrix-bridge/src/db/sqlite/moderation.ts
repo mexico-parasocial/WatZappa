@@ -75,12 +75,46 @@ export class ModerationArea extends SortitionArea {
     return info.changes
   }
 
-  getActiveSanctions(did: string, communityUri: string): any[] {
+  getSanctionEvents(did: string, communityUri: string): any[] {
     return this.db
       .prepare(
-        "SELECT * FROM chat_moderation_events WHERE did = ? AND community_uri = ? AND event_type IN ('mute','ban') AND created_at >= datetime('now', '-90 days') ORDER BY created_at DESC",
+        "SELECT * FROM chat_moderation_events WHERE did = ? AND community_uri = ? AND event_type IN ('mute','ban','sanction_lifted') ORDER BY id ASC",
       )
       .all(did, communityUri) as any[]
+  }
+
+  getSubjectsWithTimedSanctions(
+    sinceDays: number,
+  ): { did: string; communityUri: string }[] {
+    const rows = this.db
+      .prepare(
+        "SELECT DISTINCT did, community_uri FROM chat_moderation_events WHERE event_type IN ('mute','ban') AND sanction_duration_minutes IS NOT NULL AND created_at >= datetime('now', '-' || ? || ' days')",
+      )
+      .all(sinceDays) as { did: string; community_uri: string }[]
+    return rows.map((r) => ({ did: r.did, communityUri: r.community_uri }))
+  }
+
+  getReportDismissalsForCommunity(communityUri: string, days = 30): any[] {
+    return this.db
+      .prepare(
+        "SELECT id, did, reported_event_id, sanctioned_by_did, created_at FROM chat_moderation_events WHERE community_uri = ? AND event_type = 'report_dismissed' AND created_at >= datetime('now', '-' || ? || ' days') ORDER BY id DESC",
+      )
+      .all(communityUri, days) as any[]
+  }
+
+  hasReportFrom(
+    reporterDid: string,
+    did: string,
+    communityUri: string,
+    reportedEventId: string | null,
+    days: number,
+  ): boolean {
+    const row = this.db
+      .prepare(
+        "SELECT 1 AS found FROM chat_moderation_events WHERE event_type = 'report_received' AND reporter_did = ? AND did = ? AND community_uri = ? AND reported_event_id IS ? AND created_at >= datetime('now', '-' || ? || ' days') LIMIT 1",
+      )
+      .get(reporterDid, did, communityUri, reportedEventId, days)
+    return row !== undefined
   }
 
   // Chat user badges (computed cache)

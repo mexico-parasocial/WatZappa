@@ -36,6 +36,17 @@ export class InfraArea extends IdentityMatrixArea {
       .all(limit) as SyncLogEntry[]
   }
 
+  getProvisioningRetryJobs(limit = 50): SyncLogEntry[] {
+    return this.db
+      .prepare(
+        `SELECT id, event_type AS "eventType", community_uri AS "communityUri",
+      did, space_id AS "spaceId", success, retry_count AS "retryCount", error, created_at AS "createdAt"
+      FROM sync_log WHERE success = 0 AND event_type = 'create_space'
+      ORDER BY retry_count ASC, id ASC LIMIT ?`,
+      )
+      .all(limit) as SyncLogEntry[]
+  }
+
   getRetryCount(entryId: number): number {
     const row = this.db
       .prepare('SELECT retry_count FROM sync_log WHERE id = ?')

@@ -13,4 +13,4 @@ done
 if [ "$ready" != true ]; then exit 1; fi
 port="$(docker port "$container" 5432 | head -1 | sed 's/.*://')"
 export MATRIX_TEST_DATABASE_URL="postgresql://postgres:bridge-test-only@127.0.0.1:${port}/bridge_test"
-pnpm --config.verify-deps-before-run=false test
+pnpm --config.verify-deps-before-run=false test "$@"

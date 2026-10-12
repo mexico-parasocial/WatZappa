@@ -224,7 +224,8 @@ describe.each([
         'moderator',
       ])
       await db.setCommunityMembership(secondReporter, community, 'active', [])
-      // Two people report the same message, one of them twice.
+      // Two people report the same message, one of them twice. The repeat is
+      // one person's report, so it is not counted again.
       for (const [who, reason] of [
         [reporter, 'harassment'],
         [secondReporter, 'harassment'],
@@ -259,9 +260,9 @@ describe.each([
       expect(message).toMatchObject({
         reportedDid: author.did,
         matrixRoomId: room,
-        reportCount: 3,
+        reportCount: 2,
         reporterCount: 2,
-        reasons: { harassment: 2, spam: 1 },
+        reasons: { harassment: 2 },
       })
       const member = reports.find(
         (r: { matrixEventId: string | null }) => r.matrixEventId === null,

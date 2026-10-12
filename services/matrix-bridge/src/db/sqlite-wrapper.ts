@@ -140,6 +140,10 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     return this.wrap(() => this.inner.getFailedSyncs(limit))
   }
 
+  getProvisioningRetryJobs(limit = 50): Promise<SyncLogEntry[]> {
+    return this.wrap(() => this.inner.getProvisioningRetryJobs(limit))
+  }
+
   getRetryCount(entryId: number): Promise<number> {
     return this.wrap(() => this.inner.getRetryCount(entryId))
   }
@@ -507,8 +511,41 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     return this.wrap(() => this.inner.purgeReportedMessagePreviews())
   }
 
-  getActiveSanctions(did: string, communityUri: string): Promise<any[]> {
-    return this.wrap(() => this.inner.getActiveSanctions(did, communityUri))
+  getSanctionEvents(did: string, communityUri: string): Promise<any[]> {
+    return this.wrap(() => this.inner.getSanctionEvents(did, communityUri))
+  }
+
+  getSubjectsWithTimedSanctions(
+    sinceDays: number,
+  ): Promise<{ did: string; communityUri: string }[]> {
+    return this.wrap(() => this.inner.getSubjectsWithTimedSanctions(sinceDays))
+  }
+
+  getReportDismissalsForCommunity(
+    communityUri: string,
+    days = 30,
+  ): Promise<any[]> {
+    return this.wrap(() =>
+      this.inner.getReportDismissalsForCommunity(communityUri, days),
+    )
+  }
+
+  hasReportFrom(
+    reporterDid: string,
+    did: string,
+    communityUri: string,
+    reportedEventId: string | null,
+    days: number,
+  ): Promise<boolean> {
+    return this.wrap(() =>
+      this.inner.hasReportFrom(
+        reporterDid,
+        did,
+        communityUri,
+        reportedEventId,
+        days,
+      ),
+    )
   }
 
   // ── Participation ──

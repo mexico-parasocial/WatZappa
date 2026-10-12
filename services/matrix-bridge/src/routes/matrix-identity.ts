@@ -7,6 +7,7 @@ import {
 } from '../identity-proof.js'
 import { HttpError, authenticateM8 } from '../m8-auth.js'
 import { MatrixLoginUnavailableError } from '../matrix-login-error.js'
+import { SanctionedMemberError } from '../matrix-projection.js'
 import type { RouteContext } from './context.js'
 import { readBody, writeJson } from './http.js'
 
@@ -435,12 +436,27 @@ export async function apiCommunityJoinHandler(
     identityPub[i] = Number.parseInt(identityPubHex.slice(i * 2, i * 2 + 2), 16)
   }
 
-  const { mxid: joinedMxid, joinedRoomIds } = await ctx.projection.verifiedJoin(
-    space,
-    auth.did,
-    identityPub,
-    { roles, chamber, isObserver },
-  )
+  let joined: { mxid: string; joinedRoomIds: string[] }
+  try {
+    joined = await ctx.projection.verifiedJoin(space, auth.did, identityPub, {
+      roles,
+      chamber,
+      isObserver,
+    })
+  } catch (err) {
+    // A ban follows the member, not the chat key they present. They are told
+    // that and until when; the moderator's reason stays with moderators.
+    if (err instanceof SanctionedMemberError) {
+      writeJson(res, 403, {
+        error: 'You are banned from this community',
+        code: err.code,
+        until: err.sanction.until,
+      })
+      return
+    }
+    throw err
+  }
+  const { mxid: joinedMxid, joinedRoomIds } = joined
   // The join settled this community; reconciliation settles the member's
   // others (role catch-up, removal bans) in the same verified interaction.
   await reconcileAccess(ctx, auth.did, joinedMxid)
