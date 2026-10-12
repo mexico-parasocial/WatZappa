@@ -5,7 +5,7 @@ built. Companion to the spaces adoption plan; the community civic tree is out of
 scope here and stays as it is.
 
 **Status:** CD-P1 implemented. CD-P2 is a standing prohibition, not a plan.
-OD-P1 and OD-P2 are open.
+CD-P3 decided, not built. OD-P1 and OD-P2 are open.
 
 ---
 
@@ -126,6 +126,26 @@ worse than writing nothing, because the product then makes a promise about it.
 the intended trade: no sharing is a better product than a sharing control that
 does not control anything.
 
+### CD-P3 — space data is reachable only through OAuth sessions
+
+**Decision.** (2026-10-11) Before any personal civic data moves into a space,
+the PARA app signs in with atproto OAuth, and the PDS serves Spaces methods only
+to OAuth sessions whose `space:` grant covers the action — never to password
+sessions (`createSession`) or app passwords, scoped or not.
+
+**Problem.** The app signs in with `createSession` today. The reference PDS lets
+legacy sessions read and write their own space records, so a stolen password or
+app password would reach everything the account keeps in spaces, with no consent
+screen naming the space and no per-app scope.
+
+**Rejected alternative.** *Following the reference and accepting password
+sessions.* Simpler for the app, but it makes the space no more protected than
+the account password. vlpds made the same call and documents it as a deliberate
+divergence from the reference.
+
+**Consequences.** OAuth in the app is a prerequisite for OD-P1, not a follow-up.
+The PDS work (repo host behind a flag) can proceed in parallel against tests.
+
 ---
 
 ## 4. Open decisions
@@ -137,6 +157,38 @@ needs a space host, and WatZappa cannot merge `upstream/permissioned-data` — i
 has no shared ancestry with atproto. The two candidates are a stock alpha PDS run
 as a sidecar, or continuing the hand-port (`packages/space` is already vendored
 and passing its own suite). Unresolved.
+
+*Update 2026-10-11.* The sidecar cannot hold these records: a space record lives
+in its author's space repo on the author's own PDS, so a separate host (a stock
+PDS, or vlpds 1.1.0 with `--spaces`) can only act as authority for spaces whose
+members never write. That leaves the hand-port, as a repo host and simplespace
+host in this PDS behind a flag. Its first step is done: `packages/space` and the
+space lexicons now sit at the commit vlpds tracks, and pass vlpds's vectors
+(`packages/space/SOURCE`). Prerequisite: CD-P3.
+
+*Update 2026-10-11, second step.* The PDS now hosts an account's own space
+repos behind `PDS_SPACES_ENABLED` (alpha, off by default): OAuth only, writes
+only into spaces the writer governs, no blobs, nothing on the firehose or in
+the public repo (`packages/pds/tests/spaces.test.ts`). That is enough storage
+for collections as OD-P1 describes them; the simplespace host and the move of
+collections out of the appview are what is left.
+
+*Update 2026-10-11, third step.* The server side is in place: a simplespace
+host for owned spaces (member-list policy only, owner as sole member) and the
+record `com.para.collection.record` (one per collection, rkey = collection id,
+same fields as `defs#collection`), which the PDS refuses outside a space. The
+space type is the NSID `com.para.space.personal` with skey `civic-tree`; it has
+no lexicon file yet because the lexicon tooling here cannot declare a `space`
+type. Two corrections to the plan above:
+
+- *The appview does not index the space.* It cannot read it without space
+  credentials, and the owner is the only reader: the app reads the collections
+  from the owner's PDS. The appview tables go away with the move instead of
+  being demoted.
+- *The move is the app's to do.* Only the owner, over OAuth (CD-P3), can write
+  into the space, so the app copies each appview collection into the space once
+  and then stops calling `com.para.collection.*`. That waits on OAuth in the
+  app.
 
 **OD-P2 — when the sources move.** From F-P2: the personal civic tree only
 becomes private once highlights, delegations and votes leave public repos.

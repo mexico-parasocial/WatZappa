@@ -2108,6 +2108,9 @@ importers:
       '@atproto/repo':
         specifier: workspace:^
         version: link:../repo
+      '@atproto/space':
+        specifier: workspace:^
+        version: link:../space
       '@atproto/syntax':
         specifier: workspace:^
         version: link:../syntax
@@ -2302,34 +2305,31 @@ importers:
 
   packages/space:
     dependencies:
-      '@atproto/common':
+      '@atproto/car':
         specifier: workspace:^
-        version: link:../common
+        version: link:../car
       '@atproto/crypto':
         specifier: workspace:^
         version: link:../crypto
-      '@atproto/jwk':
-        specifier: workspace:^
-        version: link:../oauth/jwk
       '@atproto/lex-cbor':
         specifier: workspace:^
         version: link:../lex/lex-cbor
       '@atproto/lex-data':
         specifier: workspace:^
         version: link:../lex/lex-data
+      '@atproto/syntax':
+        specifier: workspace:^
+        version: link:../syntax
       '@noble/hashes':
         specifier: ^1.6.1
         version: 1.8.0
-      jose:
-        specifier: ^5.2.0
-        version: 5.3.0
+      structured-headers:
+        specifier: ^1.0.1
+        version: 1.0.1
       zod:
         specifier: ^3.23.8
         version: 3.25.76
     devDependencies:
-      '@atproto/jwk-jose':
-        specifier: workspace:^
-        version: link:../oauth/jwk-jose
       vitest:
         specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(@vitest/coverage-v8@4.1.10)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.44.0)(tsx@4.23.12)(yaml@2.9.0))

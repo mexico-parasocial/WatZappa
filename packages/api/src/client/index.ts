@@ -288,13 +288,13 @@ import * as ComAtprotoServerReserveSigningKey from './types/com/atproto/server/r
 import * as ComAtprotoServerResetPassword from './types/com/atproto/server/resetPassword.js'
 import * as ComAtprotoServerRevokeAppPassword from './types/com/atproto/server/revokeAppPassword.js'
 import * as ComAtprotoServerUpdateEmail from './types/com/atproto/server/updateEmail.js'
-import * as ComAtprotoSimplespaceAddMember from './types/com/atproto/simplespace/addMember.js'
 import * as ComAtprotoSimplespaceCheckUserAccess from './types/com/atproto/simplespace/checkUserAccess.js'
 import * as ComAtprotoSimplespaceCreateSpace from './types/com/atproto/simplespace/createSpace.js'
 import * as ComAtprotoSimplespaceDefs from './types/com/atproto/simplespace/defs.js'
 import * as ComAtprotoSimplespaceDeleteSpace from './types/com/atproto/simplespace/deleteSpace.js'
 import * as ComAtprotoSimplespaceGetSpace from './types/com/atproto/simplespace/getSpace.js'
 import * as ComAtprotoSimplespaceListMembers from './types/com/atproto/simplespace/listMembers.js'
+import * as ComAtprotoSimplespacePutMember from './types/com/atproto/simplespace/putMember.js'
 import * as ComAtprotoSimplespaceRemoveMember from './types/com/atproto/simplespace/removeMember.js'
 import * as ComAtprotoSimplespaceUpdateSpace from './types/com/atproto/simplespace/updateSpace.js'
 import * as ComAtprotoSpaceApplyWrites from './types/com/atproto/space/applyWrites.js'
@@ -312,6 +312,7 @@ import * as ComAtprotoSpaceListRecords from './types/com/atproto/space/listRecor
 import * as ComAtprotoSpaceListRepoOps from './types/com/atproto/space/listRepoOps.js'
 import * as ComAtprotoSpaceListRepos from './types/com/atproto/space/listRepos.js'
 import * as ComAtprotoSpaceListSpaces from './types/com/atproto/space/listSpaces.js'
+import * as ComAtprotoSpaceNotifyCredentialRevoked from './types/com/atproto/space/notifyCredentialRevoked.js'
 import * as ComAtprotoSpaceNotifySpaceDeleted from './types/com/atproto/space/notifySpaceDeleted.js'
 import * as ComAtprotoSpaceNotifyWrite from './types/com/atproto/space/notifyWrite.js'
 import * as ComAtprotoSpacePutRecord from './types/com/atproto/space/putRecord.js'
@@ -374,6 +375,7 @@ import * as ComParaCollectionDefs from './types/com/para/collection/defs.js'
 import * as ComParaCollectionDeleteCollection from './types/com/para/collection/deleteCollection.js'
 import * as ComParaCollectionGetCollection from './types/com/para/collection/getCollection.js'
 import * as ComParaCollectionListCollections from './types/com/para/collection/listCollections.js'
+import * as ComParaCollectionRecord from './types/com/para/collection/record.js'
 import * as ComParaCollectionUpdateCollection from './types/com/para/collection/updateCollection.js'
 import * as ComParaCommunityAcceptDraftInvite from './types/com/para/community/acceptDraftInvite.js'
 import * as ComParaCommunityActivityLedgerEntry from './types/com/para/community/activityLedgerEntry.js'
@@ -830,13 +832,13 @@ export * as ComAtprotoServerReserveSigningKey from './types/com/atproto/server/r
 export * as ComAtprotoServerResetPassword from './types/com/atproto/server/resetPassword.js'
 export * as ComAtprotoServerRevokeAppPassword from './types/com/atproto/server/revokeAppPassword.js'
 export * as ComAtprotoServerUpdateEmail from './types/com/atproto/server/updateEmail.js'
-export * as ComAtprotoSimplespaceAddMember from './types/com/atproto/simplespace/addMember.js'
 export * as ComAtprotoSimplespaceCheckUserAccess from './types/com/atproto/simplespace/checkUserAccess.js'
 export * as ComAtprotoSimplespaceCreateSpace from './types/com/atproto/simplespace/createSpace.js'
 export * as ComAtprotoSimplespaceDefs from './types/com/atproto/simplespace/defs.js'
 export * as ComAtprotoSimplespaceDeleteSpace from './types/com/atproto/simplespace/deleteSpace.js'
 export * as ComAtprotoSimplespaceGetSpace from './types/com/atproto/simplespace/getSpace.js'
 export * as ComAtprotoSimplespaceListMembers from './types/com/atproto/simplespace/listMembers.js'
+export * as ComAtprotoSimplespacePutMember from './types/com/atproto/simplespace/putMember.js'
 export * as ComAtprotoSimplespaceRemoveMember from './types/com/atproto/simplespace/removeMember.js'
 export * as ComAtprotoSimplespaceUpdateSpace from './types/com/atproto/simplespace/updateSpace.js'
 export * as ComAtprotoSpaceApplyWrites from './types/com/atproto/space/applyWrites.js'
@@ -854,6 +856,7 @@ export * as ComAtprotoSpaceListRecords from './types/com/atproto/space/listRecor
 export * as ComAtprotoSpaceListRepoOps from './types/com/atproto/space/listRepoOps.js'
 export * as ComAtprotoSpaceListRepos from './types/com/atproto/space/listRepos.js'
 export * as ComAtprotoSpaceListSpaces from './types/com/atproto/space/listSpaces.js'
+export * as ComAtprotoSpaceNotifyCredentialRevoked from './types/com/atproto/space/notifyCredentialRevoked.js'
 export * as ComAtprotoSpaceNotifySpaceDeleted from './types/com/atproto/space/notifySpaceDeleted.js'
 export * as ComAtprotoSpaceNotifyWrite from './types/com/atproto/space/notifyWrite.js'
 export * as ComAtprotoSpacePutRecord from './types/com/atproto/space/putRecord.js'
@@ -916,6 +919,7 @@ export * as ComParaCollectionDefs from './types/com/para/collection/defs.js'
 export * as ComParaCollectionDeleteCollection from './types/com/para/collection/deleteCollection.js'
 export * as ComParaCollectionGetCollection from './types/com/para/collection/getCollection.js'
 export * as ComParaCollectionListCollections from './types/com/para/collection/listCollections.js'
+export * as ComParaCollectionRecord from './types/com/para/collection/record.js'
 export * as ComParaCollectionUpdateCollection from './types/com/para/collection/updateCollection.js'
 export * as ComParaCommunityAcceptDraftInvite from './types/com/para/community/acceptDraftInvite.js'
 export * as ComParaCommunityActivityLedgerEntry from './types/com/para/community/activityLedgerEntry.js'
@@ -5712,17 +5716,6 @@ export class ComAtprotoSimplespaceNS {
     this._client = client
   }
 
-  addMember(
-    data?: ComAtprotoSimplespaceAddMember.InputSchema,
-    opts?: ComAtprotoSimplespaceAddMember.CallOptions,
-  ): Promise<ComAtprotoSimplespaceAddMember.Response> {
-    return this._client
-      .call('com.atproto.simplespace.addMember', opts?.qp, data, opts)
-      .catch((e) => {
-        throw ComAtprotoSimplespaceAddMember.toKnownErr(e)
-      })
-  }
-
   checkUserAccess(
     params?: ComAtprotoSimplespaceCheckUserAccess.QueryParams,
     opts?: ComAtprotoSimplespaceCheckUserAccess.CallOptions,
@@ -5776,6 +5769,17 @@ export class ComAtprotoSimplespaceNS {
       .call('com.atproto.simplespace.listMembers', params, undefined, opts)
       .catch((e) => {
         throw ComAtprotoSimplespaceListMembers.toKnownErr(e)
+      })
+  }
+
+  putMember(
+    data?: ComAtprotoSimplespacePutMember.InputSchema,
+    opts?: ComAtprotoSimplespacePutMember.CallOptions,
+  ): Promise<ComAtprotoSimplespacePutMember.Response> {
+    return this._client
+      .call('com.atproto.simplespace.putMember', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ComAtprotoSimplespacePutMember.toKnownErr(e)
       })
   }
 
@@ -5965,6 +5969,18 @@ export class ComAtprotoSpaceNS {
     )
   }
 
+  notifyCredentialRevoked(
+    data?: ComAtprotoSpaceNotifyCredentialRevoked.InputSchema,
+    opts?: ComAtprotoSpaceNotifyCredentialRevoked.CallOptions,
+  ): Promise<ComAtprotoSpaceNotifyCredentialRevoked.Response> {
+    return this._client.call(
+      'com.atproto.space.notifyCredentialRevoked',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
+
   notifySpaceDeleted(
     data?: ComAtprotoSpaceNotifySpaceDeleted.InputSchema,
     opts?: ComAtprotoSpaceNotifySpaceDeleted.CallOptions,
@@ -5981,12 +5997,11 @@ export class ComAtprotoSpaceNS {
     data?: ComAtprotoSpaceNotifyWrite.InputSchema,
     opts?: ComAtprotoSpaceNotifyWrite.CallOptions,
   ): Promise<ComAtprotoSpaceNotifyWrite.Response> {
-    return this._client.call(
-      'com.atproto.space.notifyWrite',
-      opts?.qp,
-      data,
-      opts,
-    )
+    return this._client
+      .call('com.atproto.space.notifyWrite', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ComAtprotoSpaceNotifyWrite.toKnownErr(e)
+      })
   }
 
   putRecord(
@@ -7249,9 +7264,11 @@ export class ComParaCivicVoteRecord {
 
 export class ComParaCollectionNS {
   _client: XrpcClient
+  record: ComParaCollectionRecordRecord
 
   constructor(client: XrpcClient) {
     this._client = client
+    this.record = new ComParaCollectionRecordRecord(client)
   }
 
   applyOps(
@@ -7321,6 +7338,89 @@ export class ComParaCollectionNS {
       .catch((e) => {
         throw ComParaCollectionUpdateCollection.toKnownErr(e)
       })
+  }
+}
+
+export class ComParaCollectionRecordRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: ComParaCollectionRecord.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'com.para.collection.record',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: ComParaCollectionRecord.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'com.para.collection.record',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCollectionRecord.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.collection.record'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCollectionRecord.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.collection.record'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'com.para.collection.record', ...params },
+      { headers },
+    )
   }
 }
 

@@ -29,6 +29,8 @@ import {
   type DidString,
   type NsidString,
   type RecordKeyString,
+  SpaceRef,
+  type SpaceRefString,
   isValidRecordKey,
 } from '@atproto/syntax'
 import { hasExplicitSlur } from '../handle/explicit-slurs.js'
@@ -97,6 +99,8 @@ const validateRecord = (
 
 export const prepareCreate = async (opts: {
   did: DidString
+  // Set for a permissioned space record, whose uri nests under the space ref.
+  space?: SpaceRefString
   collection: NsidString
   rkey?: RecordKeyString
   swapCid?: Cid | null
@@ -120,6 +124,7 @@ export const prepareCreate = async (opts: {
 
 export const prepareUpdate = async (opts: {
   did: DidString
+  space?: SpaceRefString
   collection: NsidString
   rkey: RecordKeyString
   swapCid?: Cid | null
@@ -142,7 +147,8 @@ export const prepareUpdate = async (opts: {
 }
 
 async function prepareWrite(opts: {
-  did: string
+  did: DidString
+  space?: SpaceRefString
   collection: NsidString
   rkey?: RecordKeyString
   record: LexMap
@@ -156,6 +162,15 @@ async function prepareWrite(opts: {
   uri: AtUri
   cid: Cid
 }> {
+  // A space-only collection never enters a public repo, whatever else the write
+  // claims: its records are private by definition (CD-P2), and a public repo is
+  // on the firehose.
+  if (!opts.space && SPACE_ONLY_COLLECTIONS.has(opts.collection)) {
+    throw new UnsupportedRecordError(
+      `${opts.collection} records live only in a space`,
+    )
+  }
+
   // @NOTE deliberately ahead of, and independent of, validateRecord: `validate:
   // false` waives schema checking, not the ballot policy. prepareDelete does not
   // route through here, so removing an existing ballot stays possible. `replay`
@@ -245,21 +260,41 @@ async function prepareWrite(opts: {
         return blob
       },
     ),
-    uri: AtUri.make(opts.did, opts.collection, rkey),
+    uri: opts.space
+      ? spaceRecordUri(opts.space, opts.did, opts.collection, rkey)
+      : AtUri.make(opts.did, opts.collection, rkey),
     cid: await cidForCbor(encode(record)),
   }
 }
 
+/** Collections whose records are only ever written into a space. */
+export const SPACE_ONLY_COLLECTIONS: ReadonlySet<string> = new Set([
+  'com.para.collection.record',
+])
+
+export const spaceRecordUri = (
+  space: SpaceRefString,
+  author: DidString,
+  collection: NsidString,
+  rkey: RecordKeyString,
+): AtUri => {
+  const { spaceDid, spaceType, skey } = SpaceRef.parse(space)
+  return AtUri.makeSpace(spaceDid, spaceType, skey, author, collection, rkey)
+}
+
 export const prepareDelete = (opts: {
   did: DidString
+  space?: SpaceRefString
   collection: NsidString
   rkey: RecordKeyString
   swapCid?: Cid | null
 }): PreparedDelete => {
-  const { did, collection, rkey, swapCid } = opts
+  const { did, space, collection, rkey, swapCid } = opts
   return {
     action: WriteOpAction.Delete,
-    uri: AtUri.make(did, collection, rkey),
+    uri: space
+      ? spaceRecordUri(space, did, collection, rkey)
+      : AtUri.make(did, collection, rkey),
     swapCid,
   }
 }

@@ -27,7 +27,7 @@ export class NSID {
     return new NSID(input)
   }
 
-  static isValid(nsid: string) {
+  static isValid<I>(nsid: I): nsid is I & NsidString {
     return isValidNsid(nsid)
   }
 
@@ -37,7 +37,7 @@ export class NSID {
       return input
     }
     if (Array.isArray(input)) {
-      return new NSID((input as string[]).join('.'))
+      return new NSID(input.join('.'))
     }
     return new NSID(String(input))
   }
@@ -75,12 +75,10 @@ export function parseNsid(nsid: string): string[] {
   return result.value
 }
 
-export function isValidNsid<I extends string>(
-  input: I,
-): input is I & NsidString {
+export function isValidNsid<I>(input: I): input is I & NsidString {
   // Since the regex version is more performant for valid NSIDs, we use it when
   // we don't care about error details.
-  return validateNsidRegex(input).success
+  return typeof input === 'string' && validateNsidRegex(input).success
 }
 
 // Human readable constraints on NSID:

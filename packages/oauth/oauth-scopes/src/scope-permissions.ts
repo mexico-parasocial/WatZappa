@@ -1,3 +1,10 @@
+import {
+  type DidString,
+  type NsidString,
+  type RecordKeyString,
+  SpaceRef,
+  type SpaceRefString,
+} from '@atproto/syntax'
 import { ScopeMissingError } from './scope-missing-error.js'
 import {
   AccountPermission,
@@ -16,6 +23,11 @@ import {
   RepoPermissionMatch,
 } from './scopes/repo-permission.js'
 import { RpcPermission, RpcPermissionMatch } from './scopes/rpc-permission.js'
+import {
+  SpacePermission,
+  type SpacePermissionMatch,
+  type SpacePermissionMatchOperation,
+} from './scopes/space-permission.js'
 import { ScopesSet } from './scopes-set.js'
 
 export type {
@@ -24,6 +36,7 @@ export type {
   IdentityPermissionMatch,
   RepoPermissionMatch,
   RpcPermissionMatch,
+  SpacePermissionMatch,
 }
 
 export class ScopePermissions {
@@ -87,5 +100,34 @@ export class ScopePermissions {
       const scope = RpcPermission.scopeNeededFor(options)
       throw new ScopeMissingError(scope)
     }
+  }
+
+  public allowsSpace(options: SpacePermissionMatch): boolean {
+    return this.scopes.matches('space', options)
+  }
+  public assertSpace(options: SpacePermissionMatch): void {
+    if (!this.allowsSpace(options)) {
+      const scope = SpacePermission.scopeNeededFor(options)
+      throw new ScopeMissingError(scope)
+    }
+  }
+  public assertSpaceRef(
+    space:
+      | {
+          readonly spaceDid: DidString
+          readonly spaceType: NsidString
+          readonly skey: RecordKeyString
+        }
+      | SpaceRefString,
+    operation: SpacePermissionMatchOperation,
+  ): void {
+    const ref = typeof space === 'string' ? SpaceRef.parse(space) : space
+
+    this.assertSpace({
+      ...operation,
+      type: ref.spaceType,
+      authority: ref.spaceDid,
+      skey: ref.skey,
+    })
   }
 }

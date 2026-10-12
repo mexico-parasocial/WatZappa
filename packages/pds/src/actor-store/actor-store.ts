@@ -18,6 +18,8 @@ import { type ActorDb, getDb, getMigrator } from './db/index.js'
 
 export class ActorStore {
   reservedKeyDir: string
+  // DIDs whose store this process has brought to the latest schema.
+  private readonly upToDate = new Set<string>()
 
   constructor(
     public cfg: ActorStoreConfig,
@@ -43,6 +45,22 @@ export class ActorStore {
     const { keyLocation } = await this.getLocation(did)
     const privKey = await fs.readFile(keyLocation)
     return crypto.Secp256k1Keypair.import(privKey)
+  }
+
+  /**
+   * A store is migrated when its account is created, so one created before a
+   * later migration lacks its tables. Callers of those tables (the space
+   * handlers) bring the store up to date first; once per account per process.
+   */
+  async ensureLatestSchema(did: string): Promise<void> {
+    if (this.upToDate.has(did)) return
+    const db = await this.openDb(did)
+    try {
+      await getMigrator(db).migrateToLatestOrThrow()
+    } finally {
+      db.close()
+    }
+    this.upToDate.add(did)
   }
 
   async openDb(did: string): Promise<ActorDb> {

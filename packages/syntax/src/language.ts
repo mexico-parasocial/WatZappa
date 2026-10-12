@@ -104,9 +104,9 @@ function hasDuplicateVariantOrSingleton(
 export function parseLanguageString(input: string): LanguageTag | null {
   const parsed = matchValidLanguage(input)
   if (!parsed?.groups) return null
-  if (!hasStrictPrimarySubtag(parsed.groups)) return null
 
   const { groups } = parsed
+  if (!hasStrictPrimarySubtag(groups)) return null
   return {
     grandfathered: groups.grandfathered,
     language: groups.language,

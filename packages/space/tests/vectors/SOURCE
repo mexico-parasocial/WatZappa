@@ -1,0 +1,13 @@
+spaces-alpha.json is vlpds's testdata/spaces-alpha/vectors.json, copied
+unmodified from https://github.com/jazware/vlpds (mirrored at
+mexico-parasocial/vlpds) at release v1.1.0.
+
+vlpds generated it by running the reference implementation (this package's
+src, bluesky-social/atproto PR #5187 at
+5b95b2f2723a2882824fbb0b819fd6aad884ef20) with fixed keys, and its Rust
+implementation asserts the same vectors. Passing them here pins this copy to
+the same wire as vlpds and the reference.
+
+License: MIT (bluesky-social/atproto). To update: when packages/space moves to
+a newer reference commit, take vectors.json from the vlpds commit whose
+testdata/spaces-alpha/SOURCE names that same commit.

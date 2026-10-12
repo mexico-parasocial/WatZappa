@@ -11,3 +11,6 @@ export * from './scopes/identity-permission.js'
 export * from './scopes/include-scope.js'
 export * from './scopes/repo-permission.js'
 export * from './scopes/rpc-permission.js'
+export * from './scopes/space-permission.js'
+
+export { type NeArray, type NeRoArray, isNonEmpty } from './lib/syntax.js'
