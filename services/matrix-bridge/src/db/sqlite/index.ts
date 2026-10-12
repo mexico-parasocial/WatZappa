@@ -1,3 +1,3 @@
-import { EventLogArea } from './event-log.js'
+import { DmRequestsArea } from './dm-requests.js'
 
-export class BridgeDatabase extends EventLogArea {}
+export class BridgeDatabase extends DmRequestsArea {}
