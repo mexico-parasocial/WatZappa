@@ -23,12 +23,10 @@ import type {
   RecordRef,
 } from '../proto/bsky_pb.js'
 import { events } from '../telemetry/events.js'
-import {
-  SITE_STANDARD_NSID_PREFIX,
-  parseSiteStandardRecordKey,
-} from '../util/standard-site.js'
+import { SITE_STANDARD_NSID_PREFIX } from '../util/standard-site.js'
 import { uriToDid, uriToDid as didFromUri } from '../util/uris.js'
 import type { ParsedLabelers } from '../util.js'
+import { MAX_PROFILE_LINKS } from '../views/profile-link-rules.js'
 import {
   type ProfileRecord,
   isExternalEmbedType,
@@ -43,6 +41,7 @@ import {
   type KnownFollowersStates,
   type KnownLikersStates,
   type ProfileAggs,
+  type ProfileLinks,
   type ProfileViewerState,
   type ProfileViewerStates,
 } from './actor.js'
@@ -50,6 +49,7 @@ import {
   ExternalHydrator,
   type SiteStandardDocuments,
   type SiteStandardPublications,
+  parseGenericRecordKey,
 } from './external.js'
 import {
   type FeedGenAggs,
@@ -136,6 +136,8 @@ export type HydrateCtxVals = {
   features: ScopedFeatureGatesClient
 }
 
+export type ListItemSubjectOptOuts = HydrationMap<AtUriString, true>
+
 export type HydrationState = {
   ctx?: HydrateCtx
   actors?: Actors
@@ -156,6 +158,7 @@ export type HydrationState = {
   listMemberships?: ListMembershipStates
   listViewers?: ListViewerStates
   listItems?: ListItems
+  listItemSubjectOptOuts?: ListItemSubjectOptOuts
   likes?: Likes
   likeBlocks?: LikeBlocks
   labels?: Labels
@@ -164,6 +167,7 @@ export type HydrationState = {
   feedgenAggs?: FeedGenAggs
   starterPacks?: StarterPacks
   starterPackAggs?: StarterPackAggs
+  profileLinks?: ProfileLinks
   labelers?: Labelers
   labelerViewers?: LabelerViewerStates
   labelerAggs?: LabelerAggs
@@ -414,12 +418,21 @@ export class Hydrator {
         starterPackUriSet.add(actor?.profile?.joinedViaStarterPack?.uri)
       }
     })
-    const starterPackState = await this.hydrateStarterPacksBasic(
-      [...starterPackUriSet],
-      ctx,
-    )
+    const [starterPackState, profileLinks] = await Promise.all([
+      this.hydrateStarterPacksBasic([...starterPackUriSet], ctx),
+      this.actor
+        .getProfileLinks(
+          profileLinkUris(dids, state.actors),
+          ctx.includeTakedowns,
+        )
+        .catch((err): ProfileLinks => {
+          hydrationLogger.error({ err }, 'Failed to get profile links')
+          return new HydrationMap()
+        }),
+    ])
     return mergeManyStates(state, starterPackState, {
       profileAggs,
+      profileLinks,
       knownFollowers,
       activitySubscriptions,
       ctx,
@@ -755,7 +768,7 @@ export class Hydrator {
     const knownProfileDidsSet = new Set(knownProfileDids)
     const extraSsDids: DidString[] = []
     for (const key of siteStandardPublications.keys()) {
-      const did = uriToDid(parseSiteStandardRecordKey(key).uri)
+      const did = uriToDid(parseGenericRecordKey(key).uri)
       if (!knownProfileDidsSet.has(did)) {
         knownProfileDidsSet.add(did)
         extraSsDids.push(did)
@@ -883,13 +896,6 @@ export class Hydrator {
     const posts = await this.feed.getPosts(
       items.map((item) => item.post.uri),
       ctx.includeTakedowns,
-      undefined,
-      undefined,
-      {
-        includeOpThreadMetadata: ctx.features.checkGate(
-          ctx.features.Gate.OpThreadMetadataEnable,
-        ),
-      },
     )
     const rootUris: AtUriString[] = []
     const parentUris: AtUriString[] = []
@@ -981,7 +987,7 @@ export class Hydrator {
     const knownDids = new Set<string>(dids)
     const extraDids: DidString[] = []
     for (const key of publications.keys()) {
-      const did = uriToDid(parseSiteStandardRecordKey(key).uri)
+      const did = uriToDid(parseGenericRecordKey(key).uri)
       if (!knownDids.has(did)) {
         knownDids.add(did)
         extraDids.push(did)
@@ -1171,7 +1177,11 @@ export class Hydrator {
       this.hydrateFeedGens(feedUris, ctx),
       this.hydrateLists(listUris, ctx),
       ...listUris.map((uri) =>
-        this.dataplane.getListMembers({ listUri: uri, limit: 50 }),
+        this.dataplane.getListMembers({
+          listUri: uri,
+          limit: 50,
+          viewerDid: ctx.viewer ?? undefined,
+        }),
       ),
     ])
     // collect list info
@@ -1224,11 +1234,21 @@ export class Hydrator {
     })
     // hydrate sampled list items
     const listItemState = await this.hydrateListItems(listItemUris, ctx)
+    // @NOTE Subject opt-outs come from list membership, not list item records.
+    const listItemSubjectOptOuts: ListItemSubjectOptOuts = new HydrationMap()
+    listsMembers.forEach((members) => {
+      members.listitems.forEach((item) => {
+        if (item.subjectOptedOut) {
+          listItemSubjectOptOuts.set(item.uri as AtUriString, true)
+        }
+      })
+    })
     return mergeManyStates(
       starterPackState,
       feedGenState,
       listState,
       listItemState,
+      { listItemSubjectOptOuts },
     )
   }
 
@@ -1688,6 +1708,11 @@ export class Hydrator {
           uri,
         ) ?? undefined
       )
+    } else if (collection === app.bsky.actor.link.$type) {
+      return (
+        (await this.actor.getProfileLinks([uri], includeTakedowns)).get(uri) ??
+        undefined
+      )
     } else if (collection === app.bsky.notification.declaration.$type) {
       if (parsed.rkey !== 'self') return
       return (
@@ -1932,6 +1957,30 @@ const pairsToMap = <K extends string>(pairs: [a: K, b: K][]): Map<K, K[]> => {
   return map
 }
 
+/**
+ * The link records a profile points to, in order. Only the first
+ * MAX_PROFILE_LINKS are shown, and only links in the profile's own repo count.
+ */
+export const profileLinkUris = (
+  dids: DidString[],
+  actors: Actors | undefined,
+): AtUriString[] => {
+  const uris: AtUriString[] = []
+  for (const did of dids) {
+    const refs = actors?.get(did)?.profile?.links ?? []
+    for (const ref of refs.slice(0, MAX_PROFILE_LINKS)) {
+      const parsed = new AtUri(ref.uri)
+      if (
+        parsed.host === did &&
+        parsed.collection === app.bsky.actor.link.$type
+      ) {
+        uris.push(ref.uri)
+      }
+    }
+  }
+  return dedupeStrs(uris)
+}
+
 export const mergeStates = (
   stateA: HydrationState,
   stateB: HydrationState,
@@ -1965,6 +2014,10 @@ export const mergeStates = (
     ),
     listViewers: mergeMaps(stateA.listViewers, stateB.listViewers),
     listItems: mergeMaps(stateA.listItems, stateB.listItems),
+    listItemSubjectOptOuts: mergeMaps(
+      stateA.listItemSubjectOptOuts,
+      stateB.listItemSubjectOptOuts,
+    ),
     likes: mergeMaps(stateA.likes, stateB.likes),
     likeBlocks: mergeMaps(stateA.likeBlocks, stateB.likeBlocks),
     labels: mergeMaps(stateA.labels, stateB.labels),
@@ -1973,6 +2026,7 @@ export const mergeStates = (
     feedgenViewers: mergeMaps(stateA.feedgenViewers, stateB.feedgenViewers),
     starterPacks: mergeMaps(stateA.starterPacks, stateB.starterPacks),
     starterPackAggs: mergeMaps(stateA.starterPackAggs, stateB.starterPackAggs),
+    profileLinks: mergeMaps(stateA.profileLinks, stateB.profileLinks),
     labelers: mergeMaps(stateA.labelers, stateB.labelers),
     labelerAggs: mergeMaps(stateA.labelerAggs, stateB.labelerAggs),
     labelerViewers: mergeMaps(stateA.labelerViewers, stateB.labelerViewers),
@@ -2033,7 +2087,7 @@ const actionSiteStandardTakedownLabels = (
   if (documents.size > 0 && publications.size > 0) {
     const pubKeysByUri = new Map<string, string[]>()
     for (const key of publications.keys()) {
-      const { uri } = parseSiteStandardRecordKey(key)
+      const { uri } = parseGenericRecordKey(key)
       const list = pubKeysByUri.get(uri)
       if (list) list.push(key)
       else pubKeysByUri.set(uri, [key])
@@ -2049,11 +2103,11 @@ const actionSiteStandardTakedownLabels = (
 
   // Per-record takedowns: null any entry whose subject URI is taken down.
   for (const key of documents.keys()) {
-    const { uri } = parseSiteStandardRecordKey(key)
+    const { uri } = parseGenericRecordKey(key)
     if (labels.get(uri)?.isTakendown) documents.set(key, null)
   }
   for (const key of publications.keys()) {
-    const { uri } = parseSiteStandardRecordKey(key)
+    const { uri } = parseGenericRecordKey(key)
     if (labels.get(uri)?.isTakendown) publications.set(key, null)
   }
 

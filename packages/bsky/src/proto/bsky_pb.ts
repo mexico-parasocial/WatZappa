@@ -215,6 +215,50 @@ proto3.util.setEnumType(SitemapPageType, "bsky.SitemapPageType", [
 ]);
 
 /**
+ * @generated from enum bsky.RecordLookupStatus
+ */
+export enum RecordLookupStatus {
+  /**
+   * @generated from enum value: RECORD_LOOKUP_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: RECORD_LOOKUP_STATUS_FOUND = 1;
+   */
+  FOUND = 1,
+
+  /**
+   * @generated from enum value: RECORD_LOOKUP_STATUS_NOT_FOUND = 2;
+   */
+  NOT_FOUND = 2,
+
+  /**
+   * @generated from enum value: RECORD_LOOKUP_STATUS_TAKEN_DOWN = 3;
+   */
+  TAKEN_DOWN = 3,
+
+  /**
+   * @generated from enum value: RECORD_LOOKUP_STATUS_INVALID_REF = 4;
+   */
+  INVALID_REF = 4,
+
+  /**
+   * @generated from enum value: RECORD_LOOKUP_STATUS_UNSUPPORTED_COLLECTION = 5;
+   */
+  UNSUPPORTED_COLLECTION = 5,
+}
+// Retrieve enum metadata with: proto3.getEnumType(RecordLookupStatus)
+proto3.util.setEnumType(RecordLookupStatus, "bsky.RecordLookupStatus", [
+  { no: 0, name: "RECORD_LOOKUP_STATUS_UNSPECIFIED" },
+  { no: 1, name: "RECORD_LOOKUP_STATUS_FOUND" },
+  { no: 2, name: "RECORD_LOOKUP_STATUS_NOT_FOUND" },
+  { no: 3, name: "RECORD_LOOKUP_STATUS_TAKEN_DOWN" },
+  { no: 4, name: "RECORD_LOOKUP_STATUS_INVALID_REF" },
+  { no: 5, name: "RECORD_LOOKUP_STATUS_UNSUPPORTED_COLLECTION" },
+]);
+
+/**
  * @generated from message bsky.Record
  */
 export class Record extends Message<Record> {
@@ -11570,193 +11614,48 @@ export class StashRef extends Message<StashRef> {
 }
 
 /**
- * Standard.site records
+ * Generic records
  *
- * @generated from message bsky.GetSiteStandardRecordsByURIRequest
+ * @generated from message bsky.GetRecordsByRefRequest
  */
-export class GetSiteStandardRecordsByURIRequest extends Message<GetSiteStandardRecordsByURIRequest> {
+export class GetRecordsByRefRequest extends Message<GetRecordsByRefRequest> {
   /**
-   * Mixed list of site.standard.document and site.standard.publication AT-URIs.
-   * URIs of other collections (or unparseable strings) are silently skipped.
-   *
-   * @generated from field: repeated string uris = 1;
-   */
-  uris: string[] = [];
-
-  constructor(data?: PartialMessage<GetSiteStandardRecordsByURIRequest>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "bsky.GetSiteStandardRecordsByURIRequest";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetSiteStandardRecordsByURIRequest {
-    return new GetSiteStandardRecordsByURIRequest().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetSiteStandardRecordsByURIRequest {
-    return new GetSiteStandardRecordsByURIRequest().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetSiteStandardRecordsByURIRequest {
-    return new GetSiteStandardRecordsByURIRequest().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: GetSiteStandardRecordsByURIRequest | PlainMessage<GetSiteStandardRecordsByURIRequest> | undefined, b: GetSiteStandardRecordsByURIRequest | PlainMessage<GetSiteStandardRecordsByURIRequest> | undefined): boolean {
-    return proto3.util.equals(GetSiteStandardRecordsByURIRequest, a, b);
-  }
-}
-
-/**
- * @generated from message bsky.GetSiteStandardRecordsByURIResponse
- */
-export class GetSiteStandardRecordsByURIResponse extends Message<GetSiteStandardRecordsByURIResponse> {
-  /**
-   * Latest indexed version of each requested document.
-   *
-   * @generated from field: repeated bsky.SiteStandardRecord documents = 1;
-   */
-  documents: SiteStandardRecord[] = [];
-
-  /**
-   * Latest indexed version of each requested publication AND each publication
-   * resolved from a document's `site` field. Each publication appears at most
-   * once across the two sources.
-   *
-   * @generated from field: repeated bsky.SiteStandardRecord publications = 2;
-   */
-  publications: SiteStandardRecord[] = [];
-
-  constructor(data?: PartialMessage<GetSiteStandardRecordsByURIResponse>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "bsky.GetSiteStandardRecordsByURIResponse";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "documents", kind: "message", T: SiteStandardRecord, repeated: true },
-    { no: 2, name: "publications", kind: "message", T: SiteStandardRecord, repeated: true },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetSiteStandardRecordsByURIResponse {
-    return new GetSiteStandardRecordsByURIResponse().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetSiteStandardRecordsByURIResponse {
-    return new GetSiteStandardRecordsByURIResponse().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetSiteStandardRecordsByURIResponse {
-    return new GetSiteStandardRecordsByURIResponse().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: GetSiteStandardRecordsByURIResponse | PlainMessage<GetSiteStandardRecordsByURIResponse> | undefined, b: GetSiteStandardRecordsByURIResponse | PlainMessage<GetSiteStandardRecordsByURIResponse> | undefined): boolean {
-    return proto3.util.equals(GetSiteStandardRecordsByURIResponse, a, b);
-  }
-}
-
-/**
- * @generated from message bsky.GetSiteStandardRecordsByRefRequest
- */
-export class GetSiteStandardRecordsByRefRequest extends Message<GetSiteStandardRecordsByRefRequest> {
-  /**
-   * Mixed list of site.standard.document and site.standard.publication refs
-   * (uri + cid). Refs whose URI is not a SiteStandard collection (or doesn't
-   * parse) are silently skipped.
-   *
    * @generated from field: repeated bsky.RecordRef refs = 1;
    */
   refs: RecordRef[] = [];
 
-  constructor(data?: PartialMessage<GetSiteStandardRecordsByRefRequest>) {
+  constructor(data?: PartialMessage<GetRecordsByRefRequest>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "bsky.GetSiteStandardRecordsByRefRequest";
+  static readonly typeName = "bsky.GetRecordsByRefRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "refs", kind: "message", T: RecordRef, repeated: true },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetSiteStandardRecordsByRefRequest {
-    return new GetSiteStandardRecordsByRefRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetRecordsByRefRequest {
+    return new GetRecordsByRefRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetSiteStandardRecordsByRefRequest {
-    return new GetSiteStandardRecordsByRefRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetRecordsByRefRequest {
+    return new GetRecordsByRefRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetSiteStandardRecordsByRefRequest {
-    return new GetSiteStandardRecordsByRefRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetRecordsByRefRequest {
+    return new GetRecordsByRefRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: GetSiteStandardRecordsByRefRequest | PlainMessage<GetSiteStandardRecordsByRefRequest> | undefined, b: GetSiteStandardRecordsByRefRequest | PlainMessage<GetSiteStandardRecordsByRefRequest> | undefined): boolean {
-    return proto3.util.equals(GetSiteStandardRecordsByRefRequest, a, b);
-  }
-}
-
-/**
- * @generated from message bsky.GetSiteStandardRecordsByRefResponse
- */
-export class GetSiteStandardRecordsByRefResponse extends Message<GetSiteStandardRecordsByRefResponse> {
-  /**
-   * Document version exactly matching each requested doc ref.
-   *
-   * @generated from field: repeated bsky.SiteStandardRecord documents = 1;
-   */
-  documents: SiteStandardRecord[] = [];
-
-  /**
-   * Publication version exactly matching each requested pub ref. This RPC
-   * does NOT auto-resolve publications referenced by documents — callers who
-   * want a paired publication should pass its ref explicitly.
-   *
-   * @generated from field: repeated bsky.SiteStandardRecord publications = 2;
-   */
-  publications: SiteStandardRecord[] = [];
-
-  constructor(data?: PartialMessage<GetSiteStandardRecordsByRefResponse>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "bsky.GetSiteStandardRecordsByRefResponse";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "documents", kind: "message", T: SiteStandardRecord, repeated: true },
-    { no: 2, name: "publications", kind: "message", T: SiteStandardRecord, repeated: true },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetSiteStandardRecordsByRefResponse {
-    return new GetSiteStandardRecordsByRefResponse().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetSiteStandardRecordsByRefResponse {
-    return new GetSiteStandardRecordsByRefResponse().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetSiteStandardRecordsByRefResponse {
-    return new GetSiteStandardRecordsByRefResponse().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: GetSiteStandardRecordsByRefResponse | PlainMessage<GetSiteStandardRecordsByRefResponse> | undefined, b: GetSiteStandardRecordsByRefResponse | PlainMessage<GetSiteStandardRecordsByRefResponse> | undefined): boolean {
-    return proto3.util.equals(GetSiteStandardRecordsByRefResponse, a, b);
+  static equals(a: GetRecordsByRefRequest | PlainMessage<GetRecordsByRefRequest> | undefined, b: GetRecordsByRefRequest | PlainMessage<GetRecordsByRefRequest> | undefined): boolean {
+    return proto3.util.equals(GetRecordsByRefRequest, a, b);
   }
 }
 
 /**
- * SiteStandardRecord pairs a record with its addressing ref so callers can
- * build a uri- or (uri,cid)-keyed lookup without server-side encoding.
- *
- * @generated from message bsky.SiteStandardRecord
+ * @generated from message bsky.RecordLookupResult
  */
-export class SiteStandardRecord extends Message<SiteStandardRecord> {
+export class RecordLookupResult extends Message<RecordLookupResult> {
   /**
    * @generated from field: bsky.RecordRef ref = 1;
    */
@@ -11767,32 +11666,703 @@ export class SiteStandardRecord extends Message<SiteStandardRecord> {
    */
   record?: Record;
 
-  constructor(data?: PartialMessage<SiteStandardRecord>) {
+  /**
+   * @generated from field: bsky.RecordLookupStatus status = 3;
+   */
+  status = RecordLookupStatus.UNSPECIFIED;
+
+  constructor(data?: PartialMessage<RecordLookupResult>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "bsky.SiteStandardRecord";
+  static readonly typeName = "bsky.RecordLookupResult";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "ref", kind: "message", T: RecordRef },
     { no: 2, name: "record", kind: "message", T: Record },
+    { no: 3, name: "status", kind: "enum", T: proto3.getEnumType(RecordLookupStatus) },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SiteStandardRecord {
-    return new SiteStandardRecord().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RecordLookupResult {
+    return new RecordLookupResult().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SiteStandardRecord {
-    return new SiteStandardRecord().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RecordLookupResult {
+    return new RecordLookupResult().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SiteStandardRecord {
-    return new SiteStandardRecord().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RecordLookupResult {
+    return new RecordLookupResult().fromJsonString(jsonString, options);
   }
 
-  static equals(a: SiteStandardRecord | PlainMessage<SiteStandardRecord> | undefined, b: SiteStandardRecord | PlainMessage<SiteStandardRecord> | undefined): boolean {
-    return proto3.util.equals(SiteStandardRecord, a, b);
+  static equals(a: RecordLookupResult | PlainMessage<RecordLookupResult> | undefined, b: RecordLookupResult | PlainMessage<RecordLookupResult> | undefined): boolean {
+    return proto3.util.equals(RecordLookupResult, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetRecordsByRefResponse
+ */
+export class GetRecordsByRefResponse extends Message<GetRecordsByRefResponse> {
+  /**
+   * @generated from field: repeated bsky.RecordLookupResult results = 1;
+   */
+  results: RecordLookupResult[] = [];
+
+  constructor(data?: PartialMessage<GetRecordsByRefResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetRecordsByRefResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "results", kind: "message", T: RecordLookupResult, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetRecordsByRefResponse {
+    return new GetRecordsByRefResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetRecordsByRefResponse {
+    return new GetRecordsByRefResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetRecordsByRefResponse {
+    return new GetRecordsByRefResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetRecordsByRefResponse | PlainMessage<GetRecordsByRefResponse> | undefined, b: GetRecordsByRefResponse | PlainMessage<GetRecordsByRefResponse> | undefined): boolean {
+    return proto3.util.equals(GetRecordsByRefResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetRecordsByURIRequest
+ */
+export class GetRecordsByURIRequest extends Message<GetRecordsByURIRequest> {
+  /**
+   * @generated from field: repeated string uris = 1;
+   */
+  uris: string[] = [];
+
+  constructor(data?: PartialMessage<GetRecordsByURIRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetRecordsByURIRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetRecordsByURIRequest {
+    return new GetRecordsByURIRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetRecordsByURIRequest {
+    return new GetRecordsByURIRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetRecordsByURIRequest {
+    return new GetRecordsByURIRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetRecordsByURIRequest | PlainMessage<GetRecordsByURIRequest> | undefined, b: GetRecordsByURIRequest | PlainMessage<GetRecordsByURIRequest> | undefined): boolean {
+    return proto3.util.equals(GetRecordsByURIRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetRecordsByURIResponse
+ */
+export class GetRecordsByURIResponse extends Message<GetRecordsByURIResponse> {
+  /**
+   * @generated from field: repeated bsky.RecordLookupResult results = 1;
+   */
+  results: RecordLookupResult[] = [];
+
+  constructor(data?: PartialMessage<GetRecordsByURIResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetRecordsByURIResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "results", kind: "message", T: RecordLookupResult, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetRecordsByURIResponse {
+    return new GetRecordsByURIResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetRecordsByURIResponse {
+    return new GetRecordsByURIResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetRecordsByURIResponse {
+    return new GetRecordsByURIResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetRecordsByURIResponse | PlainMessage<GetRecordsByURIResponse> | undefined, b: GetRecordsByURIResponse | PlainMessage<GetRecordsByURIResponse> | undefined): boolean {
+    return proto3.util.equals(GetRecordsByURIResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.AtmosphereActivityItem
+ */
+export class AtmosphereActivityItem extends Message<AtmosphereActivityItem> {
+  /**
+   * @generated from field: string uri = 1;
+   */
+  uri = "";
+
+  /**
+   * @generated from field: google.protobuf.Timestamp sorted_at = 2;
+   */
+  sortedAt?: Timestamp;
+
+  constructor(data?: PartialMessage<AtmosphereActivityItem>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.AtmosphereActivityItem";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "sorted_at", kind: "message", T: Timestamp },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AtmosphereActivityItem {
+    return new AtmosphereActivityItem().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): AtmosphereActivityItem {
+    return new AtmosphereActivityItem().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): AtmosphereActivityItem {
+    return new AtmosphereActivityItem().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: AtmosphereActivityItem | PlainMessage<AtmosphereActivityItem> | undefined, b: AtmosphereActivityItem | PlainMessage<AtmosphereActivityItem> | undefined): boolean {
+    return proto3.util.equals(AtmosphereActivityItem, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetAtmosphereTimelineRequest
+ */
+export class GetAtmosphereTimelineRequest extends Message<GetAtmosphereTimelineRequest> {
+  /**
+   * @generated from field: string viewer_did = 1;
+   */
+  viewerDid = "";
+
+  /**
+   * @generated from field: int32 limit = 2;
+   */
+  limit = 0;
+
+  /**
+   * @generated from field: string cursor = 3;
+   */
+  cursor = "";
+
+  constructor(data?: PartialMessage<GetAtmosphereTimelineRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetAtmosphereTimelineRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "viewer_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 3, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetAtmosphereTimelineRequest {
+    return new GetAtmosphereTimelineRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetAtmosphereTimelineRequest {
+    return new GetAtmosphereTimelineRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetAtmosphereTimelineRequest {
+    return new GetAtmosphereTimelineRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetAtmosphereTimelineRequest | PlainMessage<GetAtmosphereTimelineRequest> | undefined, b: GetAtmosphereTimelineRequest | PlainMessage<GetAtmosphereTimelineRequest> | undefined): boolean {
+    return proto3.util.equals(GetAtmosphereTimelineRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetAtmosphereTimelineResponse
+ */
+export class GetAtmosphereTimelineResponse extends Message<GetAtmosphereTimelineResponse> {
+  /**
+   * @generated from field: repeated bsky.AtmosphereActivityItem items = 1;
+   */
+  items: AtmosphereActivityItem[] = [];
+
+  /**
+   * @generated from field: string cursor = 2;
+   */
+  cursor = "";
+
+  constructor(data?: PartialMessage<GetAtmosphereTimelineResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetAtmosphereTimelineResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "items", kind: "message", T: AtmosphereActivityItem, repeated: true },
+    { no: 2, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetAtmosphereTimelineResponse {
+    return new GetAtmosphereTimelineResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetAtmosphereTimelineResponse {
+    return new GetAtmosphereTimelineResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetAtmosphereTimelineResponse {
+    return new GetAtmosphereTimelineResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetAtmosphereTimelineResponse | PlainMessage<GetAtmosphereTimelineResponse> | undefined, b: GetAtmosphereTimelineResponse | PlainMessage<GetAtmosphereTimelineResponse> | undefined): boolean {
+    return proto3.util.equals(GetAtmosphereTimelineResponse, a, b);
+  }
+}
+
+/**
+ * Atmosphere backlinks: records in a source collection that reference a
+ * target AT-URI through a registered backlink path.
+ *
+ * @generated from message bsky.AtmosphereBacklink
+ */
+export class AtmosphereBacklink extends Message<AtmosphereBacklink> {
+  /**
+   * @generated from field: string uri = 1;
+   */
+  uri = "";
+
+  /**
+   * @generated from field: google.protobuf.Timestamp sorted_at = 2;
+   */
+  sortedAt?: Timestamp;
+
+  constructor(data?: PartialMessage<AtmosphereBacklink>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.AtmosphereBacklink";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "sorted_at", kind: "message", T: Timestamp },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AtmosphereBacklink {
+    return new AtmosphereBacklink().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): AtmosphereBacklink {
+    return new AtmosphereBacklink().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): AtmosphereBacklink {
+    return new AtmosphereBacklink().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: AtmosphereBacklink | PlainMessage<AtmosphereBacklink> | undefined, b: AtmosphereBacklink | PlainMessage<AtmosphereBacklink> | undefined): boolean {
+    return proto3.util.equals(AtmosphereBacklink, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetAtmosphereBacklinksRequest
+ */
+export class GetAtmosphereBacklinksRequest extends Message<GetAtmosphereBacklinksRequest> {
+  /**
+   * @generated from field: string target_uri = 1;
+   */
+  targetUri = "";
+
+  /**
+   * Source collection NSID, e.g. site.standard.graph.recommend.
+   *
+   * @generated from field: string collection = 2;
+   */
+  collection = "";
+
+  /**
+   * @generated from field: int32 limit = 3;
+   */
+  limit = 0;
+
+  /**
+   * @generated from field: string cursor = 4;
+   */
+  cursor = "";
+
+  constructor(data?: PartialMessage<GetAtmosphereBacklinksRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetAtmosphereBacklinksRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "target_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "collection", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 4, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetAtmosphereBacklinksRequest {
+    return new GetAtmosphereBacklinksRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetAtmosphereBacklinksRequest {
+    return new GetAtmosphereBacklinksRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetAtmosphereBacklinksRequest {
+    return new GetAtmosphereBacklinksRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetAtmosphereBacklinksRequest | PlainMessage<GetAtmosphereBacklinksRequest> | undefined, b: GetAtmosphereBacklinksRequest | PlainMessage<GetAtmosphereBacklinksRequest> | undefined): boolean {
+    return proto3.util.equals(GetAtmosphereBacklinksRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetAtmosphereBacklinksResponse
+ */
+export class GetAtmosphereBacklinksResponse extends Message<GetAtmosphereBacklinksResponse> {
+  /**
+   * @generated from field: repeated bsky.AtmosphereBacklink backlinks = 1;
+   */
+  backlinks: AtmosphereBacklink[] = [];
+
+  /**
+   * @generated from field: string cursor = 2;
+   */
+  cursor = "";
+
+  constructor(data?: PartialMessage<GetAtmosphereBacklinksResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetAtmosphereBacklinksResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "backlinks", kind: "message", T: AtmosphereBacklink, repeated: true },
+    { no: 2, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetAtmosphereBacklinksResponse {
+    return new GetAtmosphereBacklinksResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetAtmosphereBacklinksResponse {
+    return new GetAtmosphereBacklinksResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetAtmosphereBacklinksResponse {
+    return new GetAtmosphereBacklinksResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetAtmosphereBacklinksResponse | PlainMessage<GetAtmosphereBacklinksResponse> | undefined, b: GetAtmosphereBacklinksResponse | PlainMessage<GetAtmosphereBacklinksResponse> | undefined): boolean {
+    return proto3.util.equals(GetAtmosphereBacklinksResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetAtmosphereBacklinksByActorRequest
+ */
+export class GetAtmosphereBacklinksByActorRequest extends Message<GetAtmosphereBacklinksByActorRequest> {
+  /**
+   * @generated from field: string actor_did = 1;
+   */
+  actorDid = "";
+
+  /**
+   * Source collection NSID.
+   *
+   * @generated from field: string collection = 2;
+   */
+  collection = "";
+
+  /**
+   * @generated from field: repeated string target_uris = 3;
+   */
+  targetUris: string[] = [];
+
+  constructor(data?: PartialMessage<GetAtmosphereBacklinksByActorRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetAtmosphereBacklinksByActorRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "actor_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "collection", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "target_uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetAtmosphereBacklinksByActorRequest {
+    return new GetAtmosphereBacklinksByActorRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetAtmosphereBacklinksByActorRequest {
+    return new GetAtmosphereBacklinksByActorRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetAtmosphereBacklinksByActorRequest {
+    return new GetAtmosphereBacklinksByActorRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetAtmosphereBacklinksByActorRequest | PlainMessage<GetAtmosphereBacklinksByActorRequest> | undefined, b: GetAtmosphereBacklinksByActorRequest | PlainMessage<GetAtmosphereBacklinksByActorRequest> | undefined): boolean {
+    return proto3.util.equals(GetAtmosphereBacklinksByActorRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.AtmosphereBacklinksByActor
+ */
+export class AtmosphereBacklinksByActor extends Message<AtmosphereBacklinksByActor> {
+  /**
+   * @generated from field: string target_uri = 1;
+   */
+  targetUri = "";
+
+  /**
+   * Source record URIs authored by the actor; empty if none.
+   *
+   * @generated from field: repeated string uris = 2;
+   */
+  uris: string[] = [];
+
+  constructor(data?: PartialMessage<AtmosphereBacklinksByActor>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.AtmosphereBacklinksByActor";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "target_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AtmosphereBacklinksByActor {
+    return new AtmosphereBacklinksByActor().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): AtmosphereBacklinksByActor {
+    return new AtmosphereBacklinksByActor().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): AtmosphereBacklinksByActor {
+    return new AtmosphereBacklinksByActor().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: AtmosphereBacklinksByActor | PlainMessage<AtmosphereBacklinksByActor> | undefined, b: AtmosphereBacklinksByActor | PlainMessage<AtmosphereBacklinksByActor> | undefined): boolean {
+    return proto3.util.equals(AtmosphereBacklinksByActor, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetAtmosphereBacklinksByActorResponse
+ */
+export class GetAtmosphereBacklinksByActorResponse extends Message<GetAtmosphereBacklinksByActorResponse> {
+  /**
+   * One entry per requested target, in request order.
+   *
+   * @generated from field: repeated bsky.AtmosphereBacklinksByActor results = 1;
+   */
+  results: AtmosphereBacklinksByActor[] = [];
+
+  /**
+   * True if the actor has more matching records than the response limit, so
+   * some targets may be missing links.
+   *
+   * @generated from field: bool truncated = 2;
+   */
+  truncated = false;
+
+  constructor(data?: PartialMessage<GetAtmosphereBacklinksByActorResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetAtmosphereBacklinksByActorResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "results", kind: "message", T: AtmosphereBacklinksByActor, repeated: true },
+    { no: 2, name: "truncated", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetAtmosphereBacklinksByActorResponse {
+    return new GetAtmosphereBacklinksByActorResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetAtmosphereBacklinksByActorResponse {
+    return new GetAtmosphereBacklinksByActorResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetAtmosphereBacklinksByActorResponse {
+    return new GetAtmosphereBacklinksByActorResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetAtmosphereBacklinksByActorResponse | PlainMessage<GetAtmosphereBacklinksByActorResponse> | undefined, b: GetAtmosphereBacklinksByActorResponse | PlainMessage<GetAtmosphereBacklinksByActorResponse> | undefined): boolean {
+    return proto3.util.equals(GetAtmosphereBacklinksByActorResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetAtmosphereBacklinkCountsRequest
+ */
+export class GetAtmosphereBacklinkCountsRequest extends Message<GetAtmosphereBacklinkCountsRequest> {
+  /**
+   * @generated from field: repeated string target_uris = 1;
+   */
+  targetUris: string[] = [];
+
+  /**
+   * Optional source collection NSID; empty returns counts for every collection.
+   *
+   * @generated from field: string collection = 2;
+   */
+  collection = "";
+
+  constructor(data?: PartialMessage<GetAtmosphereBacklinkCountsRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetAtmosphereBacklinkCountsRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "target_uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 2, name: "collection", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetAtmosphereBacklinkCountsRequest {
+    return new GetAtmosphereBacklinkCountsRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetAtmosphereBacklinkCountsRequest {
+    return new GetAtmosphereBacklinkCountsRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetAtmosphereBacklinkCountsRequest {
+    return new GetAtmosphereBacklinkCountsRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetAtmosphereBacklinkCountsRequest | PlainMessage<GetAtmosphereBacklinkCountsRequest> | undefined, b: GetAtmosphereBacklinkCountsRequest | PlainMessage<GetAtmosphereBacklinkCountsRequest> | undefined): boolean {
+    return proto3.util.equals(GetAtmosphereBacklinkCountsRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.AtmosphereBacklinkCounts
+ */
+export class AtmosphereBacklinkCounts extends Message<AtmosphereBacklinkCounts> {
+  /**
+   * @generated from field: string target_uri = 1;
+   */
+  targetUri = "";
+
+  /**
+   * Source collection NSID -> number of source records linking to the target.
+   *
+   * @generated from field: map<string, int64> counts = 2;
+   */
+  counts: { [key: string]: bigint } = {};
+
+  constructor(data?: PartialMessage<AtmosphereBacklinkCounts>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.AtmosphereBacklinkCounts";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "target_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "counts", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 3 /* ScalarType.INT64 */} },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AtmosphereBacklinkCounts {
+    return new AtmosphereBacklinkCounts().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): AtmosphereBacklinkCounts {
+    return new AtmosphereBacklinkCounts().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): AtmosphereBacklinkCounts {
+    return new AtmosphereBacklinkCounts().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: AtmosphereBacklinkCounts | PlainMessage<AtmosphereBacklinkCounts> | undefined, b: AtmosphereBacklinkCounts | PlainMessage<AtmosphereBacklinkCounts> | undefined): boolean {
+    return proto3.util.equals(AtmosphereBacklinkCounts, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetAtmosphereBacklinkCountsResponse
+ */
+export class GetAtmosphereBacklinkCountsResponse extends Message<GetAtmosphereBacklinkCountsResponse> {
+  /**
+   * One entry per requested target, in request order.
+   *
+   * @generated from field: repeated bsky.AtmosphereBacklinkCounts results = 1;
+   */
+  results: AtmosphereBacklinkCounts[] = [];
+
+  constructor(data?: PartialMessage<GetAtmosphereBacklinkCountsResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetAtmosphereBacklinkCountsResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "results", kind: "message", T: AtmosphereBacklinkCounts, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetAtmosphereBacklinkCountsResponse {
+    return new GetAtmosphereBacklinkCountsResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetAtmosphereBacklinkCountsResponse {
+    return new GetAtmosphereBacklinkCountsResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetAtmosphereBacklinkCountsResponse {
+    return new GetAtmosphereBacklinkCountsResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetAtmosphereBacklinkCountsResponse | PlainMessage<GetAtmosphereBacklinkCountsResponse> | undefined, b: GetAtmosphereBacklinkCountsResponse | PlainMessage<GetAtmosphereBacklinkCountsResponse> | undefined): boolean {
+    return proto3.util.equals(GetAtmosphereBacklinkCountsResponse, a, b);
   }
 }
 

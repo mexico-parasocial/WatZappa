@@ -474,6 +474,16 @@ import * as ToolsOzoneHistoryGetSubjectHistory from './types/tools/ozone/history
 import * as ToolsOzoneHostingGetAccountHistory from './types/tools/ozone/hosting/getAccountHistory.js'
 import * as ToolsOzoneInboxAppealActionedSubject from './types/tools/ozone/inbox/appealActionedSubject.js'
 import * as ToolsOzoneInboxDefs from './types/tools/ozone/inbox/defs.js'
+import * as ToolsOzoneInboxGetAccountStatus from './types/tools/ozone/inbox/getAccountStatus.js'
+import * as ToolsOzoneInboxGetActionedSubject from './types/tools/ozone/inbox/getActionedSubject.js'
+import * as ToolsOzoneInboxGetNotificationPreferences from './types/tools/ozone/inbox/getNotificationPreferences.js'
+import * as ToolsOzoneInboxGetReport from './types/tools/ozone/inbox/getReport.js'
+import * as ToolsOzoneInboxGetUnreadCount from './types/tools/ozone/inbox/getUnreadCount.js'
+import * as ToolsOzoneInboxListActionedSubjects from './types/tools/ozone/inbox/listActionedSubjects.js'
+import * as ToolsOzoneInboxListNotifications from './types/tools/ozone/inbox/listNotifications.js'
+import * as ToolsOzoneInboxListReports from './types/tools/ozone/inbox/listReports.js'
+import * as ToolsOzoneInboxPutNotificationPreferences from './types/tools/ozone/inbox/putNotificationPreferences.js'
+import * as ToolsOzoneInboxUpdateSeen from './types/tools/ozone/inbox/updateSeen.js'
 import * as ToolsOzoneModerationCancelScheduledActions from './types/tools/ozone/moderation/cancelScheduledActions.js'
 import * as ToolsOzoneModerationDefs from './types/tools/ozone/moderation/defs.js'
 import * as ToolsOzoneModerationEmitEvent from './types/tools/ozone/moderation/emitEvent.js'
@@ -521,6 +531,7 @@ import * as ToolsOzoneSafelinkQueryEvents from './types/tools/ozone/safelink/que
 import * as ToolsOzoneSafelinkQueryRules from './types/tools/ozone/safelink/queryRules.js'
 import * as ToolsOzoneSafelinkRemoveRule from './types/tools/ozone/safelink/removeRule.js'
 import * as ToolsOzoneSafelinkUpdateRule from './types/tools/ozone/safelink/updateRule.js'
+import * as ToolsOzoneServerGetCapabilities from './types/tools/ozone/server/getCapabilities.js'
 import * as ToolsOzoneServerGetConfig from './types/tools/ozone/server/getConfig.js'
 import * as ToolsOzoneSetAddValues from './types/tools/ozone/set/addValues.js'
 import * as ToolsOzoneSetDefs from './types/tools/ozone/set/defs.js'
@@ -1011,6 +1022,16 @@ export * as ToolsOzoneHistoryGetSubjectHistory from './types/tools/ozone/history
 export * as ToolsOzoneHostingGetAccountHistory from './types/tools/ozone/hosting/getAccountHistory.js'
 export * as ToolsOzoneInboxAppealActionedSubject from './types/tools/ozone/inbox/appealActionedSubject.js'
 export * as ToolsOzoneInboxDefs from './types/tools/ozone/inbox/defs.js'
+export * as ToolsOzoneInboxGetAccountStatus from './types/tools/ozone/inbox/getAccountStatus.js'
+export * as ToolsOzoneInboxGetActionedSubject from './types/tools/ozone/inbox/getActionedSubject.js'
+export * as ToolsOzoneInboxGetNotificationPreferences from './types/tools/ozone/inbox/getNotificationPreferences.js'
+export * as ToolsOzoneInboxGetReport from './types/tools/ozone/inbox/getReport.js'
+export * as ToolsOzoneInboxGetUnreadCount from './types/tools/ozone/inbox/getUnreadCount.js'
+export * as ToolsOzoneInboxListActionedSubjects from './types/tools/ozone/inbox/listActionedSubjects.js'
+export * as ToolsOzoneInboxListNotifications from './types/tools/ozone/inbox/listNotifications.js'
+export * as ToolsOzoneInboxListReports from './types/tools/ozone/inbox/listReports.js'
+export * as ToolsOzoneInboxPutNotificationPreferences from './types/tools/ozone/inbox/putNotificationPreferences.js'
+export * as ToolsOzoneInboxUpdateSeen from './types/tools/ozone/inbox/updateSeen.js'
 export * as ToolsOzoneModerationCancelScheduledActions from './types/tools/ozone/moderation/cancelScheduledActions.js'
 export * as ToolsOzoneModerationDefs from './types/tools/ozone/moderation/defs.js'
 export * as ToolsOzoneModerationEmitEvent from './types/tools/ozone/moderation/emitEvent.js'
@@ -1058,6 +1079,7 @@ export * as ToolsOzoneSafelinkQueryEvents from './types/tools/ozone/safelink/que
 export * as ToolsOzoneSafelinkQueryRules from './types/tools/ozone/safelink/queryRules.js'
 export * as ToolsOzoneSafelinkRemoveRule from './types/tools/ozone/safelink/removeRule.js'
 export * as ToolsOzoneSafelinkUpdateRule from './types/tools/ozone/safelink/updateRule.js'
+export * as ToolsOzoneServerGetCapabilities from './types/tools/ozone/server/getCapabilities.js'
 export * as ToolsOzoneServerGetConfig from './types/tools/ozone/server/getConfig.js'
 export * as ToolsOzoneSetAddValues from './types/tools/ozone/set/addValues.js'
 export * as ToolsOzoneSetDefs from './types/tools/ozone/set/defs.js'
@@ -11095,6 +11117,124 @@ export class ToolsOzoneInboxNS {
         throw ToolsOzoneInboxAppealActionedSubject.toKnownErr(e)
       })
   }
+
+  getAccountStatus(
+    params?: ToolsOzoneInboxGetAccountStatus.QueryParams,
+    opts?: ToolsOzoneInboxGetAccountStatus.CallOptions,
+  ): Promise<ToolsOzoneInboxGetAccountStatus.Response> {
+    return this._client.call(
+      'tools.ozone.inbox.getAccountStatus',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  getActionedSubject(
+    params?: ToolsOzoneInboxGetActionedSubject.QueryParams,
+    opts?: ToolsOzoneInboxGetActionedSubject.CallOptions,
+  ): Promise<ToolsOzoneInboxGetActionedSubject.Response> {
+    return this._client
+      .call('tools.ozone.inbox.getActionedSubject', params, undefined, opts)
+      .catch((e) => {
+        throw ToolsOzoneInboxGetActionedSubject.toKnownErr(e)
+      })
+  }
+
+  getNotificationPreferences(
+    params?: ToolsOzoneInboxGetNotificationPreferences.QueryParams,
+    opts?: ToolsOzoneInboxGetNotificationPreferences.CallOptions,
+  ): Promise<ToolsOzoneInboxGetNotificationPreferences.Response> {
+    return this._client.call(
+      'tools.ozone.inbox.getNotificationPreferences',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  getReport(
+    params?: ToolsOzoneInboxGetReport.QueryParams,
+    opts?: ToolsOzoneInboxGetReport.CallOptions,
+  ): Promise<ToolsOzoneInboxGetReport.Response> {
+    return this._client
+      .call('tools.ozone.inbox.getReport', params, undefined, opts)
+      .catch((e) => {
+        throw ToolsOzoneInboxGetReport.toKnownErr(e)
+      })
+  }
+
+  getUnreadCount(
+    params?: ToolsOzoneInboxGetUnreadCount.QueryParams,
+    opts?: ToolsOzoneInboxGetUnreadCount.CallOptions,
+  ): Promise<ToolsOzoneInboxGetUnreadCount.Response> {
+    return this._client.call(
+      'tools.ozone.inbox.getUnreadCount',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  listActionedSubjects(
+    params?: ToolsOzoneInboxListActionedSubjects.QueryParams,
+    opts?: ToolsOzoneInboxListActionedSubjects.CallOptions,
+  ): Promise<ToolsOzoneInboxListActionedSubjects.Response> {
+    return this._client.call(
+      'tools.ozone.inbox.listActionedSubjects',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  listNotifications(
+    params?: ToolsOzoneInboxListNotifications.QueryParams,
+    opts?: ToolsOzoneInboxListNotifications.CallOptions,
+  ): Promise<ToolsOzoneInboxListNotifications.Response> {
+    return this._client.call(
+      'tools.ozone.inbox.listNotifications',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  listReports(
+    params?: ToolsOzoneInboxListReports.QueryParams,
+    opts?: ToolsOzoneInboxListReports.CallOptions,
+  ): Promise<ToolsOzoneInboxListReports.Response> {
+    return this._client.call(
+      'tools.ozone.inbox.listReports',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  putNotificationPreferences(
+    data?: ToolsOzoneInboxPutNotificationPreferences.InputSchema,
+    opts?: ToolsOzoneInboxPutNotificationPreferences.CallOptions,
+  ): Promise<ToolsOzoneInboxPutNotificationPreferences.Response> {
+    return this._client.call(
+      'tools.ozone.inbox.putNotificationPreferences',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
+
+  updateSeen(
+    data?: ToolsOzoneInboxUpdateSeen.InputSchema,
+    opts?: ToolsOzoneInboxUpdateSeen.CallOptions,
+  ): Promise<ToolsOzoneInboxUpdateSeen.Response> {
+    return this._client.call(
+      'tools.ozone.inbox.updateSeen',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
 }
 
 export class ToolsOzoneModerationNS {
@@ -11637,6 +11777,18 @@ export class ToolsOzoneServerNS {
 
   constructor(client: XrpcClient) {
     this._client = client
+  }
+
+  getCapabilities(
+    params?: ToolsOzoneServerGetCapabilities.QueryParams,
+    opts?: ToolsOzoneServerGetCapabilities.CallOptions,
+  ): Promise<ToolsOzoneServerGetCapabilities.Response> {
+    return this._client.call(
+      'tools.ozone.server.getCapabilities',
+      params,
+      undefined,
+      opts,
+    )
   }
 
   getConfig(

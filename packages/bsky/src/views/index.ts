@@ -55,6 +55,10 @@ import {
   uriToDid as creatorFromUri,
 } from '../util/uris.js'
 import {
+  MAX_PROFILE_LINKS,
+  isAllowedProfileLinkUrl,
+} from './profile-link-rules.js'
+import {
   type ThreadItemValueBlocked,
   type ThreadItemValueNoUnauthenticated,
   type ThreadItemValueNotFound,
@@ -105,6 +109,7 @@ import {
   type PostView,
   type ProfileAssociatedActivitySubscription,
   type ProfileAssociatedChat,
+  type ProfileLinkView,
   type ProfileRecord,
   type ProfileView,
   type ProfileViewBasic,
@@ -356,8 +361,40 @@ export class Views {
         ? this.starterPackBasic(actor.profile.joinedViaStarterPack.uri, state)
         : undefined,
       pinnedPost: safePinnedPost(actor.profile?.pinnedPost),
+      links: this.profileLinks(did, state),
     }
   }
+
+  profileLinks(
+    did: DidString,
+    state: HydrationState,
+  ): ProfileLinkView[] | undefined {
+    const refs = state.actors?.get(did)?.profile?.links
+    if (!refs?.length) return
+    const links: ProfileLinkView[] = []
+    for (const ref of refs.slice(0, MAX_PROFILE_LINKS)) {
+      // the batch may include other actors' links, so check the repo here too
+      if (uriToDid(ref.uri) !== did) continue
+      // missing when taken down, deleted, or invalid
+      const link = state.profileLinks?.get(ref.uri)
+      if (!link || !isAllowedProfileLinkUrl(link.record.url)) continue
+      links.push({
+        uri: ref.uri,
+        cid: link.cid,
+        url: link.record.url,
+        title: link.record.title,
+        icon: link.record.icon
+          ? this.imgUriBuilder.getPresetUri(
+              'avatar',
+              did,
+              getBlobCidString(link.record.icon),
+            )
+          : undefined,
+      })
+    }
+    return links.length ? links : undefined
+  }
+
   profile(
     did: DidString,
     state: HydrationState,
@@ -395,10 +432,7 @@ export class Views {
         record: actor.profile,
       }),
     ]
-    // PARA extension: `cabildeoLive` is not in the app.bsky lexicon, so it
-    // rides along on the view untyped (restored after the 2026-08-22 WIP
-    // commit dropped it).
-    const view: Un$Typed<ProfileViewBasic> & { cabildeoLive?: unknown } = {
+    return {
       did,
       handle: actor.handle ?? INVALID_HANDLE,
       displayName: actor.profile?.displayName,
@@ -431,36 +465,6 @@ export class Views {
       verification: this.verification(did, state),
       status: this.status(did, state),
       debug: state.ctx?.includeDebugField ? actor.debug : undefined,
-    }
-    const cabildeoLive = this.cabildeoLive(actor)
-    if (cabildeoLive) {
-      view.cabildeoLive = cabildeoLive
-    }
-    return view
-  }
-
-  /**
-   * The cabildeo an actor is live in, unless their current generic live status
-   * points somewhere else (a generic live status takes precedence).
-   */
-  cabildeoLive(actor: Actor) {
-    const live = actor.cabildeoLive
-    if (!live) return undefined
-
-    const status = actor.status?.record
-    const external =
-      status?.embed && isExternalEmbedType(status.embed)
-        ? status.embed.external
-        : undefined
-    if (external?.uri && external.uri !== live.liveUri) {
-      return undefined
-    }
-
-    return {
-      cabildeoUri: live.cabildeoUri,
-      community: live.community,
-      phase: live.phase,
-      expiresAt: live.expiresAt,
     }
   }
 
@@ -819,6 +823,10 @@ export class Views {
         ? {
             muted: !!listViewer.viewerMuted,
             blocked: listViewer.viewerListBlockUri,
+            referenceListOptOut:
+              list.record.purpose === app.bsky.graph.defs.Referencelist
+                ? listViewer.referenceListOptOutUri
+                : undefined,
           }
         : undefined,
     }
@@ -828,10 +836,11 @@ export class Views {
     uri: AtUriString,
     did: DidString,
     state: HydrationState,
+    subjectOptedOut?: boolean,
   ): Un$Typed<ListItemView> | undefined {
     const subject = this.profile(did, state)
     if (!subject) return
-    return { uri, subject }
+    return { uri, subject, subjectOptedOut: subjectOptedOut || undefined }
   }
 
   starterPackBasic(
@@ -869,12 +878,18 @@ export class Views {
       this.feedGenerator(feed.uri, state),
     )
     const list = this.listBasic(sp.record.list, state)
+    const showSubjectOptOuts =
+      state.ctx?.viewer === creatorFromUri(sp.record.list) &&
+      list?.purpose === app.bsky.graph.defs.Referencelist
     const listItemsSample = mapDefined(agg?.listItemSampleUris ?? [], (uri) => {
       const li = state.listItems?.get(uri)
       if (!li) return
-      const subject = this.profile(li.record.subject, state)
-      if (!subject) return
-      return { uri, subject }
+      return this.listItemView(
+        uri,
+        li.record.subject,
+        state,
+        showSubjectOptOuts && !!state.listItemSubjectOptOuts?.get(uri),
+      )
     })
     return {
       ...basicView,
@@ -1128,7 +1143,6 @@ export class Views {
       replyCount: aggs?.replies ?? 0,
       repostCount: aggs?.reposts ?? 0,
       likeCount: aggs?.likes ?? 0,
-      voteScore: aggs?.voteScore ?? aggs?.likes ?? 0,
       quoteCount: aggs?.quotes ?? 0,
       indexedAt: this.indexedAt(post).toISOString() as DatetimeString,
       viewer: viewer
@@ -1156,12 +1170,7 @@ export class Views {
   feedViewPost(
     item: FeedItem,
     state: HydrationState,
-  ):
-    | (Un$Typed<FeedViewPost> & {
-        opThreadPostIndex?: number
-        opThreadPostCount?: number
-      })
-    | undefined {
+  ): Un$Typed<FeedViewPost> | undefined {
     const postInfo = state.posts?.get(item.post.uri)
     let reason: $Typed<ReasonRepost> | $Typed<ReasonPin> | undefined
     if (item.authorPinned) {
@@ -2630,6 +2639,7 @@ export class Views {
   ): $Typed<PostEmbedView> | undefined {
     const postView = this.post(uri, state, depth)
     if (!postView) return
+    const postInfo = state.posts?.get(uri)
     return app.bsky.embed.record.viewRecord.$build({
       uri: postView.uri,
       cid: postView.cid,
@@ -2640,6 +2650,8 @@ export class Views {
       replyCount: postView.replyCount,
       repostCount: postView.repostCount,
       quoteCount: postView.quoteCount,
+      opThreadPostIndex: postInfo?.opThreadPostIndex,
+      opThreadPostCount: postInfo?.opThreadPostCount,
       indexedAt: postView.indexedAt,
       embeds: depth > 1 ? undefined : postView.embed ? [postView.embed] : [],
     })

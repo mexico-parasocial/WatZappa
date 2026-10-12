@@ -1,12 +1,12 @@
 import { Timestamp } from '@bufbuild/protobuf'
-import { ServiceImpl } from '@connectrpc/connect'
+import type { ServiceImpl } from '@connectrpc/connect'
 import { sql } from 'kysely'
 import * as ui8 from 'uint8arrays'
 import { keyBy } from '@atproto/common'
 import { l } from '@atproto/lex'
 import { AtUri } from '@atproto/syntax'
 import { app, chat, com } from '../../../lexicons/index.js'
-import { Service } from '../../../proto/bsky_connect.js'
+import type { Service } from '../../../proto/bsky_connect.js'
 import {
   ParaPolicySignalBucket,
   ParaPolicyTally,
@@ -14,7 +14,7 @@ import {
   PostRecordMeta,
   Record,
 } from '../../../proto/bsky_pb.js'
-import { Database } from '../db/index.js'
+import type { Database } from '../db/index.js'
 import { getParaVoteScores } from './para-vote-score.js'
 
 export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
@@ -37,6 +37,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     app.bsky.notification.declaration,
   ),
   getGermDeclarationRecords: getRecords(db, com.germnetwork.declaration),
+  getProfileLinkRecords: getRecords(db, app.bsky.actor.link),
   getStarterPackRecords: getRecords(db, app.bsky.graph.starterpack),
   getVerificationRecords: getRecords(db, app.bsky.graph.verification),
   getStatusRecords: getRecords(db, app.bsky.actor.status),

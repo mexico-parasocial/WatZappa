@@ -110,7 +110,6 @@ export type FeedItem = {
 
 export type GetPostsHydrationOptions = {
   processDynamicTagsForView?: 'thread' | 'search'
-  includeOpThreadMetadata?: boolean
 }
 
 export class FeedHydrator {
@@ -137,11 +136,11 @@ export class FeedHydrator {
               uris: need,
               viewerDid: viewer ?? undefined,
               processDynamicTagsForView: options.processDynamicTagsForView,
-              includeOpThreadMetadata: options.includeOpThreadMetadata,
+              includeOpThreadMetadata: true,
             }
           : {
               uris: need,
-              includeOpThreadMetadata: options.includeOpThreadMetadata,
+              includeOpThreadMetadata: true,
             },
       )
       const opThreadMetadata = new Map<

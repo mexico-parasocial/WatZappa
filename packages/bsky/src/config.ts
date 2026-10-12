@@ -67,7 +67,8 @@ export interface ServerConfigValues {
   searchTagsHide: Set<string>
   searchTagsHideAll: Set<string>
   suggestionsUrl?: string
-  suggestionsApiKey?: string
+  suggestionsApiKey?:
+  atmosphereExploreTabService?: string
   topicsUrl?: string
   topicsApiKey?: string
   irisUrl?: string
@@ -76,7 +77,7 @@ export interface ServerConfigValues {
   irisStagingServiceDid?: DidString
   trendingFeedDid?: DidString
   bskyFeedgenDids: Set<string>
-  irisFeedUris?: Set<string> // `iris:feed:enable` gate to serve via iris instead of seeemore
+  irisFeedUris?: Set<string> // allowlist iris may serve instead of seeemore; whats-hot is gated by `iris:feed:enable`, other feeds by their per-rkey `iris:feed:<rkey>:enable` gate
   irisStagingUrl?: string
   irisStagingFeedUris?: Set<string> // serve via iris staging instead of the registered feed generator
   feedGenSkeletonTimeout: number
@@ -193,6 +194,8 @@ export class ServerConfig {
     )
     const suggestionsUrl = process.env.BSKY_SUGGESTIONS_URL || undefined
     const suggestionsApiKey = process.env.BSKY_SUGGESTIONS_API_KEY || undefined
+    const atmosphereExploreTabService =
+      process.env.BSKY_ATMOSPHERE_EXPLORE_TAB_SERVICE || undefined
     const topicsUrl = process.env.BSKY_TOPICS_URL || undefined
     const topicsApiKey = process.env.BSKY_TOPICS_API_KEY
     const irisUrl = process.env.BSKY_IRIS_URL || undefined
@@ -425,6 +428,7 @@ export class ServerConfig {
       searchTagsHideAll,
       suggestionsUrl,
       suggestionsApiKey,
+      atmosphereExploreTabService,
       topicsUrl,
       topicsApiKey,
       irisUrl,
@@ -620,6 +624,10 @@ export class ServerConfig {
 
   get suggestionsApiKey() {
     return this.cfg.suggestionsApiKey
+  }
+
+  get atmosphereExploreTabService() {
+    return this.cfg.atmosphereExploreTabService
   }
 
   get topicsUrl() {

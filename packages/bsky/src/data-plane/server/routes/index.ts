@@ -1,17 +1,18 @@
-import { ConnectError, ConnectRouter } from '@connectrpc/connect'
-import { IdResolver } from '@atproto/identity'
-import { Service } from '../../../proto/bsky_connect.js'
+import { ConnectError, type ConnectRouter } from '@connectrpc/connect'
+import type { IdResolver } from '@atproto/identity'
 import { dataplaneLogger } from '../../../logger.js'
-import { Database } from '../db/index.js'
+import { Service } from '../../../proto/bsky_connect.js'
+import type { Database } from '../db/index.js'
 import activitySubscription from './activity-subscription.js'
+import { atmosphere } from './atmosphere.js'
 import blocks from './blocks.js'
 import bookmarks from './bookmarks.js'
 import briefingPack from './briefing-pack.js'
 import cabildeo from './cabildeo.js'
-import collections from './collections.js'
-import community from './community.js'
 import civicTree from './civic-tree.js'
+import collections from './collections.js'
 import communityCivicTree from './community-civic-tree.js'
+import community from './community.js'
 import discourse from './discourse.js'
 import drafts from './drafts.js'
 import feedGens from './feed-gens.js'
@@ -26,12 +27,12 @@ import lists from './lists.js'
 import moderation from './moderation.js'
 import mutes from './mutes.js'
 import notifs from './notifs.js'
+import paraDeliberation from './para-deliberation.js'
 import paraSuggestions from './para-suggestions.js'
 import personalCivicTree from './personal-civic-tree.js'
 import postSubscription from './post-subscription.js'
 import profile from './profile.js'
 import quotes from './quotes.js'
-import paraDeliberation from './para-deliberation.js'
 import qvlAudit from './qvl-audit.js'
 import qvlSimulation from './qvl-simulation.js'
 import qvlVoting from './qvl-voting.js'
@@ -41,7 +42,6 @@ import relationships from './relationships.js'
 import reposts from './reposts.js'
 import search from './search.js'
 import sitemap from './sitemap.js'
-import siteStandard from './site-standard.js'
 import starterPacks from './starter-packs.js'
 import suggestions from './suggestions.js'
 import sync from './sync.js'
@@ -63,7 +63,10 @@ const logUnexpectedErrors = <T extends Record<string, unknown>>(impl: T): T =>
               return await handler(...args)
             } catch (err) {
               if (!(err instanceof ConnectError)) {
-                dataplaneLogger.error({ err, method }, 'dataplane handler failed')
+                dataplaneLogger.error(
+                  { err, method },
+                  'dataplane handler failed',
+                )
               }
               throw err
             }
@@ -74,53 +77,56 @@ const logUnexpectedErrors = <T extends Record<string, unknown>>(impl: T): T =>
 
 export default (db: Database, idResolver: IdResolver) =>
   (router: ConnectRouter) => {
-    router.service(Service, logUnexpectedErrors({
-      ...activitySubscription(db),
-      ...blocks(db),
-      ...bookmarks(db),
-      ...briefingPack(db),
-      ...cabildeo(db),
-      ...collections(db),
-      ...community(db),
-      ...civicTree(db),
-      ...communityCivicTree(db),
-      ...discourse(db),
-      ...paraDeliberation(db),
-      ...qvlAudit(db),
-      ...qvlSimulation(db),
-      ...qvlVoting(db),
-      ...raq(db),
-      ...drafts(db),
-      ...feedGens(db),
-      ...feeds(db),
-      ...follows(db),
-      ...identity(db, idResolver),
-      ...interactions(db),
-      ...labels(db),
-      ...highlight(db),
-      ...likes(db),
-      ...lists(db),
-      ...moderation(db),
-      ...mutes(db),
-      ...notifs(db),
-      ...paraSuggestions(db),
-      ...personalCivicTree(db),
-      ...postSubscription(db),
-      ...profile(db),
-      ...quotes(db),
-      ...records(db),
-      ...relationships(db),
-      ...reposts(db),
-      ...search(db),
-      ...sitemap(),
-      ...siteStandard(db),
-      ...suggestions(db),
-      ...sync(db),
-      ...threads(db),
-      ...starterPacks(db),
+    router.service(
+      Service,
+      logUnexpectedErrors({
+        ...activitySubscription(db),
+        ...atmosphere(),
+        ...blocks(db),
+        ...bookmarks(db),
+        ...briefingPack(db),
+        ...cabildeo(db),
+        ...collections(db),
+        ...community(db),
+        ...civicTree(db),
+        ...communityCivicTree(db),
+        ...discourse(db),
+        ...paraDeliberation(db),
+        ...qvlAudit(db),
+        ...qvlSimulation(db),
+        ...qvlVoting(db),
+        ...raq(db),
+        ...drafts(db),
+        ...feedGens(db),
+        ...feeds(db),
+        ...follows(db),
+        ...identity(db, idResolver),
+        ...interactions(db),
+        ...labels(db),
+        ...highlight(db),
+        ...likes(db),
+        ...lists(db),
+        ...moderation(db),
+        ...mutes(db),
+        ...notifs(db),
+        ...paraSuggestions(db),
+        ...personalCivicTree(db),
+        ...postSubscription(db),
+        ...profile(db),
+        ...quotes(db),
+        ...records(db),
+        ...relationships(db),
+        ...reposts(db),
+        ...search(db),
+        ...sitemap(),
+        ...suggestions(db),
+        ...sync(db),
+        ...threads(db),
+        ...starterPacks(db),
 
-      async ping() {
-        return {}
-      },
-    }))
+        async ping() {
+          return {}
+        },
+      }),
+    )
   }

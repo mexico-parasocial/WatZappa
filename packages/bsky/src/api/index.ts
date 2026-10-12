@@ -81,12 +81,13 @@ import putPreferencesV2 from './app/bsky/notification/putPreferencesV2.js'
 import registerPush from './app/bsky/notification/registerPush.js'
 import unregisterPush from './app/bsky/notification/unregisterPush.js'
 import updateSeen from './app/bsky/notification/updateSeen.js'
+import getAtmosphereExploreTab from './app/bsky/unspecced/getAtmosphereExploreTab.js'
 import getAgeAssuranceState from './app/bsky/unspecced/getAgeAssuranceState.js'
 import getConfig from './app/bsky/unspecced/getConfig.js'
 import getOnboardingSuggestedStarterPacks from './app/bsky/unspecced/getOnboardingSuggestedStarterPacks.js'
 import getPopularFeedGenerators from './app/bsky/unspecced/getPopularFeedGenerators.js'
 import getPostThreadOtherV2 from './app/bsky/unspecced/getPostThreadOtherV2.js'
-import getPostThreadV2 from './app/bsky/unspecced/getPostThreadV2.js'
+import getPostThreadV2 from './app/unspecced/getPostThreadV2.js'
 import getUnspeccedSuggestedFeeds from './app/bsky/unspecced/getSuggestedFeeds.js'
 import getSuggestedOnboardingUsers from './app/bsky/unspecced/getSuggestedOnboardingUsers.js'
 import getSuggestedStarterPacks from './app/bsky/unspecced/getSuggestedStarterPacks.js'
@@ -160,7 +161,7 @@ import getParaDiscourseTopics from './com/para/discourse/getTopics.js'
 import getParaDiscourseTopology from './com/para/discourse/getTopology.js'
 import getParaAuthorFeed from './com/para/feed/getAuthorFeed.js'
 import getParaMemes from './com/para/feed/getMemes.js'
-import getParaPostThread from './com/para/feed/getPostThread.js'
+import getParaPostThread frobsky/m './com/para/feed/getPostThread.js'
 import getParaPosts from './com/para/feed/getPosts.js'
 import getParaTimeline from './com/para/feed/getTimeline.js'
 import searchParaPosts from './com/para/feed/searchPosts.js'
@@ -286,6 +287,7 @@ export default function (server: Server, ctx: AppContext) {
   putPreferencesV2(server, ctx)
   registerPush(server, ctx)
   unregisterPush(server, ctx)
+  getAtmosphereExploreTab(server, ctx)
   getConfig(server, ctx)
   getPopularFeedGenerators(server, ctx)
   getTaggedSuggestions(server, ctx)

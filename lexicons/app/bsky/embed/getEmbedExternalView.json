@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Resolve one or more AT-URIs into the data needed to render an enhanced external embed. Returns `associatedRefs` (strongRefs to embed into a post's external.associatedRefs) and the raw `associatedRecords`; `view` is also included when the resolved records can produce a renderable view, but may be omitted when no records were hydratable.",
+      "description": "Resolve one or more AT-URIs into the data needed to render an enhanced external embed. Returns `associatedRefs` (strongRefs to embed into a post's external.associatedRefs), the raw `associatedRecords`, and a hydrated `view`. The response is empty (`{}`) when no records were resolvable, or when validation determined the resolved records don't actually back the requested URL; clients should fall back to their own link-card rendering in that case and skip writing strongRefs to the post.",
       "parameters": {
         "type": "params",
         "required": ["url", "uris"],
@@ -29,7 +29,18 @@
           "properties": {
             "view": {
               "type": "ref",
-              "ref": "app.bsky.embed.external#view"
+              "ref": "app.bsky.embed.external#view",
+              "description": "Hydrated view of the embed. Present only when the resolved records back the requested URL and supply enough information to populate the required `viewExternal` fields. Omitted alongside the rest of the response when no records resolved or validation failed."
+            },
+            "data": {
+              "type": "union",
+              "refs": [
+                "app.bsky.embed.external#viewArticle",
+                "app.bsky.embed.external#viewArticlePublication",
+                "app.bsky.embed.external#viewGallery",
+                "app.bsky.embed.external#viewLivestream"
+              ],
+              "description": "Preferred to #view. Hydrated data of the embed. Present only when the resolved records back the requested URL and supply enough information to populate the required fields. Omitted alongside the rest of the response when no records resolved or validation failed."
             },
             "associatedRefs": {
               "type": "array",
@@ -45,14 +56,6 @@
                 "type": "unknown",
                 "description": "The raw record data of the Atmosphere records that backed this view. This is returned for convenience, to avoid the need for the client to separately fetch the record data for the associatedRefs. Example: the site.standard.document and site.standard.publication records that backed this view."
               }
-            },
-            "associatedProfiles": {
-              "type": "array",
-              "items": {
-                "type": "ref",
-                "ref": "app.bsky.actor.defs#profileViewBasic"
-              },
-              "description": "Profiles of the owners of the Atmosphere records that backed this view."
             }
           }
         }
