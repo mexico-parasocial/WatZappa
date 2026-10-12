@@ -68,5 +68,6 @@ deploy/matrix/seed/
 # repos, blobs and the local PLC registry. Real accounts, local and disposable
 # — delete the directory to start over. Never version it.
 .dev-env-data/
+.dev-env-data-*/
 # Credentials for the seeded test accounts (scripts/seed-test-accounts.sh).
 test-accounts.json
