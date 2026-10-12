@@ -211,6 +211,14 @@ an identity label or local room-creation flag.
 Exit: a reproducible supported-client acceptance record. S4's remaining QA is
 here; its completed backend implementation has been removed from the backlog.
 
+
+2026-10-08 messaging source and automated evidence is appended to the
+[local acceptance record](./MATRIX-LOCAL-ACCEPTANCE-2026-09-26.md#2026-10-08--connectivity-provisioning-and-release-update)
+and PARA's linked device ledger. P2/P4 remain open: bridge 3001 is absent, the
+persistent platform build fails, the active demo needs a complete restore unit,
+and the user has no working iPhone. The native engine remains opt-in; room
+migration and VLPDS work remain gated on messaging acceptance.
+
 ### P3 — real pilot data and moderation
 
 Exercise the existing real policies/representatives/RAQ paths in a build where
