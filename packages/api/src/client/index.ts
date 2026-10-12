@@ -15,6 +15,7 @@ import * as AppBskyActorGetPreferences from './types/app/bsky/actor/getPreferenc
 import * as AppBskyActorGetProfile from './types/app/bsky/actor/getProfile.js'
 import * as AppBskyActorGetProfiles from './types/app/bsky/actor/getProfiles.js'
 import * as AppBskyActorGetSuggestions from './types/app/bsky/actor/getSuggestions.js'
+import * as AppBskyActorLink from './types/app/bsky/actor/link.js'
 import * as AppBskyActorProfile from './types/app/bsky/actor/profile.js'
 import * as AppBskyActorPutPreferences from './types/app/bsky/actor/putPreferences.js'
 import * as AppBskyActorSearchActors from './types/app/bsky/actor/searchActors.js'
@@ -127,6 +128,7 @@ import * as AppBskyNotificationUpdateSeen from './types/app/bsky/notification/up
 import * as AppBskyRichtextFacet from './types/app/bsky/richtext/facet.js'
 import * as AppBskyUnspeccedDefs from './types/app/bsky/unspecced/defs.js'
 import * as AppBskyUnspeccedGetAgeAssuranceState from './types/app/bsky/unspecced/getAgeAssuranceState.js'
+import * as AppBskyUnspeccedGetAtmosphereExploreTab from './types/app/bsky/unspecced/getAtmosphereExploreTab.js'
 import * as AppBskyUnspeccedGetConfig from './types/app/bsky/unspecced/getConfig.js'
 import * as AppBskyUnspeccedGetOnboardingSuggestedStarterPacks from './types/app/bsky/unspecced/getOnboardingSuggestedStarterPacks.js'
 import * as AppBskyUnspeccedGetOnboardingSuggestedStarterPacksSkeleton from './types/app/bsky/unspecced/getOnboardingSuggestedStarterPacksSkeleton.js'
@@ -563,6 +565,7 @@ export * as AppBskyActorGetPreferences from './types/app/bsky/actor/getPreferenc
 export * as AppBskyActorGetProfile from './types/app/bsky/actor/getProfile.js'
 export * as AppBskyActorGetProfiles from './types/app/bsky/actor/getProfiles.js'
 export * as AppBskyActorGetSuggestions from './types/app/bsky/actor/getSuggestions.js'
+export * as AppBskyActorLink from './types/app/bsky/actor/link.js'
 export * as AppBskyActorProfile from './types/app/bsky/actor/profile.js'
 export * as AppBskyActorPutPreferences from './types/app/bsky/actor/putPreferences.js'
 export * as AppBskyActorSearchActors from './types/app/bsky/actor/searchActors.js'
@@ -675,6 +678,7 @@ export * as AppBskyNotificationUpdateSeen from './types/app/bsky/notification/up
 export * as AppBskyRichtextFacet from './types/app/bsky/richtext/facet.js'
 export * as AppBskyUnspeccedDefs from './types/app/bsky/unspecced/defs.js'
 export * as AppBskyUnspeccedGetAgeAssuranceState from './types/app/bsky/unspecced/getAgeAssuranceState.js'
+export * as AppBskyUnspeccedGetAtmosphereExploreTab from './types/app/bsky/unspecced/getAtmosphereExploreTab.js'
 export * as AppBskyUnspeccedGetConfig from './types/app/bsky/unspecced/getConfig.js'
 export * as AppBskyUnspeccedGetOnboardingSuggestedStarterPacks from './types/app/bsky/unspecced/getOnboardingSuggestedStarterPacks.js'
 export * as AppBskyUnspeccedGetOnboardingSuggestedStarterPacksSkeleton from './types/app/bsky/unspecced/getOnboardingSuggestedStarterPacksSkeleton.js'
@@ -1280,11 +1284,13 @@ export class AppBskyNS {
 
 export class AppBskyActorNS {
   _client: XrpcClient
+  link: AppBskyActorLinkRecord
   profile: AppBskyActorProfileRecord
   status: AppBskyActorStatusRecord
 
   constructor(client: XrpcClient) {
     this._client = client
+    this.link = new AppBskyActorLinkRecord(client)
     this.profile = new AppBskyActorProfileRecord(client)
     this.status = new AppBskyActorStatusRecord(client)
   }
@@ -1370,6 +1376,85 @@ export class AppBskyActorNS {
       params,
       undefined,
       opts,
+    )
+  }
+}
+
+export class AppBskyActorLinkRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: AppBskyActorLink.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'app.bsky.actor.link',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{ uri: string; cid: string; value: AppBskyActorLink.Record }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'app.bsky.actor.link',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<AppBskyActorLink.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'app.bsky.actor.link'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<AppBskyActorLink.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'app.bsky.actor.link'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'app.bsky.actor.link', ...params },
+      { headers },
     )
   }
 }
@@ -3697,6 +3782,18 @@ export class AppBskyUnspeccedNS {
   ): Promise<AppBskyUnspeccedGetAgeAssuranceState.Response> {
     return this._client.call(
       'app.bsky.unspecced.getAgeAssuranceState',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  getAtmosphereExploreTab(
+    params?: AppBskyUnspeccedGetAtmosphereExploreTab.QueryParams,
+    opts?: AppBskyUnspeccedGetAtmosphereExploreTab.CallOptions,
+  ): Promise<AppBskyUnspeccedGetAtmosphereExploreTab.Response> {
+    return this._client.call(
+      'app.bsky.unspecced.getAtmosphereExploreTab',
       params,
       undefined,
       opts,

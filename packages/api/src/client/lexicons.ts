@@ -215,6 +215,15 @@ export const schemaDict = {
             type: 'ref',
             ref: 'lex:com.atproto.repo.strongRef',
           },
+          links: {
+            type: 'array',
+            description:
+              "The profile's links, in display order. Links that were taken down or don't resolve are left out.",
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.actor.defs#profileLinkView',
+            },
+          },
           verification: {
             type: 'ref',
             ref: 'lex:app.bsky.actor.defs#verificationState',
@@ -283,6 +292,37 @@ export const schemaDict = {
           showButtonTo: {
             type: 'string',
             knownValues: ['usersIFollow', 'everyone'],
+          },
+        },
+      },
+      profileLinkView: {
+        type: 'object',
+        required: ['uri', 'cid', 'url'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+            description:
+              'The app.bsky.actor.link record, e.g. for reporting the link.',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          url: {
+            type: 'string',
+            format: 'uri',
+            description: 'The link destination.',
+          },
+          title: {
+            type: 'string',
+            maxGraphemes: 40,
+            maxLength: 320,
+          },
+          icon: {
+            type: 'string',
+            format: 'uri',
+            description: "Image URL for the destination site's icon.",
           },
         },
       },
@@ -1085,6 +1125,47 @@ export const schemaDict = {
       },
     },
   },
+  AppBskyActorLink: {
+    lexicon: 1,
+    id: 'app.bsky.actor.link',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "A link shown on the account's profile. The profile record's links field sets which links are shown, and in what order.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['url', 'createdAt'],
+          properties: {
+            url: {
+              type: 'string',
+              format: 'uri',
+              description: 'The link destination, an https URL.',
+            },
+            title: {
+              type: 'string',
+              description:
+                "Optional label for the link. Clients can fall back to the destination's domain.",
+              maxGraphemes: 40,
+              maxLength: 320,
+            },
+            icon: {
+              type: 'blob',
+              description:
+                "The destination site's icon, uploaded when the link is saved.",
+              accept: ['image/png', 'image/jpeg', 'image/webp'],
+              maxSize: 100000,
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
   AppBskyActorProfile: {
     lexicon: 1,
     id: 'app.bsky.actor.profile',
@@ -1144,6 +1225,16 @@ export const schemaDict = {
             pinnedPost: {
               type: 'ref',
               ref: 'lex:com.atproto.repo.strongRef',
+            },
+            links: {
+              type: 'array',
+              description:
+                'Links shown on the profile, in display order. Each ref points to an app.bsky.actor.link record in this repo.',
+              maxLength: 10,
+              items: {
+                type: 'ref',
+                ref: 'lex:com.atproto.repo.strongRef',
+              },
             },
             createdAt: {
               type: 'string',
@@ -8266,6 +8357,9 @@ export const schemaDict = {
             refs: [
               'lex:app.bsky.notification.getGroupedNotifications#likeGroup',
               'lex:app.bsky.notification.getGroupedNotifications#multiPostLikeGroup',
+              'lex:app.bsky.notification.getGroupedNotifications#multiPostRepostGroup',
+              'lex:app.bsky.notification.getGroupedNotifications#multiPostLikeViaRepostGroup',
+              'lex:app.bsky.notification.getGroupedNotifications#multiPostRepostViaRepostGroup',
               'lex:app.bsky.notification.getGroupedNotifications#repostGroup',
               'lex:app.bsky.notification.getGroupedNotifications#likeViaRepostGroup',
               'lex:app.bsky.notification.getGroupedNotifications#repostViaRepostGroup',
@@ -8339,6 +8433,108 @@ export const schemaDict = {
         required: ['post'],
         properties: {
           post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+      multiPostRepostGroup: {
+        type: 'object',
+        description: 'Group of reposts by the same actor of different posts.',
+        required: ['actor', 'items'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+          items: {
+            type: 'array',
+            minLength: 2,
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.notification.getGroupedNotifications#multiPostRepostItem',
+            },
+          },
+        },
+      },
+      multiPostRepostItem: {
+        type: 'object',
+        description: "One post which was reposted by the group's actor.",
+        required: ['post'],
+        properties: {
+          post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+      multiPostLikeViaRepostGroup: {
+        type: 'object',
+        description:
+          "Group of likes by the same actor on different posts via the requesting account's reposts.",
+        required: ['actor', 'items'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+          items: {
+            type: 'array',
+            minLength: 2,
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.notification.getGroupedNotifications#multiPostLikeViaRepostItem',
+            },
+          },
+        },
+      },
+      multiPostLikeViaRepostItem: {
+        type: 'object',
+        description:
+          "One post which was liked by the group's actor via the requesting account's repost.",
+        required: ['post', 'viaRepost'],
+        properties: {
+          post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          viaRepost: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+      multiPostRepostViaRepostGroup: {
+        type: 'object',
+        description:
+          "Group of reposts by the same actor of different posts via the requesting account's reposts.",
+        required: ['actor', 'items'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+          items: {
+            type: 'array',
+            minLength: 2,
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.notification.getGroupedNotifications#multiPostRepostViaRepostItem',
+            },
+          },
+        },
+      },
+      multiPostRepostViaRepostItem: {
+        type: 'object',
+        description:
+          "One post which was reposted by the group's actor via the requesting account's repost.",
+        required: ['post', 'viaRepost'],
+        properties: {
+          post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          viaRepost: {
             type: 'string',
             format: 'at-uri',
           },
@@ -9525,6 +9721,226 @@ export const schemaDict = {
           schema: {
             type: 'ref',
             ref: 'lex:app.bsky.unspecced.defs#ageAssuranceState',
+          },
+        },
+      },
+    },
+  },
+  AppBskyUnspeccedGetAtmosphereExploreTab: {
+    lexicon: 1,
+    id: 'app.bsky.unspecced.getAtmosphereExploreTab',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Get curated Atmosphere Explore content. Authentication is optional; authenticated requests include viewer-specific profile state.',
+        parameters: {
+          type: 'params',
+          properties: {
+            langs: {
+              type: 'array',
+              description: 'Preferred languages. Currently ignored.',
+              items: {
+                type: 'string',
+                format: 'language',
+              },
+            },
+            countryCode: {
+              type: 'string',
+              description:
+                'The ISO 3166-1 alpha-2 country code used to select curated content.',
+            },
+            regionCode: {
+              type: 'string',
+              description:
+                'The ISO 3166-2 region code used to select curated content.',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: [
+              'articles',
+              'publications',
+              'photos',
+              'livestreams',
+              'apps',
+            ],
+            properties: {
+              announcementBanner: {
+                type: 'ref',
+                ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#announcementBanner',
+              },
+              articles: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#articleItem',
+                },
+              },
+              publications: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#publicationItem',
+                },
+              },
+              photos: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#galleryItem',
+                },
+              },
+              livestreams: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#livestreamItem',
+                },
+              },
+              apps: {
+                type: 'array',
+                maxLength: 100,
+                items: {
+                  type: 'ref',
+                  ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#appCard',
+                },
+              },
+            },
+          },
+        },
+      },
+      articleItem: {
+        type: 'object',
+        required: ['featured', 'view'],
+        properties: {
+          featured: {
+            type: 'boolean',
+          },
+          view: {
+            type: 'ref',
+            ref: 'lex:app.bsky.embed.external#viewArticle',
+          },
+        },
+      },
+      publicationItem: {
+        type: 'object',
+        required: ['featured', 'view'],
+        properties: {
+          featured: {
+            type: 'boolean',
+          },
+          view: {
+            type: 'ref',
+            ref: 'lex:app.bsky.embed.external#viewArticlePublication',
+          },
+        },
+      },
+      galleryItem: {
+        type: 'object',
+        required: ['featured', 'view'],
+        properties: {
+          featured: {
+            type: 'boolean',
+          },
+          view: {
+            type: 'ref',
+            ref: 'lex:app.bsky.embed.external#viewGallery',
+          },
+        },
+      },
+      livestreamItem: {
+        type: 'object',
+        required: ['featured', 'view'],
+        properties: {
+          featured: {
+            type: 'boolean',
+          },
+          view: {
+            type: 'ref',
+            ref: 'lex:app.bsky.embed.external#viewLivestream',
+          },
+        },
+      },
+      announcementBanner: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          title: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          description: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          url: {
+            type: 'string',
+            format: 'uri',
+            maxLength: 4096,
+          },
+          image: {
+            type: 'string',
+            format: 'uri',
+            maxLength: 4096,
+          },
+          overlayColor: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          textColor: {
+            type: 'string',
+            maxLength: 4096,
+          },
+        },
+      },
+      appCard: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          title: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          description: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          logo: {
+            type: 'string',
+            format: 'uri',
+            maxLength: 4096,
+          },
+          backgroundImage: {
+            type: 'string',
+            format: 'uri',
+            maxLength: 4096,
+          },
+          overlayColor: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          textColor: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          url: {
+            type: 'string',
+            format: 'uri',
+            maxLength: 4096,
+          },
+          category: {
+            type: 'string',
+            maxLength: 4096,
           },
         },
       },
@@ -42339,6 +42755,7 @@ export const ids = {
   AppBskyActorGetProfile: 'app.bsky.actor.getProfile',
   AppBskyActorGetProfiles: 'app.bsky.actor.getProfiles',
   AppBskyActorGetSuggestions: 'app.bsky.actor.getSuggestions',
+  AppBskyActorLink: 'app.bsky.actor.link',
   AppBskyActorProfile: 'app.bsky.actor.profile',
   AppBskyActorPutPreferences: 'app.bsky.actor.putPreferences',
   AppBskyActorSearchActors: 'app.bsky.actor.searchActors',
@@ -42459,6 +42876,8 @@ export const ids = {
   AppBskyUnspeccedDefs: 'app.bsky.unspecced.defs',
   AppBskyUnspeccedGetAgeAssuranceState:
     'app.bsky.unspecced.getAgeAssuranceState',
+  AppBskyUnspeccedGetAtmosphereExploreTab:
+    'app.bsky.unspecced.getAtmosphereExploreTab',
   AppBskyUnspeccedGetConfig: 'app.bsky.unspecced.getConfig',
   AppBskyUnspeccedGetOnboardingSuggestedStarterPacks:
     'app.bsky.unspecced.getOnboardingSuggestedStarterPacks',

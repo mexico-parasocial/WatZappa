@@ -76,6 +76,9 @@ export interface Group {
   kind:
     | $Typed<LikeGroup>
     | $Typed<MultiPostLikeGroup>
+    | $Typed<MultiPostRepostGroup>
+    | $Typed<MultiPostLikeViaRepostGroup>
+    | $Typed<MultiPostRepostViaRepostGroup>
     | $Typed<RepostGroup>
     | $Typed<LikeViaRepostGroup>
     | $Typed<RepostViaRepostGroup>
@@ -167,6 +170,123 @@ export function isMultiPostLikeItem<V>(v: V) {
 
 export function validateMultiPostLikeItem<V>(v: V) {
   return validate<MultiPostLikeItem & V>(v, id, hashMultiPostLikeItem)
+}
+
+/** Group of reposts by the same actor of different posts. */
+export interface MultiPostRepostGroup {
+  $type?: 'app.bsky.notification.getGroupedNotifications#multiPostRepostGroup'
+  actor: string
+  items: MultiPostRepostItem[]
+}
+
+const hashMultiPostRepostGroup = 'multiPostRepostGroup'
+
+export function isMultiPostRepostGroup<V>(v: V) {
+  return is$typed(v, id, hashMultiPostRepostGroup)
+}
+
+export function validateMultiPostRepostGroup<V>(v: V) {
+  return validate<MultiPostRepostGroup & V>(v, id, hashMultiPostRepostGroup)
+}
+
+/** One post which was reposted by the group's actor. */
+export interface MultiPostRepostItem {
+  $type?: 'app.bsky.notification.getGroupedNotifications#multiPostRepostItem'
+  post: string
+}
+
+const hashMultiPostRepostItem = 'multiPostRepostItem'
+
+export function isMultiPostRepostItem<V>(v: V) {
+  return is$typed(v, id, hashMultiPostRepostItem)
+}
+
+export function validateMultiPostRepostItem<V>(v: V) {
+  return validate<MultiPostRepostItem & V>(v, id, hashMultiPostRepostItem)
+}
+
+/** Group of likes by the same actor on different posts via the requesting account's reposts. */
+export interface MultiPostLikeViaRepostGroup {
+  $type?: 'app.bsky.notification.getGroupedNotifications#multiPostLikeViaRepostGroup'
+  actor: string
+  items: MultiPostLikeViaRepostItem[]
+}
+
+const hashMultiPostLikeViaRepostGroup = 'multiPostLikeViaRepostGroup'
+
+export function isMultiPostLikeViaRepostGroup<V>(v: V) {
+  return is$typed(v, id, hashMultiPostLikeViaRepostGroup)
+}
+
+export function validateMultiPostLikeViaRepostGroup<V>(v: V) {
+  return validate<MultiPostLikeViaRepostGroup & V>(
+    v,
+    id,
+    hashMultiPostLikeViaRepostGroup,
+  )
+}
+
+/** One post which was liked by the group's actor via the requesting account's repost. */
+export interface MultiPostLikeViaRepostItem {
+  $type?: 'app.bsky.notification.getGroupedNotifications#multiPostLikeViaRepostItem'
+  post: string
+  viaRepost: string
+}
+
+const hashMultiPostLikeViaRepostItem = 'multiPostLikeViaRepostItem'
+
+export function isMultiPostLikeViaRepostItem<V>(v: V) {
+  return is$typed(v, id, hashMultiPostLikeViaRepostItem)
+}
+
+export function validateMultiPostLikeViaRepostItem<V>(v: V) {
+  return validate<MultiPostLikeViaRepostItem & V>(
+    v,
+    id,
+    hashMultiPostLikeViaRepostItem,
+  )
+}
+
+/** Group of reposts by the same actor of different posts via the requesting account's reposts. */
+export interface MultiPostRepostViaRepostGroup {
+  $type?: 'app.bsky.notification.getGroupedNotifications#multiPostRepostViaRepostGroup'
+  actor: string
+  items: MultiPostRepostViaRepostItem[]
+}
+
+const hashMultiPostRepostViaRepostGroup = 'multiPostRepostViaRepostGroup'
+
+export function isMultiPostRepostViaRepostGroup<V>(v: V) {
+  return is$typed(v, id, hashMultiPostRepostViaRepostGroup)
+}
+
+export function validateMultiPostRepostViaRepostGroup<V>(v: V) {
+  return validate<MultiPostRepostViaRepostGroup & V>(
+    v,
+    id,
+    hashMultiPostRepostViaRepostGroup,
+  )
+}
+
+/** One post which was reposted by the group's actor via the requesting account's repost. */
+export interface MultiPostRepostViaRepostItem {
+  $type?: 'app.bsky.notification.getGroupedNotifications#multiPostRepostViaRepostItem'
+  post: string
+  viaRepost: string
+}
+
+const hashMultiPostRepostViaRepostItem = 'multiPostRepostViaRepostItem'
+
+export function isMultiPostRepostViaRepostItem<V>(v: V) {
+  return is$typed(v, id, hashMultiPostRepostViaRepostItem)
+}
+
+export function validateMultiPostRepostViaRepostItem<V>(v: V) {
+  return validate<MultiPostRepostViaRepostItem & V>(
+    v,
+    id,
+    hashMultiPostRepostViaRepostItem,
+  )
 }
 
 /** Group of reposts by different actors of the same post. */

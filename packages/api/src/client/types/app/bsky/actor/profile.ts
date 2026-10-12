@@ -32,6 +32,8 @@ export interface Main {
   labels?: $Typed<ComAtprotoLabelDefs.SelfLabels> | { $type: string }
   joinedViaStarterPack?: ComAtprotoRepoStrongRef.Main
   pinnedPost?: ComAtprotoRepoStrongRef.Main
+  /** Links shown on the profile, in display order. Each ref points to an app.bsky.actor.link record in this repo. */
+  links?: ComAtprotoRepoStrongRef.Main[]
   createdAt?: string
   /** Whether to display the global Influence score to other viewers. Defaults to false when absent. */
   revealInfluence?: boolean

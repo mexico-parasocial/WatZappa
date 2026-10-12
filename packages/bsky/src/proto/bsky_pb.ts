@@ -1382,6 +1382,80 @@ export class GetGermDeclarationRecordsResponse extends Message<GetGermDeclaratio
 }
 
 /**
+ * @generated from message bsky.GetProfileLinkRecordsRequest
+ */
+export class GetProfileLinkRecordsRequest extends Message<GetProfileLinkRecordsRequest> {
+  /**
+   * @generated from field: repeated string uris = 1;
+   */
+  uris: string[] = [];
+
+  constructor(data?: PartialMessage<GetProfileLinkRecordsRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetProfileLinkRecordsRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetProfileLinkRecordsRequest {
+    return new GetProfileLinkRecordsRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetProfileLinkRecordsRequest {
+    return new GetProfileLinkRecordsRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetProfileLinkRecordsRequest {
+    return new GetProfileLinkRecordsRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetProfileLinkRecordsRequest | PlainMessage<GetProfileLinkRecordsRequest> | undefined, b: GetProfileLinkRecordsRequest | PlainMessage<GetProfileLinkRecordsRequest> | undefined): boolean {
+    return proto3.util.equals(GetProfileLinkRecordsRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetProfileLinkRecordsResponse
+ */
+export class GetProfileLinkRecordsResponse extends Message<GetProfileLinkRecordsResponse> {
+  /**
+   * @generated from field: repeated bsky.Record records = 1;
+   */
+  records: Record[] = [];
+
+  constructor(data?: PartialMessage<GetProfileLinkRecordsResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetProfileLinkRecordsResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "records", kind: "message", T: Record, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetProfileLinkRecordsResponse {
+    return new GetProfileLinkRecordsResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetProfileLinkRecordsResponse {
+    return new GetProfileLinkRecordsResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetProfileLinkRecordsResponse {
+    return new GetProfileLinkRecordsResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetProfileLinkRecordsResponse | PlainMessage<GetProfileLinkRecordsResponse> | undefined, b: GetProfileLinkRecordsResponse | PlainMessage<GetProfileLinkRecordsResponse> | undefined): boolean {
+    return proto3.util.equals(GetProfileLinkRecordsResponse, a, b);
+  }
+}
+
+/**
  * @generated from message bsky.GetStatusRecordsRequest
  */
 export class GetStatusRecordsRequest extends Message<GetStatusRecordsRequest> {
