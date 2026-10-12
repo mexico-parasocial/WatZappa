@@ -1,6 +1,10 @@
 # bsky appview service
 
-This is the service entrypoint for the bsky appview. The entrypoint command should run `api.js` with node, e.g. `node api.js`. The following env vars are supported:
+This is the service entrypoint for the bsky appview. The entrypoint command should run `api.js` with node, e.g. `node api.js`.
+
+The API reads through a data plane, which `dataplane.js` runs as its own process (`node dataplane.js`, one instance): it migrates the database, serves the data plane, and indexes the PDS firehose and bsync. Its variables are listed at the top of the file; the compose files run it as the `dataplane` service.
+
+The following env vars are supported by `api.js`:
 
 - `BSKY_PUBLIC_URL` - (required) the public url of the appview, e.g. `https://api.bsky.app`.
 - `BSKY_DID_PLC_URL` - (required) the url of the PLC service used for looking up did documents, e.g. `https://plc.directory`.
