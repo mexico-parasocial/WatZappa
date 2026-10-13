@@ -1,4 +1,4 @@
-import { EventLogArea } from './event-log.js'
+import { DmRequestsArea } from './dm-requests.js'
 
 // Re-exported so existing `from './pg.js'` type imports keep resolving. The
 // canonical home for these is interface.ts.
@@ -13,4 +13,4 @@ export type {
   UserPushToken,
 } from '../interface.js'
 
-export class PgBridgeDatabase extends EventLogArea {}
+export class PgBridgeDatabase extends DmRequestsArea {}

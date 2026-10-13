@@ -118,7 +118,9 @@ describe('searchOpenLibrary', () => {
   beforeEach(() => clearBookSearchCache())
 
   const respond = (docs: unknown[]) =>
-    vi.fn(async () => new Response(JSON.stringify({ docs }), { status: 200 }))
+    vi.fn<typeof fetch>(
+      async () => new Response(JSON.stringify({ docs }), { status: 200 }),
+    )
 
   it('identifies itself and caches repeat lookups', async () => {
     const fetchImpl = respond([{ key: '/works/OL1W', title: 'Walden' }])

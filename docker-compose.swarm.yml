@@ -160,9 +160,17 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    # Migrates the database, serves the data plane and indexes the PDS
+    # firehose (services/bsky/dataplane.js). Run one.
+    command: ['node', '--enable-source-maps', 'dataplane.js']
     environment:
-      PORT: 2585
-      DB_POSTGRES_URL: postgres://${POSTGRES_USER:-pg}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-para}
+      BSKY_DATAPLANE_PORT: 2585
+      BSKY_DB_POSTGRES_URL: postgres://${POSTGRES_USER:-pg}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-para}
+      BSKY_DID_PLC_URL: ${PDS_DID_PLC_URL:-https://plc.directory}
+      # The firehose this AppView indexes.
+      BSKY_REPO_PROVIDER: ws://pds:2583
+      BSKY_BSYNC_URL: http://bsync:2586
+      BSKY_BSYNC_HTTP_VERSION: '1.1'
     expose:
       - '2585'
     networks:
@@ -183,17 +191,20 @@ services:
     env_file:
       - .env
     environment:
-      PORT: 2584
-      DB_POSTGRES_URL: postgres://${POSTGRES_USER:-pg}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-para}
-      REDIS_URL: redis://redis:6379
-      SERVER_DID: ${BSKY_SERVER_DID}
-      DID_PLC_URL: ${PDS_DID_PLC_URL:-https://plc.directory}
+      BSKY_PORT: 2584
+      BSKY_PUBLIC_URL: ${BSKY_PUBLIC_URL:-}
+      BSKY_SERVER_DID: ${BSKY_SERVER_DID}
+      BSKY_DID_PLC_URL: ${PDS_DID_PLC_URL:-https://plc.directory}
+      BSKY_ADMIN_PASSWORDS: ${ADMIN_PASSWORDS}
+      BSKY_REDIS_HOST: redis:6379
+      # The data plane and bsync serve HTTP/1.1 (dataplane.js, as in dev-env).
+      BSKY_DATAPLANE_URLS: http://dataplane:2585
+      BSKY_DATAPLANE_HTTP_VERSION: '1.1'
+      BSKY_BSYNC_URL: http://bsync:2586
+      BSKY_BSYNC_HTTP_VERSION: '1.1'
       BSKY_APP_VIEW_DID: ${BSKY_SERVER_DID}
       MOD_SERVICE_DID: ${MOD_SERVICE_DID:-${BSKY_SERVER_DID}}
-      ADMIN_PASSWORDS: ${ADMIN_PASSWORDS}
       BSKY_SERVICE_SIGNING_KEY: ${BSKY_SERVICE_SIGNING_KEY}
-      DATAPLANE_URLS: http://dataplane:2585
-      BSYNC_URL: http://bsync:2586
     expose:
       - '2584'
     healthcheck:
@@ -233,12 +244,13 @@ services:
     env_file:
       - .env
     environment:
-      PORT: 2586
+      BSYNC_PORT: 2586
       BSYNC_DB_POSTGRES_URL: postgres://${POSTGRES_USER:-pg}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-para}
       BSYNC_SERVER_DID: ${BSYNC_SERVER_DID:-${BSKY_SERVER_DID}}
       BSYNC_DB_POOL_SIZE: ${BSYNC_DB_POOL_SIZE:-10}
       BSYNC_DB_POOL_MAX_USES: ${BSYNC_DB_POOL_MAX_USES:-100}
       BSYNC_DB_POOL_IDLE_TIMEOUT_MS: ${BSYNC_DB_POOL_IDLE_TIMEOUT_MS:-30000}
+      BSYNC_DB_MIGRATE: 'true'
     expose:
       - '2586'
     networks:

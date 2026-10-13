@@ -1,4 +1,4 @@
-import { findCommunityNameConflict } from '../src/api/com/para/community/name-uniqueness'
+import { findCommunityNameConflict } from '../src/api/com/para/community/name-uniqueness.js'
 
 const board = (name: string, rkey = name) => ({
   uri: `at://did:plc:a/com.para.community.board/${rkey}`,

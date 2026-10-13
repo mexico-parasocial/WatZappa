@@ -4974,6 +4974,9 @@ export const schemaDict = {
             type: 'object',
             required: ['feed'],
             properties: {
+              cursor: {
+                type: 'string',
+              },
               startCursor: {
                 type: 'string',
                 description:

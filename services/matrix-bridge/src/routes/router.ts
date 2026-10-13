@@ -19,6 +19,12 @@ import {
   apiVoteHandler,
   apiVotesHandler,
 } from './deliberation.js'
+import {
+  apiDmRequestAcceptHandler,
+  apiDmRequestCreateHandler,
+  apiDmRequestDeclineHandler,
+  apiDmRequestListHandler,
+} from './dm-requests.js'
 import { apiEventsSseHandler } from './events.js'
 import {
   apiConstitutionHandler,
@@ -125,6 +131,30 @@ const ROUTES: Route[] = [
     prefix: false,
     method: 'POST',
     handler: apiCommunityJoinHandler,
+  },
+  {
+    urls: ['/api/dm-requests'],
+    prefix: false,
+    method: 'POST',
+    handler: apiDmRequestCreateHandler,
+  },
+  {
+    urls: ['/api/dm-requests'],
+    prefix: false,
+    method: 'GET',
+    handler: apiDmRequestListHandler,
+  },
+  {
+    urls: ['/api/dm-requests/accept'],
+    prefix: false,
+    method: 'POST',
+    handler: apiDmRequestAcceptHandler,
+  },
+  {
+    urls: ['/api/dm-requests/decline'],
+    prefix: false,
+    method: 'POST',
+    handler: apiDmRequestDeclineHandler,
   },
   {
     urls: ['/api/devices'],

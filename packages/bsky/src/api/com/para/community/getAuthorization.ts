@@ -1,5 +1,6 @@
+import type { AtUriString } from '@atproto/syntax'
 import type { Server } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 
 export default function (server: Server, ctx: AppContext) {
@@ -22,12 +23,11 @@ export default function (server: Server, ctx: AppContext) {
           authorization: {
             action: authorization?.action || params.action,
             status: (authorization?.status || 'denied') as
-              | 'allowed'
-              | 'requires_approval'
-              | 'denied',
+              'allowed' | 'requires_approval' | 'denied',
             policy: authorization?.policy || 'role_required',
             reason: authorization?.reason || undefined,
-            evidence: authorization?.evidence || undefined,
+            evidence: (authorization?.evidence || undefined) as
+              AtUriString | undefined,
           },
         },
       }

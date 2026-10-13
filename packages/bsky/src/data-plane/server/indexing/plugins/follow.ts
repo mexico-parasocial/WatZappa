@@ -130,10 +130,7 @@ const updateAggregates = async (db: DatabaseSchema, follow: IndexedFollow) => {
 }
 
 export type PluginType = ReturnType<typeof makePlugin>
-export const makePlugin = (
-  db: Database,
-  background: BackgroundQueue<Database>,
-) => {
+export const makePlugin = (db: Database, background: BackgroundQueue) => {
   return new RecordProcessor(db, background, {
     schema: app.bsky.graph.follow.main,
     insertFn,

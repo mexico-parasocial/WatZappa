@@ -425,3 +425,19 @@ CREATE TABLE IF NOT EXISTS institution_memberships (
   PRIMARY KEY (institution_id, workspace_id, did)
 );
 CREATE INDEX IF NOT EXISTS idx_institution_memberships_did ON institution_memberships(institution_id, did);
+
+-- Pending Matrix direct-message requests. The requester consented to share
+-- its MXID with the recipient; the row lives only until the recipient
+-- accepts or declines, or it expires. ISO-8601 UTC text timestamps.
+CREATE TABLE IF NOT EXISTS dm_requests (
+  id TEXT PRIMARY KEY,
+  requester_did TEXT NOT NULL,
+  requester_mxid TEXT NOT NULL,
+  -- 'pending' | 'accepted'. Accepting blanks requester_mxid.
+  status TEXT NOT NULL DEFAULT 'pending',
+  recipient_did TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  UNIQUE (requester_did, recipient_did)
+);
+CREATE INDEX IF NOT EXISTS idx_dm_requests_recipient ON dm_requests (recipient_did);

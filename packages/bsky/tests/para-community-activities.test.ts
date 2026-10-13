@@ -9,6 +9,7 @@ import {
   seedCommunityActivities,
   usersSeed,
 } from '@atproto/dev-env'
+import type { DidString } from '@atproto/syntax'
 import { communityActivitySchemas } from '../src/api/com/para/community/activities/schemas.js'
 
 const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
@@ -31,10 +32,10 @@ type ActivityView = {
 maybeDescribe('community activities (AppView)', () => {
   let network: TestNetwork
   let sc: SeedClient
-  let alice: string // board creator and owner
-  let bob: string // moderator appointed by alice
-  let carol: string // member who declares herself a moderator
-  let dan: string // outsider
+  let alice: DidString // board creator and owner
+  let bob: DidString // moderator appointed by alice
+  let carol: DidString // member who declares herself a moderator
+  let dan: DidString // outsider
   let board: string
   let bobMembership: string
   let bobModerator: string
@@ -58,7 +59,7 @@ maybeDescribe('community activities (AppView)', () => {
     activities.map((a) => a.record.title).sort()
 
   const write = async (
-    by: string,
+    by: DidString,
     collection: string,
     record: Record<string, unknown>,
   ) => {
@@ -74,7 +75,7 @@ maybeDescribe('community activities (AppView)', () => {
   }
 
   const authorityEvent = (
-    issuer: string,
+    issuer: DidString,
     event: {
       subject: string
       action: string
@@ -93,7 +94,7 @@ maybeDescribe('community activities (AppView)', () => {
     })
 
   const socialActivity = (
-    by: string,
+    by: DidString,
     title: string,
     opts: { community?: string; startsAt?: string; status?: string } = {},
   ) =>
@@ -112,7 +113,11 @@ maybeDescribe('community activities (AppView)', () => {
       updatedAt: new Date().toISOString(),
     })
 
-  const raffle = (by: string, title: string, opts: { startsAt?: string; status?: string } = {}) =>
+  const raffle = (
+    by: DidString,
+    title: string,
+    opts: { startsAt?: string; status?: string } = {},
+  ) =>
     write(by, 'com.para.community.economicActivity', {
       communityUri: board,
       title,
@@ -140,7 +145,7 @@ maybeDescribe('community activities (AppView)', () => {
     })
 
   const ledgerEntry = (
-    by: string,
+    by: DidString,
     activityUri: string,
     description: string,
     community = board,
@@ -158,7 +163,7 @@ maybeDescribe('community activities (AppView)', () => {
     })
 
   const wikiPage = (
-    by: string,
+    by: DidString,
     slug: string,
     title: string,
     opts: { kind?: string; pinned?: boolean; updatedAt?: string } = {},
@@ -266,7 +271,10 @@ maybeDescribe('community activities (AppView)', () => {
   })
 
   it('filters by time and category', async () => {
-    const upcoming = await listActivities({ community: board, time: 'upcoming' })
+    const upcoming = await listActivities({
+      community: board,
+      time: 'upcoming',
+    })
     expect(titles(upcoming.activities)).toEqual(['Marcha por el agua'])
     const past = await listActivities({ community: board, time: 'past' })
     expect(titles(past.activities)).toEqual(['Rifa de bob'])
@@ -335,9 +343,12 @@ maybeDescribe('community activities (AppView)', () => {
     expect(all.body.activities.some((a) => a.author === carol)).toBe(false)
     const carolUri = await socialActivity(carol, 'Otra de carol')
     await network.processAll()
-    const res = await xrpc<{ error: string }>('com.para.community.getActivity', {
-      uri: carolUri,
-    })
+    const res = await xrpc<{ error: string }>(
+      'com.para.community.getActivity',
+      {
+        uri: carolUri,
+      },
+    )
     expect(res.status).toBe(400)
     expect(res.body.error).toBe('NotFound')
   })
@@ -416,9 +427,7 @@ maybeDescribe('community activities (AppView)', () => {
       pages: Array<{ author: string; record: { title: string } }>
     }>('com.para.community.listWikiPages', { community: board })
     // alice's older page for the slug takes over.
-    expect(body.pages.map((p) => p.record.title)).toContain(
-      'Acerca de (viejo)',
-    )
+    expect(body.pages.map((p) => p.record.title)).toContain('Acerca de (viejo)')
   })
 
   it('serves the demo seed: two communities, a settled raffle and wiki', async () => {

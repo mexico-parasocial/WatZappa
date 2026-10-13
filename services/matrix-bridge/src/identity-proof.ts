@@ -43,6 +43,7 @@ export const BRIDGE_AUDIENCES = {
   session: 'para-matrix-bridge/session.v1',
   join: 'para-matrix-bridge/join.v1',
   attest: 'para-matrix-bridge/attest.v1',
+  dm: 'para-matrix-bridge/dm.v1',
 } as const
 
 /** RFC 4648 base32, lowercased and unpadded — the Matrix localpart grammar
