@@ -13,7 +13,11 @@ import {
 } from '../../../../auth-scope.js'
 import { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
-import { PRIVILEGED_METHODS, PROTECTED_METHODS } from '../../../../pipethrough.js'
+import {
+  PRIVILEGED_METHODS,
+  PROTECTED_METHODS,
+  isSpacesMethod,
+} from '../../../../pipethrough.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.add(com.atproto.server.getServiceAuth, {
@@ -85,6 +89,11 @@ export default function (server: Server, ctx: AppContext) {
       if (lxm && PROTECTED_METHODS.has(lxm)) {
         throw new InvalidRequestError(
           `cannot request a service auth token for the following protected method: ${lxm}`,
+        )
+      }
+      if (lxm && isSpacesMethod(lxm)) {
+        throw new InvalidRequestError(
+          `cannot request a service auth token for a Spaces method: ${lxm}`,
         )
       }
 

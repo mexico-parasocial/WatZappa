@@ -22,7 +22,12 @@ export type QueryParams = {}
 export interface InputSchema {
   /** Reference to the space to update. */
   space: string
-  policy?:
+  readPolicy?:
+    | $Typed<ComAtprotoSimplespaceDefs.PublicPolicy>
+    | $Typed<ComAtprotoSimplespaceDefs.MemberListPolicy>
+    | $Typed<ComAtprotoSimplespaceDefs.ManagingAppPolicy>
+    | { $type: string }
+  writePolicy?:
     | $Typed<ComAtprotoSimplespaceDefs.PublicPolicy>
     | $Typed<ComAtprotoSimplespaceDefs.MemberListPolicy>
     | $Typed<ComAtprotoSimplespaceDefs.ManagingAppPolicy>

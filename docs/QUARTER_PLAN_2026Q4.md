@@ -90,7 +90,7 @@ No new scope.
 | E2EE rollout | Blocked upstream (matrix-js-sdk#4150); spike only in S5 |
 | Tuwunel homeserver spike / OD-1 | Deferred out of quarter by MATRIX_V2 |
 | Multi-community | Needs F9 validated in production first (R10) |
-| OD-P1/P2 personal spaces for civic-tree collections | Awaiting space-host decision |
+| OD-P1/P2 personal spaces for civic-tree collections | Only the in-PDS hand-port remains (sidecar ruled out); `packages/space` is at vlpds's pin. Waits on CD-P3 (OAuth in the app) and a stable upstream |
 | OD-7 §5a vote-proof requirement | Blocks the `anonymous_identities` linkage fix; not pilot-critical |
 | Cabildeo-live test suite | Unless the pilot uses cabildeo-live — then pull into S5 |
 | INE institutional approval | External dependency; keep preview mode and disclose in-app |

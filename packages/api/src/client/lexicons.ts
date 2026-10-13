@@ -18907,44 +18907,6 @@ export const schemaDict = {
       },
     },
   },
-  ComAtprotoSimplespaceAddMember: {
-    lexicon: 1,
-    id: 'com.atproto.simplespace.addMember',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          "Add a member to a space's member list. The member list is host-internal state consulted at credential-mint time when the space's policy is 'member-list'. It is not a synced protocol structure and is not enumerated to the network. Requires auth as the space owner.",
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['space', 'did'],
-            properties: {
-              space: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'Reference to the space.',
-              },
-              did: {
-                type: 'string',
-                format: 'did',
-                description: 'The DID of the member to add.',
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'NotSpaceOwner',
-          },
-        ],
-      },
-    },
-  },
   ComAtprotoSimplespaceCheckUserAccess: {
     lexicon: 1,
     id: 'com.atproto.simplespace.checkUserAccess',
@@ -18952,10 +18914,10 @@ export const schemaDict = {
       main: {
         type: 'query',
         description:
-          "Ask a space's managing app whether to authorize a requesting user for a space credential. Served by the managingApp (not the PDS), called by the space authority at mint time when policy is 'managing-app'. Authenticated with service auth from the authority.",
+          "Ask a space's managing app whether to authorize a user to read or write. Served by the managingApp (not the PDS), called by the space authority when the corresponding policy is 'managing-app'. Authenticated with service auth from the authority.",
         parameters: {
           type: 'params',
-          required: ['space', 'user'],
+          required: ['space', 'user', 'access'],
           properties: {
             space: {
               type: 'string',
@@ -18967,10 +18929,15 @@ export const schemaDict = {
               format: 'did',
               description: 'The DID of the requesting user.',
             },
+            access: {
+              type: 'string',
+              knownValues: ['read', 'write'],
+              description: 'The kind of access being checked.',
+            },
             clientId: {
               type: 'string',
               description:
-                'The attested client_id, if a client attestation was presented.',
+                'The attested client_id, if a client attestation was presented. Omitted for write checks.',
             },
           },
         },
@@ -19002,9 +18969,9 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'object',
-            required: ['type', 'policy', 'appAccess'],
+            required: ['spaceType', 'readPolicy', 'writePolicy', 'appAccess'],
             properties: {
-              type: {
+              spaceType: {
                 type: 'string',
                 format: 'nsid',
                 description:
@@ -19016,10 +18983,20 @@ export const schemaDict = {
                 description:
                   'The space key. Used to differentiate multiple spaces of the same type under the same owner. Same syntax requirements as a record key. If not provided, one will be auto-generated (TID).',
               },
-              policy: {
+              readPolicy: {
                 type: 'union',
                 description:
-                  'How the authority decides whether to authorize a requesting user.',
+                  'How the authority decides whether to authorize a user to read the space.',
+                refs: [
+                  'lex:com.atproto.simplespace.defs#publicPolicy',
+                  'lex:com.atproto.simplespace.defs#memberListPolicy',
+                  'lex:com.atproto.simplespace.defs#managingAppPolicy',
+                ],
+              },
+              writePolicy: {
+                type: 'union',
+                description:
+                  "How the authority decides whether to track and forward a user's write notifications.",
                 refs: [
                   'lex:com.atproto.simplespace.defs#publicPolicy',
                   'lex:com.atproto.simplespace.defs#memberListPolicy',
@@ -19060,7 +19037,7 @@ export const schemaDict = {
           },
           {
             name: 'UnsupportedPolicy',
-            description: 'The requested policy is not one the host implements.',
+            description: 'A requested policy is not one the host implements.',
           },
           {
             name: 'UnsupportedAppAccess',
@@ -19179,17 +19156,27 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'object',
-            required: ['uri', 'policy', 'appAccess'],
+            required: ['uri', 'readPolicy', 'writePolicy', 'appAccess'],
             properties: {
               uri: {
                 type: 'string',
                 format: 'space-ref',
                 description: 'URI of the space.',
               },
-              policy: {
+              readPolicy: {
                 type: 'union',
                 description:
-                  'How the authority decides whether to authorize a requesting user.',
+                  'How the authority decides whether to authorize a user to read the space.',
+                refs: [
+                  'lex:com.atproto.simplespace.defs#publicPolicy',
+                  'lex:com.atproto.simplespace.defs#memberListPolicy',
+                  'lex:com.atproto.simplespace.defs#managingAppPolicy',
+                ],
+              },
+              writePolicy: {
+                type: 'union',
+                description:
+                  "How the authority decides whether to track and forward a user's write notifications.",
                 refs: [
                   'lex:com.atproto.simplespace.defs#publicPolicy',
                   'lex:com.atproto.simplespace.defs#memberListPolicy',
@@ -19223,7 +19210,7 @@ export const schemaDict = {
       main: {
         type: 'query',
         description:
-          "List the members in a space's host-internal member list. Must be called on the space authority's PDS. Requires OAuth with a covering read grant; a space credential is not sufficient, so members hosted elsewhere cannot enumerate the list. This reflects the simplespace member list, not a protocol-level reader set.",
+          "List the members in a space's host-internal member list and their read and write access. Must be called on the space authority's PDS. Requires OAuth with a covering read grant; a space credential is not sufficient, so members hosted elsewhere cannot enumerate the list.",
         parameters: {
           type: 'params',
           required: ['space'],
@@ -19272,13 +19259,67 @@ export const schemaDict = {
       },
       member: {
         type: 'object',
-        required: ['did'],
+        required: ['did', 'read', 'write'],
         properties: {
           did: {
             type: 'string',
             format: 'did',
           },
+          read: {
+            type: 'boolean',
+          },
+          write: {
+            type: 'boolean',
+          },
         },
+      },
+    },
+  },
+  ComAtprotoSimplespacePutMember: {
+    lexicon: 1,
+    id: 'com.atproto.simplespace.putMember',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          "Add a member to a space's host-internal member list or replace their read and write access. Requires auth as the space owner.",
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['space', 'did', 'read', 'write'],
+            properties: {
+              space: {
+                type: 'string',
+                format: 'space-ref',
+                description: 'Reference to the space.',
+              },
+              did: {
+                type: 'string',
+                format: 'did',
+                description: 'The DID of the member.',
+              },
+              read: {
+                type: 'boolean',
+                description:
+                  'Whether the member may read under a member-list read policy.',
+              },
+              write: {
+                type: 'boolean',
+                description:
+                  "Whether the member's writes are tracked under a member-list write policy.",
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'SpaceNotFound',
+          },
+          {
+            name: 'NotSpaceOwner',
+          },
+        ],
       },
     },
   },
@@ -19289,7 +19330,7 @@ export const schemaDict = {
       main: {
         type: 'procedure',
         description:
-          "Remove a member from a space's member list. The member list is host-internal state consulted at credential-mint time when the space's policy is 'member-list'. Requires auth as the space owner.",
+          "Remove a member from a space's host-internal member list. Requires auth as the space owner.",
         input: {
           encoding: 'application/json',
           schema: {
@@ -19339,10 +19380,20 @@ export const schemaDict = {
                 format: 'space-ref',
                 description: 'Reference to the space to update.',
               },
-              policy: {
+              readPolicy: {
                 type: 'union',
                 description:
-                  'How the authority decides whether to authorize a requesting user. When supplied, replaces the current policy wholesale.',
+                  'How the authority decides whether to authorize a user to read the space. When supplied, replaces the current read policy wholesale.',
+                refs: [
+                  'lex:com.atproto.simplespace.defs#publicPolicy',
+                  'lex:com.atproto.simplespace.defs#memberListPolicy',
+                  'lex:com.atproto.simplespace.defs#managingAppPolicy',
+                ],
+              },
+              writePolicy: {
+                type: 'union',
+                description:
+                  "How the authority decides whether to track and forward a user's write notifications. When supplied, replaces the current write policy wholesale.",
                 refs: [
                   'lex:com.atproto.simplespace.defs#publicPolicy',
                   'lex:com.atproto.simplespace.defs#memberListPolicy',
@@ -19370,7 +19421,7 @@ export const schemaDict = {
           },
           {
             name: 'UnsupportedPolicy',
-            description: 'The requested policy is not one the host implements.',
+            description: 'A requested policy is not one the host implements.',
           },
           {
             name: 'UnsupportedAppAccess',
@@ -20022,7 +20073,7 @@ export const schemaDict = {
       main: {
         type: 'procedure',
         description:
-          "Exchange a delegation token for a space credential. Called on the space authority, with the delegation token as the request's authorization token and a DPoP proof signed by the key to bind the credential to. The resulting space credential reads repos across the space. Requires a delegation token and DPoP proof, plus a client attestation when the space gates on app identity.",
+          "Exchange a delegation token for a space credential. Called on the space authority, with the delegation token as the request's authorization token and an HTTP message signature over Authorization made by the key to bind the credential to. The resulting space credential reads repos across the space. Requires a delegation token and HTTP message signature, plus a client attestation when the space gates on app identity.",
         input: {
           encoding: 'application/json',
           schema: {
@@ -20050,8 +20101,7 @@ export const schemaDict = {
             properties: {
               credential: {
                 type: 'string',
-                description:
-                  "A signed JWT space credential, bound through its cnf.jkt claim to the key that signed the request's DPoP proof.",
+                description: 'A signed JWT space credential.',
               },
             },
           },
@@ -20412,7 +20462,7 @@ export const schemaDict = {
       main: {
         type: 'query',
         description:
-          "List the known repos that hold data in a space (the writer set), with each repo's current rev and commit hash. Served by the space host. This is the sync boundary, not an access-control list: it enumerates only writers, never readers. The set is what the authority claims from write notifications and is not itself authoritative; a repo's host is the source of truth.",
+          "List the known repos that hold data in a space (the writer set), with each repo's current repoRev and commit hash. Served by the space host. This is the sync boundary, not an access-control list: it enumerates only writers, never readers. The set is what the authority claims from write notifications and is not itself authoritative; a repo's host is the source of truth.",
         parameters: {
           type: 'params',
           required: ['space'],
@@ -20431,6 +20481,8 @@ export const schemaDict = {
             },
             cursor: {
               type: 'string',
+              description:
+                "Return repos updated after this space revision (exclusive). Use a previous response's cursor or a previously processed spaceRev.",
             },
           },
         },
@@ -20440,15 +20492,19 @@ export const schemaDict = {
             type: 'object',
             required: ['repos'],
             properties: {
-              cursor: {
-                type: 'string',
-              },
               repos: {
                 type: 'array',
                 items: {
                   type: 'ref',
                   ref: 'lex:com.atproto.space.listRepos#repo',
                 },
+                description:
+                  'Returned in ascending spaceRev order. A repo may reappear if updated while paginating.',
+              },
+              cursor: {
+                type: 'string',
+                description:
+                  'Pass this cursor on the next request. Omitted when no repos are returned.',
               },
             },
           },
@@ -20461,14 +20517,14 @@ export const schemaDict = {
       },
       repo: {
         type: 'object',
-        required: ['did', 'rev', 'hash'],
+        required: ['did', 'repoRev', 'hash', 'spaceRev'],
         properties: {
           did: {
             type: 'string',
             format: 'did',
             description: 'The DID of a repo that holds data in the space.',
           },
-          rev: {
+          repoRev: {
             type: 'string',
             description:
               "The repo's current revision (TID), as last reported to the authority. May lag the repo host, which is the source of truth.",
@@ -20478,6 +20534,12 @@ export const schemaDict = {
             type: 'bytes',
             description:
               "The repo's current commit hash (sha256 of the LtHash state), as last reported to the authority.",
+          },
+          spaceRev: {
+            type: 'string',
+            format: 'tid',
+            description:
+              'The space revision at which this repo was last updated.',
           },
         },
       },
@@ -20494,10 +20556,10 @@ export const schemaDict = {
         parameters: {
           type: 'params',
           properties: {
-            type: {
+            spaceType: {
               type: 'string',
               format: 'nsid',
-              description: 'Filter to spaces of this type.',
+              description: 'Filter to spaces of this space type.',
             },
             did: {
               type: 'string',
@@ -20549,6 +20611,41 @@ export const schemaDict = {
       },
     },
   },
+  ComAtprotoSpaceNotifyCredentialRevoked: {
+    lexicon: 1,
+    id: 'com.atproto.space.notifyCredentialRevoked',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          'Notify a repo host that the space authority has revoked one or more credentials. Authenticated with service auth from the space authority, addressed to the repo DID.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['space', 'credentials'],
+            properties: {
+              space: {
+                type: 'string',
+                format: 'space-ref',
+                description: 'Reference to the space.',
+              },
+              credentials: {
+                type: 'array',
+                minLength: 1,
+                maxLength: 100,
+                description: 'The jti of the revoked credentials.',
+                items: {
+                  type: 'string',
+                  minLength: 1,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   ComAtprotoSpaceNotifySpaceDeleted: {
     lexicon: 1,
     id: 'com.atproto.space.notifySpaceDeleted',
@@ -20581,12 +20678,12 @@ export const schemaDict = {
       main: {
         type: 'procedure',
         description:
-          'Notify that a repo in a space has advanced to a new revision. Sent by a repo host to the space host, and forwarded to registered syncers. Best-effort. Authenticated with service auth.',
+          'Notify that a repo in a space has advanced. Repo hosts reliably deliver their latest state to the space host, which sequences updates and forwards them to registered syncers with reasonable-effort delivery. Authenticated with service auth.',
         input: {
           encoding: 'application/json',
           schema: {
             type: 'object',
-            required: ['space', 'repo', 'rev', 'hash'],
+            required: ['space', 'repo', 'repoRev', 'hash'],
             properties: {
               space: {
                 type: 'string',
@@ -20598,9 +20695,9 @@ export const schemaDict = {
                 format: 'did',
                 description: 'The DID of the account whose repo advanced.',
               },
-              rev: {
+              repoRev: {
                 type: 'string',
-                description: 'The revision of the write.',
+                description: 'The repo revision after the write.',
                 format: 'tid',
               },
               hash: {
@@ -20608,9 +20705,30 @@ export const schemaDict = {
                 description:
                   "The repo's current commit hash (sha256 of the LtHash state) after the write. Lets the space host maintain each repo's hash for listRepos.",
               },
+              spaceRev: {
+                type: 'string',
+                format: 'tid',
+                description:
+                  'The space revision assigned by the space host. Present only on notifications forwarded to syncers.',
+              },
+              prevSpaceRev: {
+                type: 'string',
+                format: 'tid',
+                description:
+                  'The previous space revision. Omitted on the first update in a space. A gap indicates missed notifications; recover using listRepos with cursor.',
+              },
             },
           },
         },
+        errors: [
+          {
+            name: 'SpaceNotFound',
+          },
+          {
+            name: 'FutureRev',
+            description: 'The repo revision exceeds the permitted clock skew.',
+          },
+        ],
       },
     },
   },
@@ -24970,6 +25088,58 @@ export const schemaDict = {
                   ref: 'lex:com.para.collection.defs#collectionView',
                 },
               },
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCollectionRecord: {
+    lexicon: 1,
+    id: 'com.para.collection.record',
+    defs: {
+      main: {
+        type: 'record',
+        key: 'any',
+        description:
+          "A civic-tree collection as a record. It lives only in its owner's `com.para.space.personal` space (skey `civic-tree`); a PDS refuses it in a public repo. The record key is the collection id.",
+        record: {
+          type: 'object',
+          required: ['name', 'items', 'createdAt'],
+          properties: {
+            name: {
+              type: 'string',
+              maxLength: 200,
+            },
+            description: {
+              type: 'string',
+              maxLength: 2000,
+            },
+            color: {
+              type: 'string',
+              maxLength: 7,
+            },
+            items: {
+              type: 'array',
+              items: {
+                type: 'ref',
+                ref: 'lex:com.para.collection.defs#civicTreeItem',
+              },
+            },
+            relations: {
+              type: 'array',
+              items: {
+                type: 'ref',
+                ref: 'lex:com.para.collection.defs#civicTreeRelation',
+              },
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'datetime',
             },
           },
         },
@@ -41778,7 +41948,6 @@ export const ids = {
   ComAtprotoServerResetPassword: 'com.atproto.server.resetPassword',
   ComAtprotoServerRevokeAppPassword: 'com.atproto.server.revokeAppPassword',
   ComAtprotoServerUpdateEmail: 'com.atproto.server.updateEmail',
-  ComAtprotoSimplespaceAddMember: 'com.atproto.simplespace.addMember',
   ComAtprotoSimplespaceCheckUserAccess:
     'com.atproto.simplespace.checkUserAccess',
   ComAtprotoSimplespaceCreateSpace: 'com.atproto.simplespace.createSpace',
@@ -41786,6 +41955,7 @@ export const ids = {
   ComAtprotoSimplespaceDeleteSpace: 'com.atproto.simplespace.deleteSpace',
   ComAtprotoSimplespaceGetSpace: 'com.atproto.simplespace.getSpace',
   ComAtprotoSimplespaceListMembers: 'com.atproto.simplespace.listMembers',
+  ComAtprotoSimplespacePutMember: 'com.atproto.simplespace.putMember',
   ComAtprotoSimplespaceRemoveMember: 'com.atproto.simplespace.removeMember',
   ComAtprotoSimplespaceUpdateSpace: 'com.atproto.simplespace.updateSpace',
   ComAtprotoSpaceApplyWrites: 'com.atproto.space.applyWrites',
@@ -41803,6 +41973,8 @@ export const ids = {
   ComAtprotoSpaceListRepoOps: 'com.atproto.space.listRepoOps',
   ComAtprotoSpaceListRepos: 'com.atproto.space.listRepos',
   ComAtprotoSpaceListSpaces: 'com.atproto.space.listSpaces',
+  ComAtprotoSpaceNotifyCredentialRevoked:
+    'com.atproto.space.notifyCredentialRevoked',
   ComAtprotoSpaceNotifySpaceDeleted: 'com.atproto.space.notifySpaceDeleted',
   ComAtprotoSpaceNotifyWrite: 'com.atproto.space.notifyWrite',
   ComAtprotoSpacePutRecord: 'com.atproto.space.putRecord',
@@ -41867,6 +42039,7 @@ export const ids = {
   ComParaCollectionDeleteCollection: 'com.para.collection.deleteCollection',
   ComParaCollectionGetCollection: 'com.para.collection.getCollection',
   ComParaCollectionListCollections: 'com.para.collection.listCollections',
+  ComParaCollectionRecord: 'com.para.collection.record',
   ComParaCollectionUpdateCollection: 'com.para.collection.updateCollection',
   ComParaCommunityAcceptDraftInvite: 'com.para.community.acceptDraftInvite',
   ComParaCommunityActivityLedgerEntry: 'com.para.community.activityLedgerEntry',

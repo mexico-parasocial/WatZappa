@@ -58,6 +58,8 @@ export function toKnownErr(e: any) {
 export interface Member {
   $type?: 'com.atproto.simplespace.listMembers#member'
   did: string
+  read: boolean
+  write: boolean
 }
 
 const hashMember = 'member'
