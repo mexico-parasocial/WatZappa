@@ -149,6 +149,8 @@ services:
       BSKY_APP_VIEW_DID: ${BSKY_SERVER_DID}
       MOD_SERVICE_DID: ${MOD_SERVICE_DID:-${BSKY_SERVER_DID}}
       BSKY_SERVICE_SIGNING_KEY: ${BSKY_SERVICE_SIGNING_KEY}
+      # Match the bridge's dedicated read credential, including platform overrides.
+      PARA_AUTHORITY_SERVICE_TOKEN: ${PARA_AUTHORITY_SERVICE_TOKEN:-}
     expose:
       - '2584'
     healthcheck:

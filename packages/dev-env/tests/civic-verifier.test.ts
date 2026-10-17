@@ -5,6 +5,7 @@ import {
   DevCivicVerifier,
   devCabildeoVoteProof,
   devDelegationProof,
+  devPolicyVoteProof,
   devVoteNullifier,
 } from '../src/civic-verifier.js'
 
@@ -88,6 +89,31 @@ describe('DevCivicVerifier', () => {
     const claim = { actorDid, subjectUri: cabildeo, selectedOption: 1, ...proof }
     expect((await post(claim)).status).toBe(204)
     expect((await post({ ...claim, selectedOption: 0 })).status).toBe(422)
+  })
+
+  it('accepts a policy proof it minted, bound to its signal', async () => {
+    const policy = 'at://did:plc:author/com.para.post/one'
+    const proof = devPolicyVoteProof(actorDid, policy, 2)
+    const claim = { actorDid, subjectUri: policy, signal: 2, ...proof }
+    expect((await post(claim)).status).toBe(204)
+    // The same authorization does not carry a different signal.
+    expect((await post({ ...claim, signal: -3 })).status).toBe(422)
+    // Nor does it pass as a cabildeo authorization.
+    expect(proof.eligibilityProofRef.startsWith('m8:policy:v1:')).toBe(true)
+  })
+
+  it('forwards a policy proof it did not mint to the real m8', async () => {
+    const claim = {
+      actorDid,
+      subjectUri: 'at://did:plc:author/com.para.post/one',
+      signal: 1,
+      voteNullifier: 'b'.repeat(64),
+      eligibilityProofRef: 'm8:policy:v1:' + 'u'.repeat(43),
+    }
+    await post(claim)
+    expect(upstreamCalls.at(-1)?.path).toBe(
+      '/v1/identity/civic-vote-proof/verify',
+    )
   })
 
   it('forwards a proof it did not mint to the real m8', async () => {

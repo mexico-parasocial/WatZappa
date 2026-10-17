@@ -2,7 +2,31 @@
 
 This is the spec the PARA app implements against. It documents the current,
 shipped behavior of the bridge (`services/matrix-bridge`) — event payloads and
-endpoints here describe the bridge implementation. Updated 2026-09-21.
+endpoints here describe the bridge implementation. Updated 2026-10-05.
+
+**Trusted authority upgrade:** deploy the paired AppView change and its authority
+revalidation migration first. Set `BRIDGE_AUTHORITY_APPVIEW_URL` to that AppView
+(HTTPS, or loopback HTTP in development), and configure the same dedicated
+32–512 character `PARA_AUTHORITY_SERVICE_TOKEN` on both services. This credential
+only reads verified community authority for a specified member. Never send it to
+clients or reuse Matrix admin/appservice/M8 tokens. The local dev wrapper creates
+an ephemeral shared credential; the dev AppView reads it from the environment.
+
+Membership records can nominate a delegation candidate but never grant bridge
+owner/moderator/delegate/observer privileges. The current verified contract
+supports member/moderator/owner; delegate/observer powers require a verified
+protocol before being enabled. Assembly-decision grants remain closed pending a
+trusted tally verifier. Valid founder grants, owner appointments, handover and
+revocation use verified authority-event chains.
+
+Before opening the API, the bridge revalidates/projects every persisted
+membership. Authority events and a 60-second sweep catch changes and expirations;
+joins, resource authorization, SSE room delivery, native interactions and retries
+refresh authority. An unavailable/invalid authority source fails closed: the
+cached membership is suspended, role flags are cleared, minted devices are
+revoked and tracked accounts are banned from community rooms. Recovery reprojects
+verified membership; revoked devices require a fresh login/attestation. Verify
+this outage/recovery behavior against the staging homeserver before rollout.
 
 **Deployment gate:** the Synapse v1.161.0 + MAS 1.24.0 deployment does not
 support `m.login.application_service`. Direct Synapse login returns 404; MAS

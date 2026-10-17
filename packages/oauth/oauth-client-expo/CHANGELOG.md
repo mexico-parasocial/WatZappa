@@ -1,5 +1,132 @@
 # @atproto/oauth-client-expo
 
+## 0.2.7
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.8.10
+  - @atproto/oauth-client-browser@0.5.10
+
+## 0.2.6
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.8.9
+  - @atproto/oauth-client-browser@0.5.9
+
+## 0.2.5
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.8.8
+  - @atproto/oauth-client-browser@0.5.8
+
+## 0.2.4
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.8.7
+  - @atproto/oauth-client-browser@0.5.7
+
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.8.6
+  - @atproto/oauth-client-browser@0.5.6
+
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.8.5
+  - @atproto/oauth-client-browser@0.5.5
+
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.8.4
+  - @atproto/oauth-client-browser@0.5.4
+
+## 0.2.0
+
+### Minor Changes
+
+- [#5371](https://github.com/bluesky-social/atproto/pull/5371) [`c7f39c5`](https://github.com/bluesky-social/atproto/commit/c7f39c527758ffd5b21b896fac494ecf7e69aa37) Thanks [@matthieusieben](https://github.com/matthieusieben)! - **Breaking**: `core-js`, `expo-web-browser`, `react-native-mmkv` and `react-native-url-polyfill` are now peer dependencies of `@atproto/oauth-client-expo`. You will need to install them in your project if you are using this package.
+
+### Patch Changes
+
+- [#5371](https://github.com/bluesky-social/atproto/pull/5371) [`c7f39c5`](https://github.com/bluesky-social/atproto/commit/c7f39c527758ffd5b21b896fac494ecf7e69aa37) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Update `react-native-mmkv` to version 4
+
+## 0.1.12
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.8.3
+  - @atproto/oauth-client-browser@0.5.3
+
+## 0.1.11
+
+### Patch Changes
+
+- Updated dependencies [[`6a3d607`](https://github.com/bluesky-social/atproto/commit/6a3d6073cb66c527b5b109242049c85c36b9658c)]:
+  - @atproto-labs/simple-store@0.5.1
+  - @atproto/oauth-client@0.8.2
+  - @atproto/oauth-client-browser@0.5.2
+
+## 0.1.10
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.8.1
+  - @atproto/oauth-client-browser@0.5.1
+
+## 0.1.9
+
+### Patch Changes
+
+- Updated dependencies [[`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a)]:
+  - @atproto/oauth-client@0.8.0
+  - @atproto-labs/simple-store@0.5.0
+  - @atproto/oauth-client-browser@0.5.0
+
+## 0.1.8
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.7.11
+  - @atproto/oauth-client-browser@0.4.9
+
+## 0.1.7
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.7.10
+  - @atproto/oauth-client-browser@0.4.8
+
+## 0.1.6
+
+### Patch Changes
+
+- [#5197](https://github.com/bluesky-social/atproto/pull/5197) [`a0c49d9`](https://github.com/bluesky-social/atproto/commit/a0c49d9e8bc685c5a747a8d3b2775c73c63fdb6f) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Rewrite import statements to be compatible with TypeScript's `verbatimModuleSyntax` config.
+
+- Updated dependencies [[`a0c49d9`](https://github.com/bluesky-social/atproto/commit/a0c49d9e8bc685c5a747a8d3b2775c73c63fdb6f)]:
+  - @atproto/oauth-client-browser@0.4.7
+  - @atproto-labs/simple-store@0.4.4
+  - @atproto/oauth-client@0.7.9
+
 ## 0.1.5
 
 ### Patch Changes

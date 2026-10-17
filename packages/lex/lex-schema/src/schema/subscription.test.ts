@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { integer } from './integer.js'
 import { ObjectSchema, object } from './object.js'
@@ -7,8 +6,8 @@ import { ParamsSchema, params } from './params.js'
 import { RefSchema, ref } from './ref.js'
 import { string } from './string.js'
 import {
-  InferSubscriptionMessage,
-  InferSubscriptionParameters,
+  type InferSubscriptionMessage,
+  type InferSubscriptionParameters,
   Subscription,
   subscription,
 } from './subscription.js'

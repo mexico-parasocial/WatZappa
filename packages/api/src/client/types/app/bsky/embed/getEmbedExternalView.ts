@@ -13,27 +13,35 @@ import {
 } from '../../../../util.js'
 import type * as AppBskyEmbedExternal from './external.js'
 import type * as ComAtprotoRepoStrongRef from '../../../com/atproto/repo/strongRef.js'
-import type * as AppBskyActorDefs from '../actor/defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
 const id = 'app.bsky.embed.getEmbedExternalView'
 
 export type QueryParams = {
-  /** The canonical web URL the embed represents (typically the URL the user pasted into the composer). Used as the returned view's `uri`. May be used for validation in the future. */
+  /** The canonical web URL the embed represents (typically the URL the user pasted into the composer). Used as the returned view's `uri`, and validated against the resolved records. */
   url: string
-  /** AT-URIs of any Atmosphere records that can be resolved and used to construct #externalView views. Example: a site.standard.document and optionally its associated site.standard.publication. */
-  uris: string[]
+  /** The canonical AT URI of the atproto record found on the webpage. When provided, takes precedence over `uris`, which is then ignored. */
+  canonicalUri?: string
+  /** Legacy input for Standard.site callers, ignored when `canonicalUri` is provided. A single record is selected from it: the first site.standard.document URI, otherwise the first site.standard.publication URI. Other entries are ignored; a document's publication is discovered from the document itself. */
+  uris?: string[]
 }
 export type InputSchema = undefined
 
 export interface OutputSchema {
   view?: AppBskyEmbedExternal.View
-  /** StrongRefs (URI+CID) of the Atmosphere records that backed this view, suitable for embedding into a post's external.associatedRefs. */
+  data?:
+    | $Typed<AppBskyEmbedExternal.ViewArticle>
+    | $Typed<AppBskyEmbedExternal.ViewArticlePublication>
+    | $Typed<AppBskyEmbedExternal.ViewGallery>
+    | $Typed<AppBskyEmbedExternal.ViewLivestream>
+    | { $type: string }
+  /** StrongRefs (URI+CID) of the Atmosphere records selected for persistence in a post, suitable for embedding into its external.associatedRefs: the canonical record, plus only the additional records the service chooses to persist for its collection. This can be a subset of the records used to render `data`, which may also draw on other hydrated records such as recommendations, subscriptions, or favorites. Present only when validation passed. Index-aligned with `associatedRecords`. */
   associatedRefs?: ComAtprotoRepoStrongRef.Main[]
   associatedRecords?: { [_ in string]: unknown }[]
-  /** Profiles of the owners of the Atmosphere records that backed this view. */
-  associatedProfiles?: AppBskyActorDefs.ProfileViewBasic[]
+  /** StrongRefs (URI+CID) of the same persistence-selected Atmosphere records (the canonical record plus chosen additional records) when validation of the requested `url` failed. These must not be written to a post. Index-aligned with `unverifiedAssociatedRecords`. */
+  unverifiedAssociatedRefs?: ComAtprotoRepoStrongRef.Main[]
+  unverifiedAssociatedRecords?: { [_ in string]: unknown }[]
 }
 
 export interface CallOptions {

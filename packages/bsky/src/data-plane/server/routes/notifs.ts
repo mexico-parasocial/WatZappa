@@ -153,6 +153,8 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         reasonSubject: notif.reasonSubject ?? undefined,
         timestamp: Timestamp.fromDate(new Date(notif.sortAt)),
       })),
+      // Over-fetch by one so an exhausted page reports no cursor, rather than
+      // handing out a cursor that returns an empty page.
       cursor: rows.length > limit ? key.packFromResult(items) : undefined,
     }
   },

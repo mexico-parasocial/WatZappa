@@ -9,7 +9,7 @@ import {
   ensureValidDid,
 } from '@atproto/syntax'
 import { countAll, notSoftDeletedClause } from '../../db/util.js'
-import { app, com } from '../../lexicons/index.js'
+import { app, type com } from '../../lexicons/index.js'
 import type { LocalRecords } from '../../read-after-write/types.js'
 import type { ActorDb, Backlink } from '../db/index.js'
 
@@ -282,12 +282,7 @@ export class RecordReader {
   }
 
   async getRecordsSinceRev(rev: string): Promise<LocalRecords> {
-    const result: LocalRecords = {
-      count: 0,
-      profile: null,
-      posts: [],
-      paraPosts: [],
-    }
+    const result: LocalRecords = { count: 0, profile: null, posts: [] }
 
     const res = await this.db.db
       .selectFrom('record')
@@ -337,13 +332,6 @@ export class RecordReader {
           cid: parseCid(cur.cid),
           indexedAt: cur.indexedAt as DatetimeString,
           record: cborToLexRecord(cur.content) as app.bsky.feed.post.Main,
-        })
-      } else if (uri.collection === com.para.post.$type) {
-        result.paraPosts.push({
-          uri,
-          cid: parseCid(cur.cid),
-          indexedAt: cur.indexedAt as DatetimeString,
-          record: cborToLexRecord(cur.content) as com.para.post.Main,
         })
       }
     }

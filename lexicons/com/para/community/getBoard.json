@@ -87,6 +87,12 @@
           "maxGraphemes": 64,
           "maxLength": 128
         },
+        "region": {
+          "type": "string",
+          "description": "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
+          "maxGraphemes": 64,
+          "maxLength": 128
+        },
         "delegatesChatId": { "type": "string" },
         "subdelegatesChatId": { "type": "string" },
         "memberCount": { "type": "integer" },

@@ -1,5 +1,5 @@
-import { Key, SimpleStore, Value } from '@atproto-labs/simple-store'
-import { DB, DBObjectStore } from './indexed-db/index.js'
+import type { Key, SimpleStore, Value } from '@atproto-labs/simple-store'
+import { DB, type DBObjectStore } from './indexed-db/index.js'
 
 const storeName = 'store'
 type Item<V> = {
@@ -10,8 +10,7 @@ type Item<V> = {
 export class IndexedDBStore<
   K extends Extract<IDBValidKey, Key>,
   V extends Value,
-> implements SimpleStore<K, V>
-{
+> implements SimpleStore<K, V> {
   constructor(
     private dbName: string,
     protected maxAge = 600e3,

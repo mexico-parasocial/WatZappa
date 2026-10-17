@@ -393,6 +393,12 @@ export function validateModEventComment<V>(v: V) {
 /** Report a subject */
 export interface ModEventReport {
   $type?: 'tools.ozone.moderation.defs#modEventReport'
+  /** Moderator who submitted this appeal on behalf of the affected account. Returned by moderator event APIs. */
+  appealSubmittedBy?: string
+  /** Action reference type recorded when this appeal was submitted. */
+  appealActionType?: string
+  appealActionId?: number
+  appealLabel?: string
   comment?: string
   /** Set to true if the reporter was muted from reporting at the time of the event. These reports won't impact the reviewState of the subject. */
   isReporterMuted?: boolean

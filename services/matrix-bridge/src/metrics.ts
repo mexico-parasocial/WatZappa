@@ -2,6 +2,18 @@ import { Counter, Gauge, Histogram, Registry } from 'prom-client'
 
 export class BridgeMetrics {
   readonly registry = new Registry()
+  readonly pushReceiptResults = new Counter({
+    name: 'para_matrix_push_receipt_results_total',
+    help: 'Expo receipt outcomes; provider acceptance is not device delivery',
+    labelNames: ['result'],
+    registers: [this.registry],
+  })
+
+  readonly pushReceiptBatch = new Gauge({
+    name: 'para_matrix_push_receipt_due_batch',
+    help: 'Due receipt batch size, capped at 1000',
+    registers: [this.registry],
+  })
 
   readonly asTransactionsTotal = new Counter({
     name: 'bridge_as_transactions_total',
@@ -48,6 +60,12 @@ export class BridgeMetrics {
     name: 'para_matrix_retry_attempts_total',
     help: 'Total number of retry attempts for failed syncs',
     labelNames: ['event_type', 'status'],
+    registers: [this.registry],
+  })
+
+  readonly provisioningRetryBlocked = new Gauge({
+    name: 'para_matrix_provisioning_retry_blocked',
+    help: 'Provisioning jobs in the current retry batch that have failed at least five times (batch limited to 50)',
     registers: [this.registry],
   })
 

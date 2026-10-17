@@ -39,6 +39,7 @@ describe('account', () => {
         contactEmailAddress: 'abuse@example.com',
         termsOfServiceUrl: 'https://example.com/tos',
         privacyPolicyUrl: 'https://example.com/privacy-policy',
+        blobUploadLimit: 123_456,
       },
     })
     ctx = network.pds.ctx
@@ -64,6 +65,7 @@ describe('account', () => {
     expect(res.data.inviteCodeRequired).toBe(false)
     expect(res.data.availableUserDomains[0]).toBe('.test')
     expect(typeof res.data.inviteCodeRequired).toBe('boolean')
+    expect(res.data.blobUploadLimit).toBe(123_456)
     expect(res.data.links?.privacyPolicy).toBe(
       'https://example.com/privacy-policy',
     )
@@ -304,6 +306,41 @@ describe('account', () => {
         password,
       }),
     ).rejects.toThrow('Handle already taken: bob.test')
+  })
+
+  it('disallows the email and handle of a deactivated account', async () => {
+    const email = 'dan@test.com'
+    const handle = 'dan.test'
+    const password = 'test123'
+    const { data: account } = await agent.api.com.atproto.server.createAccount({
+      email,
+      handle,
+      password,
+    })
+
+    await agent.api.com.atproto.server.deactivateAccount(
+      {},
+      {
+        encoding: 'application/json',
+        headers: { authorization: `Bearer ${account.accessJwt}` },
+      },
+    )
+
+    await expect(
+      agent.api.com.atproto.server.createAccount({
+        email: 'erin@test.com',
+        handle,
+        password,
+      }),
+    ).rejects.toThrow(`Handle already taken: ${handle}`)
+
+    await expect(
+      agent.api.com.atproto.server.createAccount({
+        email,
+        handle: 'erin.test',
+        password,
+      }),
+    ).rejects.toThrow(`Email already taken: ${email}`)
   })
 
   it('validates input through lexicon schema', async () => {

@@ -27,6 +27,14 @@ const ctx = {
   events: bus,
   log,
   config: { matrixHsToken: hsToken },
+  // Explicit authority fixture for this isolated test; no deployed AppView credentials.
+  firehose: {
+    async refreshMembership(community: string, did: string) {
+      assert.equal(community, 'at://smoke/community/test')
+      assert.equal(did, 'did:plc:smoke')
+      await db.setCommunityMembership(did, community, 'active')
+    },
+  },
 } as unknown as RouteContext
 let lastTransaction: { url: string; body: string } | undefined
 let active = false

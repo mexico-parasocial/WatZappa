@@ -73,7 +73,8 @@ services:
   synapse-init:
     image: alpine:3
     container_name: para-matrix-init
-    command: ["sh", "-c", "mkdir -p /data/media_store && chown -R 991:991 /data"]
+    command:
+      ['sh', '-c', 'mkdir -p /data/media_store && chown -R 991:991 /data']
     volumes:
       - synapse_data:/data
     restart: 'no'
@@ -197,7 +198,7 @@ services:
     volumes:
       - ./deploy/matrix/element-config.json:/app/config.json:ro
     ports:
-      - '127.0.0.1:8082:80'  # 8080 belongs to MAS
+      - '127.0.0.1:8082:80' # 8080 belongs to MAS
     depends_on:
       - synapse
 
@@ -218,6 +219,8 @@ services:
       MATRIX_APPSERVICE_TOKEN: ${MATRIX_APPSERVICE_TOKEN:-}
       MATRIX_ENABLE_ENCRYPTION: ${MATRIX_ENABLE_ENCRYPTION:-false}
       M8_BASE_URL: ${M8_BASE_URL:-http://host.docker.internal:8787/v1}
+      BRIDGE_AUTHORITY_APPVIEW_URL: ${BRIDGE_AUTHORITY_APPVIEW_URL:-}
+      PARA_AUTHORITY_SERVICE_TOKEN: ${PARA_AUTHORITY_SERVICE_TOKEN:-}
       # The image chowns /app/data to `node`; mounting there (not /data) is
       # what makes a fresh named volume writable by the non-root process.
       BRIDGE_DB_PATH: /app/data/bridge.db

@@ -1,4 +1,4 @@
-// @ts-nocheck
+import { describe, expect, it } from 'vitest'
 import { RpcPermission } from './rpc-permission.js'
 
 describe('RpcPermission', () => {

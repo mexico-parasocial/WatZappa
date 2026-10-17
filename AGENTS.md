@@ -2,7 +2,7 @@
 
 ## Repository overview
 
-This is the TypeScript reference implementation of [AT Protocol](https://atproto.com), the decentralized social media protocol behind Bluesky. It is a pnpm monorepo (runtime floor Node.js ≥22; local dev and CI build/verify default to Node 22 via `.nvmrc` — only the test matrix runs on 22) containing client libraries, schema/codegen tooling, and the two main service implementations: the Personal Data Server (PDS) and the `app.bsky` AppView.
+This is the TypeScript reference implementation of [AT Protocol](https://atproto.com), the decentralized social media protocol behind Bluesky. It is a pnpm monorepo (runtime floor Node.js ≥22; local dev is pinned to the 22 major via `.nvmrc` and `devEngines`, upstream's own `.nvmrc` is 24) containing client libraries, schema/codegen tooling, and the two main service implementations: the Personal Data Server (PDS) and the `app.bsky` AppView.
 
 Workspace layout (see [pnpm-workspace.yaml](./pnpm-workspace.yaml) and [tsconfig.json](./tsconfig.json)):
 
@@ -11,7 +11,7 @@ Workspace layout (see [pnpm-workspace.yaml](./pnpm-workspace.yaml) and [tsconfig
 - [packages/oauth/\*](packages/oauth/) — OAuth client/provider implementations and JWK helpers.
 - [packages/internal/\*](packages/internal/) — `@atproto-labs/*` internal shared utilities (fetch, handle/identity/DID resolvers, simple-store, pipe, xrpc-utils).
 - [services/{pds,bsky,bsync,ozone}](services/) — thin runtime wrappers; the actual implementation code lives in `packages/{pds,bsky,bsync,ozone}`.
-- [lexicons/](lexicons/) — canonical JSON Lexicon schemas for `com.atproto.*`, `app.bsky.*`, `chat.bsky.*`, `tools.ozone.*`. These are the source-of-truth that codegen consumes.
+- [lexicons/](lexicons/) — the canonical JSON Lexicon schemas for `com.atproto.*` and `tools.ozone.*` **only** (this repo is their source of truth). Other namespaces (`app.bsky.*`, `chat.bsky.*`, …) are vendored per-package from the `bsky` repo or the network — see [Codegen](#codegen). [lexicons-overrides/](lexicons-overrides/) holds local override documents shared across packages.
 - [interop-test-files/](interop-test-files/) — language-neutral protocol conformance fixtures, copied from [bluesky-social/atproto-interop-tests](https://github.com/bluesky-social/atproto-interop-tests/) (their canonical source, shared across SDKs). Don't edit unless changing protocol-level behavior; any edit must also be contributed upstream.
 
 ## Common commands
@@ -55,17 +55,35 @@ Run the formatter/linter once the work is complete: when about to commit, or whe
 
 ## Tests
 
+For Ozone integration tests, verify state through existing endpoints (for example, `queryEvents` for appeal events and `queryReports` for report state). Use direct database access only for fixtures that cannot be created through an API, or for tests specifically exercising database behavior.
+
 Before writing or extending any test, invoke the `testing` skill ([.agents/skills/testing/SKILL.md](.agents/skills/testing/SKILL.md)). It covers runner selection (vitest vs jest), file layout, and tsconfig setup. For browser-driven UI tests, or for demoing/debugging the OAuth flows or the Account Manager interface, invoke the `playwright` skill ([.agents/skills/playwright/SKILL.md](.agents/skills/playwright/SKILL.md)) instead.
 
 ## Codegen
 
-After editing anything under [lexicons/](lexicons/), or any `.proto` file, run `pnpm codegen` from the repo root.
+The repo-root [lexicons/](lexicons/) holds the canonical `com.atproto.*` / `tools.ozone.*` schemas **only** — this repo is their source of truth. Every other namespace (`app.bsky.*`, `chat.bsky.*`, `site.standard.*`, …) is vendored **per package**: each package lists the NSIDs it needs and where to resolve them (the root `lexicons` directory, the `bsky` GitHub repo, the network, or the shared [lexicons-overrides/](lexicons-overrides/)) in its own committed `lexicons.json`. A package's `prebuild` runs `lex install --ci` (resolving JSON into its gitignored `./lexicons`) then `lex build` (generating the gitignored `./src/lexicons` TypeScript tree that code imports). **Full how-to: the ["Working with lexicons"](CONTRIBUTING.md#working-with-lexicons) section of CONTRIBUTING.md and the `lex-setup` skill.**
 
-The lexicon JSON schemas are derived into TypeScript runtime schemas by `@atproto/lex` (`lex build`, wired through each package's `prebuild`).
+- **Add/refresh an external lexicon in a package:** `cd packages/<pkg> && pnpm lex:install <nsid>` (adds it plus transitive deps); `pnpm lex:update` refreshes installed ones.
+- **Edit a canonical lexicon:** change it under [lexicons/](lexicons/), then run `pnpm lex:update-local` from the repo root to propagate the new CID into every dependent package's `lexicons.json`. (After editing a `.proto` file instead, run `pnpm codegen` from the root.)
 
-For working with that SDK, invoke the focused skills under [.agents/skills/](.agents/skills/): `lex-setup` (install/build config), `lex-schema` and `lex-data` (schemas and values), `lex-client` (calls out), `xrpc-server` (defining server routes), and `lexification-client` / `lexification-server` (migrating off the legacy stack). To sync `chat.bsky.*` schemas from the chat repo, use `update-chat-lexicons`.
+For working with the generated SDK, invoke the focused skills under [.agents/skills/](.agents/skills/): `lex-setup` (lexicons.json / resolvers / codegen wiring), `lex-schema` and `lex-data` (schemas and values), `lex-client` (calls out), `xrpc-server` (defining server routes), and `lexification-client` / `lexification-server` (migrating off the legacy stack). To sync `chat.bsky.*` schemas from the chat repo, use `update-chat-lexicons`.
 
 ## Architecture notes
+
+- Community authority comes from verified authority-event chains; self-authored
+  membership roles never grant offices. `PARA_AUTHORITY_SERVICE_TOKEN` is a
+  dedicated read credential for the bridge's specified-subject authorization
+  query; redact its header, disable caching, and never reuse admin/M8 credentials.
+  Assembly-decision grants stay closed until a trusted tally verifier exists.
+
+- Pilot planning: read [docs/QUARTER_PLAN_2026Q4.md](docs/QUARTER_PLAN_2026Q4.md)
+  and its evidence before auditing or scheduling work. It is the canonical
+  remaining-work queue, re-baselined 2026-10-05; the old sprint calendars are
+  superseded. Inspect only relevant changes, distinguish implemented/tested/
+  merged/deployed, and remove closed actions from active roadmaps while retaining
+  linked evidence. Trusted-role fixes are integrated locally in the active branch
+  at `d11fa24f1` (2026-10-06); release selection and homeserver acceptance remain
+  open. Do not re-integrate the old worktrees or repeat the completed source audit.
 
 - Public cabildeo and policy votes require `verifyPublicBallotProof` before PDS
   preparation and AppView indexing, including foreign repositories. A policy
@@ -73,6 +91,14 @@ For working with that SDK, invoke the focused skills under [.agents/skills/](.ag
   is operator configuration; absent/unavailable verification must never fall
   back to account-only deduplication. This MAC authorization is not anonymous
   voting. `civic.delegation` carrying `signal` is also refused by the shared policy.
+
+- The dev-env seed (`packages/dev-env/src/seed/para-policies.ts`) adds policies
+  filed under each of the six official matter groups and casts public policy
+  ballots from the demo accounts, leaning by party. The proofs come from the
+  dev-env verifier (`devPolicyVoteProof`), signed with a key that exists only
+  there. `com.para.civic.getPolicyCommunityVotes` (hand-registered in
+  `api/com/para/civic/schemas.ts`) reads `para_policy_vote` joined to active
+  `para_community_membership`; it is gated to members of that community.
 
 - `packages/bsky/src/governance-lab` is a synthetic reference only. Its
   `g1-follow-signal-v1` policy is provisional; never import it into production
@@ -85,13 +111,16 @@ For working with that SDK, invoke the focused skills under [.agents/skills/](.ag
   against differencing aggregates. Delegation payloads must bind the delegator
   to the repository owner before indexing voting power.
 
-- **Lexicons are the contract.** The JSON files in [lexicons/](lexicons/) drive both client types and server route validation. Service packages don't hand-write XRPC method signatures — they import the generated definitions from their `src/lexicons/` directory (gitignored / regenerated).
+- **Lexicons are the contract.** Lexicon schemas drive both client types and server route validation. Service packages don't hand-write XRPC method signatures — they import the generated definitions from their `src/lexicons/` directory (gitignored; regenerated from the package's `lexicons.json` — see [Codegen](#codegen)).
 - **bsky legacy route registry is frozen.** The generated `Server` + typed handlers in `packages/bsky/src/lexicon/` (legacy lexgen output) can no longer be regenerated — `lex build` writes the runtime schema tree to `src/lexicons/` instead. To serve an XRPC method the registry predates: install its `LexiconDoc` via `server.addLexicons(...)` (see `packages/bsky/src/api/com/para/community/civicTree/schemas.ts`) and register the handler with `server.xrpc.method(nsid, cfg)` (see the post-subscription endpoints for the existing pattern). Bind write-endpoint DIDs to `auth.credentials.iss`, never the payload.
 - ([packages/pds](packages/pds)) — a single-tenant atproto server: account management, repo storage (kysely-over-sqlite), actor storage (kysely-over-postgres), email, OAuth provider, blob storage. Runtime entry point is [services/pds](services/pds); production code is in `packages/pds/src`.
 - Outbound requests to a URL resolved from a DID document are untrusted. Make them with `ctx.safeClient(url).xrpc(…)`, never a bare `xrpc(url, …)`, which uses the global fetch and bypasses the https-only/unicast-only checks. (`ctx.proxyAgent` is a separate thing — an undici `Dispatcher` used by pipethrough.)
 - ([packages/bsky](packages/bsky)) — read-side service for `app.bsky.*` queries (timelines, profiles, feed generators, hydration pipeline, GraphQL-like view composition). Talks to PDSes via XRPC and to `bsync` via Connect-RPC (protobuf in `packages/bsky/proto`). Runtime entry point in [services/bsky](services/bsky).
+  - `app.bsky.feed.getFeed` forwards passthrough headers to a feed generator only when its record's service DID is in `bskyFeedgenDids`; Iris routing overrides do not grant permission.
 - ([packages/bsync](packages/bsync)) — internal service for cross-AppView synchronization (mutes, notifications). Connect-RPC interface.
 - ([packages/ozone](packages/ozone)) — moderation service for `tools.ozone.*`.
+  - Design viewer queries for hundreds of millions of moderation events and tens of millions of reports. Batch hydration, bound returned rows, and check query plans against existing indexes before proposing new ones. Keep viewer projections explicit and test ownership and private-field isolation through the API.
+- Large report-table backfills run in the daemon as bounded primary-key batches. Lock a `job_cursor` row and commit each batch; schema migrations should add nullable columns only. After legacy report writers have rolled off, run `UPDATE job_cursor SET cursor = NULL WHERE job = 'report_reporter_did_backfill'` for a catch-up sweep. Advance past rows with missing or invalid source events and log their counts so they cannot stall the worker.
 - **Spaces is pinned, not forked.** `packages/space` and the `com.atproto.space` / `simplespace` lexicons are unmodified copies of the reference at the commit in [packages/space/SOURCE](packages/space/SOURCE), the one vlpds tracks; its vectors test checks the wire against vlpds. Never edit them in place: move the pin as SOURCE describes.
 - **The PDS hosts only its accounts' own space repos** ([api/com/atproto/space](packages/pds/src/api/com/atproto/space)), behind `PDS_SPACES_ENABLED`. Their auth is `authVerifier.spaceAuthorization` (OAuth only, CD-P3); the handler checks the `space:` grant. Writes go only into spaces the writer governs and may not carry blobs. Any other `com.atproto.space.*` / `simplespace.*` method answers 501 in `pipethrough.ts` and is never proxied, and `getServiceAuth` refuses them. Space tables arrive by migration, so handlers call `actorStore.ensureLatestSchema` first. It also runs a simplespace host for spaces the account owns ([simplespace](packages/pds/src/simplespace)): member-list policy only, no members besides the owner until credentials exist.
 - **Space-only collections** (`SPACE_ONLY_COLLECTIONS` in `packages/pds/src/repo/prepare.ts`, today `com.para.collection.record`) are refused in a public repo. Private PARA data gets a record lexicon in this set, never a visibility flag (CD-P2).
@@ -101,7 +130,8 @@ For working with that SDK, invoke the focused skills under [.agents/skills/](.ag
 
 **Code style rules live in [STYLE_GUIDE.md](./STYLE_GUIDE.md)** — imports, typing, dependencies, change scope, and formatting. Read it before writing code. The rest of this section covers repository mechanics only.
 
-- Node ≥22 runtime floor for published packages; **local dev is pinned to 22.x** (`devEngines.runtime`, `onFail: error`), so `pnpm` refuses to run on any other major — `nvm use` picks it up from `.nvmrc`. Native modules are compiled per Node ABI: after switching versions, `pnpm rebuild better-sqlite3`, or the pds/bsky test suites fail to boot. Use `node --enable-source-maps` for production-style runs.
+- Node ≥22 runtime floor for published packages; **local dev is pinned to 22.x** (`devEngines.runtime`, `onFail: error`), so `pnpm` refuses to run on any other major — `nvm use` picks it up from `.nvmrc`. This is narrower than upstream, whose `devEngines.runtime` is a `>=22.12.0` floor and whose `.nvmrc` is 24; the pin is deliberate, so do not widen it to make a tool happy. Native modules are compiled per Node ABI: after switching versions, `pnpm rebuild better-sqlite3`, or the pds/bsky test suites fail to boot. Use `node --enable-source-maps` for production-style runs.
+- **`natural` is loaded on first use in `discourse-nlp.ts`, through `createRequire`. Keep it that way.** Its `SentimentAnalyzer` does `require('afinn-165')`, which is ESM-only: plain Node handles that from 22.12 on, but jest's registry cannot `require()` ESM before Node 24.9, so a top-level import made every suite that merely reaches that file fail to load — ozone's included, since its fixtures pull `@atproto/bsky` in through dev-env, and none of them call `analyzeDiscourse`. `createRequire` resolves through Node's own loader rather than the runner's, which is the one that supports `require(esm)` on the pinned Node 22. A plain top-level `import` there breaks the ozone suites again.
 - TypeScript compilation uses the native TS7 `tsc` (the standard `typescript` package). There is no per-package `typescript` devDependency — it is hoisted at the root. Note TS7 has no stable programmatic API yet; tools needing one must pin TS6.
 - **Every package touched by a change needs a changeset entry.** Add a file under [.changeset/](.changeset/) listing each modified package with an appropriate bump level (pre-v1 breaking changes are `minor` and everything else `patch`, post-v1 `major` for breaking changes, `minor` for new public API, `patch` otherwise). Dependency-only bumps are generated automatically — don't list them by hand. Create that file with `pnpm changeset`.
 - **Never buffer an unbounded stream from outside the process.** Decoding or buffering a request/response body that did not originate locally requires an explicit size bound on the _decoded_ bytes — a wire-size cap does not bound a compressed payload. Compose `createDecoders` with `MaxSizeChecker` in a `pipeline` (see `packages/xrpc-server/src/util.ts`), rather than passing a decoded stream straight to `streamToNodeBuffer`.
@@ -110,9 +140,9 @@ For working with that SDK, invoke the focused skills under [.agents/skills/](.ag
 
 Agent files — this `AGENTS.md`, the skills under [.agents/skills/](.agents/skills/), and any package-level equivalents — are part of the codebase and must stay in sync with it.
 
-- **New pattern introduced** → document it in the relevant agent file (package-specific if scoped, global otherwise) so it can be re-applied.
-- **Existing important pattern found undocumented** → add it.
-- **Concept removed** → remove it from the agent files in the same change. Reviewers should check for this (see [.github/claude-review-prompt.md](.github/claude-review-prompt.md)).
+- Keep working plans, handoffs, review reports, query-plan captures, and other session scratch files outside the repository, such as in the workspace directory containing the checkout. Do not add repository ignore rules for them. Never commit them. Before committing, inspect the staged file list for working documents; put only durable project guidance in tracked documentation.
+
+- These files capture **important architectural patterns and conventions** — the non-obvious rules, invariants, and cross-cutting decisions an expert needs that are _not_ evident from reading the code itself. They are not a changelog of behavior, and must not restate anything a reader can infer directly from the code (a route's signature, a function's arguments, what a module exports). Most changes need no update: don't document a new route, metric, migration, or test that simply re-applies an existing pattern. Reach for an edit only when a change establishes, meaningfully alters, or removes such an architectural pattern, and prefer doing it when wrapping up rather than mid-task. If you do, update the file that owns it (repo-wide → this file or [STYLE_GUIDE.md](./STYLE_GUIDE.md); scoped to one package → that package's nested `AGENTS.md`; a workflow an agent follows → the relevant skill), and delete guidance a change makes obsolete in the same pass — stale guidance is worse than none. Reviewers check for drift as a backstop (see [.github/claude-review-prompt.md](.github/claude-review-prompt.md)).
 - Keep them **as concise as possible**: only the minimal directives an expert needs. No tutorials, no restating what the code already says.
 
 ## Troubleshooting

@@ -409,6 +409,7 @@ describe('oauth', () => {
 
     await page.waitForNetworkIdle()
   })
+
   describe('with 2FA', () => {
     let jane
 

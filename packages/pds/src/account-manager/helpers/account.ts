@@ -26,7 +26,6 @@ export type ActorAccount = ActorEntry & {
   emailConfirmedAt: string | null
   emailAuthFactorAt: string | null
   invitesDisabled: 0 | 1 | null
-  authFactorType: 'email' | 'im8' | null
 }
 
 export type AvailabilityFlags = {
@@ -70,7 +69,6 @@ export const selectAccountQB = (db: AccountDb, flags?: AvailabilityFlags) => {
       'account.emailConfirmedAt',
       'account.invitesDisabled',
       'account_email_auth_factor.emailAuthFactorEnabledAt as emailAuthFactorAt',
-      'account.authFactorType',
     ])
 }
 
@@ -149,7 +147,9 @@ export const registerActor = async (
       .returning('did'),
   )
   if (!registered) {
-    throw new UserAlreadyExistsError()
+    throw new UserAlreadyExistsError(
+      'Handle is already in use, please choose a different handle.',
+    )
   }
 }
 
@@ -268,16 +268,6 @@ export const setEmailConfirmedAt = async (
       .updateTable('account')
       .set({ emailConfirmedAt })
       .where('did', '=', did),
-  )
-}
-
-export const updateAuthFactorType = async (
-  db: AccountDb,
-  did: DidString,
-  authFactorType: 'email' | 'im8' | null,
-) => {
-  await db.executeWithRetry(
-    db.db.updateTable('account').set({ authFactorType }).where('did', '=', did),
   )
 }
 

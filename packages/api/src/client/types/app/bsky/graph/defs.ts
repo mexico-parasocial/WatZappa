@@ -72,6 +72,8 @@ export interface ListItemView {
   $type?: 'app.bsky.graph.defs#listItemView'
   uri: string
   subject: AppBskyActorDefs.ProfileView
+  /** Set to true when the subject has opted out of appearing in the reference list. Only set when the viewer owns the list. */
+  subjectOptedOut?: true
 }
 
 const hashListItemView = 'listItemView'
@@ -149,6 +151,8 @@ export interface ListViewerState {
   $type?: 'app.bsky.graph.defs#listViewerState'
   muted?: boolean
   blocked?: string
+  /** The authenticated viewer's app.bsky.graph.referencelistoptout record URI for this reference list. Only set for reference lists. A client can delete this record to undo the opt-out. */
+  referenceListOptOut?: string
 }
 
 const hashListViewerState = 'listViewerState'

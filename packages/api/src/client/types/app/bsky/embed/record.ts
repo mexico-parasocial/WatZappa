@@ -77,6 +77,10 @@ export interface ViewRecord {
   repostCount?: number
   likeCount?: number
   quoteCount?: number
+  /** The 1-indexed position of this post within the contiguous OP thread. Only present when this post is part of the OP thread. */
+  opThreadPostIndex?: number
+  /** The total number of posts in the contiguous OP thread that this post belongs to. Only present when this post is part of the OP thread. */
+  opThreadPostCount?: number
   embeds?: (
     | $Typed<AppBskyEmbedImages.View>
     | $Typed<AppBskyEmbedVideo.View>

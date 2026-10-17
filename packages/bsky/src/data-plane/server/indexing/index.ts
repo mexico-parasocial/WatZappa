@@ -43,8 +43,8 @@ import * as NotifDeclaration from './plugins/notif-declaration.js'
 import * as OpenQuestionVote from './plugins/open-question-vote.js'
 import * as OpenQuestion from './plugins/open-question.js'
 import * as ParaCommunityActivity from './plugins/para-community-activity.js'
-import * as ParaCommunityBoard from './plugins/para-community-board.js'
 import * as ParaCommunityAuthorityEvent from './plugins/para-community-authority-event.js'
+import * as ParaCommunityBoard from './plugins/para-community-board.js'
 import * as ParaCommunityBriefingPack from './plugins/para-community-briefing-pack.js'
 import * as ParaCommunityGovernance from './plugins/para-community-governance.js'
 import * as ParaCommunityMembership from './plugins/para-community-membership.js'
@@ -63,12 +63,14 @@ import * as ParaQvlVote from './plugins/para-qvl-vote.js'
 import * as ParaStatus from './plugins/para-status.js'
 import * as Postgate from './plugins/post-gate.js'
 import * as Post from './plugins/post.js'
+import * as ProfileLink from './plugins/profile-link.js'
 import * as Profile from './plugins/profile.js'
 import * as RaqAssessment from './plugins/raq-assessment.js'
 import * as RaqAxisVote from './plugins/raq-axis-vote.js'
 import * as RaqProposalAnswer from './plugins/raq-proposal-answer.js'
 import * as RaqProposalVote from './plugins/raq-proposal-vote.js'
 import * as RaqProposal from './plugins/raq-proposal.js'
+import * as ReferenceListOptOut from './plugins/reference-list-opt-out.js'
 import * as Repost from './plugins/repost.js'
 import * as StarterPack from './plugins/starter-pack.js'
 import * as Status from './plugins/status.js'
@@ -86,6 +88,7 @@ export class IndexingService {
     profile: Profile.PluginType
     list: List.PluginType
     listItem: ListItem.PluginType
+    referenceListOptOut: ReferenceListOptOut.PluginType
     listBlock: ListBlock.PluginType
     block: Block.PluginType
     feedGenerator: FeedGenerator.PluginType
@@ -94,6 +97,7 @@ export class IndexingService {
     notifDeclaration: NotifDeclaration.PluginType
     chatDeclaration: ChatDeclaration.PluginType
     germDeclaration: GermDeclaration.PluginType
+    profileLink: ProfileLink.PluginType
     verification: Verification.PluginType
     status: Status.PluginType
     openQuestion: OpenQuestion.PluginType
@@ -148,6 +152,10 @@ export class IndexingService {
       profile: Profile.makePlugin(this.db, this.background),
       list: List.makePlugin(this.db, this.background),
       listItem: ListItem.makePlugin(this.db, this.background),
+      referenceListOptOut: ReferenceListOptOut.makePlugin(
+        this.db,
+        this.background,
+      ),
       listBlock: ListBlock.makePlugin(this.db, this.background),
       block: Block.makePlugin(this.db, this.background),
       feedGenerator: FeedGenerator.makePlugin(this.db, this.background),
@@ -156,6 +164,7 @@ export class IndexingService {
       notifDeclaration: NotifDeclaration.makePlugin(this.db, this.background),
       chatDeclaration: ChatDeclaration.makePlugin(this.db, this.background),
       germDeclaration: GermDeclaration.makePlugin(this.db, this.background),
+      profileLink: ProfileLink.makePlugin(this.db, this.background),
       verification: Verification.makePlugin(this.db, this.background),
       status: Status.makePlugin(this.db, this.background),
       openQuestion: OpenQuestion.makePlugin(this.db, this.background),
@@ -527,6 +536,10 @@ export class IndexingService {
     // lists
     await this.db.db
       .deleteFrom('list_item')
+      .where('creator', '=', did)
+      .execute()
+    await this.db.db
+      .deleteFrom('reference_list_opt_out')
       .where('creator', '=', did)
       .execute()
     await this.db.db.deleteFrom('list').where('creator', '=', did).execute()

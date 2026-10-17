@@ -7,6 +7,7 @@ import { ChatModerationEngine } from '../src/chat-moderation.js'
 import type { IBridgeDatabase } from '../src/db/interface.js'
 import { PgBridgeDatabase } from '../src/db/pg/index.js'
 import { SqliteBridgeDatabase } from '../src/db/sqlite-wrapper.js'
+import type * as M8Auth from '../src/m8-auth.js'
 import type { RouteContext } from '../src/routes/context.js'
 import {
   apiModerationReportHandler,
@@ -16,7 +17,7 @@ import {
 // The authenticated caller; each test may switch it (reporter or moderator).
 const auth = vi.hoisted(() => ({ did: 'did:plc:reporter' }))
 vi.mock('../src/m8-auth.js', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../src/m8-auth.js')>()),
+  ...(await importOriginal<typeof M8Auth>()),
   authenticateM8: async () => ({ did: auth.did }),
 }))
 
@@ -93,6 +94,7 @@ describe.each([
     }
     ctx = {
       db,
+      firehose: { refreshMembership: async () => {} },
       config: { port: 3001 },
       chatMod: new ChatModerationEngine(db, log),
       log,
@@ -222,7 +224,8 @@ describe.each([
         'moderator',
       ])
       await db.setCommunityMembership(secondReporter, community, 'active', [])
-      // Two people report the same message, one of them twice.
+      // Two people report the same message, one of them twice. The repeat is
+      // one person's report, so it is not counted again.
       for (const [who, reason] of [
         [reporter, 'harassment'],
         [secondReporter, 'harassment'],
@@ -257,9 +260,9 @@ describe.each([
       expect(message).toMatchObject({
         reportedDid: author.did,
         matrixRoomId: room,
-        reportCount: 3,
+        reportCount: 2,
         reporterCount: 2,
-        reasons: { harassment: 2, spam: 1 },
+        reasons: { harassment: 2 },
       })
       const member = reports.find(
         (r: { matrixEventId: string | null }) => r.matrixEventId === null,

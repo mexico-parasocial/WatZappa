@@ -98,6 +98,8 @@ export interface ProfileViewDetailed {
   viewer?: ViewerState
   labels?: ComAtprotoLabelDefs.Label[]
   pinnedPost?: ComAtprotoRepoStrongRef.Main
+  /** The profile's links, in display order. Links that were taken down or don't resolve are left out. */
+  links?: ProfileLinkView[]
   verification?: VerificationState
   status?: StatusView
   /** Debug information for internal development */
@@ -165,6 +167,29 @@ export function isProfileAssociatedGerm<V>(v: V) {
 
 export function validateProfileAssociatedGerm<V>(v: V) {
   return validate<ProfileAssociatedGerm & V>(v, id, hashProfileAssociatedGerm)
+}
+
+export interface ProfileLinkView {
+  $type?: 'app.bsky.actor.defs#profileLinkView'
+  /** The app.bsky.actor.link record, e.g. for reporting the link. */
+  uri: string
+  cid: string
+  /** The link destination. */
+  url: string
+  title?: string
+  /** Image URL for the destination site's icon. */
+  icon?: string
+  labels?: ComAtprotoLabelDefs.Label[]
+}
+
+const hashProfileLinkView = 'profileLinkView'
+
+export function isProfileLinkView<V>(v: V) {
+  return is$typed(v, id, hashProfileLinkView)
+}
+
+export function validateProfileLinkView<V>(v: V) {
+  return validate<ProfileLinkView & V>(v, id, hashProfileLinkView)
 }
 
 export interface ProfileAssociatedActivitySubscription {

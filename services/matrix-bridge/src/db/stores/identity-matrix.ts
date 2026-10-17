@@ -63,6 +63,11 @@ export interface IdentityMatrixStore {
     roles?: string[],
   ): Promise<void>
 
+  listCommunityMemberships(
+    limit: number,
+    offset: number,
+  ): Promise<Array<{ did: string; communityUri: string }>>
+
   getCommunityMembership(
     did: string,
     communityUri: string,
@@ -89,7 +94,9 @@ export interface IdentityMatrixStore {
 
   getExpiredCommunityMembershipLeases(
     cutoffIso: string,
-  ): Promise<Array<{ communityUri: string; mxid: string; lastVerifiedAt: string }>>
+  ): Promise<
+    Array<{ communityUri: string; mxid: string; lastVerifiedAt: string }>
+  >
 
   deleteCommunityMembershipLease(
     communityUri: string,

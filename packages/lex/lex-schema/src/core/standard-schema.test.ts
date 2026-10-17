@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { assert, describe, expect, it } from 'vitest'
 import { array } from '../schema/array.js'
 import { integer } from '../schema/integer.js'

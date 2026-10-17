@@ -6,6 +6,14 @@ planificación original; el trabajo comenzó antes. Preparado el 20 de septiembr
 
 Avance y evidencias: [bitácora de ejecución](./GOVERNANCE-G1-EXECUTION.md).
 
+**Rebase del 5 de octubre de 2026:** el
+[plan trimestral](./QUARTER_PLAN_2026Q4.md) ya registra la sustitución de capacidad
+de S3 y mantiene una sola cola de trabajo pendiente. Las fechas y la secuencia
+de este documento son la propuesta histórica, no un segundo calendario vigente.
+G1 continúa abierto según su bitácora; no reiniciar el motor ni el diagnóstico
+ya realizados. Su continuación compite con la integración de identidad y el
+piloto; G2 depende de reglas resueltas y no tiene fecha de producción prometida.
+
 Base: [revisión de producción](./GOVERNANCE-PRODUCTION-REVIEW-2026-09-20.md),
 [plan trimestral](./QUARTER_PLAN_2026Q4.md) y
 [decisiones de voto privado OD-7](./OD-7-BALLOT-IDENTITY-REGISTRATION.md).
@@ -28,9 +36,8 @@ sistema de voto privado ni un resultado vinculante.
   un especialista cuya disponibilidad aún no está confirmada.
 - Este alcance **sustituye la capacidad de S3**, no se suma al trabajo existente.
   MAS, `para-idp` y el grant M8 de S3 necesitarían reprogramación o capacidad
-  adicional. El plan trimestral no se modifica automáticamente. Si S3 conserva
-  su alcance actual, este plan pasa a la siguiente ventana con capacidad; no
-  se mantiene la misma fecha prometiendo ambas cargas.
+  adicional. El rebase del 5 de octubre ya recoge ese desplazamiento en el plan
+  trimestral. No se mantiene la misma fecha prometiendo ambas cargas.
 
 El sprint resuelve la ambigüedad funcional, implementa una referencia comprobable
 y cierra rutas inseguras alcanzables. **No promete resolver y auditar toda la

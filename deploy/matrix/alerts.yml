@@ -1,0 +1,34 @@
+groups:
+  - name: para-community-chat
+    rules:
+      - alert: ParaMatrixBridgeUnavailable
+        expr: up{job="matrix-bridge"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Community messaging bridge is unavailable
+          description: Check bridge supervision, AppView authority credentials, and PDS source/database binding before restarting. Preserve the data profile and cursor.
+      - alert: ParaMatrixProvisioningBlocked
+        expr: para_matrix_provisioning_retry_blocked > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Community rooms repeatedly fail to provision
+          description: Inspect create_space failures in sync_log and Synapse health or alias ownership. Jobs remain durable and retry automatically; do not reset the firehose cursor.
+      - alert: ParaMatrixPushProviderFailure
+        expr: increase(para_matrix_push_receipt_results_total{result=~"failed|check_error"}[10m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Chat push provider acceptance could not be confirmed
+          description: Check Expo receipts and push credentials. A ticket alone does not establish device delivery.
+      - alert: ParaMatrixPushReceiptBacklog
+        expr: para_matrix_push_receipt_due_batch >= 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Chat receipt checks remain at the batch limit

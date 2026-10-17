@@ -2,21 +2,15 @@ import { isAtprotoDid } from '@atproto/did'
 import { LexResolverError } from '@atproto/lex-resolver'
 import type { Account } from '@atproto/oauth-provider-api'
 import { isAtprotoOauthScope } from '@atproto/oauth-scopes'
-import {
+import type {
   OAuthAuthorizationRequestParameters,
   OAuthAuthorizationServerMetadata,
 } from '@atproto/oauth-types'
 import { isValidHandle } from '@atproto/syntax'
-import { ClientAuth } from '../client/client-auth.js'
-import { ClientId } from '../client/client-id.js'
-import { Client } from '../client/client.js'
-import {
-  AUTHORIZATION_INACTIVITY_TIMEOUT,
-  NODE_ENV,
-  PAR_EXPIRES_IN,
-  TOKEN_MAX_AGE,
-} from '../oauth-constants.js'
-import { DeviceId } from '../device/device-id.js'
+import type { ClientAuth } from '../client/client-auth.js'
+import type { ClientId } from '../client/client-id.js'
+import type { Client } from '../client/client.js'
+import type { DeviceId } from '../device/device-id.js'
 import { AccessDeniedError } from '../errors/access-denied-error.js'
 import { AuthorizationError } from '../errors/authorization-error.js'
 import { ConsentRequiredError } from '../errors/consent-required-error.js'
@@ -24,19 +18,25 @@ import { InvalidAuthorizationDetailsError } from '../errors/invalid-authorizatio
 import { InvalidGrantError } from '../errors/invalid-grant-error.js'
 import { InvalidRequestError } from '../errors/invalid-request-error.js'
 import { InvalidScopeError } from '../errors/invalid-scope-error.js'
-import { LexiconManager } from '../lexicon/lexicon-manager.js'
-import { RequestMetadata } from '../lib/http/request.js'
-import { OAuthHooks } from '../oauth-hooks.js'
-import { Signer } from '../signer/signer.js'
-import { Code, generateCode } from './code.js'
+import type { LexiconManager } from '../lexicon/lexicon-manager.js'
+import type { RequestMetadata } from '../lib/http/request.js'
 import {
-  RequestDataAuthorized,
+  AUTHORIZATION_INACTIVITY_TIMEOUT,
+  NODE_ENV,
+  PAR_EXPIRES_IN,
+  TOKEN_MAX_AGE,
+} from '../oauth-constants.js'
+import type { OAuthHooks } from '../oauth-hooks.js'
+import type { Signer } from '../signer/signer.js'
+import { type Code, generateCode } from './code.js'
+import {
+  type RequestDataAuthorized,
   isRequestDataAuthorized,
 } from './request-data.js'
 import { generateRequestId } from './request-id.js'
-import { RequestStore, UpdateRequestData } from './request-store.js'
+import type { RequestStore, UpdateRequestData } from './request-store.js'
 import {
-  RequestUri,
+  type RequestUri,
   decodeRequestUri,
   encodeRequestUri,
 } from './request-uri.js'
@@ -181,7 +181,7 @@ export class RequestManager {
     // the fact that the AS does not know how to properly display those scopes
     // to the user, so it cannot properly ask for consent.
     const scope =
-      [...scopes].filter(isAtprotoOauthScope).join(' ') || undefined
+      Array.from(scopes).filter(isAtprotoOauthScope).join(' ') || undefined
     parameters = { ...parameters, scope }
 
     if (parameters.code_challenge) {

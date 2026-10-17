@@ -21,6 +21,8 @@ export type QueryParams = {}
 export interface InputSchema {
   name: string
   quadrant: string
+  /** Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state. */
+  region?: string
   description?: string
   /** User-provided name for the internal starter pack tracking founding members. If absent, a default name will be generated. */
   founderStarterPackName?: string

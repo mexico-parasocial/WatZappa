@@ -17,6 +17,7 @@ import { ChatModerationEngine } from '../chat-moderation.js'
 function stubDb() {
   return {
     insertModerationEvent: vi.fn(async () => {}),
+    hasReportFrom: vi.fn(async () => false),
   } as any
 }
 

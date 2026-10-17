@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, expect, it, vi } from 'vitest'
 import { IssueCustom } from '../core.js'
 import { custom } from './custom.js'

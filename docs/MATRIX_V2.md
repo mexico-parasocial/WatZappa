@@ -1,5 +1,20 @@
 # Matrix v2
 
+**Planning note — 2026-10-06:** use
+[QUARTER_PLAN_2026Q4.md](./QUARTER_PLAN_2026Q4.md) for current remaining work and
+the inspected branch/worktree baseline. This document retains historical v1
+findings and design decisions; they are not a current sprint backlog or proof
+of deployment. OD-6/table deletion and local MAS are implemented. F9's route
+checks do not close the separate self-declared-role ingestion defect. The
+recorded bridge/AppView fixes are now integrated into the active development
+branch at `d11fa24f1`; release selection and actual homeserver acceptance remain
+open before claiming deployed trusted authorization.
+
+The paired PARA/M8 login candidate is now committed and locally tested; see
+[implementation and remaining acceptance](./M8-LOGIN-EXECUTION-2026-10-05.md).
+Real-provider and supported-client staging evidence remain open. This login
+session is distinct from the client's Matrix MAS/OIDC session.
+
 Status: **Phase 1 in progress.** This document is the reference for the Matrix
 v2 upgrade described in `para-matrix-v2-plan.md`. It records what v1 actually
 is (§1–2), what we do and do not guarantee (§3), the derivation the whole
@@ -267,7 +282,15 @@ handlers. The port is published on `127.0.0.1` only, so this is a finding and
 not an incident — confirm the Caddy/nginx front end does not proxy `/api`
 before relying on that.
 
-**F9 — the bridge authenticates but does not authorize.** *(fixed)*
+**F9 — the bridge authenticates but does not authorize.** *(route checks implemented; trusted role candidate tested, release/staging acceptance open as of 2026-10-05)*
+
+The resolution below describes route/resource checks. The main feature checkout
+still accepts self-authored membership roles until the tested candidate is
+integrated. `fix/bridge-self-declared-roles` at `7f485158b` contains the paired
+AppView/bridge fix and existing-state remediation; the creator-only interim
+restriction has been replaced. See the [execution record](./TRUSTED-AUTHORITY-EXECUTION-2026-10-05.md)
+and canonical P0 for validation and remaining real-homeserver acceptance.
+
 With F6 and F8 closed, every `/api` endpoint requires a valid M8 session. Almost
 none of them check that the caller is *entitled to the specific resource*: any
 authenticated user can read any community's member list, moderation dashboard,

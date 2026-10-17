@@ -1,6 +1,10 @@
-// @ts-nocheck
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { DidString, Infer, Unknown$Type, Unknown$TypedObject } from '../core.js'
+import type {
+  DidString,
+  Infer,
+  Unknown$Type,
+  Unknown$TypedObject,
+} from '../core.js'
 import { integer } from './integer.js'
 import { object } from './object.js'
 import { optional } from './optional.js'
@@ -103,10 +107,10 @@ describe('RecordSchema', () => {
     it('properly discriminates Unknown$TypeObject', () => {
       function foo(value: Unknown$TypedObject | Schema) {
         if (schema.isTypeOf(value)) {
-          value.text
+          void value.text
         } else {
           // @ts-expect-error
-          value.text
+          void value.text
         }
       }
 
@@ -482,7 +486,6 @@ describe('RecordSchema', () => {
       'any',
       'app.bsky.feed.post',
       object({
-        $type: string(),
         text: string({ maxLength: 300 }),
         createdAt: string({ format: 'datetime' }),
       }),
@@ -585,7 +588,6 @@ describe('RecordSchema', () => {
         'any',
         'app.bsky.complex',
         object({
-          $type: string(),
           nested: object({
             deep: object({
               value: string(),
@@ -611,7 +613,6 @@ describe('RecordSchema', () => {
       'any',
       'app.bsky.feed.post',
       object({
-        $type: string(),
         text: string(),
       }),
     )
@@ -632,7 +633,6 @@ describe('RecordSchema', () => {
       'any',
       'app.bsky.feed.post',
       object({
-        $type: string(),
         text: string(),
       }),
     )

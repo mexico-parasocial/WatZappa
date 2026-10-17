@@ -9,6 +9,11 @@ import {
   isLiveCabildeoPhase,
   presenceExpiry,
 } from '../cabildeo-live.js'
+import {
+  getAuthoritySnapshot,
+  getAuthoritySnapshots,
+} from '../community-authority.js'
+import { getTrustedGovernanceRecordJson } from '../community-governance.js'
 import type { Database } from '../db/index.js'
 import { TimeCidKeyset, paginate } from '../db/pagination.js'
 
@@ -178,18 +183,20 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         viewerDid: req.viewerDid,
         viewerIsAdmin: req.viewerIsAdmin,
       })
-      const [governance, members] = await Promise.all([
-        getCandidateGovernanceRecord(db, board.name, board.slug),
-        selectDelegateLikeMembers(db, board.uri),
+      const [governance, moderators, nominees] = await Promise.all([
+        getTrustedGovernanceRecordJson(db, board).then((json) =>
+          json ? parseCandidateGovernance(json) : null,
+        ),
+        selectVerifiedModerators(db, board.uri),
+        selectSelfNominatedDelegates(db, board.uri),
       ])
 
       addGovernanceCandidates(rolesByDid, governance)
-      for (const member of members) {
-        const set = ensureRoleSet(rolesByDid, member.creator)
-        for (const role of member.roles ?? []) {
-          set.add(role)
-        }
-        if (set.size === 0) set.add('member')
+      for (const did of moderators) {
+        ensureRoleSet(rolesByDid, did).add('moderator')
+      }
+      for (const did of nominees) {
+        ensureRoleSet(rolesByDid, did).add(SELF_NOMINATED_ROLE)
       }
     }
 
@@ -420,7 +427,7 @@ const selectCandidateCommunityBoard = async (
     const byUri = await db.db
       .selectFrom('para_community_board')
       .where('uri', '=', communityId)
-      .select(['uri', 'name', 'slug'])
+      .select(['uri', 'creator', 'name', 'slug'])
       .executeTakeFirst()
     if (byUri) return byUri
   }
@@ -433,31 +440,76 @@ const selectCandidateCommunityBoard = async (
         or regexp_replace(lower(coalesce("name", '')), '[^a-z0-9]+', '-', 'g') = ${normalizedSlug}
       )`,
     )
-    .select(['uri', 'name', 'slug'])
+    .select(['uri', 'creator', 'name', 'slug'])
     .executeTakeFirst()
 }
 
-const selectDelegateLikeMembers = async (db: Database, communityUri: string) =>
-  db.db
+/*
+ * Delegation candidates and the roles reported for them.
+ *
+ * A member may nominate themselves as a delegate candidate: the membership
+ * record they write themselves can say so, and is reported only as
+ * `delegate`. Offices cannot be self-declared. Moderators come from verified
+ * authority events, and moderators, officials and deputies from the trusted
+ * governance record (`getTrustedGovernanceRecordJson`). Any other role in a
+ * membership record (`moderator`, `official`, `deputy`, `representative`, ...)
+ * is ignored.
+ *
+ * Being listed, by nomination or office, is not proof of electoral weight.
+ */
+const SELF_NOMINATED_ROLE = 'delegate'
+
+// Membership-record roles that opt a member in as a delegate candidate.
+const SELF_NOMINATION_ROLES = ['delegate', 'delegado', 'subdelegate', 'agent']
+
+/** Members holding the moderator role by verified authority events. */
+const selectVerifiedModerators = async (db: Database, communityUri: string) => {
+  const rows = await db.db
+    .selectFrom('para_community_authority_event')
+    .where('communityUri', '=', communityUri)
+    .where('action', '=', 'moderator.grant')
+    .select('subject')
+    .distinct()
+    .execute()
+  const snapshots = await getAuthoritySnapshots(
+    db,
+    communityUri,
+    rows.map((row) => row.subject),
+  )
+  return [...snapshots]
+    .filter(([, snapshot]) => snapshot.roles.includes('moderator'))
+    .map(([did]) => did)
+}
+
+/**
+ * Members whose own membership record nominates them as a delegate, and who
+ * are active members by `getAuthoritySnapshot`.
+ */
+const selectSelfNominatedDelegates = async (
+  db: Database,
+  communityUri: string,
+) => {
+  const rows = await db.db
     .selectFrom('para_community_membership')
     .where('communityUri', '=', communityUri)
     .where('membershipState', '=', 'active')
     .where(
       // `roles` is a jsonb array: `?|` is true when it holds any listed role.
-      sql<boolean>`coalesce("roles", '[]'::jsonb) ?| array[
-        'delegate',
-        'delegado',
-        'representative',
-        'representante',
-        'moderator',
-        'official',
-        'deputy',
-        'subdelegate',
-        'agent'
-      ]::text[]`,
+      sql<boolean>`coalesce("roles", '[]'::jsonb) ?| array[${sql.join(
+        SELF_NOMINATION_ROLES.map((role) => sql`${role}`),
+      )}]::text[]`,
     )
-    .select(['creator', 'roles'])
+    .select('creator')
     .execute()
+  const snapshots = await getAuthoritySnapshots(
+    db,
+    communityUri,
+    rows.map((row) => row.creator),
+  )
+  return [...snapshots]
+    .filter(([, snapshot]) => snapshot.membershipState === 'active')
+    .map(([did]) => did)
+}
 
 const assertActiveCommunityViewer = async (
   db: Database,
@@ -474,51 +526,17 @@ const assertActiveCommunityViewer = async (
       Code.PermissionDenied,
     )
   }
-  const membership = await db.db
-    .selectFrom('para_community_membership')
-    .where('creator', '=', opts.viewerDid)
-    .where('communityUri', '=', opts.communityUri)
-    .where('membershipState', '=', 'active')
-    .select(['uri'])
-    .executeTakeFirst()
-
-  if (!membership) {
+  const authority = await getAuthoritySnapshot(
+    db,
+    opts.communityUri,
+    opts.viewerDid,
+  )
+  if (authority.membershipState !== 'active') {
     throw new ConnectError(
       'Active community membership is required',
       Code.PermissionDenied,
     )
   }
-}
-
-const getCandidateGovernanceRecord = async (
-  db: Database,
-  community: string,
-  slug: string,
-): Promise<CandidateGovernanceRecord | null> => {
-  const suffix = `/com.para.community.governance/${slug || 'community'}`
-  const slugMatch = await db.db
-    .selectFrom('record')
-    .select(['json'])
-    .where('uri', 'like', `%${suffix}`)
-    .orderBy('indexedAt', 'desc')
-    .executeTakeFirst()
-
-  if (slugMatch) return parseCandidateGovernance(slugMatch.json)
-
-  const normalizedCommunity = normalizeCommunityKey(community)
-  const recordMatch = await db.db
-    .selectFrom('record')
-    .select(['json'])
-    .where('uri', 'like', '%/com.para.community.governance/%')
-    .where(
-      sql`regexp_replace(lower(translate(regexp_replace(coalesce(("record"."json"::jsonb ->> 'community'), ''), '^p/', '', 'i'), ${COMMUNITY_TRANSLATION_SOURCE}, ${COMMUNITY_TRANSLATION_TARGET})), '[^a-z0-9]+', '', 'g')`,
-      '=',
-      normalizedCommunity,
-    )
-    .orderBy('indexedAt', 'desc')
-    .executeTakeFirst()
-
-  return recordMatch ? parseCandidateGovernance(recordMatch.json) : null
 }
 
 const parseCandidateGovernance = (
@@ -977,20 +995,6 @@ const asNumberArray = (value: unknown, length: number): number[] => {
 const normalizeCommunity = (value: string | undefined) => {
   return value?.trim().toLowerCase().replace(/^p\//, '') || ''
 }
-
-const COMMUNITY_TRANSLATION_SOURCE =
-  'ÁÀÄÂÃáàäâãÉÈËÊéèëêÍÌÏÎíìïîÓÒÖÔÕóòöôõÚÙÜÛúùüûÑñÇç'
-const COMMUNITY_TRANSLATION_TARGET =
-  'AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuNnCc'
-
-const normalizeCommunityKey = (value: string) =>
-  value
-    .trim()
-    .replace(/^p\//i, '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '')
 
 const normalizeCommunitySlug = (value: string) =>
   value

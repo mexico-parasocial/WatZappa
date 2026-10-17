@@ -4,6 +4,12 @@ import { ParaSeedCheckpointRunner } from './para-checkpoints.js'
 import { seedCommunityActivities } from './para-community-activities.js'
 import { seedDemoMemes } from './para-memes.js'
 import { seedTid } from './seed-tid.js'
+import {
+  EXTRA_POLICIES,
+  LEGACY_POLICY_STANCE,
+  castPolicyVotes,
+  planPolicyVotes,
+} from './para-policies.js'
 
 export default async (sc: SeedClient) => {
   const checkpoints = new ParaSeedCheckpointRunner(sc.network)
@@ -605,6 +611,13 @@ export default async (sc: SeedClient) => {
     })
   }
 
+  // The official parties deliberate in two chambers, so the bridge gives each
+  // one a Cámara A, a Cámara B and an observer council besides the main room.
+  // `createBoard` does not take `chamberMode`; it is set on the record, as
+  // `status` is below. The other parties and all topic communities stay
+  // unicameral (main room only).
+  const bicameralParties = new Set(['Morena', 'PAN', 'PRI', 'PVEM', 'PT', 'MC'])
+
   // Activate boards
   for (const pb of partyBoards) {
     const creator = users.find((u) => u.did === pb.creatorDid)!
@@ -617,7 +630,11 @@ export default async (sc: SeedClient) => {
       repo: pb.creatorDid,
       collection: 'com.para.community.board',
       rkey: pb.rkey,
-      record: { ...(current.data.value as any), status: 'active' },
+      record: {
+        ...(current.data.value as any),
+        status: 'active',
+        ...(bicameralParties.has(pb.name) && { chamberMode: 'bicameral' }),
+      },
       swapRecord: current.data.cid,
     })
   }
@@ -720,7 +737,7 @@ export default async (sc: SeedClient) => {
   await checkpoints.flush('partyCommunities')
 
   // ═══════════════════════════════════════════════════════════════════════
-  //  CIVIC COMMUNITIES  (12 topic-based)
+  //  CIVIC COMMUNITIES  (12 topic-based, 4 state-based)
   // ═══════════════════════════════════════════════════════════════════════
 
   const communityCreators = [
@@ -808,14 +825,75 @@ export default async (sc: SeedClient) => {
       description:
         'Acceso a servicios de salud, medicamentos, prevención y atención primaria.',
     },
+    // Communities tied to one state: these set `region`, so they list under
+    // that state in the app. Keep them after the topic communities above;
+    // cabildeos refer to communities by index.
+    {
+      creator: 'gabriela',
+      name: 'Agua y Presas de Jalisco',
+      quadrant: 'centro',
+      region: 'Jalisco',
+      description:
+        'Gestión del agua, saneamiento del Lerma-Santiago y abasto metropolitano en Jalisco.',
+    },
+    {
+      creator: 'fernando',
+      name: 'Calidad del Aire Nuevo León',
+      quadrant: 'norte',
+      region: 'Nuevo León',
+      description:
+        'Monitoreo de contaminación, industria y transporte en el área metropolitana de Monterrey.',
+    },
+    {
+      creator: 'eva',
+      name: 'Pueblos Mixtecos de Oaxaca',
+      quadrant: 'sur',
+      region: 'Oaxaca',
+      description:
+        'Territorio, lengua y autonomía de las comunidades mixtecas de Oaxaca.',
+    },
+    {
+      creator: 'dan',
+      name: 'Vivienda Digna CDMX',
+      quadrant: 'centro',
+      region: 'Ciudad de México',
+      description:
+        'Acceso a vivienda, renta justa y desarrollo urbano en la Ciudad de México.',
+    },
   ]
+
+  // Only these five are created: a demo with sixteen unofficial communities
+  // buries the official ones. Cabildeos still carry their original
+  // `communityIdx`; `rehome` maps a removed community onto a kept one.
+  const KEPT_COMMUNITIES = [
+    'Presupuesto Participativo Centro',
+    'Movilidad Sostenible Norte',
+    'Medio Ambiente y Clima',
+    'Vivienda Digna CDMX',
+    'Agua y Presas de Jalisco',
+  ]
+  const rehome: Record<string, string> = {
+    'Educación y Cultura Sur': 'Presupuesto Participativo Centro',
+    'Derechos Laborales': 'Vivienda Digna CDMX',
+    'Transparencia y Anticorrupción': 'Presupuesto Participativo Centro',
+    'Seguridad Ciudadana': 'Vivienda Digna CDMX',
+    'Economía y Desarrollo': 'Presupuesto Participativo Centro',
+    'Derechos Humanos': 'Vivienda Digna CDMX',
+    'Innovación y Tecnología': 'Movilidad Sostenible Norte',
+    'Cultura Indígena': 'Medio Ambiente y Clima',
+    'Salud Pública': 'Vivienda Digna CDMX',
+    'Calidad del Aire Nuevo León': 'Medio Ambiente y Clima',
+    'Pueblos Mixtecos de Oaxaca': 'Medio Ambiente y Clima',
+  }
 
   const communities: any[] = []
   for (const c of communityCreators) {
+    if (!KEPT_COMMUNITIES.includes(c.name)) continue
     const creator = users.find((u) => u.short === c.creator)!
     const board = await creator.agent.com.para.community.createBoard({
       name: c.name,
       quadrant: c.quadrant as any,
+      region: c.region,
       description: c.description,
     })
     communities.push({
@@ -848,6 +926,12 @@ export default async (sc: SeedClient) => {
   // ═══════════════════════════════════════════════════════════════════════
   //  CABILDEOS  (20 — rich variety across all phases)
   // ═══════════════════════════════════════════════════════════════════════
+
+  const communityForCabildeo = (originalIdx: number): string => {
+    const name = communityCreators[originalIdx].name
+    const keptName = KEPT_COMMUNITIES.includes(name) ? name : rehome[name]
+    return communities.find((c) => c.name === keptName)!.uri
+  }
 
   const cabildeoDefs = [
     // DRAFT (2)
@@ -1372,7 +1456,7 @@ export default async (sc: SeedClient) => {
         $type: 'com.para.civic.cabildeo',
         title: c.title,
         description: c.description,
-        community: communities[c.communityIdx].uri,
+        community: communityForCabildeo(c.communityIdx),
         options: c.options,
         phase: c.phase,
         phaseDeadline: deadline,
@@ -1992,7 +2076,7 @@ export default async (sc: SeedClient) => {
       text: 'La reforma energética debe garantizar precios justos de electricidad a todas las familias. La soberanía energética es prioridad nacional — no podemos depender de importaciones cuando tenemos recursos propios.',
       postType: 'policy',
       bskyTags: ['policy', 'energia', 'reforma'],
-      paraFlairs: ['||#Policy', '||#EmpresaPublicaDeAgua'],
+      paraFlairs: ['||#Policy', '||#EmpresaPublicaDeAgua', '|#IndustriaEnergetica'],
     },
     {
       agent: 'alice',
@@ -2001,7 +2085,7 @@ export default async (sc: SeedClient) => {
       text: 'Ampliación de ciclovías y transporte eléctrico en zonas urbanas prioritarias. La contaminación no espera y nuestras ciudades necesitan respirar.',
       postType: 'policy',
       bskyTags: ['policy', 'movilidad', 'sustentabilidad'],
-      paraFlairs: ['||#Policy', '||#TransportePublico'],
+      paraFlairs: ['||#Policy', '||#TransportePublico', '|#TransportePublico'],
     },
     {
       agent: 'alice',
@@ -2103,7 +2187,7 @@ export default async (sc: SeedClient) => {
       text: 'Presenté iniciativa de fortalecimiento institucional anticorrupción con fiscalía autónoma, rendición de cuentas y protección a denunciantes. La corrupción mata y debemos combatirla sin tregua.',
       postType: 'policy',
       bskyTags: ['policy', 'anticorrupcion', 'instituciones'],
-      paraFlairs: ['||#Policy', '||#LimiteDeMandatos'],
+      paraFlairs: ['||#Policy', '||#LimiteDeMandatos', '|#Corrupción'],
     },
     {
       agent: 'bob',
@@ -2132,7 +2216,7 @@ export default async (sc: SeedClient) => {
       text: 'Respaldo el tren eléctrico con datos duros: reduce emisiones 40%, conecta la ciudad en 32 minutos y genera 12,000 empleos directos. La infraestructura debe ser sostenible.',
       postType: 'policy',
       bskyTags: ['policy', 'tren', 'infraestructura'],
-      paraFlairs: ['||#Policy', '||#TransportePublico'],
+      paraFlairs: ['||#Policy', '||#TransportePublico', '|#UsoDelTren'],
     },
     {
       agent: 'nicolas',
@@ -2141,7 +2225,7 @@ export default async (sc: SeedClient) => {
       text: 'Iniciativa para blindar elecciones de interferencia externa con auditoría de software y observación internacional. La democracia se defiende con tecnología, no solo con buenas intenciones.',
       postType: 'policy',
       bskyTags: ['policy', 'elecciones', 'democracia'],
-      paraFlairs: ['||#Policy'],
+      paraFlairs: ['||#Policy', '|#Democracia'],
     },
 
     // Carla (PRI — Regidora)
@@ -2152,7 +2236,7 @@ export default async (sc: SeedClient) => {
       text: 'Impulso la modernización del sector energético con inversión privada participativa y transición sustentable. El reto es hacerlo sin dejar atrás a las comunidades petroleras.',
       postType: 'policy',
       bskyTags: ['policy', 'energia', 'modernizacion'],
-      paraFlairs: ['||#Policy', '||#FondoDeAdaptacionAlCambioClimatico'],
+      paraFlairs: ['||#Policy', '||#FondoDeAdaptacionAlCambioClimatico', '|#IndustriaEnergetica'],
     },
     {
       agent: 'carla',
@@ -2181,7 +2265,7 @@ export default async (sc: SeedClient) => {
       text: 'Metas claras de reducción de emisiones para 2030 y fondo de adaptación ecológica. Sin ley, sin compromiso; sin compromiso, sin futuro.',
       postType: 'policy',
       bskyTags: ['policy', 'clima', 'emisiones'],
-      paraFlairs: ['||#Policy', '||#FondoDeAdaptacionAlCambioClimatico'],
+      paraFlairs: ['||#Policy', '||#FondoDeAdaptacionAlCambioClimatico', '|#EmisionesCO2'],
     },
     {
       agent: 'dan',
@@ -2241,7 +2325,7 @@ export default async (sc: SeedClient) => {
       text: 'Votación digital ciudadana y transparencia total en el gasto público. Cada peso, rastreable. La rendición de cuentas no puede esperar a que alguien más la exija.',
       postType: 'policy',
       bskyTags: ['policy', 'presupuesto', 'digital'],
-      paraFlairs: ['||#Policy', '||#PresupuestoParticipativo'],
+      paraFlairs: ['||#Policy', '||#PresupuestoParticipativo', '|#TransparenciaFiscal'],
     },
     {
       agent: 'fernando',
@@ -2250,7 +2334,7 @@ export default async (sc: SeedClient) => {
       text: 'Seguimiento de cada peso gastado por dependencias federales. Sin excepciones, sin zonas grises. El dinero público debe ser visible por diseño.',
       postType: 'policy',
       bskyTags: ['policy', 'transparencia', 'fiscal'],
-      paraFlairs: ['||#Policy'],
+      paraFlairs: ['||#Policy', '|#TransparenciaFiscal'],
     },
     {
       agent: 'fernando',
@@ -2259,7 +2343,7 @@ export default async (sc: SeedClient) => {
       text: 'La transición no puede dejar atrás a las comunidades petroleras. Propongo fondo de reconversión laboral con inversión privada y pública. Justicia ambiental es justicia laboral.',
       postType: 'policy',
       bskyTags: ['policy', 'transicion', 'empleo'],
-      paraFlairs: ['||#Policy'],
+      paraFlairs: ['||#Policy', '|#Desempleo'],
     },
     {
       agent: 'fernando',
@@ -2279,7 +2363,7 @@ export default async (sc: SeedClient) => {
       text: 'Toda información gubernamental debe ser pública por default. Solo se reserva lo estrictamente necesario por seguridad. El secreto generalizado es opacidad, no protección.',
       postType: 'policy',
       bskyTags: ['policy', 'datos', 'transparencia'],
-      paraFlairs: ['||#Policy', '||#Innovacion'],
+      paraFlairs: ['||#Policy', '||#Innovacion', '|#Tecnologia'],
     },
     {
       agent: 'jorge',
@@ -2308,7 +2392,7 @@ export default async (sc: SeedClient) => {
       text: 'Debe ser autónoma presupuestalmente y designarse por concurso público. No más dedazos, no más impunidad. La justicia no se negocia.',
       postType: 'policy',
       bskyTags: ['policy', 'fiscalia', 'anticorrupcion'],
-      paraFlairs: ['||#Policy', '||#Anticorrupcion'],
+      paraFlairs: ['||#Policy', '||#Anticorrupcion', '|#Corrupción'],
     },
     {
       agent: 'mariana',
@@ -2317,7 +2401,7 @@ export default async (sc: SeedClient) => {
       text: 'La paridad no es cuota, es justicia. 50% de mujeres en cargos de elección, dirección de dependencias y consejos ciudadanos. Nada menos es injusticia.',
       postType: 'policy',
       bskyTags: ['policy', 'paridad', 'mujeres'],
-      paraFlairs: ['||#DerechosHumanos', '|#NiUnaMenos'],
+      paraFlairs: ['||#DerechosHumanos', '|#IgualdadDeGenero'],
     },
 
     // Isabel (PRD — Activista feminista)
@@ -2328,7 +2412,7 @@ export default async (sc: SeedClient) => {
       text: 'La despenalización es justicia reproductiva. Ninguna persona debe morir por ejercer su derecho a decidir sobre su cuerpo. El Estado debe garantizar, no criminalizar.',
       postType: 'policy',
       bskyTags: ['policy', 'aborto', 'derechos'],
-      paraFlairs: ['||#DerechosHumanos', '|#NiUnaMenos'],
+      paraFlairs: ['||#DerechosHumanos', '|#IgualdadDeGenero'],
     },
     {
       agent: 'isabel',
@@ -2430,6 +2514,9 @@ export default async (sc: SeedClient) => {
       bskyTags: ['meme', 'humor', 'cabildeo', 'abuela'],
       paraFlairs: ['#MEME'],
     },
+
+    // Policies filed under each of the six matter groups, for filtering.
+    ...EXTRA_POLICIES,
   ]
 
   const createdPosts: any[] = []
@@ -2490,6 +2577,43 @@ export default async (sc: SeedClient) => {
   }
 
   await checkpoints.flush('posts')
+
+  // ═══════════════════════════════════════════════════════════════════════
+  //  POLICY VOTES  (public -3..+3 ballots, authorized by the dev-env m8)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // @NOTE the proofs are signed with a key that exists only in dev-env's
+  // verifier, so nothing outside dev-env accepts these ballots. If a real m8
+  // verifier is configured instead, the PDS refuses them and they are counted
+  // below rather than written.
+  const policyEntries = seededPosts
+    .map((post, index) => ({ post, created: createdPosts[index] }))
+    .filter(({ post }) => post.postType === 'policy')
+  const policyPlan = planPolicyVotes(
+    users.map((u) => ({ short: u.short, party: u.party })),
+    policyEntries.map(({ post }) => {
+      const lean =
+        'stance' in post
+          ? { stance: post.stance as number, reach: post.reach as number }
+          : (LEGACY_POLICY_STANCE[post.bskyTags[1]] ?? {
+              stance: 0,
+              reach: 0.6,
+            })
+      return { key: post.title, ...lean }
+    }),
+  )
+  const policyVotes = await castPolicyVotes(
+    policyPlan,
+    new Map(users.map((u) => [u.short, { did: u.did, agent: u.agent }])),
+    policyEntries.map(({ created }) => created.uri),
+  )
+  console.log(
+    `  [para-demo] Policy votes: ${policyVotes.cast} cast on ${policyEntries.length} policies` +
+      (policyVotes.refused
+        ? `, ${policyVotes.refused} refused (is a real m8 verifier configured?)`
+        : ''),
+  )
+  await checkpoints.flush('policyVotes')
 
   // ═══════════════════════════════════════════════════════════════════════
   //  ENGAGEMENT  (likes, replies, bookmarks; PARA has no reposts)
@@ -3296,6 +3420,20 @@ export default async (sc: SeedClient) => {
   }
 
   await checkpoints.flush('raq')
+
+  // Share the standalone add-on's fixtures; the meme seed already ran above.
+  const { seedDemoContent } = await import(
+    new URL('../../assets/demo-content/seed.mjs', import.meta.url).href
+  )
+  await checkpoints.run('civicTrees', () =>
+    seedDemoContent({
+      service: sc.network.pds.url,
+      appviewDid: sc.network.pds.ctx.cfg.bskyAppView?.did,
+      password: 'hunter2',
+      includeMemes: false,
+      sync: () => sc.network.processAll(),
+    }),
+  )
 
   // ═══════════════════════════════════════════════════════════════════════
   //  SUMMARY

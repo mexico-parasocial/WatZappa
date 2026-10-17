@@ -73,11 +73,45 @@ export class ModerationArea extends SortitionArea {
     return rows.length
   }
 
-  async getActiveSanctions(did: string, communityUri: string): Promise<any[]> {
+  async getSanctionEvents(did: string, communityUri: string): Promise<any[]> {
     return this.queryAll(
-      "SELECT * FROM chat_moderation_events WHERE did = $1 AND community_uri = $2 AND event_type IN ('mute','ban') AND created_at >= NOW() - INTERVAL '90 days' ORDER BY created_at DESC",
+      "SELECT * FROM chat_moderation_events WHERE did = $1 AND community_uri = $2 AND event_type IN ('mute','ban','sanction_lifted') ORDER BY id ASC",
       [did, communityUri],
     )
+  }
+
+  async getSubjectsWithTimedSanctions(
+    sinceDays: number,
+  ): Promise<{ did: string; communityUri: string }[]> {
+    const rows = await this.queryAll<{ did: string; community_uri: string }>(
+      "SELECT DISTINCT did, community_uri FROM chat_moderation_events WHERE event_type IN ('mute','ban') AND sanction_duration_minutes IS NOT NULL AND created_at >= NOW() - INTERVAL '1 day' * $1",
+      [sinceDays],
+    )
+    return rows.map((r) => ({ did: r.did, communityUri: r.community_uri }))
+  }
+
+  async getReportDismissalsForCommunity(
+    communityUri: string,
+    days = 30,
+  ): Promise<any[]> {
+    return this.queryAll(
+      "SELECT id, did, reported_event_id, sanctioned_by_did, created_at FROM chat_moderation_events WHERE community_uri = $1 AND event_type = 'report_dismissed' AND created_at >= NOW() - INTERVAL '1 day' * $2 ORDER BY id DESC",
+      [communityUri, days],
+    )
+  }
+
+  async hasReportFrom(
+    reporterDid: string,
+    did: string,
+    communityUri: string,
+    reportedEventId: string | null,
+    days: number,
+  ): Promise<boolean> {
+    const rows = await this.queryAll(
+      "SELECT 1 AS found FROM chat_moderation_events WHERE event_type = 'report_received' AND reporter_did = $1 AND did = $2 AND community_uri = $3 AND reported_event_id IS NOT DISTINCT FROM $4 AND created_at >= NOW() - INTERVAL '1 day' * $5 LIMIT 1",
+      [reporterDid, did, communityUri, reportedEventId, days],
+    )
+    return rows.length > 0
   }
 
   // Chat user badges

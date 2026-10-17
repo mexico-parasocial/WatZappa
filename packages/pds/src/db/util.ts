@@ -1,11 +1,11 @@
 import {
   DummyDriver,
-  DynamicModule,
-  Kysely,
-  RawBuilder,
-  ReferenceExpression,
-  SelectQueryBuilder,
-  SqlBool,
+  type DynamicModule,
+  type Kysely,
+  type RawBuilder,
+  type ReferenceExpression,
+  type SelectQueryBuilder,
+  type SqlBool,
   SqliteAdapter,
   SqliteIntrospector,
   SqliteQueryCompiler,
@@ -93,7 +93,8 @@ const RETRY_ERRORS = new Set([
 
 export type Ref = ReferenceExpression<any, any>
 
-export type DbRef = RawBuilder<unknown> | ReturnType<DynamicModule<unknown>['ref']>
+export type DbRef =
+  RawBuilder<unknown> | ReturnType<DynamicModule<unknown>['ref']>
 
 export type AnyQb = SelectQueryBuilder<any, any, any>
 

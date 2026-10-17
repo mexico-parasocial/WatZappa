@@ -17,9 +17,7 @@ export function isNonEmpty(value?: readonly unknown[]): boolean {
 }
 
 export type ScopeStringFor<P extends string> =
-  | P
-  | `${P}:${string}`
-  | `${P}?${string}`
+  P | `${P}:${string}` | `${P}?${string}`
 
 /**
  * Allows to quickly check if a scope is for a specific resource.

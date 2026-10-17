@@ -1,7 +1,6 @@
-// @ts-nocheck
-import { AtpAgent } from '@atproto/api'
+import type { AtpAgent } from '@atproto/api'
 import { randomStr } from '@atproto/crypto'
-import { SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
+import { type SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
 
 describe('pds admin invite views', () => {
@@ -22,7 +21,7 @@ describe('pds admin invite views', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   let alice: DidString

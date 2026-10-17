@@ -1,4 +1,3 @@
-// @ts-nocheck
 import * as jose from 'jose'
 import type { AtpAgent } from '@atproto/api'
 import { type SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
@@ -11,7 +10,6 @@ describe('app_passwords', () => {
   let accntAgent: AtpAgent
   let appAgent: AtpAgent
   let priviAgent: AtpAgent
-  janeAgent = network.pds.getAgent()
 
   beforeAll(async () => {
     network = await TestNetworkNoAppView.create({
@@ -20,6 +18,7 @@ describe('app_passwords', () => {
     accntAgent = network.pds.getAgent()
     appAgent = network.pds.getAgent()
     priviAgent = network.pds.getAgent()
+    janeAgent = network.pds.getAgent()
 
     await accntAgent.createAccount({
       handle: 'alice.test',
@@ -53,7 +52,7 @@ describe('app_passwords', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   let appPass: string

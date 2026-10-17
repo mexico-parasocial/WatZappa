@@ -119,6 +119,20 @@ export class SqliteBase {
         source_id TEXT NOT NULL
       );
 
+      CREATE TABLE IF NOT EXISTS push_delivery (
+        id TEXT PRIMARY KEY,
+        token TEXT NOT NULL,
+        state TEXT NOT NULL,
+        owner TEXT NOT NULL,
+        lease_until INTEGER NOT NULL,
+        receipt_id TEXT,
+        created_at INTEGER NOT NULL,
+        check_after INTEGER NOT NULL,
+        error_code TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_push_delivery_receipts ON push_delivery(state, check_after);
+      CREATE INDEX IF NOT EXISTS idx_push_delivery_retention ON push_delivery(created_at);
+
       CREATE TABLE IF NOT EXISTS user_push_tokens (
         did TEXT PRIMARY KEY,
         expo_push_token TEXT NOT NULL,

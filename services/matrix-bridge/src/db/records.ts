@@ -45,18 +45,6 @@ export interface CommunityRoomSummary {
   kind: CommunityRoomKind
 }
 
-import type {
-  ConsentPrefsStore,
-  ConstitutionProposalsStore,
-  DeliberationStore,
-  IdentityMatrixStore,
-  InfraStore,
-  MatrixEventsStore,
-  ModerationStore,
-  ParticipationStore,
-  SortitionStore,
-} from './stores/index.js'
-
 export interface DeviceSession {
   id: string
   did: string
@@ -77,6 +65,13 @@ export interface BridgeEvent {
   audienceDids: string[] | null
   payload: unknown
   createdAt: string
+}
+export interface PushDelivery {
+  id: string
+  token: string
+  state: 'sending' | 'submitted' | 'provider_accepted' | 'rejected' | 'failed'
+  receiptId: string | null
+  createdAt: number
 }
 
 /**

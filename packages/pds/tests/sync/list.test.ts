@@ -1,6 +1,5 @@
-// @ts-nocheck
-import { AtpAgent } from '@atproto/api'
-import { SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
+import type { AtpAgent } from '@atproto/api'
+import { type SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
 import basicSeed from '../seeds/basic.js'
 
 describe('sync listing', () => {
@@ -18,7 +17,7 @@ describe('sync listing', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   it('lists hosted repos in order of creation', async () => {

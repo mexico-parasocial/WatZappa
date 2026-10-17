@@ -1,4 +1,13 @@
-// @ts-nocheck
+import { setImmediate } from 'node:timers/promises'
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 import { type AtpAgent, ids } from '@atproto/api'
 import { type SeedClient, TestNetwork } from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
@@ -55,20 +64,12 @@ describe('known followers (social proof)', () => {
       { createdAt: new Date().toISOString(), subject: dids.mix_sp_block_res },
       seedClient.getHeaders(dids.mix_sub_1),
     )
-
-    await network.processAll()
   })
 
-  afterAll(async () => {
-    await network.close()
-  })
+  beforeEach(async () => network.processAll())
+  afterAll(async () => network?.close())
 
-  /*
-   * Note that this test arbitrarily uses `getFollows` bc atm it returns
-   * `ProfileViewBasic`. This method could be updated one day to return
-   * `knownFollowers`, in which case this test would begin failing.
-   */
-  it('basic profile views do not return knownFollowers', async () => {
+  it('getFollows omits knownFollowers when social proof is not hydrated', async () => {
     const { data } = await agent.api.app.bsky.graph.getFollows(
       { actor: dids.base_res_1 },
       {
@@ -114,6 +115,33 @@ describe('known followers (social proof)', () => {
     expect(knownFollowers?.count).toBe(1)
     expect(knownFollowers?.followers).toHaveLength(1)
     expect(knownFollowers?.followers[0].did).toBe(dids.base_res_1)
+  })
+
+  it('getProfile: handles count failures while known followers are pending', async () => {
+    const dataplane = network.bsky.ctx.hydrator.dataplane
+    const sampleFollowsFollowing =
+      dataplane.sampleFollowsFollowing.bind(dataplane)
+    using _knownFollowers = vi
+      .spyOn(dataplane, 'sampleFollowsFollowing')
+      .mockImplementation(async (...args) => {
+        await setImmediate()
+        return sampleFollowsFollowing(...args)
+      })
+    using _counts = vi
+      .spyOn(dataplane, 'getCountsForUsers')
+      .mockRejectedValue(new Error('Profile counts unavailable'))
+
+    await expect(
+      agent.api.app.bsky.actor.getProfile(
+        { actor: dids.base_sub },
+        {
+          headers: await network.serviceHeaders(
+            dids.base_view,
+            ids.AppBskyActorGetProfile,
+          ),
+        },
+      ),
+    ).rejects.toMatchObject({ status: 500 })
   })
 
   it('getProfile: filters 1st-party blocks', async () => {

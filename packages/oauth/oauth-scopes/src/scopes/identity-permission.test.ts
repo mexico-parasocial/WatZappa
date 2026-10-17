@@ -1,4 +1,4 @@
-// @ts-nocheck
+import { describe, expect, it } from 'vitest'
 import { IdentityPermission } from './identity-permission.js'
 
 describe('IdentityPermission', () => {

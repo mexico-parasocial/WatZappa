@@ -1,11 +1,7 @@
 #! /usr/bin/env node
 
-/* eslint-env node */
-/* eslint-disable @typescript-eslint/no-namespace */
-/* eslint-disable n/no-extraneous-import */
-
 import { scheduler } from 'node:timers/promises'
-import { l } from '@atproto/lex'
+import { l } from '@atproto/lex-schema'
 import { LexError, LexRouter } from '@atproto/lex-server'
 import { serve, upgradeWebSocket } from '@atproto/lex-server/nodejs'
 

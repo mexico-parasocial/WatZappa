@@ -1,33 +1,29 @@
 import { atUri } from '@atproto/lex'
 import {
-  LegacyBlobRef,
-  LexMap,
-  TypedBlobRef,
+  type LegacyBlobRef,
+  type LexMap,
+  type TypedBlobRef,
   isLegacyBlobRef,
   parseCid,
 } from '@atproto/lex-data'
 import {
   AuthRequiredError,
   InvalidRequestError,
-  Server,
+  type Server,
 } from '@atproto/xrpc-server'
-import { ActorStoreTransactor } from '../../../../actor-store/actor-store-transactor.js'
-import { AppContext } from '../../../../context.js'
+import type { ActorStoreTransactor } from '../../../../actor-store/actor-store-transactor.js'
+import type { AppContext } from '../../../../context.js'
 import { app, com } from '../../../../lexicons/index.js'
 import { dbLogger } from '../../../../logger.js'
 import {
   BadCommitSwapError,
   BadRecordSwapError,
   InvalidRecordError,
-  PreparedCreate,
-  PreparedUpdate,
+  type PreparedCreate,
+  type PreparedUpdate,
   prepareCreate,
   prepareUpdate,
 } from '../../../../repo/index.js'
-import {
-  assertAuthorityEventWrite,
-  assertHorizontalGovernanceWrite,
-} from '../../../com/para/community/util.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.add(com.atproto.repo.putRecord, {
@@ -137,23 +133,6 @@ export default function (server: Server, ctx: AppContext) {
               commit: null,
               write,
             }
-          }
-
-          if (collection === 'com.para.community.governance') {
-            await assertHorizontalGovernanceWrite({
-              actorTxn,
-              did,
-              record: record as Record<string, unknown>,
-            })
-          }
-          if (collection === 'com.para.community.authorityEvent') {
-            if (current) {
-              throw new InvalidRequestError('Authority events are immutable.')
-            }
-            assertAuthorityEventWrite({
-              did,
-              record: record as Record<string, unknown>,
-            })
           }
 
           const commit = await actorTxn.repo

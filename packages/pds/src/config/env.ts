@@ -28,24 +28,12 @@ export function readEnv() {
     trustedOAuthClients: envList('PDS_OAUTH_TRUSTED_CLIENTS'),
 
     // branding
-    lightColor: envStr('PDS_LIGHT_COLOR'),
-    darkColor: envStr('PDS_DARK_COLOR'),
-    contrastSaturation: envInt('PDS_CONTRAST_SATURATION'),
     primaryColor: envStr('PDS_PRIMARY_COLOR'),
-    primaryColorContrast: envStr('PDS_PRIMARY_COLOR_CONTRAST'),
-    primaryColorHue: envInt('PDS_PRIMARY_COLOR_HUE'),
     errorColor: envStr('PDS_ERROR_COLOR'),
-    errorColorContrast: envStr('PDS_ERROR_COLOR_CONTRAST'),
-    errorColorHue: envInt('PDS_ERROR_COLOR_HUE'),
     warningColor: envStr('PDS_WARNING_COLOR'),
-    warningColorContrast: envStr('PDS_WARNING_COLOR_CONTRAST'),
-    warningColorHue: envInt('PDS_WARNING_COLOR_HUE'),
     infoColor: envStr('PDS_INFO_COLOR'),
-    infoColorContrast: envStr('PDS_INFO_COLOR_CONTRAST'),
-    infoColorHue: envInt('PDS_INFO_COLOR_HUE'),
     successColor: envStr('PDS_SUCCESS_COLOR'),
-    successColorContrast: envStr('PDS_SUCCESS_COLOR_CONTRAST'),
-    successColorHue: envInt('PDS_SUCCESS_COLOR_HUE'),
+
     backgroundLightUrl: envStr('PDS_BACKGROUND_LIGHT_URL'),
     backgroundDarkUrl: envStr('PDS_BACKGROUND_DARK_URL'),
 
@@ -114,10 +102,6 @@ export function readEnv() {
     bskyAppViewUrl: envStr('PDS_BSKY_APP_VIEW_URL'),
     bskyAppViewDid: envStr('PDS_BSKY_APP_VIEW_DID'),
     bskyAppViewCdnUrlPattern: envStr('PDS_BSKY_APP_VIEW_CDN_URL_PATTERN'),
-    paraCommunityCreatorDids: envList('PDS_PARA_COMMUNITY_CREATOR_DIDS'),
-
-    // m8 identity broker
-    m8BaseUrl: envStr('PDS_M8_BASE_URL'),
 
     // mod service
     modServiceUrl: envStr('PDS_MOD_SERVICE_URL'),

@@ -1,24 +1,35 @@
-import { randomUUID } from 'node:crypto'
-import type {
-  AiConsentRecord,
-  CommunityRoomKind,
-  CommunityRoomSummary,
-  CommunitySpaceMap,
-  DeviceSession,
-  SyncLogEntry,
-  UserPushToken,
-} from '../interface.js'
+import type { CommunitySpaceMap, DeviceSession } from '../interface.js'
 import { PgBase } from './base.js'
 
 export class IdentityMatrixArea extends PgBase {
   // Community <-> Space mappings
+  /**
+   * The same shape the SQLite driver returns. This used to hand back the raw
+   * snake_case row typed as `CommunitySpaceMap`, so on Postgres every
+   * consumer read `spaceId` and the chamber rooms as undefined and built an
+   * empty list of rooms.
+   */
   async getSpaceForCommunity(
     communityUri: string,
   ): Promise<CommunitySpaceMap | undefined> {
-    return this.queryOne<CommunitySpaceMap>(
+    const row = await this.queryOne<Record<string, any>>(
       'SELECT * FROM community_space_map WHERE community_uri = $1',
       [communityUri],
     )
+    if (!row) return undefined
+    return {
+      communityUri: row.community_uri,
+      spaceId: row.space_id,
+      slug: row.slug,
+      chamberMode: row.chamber_mode,
+      chamberA_RoomId: row.chamber_a_room_id ?? null,
+      chamberB_RoomId: row.chamber_b_room_id ?? null,
+      observerRoomId: row.observer_room_id ?? null,
+      createdAt:
+        row.created_at instanceof Date
+          ? row.created_at.toISOString()
+          : row.created_at,
+    }
   }
 
   async setSpaceForCommunity(
@@ -136,6 +147,16 @@ export class IdentityMatrixArea extends PgBase {
          roles_json = EXCLUDED.roles_json,
          updated_at = NOW()`,
       [did, communityUri, membershipState, JSON.stringify(roles)],
+    )
+  }
+
+  async listCommunityMemberships(
+    limit: number,
+    offset: number,
+  ): Promise<Array<{ did: string; communityUri: string }>> {
+    return this.queryAll(
+      'SELECT did, community_uri AS "communityUri" FROM community_membership_state ORDER BY community_uri, did LIMIT $1 OFFSET $2',
+      [limit, offset],
     )
   }
 
@@ -280,6 +301,23 @@ export class IdentityMatrixArea extends PgBase {
       if (row.chamber_mode !== 'bicameral') continue
 
       const roles = JSON.parse(row.roles_json || '[]') as string[]
+      // @NOTE verified moderators/owners review every room, matching Matrix projection.
+      if (roles.includes('moderator') || roles.includes('owner')) {
+        for (const [roomId, kind] of [
+          [row.chamber_a_room_id, 'chamber-a'],
+          [row.chamber_b_room_id, 'chamber-b'],
+          [row.observer_room_id, 'observers'],
+        ] as const) {
+          if (roomId)
+            result.push({
+              roomId,
+              communityUri: row.community_uri,
+              slug: row.slug,
+              kind,
+            })
+        }
+        continue
+      }
       const isObserver = roles.includes('observer')
       if (isObserver && row.observer_room_id) {
         result.push({

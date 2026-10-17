@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, expect, it } from 'vitest'
 import { enumSchema } from './enum.js'
 import { withDefault } from './with-default.js'

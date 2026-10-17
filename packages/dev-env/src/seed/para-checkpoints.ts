@@ -10,12 +10,14 @@ export type ParaSeedCheckpointName =
   | 'positions'
   | 'delegations'
   | 'posts'
+  | 'policyVotes'
   | 'engagement'
   | 'highlights'
   | 'liveSessions'
   | 'lists'
   | 'postMeta'
   | 'raq'
+  | 'civicTrees'
 
 export type ParaSeedCheckpoint = {
   name: ParaSeedCheckpointName

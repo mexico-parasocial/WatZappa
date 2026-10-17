@@ -1,4 +1,4 @@
-// @ts-nocheck
+import { describe, expect, it } from 'vitest'
 import { ScopesSet } from './scopes-set.js'
 
 describe('ScopesSet', () => {

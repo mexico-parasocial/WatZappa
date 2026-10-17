@@ -21,6 +21,12 @@
               "type": "string",
               "maxLength": 64
             },
+            "region": {
+              "type": "string",
+              "description": "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
+              "maxGraphemes": 64,
+              "maxLength": 128
+            },
             "description": {
               "type": "string",
               "maxLength": 3000

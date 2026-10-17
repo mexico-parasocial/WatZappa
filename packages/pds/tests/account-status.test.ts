@@ -1,7 +1,6 @@
-// @ts-nocheck
 import { jest } from '@jest/globals'
 import { TestNetworkNoAppView } from '@atproto/dev-env'
-import { Client } from '@atproto/lex'
+import type { Client } from '@atproto/lex'
 import { com } from '../src/lexicons/index.js'
 
 describe('account-status', () => {
@@ -20,7 +19,7 @@ describe('account-status', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   it('takedown + activation triggers an error', async () => {
@@ -53,7 +52,7 @@ describe('account-status', () => {
       password: 'password',
     })
 
-    const mock = jest.spyOn(network.pds.ctx.sequencer, 'sequenceEvts')
+    using mock = jest.spyOn(network.pds.ctx.sequencer, 'sequenceEvts')
 
     // First deactivate
     await client.call(
@@ -108,9 +107,6 @@ describe('account-status', () => {
       identifier: 'iris2.test',
       password: 'password',
     })
-
-    // @TODO use "using" (requires updating jest)
-    mock.mockRestore()
   })
 
   it('sequences an account status event when calling updateSubjectStatus without changing the status', async () => {
@@ -120,7 +116,7 @@ describe('account-status', () => {
       password: 'password',
     })
 
-    const mock = jest.spyOn(network.pds.ctx.sequencer, 'sequenceEvts')
+    using mock = jest.spyOn(network.pds.ctx.sequencer, 'sequenceEvts')
 
     // Update the account status without changing the status (should still sequence an event)
     await client.call(
@@ -132,9 +128,6 @@ describe('account-status', () => {
     )
 
     expect(mock).toHaveBeenCalledTimes(1)
-
-    // @TODO use "using" (requires updating jest)
-    mock.mockRestore()
   })
 
   it('allows to takedown, then deactivate, an account', async () => {

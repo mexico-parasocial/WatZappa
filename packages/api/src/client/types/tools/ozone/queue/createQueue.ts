@@ -34,6 +34,8 @@ export interface InputSchema {
   description?: string
   /** Policy keys to recommend when actioning reports in this queue */
   recommendedPolicies?: string[]
+  /** Labels to recommend for this queue and use as fallback appeal routing mappings */
+  recommendedLabels?: string[]
 }
 
 export interface OutputSchema {

@@ -695,6 +695,8 @@ const parseBasicAuth = (
   }
 }
 
+export { type KeyObject }
+
 export const createSecretKeyObject = (secret: string): KeyObject => {
   return createSecretKey(Buffer.from(secret))
 }

@@ -100,6 +100,43 @@ const run = async () => {
     await network.processAll()
   }
 
+  if (runtimeConfig.seedCivicTreesOnStart && runtimeConfig.skipParaDemoSeed) {
+    const { seedDemoContent } = await import(
+      new URL('../assets/demo-content/seed.mjs', import.meta.url).href
+    )
+    const password =
+      process.env.PARA_DEMO_PASSWORD ??
+      process.env.SEED_PASSWORD ??
+      'para-test-pw'
+    await seedDemoContent({
+      service: network.pds.url,
+      appviewDid: network.bsky.serverDid,
+      includeMemes: false,
+      ensureCommunities: true,
+      sync: () => network.processAll(),
+      ensureSession: async (handle: string) => {
+        const agent = network.pds.getAgent()
+        const existing = await network.pds.ctx.accountManager.getAccount(
+          asStringFormat(handle, 'handle'),
+          { includeDeactivated: true },
+        )
+        if (existing) {
+          await agent.login({ identifier: handle, password })
+        } else {
+          await agent.createAccount({
+            handle,
+            email: handle.replace('.test', '@test.com'),
+            password,
+          })
+        }
+        const session = agent.session
+        if (!session)
+          throw new Error(`No authenticated demo session for ${handle}`)
+        return { handle, did: session.did, token: session.accessJwt }
+      },
+    })
+  }
+
   console.log('✅ Dev environment is ready')
   console.log(`📋 DevEnv manifest ${JSON.stringify(network.manifest, null, 2)}`)
 }

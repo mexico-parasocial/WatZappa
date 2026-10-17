@@ -82,6 +82,7 @@ import registerPush from './app/bsky/notification/registerPush.js'
 import unregisterPush from './app/bsky/notification/unregisterPush.js'
 import updateSeen from './app/bsky/notification/updateSeen.js'
 import getAgeAssuranceState from './app/bsky/unspecced/getAgeAssuranceState.js'
+import getAtmosphereExploreTab from './app/bsky/unspecced/getAtmosphereExploreTab.js'
 import getConfig from './app/bsky/unspecced/getConfig.js'
 import getOnboardingSuggestedStarterPacks from './app/bsky/unspecced/getOnboardingSuggestedStarterPacks.js'
 import getPopularFeedGenerators from './app/bsky/unspecced/getPopularFeedGenerators.js'
@@ -111,13 +112,17 @@ import getParaAgentConversation from './com/para/agent/getConversation.js'
 import sendParaAgentMessage from './com/para/agent/sendMessage.js'
 import getParaAlphaAccess from './com/para/alpha/getAccess.js'
 import getParaAlphaRolloutStatus from './com/para/alpha/getRolloutStatus.js'
+import { bookSchemas } from './com/para/book/schemas.js'
+import searchParaBooks from './com/para/book/searchBooks.js'
 import getParaCabildeo from './com/para/civic/getCabildeo.js'
 import getParaOpenQuestionThread from './com/para/civic/getOpenQuestionThread.js'
+import getParaPolicyCommunityVotes from './com/para/civic/getPolicyCommunityVotes.js'
 import getParaPolicyTally from './com/para/civic/getPolicyTally.js'
 import listParaCabildeoPositions from './com/para/civic/listCabildeoPositions.js'
 import listParaCabildeos from './com/para/civic/listCabildeos.js'
 import listParaDelegationCandidates from './com/para/civic/listDelegationCandidates.js'
 import putParaLivePresence from './com/para/civic/putLivePresence.js'
+import { civicSchemas } from './com/para/civic/schemas.js'
 import applyParaCollectionOps, {
   applyOpsSchema,
 } from './com/para/collection/applyOps.js'
@@ -126,19 +131,18 @@ import deleteParaCollection from './com/para/collection/deleteCollection.js'
 import getParaCollection from './com/para/collection/getCollection.js'
 import listParaCollections from './com/para/collection/listCollections.js'
 import updateParaCollection from './com/para/collection/updateCollection.js'
-import createParaCivicTreeRelationship from './com/para/community/civicTree/createRelationship.js'
-import listParaCivicTreeContributions from './com/para/community/civicTree/listContributions.js'
-import { civicTreeProcedureSchemas } from './com/para/community/civicTree/schemas.js'
-import { bookSchemas } from './com/para/book/schemas.js'
-import searchParaBooks from './com/para/book/searchBooks.js'
 import getParaCommunityActivity from './com/para/community/activities/getActivity.js'
 import listParaCommunityActivities from './com/para/community/activities/listActivities.js'
 import listParaCommunityWikiPages from './com/para/community/activities/listWikiPages.js'
 import { communityActivitySchemas } from './com/para/community/activities/schemas.js'
+import createParaCivicTreeRelationship from './com/para/community/civicTree/createRelationship.js'
+import listParaCivicTreeContributions from './com/para/community/civicTree/listContributions.js'
+import { civicTreeProcedureSchemas } from './com/para/community/civicTree/schemas.js'
 import submitParaCivicTreeContribution from './com/para/community/civicTree/submitContribution.js'
 import voteParaCivicTreeContribution from './com/para/community/civicTree/voteContribution.js'
 import exportParaObsidianVault from './com/para/community/exportObsidianVault.js'
 import getParaAuditTrail from './com/para/community/getAuditTrail.js'
+import getParaCommunityAuthorization from './com/para/community/getAuthorization.js'
 import getParaCommunityBoard from './com/para/community/getBoard.js'
 import getParaBriefingPack from './com/para/community/getBriefingPack.js'
 import getParaCivicTree from './com/para/community/getCivicTree.js'
@@ -191,6 +195,7 @@ export default function (server: Server, ctx: AppContext) {
   // The civicTree procedure lexicons postdate the frozen generated registry.
   server.addLexicons(civicTreeProcedureSchemas)
   server.addLexicons(bookSchemas)
+  server.addLexicons(civicSchemas)
   server.addLexicons(communityActivitySchemas)
   server.addLexicons([applyOpsSchema])
 
@@ -290,6 +295,7 @@ export default function (server: Server, ctx: AppContext) {
   putPreferencesV2(server, ctx)
   registerPush(server, ctx)
   unregisterPush(server, ctx)
+  getAtmosphereExploreTab(server, ctx)
   getConfig(server, ctx)
   getPopularFeedGenerators(server, ctx)
   getTaggedSuggestions(server, ctx)
@@ -318,11 +324,13 @@ export default function (server: Server, ctx: AppContext) {
   listParaCabildeoPositions(paraServer, ctx)
   listParaDelegationCandidates(paraServer, ctx)
   putParaLivePresence(paraServer, ctx)
+  getParaCommunityAuthorization(server, ctx)
   getParaCommunityBoard(paraServer, ctx)
   getParaCommunityGovernance(paraServer, ctx)
   getParaAuditTrail(paraServer, ctx)
   getParaCivicTree(paraServer, ctx)
   searchParaBooks(paraServer, ctx)
+  getParaPolicyCommunityVotes(paraServer, ctx)
   listParaCommunityActivities(paraServer, ctx)
   getParaCommunityActivity(paraServer, ctx)
   listParaCommunityWikiPages(paraServer, ctx)
