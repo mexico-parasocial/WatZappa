@@ -33,6 +33,7 @@ type RecordProcessorOptions<TSchema extends l.RecordSchema, TRow> = {
   ) => { notifs: Notif[]; toDelete: string[] }
   updateAggregates?: (db: DatabaseSchema, obj: TRow) => Promise<void>
   invalidateCache?: (db: DatabaseSchema, obj: TRow) => Promise<string[]>
+  promoteDuplicateOnDelete?: boolean
 }
 
 type Notif = Insertable<Notification>
@@ -201,6 +202,9 @@ export class RecordProcessor<TSchema extends l.RecordSchema, TRow> {
         .execute()
       return this.handleNotifs({ deleted })
     } else {
+      if (this.options.promoteDuplicateOnDelete === false) {
+        return this.handleNotifs({ deleted })
+      }
       const found = await this.db
         .selectFrom('duplicate_record')
         .innerJoin('record', 'record.uri', 'duplicate_record.uri')

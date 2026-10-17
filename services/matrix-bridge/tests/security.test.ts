@@ -14,6 +14,7 @@ import { PgBridgeDatabase } from '../src/db/pg/index.js'
 import { SqliteBridgeDatabase } from '../src/db/sqlite-wrapper.js'
 import { EventBus } from '../src/events/bus.js'
 import { BRIDGE_AUDIENCES } from '../src/identity-proof.js'
+import type * as M8Auth from '../src/m8-auth.js'
 import { ingestMatrixEvents } from '../src/matrix-ingestion.js'
 import { MatrixLoginUnavailableError } from '../src/matrix-login-error.js'
 import type { RouteContext, RouteHandler } from '../src/routes/context.js'
@@ -25,13 +26,13 @@ import {
 } from '../src/routes/institutions.js'
 import {
   apiMatrixAttestHandler,
-  apiMatrixIdentityHandler,
   apiMatrixIdentityGoneHandler,
+  apiMatrixIdentityHandler,
   apiMatrixTokenHandler,
 } from '../src/routes/matrix-identity.js'
 
 vi.mock('../src/m8-auth.js', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../src/m8-auth.js')>()),
+  ...(await importOriginal<typeof M8Auth>()),
   authenticateM8: async () => ({ did: 'did:plc:alice' }),
 }))
 const did = 'did:plc:alice'
@@ -89,6 +90,7 @@ describe.each([
     }
     ctx = {
       db,
+      firehose: { refreshMembership: async () => {} },
       config: {
         port: 3001,
         matrixPublicHomeserverUrl: 'https://matrix.example',
@@ -124,6 +126,42 @@ describe.each([
       payload: { roomId, ...extra },
     })
   }
+  it('refuses room delivery when fresh authority removes a cached member', async () => {
+    ctx.firehose = {
+      refreshMembership: async () => {
+        await db.setCommunityMembership(did, community, 'removed', [])
+      },
+    } as unknown as RouteContext['firehose']
+    await notice('!a:para', { marker: 'revoked-data' })
+    const res = await connect()
+    expect(res.text).not.toContain('revoked-data')
+  })
+
+  it('lists both chambers for a verified moderator and removes that access after demotion', async () => {
+    await db.setCommunityMembership(did, community, 'active', [
+      'member',
+      'moderator',
+    ])
+    expect(
+      (await db.getActiveCommunityRoomsForDid(did)).map((r) => r.roomId).sort(),
+    ).toEqual(['!a:para', '!b:para', '!main:para', '!observer:para'])
+    await db.setCommunityMembership(did, community, 'active', ['member'])
+    expect(
+      (await db.getActiveCommunityRoomsForDid(did)).map((r) => r.roomId).sort(),
+    ).toEqual(['!a:para', '!main:para'])
+  })
+
+  it('paginates all persisted membership states for authority reconciliation', async () => {
+    await db.setCommunityMembership('did:plc:bob', community, 'removed', [])
+    const first = await db.listCommunityMemberships(1, 0)
+    const second = await db.listCommunityMemberships(1, 1)
+    expect([...first, ...second].map((m) => m.did).sort()).toEqual([
+      did,
+      'did:plc:bob',
+    ])
+    expect(await db.listCommunityMemberships(1, 2)).toEqual([])
+  })
+
   it('atomically retries failed ingestion and deduplicates both producers', async () => {
     // Attribution flows through minted device sessions post-CD-M1.
     const now = new Date().toISOString()
@@ -145,7 +183,7 @@ describe.each([
       type: 'm.room.message',
       originServerTs: Date.now(),
     }
-    using broken = vi
+    using _broken = vi
       .spyOn(db, 'appendEvent')
       .mockRejectedValueOnce(new Error('storage failure'))
     await expect(
@@ -165,7 +203,7 @@ describe.each([
   it('replays more than 200 entries including events published during replay', async () => {
     for (let n = 0; n < 405; n++) await notice('!a:para', { n })
     const read = db.listEventsAfter.bind(db)
-    using spy = vi
+    using _spy = vi
       .spyOn(db, 'listEventsAfter')
       .mockImplementationOnce(async (cursor, limit) => {
         await notice('!a:para', { n: 405 })

@@ -5,16 +5,21 @@ import { ValidationContext } from './validator.js'
 /**
  * The Standard Schema adapter for {@link Validator} instances.
  */
-export class StandardSchemaAdapter<TInput, TOutput>
-  implements StandardSchemaV1.Props<TInput, TOutput>
-{
+export class StandardSchemaAdapter<
+  TInput,
+  TOutput,
+> implements StandardSchemaV1.Props<TInput, TOutput> {
   readonly version = 1
 
   readonly vendor = '@atproto/lex-schema'
 
   declare readonly types: StandardSchemaV1.Types<TInput, TOutput>
 
-  constructor(private readonly validator: Validator<TInput, TOutput>) {}
+  private readonly validator: Validator<TInput, TOutput>
+
+  constructor(validator: Validator<TInput, TOutput>) {
+    this.validator = validator
+  }
 
   validate(
     value: unknown,

@@ -15,6 +15,7 @@ import {
   GetParaCommunityGovernanceResponse,
   GetParaCommunityMembersResponse,
   GetParaCommunityPostsResponse,
+  GetParaPolicyCommunityVotesResponse,
   GetParaCommunityRelationsResponse,
   GetParaCommunitySharedContentResponse,
   ParaAuthorFeedItem,
@@ -31,12 +32,20 @@ import {
   ParaCommunityRelationView,
   ParaCommunitySharedContentView,
   ParaCommunitySummary,
+  ParaPolicyCommunityVote,
+  ParaPolicySignalBucket,
   ParaRoleDefinition,
   ParaRoleHolder,
   ParaSharedContentActionView,
   ParaStrongRef,
 } from '../../../proto/bsky_pb.js'
 import { getAuthoritySnapshot } from '../community-authority.js'
+import {
+  type GovernanceBoard,
+  getTrustedGovernanceRecordJson,
+  governanceSlugMatchSql,
+  isTrustedBoardGovernanceSql,
+} from '../community-governance.js'
 import { Database } from '../db/index.js'
 import {
   CreatedAtCidKeyset,
@@ -55,6 +64,7 @@ type BoardRow = {
   name: string
   description: string | null
   quadrant: string
+  region: string | null
   delegatesChatId: string
   subdelegatesChatId: string
   createdAt: string
@@ -147,7 +157,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         getMemberCounts(db, [board.uri]).then(
           (counts) => counts.get(board.uri) ?? 0,
         ),
-        getGovernanceSummary(db, board.name, board.slug).catch(() => null),
+        getGovernanceSummary(db, board).catch(() => null),
         getChildCommunityCounts(db, [board.uri]),
         getSharedContentCounts(db, [board.uri]),
         getParentCommunityUris(db, [board.uri]),
@@ -191,6 +201,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       flairId: req.flairId,
       sort: req.sort,
       quadrant: req.quadrant,
+      region: req.region,
     })
     if (result.boards.length === 0) {
       return new GetParaCommunityBoardsResponse({ boards: [] })
@@ -257,10 +268,91 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     })
   },
 
+  async getParaPolicyCommunityVotes(req) {
+    const board = await selectBoard(db, req.communityId, undefined)
+    if (!board) {
+      return new GetParaPolicyCommunityVotesResponse({})
+    }
+    // Who voted is public (the ballots live in public repos), but "my
+    // community" is a view for its own members.
+    await assertActiveCommunityViewer(db, {
+      communityUri: board.uri,
+      viewerDid: req.viewerDid,
+      viewerIsAdmin: req.viewerIsAdmin,
+    })
+
+    const members = db.db
+      .selectFrom('para_community_membership as membership')
+      .where('membership.communityUri', '=', board.uri)
+      .where('membership.membershipState', '=', 'active')
+    const voters = members
+      .innerJoin('para_policy_vote as vote', 'vote.creator', 'membership.creator')
+      .where('vote.subject', '=', req.postUri)
+      .where('vote.subjectType', '=', 'policy')
+
+    const [memberCount, breakdown, rows] = await Promise.all([
+      members
+        .select(sql<number>`count(*)`.as('count'))
+        .executeTakeFirst(),
+      voters
+        .select(['vote.signal as signal', sql<number>`count(*)`.as('count')])
+        .groupBy('vote.signal')
+        .orderBy('vote.signal', 'asc')
+        .execute(),
+      voters
+        .leftJoin('actor as actor', 'actor.did', 'vote.creator')
+        .leftJoin('profile as profile', 'profile.creator', 'vote.creator')
+        .select([
+          'vote.creator as did',
+          'vote.signal as signal',
+          'vote.createdAt as createdAt',
+          'actor.handle as handle',
+          'profile.displayName as displayName',
+        ])
+        .orderBy('vote.createdAt', 'desc')
+        .orderBy('vote.creator', 'asc')
+        .limit(normalizeLimit(req.limit))
+        .execute(),
+    ])
+
+    const voterCount = breakdown.reduce((sum, row) => sum + Number(row.count), 0)
+    const signalSum = breakdown.reduce(
+      (sum, row) => sum + Number(row.signal) * Number(row.count),
+      0,
+    )
+
+    return new GetParaPolicyCommunityVotesResponse({
+      communityUri: board.uri,
+      communityName: board.name ?? '',
+      memberCount: Number(memberCount?.count) || 0,
+      voterCount,
+      signalAverage: voterCount > 0 ? signalSum / voterCount : 0,
+      breakdown: breakdown.map(
+        (row) =>
+          new ParaPolicySignalBucket({
+            signal: Number(row.signal),
+            count: Number(row.count),
+          }),
+      ),
+      votes: rows.map(
+        (row) =>
+          new ParaPolicyCommunityVote({
+            did: row.did,
+            handle: row.handle ?? '',
+            displayName: row.displayName ?? '',
+            avatar: '',
+            signal: Number(row.signal),
+            createdAt: row.createdAt,
+          }),
+      ),
+    })
+  },
+
   async getParaCommunityGovernance(req) {
     const community = normalizeCommunitySlug(req.community)
+    const board = await selectBoard(db, community, undefined)
     const [record, counters] = await Promise.all([
-      getPublishedGovernanceRecord(db, req.community, community),
+      board ? getPublishedGovernanceRecord(db, board) : null,
       getCommunityCounters(db, community),
     ])
 
@@ -280,7 +372,6 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       return true
     }
 
-    const board = await selectBoard(db, community, undefined)
     const standard = (board?.governanceMode || 'hierarchical') as
       | 'hierarchical'
       | 'horizontal'
@@ -658,12 +749,18 @@ const selectBoards = async (
     flairId?: string
     sort?: string
     quadrant?: string
+    region?: string
   },
 ): Promise<{ boards: BoardRow[]; cursor: string }> => {
   let builder = boardBaseQuery(db)
 
   if (opts.quadrant) {
     builder = builder.where('board.quadrant', '=', opts.quadrant)
+  }
+
+  const region = opts.region?.trim()
+  if (region) {
+    builder = builder.where('board.region', '=', region)
   }
 
   const state = opts.state?.trim()
@@ -756,10 +853,18 @@ const boardBaseQuery = (db: Database) =>
   db.db
     .selectFrom('para_community_board as board')
     .leftJoin('actor as actor', 'actor.did', 'board.creator')
-    .leftJoin(
-      'para_community_governance as gov',
-      'gov.communityUri',
-      'board.uri',
+    // The board's trusted governance record only: see community-governance.ts.
+    .leftJoinLateral(
+      (eb) =>
+        eb
+          .selectFrom('para_community_governance as candidate')
+          .where(isTrustedBoardGovernanceSql('candidate', 'board'))
+          .orderBy(governanceSlugMatchSql('candidate', 'board'), 'desc')
+          .orderBy('candidate.indexedAt', 'desc')
+          .limit(1)
+          .selectAll('candidate')
+          .as('gov'),
+      (join) => join.onTrue(),
     )
     .select([
       'board.uri',
@@ -769,6 +874,7 @@ const boardBaseQuery = (db: Database) =>
       'board.name',
       'board.description',
       'board.quadrant',
+      'board.region',
       'board.delegatesChatId',
       'board.subdelegatesChatId',
       'board.governanceMode',
@@ -1053,30 +1159,6 @@ const assertCommunitySteward = async (
   }
 }
 
-const filterValidRoles = (
-  roles: string[] | null,
-  roleAssignments: Record<string, unknown>[] | null,
-): string[] => {
-  if (roleAssignments && roleAssignments.length > 0) {
-    const now = Date.now()
-    return roleAssignments
-      .filter((assignment) => {
-        const validFrom = assignment.validFrom
-          ? Date.parse(assignment.validFrom as string)
-          : 0
-        const validUntil = assignment.validUntil
-          ? Date.parse(assignment.validUntil as string)
-          : Infinity
-        if (validFrom > now) return false
-        if (validUntil <= now) return false
-        return true
-      })
-      .map((assignment) => (assignment.role as string) || '')
-      .filter(Boolean)
-  }
-  return roles ?? []
-}
-
 const toBoardView = (
   board: BoardRow,
   memberCount: number,
@@ -1116,6 +1198,7 @@ const toBoardView = (
     sharedContentCount: summary?.sharedContentCount ?? 0,
     governanceMode: board.governanceMode ?? 'hierarchical',
     admissionMode: board.admissionMode,
+    region: board.region ?? '',
   })
 
 const selectMembers = async (
@@ -1140,8 +1223,6 @@ const selectMembers = async (
       'membership.creator as did',
       'membership.cid',
       'membership.membershipState',
-      'membership.roles',
-      'membership.roleAssignments',
       'membership.joinedAt',
       'actor.handle as handle',
       'profile.displayName as displayName',
@@ -1159,18 +1240,18 @@ const selectMembers = async (
           : ['owner.revoke']
       builder = builder.where(
         sql<boolean>`exists (
-          select 1 from para_community_authority_event grant
-          where grant."communityUri" = "membership"."communityUri"
-            and grant.subject = "membership".creator
-            and grant.action = ${grant}
-            and grant."effectiveAt"::timestamptz <= now()
-            and (grant."expiresAt" is null or grant."expiresAt"::timestamptz > now())
+          select 1 from para_community_authority_event granted
+          where granted."communityUri" = "membership"."communityUri"
+            and granted.subject = "membership".creator
+            and granted.action = ${grant}
+            and granted."effectiveAt"::timestamptz <= now()
+            and (granted."expiresAt" is null or granted."expiresAt"::timestamptz > now())
             and not exists (
               select 1 from para_community_authority_event terminal
-              where terminal."communityUri" = grant."communityUri"
-                and terminal.subject = grant.subject
+              where terminal."communityUri" = granted."communityUri"
+                and terminal.subject = granted.subject
                 and terminal.action in (${sql.join(terminal)})
-                and terminal.version > grant.version
+                and terminal.version > granted.version
             )
         )`,
       )
@@ -1229,9 +1310,7 @@ const selectMembers = async (
           avatar: '',
           membershipState:
             authorityByDid.get(row.did)?.membershipState ?? row.membershipState,
-          roles:
-            authorityByDid.get(row.did)?.roles ??
-            filterValidRoles(row.roles ?? null, row.roleAssignments ?? null),
+          roles: authorityByDid.get(row.did)?.roles ?? [],
           joinedAt: row.joinedAt,
           votesCast: voteCounts.get(row.did) ?? 0,
           delegationsReceived: delegationCounts.get(row.did) ?? 0,
@@ -1289,9 +1368,7 @@ const selectMembers = async (
         avatar: '',
         membershipState:
           authorityByDid.get(row.did)?.membershipState ?? row.membershipState,
-        roles:
-          authorityByDid.get(row.did)?.roles ??
-          filterValidRoles(row.roles ?? null, row.roleAssignments ?? null),
+        roles: authorityByDid.get(row.did)?.roles ?? [],
         joinedAt: row.joinedAt,
         votesCast: voteCounts.get(row.did) ?? 0,
         delegationsReceived: delegationCounts.get(row.did) ?? 0,
@@ -1386,10 +1463,9 @@ const getCommunityPostCounts = async (
 
 const getGovernanceSummary = async (
   db: Database,
-  community: string,
-  slug: string,
+  board: GovernanceBoard,
 ): Promise<ParaCommunityGovernanceSummary | null> => {
-  const record = await getPublishedGovernanceRecord(db, community, slug)
+  const record = await getPublishedGovernanceRecord(db, board)
   if (!record) return null
 
   return new ParaCommunityGovernanceSummary({
@@ -1506,42 +1582,12 @@ const toGovernanceMember = (person: {
     avatar: person.avatar ?? undefined,
   })
 
-const COMMUNITY_TRANSLATION_SOURCE =
-  'ÁÀÄÂÃáàäâãÉÈËÊéèëêÍÌÏÎíìïîÓÒÖÔÕóòöôõÚÙÜÛúùüûÑñÇç'
-const COMMUNITY_TRANSLATION_TARGET =
-  'AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuNnCc'
-
 const getPublishedGovernanceRecord = async (
   db: Database,
-  community: string,
-  slug: string,
+  board: GovernanceBoard,
 ): Promise<GovernanceRecord | null> => {
-  const suffix = `/com.para.community.governance/${slug || 'community'}`
-
-  const slugMatch = await db.db
-    .selectFrom('record')
-    .select(['json'])
-    .where('uri', 'like', `%${suffix}`)
-    .orderBy('indexedAt', 'desc')
-    .executeTakeFirst()
-  if (slugMatch) {
-    return parseGovernanceRecord(slugMatch.json)
-  }
-
-  const normalizedCommunity = normalizeCommunityKey(community)
-  const recordMatch = await db.db
-    .selectFrom('record')
-    .select(['json'])
-    .where('uri', 'like', '%/com.para.community.governance/%')
-    .where(
-      sql`regexp_replace(lower(translate(regexp_replace(coalesce(("record"."json"::jsonb ->> 'community'), ''), '^p/', '', 'i'), ${COMMUNITY_TRANSLATION_SOURCE}, ${COMMUNITY_TRANSLATION_TARGET})), '[^a-z0-9]+', '', 'g')`,
-      '=',
-      normalizedCommunity,
-    )
-    .orderBy('indexedAt', 'desc')
-    .executeTakeFirst()
-
-  return recordMatch ? parseGovernanceRecord(recordMatch.json) : null
+  const json = await getTrustedGovernanceRecordJson(db, board)
+  return json ? parseGovernanceRecord(json) : null
 }
 
 const parseGovernanceRecord = (json: string): GovernanceRecord | null => {
@@ -1563,15 +1609,6 @@ const parseGovernanceRecord = (json: string): GovernanceRecord | null => {
     return null
   }
 }
-
-const normalizeCommunityKey = (value?: string | null) =>
-  (value || '')
-    .trim()
-    .replace(/^p\//i, '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '')
 
 const normalizeCommunitySlug = (value?: string | null) =>
   (value || '')

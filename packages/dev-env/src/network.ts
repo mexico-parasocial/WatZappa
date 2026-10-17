@@ -214,6 +214,7 @@ export class TestNetwork extends TestNetworkNoAppView {
       skipMockSetup: false,
       skipParaDemoSeed: false,
       seedMemesOnStart: false,
+      seedCivicTreesOnStart: false,
     })
     return network
   }

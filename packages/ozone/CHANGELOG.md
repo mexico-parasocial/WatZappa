@@ -1,5 +1,261 @@
 # @atproto/ozone
 
+## 0.9.2
+
+### Patch Changes
+
+- [#5667](https://github.com/bluesky-social/atproto/pull/5667) [`68c6502`](https://github.com/bluesky-social/atproto/commit/68c6502d832bffe5c51944477d3fead3e2d5c6d3) Thanks [@foysalit](https://github.com/foysalit)! - Return a noAction inbox report outcome when the latest closure has no linked moderation action.
+
+- [#5659](https://github.com/bluesky-social/atproto/pull/5659) [`0623725`](https://github.com/bluesky-social/atproto/commit/0623725e07aa372d45fb82b9f26b285cef38bd20) Thanks [@foysalit](https://github.com/foysalit)! - Fix temporary tag renewal and record expiry. Reissued tags replace their pending deadline, permanent reissues clear it, and expiry workers ignore stale or already consumed work. Bound each tag-expiry pass to 1,000 due rows, oldest deadline first.
+
+- [#5675](https://github.com/bluesky-social/atproto/pull/5675) [`95a4cd5`](https://github.com/bluesky-social/atproto/commit/95a4cd57f958d981d5648e964e9aa584150c47b5) Thanks [@estrattonbailey](https://github.com/estrattonbailey)! - Sync the bundled `app.bsky.unspecced` lexicon manifest with the updated Atmosphere Explore lexicons.
+
+- [#5672](https://github.com/bluesky-social/atproto/pull/5672) [`5816c4f`](https://github.com/bluesky-social/atproto/commit/5816c4fefe896422c59f3de9f0602528c64bea82) Thanks [@gcwill70](https://github.com/gcwill70)! - Expose complete lifecycle counts and duration metrics in queue statistics.
+
+- [#5673](https://github.com/bluesky-social/atproto/pull/5673) [`d630dcd`](https://github.com/bluesky-social/atproto/commit/d630dcdf2f4974eea0ec3d9047340a7d53d0016e) Thanks [@foysalit](https://github.com/foysalit)! - Add OZONE_REPORT_TAGS_DISABLED to disable automatic report-reason tags when set to true, while keeping them enabled by default and preserving other subject tags.
+
+- [#5670](https://github.com/bluesky-social/atproto/pull/5670) [`ee471a4`](https://github.com/bluesky-social/atproto/commit/ee471a48599480bba0ee1a1d7d29e7ca0ccf248c) Thanks [@foysalit](https://github.com/foysalit)! - Avoid report/tag deadlocks and remove event-history queries from tag expiry.
+
+## 0.9.1
+
+### Patch Changes
+
+- [#5591](https://github.com/bluesky-social/atproto/pull/5591) [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Fix the `chat.bsky.authFullChatClient` permission set: it granted the non-existent `chat.bsky.convo.exportAccountData` RPC method instead of `chat.bsky.actor.exportAccountData`.
+
+- [#5591](https://github.com/bluesky-social/atproto/pull/5591) [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Source Lexicons through each package's own `lexicons.json` manifest instead of compiling the repo-root `lexicons` directory directly. Canonical `com.atproto.*` / `tools.ozone.*` schemas are symlinked from the root, `app.bsky.*` / `chat.bsky.*` are fetched from the `bluesky-social/bsky` Github repo, other external namespaces resolve from the network, and locally diverging documents are kept under a tracked `lexicons-overrides` directory. The root `lexicons` directory now only holds the canonical `com.atproto` and `tools.ozone` namespaces. No change to generated output or published API.
+
+- [#5658](https://github.com/bluesky-social/atproto/pull/5658) [`9eeaa86`](https://github.com/bluesky-social/atproto/commit/9eeaa86a279a4dc9d0e80e653a385bd1d62896d1) Thanks [@foysalit](https://github.com/foysalit)! - Validate the canonical severity expiryInDays property and reject the obsolete spelling.
+
+- [#5651](https://github.com/bluesky-social/atproto/pull/5651) [`7c90f02`](https://github.com/bluesky-social/atproto/commit/7c90f0216c9fc2dbe8b3c1b193d34f2138c2a26c) Thanks [@foysalit](https://github.com/foysalit)! - Bound reporter statistics to a configurable history window (180 days by default) and count only explicitly linked actions using primary-key lookups.
+- Updated dependencies [[`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2), [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2), [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2), [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2), [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2), [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2), [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2)]:
+  - @atproto/lex-password-session@0.3.0
+  - @atproto/lex@0.4.0
+  - @atproto/syntax@0.7.7
+  - @atproto/xrpc-server@0.13.5
+  - @atproto-labs/fetch-node@0.4.1
+  - @atproto/identity@0.5.17
+  - @atproto/common@0.8.6
+
+## 0.9.0
+
+### Minor Changes
+
+- [#5642](https://github.com/bluesky-social/atproto/pull/5642) [`2db2f9d`](https://github.com/bluesky-social/atproto/commit/2db2f9d9cc619906d4cde3284d512c87bf26b9e7) Thanks [@foysalit](https://github.com/foysalit)! - Expose approved or denied outcomes on resolved moderation inbox appeals and snapshot outcomes in appeal resolution notifications. Preserve unknown historical outcomes, record no-action denials, and close targeted appeal reports when reversing a takedown.
+  
+  Resolve outcomes only after indexed lookups select each subject's latest appeal, keeping page hydration independent of appeal history.
+
+### Patch Changes
+
+- [#5640](https://github.com/bluesky-social/atproto/pull/5640) [`b05cf65`](https://github.com/bluesky-social/atproto/commit/b05cf65ad24cbe76d79ce40795be3e5f5e1af67b) Thanks [@foysalit](https://github.com/foysalit)! - Cancel queryEvents and queryStatuses listing SQL when the HTTP client disconnects.
+
+## 0.8.0
+
+### Minor Changes
+
+- [#5641](https://github.com/bluesky-social/atproto/pull/5641) [`7184ed7`](https://github.com/bluesky-social/atproto/commit/7184ed74423e1d976ceb9e57310d2983c90c2f18) Thanks [@foysalit](https://github.com/foysalit)! - Replace the moderation inbox global push preference with independent reports, account, and labels preferences. Support atomic partial updates and preserve existing opt-outs through nullable category columns that inherit the stored global value. Clients must switch to the category fields.
+
+### Patch Changes
+
+- [#5644](https://github.com/bluesky-social/atproto/pull/5644) [`dff8990`](https://github.com/bluesky-social/atproto/commit/dff8990f2fd409a0e78309f64e18e7ad36befcaf) Thanks [@foysalit](https://github.com/foysalit)! - Keep moderation inbox report pages, actioned subject lists and notification visibility checks bounded to the viewer's post-cutoff rows at scale
+
+- [#5597](https://github.com/bluesky-social/atproto/pull/5597) [`8c05fa0`](https://github.com/bluesky-social/atproto/commit/8c05fa00d32e912bc75f4481274ca74ff4c8e6b0) Thanks [@foysalit](https://github.com/foysalit)! - Associate email events with reports targeted by ID without changing report status. Other email report targeting modes remain no-ops.
+
+## 0.7.0
+
+### Minor Changes
+
+- [#5634](https://github.com/bluesky-social/atproto/pull/5634) [`c137c3b`](https://github.com/bluesky-social/atproto/commit/c137c3bc3cfbe96fab6886112a0599c2af518feb) Thanks [@foysalit](https://github.com/foysalit)! - Temporarily disable wildcard label queries by default to prevent expensive prefix scans. Set OZONE_LABEL_QUERY_WILDCARDS_ENABLED=true to restore support; exact URI queries remain available.
+
+## 0.6.2
+
+### Patch Changes
+
+- [#5581](https://github.com/bluesky-social/atproto/pull/5581) [`f069327`](https://github.com/bluesky-social/atproto/commit/f0693271583923f38d827b4d4387d065e2cb8be7) Thanks [@gcwill70](https://github.com/gcwill70)! - Add report closure target met and missed counts, target met percentages, and overdue pending-report snapshots to report and queue statistics. Exclude reports without closure targets and preserve unavailable historical metrics until recomputed.
+  
+  Include the updated Ozone report and queue statistics definitions in the generated API client.
+  
+  Exclude muted reports from current and recomputed historical pending and overdue counts. Inbound volume and closure outcomes continue to include muted reports.
+
+## 0.6.1
+
+### Patch Changes
+
+- [#5579](https://github.com/bluesky-social/atproto/pull/5579) [`b023046`](https://github.com/bluesky-social/atproto/commit/b023046f9266b8755ad9b44928032426bb05599e) Thanks [@gcwill70](https://github.com/gcwill70)! - Add configurable report priority levels and reason mappings, with priority scores and resolution targets in minutes snapshotted on reports at creation.
+  
+  Expose each closed report's resolution time and whether it met its priority target.
+
+## 0.6.0
+
+### Minor Changes
+
+- [#5550](https://github.com/bluesky-social/atproto/pull/5550) [`3013430`](https://github.com/bluesky-social/atproto/commit/3013430ed7433edd4c70d2970428d0ab803f6e85) Thanks [@foysalit](https://github.com/foysalit)! - Add viewer-facing moderation inbox reads for configurable account standing, report details, and cursor-paginated action history, with PDS proxy access and read-only moderator previews. Include appeal attribution in moderator event views, structured policy details in takedown actions, and pending, resolved, and unread actioned-subject filters based on appeal report state. Keep moderator notes private.
+  
+  Page reports through reporter/time indexes with bounded hydration and source ownership validation. Batch subject hydration, reuse indexes for report summaries, and limit latest appeal lookups to one row in SQL. Add non-appeal reporter/time indexes, with the inbox migration ordered after the reporter DID column migration.
+  
+  Add OZONE_INBOX_START_AT to limit report, action, and appeal history by creation time, with a public subject/action creation-time index. Cover structured policy names, links, and fallback URLs in mapper regression tests.
+
+- [#5551](https://github.com/bluesky-social/atproto/pull/5551) [`38b10d1`](https://github.com/bluesky-social/atproto/commit/38b10d1b870a6a8f5da0eff32a136caadadd0184) Thanks [@foysalit](https://github.com/foysalit)! - Add moderation inbox notifications, preferences, unread counts, and independent per-section seen watermarks with normalized timestamps and read-only staff previews. Batch and isolate notification producers from moderation failures, reuse the UI strike suspension configuration for account standing, and keep moderator note text private. Include raw record values in report and actioned-subject details for record subjects.
+  
+  Apply OZONE_INBOX_START_AT to notification producers, lists, unread counts, and target visibility, including report closures and daemon standing changes.
+
+### Patch Changes
+
+- Updated dependencies [[`a044af7`](https://github.com/bluesky-social/atproto/commit/a044af7bd7b522ca51229d7686f5b6413be6eee7)]:
+  - @atproto-labs/opentelemetry-node@0.3.1
+
+## 0.5.2
+
+### Patch Changes
+
+- [#5585](https://github.com/bluesky-social/atproto/pull/5585) [`a257997`](https://github.com/bluesky-social/atproto/commit/a25799716c061e84586687b2c533eaedbd09c05f) Thanks [@foysalit](https://github.com/foysalit)! - Store the original reporter DID on Ozone report rows.
+
+- [#5558](https://github.com/bluesky-social/atproto/pull/5558) [`38e2dc8`](https://github.com/bluesky-social/atproto/commit/38e2dc8eea64d4077155cf5bbdb84965d5c6dbf6) Thanks [@gcwill70](https://github.com/gcwill70)! - Record report unassignment activity atomically with assignment and status updates.
+
+## 0.5.1
+
+### Patch Changes
+
+- [#5493](https://github.com/bluesky-social/atproto/pull/5493) [`cd736b3`](https://github.com/bluesky-social/atproto/commit/cd736b3dbbec957cf4eaa7e67fa5b8be8f8ae04e) Thanks [@mozzius](https://github.com/mozzius)! - Add `since` and `startCursor` to `getTimeline` and `getListFeed`, for reading everything strictly newer than a previously returned position.
+- Updated dependencies [[`f8ed258`](https://github.com/bluesky-social/atproto/commit/f8ed25853dc91a16639decfaee2e0dcbb60808cd), [`0593d81`](https://github.com/bluesky-social/atproto/commit/0593d818bc2b7f8a40c9d0fe036bf39c7a4eecda)]:
+  - @atproto/crypto@0.5.7
+  - @atproto-labs/opentelemetry-node@0.3.0
+  - @atproto/identity@0.5.16
+  - @atproto/xrpc-server@0.13.4
+  - @atproto/common@0.8.5
+  - @atproto/lex@0.3.14
+  - @atproto/lex-password-session@0.2.4
+
+## 0.5.0
+
+### Minor Changes
+
+- [#5459](https://github.com/bluesky-social/atproto/pull/5459) [`136e214`](https://github.com/bluesky-social/atproto/commit/136e2145b893773a94e9620df37be5215cdb57a3) Thanks [@gcwill70](https://github.com/gcwill70)! - Add an endpoint for creating moderation appeals linked to specific actions.
+
+### Patch Changes
+
+- [#5556](https://github.com/bluesky-social/atproto/pull/5556) [`5019f55`](https://github.com/bluesky-social/atproto/commit/5019f5537317ee75ad4527db212bc27c3085fe67) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump the dev-dependencies group across 1 directory with 25 updates
+
+- [#5362](https://github.com/bluesky-social/atproto/pull/5362) [`7a85798`](https://github.com/bluesky-social/atproto/commit/7a857989751ae31518509d69ab7194a922064f3d) Thanks [@gcwill70](https://github.com/gcwill70)! - Add report lifecycle outcome, action breakdown, handling-time, and resolution-time statistics.
+  
+  Keep aggregate totals separate from unassigned-moderator groups, restore moderator inbound counts.
+  
+  Index report closure timestamps for daily statistics and combine null and unmatched queue IDs into a single unqueued group.
+  
+  Reconstruct historical pending counts at the end of each UTC day from report closure and reopen history. Current-day counts remain live; queue breakdowns use current queue membership.
+- Updated dependencies [[`5019f55`](https://github.com/bluesky-social/atproto/commit/5019f5537317ee75ad4527db212bc27c3085fe67)]:
+  - @atproto/crypto@0.5.6
+  - @atproto/identity@0.5.15
+  - @atproto/xrpc-server@0.13.3
+  - @atproto/common@0.8.4
+  - @atproto/lex@0.3.13
+
+## 0.4.3
+
+### Patch Changes
+
+- [#5517](https://github.com/bluesky-social/atproto/pull/5517) [`4dba111`](https://github.com/bluesky-social/atproto/commit/4dba11136a4a04a76dbb678135aacfe944f8d15b) Thanks [@foysalit](https://github.com/foysalit)! - Add a video invalidator for purging transcoded video content after blob takedowns.
+
+- [#5544](https://github.com/bluesky-social/atproto/pull/5544) [`1884e15`](https://github.com/bluesky-social/atproto/commit/1884e1589f3507c4316f46174f151b3eff3c4b63) Thanks [@gcwill70](https://github.com/gcwill70)! - Bound label subscription buffers with cleanup on cancellation and catch-up failures.
+
+- [#5391](https://github.com/bluesky-social/atproto/pull/5391) [`30f8149`](https://github.com/bluesky-social/atproto/commit/30f8149e629f9afc3fe41cf66bd8482954d7c052) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Remove `dotenv` dependency
+- Updated dependencies [[`2480187`](https://github.com/bluesky-social/atproto/commit/2480187c9554ff161227480dd6c0bcaf5e7e3921), [`30f8149`](https://github.com/bluesky-social/atproto/commit/30f8149e629f9afc3fe41cf66bd8482954d7c052)]:
+  - @atproto/xrpc-server@0.13.2
+  - @atproto/identity@0.5.14
+  - @atproto/lex@0.3.12
+
+## 0.4.2
+
+### Patch Changes
+
+- [#5504](https://github.com/bluesky-social/atproto/pull/5504) [`1ff43e6`](https://github.com/bluesky-social/atproto/commit/1ff43e6e592b1c3ac44e9cd5585370063035a90d) Thanks [@devinivy](https://github.com/devinivy)! - Drop ozone's own `SafeDidResolver` in favor of `@atproto/identity`'s safe
+  resolution, still relaxed by `OZONE_DEV_MODE`.
+- Updated dependencies [[`1ff43e6`](https://github.com/bluesky-social/atproto/commit/1ff43e6e592b1c3ac44e9cd5585370063035a90d), [`f88aa58`](https://github.com/bluesky-social/atproto/commit/f88aa5842df9aba9f208a6073272b43ef9bd089d)]:
+  - @atproto/identity@0.5.13
+  - @atproto-labs/fetch-node@0.4.0
+  - @atproto/lex@0.3.11
+
+## 0.4.1
+
+### Patch Changes
+
+- [#5477](https://github.com/bluesky-social/atproto/pull/5477) [`0287dce`](https://github.com/bluesky-social/atproto/commit/0287dcece76c2c2453406cb3b51591ce0f983a98) Thanks [@foysalit](https://github.com/foysalit)! - Align Ozone telemetry with the shared OpenTelemetry bootstrap and add Undici tracing while retaining PostgreSQL instrumentation. Restrict the shared ESM loader hook to instrumented modules.
+
+- [#5488](https://github.com/bluesky-social/atproto/pull/5488) [`fe4087e`](https://github.com/bluesky-social/atproto/commit/fe4087ecb7a7cc53c7081c9f97d49121e5251c36) Thanks [@dependabot](https://github.com/apps/dependabot)! - Bump the dev-dependencies group across 1 directory with 30 updates
+
+- [#5478](https://github.com/bluesky-social/atproto/pull/5478) [`7277010`](https://github.com/bluesky-social/atproto/commit/727701085829daf8e0440253346b5e70fc3810ad) Thanks [@foysalit](https://github.com/foysalit)! - Improve report query hydration by batching blob moderation lookups, deduplicating repeated status and account requests, and fetching profile chunks concurrently.
+
+- Updated dependencies [[`0287dce`](https://github.com/bluesky-social/atproto/commit/0287dcece76c2c2453406cb3b51591ce0f983a98), [`fe4087e`](https://github.com/bluesky-social/atproto/commit/fe4087ecb7a7cc53c7081c9f97d49121e5251c36)]:
+  - @atproto-labs/opentelemetry-node@0.2.1
+  - @atproto/crypto@0.5.5
+  - @atproto/identity@0.5.12
+  - @atproto/xrpc-server@0.13.1
+  - @atproto/common@0.8.3
+  - @atproto/lex@0.3.10
+
+## 0.4.0
+
+### Minor Changes
+
+- [#5426](https://github.com/bluesky-social/atproto/pull/5426) [`ed0b7d3`](https://github.com/bluesky-social/atproto/commit/ed0b7d38811bb24952a3f1da988b02e39934d222) Thanks [@bigmoves](https://github.com/bigmoves)! - Migrate Ozone onto `@atproto/lex`.
+
+  Ozone was the last package still generating its server stack with
+  `lex gen-server`. It now uses `lex build` like `pds` and `bsky`, and the legacy
+  `src/lexicon` tree is gone:
+
+  - All 95 route registrations moved from `server.<ns>.<method>()` to
+    `server.add(schema, …)` from `@atproto/xrpc-server`.
+  - `AtpAgent` is replaced by `Client`; `CredentialSession` by `PasswordSession`
+    from `@atproto/lex-password-session`.
+  - Kysely schema types, config and auth credentials now carry the branded
+    scalars (`DidString`, `DatetimeString`, `AtUriString`, `UriString`), so
+    route params flow into the database and back out into views without casts.
+
+  `@atproto/api` and `@atproto/lexicon` move to `devDependencies` (the test suites
+  still drive the legacy client), and `@atproto/xrpc` and `@atproto/lex-cli` are
+  dropped entirely.
+
+  Two behaviour changes worth noting, both from validating against the Lexicon
+  schemas rather than the legacy runtime:
+
+  - The AT Proto data model has no floating-point numbers, and the legacy stack
+    accepted them anyway. A non-integer number in an `unknown` field — for
+    example a float stored in a `tools.ozone.setting` value — is now rejected at
+    input validation. Reads are unaffected, since the server is configured with
+    `validateResponse: false`.
+  - A value whose shape contradicts the Lexicon is now rejected by schema
+    validation before a route's own validators run, so the reported error is the
+    schema's (`Expected object value type …`) rather than the application's.
+
+  `BlobDiverter` and the OAuth-preferences proxy previously threw `XRPCError` from
+  `@atproto/xrpc` to signal retryability to `retryHttp`. They now throw
+  `UpstreamHttpError`, which extends `XRPCError` from `@atproto/xrpc-server` so
+  that an error escaping a handler still carries its upstream status and message
+  instead of collapsing into a generic 500.
+
+- [#5421](https://github.com/bluesky-social/atproto/pull/5421) [`5c154f9`](https://github.com/bluesky-social/atproto/commit/5c154f9c5173e7823a5353eab92207508a7dea99) Thanks [@foysalit](https://github.com/foysalit)! - Allow moderators to retrieve hosted account preferences through `tools.ozone.moderation.getAccountPreferences`.
+
+### Patch Changes
+
+- [#5479](https://github.com/bluesky-social/atproto/pull/5479) [`a8d3893`](https://github.com/bluesky-social/atproto/commit/a8d38932747a662f2b6f45c1838807efa3341c9e) Thanks [@gcwill70](https://github.com/gcwill70)! - Scope otel down to only trace modules that are instrumented.
+
+- [#5074](https://github.com/bluesky-social/atproto/pull/5074) [`8a4631a`](https://github.com/bluesky-social/atproto/commit/8a4631a47ce6791b3868f06d1c930aa21327748c) Thanks [@foysalit](https://github.com/foysalit)! - Add opt-in prometheus metrics server and opt-in OpenTelemetry tracing (via `@atproto/ozone/tracer`, gated on `OTEL_EXPORTER_OTLP_ENDPOINT`) to ozone; the ozone service image now uses OpenTelemetry instead of dd-trace
+
+- [#5474](https://github.com/bluesky-social/atproto/pull/5474) [`59f4a42`](https://github.com/bluesky-social/atproto/commit/59f4a42d20f87fa24ea7b0bd923df9c133a5d2b5) Thanks [@gcwill70](https://github.com/gcwill70)! - Allow headers to be set when using app-configured PDS instance
+
+- [#5471](https://github.com/bluesky-social/atproto/pull/5471) [`263eaa3`](https://github.com/bluesky-social/atproto/commit/263eaa3e41d8d7328c5a7376e06b1e398156e9b7) Thanks [@foysalit](https://github.com/foysalit)! - Harden takedown event pushing with bounded concurrency, rate-limit-aware retries, and terminal handling for unavailable targets.
+
+- [#5393](https://github.com/bluesky-social/atproto/pull/5393) [`7068a65`](https://github.com/bluesky-social/atproto/commit/7068a65638f8d4664083555f402c5a10c47af460) Thanks [@gcwill70](https://github.com/gcwill70)! - Fix ascending report pagination when multiple reports share a timestamp.
+
+- [#5468](https://github.com/bluesky-social/atproto/pull/5468) [`0f3ea4b`](https://github.com/bluesky-social/atproto/commit/0f3ea4b86fbb4ec9869d219bae0d4d57ef019427) Thanks [@foysalit](https://github.com/foysalit)! - Harden outbound Ozone requests to PDS and did:web endpoints.
+
+- Updated dependencies [[`8a4631a`](https://github.com/bluesky-social/atproto/commit/8a4631a47ce6791b3868f06d1c930aa21327748c), [`ed0b7d3`](https://github.com/bluesky-social/atproto/commit/ed0b7d38811bb24952a3f1da988b02e39934d222), [`ed0b7d3`](https://github.com/bluesky-social/atproto/commit/ed0b7d38811bb24952a3f1da988b02e39934d222), [`ffcb7c5`](https://github.com/bluesky-social/atproto/commit/ffcb7c54e4dcedb10eed9175fbc939761462bca6)]:
+  - @atproto/xrpc-server@0.13.0
+  - @atproto/lex@0.3.9
+  - @atproto/syntax@0.7.6
+  - @atproto/lex-password-session@0.2.3
+  - @atproto/common@0.8.2
+  - @atproto/identity@0.5.11
+
 ## 0.3.1
 
 ### Patch Changes

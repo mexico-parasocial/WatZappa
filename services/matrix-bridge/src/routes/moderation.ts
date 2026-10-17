@@ -5,13 +5,25 @@ import {
   authorize,
   authorizeOrRespond,
   authorizeUserReadOrRespond,
+  decideCommunity,
 } from '../authz.js'
+import {
+  MAX_SANCTION_MINUTES,
+  MAX_SANCTION_REASON_LENGTH,
+  type SanctionKind,
+  isMemberReportReason,
+  isMessageReportReason,
+  sanctionKindsInForce,
+} from '../chat-moderation.js'
 import { fetchBeacon, fetchLatestBeacon } from '../drand.js'
 import { extractFromText, persistExtractedCard } from '../extraction.js'
-import { isMessageReportReason } from '../chat-moderation.js'
 import { HttpError, authenticateM8 } from '../m8-auth.js'
 import { OpenAIClient } from '../openai-client.js'
 import { sendExpoNotifications } from '../push.js'
+import {
+  type EnforcementResult,
+  createSanctionEnforcer,
+} from '../sanction-enforcement.js'
 import type { SortitionRunRow } from '../sortition-runs.js'
 import { summarizeCommunityDeliberation } from '../summarize.js'
 import type { RouteContext } from './context.js'
@@ -82,7 +94,16 @@ export async function apiChatMemberListHandler(
     return
   const limit = parseInt(url.searchParams.get('limit') || '100', 10)
   const offset = parseInt(url.searchParams.get('offset') || '0', 10)
-  const members = await ctx.chatMod.getMemberList(communityUri, limit, offset)
+  // Who is at risk or sanctioned is for moderators (and the member themself).
+  // The app also hides these, but the app is not the boundary: this is.
+  const isModerator = decideCommunity(
+    await ctx.db.getCommunityMembership(auth.did, communityUri),
+    'community.moderate',
+  ).allowed
+  const members = await ctx.chatMod.getMemberList(communityUri, limit, offset, {
+    did: auth.did,
+    isModerator,
+  })
   res.writeHead(200, { 'Content-Type': 'application/json' })
   res.end(JSON.stringify({ members, total: members.length }))
 }
@@ -130,9 +151,13 @@ export async function apiModerationReportHandler(
     )
     return
   }
-  if (isMessageReport && !isMessageReportReason(reason)) {
+  if (
+    isMessageReport
+      ? !isMessageReportReason(reason)
+      : !isMemberReportReason(reason)
+  ) {
     writeJson(res, 400, {
-      error: 'reason must be one of the fixed message-report reasons',
+      error: 'reason must be one of the fixed report reasons',
       code: 'InvalidReason',
     })
     return
@@ -187,34 +212,92 @@ export async function apiModerationReportHandler(
   res.end(JSON.stringify({ ok: true }))
 }
 
-/** POST /api/moderation-sanction */
+function parseJson(body: string): Record<string, unknown> {
+  try {
+    const parsed = JSON.parse(body || '{}')
+    if (parsed && typeof parsed === 'object') return parsed
+  } catch {
+    // fall through
+  }
+  throw new HttpError(400, 'Invalid JSON body')
+}
+
+function mergeEnforcement(results: EnforcementResult[]): EnforcementResult {
+  const accounts = Math.max(0, ...results.map((r) => r.accounts))
+  const applied = results.reduce((n, r) => n + r.applied, 0)
+  const failed = results.reduce((n, r) => n + r.failed, 0)
+  const status =
+    accounts === 0
+      ? 'pending'
+      : failed === 0
+        ? 'applied'
+        : applied === 0
+          ? 'failed'
+          : 'partial'
+  return { status, accounts, applied, failed }
+}
+
+/**
+ * POST /api/moderation-sanction
+ *
+ * Mute or ban a member for a community. The sanction is recorded against the
+ * DID and enforced in Matrix on the accounts the bridge knows; the projection
+ * enforces it again whenever the member next interacts, and for a chat key it
+ * has not seen. The response says how far enforcement got, so a moderator is
+ * never told a ban worked when it did not.
+ *
+ * Who may be sanctioned: nobody sanctions themself or an owner, and only an
+ * owner sanctions a moderator.
+ */
 export async function apiModerationSanctionHandler(
   req: IncomingMessage,
   res: ServerResponse,
   ctx: RouteContext,
 ): Promise<void> {
   const auth = await authenticateM8(req, ctx.config)
-  const body = await readBody(req)
-  const {
-    targetDid,
-    sanctionedByDid,
-    communityUri,
-    type,
-    durationMinutes,
-    matrixRoomId,
-  } = JSON.parse(body)
+  const body = parseJson(await readBody(req))
+  const { targetDid, sanctionedByDid, communityUri, type, durationMinutes } =
+    body as Record<string, any>
+  const reason = body.reason
   if (!targetDid || !sanctionedByDid || !communityUri || !type) {
-    res.writeHead(400, { 'Content-Type': 'application/json' })
-    res.end(JSON.stringify({ error: 'Missing required fields' }))
+    writeJson(res, 400, { error: 'Missing required fields' })
     return
   }
   if (auth.did !== sanctionedByDid) {
-    res.writeHead(403, { 'Content-Type': 'application/json' })
-    res.end(
-      JSON.stringify({
-        error: 'sanctionedByDid must match authenticated DID',
-      }),
+    writeJson(res, 403, {
+      error: 'sanctionedByDid must match authenticated DID',
+    })
+    return
+  }
+  if (type !== 'mute' && type !== 'ban') {
+    writeJson(res, 400, {
+      error: 'type must be "mute" or "ban"',
+      code: 'InvalidSanctionType',
+    })
+    return
+  }
+  if (
+    durationMinutes != null &&
+    !(
+      Number.isInteger(durationMinutes) &&
+      durationMinutes >= 1 &&
+      durationMinutes <= MAX_SANCTION_MINUTES
     )
+  ) {
+    writeJson(res, 400, {
+      error: `durationMinutes must be a whole number from 1 to ${MAX_SANCTION_MINUTES}`,
+      code: 'InvalidDuration',
+    })
+    return
+  }
+  if (
+    reason != null &&
+    (typeof reason !== 'string' || reason.length > MAX_SANCTION_REASON_LENGTH)
+  ) {
+    writeJson(res, 400, {
+      error: `reason must be text of at most ${MAX_SANCTION_REASON_LENGTH} characters`,
+      code: 'InvalidReason',
+    })
     return
   }
   // F9: sanctions require the moderator/owner role (central policy).
@@ -225,64 +308,148 @@ export async function apiModerationSanctionHandler(
     }))
   )
     return
+  if (targetDid === auth.did) {
+    writeJson(res, 400, {
+      error: 'You cannot sanction yourself',
+      code: 'SelfSanction',
+    })
+    return
+  }
+  await ctx.firehose.refreshMembership(communityUri, targetDid)
+  const actor = await ctx.db.getCommunityMembership(auth.did, communityUri)
+  const target = await ctx.db.getCommunityMembership(targetDid, communityUri)
+  const targetRoles = target?.roles ?? []
+  if (targetRoles.includes('owner')) {
+    writeJson(res, 403, {
+      error: 'An owner cannot be sanctioned',
+      code: 'CannotSanctionOwner',
+    })
+    return
+  }
+  if (targetRoles.includes('moderator') && !actor?.roles.includes('owner')) {
+    writeJson(res, 403, {
+      error: 'Only an owner can sanction a moderator',
+      code: 'CannotSanctionModerator',
+    })
+    return
+  }
+
+  const kind: SanctionKind = type
   await ctx.chatMod.ingestSanction({
     targetDid,
     communityUri,
-    sanctionType: type,
-    durationMinutes,
-    sanctionedByDid,
-    matrixRoomId,
+    sanctionType: kind,
+    durationMinutes: durationMinutes ?? null,
+    sanctionedByDid: auth.did,
+    reason: typeof reason === 'string' ? reason.trim() || null : null,
   })
+  const enforcement = await createSanctionEnforcer(ctx).apply(
+    targetDid,
+    communityUri,
+    kind,
+  )
+  await ctx.chatMod.recomputeUser(targetDid, communityUri)
+  const inForce = await ctx.chatMod.getSanction(targetDid, communityUri)
+  writeJson(res, 200, {
+    ok: true,
+    sanction: inForce && { type: inForce.type, until: inForce.until },
+    enforcement,
+  })
+}
 
-  // Enforce the sanction in Matrix rooms. Post-CD-M1 the bridge has no
-  // DID→MXID mapping to read: the sanction lands on the chat accounts this
-  // bridge minted device sessions for under the target DID (operational
-  // state — see matrix-projection.ts sessionMxidsForDid).
-  try {
-    const sessions = await ctx.db.listDeviceSessions(targetDid)
-    const targetMxids = [
-      ...new Set(
-        sessions.filter((s) => s.revokedAt == null).map((s) => s.mxid),
-      ),
-    ]
-    const space = await ctx.db.getSpaceForCommunity(communityUri)
-    if (targetMxids.length > 0 && space) {
-      const rooms = matrixRoomId
-        ? [matrixRoomId]
-        : [
-            space.spaceId,
-            space.chamberA_RoomId,
-            space.chamberB_RoomId,
-            space.observerRoomId,
-          ].filter((r): r is string => Boolean(r))
-      for (const targetMxid of targetMxids) {
-        for (const roomId of rooms) {
-          try {
-            if (type === 'ban') {
-              await ctx.matrix.banUser(roomId, targetMxid)
-            } else if (type === 'mute') {
-              await ctx.matrix.muteUser(roomId, targetMxid)
-            }
-            // 'redact' is informational-only; actual redaction needs an event_id.
-          } catch (roomErr: any) {
-            ctx.log.warn(
-              { err: roomErr, roomId, targetMxid, type },
-              'Failed to apply moderation sanction in Matrix room',
-            )
-          }
-        }
-      }
-    }
-  } catch (err: any) {
-    ctx.log.error(
-      { err, targetDid, communityUri, type },
-      'Failed to enforce moderation sanction in Matrix',
-    )
+/**
+ * POST /api/moderation-sanction-lift
+ *
+ * End a mute or ban before it runs out (`type` omitted: both). Safe to repeat:
+ * when nothing is in force it still retries the lift in Matrix, which is how a
+ * moderator recovers from an `enforcement` that came back `partial`.
+ */
+export async function apiModerationLiftHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+  ctx: RouteContext,
+): Promise<void> {
+  const auth = await authenticateM8(req, ctx.config)
+  const { targetDid, communityUri, type } = parseJson(
+    await readBody(req),
+  ) as Record<string, any>
+  if (!targetDid || !communityUri) {
+    writeJson(res, 400, { error: 'Missing required fields' })
+    return
   }
+  if (type != null && type !== 'mute' && type !== 'ban') {
+    writeJson(res, 400, {
+      error: 'type must be "mute" or "ban"',
+      code: 'InvalidSanctionType',
+    })
+    return
+  }
+  if (
+    !(await authorizeOrRespond(ctx, res, auth.did, 'community.moderate', {
+      kind: 'community',
+      communityUri,
+    }))
+  )
+    return
 
-  ctx.chatMod.recomputeUser(targetDid, communityUri)
-  res.writeHead(200, { 'Content-Type': 'application/json' })
-  res.end(JSON.stringify({ ok: true }))
+  const kinds: SanctionKind[] = type ? [type] : ['ban', 'mute']
+  const inForce = sanctionKindsInForce(
+    await ctx.db.getSanctionEvents(targetDid, communityUri),
+  )
+  const toLift = kinds.filter((kind) => inForce.includes(kind))
+  for (const kind of toLift) {
+    await ctx.chatMod.ingestLift({
+      targetDid,
+      communityUri,
+      sanctionType: kind,
+      liftedByDid: auth.did,
+      reason: 'lifted by moderator',
+    })
+  }
+  const enforcer = createSanctionEnforcer(ctx)
+  const enforcement = mergeEnforcement(
+    await Promise.all(
+      kinds.map((kind) => enforcer.lift(targetDid, communityUri, kind)),
+    ),
+  )
+  await ctx.chatMod.recomputeUser(targetDid, communityUri)
+  writeJson(res, 200, { ok: true, lifted: toLift.length > 0, enforcement })
+}
+
+/**
+ * POST /api/moderation-report-dismiss
+ *
+ * Close the reports against one message, or (no `matrixEventId`) everything
+ * reported about a member so far. They leave the queue and stop counting
+ * toward risk badges.
+ */
+export async function apiModerationDismissHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+  ctx: RouteContext,
+): Promise<void> {
+  const auth = await authenticateM8(req, ctx.config)
+  const { reportedDid, communityUri, matrixEventId } = parseJson(
+    await readBody(req),
+  ) as Record<string, any>
+  if (!reportedDid || !communityUri) {
+    writeJson(res, 400, { error: 'Missing required fields' })
+    return
+  }
+  if (
+    !(await authorizeOrRespond(ctx, res, auth.did, 'community.moderate', {
+      kind: 'community',
+      communityUri,
+    }))
+  )
+    return
+  await ctx.chatMod.dismissReports({
+    reportedDid,
+    communityUri,
+    matrixEventId: typeof matrixEventId === 'string' ? matrixEventId : null,
+    dismissedByDid: auth.did,
+  })
+  writeJson(res, 200, { ok: true })
 }
 
 /**
@@ -402,12 +569,19 @@ export async function apiUserChatPreferencesGETHandler(
   res: ServerResponse,
   ctx: RouteContext,
 ): Promise<void> {
-  await authenticateM8(req, ctx.config)
+  const auth = await authenticateM8(req, ctx.config)
   const url = new URL(req.url ?? '', `http://localhost:${ctx.config.port}`)
   const did = url.searchParams.get('did')
   if (!did) {
     res.writeHead(400, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ error: 'Missing did parameter' }))
+    return
+  }
+  // Whether someone shows chat badges is theirs to read; the POST is already
+  // scoped to the caller, and the app only ever reads its own.
+  if (auth.did !== did) {
+    res.writeHead(403, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ error: 'did must match authenticated DID' }))
     return
   }
   const prefs = await ctx.db.getChatPreferences(did)

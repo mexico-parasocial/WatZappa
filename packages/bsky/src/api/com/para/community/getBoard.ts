@@ -113,6 +113,7 @@ const mapBoardView = (
   name: board.name,
   description: parseString(board.description),
   quadrant: board.quadrant,
+  region: parseString(board.region),
   delegatesChatId: board.delegatesChatId,
   subdelegatesChatId: board.subdelegatesChatId,
   memberCount: board.memberCount,

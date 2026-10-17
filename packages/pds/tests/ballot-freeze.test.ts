@@ -7,7 +7,7 @@ import {
   TID,
 } from '@atproto/common'
 import { TestNetworkNoAppView } from '@atproto/dev-env'
-import { com } from '../src/lexicons.js'
+import { com } from '../src/lexicons/index.js'
 
 // @NOTE the refusal text lives in @atproto/common; these are the fragments the
 // assertions key on, so a reworded message fails here once rather than in a

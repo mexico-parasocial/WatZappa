@@ -69,6 +69,7 @@ describe('persistent dev-env plumbing', () => {
       skipMockSetup: false,
       skipParaDemoSeed: false,
       seedMemesOnStart: false,
+      seedCivicTreesOnStart: false,
     })
   })
 
@@ -88,6 +89,7 @@ describe('persistent dev-env plumbing', () => {
       DEV_ENV_SKIP_MOCK_SETUP: '1',
       DEV_ENV_SKIP_PARA_DEMO_SEED: 'true',
       DEV_ENV_SEED_MEMES_ON_START: '1',
+      DEV_ENV_SEED_CIVIC_TREES_ON_START: '1',
       DB_POSTGRES_SCHEMA: 'shared_demo',
     })
 
@@ -115,6 +117,7 @@ describe('persistent dev-env plumbing', () => {
     expect(cfg.skipMockSetup).toBe(true)
     expect(cfg.skipParaDemoSeed).toBe(true)
     expect(cfg.seedMemesOnStart).toBe(true)
+    expect(cfg.seedCivicTreesOnStart).toBe(true)
   })
 
   it('fails fast on malformed port overrides', () => {

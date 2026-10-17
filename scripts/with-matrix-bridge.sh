@@ -38,7 +38,7 @@ if [ $# -eq 0 ]; then
   exit 64
 fi
 
-for port in 2583 "$BRIDGE_PORT"; do
+for port in "${DEV_ENV_PDS_PORT:-2583}" "$BRIDGE_PORT"; do
   if command -v lsof >/dev/null 2>&1 && lsof -nP -tiTCP:"$port" -sTCP:LISTEN | grep -q .; then
     echo "Port $port is already in use; refusing to start a second dev stack." >&2
     exit 2
@@ -86,6 +86,10 @@ kill_tree() {
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
+
+# Dedicated local-only credential shared with the dev AppView, never a client token.
+export BRIDGE_AUTHORITY_APPVIEW_URL="${BRIDGE_AUTHORITY_APPVIEW_URL:-http://localhost:${DEV_ENV_BSKY_PORT:-2584}}"
+export PARA_AUTHORITY_SERVICE_TOKEN="${PARA_AUTHORITY_SERVICE_TOKEN:-$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")}"
 
 # The backend itself (the dev-env, normally).
 "$@" &

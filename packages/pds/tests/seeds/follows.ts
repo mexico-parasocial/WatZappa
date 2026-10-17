@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { SeedClient } from '@atproto/dev-env'
+import type { SeedClient } from '@atproto/dev-env'
 
 export default async (sc: SeedClient) => {
   await sc.createAccount('alice', users.alice)

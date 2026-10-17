@@ -38,6 +38,7 @@ type ListBoardsResult = {
     name: string
     description: string | undefined
     quadrant: string
+    region: string | undefined
     delegatesChatId: string
     subdelegatesChatId: string
     memberCount: number
@@ -82,6 +83,7 @@ const listBoards = async ({
     participationKind: params.participationKind ?? '',
     flairId: params.flairId ?? '',
     quadrant: params.quadrant,
+    region: params.region ?? '',
     query: params.query ?? '',
     limit: normalizeLimit(params.limit),
     cursor: params.cursor ?? '',
@@ -101,6 +103,7 @@ const listBoards = async ({
     flairId: params.flairId ?? '',
     sort: params.sort ?? '',
     quadrant: params.quadrant,
+    region: params.region ?? '',
   })
 
   const result = {
@@ -115,6 +118,7 @@ const listBoards = async ({
       name: board.name,
       description: parseString(board.description),
       quadrant: board.quadrant,
+      region: parseString(board.region),
       delegatesChatId: board.delegatesChatId,
       subdelegatesChatId: board.subdelegatesChatId,
       memberCount: board.memberCount,

@@ -1,10 +1,10 @@
 import { DAY } from '@atproto/common'
 import {
-  Server,
+  type Server,
   UpstreamTimeoutError,
   parseReqEncoding,
 } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 
 export default function (server: Server, ctx: AppContext) {
@@ -27,7 +27,11 @@ export default function (server: Server, ctx: AppContext) {
         requester,
         async (store) => {
           const metadata = await store.repo.blob
-            .uploadBlobAndGetMetadata(input.encoding, input.body)
+            .uploadBlobAndGetMetadata(
+              input.body,
+              input.encoding,
+              ctx.cfg.service.blobUploadLimit,
+            )
             .catch(throwAbortAsUpstreamError)
 
           return store.transact(async (actorTxn) => {

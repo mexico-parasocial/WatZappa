@@ -3,23 +3,19 @@ import { WriteOpAction } from '@atproto/repo'
 import {
   AuthRequiredError,
   InvalidRequestError,
-  Server,
+  type Server,
 } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 import { dbLogger } from '../../../../logger.js'
 import {
   BadCommitSwapError,
   InvalidRecordError,
-  PreparedWrite,
+  type PreparedWrite,
   prepareCreate,
   prepareDelete,
   prepareUpdate,
 } from '../../../../repo/index.js'
-import {
-  assertAuthorityEventWrite,
-  assertHorizontalGovernanceWrite,
-} from '../../../com/para/community/util.js'
 
 const ratelimitPoints = ({
   input,
@@ -171,29 +167,6 @@ export default function (server: Server, ctx: AppContext) {
       const swapCommitCid = swapCommit ? parseCid(swapCommit) : undefined
 
       const commit = await ctx.actorStore.transact(did, async (actorTxn) => {
-        for (const write of preparedWrites) {
-          if (write.uri.collection === 'com.para.community.authorityEvent') {
-            if (write.action !== WriteOpAction.Create) {
-              throw new InvalidRequestError('Authority events are immutable.')
-            }
-            assertAuthorityEventWrite({
-              did,
-              record: write.record as Record<string, unknown>,
-            })
-          }
-          if (
-            (write.action === WriteOpAction.Create ||
-              write.action === WriteOpAction.Update) &&
-            write.uri.collection === 'com.para.community.governance'
-          ) {
-            await assertHorizontalGovernanceWrite({
-              actorTxn,
-              did,
-              record: write.record as Record<string, unknown>,
-            })
-          }
-        }
-
         const commit = await actorTxn.repo
           .processWrites(preparedWrites, swapCommitCid)
           .catch((err) => {

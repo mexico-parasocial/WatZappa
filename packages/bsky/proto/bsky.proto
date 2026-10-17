@@ -143,6 +143,14 @@ message GetGermDeclarationRecordsResponse {
   repeated Record records = 1;
 }
 
+message GetProfileLinkRecordsRequest {
+  repeated string uris = 1;
+}
+
+message GetProfileLinkRecordsResponse {
+  repeated Record records = 1;
+}
+
 message GetStatusRecordsRequest {
   repeated string uris = 1;
 }
@@ -624,6 +632,7 @@ message GetBlockExistenceResponse {
 message ListItemInfo {
   string uri = 1;
   string did = 2;
+  bool subject_opted_out = 3;
 }
 
 // - Return dids of users in list A
@@ -632,6 +641,7 @@ message GetListMembersRequest {
   string list_uri = 1;
   int32 limit = 2;
   string cursor = 3;
+  string viewer_did = 4;
 }
 
 message GetListMembersResponse {
@@ -672,6 +682,15 @@ message GetActorListsRequest {
 message GetActorListsResponse {
   repeated string list_uris = 1;
   string cursor = 2;
+}
+
+message GetReferencelistoptoutsByActorAndSubjectsRequest {
+  string actor_did = 1;
+  repeated string subject_uris = 2;
+}
+
+message GetReferencelistoptoutsByActorAndSubjectsResponse {
+  repeated string uris = 1;
 }
 
 //
@@ -1679,40 +1698,110 @@ message StashRef {
   string key = 3;
 }
 
-// Standard.site records
-message GetSiteStandardRecordsByURIRequest {
-  // Mixed list of site.standard.document and site.standard.publication AT-URIs.
-  // URIs of other collections (or unparseable strings) are silently skipped.
-  repeated string uris = 1;
-}
-message GetSiteStandardRecordsByURIResponse {
-  // Latest indexed version of each requested document.
-  repeated SiteStandardRecord documents = 1;
-  // Latest indexed version of each requested publication AND each publication
-  // resolved from a document's `site` field. Each publication appears at most
-  // once across the two sources.
-  repeated SiteStandardRecord publications = 2;
-}
-message GetSiteStandardRecordsByRefRequest {
-  // Mixed list of site.standard.document and site.standard.publication refs
-  // (uri + cid). Refs whose URI is not a SiteStandard collection (or doesn't
-  // parse) are silently skipped.
+// Generic records
+message GetRecordsByRefRequest {
   repeated RecordRef refs = 1;
 }
-message GetSiteStandardRecordsByRefResponse {
-  // Document version exactly matching each requested doc ref.
-  repeated SiteStandardRecord documents = 1;
-  // Publication version exactly matching each requested pub ref. This RPC
-  // does NOT auto-resolve publications referenced by documents — callers who
-  // want a paired publication should pass its ref explicitly.
-  repeated SiteStandardRecord publications = 2;
+
+enum RecordLookupStatus {
+  RECORD_LOOKUP_STATUS_UNSPECIFIED = 0;
+  RECORD_LOOKUP_STATUS_FOUND = 1;
+  RECORD_LOOKUP_STATUS_NOT_FOUND = 2;
+  RECORD_LOOKUP_STATUS_TAKEN_DOWN = 3;
+  RECORD_LOOKUP_STATUS_INVALID_REF = 4;
+  RECORD_LOOKUP_STATUS_UNSUPPORTED_COLLECTION = 5;
 }
 
-// SiteStandardRecord pairs a record with its addressing ref so callers can
-// build a uri- or (uri,cid)-keyed lookup without server-side encoding.
-message SiteStandardRecord {
+message RecordLookupResult {
   RecordRef ref = 1;
   Record record = 2;
+  RecordLookupStatus status = 3;
+}
+
+message GetRecordsByRefResponse {
+  repeated RecordLookupResult results = 1;
+}
+
+message GetRecordsByURIRequest {
+  repeated string uris = 1;
+}
+
+message GetRecordsByURIResponse {
+  repeated RecordLookupResult results = 1;
+}
+
+message AtmosphereActivityItem {
+  string uri = 1;
+  google.protobuf.Timestamp sorted_at = 2;
+}
+
+message GetAtmosphereTimelineRequest {
+  string viewer_did = 1;
+  int32 limit = 2;
+  string cursor = 3;
+}
+
+message GetAtmosphereTimelineResponse {
+  repeated AtmosphereActivityItem items = 1;
+  string cursor = 2;
+}
+
+// Atmosphere backlinks: records in a source collection that reference a
+// target AT-URI through a registered backlink path.
+message AtmosphereBacklink {
+  string uri = 1;
+  google.protobuf.Timestamp sorted_at = 2;
+}
+
+message GetAtmosphereBacklinksRequest {
+  string target_uri = 1;
+  // Source collection NSID, e.g. site.standard.graph.recommend.
+  string collection = 2;
+  int32 limit = 3;
+  string cursor = 4;
+}
+
+message GetAtmosphereBacklinksResponse {
+  repeated AtmosphereBacklink backlinks = 1;
+  string cursor = 2;
+}
+
+message GetAtmosphereBacklinksByActorRequest {
+  string actor_did = 1;
+  // Source collection NSID.
+  string collection = 2;
+  repeated string target_uris = 3;
+}
+
+message AtmosphereBacklinksByActor {
+  string target_uri = 1;
+  // Source record URIs authored by the actor; empty if none.
+  repeated string uris = 2;
+}
+
+message GetAtmosphereBacklinksByActorResponse {
+  // One entry per requested target, in request order.
+  repeated AtmosphereBacklinksByActor results = 1;
+  // True if the actor has more matching records than the response limit, so
+  // some targets may be missing links.
+  bool truncated = 2;
+}
+
+message GetAtmosphereBacklinkCountsRequest {
+  repeated string target_uris = 1;
+  // Optional source collection NSID; empty returns counts for every collection.
+  string collection = 2;
+}
+
+message AtmosphereBacklinkCounts {
+  string target_uri = 1;
+  // Source collection NSID -> number of source records linking to the target.
+  map<string, int64> counts = 2;
+}
+
+message GetAtmosphereBacklinkCountsResponse {
+  // One entry per requested target, in request order.
+  repeated AtmosphereBacklinkCounts results = 1;
 }
 
 //
@@ -1792,6 +1881,34 @@ message GetParaPolicyTallyRequest {
 }
 message GetParaPolicyTallyResponse {
   ParaPolicyTally tally = 1;
+}
+
+// One member of a community who voted on a policy, and how.
+message ParaPolicyCommunityVote {
+  string did = 1;
+  string handle = 2;
+  string display_name = 3;
+  string avatar = 4;
+  int32 signal = 5;
+  string created_at = 6;
+}
+// How the members of one community voted on a policy. The viewer must be an
+// active member of that community.
+message GetParaPolicyCommunityVotesRequest {
+  string post_uri = 1;
+  string community_id = 2;
+  string viewer_did = 3;
+  bool viewer_is_admin = 4;
+  int32 limit = 5;
+}
+message GetParaPolicyCommunityVotesResponse {
+  string community_uri = 1;
+  string community_name = 2;
+  int32 member_count = 3;
+  int32 voter_count = 4;
+  double signal_average = 5;
+  repeated ParaPolicySignalBucket breakdown = 6;
+  repeated ParaPolicyCommunityVote votes = 7;
 }
 
 message ParaJsonPageResponse {
@@ -2306,6 +2423,7 @@ message ParaCommunityBoardView {
   int32 shared_content_count = 22;
   string governance_mode = 23;
   string admission_mode = 24;
+  string region = 25;
 }
 message GetParaCommunityBoardRequest {
   string community_id = 1;
@@ -2339,6 +2457,7 @@ message GetParaCommunityBoardsRequest {
   string flair_id = 7;
   string sort = 8;
   string quadrant = 9;
+  string region = 10;
 }
 message GetParaCommunityBoardsResponse {
   repeated ParaCommunityBoardView boards = 1;
@@ -2597,12 +2716,21 @@ service Service {
   rpc GetActorChatDeclarationRecords(GetActorChatDeclarationRecordsRequest) returns (GetActorChatDeclarationRecordsResponse);
   rpc GetNotificationDeclarationRecords(GetNotificationDeclarationRecordsRequest) returns (GetNotificationDeclarationRecordsResponse);
   rpc GetGermDeclarationRecords(GetGermDeclarationRecordsRequest) returns (GetGermDeclarationRecordsResponse);
+  rpc GetProfileLinkRecords(GetProfileLinkRecordsRequest) returns (GetProfileLinkRecordsResponse);
   rpc GetStatusRecords(GetStatusRecordsRequest) returns (GetStatusRecordsResponse);
   rpc GetRepostRecords(GetRepostRecordsRequest) returns (GetRepostRecordsResponse);
   rpc GetThreadGateRecords(GetThreadGateRecordsRequest) returns (GetThreadGateRecordsResponse);
   rpc GetPostgateRecords(GetPostgateRecordsRequest) returns (GetPostgateRecordsResponse);
   rpc GetLabelerRecords(GetLabelerRecordsRequest) returns (GetLabelerRecordsResponse);
   rpc GetStarterPackRecords(GetStarterPackRecordsRequest) returns (GetStarterPackRecordsResponse);
+  rpc GetRecordsByURI(GetRecordsByURIRequest) returns (GetRecordsByURIResponse);
+  rpc GetRecordsByRef(GetRecordsByRefRequest) returns (GetRecordsByRefResponse);
+
+  // Atmosphere
+  rpc GetAtmosphereTimeline(GetAtmosphereTimelineRequest) returns (GetAtmosphereTimelineResponse);
+  rpc GetAtmosphereBacklinks(GetAtmosphereBacklinksRequest) returns (GetAtmosphereBacklinksResponse);
+  rpc GetAtmosphereBacklinksByActor(GetAtmosphereBacklinksByActorRequest) returns (GetAtmosphereBacklinksByActorResponse);
+  rpc GetAtmosphereBacklinkCounts(GetAtmosphereBacklinkCountsRequest) returns (GetAtmosphereBacklinkCountsResponse);
 
   // Follows
   rpc GetActorFollowsActors(GetActorFollowsActorsRequest) returns (GetActorFollowsActorsResponse);
@@ -2649,6 +2777,7 @@ service Service {
   rpc GetListMembers(GetListMembersRequest) returns (GetListMembersResponse);
   rpc GetListMembership(GetListMembershipRequest) returns (GetListMembershipResponse);
   rpc GetListCount(GetListCountRequest) returns (GetListCountResponse);
+  rpc GetReferencelistoptoutsByActorAndSubjects(GetReferencelistoptoutsByActorAndSubjectsRequest) returns (GetReferencelistoptoutsByActorAndSubjectsResponse);
 
   // Mutes
   rpc GetActorMutesActor(GetActorMutesActorRequest) returns (GetActorMutesActorResponse);
@@ -2756,6 +2885,7 @@ service Service {
   rpc GetCollectionByKey(GetCollectionByKeyRequest) returns (GetCollectionByKeyResponse);
   rpc GetParaPostMeta(GetParaPostMetaRequest) returns (GetParaPostMetaResponse);
   rpc GetParaPolicyTally(GetParaPolicyTallyRequest) returns (GetParaPolicyTallyResponse);
+  rpc GetParaPolicyCommunityVotes(GetParaPolicyCommunityVotesRequest) returns (GetParaPolicyCommunityVotesResponse);
   rpc GetParaVotes(GetParaVotesRequest) returns (ParaJsonPageResponse);
   rpc GetParaDeliberations(GetParaDeliberationsRequest) returns (ParaJsonPageResponse);
   rpc GetParaIntensities(GetParaIntensitiesRequest) returns (ParaJsonPageResponse);
@@ -2836,10 +2966,6 @@ service Service {
   rpc CreateThreadMute(CreateThreadMuteRequest) returns (CreateThreadMuteResponse);
   rpc DeleteThreadMute(DeleteThreadMuteRequest) returns (DeleteThreadMuteResponse);
   rpc ClearThreadMutes(ClearThreadMutesRequest) returns (ClearThreadMutesResponse);
-
-  // Standard.site records
-  rpc GetSiteStandardRecordsByURI(GetSiteStandardRecordsByURIRequest) returns (GetSiteStandardRecordsByURIResponse);
-  rpc GetSiteStandardRecordsByRef(GetSiteStandardRecordsByRefRequest) returns (GetSiteStandardRecordsByRefResponse);
 }
 
 

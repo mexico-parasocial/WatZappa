@@ -26,6 +26,10 @@ run-dev-env: ## Run the persistent PARA development stack (PDS, AppView, Matrix 
 run-dev-env-logged: ## Run the persistent PARA development stack with logging
 	LOG_ENABLED=true ./scripts/dev-env-persistent.sh
 
+.PHONY: run-messaging-env
+run-messaging-env: ## Run isolated persistent messaging acceptance without stopping the demo
+	bash ./scripts/messaging-dev.sh
+
 .PHONY: run-demo-env
 run-demo-env: ## Run the disposable full demo without provisioning Matrix rooms
 	NODE_ENV=development pnpm --filter @atproto/dev-env run start
@@ -94,10 +98,10 @@ deps: ## Installs dependent libs using 'pnpm install'
 	pnpm install --frozen-lockfile
 
 .PHONY: clean
-clean: clean-deps clean-build clean-prebuild
+clean: clean-deps clean-gen
 
 .PHONY: clean-gen
-clean-gen: clean-build clean-prebuild
+clean-gen: clean-build clean-prebuild clean-lexicons
 
 .PHONY: clean-deps
 clean-deps: ## Deletes all installed dependencies (node_modules) in all packages
@@ -110,7 +114,22 @@ clean-build: ## Deletes all build artifacts (dist, tsbuildinfo) in all packages
 
 .PHONY: clean-prebuild
 clean-prebuild: ## Deletes all prebuild artifacts (codegen, lingui, etc.) in all packages
-	for f in packages/*/src/proto packages/*/src/lexicons packages/lex/*/src/lexicons packages/lex/*/tests/lexicons packages/oauth/*/src/lexicons packages/oauth/*/src/locales/*/messages.ts packages/api/src/client packages/api/src/moderation/const/labels.ts; do rm -r "$$f"; done || true;
+	rm -rf packages/*/src/proto;
+	rm -rf packages/*/src/lexicons;
+	rm -rf packages/lex/*/src/lexicons;
+	rm -rf packages/lex/*/tests/lexicons;
+	rm -rf packages/oauth/*/src/lexicons;
+	rm -rf packages/oauth/*/src/locales/*/messages.ts;
+	rm -rf packages/api/src/client;
+	rm -rf packages/api/src/moderation/const/labels.ts;
+
+.PHONY: clean-lexicons
+clean-lexicons: ## Restore each package's resolved ./lexicons folder to its committed content
+	for d in packages/*/lexicons packages/*/*/lexicons; do \
+		[ -e "$$d" ] || continue; \
+		git clean -fdX -- "$$d"; \
+		git restore --source=HEAD -- "$$d" 2>/dev/null || true; \
+	done
 
 .PHONY: nvm-setup
 nvm-setup: ## Use NVM to install and activate node+pnpm

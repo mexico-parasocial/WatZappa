@@ -3,26 +3,22 @@ import { InvalidRecordKeyError } from '@atproto/syntax'
 import {
   AuthRequiredError,
   InvalidRequestError,
-  Server,
+  type Server,
 } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
-import {
-  $OutputBody as CreateRecordOutputBody,
-  $Params as CreateRecordParams,
-} from '../../../../lexicons/com/atproto/repo/createRecord.defs.js'
 import { dbLogger } from '../../../../logger.js'
 import {
   BadCommitSwapError,
   InvalidRecordError,
-  PreparedCreate,
+  type PreparedCreate,
   prepareCreate,
   prepareDelete,
 } from '../../../../repo/index.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.add(com.atproto.repo.createRecord, {
-    auth: ctx.authVerifier.authorization<CreateRecordParams>({
+    auth: ctx.authVerifier.authorization({
       // @NOTE the "checkTakedown" and "checkDeactivated" checks are typically
       // performed during auth. However, since this method's "repo" parameter
       // can be a handle, we will need to fetch the account again to ensure that
@@ -140,7 +136,7 @@ export default function (server: Server, ctx: AppContext) {
             rev: commit.rev,
           },
           validationStatus: write.validationStatus,
-        } satisfies CreateRecordOutputBody,
+        },
       }
     },
   })

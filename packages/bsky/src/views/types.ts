@@ -10,6 +10,7 @@ export type KnownFollowers = app.bsky.actor.defs.KnownFollowers
 export type ProfileAssociatedActivitySubscription =
   app.bsky.actor.defs.ProfileAssociatedActivitySubscription
 export type ProfileAssociatedChat = app.bsky.actor.defs.ProfileAssociatedChat
+export type ProfileLinkView = app.bsky.actor.defs.ProfileLinkView
 export type ProfileView = app.bsky.actor.defs.ProfileView
 export type ProfileViewBasic = app.bsky.actor.defs.ProfileViewBasic
 export type ProfileViewDetailed = app.bsky.actor.defs.ProfileViewDetailed
@@ -34,15 +35,20 @@ export type VideoEmbed = app.bsky.embed.video.Main
 export type VideoEmbedView = app.bsky.embed.video.View
 
 export const isGalleryEmbedType = app.bsky.embed.gallery.$isTypeOf
-export const isGalleryImageEmbedType = app.bsky.embed.gallery.image.$isTypeOf
 export type GalleryEmbed = app.bsky.embed.gallery.Main
 export type GalleryEmbedView = app.bsky.embed.gallery.View
+export const isGalleryImageEmbedType = app.bsky.embed.gallery.image.$isTypeOf
 export type GalleryImageEmbed = app.bsky.embed.gallery.Image
 export type GalleryImageEmbedView = app.bsky.embed.gallery.ViewImage
 
 export const isExternalEmbedType = app.bsky.embed.external.$isTypeOf
 export type ExternalEmbed = app.bsky.embed.external.Main
 export type ExternalEmbedView = app.bsky.embed.external.View
+export type ExternalRecordView =
+  | app.bsky.embed.external.ViewArticle
+  | app.bsky.embed.external.ViewArticlePublication
+  | app.bsky.embed.external.ViewGallery
+  | app.bsky.embed.external.ViewLivestream
 export type ExternalEmbedSourceView = app.bsky.embed.external.ViewExternalSource
 export type ExternalEmbedSourceThemeView =
   app.bsky.embed.external.ViewExternalSourceTheme
@@ -186,6 +192,7 @@ export const validateStrongRef = com.atproto.repo.strongRef.$safeValidate
 // com.germnetwork.declaration
 
 export type GermDeclarationRecord = com.germnetwork.declaration.Main
+export type ProfileLinkRecord = app.bsky.actor.link.Main
 
 // site.standard
 

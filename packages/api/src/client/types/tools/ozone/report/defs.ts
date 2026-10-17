@@ -174,6 +174,16 @@ export interface ReportView {
     'open' | 'closed' | 'escalated' | 'queued' | 'assigned' | (string & {})
   subject: ToolsOzoneModerationDefs.SubjectView
   reportType: ComAtprotoModerationDefs.ReasonType
+  /** Priority level assigned to the report. */
+  priorityLevel?: string
+  /** Report priority score. Higher scores have higher priority. */
+  priorityScore?: number
+  /** Target resolution duration in minutes. */
+  priorityTargetMinutes?: number
+  /** Time from report creation to its last closure. */
+  resolutionTimeSec?: number
+  /** Whether the current closure occurred within the report's snapshotted target. */
+  priorityTargetMet?: boolean
   /** DID of the user who made the report */
   reportedBy: string
   reporter: ToolsOzoneModerationDefs.SubjectView
@@ -185,7 +195,7 @@ export interface ReportView {
   updatedAt?: string
   /** When the report was assigned to its current queue */
   queuedAt?: string
-  /** Array of moderation event IDs representing actions taken on this report (sorted DESC, most recent first) */
+  /** Array of moderation event IDs representing actions taken on this report, in append order (most recently linked event last) */
   actionEventIds?: number[]
   /** Optional: expanded action events */
   actions?: ToolsOzoneModerationDefs.ModEventView[]
@@ -246,6 +256,27 @@ export function isAssignmentActivity<V>(v: V) {
 
 export function validateAssignmentActivity<V>(v: V) {
   return validate<AssignmentActivity & V>(v, id, hashAssignmentActivity)
+}
+
+/** Activity recording a moderator being unassigned from a report. */
+export interface UnassignmentActivity {
+  $type?: 'tools.ozone.report.defs#unassignmentActivity'
+  /** The report's status immediately before the moderator was unassigned. May be absent on older activities. */
+  previousStatus?:
+    'open' | 'closed' | 'escalated' | 'queued' | 'assigned' | (string & {})
+  /** The report's status immediately after the moderator was unassigned. May equal previousStatus if unassignment did not change the report's status, or be absent on older activities. */
+  nextStatus?:
+    'open' | 'closed' | 'escalated' | 'queued' | 'assigned' | (string & {})
+}
+
+const hashUnassignmentActivity = 'unassignmentActivity'
+
+export function isUnassignmentActivity<V>(v: V) {
+  return is$typed(v, id, hashUnassignmentActivity)
+}
+
+export function validateUnassignmentActivity<V>(v: V) {
+  return validate<UnassignmentActivity & V>(v, id, hashUnassignmentActivity)
 }
 
 /** Activity recording a report being escalated. */
@@ -327,6 +358,7 @@ export interface ReportActivityView {
   activity:
     | $Typed<QueueActivity>
     | $Typed<AssignmentActivity>
+    | $Typed<UnassignmentActivity>
     | $Typed<EscalationActivity>
     | $Typed<CloseActivity>
     | $Typed<ReopenActivity>
@@ -361,18 +393,46 @@ export function validateReportActivityView<V>(v: V) {
 /** Live statistics for reports for the current calendar day, filterable by queue, moderator, or report type. */
 export interface LiveStats {
   $type?: 'tools.ozone.report.defs#liveStats'
-  /** Number of reports currently not closed. */
+  /** Number of unmuted reports currently not closed. */
   pendingCount?: number
-  /** Number of reports closed today. */
+  /** Unmuted pending reports past their closure target. */
+  closureTargetOverdueCount?: number
+  /** Reports whose closure meets their closure target. */
+  closureTargetMetCount?: number
+  /** Reports whose closure exceeds their closure target. */
+  closureTargetMissedCount?: number
+  /** Percent of reports meeting their closure target. */
+  closureTargetMetRate?: number
+  /** Number of close transitions. */
+  closedCount?: number
+  /** Number of closures whose last report action is label, tag, or takedown. */
   actionedCount?: number
-  /** Number of reports escalated today. */
+  /** Number of closures whose last report action is not label, tag, or takedown. */
+  acknowledgedCount?: number
+  /** Number of reports escalated. */
   escalatedCount?: number
-  /** Reports received today. */
+  /** Reports received. */
   inboundCount?: number
-  /** Percentage of reports actioned (actionedCount / inboundCount * 100), rounded to nearest integer. */
+  /** Closures whose last report action is a label event. */
+  labelActionCount?: number
+  /** Closures whose last report action is a tag event. */
+  tagActionCount?: number
+  /** Closures whose last report action is a takedown event. */
+  takedownActionCount?: number
+  /** Sum of report assignment-to-close seconds. */
+  ahtDurationSec?: number
+  /** Number of assigned closed-report samples in ahtDurationSec. */
+  ahtSampleCount?: number
+  /** Sum of report creation-to-close seconds. */
+  resolutionDurationSec?: number
+  /** Number of closed-report samples in resolutionDurationSec. */
+  resolutionSampleCount?: number
+  /** Percentage of closures actioned (actionedCount / closedCount * 100), rounded to nearest integer. */
   actionRate?: number
-  /** Average time in seconds from report creation (or moderator assignment) to close. */
+  /** Average handling time in seconds from report assignment to close. */
   avgHandlingTimeSec?: number
+  /** Average resolution time in seconds from report creation to close. */
+  avgResolutionTimeSec?: number
   /** When these statistics were last computed. */
   lastUpdated?: string
 }
@@ -394,18 +454,46 @@ export interface HistoricalStats {
   date: string
   /** When this snapshot was last computed. */
   computedAt?: string
-  /** Number of reports not closed at time of computation. */
+  /** Number of unmuted reports not closed at the end of this UTC day, or at computation time for the current day. */
   pendingCount?: number
-  /** Number of reports closed during this day. */
+  /** Unmuted pending reports past their closure target at the snapshot time. */
+  closureTargetOverdueCount?: number
+  /** Reports whose closure meets their closure target. */
+  closureTargetMetCount?: number
+  /** Reports whose closure exceeds their closure target. */
+  closureTargetMissedCount?: number
+  /** Percent of reports meeting their closure target. */
+  closureTargetMetRate?: number
+  /** Number of close transitions during this day. */
+  closedCount?: number
+  /** Number of closures whose last report action is label, tag, or takedown during this day. */
   actionedCount?: number
+  /** Number of closures whose last report action is not label, tag, or takedown during this day. */
+  acknowledgedCount?: number
   /** Number of reports escalated during this day. */
   escalatedCount?: number
   /** Reports received during this day. */
   inboundCount?: number
-  /** Percentage of reports actioned (actionedCount / inboundCount * 100), rounded to nearest integer. */
+  /** Closures whose last report action is a label event during this day. */
+  labelActionCount?: number
+  /** Closures whose last report action is a tag event during this day. */
+  tagActionCount?: number
+  /** Closures whose last report action is a takedown event during this day. */
+  takedownActionCount?: number
+  /** Sum of report assignment-to-close seconds for this day's samples. */
+  ahtDurationSec?: number
+  /** Number of assigned closed-report samples in ahtDurationSec. */
+  ahtSampleCount?: number
+  /** Sum of report creation-to-close seconds for this day's samples. */
+  resolutionDurationSec?: number
+  /** Number of closed-report samples in resolutionDurationSec. */
+  resolutionSampleCount?: number
+  /** Percentage of closures actioned (actionedCount / closedCount * 100), rounded to nearest integer. */
   actionRate?: number
-  /** Average time in seconds from report creation (or moderator assignment) to close. */
+  /** Average handling time in seconds from report assignment to close. */
   avgHandlingTimeSec?: number
+  /** Average resolution time in seconds from report creation to close. */
+  avgResolutionTimeSec?: number
 }
 
 const hashHistoricalStats = 'historicalStats'

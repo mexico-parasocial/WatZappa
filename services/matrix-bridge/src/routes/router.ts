@@ -57,6 +57,8 @@ import {
   apiChatBadgesHandler,
   apiChatMemberListHandler,
   apiModerationDashboardHandler,
+  apiModerationDismissHandler,
+  apiModerationLiftHandler,
   apiModerationReportsHandler,
   apiModerationRecomputeHandler,
   apiModerationReportHandler,
@@ -300,6 +302,18 @@ const ROUTES: Route[] = [
     prefix: false,
     method: 'POST',
     handler: apiModerationSanctionHandler,
+  },
+  {
+    urls: ['/api/moderation-sanction-lift'],
+    prefix: false,
+    method: 'POST',
+    handler: apiModerationLiftHandler,
+  },
+  {
+    urls: ['/api/moderation-report-dismiss'],
+    prefix: false,
+    method: 'POST',
+    handler: apiModerationDismissHandler,
   },
   {
     urls: ['/api/moderation-reports'],

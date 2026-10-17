@@ -15,11 +15,24 @@ export class RetryWorker {
     private projection: MatrixProjectionPort,
     private metrics: BridgeMetrics,
     private log: Logger,
+    private refreshAuthority: (
+      community: string,
+      did: string,
+      force?: boolean,
+    ) => Promise<void>,
+    private provisionCommunity?: (
+      community: string,
+      did: string,
+    ) => Promise<void>,
   ) {}
 
   start(): void {
     this.log.info({ intervalMs: RETRY_INTERVAL_MS }, 'Starting retry worker')
-    this.timer = setInterval(() => this.run(), RETRY_INTERVAL_MS)
+    this.timer = setInterval(() => {
+      void this.run().catch((err) =>
+        this.log.error({ err }, 'Retry run failed'),
+      )
+    }, RETRY_INTERVAL_MS)
     // Run immediately on start
     this.run().catch((err) =>
       this.log.error({ err }, 'Initial retry run failed'),
@@ -39,7 +52,17 @@ export class RetryWorker {
     this.running = true
 
     try {
-      const failed = await this.db.getFailedSyncs(50)
+      const provisioning = await this.db.getProvisioningRetryJobs(50)
+      this.metrics.provisioningRetryBlocked.set(
+        provisioning.filter((job) => job.retryCount >= MAX_RETRIES).length,
+      )
+      const failed = [
+        ...new Map(
+          [...(await this.db.getFailedSyncs(50)), ...provisioning].map(
+            (job) => [job.id, job],
+          ),
+        ).values(),
+      ]
       if (failed.length === 0) return
 
       this.log.info({ count: failed.length }, 'Retrying failed syncs')
@@ -47,7 +70,7 @@ export class RetryWorker {
       for (const entry of failed) {
         // Skip entries that have been retried too many times
         const retryCount = await this.db.getRetryCount(entry.id)
-        if (retryCount >= MAX_RETRIES) {
+        if (retryCount >= MAX_RETRIES && entry.eventType !== 'create_space') {
           this.log.warn(
             { entryId: entry.id, retries: retryCount },
             'Max retries exceeded, giving up',
@@ -59,39 +82,26 @@ export class RetryWorker {
           event_type: `retry_${entry.eventType}`,
         })
         try {
-          if (entry.eventType === 'create_space' && entry.spaceId) {
-            // Space already exists or failed to create — nothing to retry
-            this.log.debug({ entryId: entry.id }, 'Skipping create_space retry')
+          if (
+            entry.eventType === 'create_space' &&
+            entry.communityUri &&
+            entry.did
+          ) {
+            if (!this.provisionCommunity)
+              throw new Error('Provisioning retry handler missing')
+            await this.provisionCommunity(entry.communityUri, entry.did)
+            await this.db.markSyncSuccess(entry.id)
+            this.metrics.retryAttemptsTotal.inc({
+              event_type: entry.eventType,
+              status: 'success',
+            })
           } else if (
             entry.eventType === 'apply_roles' &&
             entry.communityUri &&
             entry.did
           ) {
-            // Handover projection: re-apply the member's current governance
-            // roles as room power levels. Reading the current state (not the
-            // state at failure time) is what makes the retry safe.
-            const space = await this.db.getSpaceForCommunity(entry.communityUri)
-            const membership = await this.db.getCommunityMembership(
-              entry.did,
-              entry.communityUri,
-            )
-            if (!space || !membership || membership.state !== 'active') {
-              await this.db.markSyncSuccess(entry.id)
-              continue
-            }
-            const roles = membership.roles ?? []
-            const isObserver = roles.includes('observer')
-            const assigned = await this.db.getChamberAssignment(
-              entry.communityUri,
-              entry.did,
-            )
-            const chamber =
-              assigned === 'A' || assigned === 'B' ? assigned : null
-            await this.projection.applyMemberRoles(space, entry.did, {
-              roles,
-              chamber,
-              isObserver,
-            })
+            // @NOTE resolve authority again; cached roles may have been revoked.
+            await this.refreshAuthority(entry.communityUri, entry.did, true)
             await this.db.markSyncSuccess(entry.id)
             this.metrics.retryAttemptsTotal.inc({
               event_type: entry.eventType,

@@ -69,6 +69,23 @@ export const devCabildeoVoteProof = (
   ])}`,
 })
 
+/** A policy ballot's authorization binds the -3..+3 signal, as a cabildeo one binds its option. */
+export const devPolicyVoteProof = (
+  actorDid: string,
+  subjectUri: string,
+  signal: number,
+  voteNullifier = devVoteNullifier(actorDid, subjectUri),
+) => ({
+  voteNullifier,
+  eligibilityProofRef: `m8:policy:v1:${devMac([
+    'policy-vote',
+    actorDid,
+    subjectUri,
+    signal,
+    voteNullifier,
+  ])}`,
+})
+
 export const devDelegationProof = (
   actorDid: string,
   claim: DevDelegationClaim,
@@ -91,6 +108,19 @@ const isDevVoteProof = (body: Record<string, unknown>) =>
       body.actorDid,
       body.subjectUri,
       body.selectedOption as number,
+      body.voteNullifier,
+    ).eligibilityProofRef
+
+const isDevPolicyProof = (body: Record<string, unknown>) =>
+  typeof body.actorDid === 'string' &&
+  typeof body.subjectUri === 'string' &&
+  typeof body.voteNullifier === 'string' &&
+  Number.isInteger(body.signal) &&
+  body.eligibilityProofRef ===
+    devPolicyVoteProof(
+      body.actorDid,
+      body.subjectUri,
+      body.signal as number,
       body.voteNullifier,
     ).eligibilityProofRef
 
@@ -170,6 +200,10 @@ export class DevCivicVerifier {
       const ref = String(body.eligibilityProofRef ?? '')
       if (ref.startsWith('m8:cabildeo:v1:')) {
         if (isDevVoteProof(body)) return { status: 204 }
+        return forward('/identity/civic-vote-proof/verify', body)
+      }
+      if (ref.startsWith('m8:policy:v1:')) {
+        if (isDevPolicyProof(body)) return { status: 204 }
         return forward('/identity/civic-vote-proof/verify', body)
       }
       if (ref.startsWith('m8:delegation:v1:')) {

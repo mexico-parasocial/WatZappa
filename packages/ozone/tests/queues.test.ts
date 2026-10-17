@@ -27,6 +27,7 @@ describe('ozone-queues', () => {
       collection?: string
       description?: string
       recommendedPolicies?: string[]
+      recommendedLabels?: string[]
     },
     role: 'admin' | 'triage' = 'admin',
   ) => {
@@ -82,6 +83,7 @@ describe('ozone-queues', () => {
       enabled?: boolean
       description?: string
       recommendedPolicies?: string[]
+      recommendedLabels?: string[]
     },
     role: 'admin' | 'triage' = 'admin',
   ) => {
@@ -141,6 +143,27 @@ describe('ozone-queues', () => {
       expect(data.queue.updatedAt).toBeDefined()
       expect(data.queue.stats).toBeDefined()
       expect(data.queue.recommendedPolicies).toEqual([])
+      expect(data.queue.recommendedLabels).toEqual([])
+    })
+
+    it('stores recommended labels and rejects labels mapped to another queue', async () => {
+      const { data } = await createQueue({
+        name: 'CQ: Label Mapping',
+        subjectTypes: [],
+        reportTypes: [],
+        recommendedLabels: ['spam-label', 'scam-label'],
+      })
+      createdIds.push(data.queue.id)
+      expect(data.queue.recommendedLabels).toEqual(['spam-label', 'scam-label'])
+
+      await expect(
+        createQueue({
+          name: 'CQ: Conflicting Label Mapping',
+          subjectTypes: [],
+          reportTypes: [],
+          recommendedLabels: ['spam-label'],
+        }),
+      ).rejects.toMatchObject({ error: 'ConflictingQueue' })
     })
 
     it('stores valid recommended policies and rejects unknown policies', async () => {
@@ -496,7 +519,87 @@ describe('ozone-queues', () => {
         expect(typeof queue.stats.pendingCount).toBe('number')
         expect(typeof queue.stats.actionedCount).toBe('number')
         expect(typeof queue.stats.escalatedCount).toBe('number')
+        expect(queue.stats.closedCount).toBe(0)
+        expect(queue.stats.acknowledgedCount).toBe(0)
+        expect(queue.stats.ahtSampleCount).toBe(0)
+        expect(queue.stats.resolutionSampleCount).toBe(0)
+        expect(queue.stats.avgHandlingTimeSec).toBeUndefined()
+        expect(queue.stats.avgResolutionTimeSec).toBeUndefined()
       }
+    })
+
+    it('returns stored lifecycle counts and durations in queue stats', async () => {
+      await modClient.computeStats()
+      const stored = {
+        inboundCount: 20,
+        pendingCount: 5,
+        closedCount: 10,
+        actionedCount: 6,
+        acknowledgedCount: 4,
+        escalatedCount: 2,
+        labelActionCount: 1,
+        tagActionCount: 2,
+        takedownActionCount: 3,
+        ahtDurationSec: 1200,
+        ahtSampleCount: 4,
+        resolutionDurationSec: 36000,
+        resolutionSampleCount: 10,
+        actionRate: 60,
+        avgHandlingTimeSec: 300,
+        avgResolutionTimeSec: 3600,
+      }
+      await network.ozone.ctx.db.db
+        .updateTable('report_stat')
+        .set(stored)
+        .where('queueId', '=', queueIds[0])
+        .where('moderatorDid', 'is', null)
+        .where('reportTypes', 'is', null)
+        .execute()
+
+      const { queues } = await listQueues()
+      expect(queues.find((q) => q.id === queueIds[0])?.stats).toEqual({
+        ...stored,
+        closureTargetMetCount: 0,
+        closureTargetMissedCount: 0,
+        closureTargetOverdueCount: 0,
+        lastUpdated: expect.any(String),
+      })
+    })
+
+    it('omits unavailable lifecycle fields from legacy queue stats', async () => {
+      await modClient.computeStats()
+      await network.ozone.ctx.db.db
+        .updateTable('report_stat')
+        .set({
+          closedCount: null,
+          acknowledgedCount: null,
+          labelActionCount: null,
+          tagActionCount: null,
+          takedownActionCount: null,
+          ahtDurationSec: null,
+          ahtSampleCount: null,
+          resolutionDurationSec: null,
+          resolutionSampleCount: null,
+          avgResolutionTimeSec: null,
+          avgHandlingTimeSec: 120,
+        })
+        .where('queueId', '=', queueIds[0])
+        .where('moderatorDid', 'is', null)
+        .where('reportTypes', 'is', null)
+        .execute()
+
+      const { queues } = await listQueues()
+      expect(queues.find((q) => q.id === queueIds[0])?.stats).toEqual({
+        inboundCount: 0,
+        pendingCount: 0,
+        actionedCount: 0,
+        escalatedCount: 0,
+        avgHandlingTimeSec: 120,
+        closureTargetMetCount: 0,
+        closureTargetMissedCount: 0,
+        closureTargetOverdueCount: 0,
+        lastUpdated: expect.any(String),
+      })
     })
   })
 
@@ -560,6 +663,28 @@ describe('ozone-queues', () => {
           recommendedPolicies: ['Not A Policy'],
         }),
       ).rejects.toMatchObject({ error: 'InvalidRecommendedPolicies' })
+    })
+
+    it('updates recommended labels and rejects a conflicting mapping', async () => {
+      const { data: other } = await createQueue({
+        name: 'UQ: Other Label Queue',
+        subjectTypes: [],
+        reportTypes: [],
+        recommendedLabels: ['other-label'],
+      })
+      const { data } = await updateQueue({
+        queueId: testQueueId,
+        recommendedLabels: ['test-label'],
+      })
+      expect(data.queue.recommendedLabels).toEqual(['test-label'])
+
+      await expect(
+        updateQueue({
+          queueId: testQueueId,
+          recommendedLabels: ['other-label'],
+        }),
+      ).rejects.toMatchObject({ error: 'ConflictingQueue' })
+      await deleteQueue(other.queue.id)
     })
 
     it('updates both name and enabled status', async () => {

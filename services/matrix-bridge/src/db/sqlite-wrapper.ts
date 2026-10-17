@@ -9,7 +9,12 @@ import type {
   SyncLogEntry,
   UserPushToken,
 } from './pg/index.js'
-import type { BridgeEvent, DmRequest, DmRequestSummary } from './records.js'
+import type {
+  BridgeEvent,
+  DmRequest,
+  DmRequestSummary,
+  PushDelivery,
+} from './records.js'
 import { BridgeDatabase } from './sqlite/index.js'
 
 /**
@@ -56,7 +61,47 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     })
   }
 
+  claimPushDelivery(
+    id: string,
+    token: string,
+    owner: string,
+    now: number,
+  ): Promise<boolean> {
+    return this.wrap(() => this.inner.claimPushDelivery(id, token, owner, now))
+  }
+  getPushDelivery(id: string): Promise<PushDelivery | undefined> {
+    return this.wrap(() => this.inner.getPushDelivery(id))
+  }
+  completePushDelivery(
+    id: string,
+    owner: string,
+    receiptId: string | null,
+    rejected: boolean,
+    now: number,
+  ): Promise<void> {
+    return this.wrap(() =>
+      this.inner.completePushDelivery(id, owner, receiptId, rejected, now),
+    )
+  }
+  releasePushDelivery(id: string, owner: string): Promise<void> {
+    return this.wrap(() => this.inner.releasePushDelivery(id, owner))
+  }
+  getPendingPushReceipts(now: number): Promise<PushDelivery[]> {
+    return this.wrap(() => this.inner.getPendingPushReceipts(now))
+  }
+  resolvePushReceipt(
+    id: string,
+    state: 'provider_accepted' | 'rejected' | 'failed' | 'submitted',
+    error: string | null,
+    now: number,
+  ): Promise<void> {
+    return this.wrap(() => this.inner.resolvePushReceipt(id, state, error, now))
+  }
+
   // ── Community / Space ──
+  prunePushDeliveries(before: number): Promise<void> {
+    return this.wrap(() => this.inner.prunePushDeliveries(before))
+  }
 
   getSpaceForCommunity(
     communityUri: string,
@@ -138,6 +183,10 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
 
   getFailedSyncs(limit = 100): Promise<SyncLogEntry[]> {
     return this.wrap(() => this.inner.getFailedSyncs(limit))
+  }
+
+  getProvisioningRetryJobs(limit = 50): Promise<SyncLogEntry[]> {
+    return this.wrap(() => this.inner.getProvisioningRetryJobs(limit))
   }
 
   getRetryCount(entryId: number): Promise<number> {
@@ -507,8 +556,41 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     return this.wrap(() => this.inner.purgeReportedMessagePreviews())
   }
 
-  getActiveSanctions(did: string, communityUri: string): Promise<any[]> {
-    return this.wrap(() => this.inner.getActiveSanctions(did, communityUri))
+  getSanctionEvents(did: string, communityUri: string): Promise<any[]> {
+    return this.wrap(() => this.inner.getSanctionEvents(did, communityUri))
+  }
+
+  getSubjectsWithTimedSanctions(
+    sinceDays: number,
+  ): Promise<{ did: string; communityUri: string }[]> {
+    return this.wrap(() => this.inner.getSubjectsWithTimedSanctions(sinceDays))
+  }
+
+  getReportDismissalsForCommunity(
+    communityUri: string,
+    days = 30,
+  ): Promise<any[]> {
+    return this.wrap(() =>
+      this.inner.getReportDismissalsForCommunity(communityUri, days),
+    )
+  }
+
+  hasReportFrom(
+    reporterDid: string,
+    did: string,
+    communityUri: string,
+    reportedEventId: string | null,
+    days: number,
+  ): Promise<boolean> {
+    return this.wrap(() =>
+      this.inner.hasReportFrom(
+        reporterDid,
+        did,
+        communityUri,
+        reportedEventId,
+        days,
+      ),
+    )
   }
 
   // ── Participation ──
@@ -748,6 +830,13 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
         roles,
       ),
     )
+  }
+
+  listCommunityMemberships(
+    limit: number,
+    offset: number,
+  ): Promise<Array<{ did: string; communityUri: string }>> {
+    return this.wrap(() => this.inner.listCommunityMemberships(limit, offset))
   }
 
   async getCommunityMembership(

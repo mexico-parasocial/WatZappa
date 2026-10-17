@@ -139,8 +139,8 @@ export class AccountManager {
     await getMigrator(this.db).migrateToLatestOrThrow()
   }
 
-  close() {
-    this.db.close()
+  async close() {
+    await this.db.close()
   }
 
   // Account
@@ -620,6 +620,7 @@ export class AccountManager {
     password,
     authFactorToken,
     locale,
+    allowOtpBypassFor = [],
   }: {
     identifier: string
     password: string
@@ -628,6 +629,7 @@ export class AccountManager {
     // declares no locale input, so the challenge email falls back to the
     // default template there.
     locale?: string | undefined
+    allowOtpBypassFor?: readonly DidString[]
   }): Promise<{
     // @TODO we should rename this "account" for consistency
     user: ActorAccount
@@ -670,6 +672,7 @@ export class AccountManager {
           throw new InvalidPasswordError(user.did)
         }
       }
+
       if (authFactorToken) {
         await this.assertValidEmailTokenAndCleanup(
           user.did,
@@ -680,6 +683,7 @@ export class AccountManager {
       } else if (
         user.email !== null &&
         user.emailAuthFactorAt !== null &&
+        !allowOtpBypassFor.includes(user.did) &&
         appPassword === null
       ) {
         const token = await this.createEmailToken(user.did, 'auth_factor')
@@ -1100,22 +1104,6 @@ export class AccountManager {
 
     account.emailAuthFactorAt = null
 
-    return account
-  }
-
-  async updateAuthFactorType(
-    did: DidString,
-    authFactorType: 'im8' | null,
-  ): Promise<ActorAccount> {
-    const account = await this.getAccount(did, {
-      includeDeactivated: true,
-      includeTakenDown: true,
-    })
-    if (!account) {
-      throw new InvalidRequestError('account not found')
-    }
-    await accountHelpers.updateAuthFactorType(this.db, did, authFactorType)
-    account.authFactorType = authFactorType
     return account
   }
 

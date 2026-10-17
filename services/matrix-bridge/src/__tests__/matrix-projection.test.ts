@@ -2,7 +2,10 @@ import type { Logger } from 'pino'
 import { describe, expect, it } from 'vitest'
 import type { IBridgeDatabase } from '../db/index.js'
 import type { DeviceSession } from '../db/interface.js'
-import { createMatrixProjection } from '../matrix-projection.js'
+import {
+  SanctionedMemberError,
+  createMatrixProjection,
+} from '../matrix-projection.js'
 import type { MatrixAdminClient } from '../matrix.js'
 import { deriveIdentity } from './helpers/identity.js'
 
@@ -32,6 +35,8 @@ function makeStubDeps() {
     roles: string[]
   }> = []
   const chamberByUri: Record<string, 'A' | 'B' | undefined> = {}
+  // Mute/ban/lift rows for the member under test, oldest first.
+  const sanctionEvents: any[] = []
   // Joined members per room, as the Synapse admin API reports them.
   const roomMembers: Record<string, string[]> = {}
   const matrix = {
@@ -66,8 +71,11 @@ function makeStubDeps() {
       return true
     },
     getMembershipsForDid: async () => memberships,
+    getCommunityMembership: async (_did: string, uri: string) =>
+      memberships.find((m) => m.communityUri === uri),
     getSpaceForCommunity: async (uri: string) => spaceByUri[uri],
     getChamberAssignment: async (uri: string) => chamberByUri[uri],
+    getSanctionEvents: async () => sanctionEvents,
     upsertCommunityMembershipLease: async (
       communityUri: string,
       mxid: string,
@@ -82,6 +90,7 @@ function makeStubDeps() {
     revoked,
     memberships,
     chamberByUri,
+    sanctionEvents,
     leases,
     matrix,
     db,
@@ -417,6 +426,32 @@ describe('reconcileMemberAccess (interaction-time settlement)', () => {
     })
   })
 
+  it('refreshes authority before projecting cached powers to a native account', async () => {
+    const { calls, memberships, matrix, db } = makeStubDeps()
+    spaceByUri[space.communityUri] = space
+    memberships.push({
+      communityUri: space.communityUri,
+      state: 'active',
+      roles: ['owner'],
+    })
+    const projection = createMatrixProjection(
+      config,
+      db,
+      matrix,
+      log,
+      async () => {
+        memberships[0] = {
+          communityUri: space.communityUri,
+          state: 'removed',
+          roles: [],
+        }
+      },
+    )
+    await projection.reconcileMemberAccess('did:plc:gone', presented)
+    expect(calls.some((c) => c.op === 'power')).toBe(false)
+    expect(calls).toContainEqual({ op: 'ban', args: ['!main:para', presented] })
+  })
+
   it('bans the presented account from communities the DID was removed from, MAS-native or not', async () => {
     const { calls, memberships, matrix, db } = makeStubDeps()
     spaceByUri[space.communityUri] = space
@@ -476,5 +511,116 @@ describe('revokeMemberAccess', () => {
       await projection.revokeMemberAccess(space, 'did:plc:none', 'left'),
     ).toBe(0)
     expect(calls).toEqual([])
+  })
+})
+
+describe('sanctions follow the DID, not the chat account', () => {
+  const did = 'did:plc:sanctioned'
+  const ago = (minutes: number) =>
+    new Date(Date.now() - minutes * 60_000).toISOString()
+  const row = (over: Record<string, unknown>) => ({
+    event_type: 'mute',
+    sanction_type: over.event_type ?? 'mute',
+    sanction_duration_minutes: null,
+    report_reason: null,
+    sanctioned_by_did: 'did:plc:mod',
+    created_at: ago(5),
+    ...over,
+  })
+  const member = { roles: [], chamber: 'A' as const, isObserver: false }
+
+  function active(roles: string[] = []) {
+    const deps = makeStubDeps()
+    spaceByUri[space.communityUri] = space
+    deps.memberships.push({
+      communityUri: space.communityUri,
+      state: 'active',
+      roles,
+    })
+    return deps
+  }
+
+  it('keeps a mute in force through reconciliation, which used to reset it to 0', async () => {
+    const { calls, sanctionEvents, matrix, db } = active()
+    sanctionEvents.push(row({ event_type: 'mute' }))
+    const projection = createMatrixProjection(config, db, matrix, log)
+    await projection.reconcileMemberAccess(did, '@presented:matrix.example')
+
+    const powers = calls.filter((c) => c.op === 'power')
+    expect(powers.length).toBeGreaterThan(0)
+    expect(powers.every((c) => c.args[2] === -1)).toBe(true)
+  })
+
+  it('restores the role level once a timed mute has run out', async () => {
+    const { calls, sanctionEvents, matrix, db } = active()
+    sanctionEvents.push(
+      row({
+        event_type: 'mute',
+        sanction_duration_minutes: 15,
+        created_at: ago(60),
+      }),
+    )
+    const projection = createMatrixProjection(config, db, matrix, log)
+    await projection.reconcileMemberAccess(did, '@presented:matrix.example')
+    expect(
+      calls.filter((c) => c.op === 'power' && c.args[0] === '!main:para'),
+    ).toContainEqual({
+      op: 'power',
+      args: ['!main:para', '@presented:matrix.example', 0],
+    })
+  })
+
+  it('refuses a verified join from a banned DID, whatever key it presents', async () => {
+    const { calls, sanctionEvents, matrix, db } = active()
+    sanctionEvents.push(row({ event_type: 'ban' }))
+    const projection = createMatrixProjection(config, db, matrix, log)
+    await expect(
+      projection.verifiedJoin(space, did, identity.pub, member),
+    ).rejects.toBeInstanceOf(SanctionedMemberError)
+    // Nothing was provisioned or joined for the new account.
+    expect(calls).toEqual([])
+  })
+
+  it('bans every account and joins none while reconciling a banned DID', async () => {
+    const { calls, sessions, sanctionEvents, matrix, db } = active()
+    sessions.push(session(did, '@old:matrix.example', 's1'))
+    sanctionEvents.push(row({ event_type: 'ban' }))
+    const projection = createMatrixProjection(config, db, matrix, log)
+    await projection.reconcileMemberAccess(did, '@fresh:matrix.example')
+
+    expect(calls.some((c) => c.op === 'join')).toBe(false)
+    for (const mxid of ['@old:matrix.example', '@fresh:matrix.example']) {
+      for (const roomId of ['!main:para', '!a:para', '!b:para', '!obs:para']) {
+        expect(calls).toContainEqual({ op: 'ban', args: [roomId, mxid] })
+      }
+    }
+  })
+
+  it('lets a lifted ban go: the member joins normally again', async () => {
+    const { sanctionEvents, matrix, db } = active()
+    sanctionEvents.push(
+      row({ event_type: 'ban', created_at: ago(30) }),
+      row({
+        event_type: 'sanction_lifted',
+        sanction_type: 'ban',
+        created_at: ago(10),
+      }),
+    )
+    const projection = createMatrixProjection(config, db, matrix, log)
+    await expect(
+      projection.verifiedJoin(space, did, identity.pub, member),
+    ).resolves.toMatchObject({ mxid: expectedMxid })
+  })
+
+  it('does not hold a moderator to a sanction from before they had the role', async () => {
+    const { sanctionEvents, matrix, db } = active(['moderator'])
+    sanctionEvents.push(row({ event_type: 'ban' }))
+    const projection = createMatrixProjection(config, db, matrix, log)
+    await expect(
+      projection.verifiedJoin(space, did, identity.pub, {
+        ...member,
+        roles: ['moderator'],
+      }),
+    ).resolves.toMatchObject({ mxid: expectedMxid })
   })
 })

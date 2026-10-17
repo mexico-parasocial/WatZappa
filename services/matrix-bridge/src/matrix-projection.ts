@@ -1,9 +1,22 @@
 import type { Logger } from 'pino'
+import { type EffectiveSanction, effectiveSanction } from './chat-moderation.js'
 import type { Config } from './config.js'
 import type { IBridgeDatabase } from './db/index.js'
 import type { CommunitySpaceMap } from './db/interface.js'
 import { mxidForIdentityPub } from './identity-proof.js'
 import type { MatrixAdminClient } from './matrix.js'
+
+/**
+ * A verified join by a member who is banned from the community. Sanctions are
+ * recorded against the DID, so presenting a fresh chat key (a fresh MXID) does
+ * not escape one: the projection checks the DID, not the account.
+ */
+export class SanctionedMemberError extends Error {
+  readonly code = 'Sanctioned'
+  constructor(readonly sanction: EffectiveSanction) {
+    super('Member is banned from this community')
+  }
+}
 
 /**
  * Matrix projection port (CD-M2). The governance side (firehose) decides
@@ -28,6 +41,7 @@ export interface MatrixProjectionPort {
   /** Provision a space (and, for bicameral, its chamber rooms) for a new
    *  community. Returns the room map to persist. Creates no user accounts. */
   createCommunitySpace(input: {
+    communityUri: string
     name: string
     slug: string
     chamberMode: string
@@ -113,6 +127,7 @@ export function createMatrixProjection(
   db: IBridgeDatabase,
   matrix: MatrixAdminClient,
   log: Logger,
+  refreshAuthority?: (community: string, did: string) => Promise<void>,
 ): MatrixProjectionPort {
   // The homeserver's own server_name, not the host we reach it on. Those are
   // the same only in production; anywhere else this minted MXIDs Synapse
@@ -212,6 +227,33 @@ export function createMatrixProjection(
     return rooms
   }
 
+  /**
+   * The sanction that restricts this member in this community, if any.
+   * Moderators and owners cannot be sanctioned (the sanction route refuses),
+   * so someone sanctioned earlier and given a role since is not held to it.
+   */
+  const sanctionFor = async (
+    did: string,
+    communityUri: string,
+    roles: string[],
+  ): Promise<EffectiveSanction | null> => {
+    if (isModerator(roles)) return null
+    return effectiveSanction(await db.getSanctionEvents(did, communityUri))
+  }
+
+  /**
+   * Power levels are written from roles on every verified interaction, so a
+   * mute has to be part of that computation: written once, it was undone the
+   * next time the member's app talked to the bridge.
+   */
+  const withMute = <T extends { powerLevel?: number }>(
+    rooms: T[],
+    sanction: EffectiveSanction | null,
+  ): T[] =>
+    sanction?.type === 'mute'
+      ? rooms.map((room) => ({ ...room, powerLevel: -1 }))
+      : rooms
+
   /** Join one member into the right rooms with the right power levels. */
   const joinMemberRooms = async (
     space: CommunitySpaceMap,
@@ -219,7 +261,9 @@ export function createMatrixProjection(
     mxid: string,
     opts: RoleOpts,
   ): Promise<string[]> => {
-    const rooms = entitledRooms(space, opts)
+    const sanction = await sanctionFor(did, space.communityUri, opts.roles)
+    if (sanction?.type === 'ban') throw new SanctionedMemberError(sanction)
+    const rooms = withMute(entitledRooms(space, opts), sanction)
     await ensureUserExists(mxid)
     const joined: string[] = []
     for (const { roomId, powerLevel } of rooms) {
@@ -246,11 +290,27 @@ export function createMatrixProjection(
    */
   const projectRolesToMxids = async (
     space: CommunitySpaceMap,
+    did: string,
     mxids: string[],
     opts: RoleOpts,
   ): Promise<void> => {
     if (mxids.length === 0) return
-    const rooms = entitledRooms(space, opts)
+    const sanction = await sanctionFor(did, space.communityUri, opts.roles)
+    if (sanction?.type === 'ban') {
+      // Not entitled to anything while banned. Re-assert the ban on every
+      // account in case one was created after it was issued.
+      for (const mxid of mxids) {
+        for (const roomId of communityRoomIds(space)) {
+          try {
+            await matrix.banUser(roomId, mxid, 'Community moderation sanction')
+          } catch {
+            // Already banned, or the room is gone.
+          }
+        }
+      }
+      return
+    }
+    const rooms = withMute(entitledRooms(space, opts), sanction)
     const entitled = new Set(rooms.map((room) => room.roomId))
     const notEntitled = communityRoomIds(space).filter(
       (roomId) => !entitled.has(roomId),
@@ -273,8 +333,8 @@ export function createMatrixProjection(
   }
 
   return {
-    async createCommunitySpace({ name, slug, chamberMode }) {
-      const spaceId = await matrix.createSpace(name, slug)
+    async createCommunitySpace({ name, slug, chamberMode, communityUri }) {
+      const spaceId = await matrix.createSpace(name, slug, communityUri)
       if (chamberMode !== 'bicameral') {
         return {
           spaceId,
@@ -284,12 +344,23 @@ export function createMatrixProjection(
         }
       }
       const [chamberA, chamberB, observerRoom] = await Promise.all([
-        matrix.createRoom(`${name} — Cámara A`, `${slug}-chamber-a`, spaceId),
-        matrix.createRoom(`${name} — Cámara B`, `${slug}-chamber-b`, spaceId),
+        matrix.createRoom(
+          `${name} — Cámara A`,
+          `${slug}-chamber-a`,
+          spaceId,
+          communityUri,
+        ),
+        matrix.createRoom(
+          `${name} — Cámara B`,
+          `${slug}-chamber-b`,
+          spaceId,
+          communityUri,
+        ),
         matrix.createRoom(
           `${name} — Consejo Observador`,
           `${slug}-observers`,
           spaceId,
+          communityUri,
         ),
       ])
       await Promise.all([
@@ -335,7 +406,7 @@ export function createMatrixProjection(
         )
         return
       }
-      await projectRolesToMxids(space, mxids, opts)
+      await projectRolesToMxids(space, did, mxids, opts)
       log.info(
         { communityUri: space.communityUri, did, roles: opts.roles, mxids },
         'Projected role change to chat rooms',
@@ -383,18 +454,22 @@ export function createMatrixProjection(
 
     async reconcileMemberAccess(did, presentedMxid) {
       const memberships = await db.getMembershipsForDid(did)
-      for (const membership of memberships) {
-        const space = await db.getSpaceForCommunity(membership.communityUri)
+      for (const cached of memberships) {
+        await refreshAuthority?.(cached.communityUri, did)
+        const membership = await db.getCommunityMembership(
+          did,
+          cached.communityUri,
+        )
+        if (!membership) continue
+        const communityUri = cached.communityUri
+        const space = await db.getSpaceForCommunity(communityUri)
         if (!space) continue
         if (membership.state === 'active') {
           // Catch-up for role changes that arrived while offline. The
           // presented account is included: it is entitled by membership,
           // even if this interaction is its first under this community.
           const roles = membership.roles ?? []
-          const assigned = await db.getChamberAssignment(
-            membership.communityUri,
-            did,
-          )
+          const assigned = await db.getChamberAssignment(communityUri, did)
           const chamber: 'A' | 'B' | null =
             assigned === 'A' || assigned === 'B' ? assigned : null
           const opts = {
@@ -405,16 +480,12 @@ export function createMatrixProjection(
           const entitled = [
             ...new Set([...(await sessionMxidsForDid(did)), presentedMxid]),
           ]
-          await projectRolesToMxids(space, entitled, opts)
+          await projectRolesToMxids(space, did, entitled, opts)
           // This interaction renews the lease of every account the member
           // actively holds for this community.
           const nowIso = new Date().toISOString()
           for (const mxid of entitled) {
-            await db.upsertCommunityMembershipLease(
-              membership.communityUri,
-              mxid,
-              nowIso,
-            )
+            await db.upsertCommunityMembershipLease(communityUri, mxid, nowIso)
           }
         } else {
           // Removal that arrived while offline. The presented account is

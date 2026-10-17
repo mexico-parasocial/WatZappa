@@ -6,6 +6,7 @@ import type {
   HcaptchaConfig,
 } from '@atproto/oauth-provider/provider'
 import { type DidString, ensureValidDid, isValidDid } from '@atproto/syntax'
+import pkg from '../../package.json' with { type: 'json' }
 import type { ServerEnvironment } from './env.js'
 
 export type { BrandingConfig }
@@ -31,7 +32,7 @@ export const envToCfg = (env: ServerEnvironment): ServerConfig => {
     hostname,
     publicUrl,
     did,
-    version: env.version, // default?
+    version: env.version || pkg.version,
     privacyPolicyUrl: env.privacyPolicyUrl,
     termsOfServiceUrl: env.termsOfServiceUrl,
     contactEmailAddress: env.contactEmailAddress,
@@ -238,9 +239,7 @@ export const envToCfg = (env: ServerEnvironment): ServerConfig => {
       }
     : null
 
-  // MVP hardening: default rate limits ON in production unless explicitly disabled.
-  const rateLimitsEnabled = env.rateLimitsEnabled ?? !env.devMode
-  const rateLimitsCfg: ServerConfig['rateLimits'] = rateLimitsEnabled
+  const rateLimitsCfg: ServerConfig['rateLimits'] = env.rateLimitsEnabled
     ? {
         enabled: true,
         bypassKey: env.rateLimitBypassKey,
@@ -274,30 +273,12 @@ export const envToCfg = (env: ServerEnvironment): ServerConfig => {
     name: env.serviceName ?? `${hostname} PDS`,
     logo: env.logoUrl,
     colors: {
-      light: env.lightColor,
-      dark: env.darkColor,
-
-      contrastSaturation: env.contrastSaturation,
-
       primary: env.primaryColor,
-      primaryContrast: env.primaryColorContrast,
-      primaryHue: env.primaryColorHue,
 
       error: env.errorColor,
-      errorContrast: env.errorColorContrast,
-      errorHue: env.errorColorHue,
-
       warning: env.warningColor,
-      warningContrast: env.warningColorContrast,
-      warningHue: env.warningColorHue,
-
       info: env.infoColor,
-      infoContrast: env.infoColorContrast,
-      infoHue: env.infoColorHue,
-
       success: env.successColor,
-      successContrast: env.successColorContrast,
-      successHue: env.successColorHue,
     },
     background: {
       light: env.backgroundLightUrl,
@@ -372,8 +353,6 @@ export const envToCfg = (env: ServerEnvironment): ServerConfig => {
     moderationEmail: moderationEmailCfg,
     subscription: subscriptionCfg,
     bskyAppView: bskyAppViewCfg,
-    communityCreatorDids: env.paraCommunityCreatorDids ?? [],
-    m8BaseUrl: env.m8BaseUrl ?? null,
     modService: modServiceCfg,
     reportService: reportServiceCfg,
     redis: redisCfg,
@@ -399,8 +378,6 @@ export type ServerConfig = {
   moderationEmail: EmailConfig | null
   subscription: SubscriptionConfig
   bskyAppView: BksyAppViewConfig | null
-  communityCreatorDids: string[]
-  m8BaseUrl: string | null
   modService: ModServiceConfig | null
   reportService: ReportServiceConfig | null
   redis: RedisScratchConfig | null
@@ -418,7 +395,7 @@ export type ServiceConfig = {
   hostname: string
   publicUrl: string
   did: DidString
-  version?: string
+  version: string
   privacyPolicyUrl?: string
   termsOfServiceUrl?: string
   acceptingImports: boolean

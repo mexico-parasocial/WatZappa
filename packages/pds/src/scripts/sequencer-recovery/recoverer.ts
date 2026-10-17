@@ -1,35 +1,35 @@
 import { rmIfExists } from '@atproto/common'
 import { Secp256k1Keypair } from '@atproto/crypto'
+import { type DidString, isNsidString, isRecordKeyString } from '@atproto/lex'
 import {
   BlockMap,
   CidSet,
-  CommitData,
+  type CommitData,
   WriteOpAction,
   cborToLexRecord,
   parseDataKey,
   readCar,
 } from '@atproto/repo'
-import { DidString, NsidString, RecordKeyString } from '@atproto/syntax'
 import {
-  AccountManager,
+  type AccountManager,
   AccountStatus,
 } from '../../account-manager/account-manager.js'
-import { ActorStore } from '../../actor-store/actor-store.js'
-import { ActorStoreTransactor } from '../../actor-store/actor-store-transactor.js'
+import type { ActorStoreTransactor } from '../../actor-store/actor-store-transactor.js'
+import type { ActorStore } from '../../actor-store/actor-store.js'
 import { countAll } from '../../db/index.js'
 import {
-  PreparedWrite,
+  type PreparedWrite,
   prepareCreate,
   prepareDelete,
   prepareUpdate,
 } from '../../repo/index.js'
-import {
+import type {
   AccountEvt,
   CommitEvt,
   SeqEvt,
   Sequencer,
 } from '../../sequencer/index.js'
-import { RecoveryDb } from './recovery-db.js'
+import type { RecoveryDb } from './recovery-db.js'
 import { UserQueues } from './user-queues.js'
 
 export type RecovererContextNoDb = {
@@ -179,12 +179,16 @@ const processRepoCreation = async (
 
 const processAccountEvt = async (ctx: RecovererContext, evt: AccountEvt) => {
   // do not need to process deactivation/takedowns because we backup account DB as well
-  if (evt.status !== AccountStatus.Deleted) {
-    return
+
+  if (evt.status === AccountStatus.Deleted) {
+    // In case an account deletion was sequenced, let's make sure to (first)
+    // delete the accounts database, and (then) unlink the actor store from the
+    // file system. Order matters here.
+    await ctx.accountManager.deleteAccount(evt.did)
+
+    const { directory } = await ctx.actorStore.getLocation(evt.did)
+    await rmIfExists(directory, true)
   }
-  const { directory } = await ctx.actorStore.getLocation(evt.did)
-  await rmIfExists(directory, true)
-  await ctx.accountManager.deleteAccount(evt.did)
 }
 
 const trackBlobs = async (
@@ -243,9 +247,9 @@ const parseCommitEvt = async (
   const evtCar = await readCar(evt.blocks, { skipCidVerification: true })
   const writesUnfiltered = await Promise.all(
     evt.ops.map(async (op) => {
-      const { collection: nsid, rkey: rk } = parseDataKey(op.path)
-      const collection = nsid as NsidString
-      const rkey = rk as RecordKeyString
+      const { collection, rkey } = parseDataKey(op.path)
+      if (!isNsidString(collection)) return undefined
+      if (!isRecordKeyString(rkey)) return undefined
 
       if (op.action === 'delete') {
         return prepareDelete({ did, collection, rkey })
@@ -256,9 +260,6 @@ const parseCommitEvt = async (
       if (!recordBytes) return undefined
       const record = cborToLexRecord(recordBytes)
 
-      // @NOTE `replay` waives the PARA ballot freeze: these ops were already
-      // committed and sequenced, and dropping one here would diverge the
-      // recovered repo from its commit.
       if (op.action === 'create') {
         return prepareCreate({
           did,

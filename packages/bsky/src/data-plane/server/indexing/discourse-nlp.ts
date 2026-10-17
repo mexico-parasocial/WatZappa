@@ -1,13 +1,56 @@
+import { createRequire } from 'node:module'
 import { removeStopwords, spa } from 'stopword'
-import naturalModule from 'natural'
 import keywordExtractorModule from 'keyword-extractor'
 
-const natural =
-  (naturalModule as typeof naturalModule & { default?: typeof naturalModule })
-    .default ?? naturalModule
-const { PorterStemmerEs, SentimentAnalyzer, RegexpTokenizer: WordTokenizer } = natural
-
 const keywordExtractor = ((m) => m.default ?? m)(keywordExtractorModule)
+
+/**
+ * `natural` is loaded on first use, not at import time.
+ *
+ * Its `SentimentAnalyzer` does `require('afinn-165')`, and `afinn-165` is
+ * ESM-only. Plain Node handles that from 22.12 on, but jest's module registry
+ * cannot `require()` ESM before Node 24.9 — so a top-level import here made
+ * every suite that merely reaches this file fail to load, ozone's included,
+ * because its fixtures pull `@atproto/bsky` in through dev-env. Nothing in
+ * those suites calls `analyzeDiscourse`; they only paid for importing it.
+ *
+ * `createRequire` is deliberate too: it resolves through Node's own loader
+ * rather than the test runner's, which is the loader that supports
+ * `require(esm)` on the Node 22 this repo pins.
+ */
+const require = createRequire(import.meta.url)
+
+type NaturalModule = typeof import('natural')
+
+let tools:
+  | {
+      analyzer: InstanceType<NaturalModule['SentimentAnalyzer']>
+      tokenizer: InstanceType<NaturalModule['RegexpTokenizer']>
+    }
+  | undefined
+
+function nlp() {
+  if (!tools) {
+    const loaded = require('natural') as NaturalModule & {
+      default?: NaturalModule
+    }
+    const natural = loaded.default ?? loaded
+    const analyzer = new natural.SentimentAnalyzer(
+      'Spanish',
+      natural.PorterStemmerEs,
+      'afinn', // Use built-in lexicon as base
+    )
+    // @ts-ignore: natural types are sometimes restrictive for custom lexicons
+    ;(analyzer as any).vocabulary = SpanishCivicLexicon // Inject custom civic lexicon
+    tools = {
+      analyzer,
+      tokenizer: new natural.RegexpTokenizer({
+        pattern: /[^a-zA-ZáéíóúÁÉÍÓÚñÑ]+/,
+      }),
+    }
+  }
+  return tools
+}
 
 // Spanish Sentiment Lexicon (Simplified for Civic Discourse)
 const SpanishCivicLexicon = {
@@ -66,17 +109,12 @@ export type SentimentResult = {
   comparative: number
 }
 
-const analyzer = new SentimentAnalyzer('Spanish', PorterStemmerEs, 'afinn') // Use built-in lexicon as base
-// @ts-ignore: natural types are sometimes restrictive for custom lexicons
-const customAnalyzer: any = analyzer
-customAnalyzer.vocabulary = SpanishCivicLexicon // Inject custom civic lexicon
-const tokenizer = new WordTokenizer({ pattern: /[^a-zA-ZáéíóúÁÉÍÓÚñÑ]+/ })
-
 export function analyzeDiscourse(text: string): {
   sentiment: SentimentResult
   keywords: string[]
   constructiveness: number
 } {
+  const { analyzer, tokenizer } = nlp()
   const tokens = tokenizer.tokenize(text.toLowerCase())
   const filteredTokens = removeStopwords(tokens, spa)
 

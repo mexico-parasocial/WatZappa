@@ -15,6 +15,7 @@ import * as AppBskyActorGetPreferences from './types/app/bsky/actor/getPreferenc
 import * as AppBskyActorGetProfile from './types/app/bsky/actor/getProfile.js'
 import * as AppBskyActorGetProfiles from './types/app/bsky/actor/getProfiles.js'
 import * as AppBskyActorGetSuggestions from './types/app/bsky/actor/getSuggestions.js'
+import * as AppBskyActorLink from './types/app/bsky/actor/link.js'
 import * as AppBskyActorProfile from './types/app/bsky/actor/profile.js'
 import * as AppBskyActorPutPreferences from './types/app/bsky/actor/putPreferences.js'
 import * as AppBskyActorSearchActors from './types/app/bsky/actor/searchActors.js'
@@ -101,6 +102,7 @@ import * as AppBskyGraphListitem from './types/app/bsky/graph/listitem.js'
 import * as AppBskyGraphMuteActor from './types/app/bsky/graph/muteActor.js'
 import * as AppBskyGraphMuteActorList from './types/app/bsky/graph/muteActorList.js'
 import * as AppBskyGraphMuteThread from './types/app/bsky/graph/muteThread.js'
+import * as AppBskyGraphReferencelistoptout from './types/app/bsky/graph/referencelistoptout.js'
 import * as AppBskyGraphSearchStarterPacks from './types/app/bsky/graph/searchStarterPacks.js'
 import * as AppBskyGraphSearchStarterPacksV2 from './types/app/bsky/graph/searchStarterPacksV2.js'
 import * as AppBskyGraphStarterpack from './types/app/bsky/graph/starterpack.js'
@@ -127,6 +129,7 @@ import * as AppBskyNotificationUpdateSeen from './types/app/bsky/notification/up
 import * as AppBskyRichtextFacet from './types/app/bsky/richtext/facet.js'
 import * as AppBskyUnspeccedDefs from './types/app/bsky/unspecced/defs.js'
 import * as AppBskyUnspeccedGetAgeAssuranceState from './types/app/bsky/unspecced/getAgeAssuranceState.js'
+import * as AppBskyUnspeccedGetAtmosphereExploreTab from './types/app/bsky/unspecced/getAtmosphereExploreTab.js'
 import * as AppBskyUnspeccedGetConfig from './types/app/bsky/unspecced/getConfig.js'
 import * as AppBskyUnspeccedGetOnboardingSuggestedStarterPacks from './types/app/bsky/unspecced/getOnboardingSuggestedStarterPacks.js'
 import * as AppBskyUnspeccedGetOnboardingSuggestedStarterPacksSkeleton from './types/app/bsky/unspecced/getOnboardingSuggestedStarterPacksSkeleton.js'
@@ -359,6 +362,7 @@ import * as ComParaCivicDefs from './types/com/para/civic/defs.js'
 import * as ComParaCivicDelegation from './types/com/para/civic/delegation.js'
 import * as ComParaCivicGetCabildeo from './types/com/para/civic/getCabildeo.js'
 import * as ComParaCivicGetOpenQuestionThread from './types/com/para/civic/getOpenQuestionThread.js'
+import * as ComParaCivicGetPolicyCommunityVotes from './types/com/para/civic/getPolicyCommunityVotes.js'
 import * as ComParaCivicGetPolicyTally from './types/com/para/civic/getPolicyTally.js'
 import * as ComParaCivicListCabildeoPositions from './types/com/para/civic/listCabildeoPositions.js'
 import * as ComParaCivicListCabildeos from './types/com/para/civic/listCabildeos.js'
@@ -479,6 +483,18 @@ import * as ToolsOzoneHistoryGetAccountActions from './types/tools/ozone/history
 import * as ToolsOzoneHistoryGetReportedSubjects from './types/tools/ozone/history/getReportedSubjects.js'
 import * as ToolsOzoneHistoryGetSubjectHistory from './types/tools/ozone/history/getSubjectHistory.js'
 import * as ToolsOzoneHostingGetAccountHistory from './types/tools/ozone/hosting/getAccountHistory.js'
+import * as ToolsOzoneInboxAppealActionedSubject from './types/tools/ozone/inbox/appealActionedSubject.js'
+import * as ToolsOzoneInboxDefs from './types/tools/ozone/inbox/defs.js'
+import * as ToolsOzoneInboxGetAccountStatus from './types/tools/ozone/inbox/getAccountStatus.js'
+import * as ToolsOzoneInboxGetActionedSubject from './types/tools/ozone/inbox/getActionedSubject.js'
+import * as ToolsOzoneInboxGetNotificationPreferences from './types/tools/ozone/inbox/getNotificationPreferences.js'
+import * as ToolsOzoneInboxGetReport from './types/tools/ozone/inbox/getReport.js'
+import * as ToolsOzoneInboxGetUnreadCount from './types/tools/ozone/inbox/getUnreadCount.js'
+import * as ToolsOzoneInboxListActionedSubjects from './types/tools/ozone/inbox/listActionedSubjects.js'
+import * as ToolsOzoneInboxListNotifications from './types/tools/ozone/inbox/listNotifications.js'
+import * as ToolsOzoneInboxListReports from './types/tools/ozone/inbox/listReports.js'
+import * as ToolsOzoneInboxPutNotificationPreferences from './types/tools/ozone/inbox/putNotificationPreferences.js'
+import * as ToolsOzoneInboxUpdateSeen from './types/tools/ozone/inbox/updateSeen.js'
 import * as ToolsOzoneModerationCancelScheduledActions from './types/tools/ozone/moderation/cancelScheduledActions.js'
 import * as ToolsOzoneModerationDefs from './types/tools/ozone/moderation/defs.js'
 import * as ToolsOzoneModerationEmitEvent from './types/tools/ozone/moderation/emitEvent.js'
@@ -526,6 +542,7 @@ import * as ToolsOzoneSafelinkQueryEvents from './types/tools/ozone/safelink/que
 import * as ToolsOzoneSafelinkQueryRules from './types/tools/ozone/safelink/queryRules.js'
 import * as ToolsOzoneSafelinkRemoveRule from './types/tools/ozone/safelink/removeRule.js'
 import * as ToolsOzoneSafelinkUpdateRule from './types/tools/ozone/safelink/updateRule.js'
+import * as ToolsOzoneServerGetCapabilities from './types/tools/ozone/server/getCapabilities.js'
 import * as ToolsOzoneServerGetConfig from './types/tools/ozone/server/getConfig.js'
 import * as ToolsOzoneSetAddValues from './types/tools/ozone/set/addValues.js'
 import * as ToolsOzoneSetDefs from './types/tools/ozone/set/defs.js'
@@ -557,6 +574,7 @@ export * as AppBskyActorGetPreferences from './types/app/bsky/actor/getPreferenc
 export * as AppBskyActorGetProfile from './types/app/bsky/actor/getProfile.js'
 export * as AppBskyActorGetProfiles from './types/app/bsky/actor/getProfiles.js'
 export * as AppBskyActorGetSuggestions from './types/app/bsky/actor/getSuggestions.js'
+export * as AppBskyActorLink from './types/app/bsky/actor/link.js'
 export * as AppBskyActorProfile from './types/app/bsky/actor/profile.js'
 export * as AppBskyActorPutPreferences from './types/app/bsky/actor/putPreferences.js'
 export * as AppBskyActorSearchActors from './types/app/bsky/actor/searchActors.js'
@@ -643,6 +661,7 @@ export * as AppBskyGraphListitem from './types/app/bsky/graph/listitem.js'
 export * as AppBskyGraphMuteActor from './types/app/bsky/graph/muteActor.js'
 export * as AppBskyGraphMuteActorList from './types/app/bsky/graph/muteActorList.js'
 export * as AppBskyGraphMuteThread from './types/app/bsky/graph/muteThread.js'
+export * as AppBskyGraphReferencelistoptout from './types/app/bsky/graph/referencelistoptout.js'
 export * as AppBskyGraphSearchStarterPacks from './types/app/bsky/graph/searchStarterPacks.js'
 export * as AppBskyGraphSearchStarterPacksV2 from './types/app/bsky/graph/searchStarterPacksV2.js'
 export * as AppBskyGraphStarterpack from './types/app/bsky/graph/starterpack.js'
@@ -669,6 +688,7 @@ export * as AppBskyNotificationUpdateSeen from './types/app/bsky/notification/up
 export * as AppBskyRichtextFacet from './types/app/bsky/richtext/facet.js'
 export * as AppBskyUnspeccedDefs from './types/app/bsky/unspecced/defs.js'
 export * as AppBskyUnspeccedGetAgeAssuranceState from './types/app/bsky/unspecced/getAgeAssuranceState.js'
+export * as AppBskyUnspeccedGetAtmosphereExploreTab from './types/app/bsky/unspecced/getAtmosphereExploreTab.js'
 export * as AppBskyUnspeccedGetConfig from './types/app/bsky/unspecced/getConfig.js'
 export * as AppBskyUnspeccedGetOnboardingSuggestedStarterPacks from './types/app/bsky/unspecced/getOnboardingSuggestedStarterPacks.js'
 export * as AppBskyUnspeccedGetOnboardingSuggestedStarterPacksSkeleton from './types/app/bsky/unspecced/getOnboardingSuggestedStarterPacksSkeleton.js'
@@ -901,6 +921,7 @@ export * as ComParaCivicDefs from './types/com/para/civic/defs.js'
 export * as ComParaCivicDelegation from './types/com/para/civic/delegation.js'
 export * as ComParaCivicGetCabildeo from './types/com/para/civic/getCabildeo.js'
 export * as ComParaCivicGetOpenQuestionThread from './types/com/para/civic/getOpenQuestionThread.js'
+export * as ComParaCivicGetPolicyCommunityVotes from './types/com/para/civic/getPolicyCommunityVotes.js'
 export * as ComParaCivicGetPolicyTally from './types/com/para/civic/getPolicyTally.js'
 export * as ComParaCivicListCabildeoPositions from './types/com/para/civic/listCabildeoPositions.js'
 export * as ComParaCivicListCabildeos from './types/com/para/civic/listCabildeos.js'
@@ -1021,6 +1042,18 @@ export * as ToolsOzoneHistoryGetAccountActions from './types/tools/ozone/history
 export * as ToolsOzoneHistoryGetReportedSubjects from './types/tools/ozone/history/getReportedSubjects.js'
 export * as ToolsOzoneHistoryGetSubjectHistory from './types/tools/ozone/history/getSubjectHistory.js'
 export * as ToolsOzoneHostingGetAccountHistory from './types/tools/ozone/hosting/getAccountHistory.js'
+export * as ToolsOzoneInboxAppealActionedSubject from './types/tools/ozone/inbox/appealActionedSubject.js'
+export * as ToolsOzoneInboxDefs from './types/tools/ozone/inbox/defs.js'
+export * as ToolsOzoneInboxGetAccountStatus from './types/tools/ozone/inbox/getAccountStatus.js'
+export * as ToolsOzoneInboxGetActionedSubject from './types/tools/ozone/inbox/getActionedSubject.js'
+export * as ToolsOzoneInboxGetNotificationPreferences from './types/tools/ozone/inbox/getNotificationPreferences.js'
+export * as ToolsOzoneInboxGetReport from './types/tools/ozone/inbox/getReport.js'
+export * as ToolsOzoneInboxGetUnreadCount from './types/tools/ozone/inbox/getUnreadCount.js'
+export * as ToolsOzoneInboxListActionedSubjects from './types/tools/ozone/inbox/listActionedSubjects.js'
+export * as ToolsOzoneInboxListNotifications from './types/tools/ozone/inbox/listNotifications.js'
+export * as ToolsOzoneInboxListReports from './types/tools/ozone/inbox/listReports.js'
+export * as ToolsOzoneInboxPutNotificationPreferences from './types/tools/ozone/inbox/putNotificationPreferences.js'
+export * as ToolsOzoneInboxUpdateSeen from './types/tools/ozone/inbox/updateSeen.js'
 export * as ToolsOzoneModerationCancelScheduledActions from './types/tools/ozone/moderation/cancelScheduledActions.js'
 export * as ToolsOzoneModerationDefs from './types/tools/ozone/moderation/defs.js'
 export * as ToolsOzoneModerationEmitEvent from './types/tools/ozone/moderation/emitEvent.js'
@@ -1068,6 +1101,7 @@ export * as ToolsOzoneSafelinkQueryEvents from './types/tools/ozone/safelink/que
 export * as ToolsOzoneSafelinkQueryRules from './types/tools/ozone/safelink/queryRules.js'
 export * as ToolsOzoneSafelinkRemoveRule from './types/tools/ozone/safelink/removeRule.js'
 export * as ToolsOzoneSafelinkUpdateRule from './types/tools/ozone/safelink/updateRule.js'
+export * as ToolsOzoneServerGetCapabilities from './types/tools/ozone/server/getCapabilities.js'
 export * as ToolsOzoneServerGetConfig from './types/tools/ozone/server/getConfig.js'
 export * as ToolsOzoneSetAddValues from './types/tools/ozone/set/addValues.js'
 export * as ToolsOzoneSetDefs from './types/tools/ozone/set/defs.js'
@@ -1268,11 +1302,13 @@ export class AppBskyNS {
 
 export class AppBskyActorNS {
   _client: XrpcClient
+  link: AppBskyActorLinkRecord
   profile: AppBskyActorProfileRecord
   status: AppBskyActorStatusRecord
 
   constructor(client: XrpcClient) {
     this._client = client
+    this.link = new AppBskyActorLinkRecord(client)
     this.profile = new AppBskyActorProfileRecord(client)
     this.status = new AppBskyActorStatusRecord(client)
   }
@@ -1358,6 +1394,85 @@ export class AppBskyActorNS {
       params,
       undefined,
       opts,
+    )
+  }
+}
+
+export class AppBskyActorLinkRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: AppBskyActorLink.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'app.bsky.actor.link',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{ uri: string; cid: string; value: AppBskyActorLink.Record }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'app.bsky.actor.link',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<AppBskyActorLink.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'app.bsky.actor.link'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<AppBskyActorLink.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'app.bsky.actor.link'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'app.bsky.actor.link', ...params },
+      { headers },
     )
   }
 }
@@ -2487,6 +2602,7 @@ export class AppBskyGraphNS {
   list: AppBskyGraphListRecord
   listblock: AppBskyGraphListblockRecord
   listitem: AppBskyGraphListitemRecord
+  referencelistoptout: AppBskyGraphReferencelistoptoutRecord
   starterpack: AppBskyGraphStarterpackRecord
   verification: AppBskyGraphVerificationRecord
 
@@ -2497,6 +2613,7 @@ export class AppBskyGraphNS {
     this.list = new AppBskyGraphListRecord(client)
     this.listblock = new AppBskyGraphListblockRecord(client)
     this.listitem = new AppBskyGraphListitemRecord(client)
+    this.referencelistoptout = new AppBskyGraphReferencelistoptoutRecord(client)
     this.starterpack = new AppBskyGraphStarterpackRecord(client)
     this.verification = new AppBskyGraphVerificationRecord(client)
   }
@@ -3158,6 +3275,89 @@ export class AppBskyGraphListitemRecord {
   }
 }
 
+export class AppBskyGraphReferencelistoptoutRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: AppBskyGraphReferencelistoptout.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'app.bsky.graph.referencelistoptout',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: AppBskyGraphReferencelistoptout.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'app.bsky.graph.referencelistoptout',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<AppBskyGraphReferencelistoptout.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'app.bsky.graph.referencelistoptout'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<AppBskyGraphReferencelistoptout.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'app.bsky.graph.referencelistoptout'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'app.bsky.graph.referencelistoptout', ...params },
+      { headers },
+    )
+  }
+}
+
 export class AppBskyGraphStarterpackRecord {
   _client: XrpcClient
 
@@ -3685,6 +3885,18 @@ export class AppBskyUnspeccedNS {
   ): Promise<AppBskyUnspeccedGetAgeAssuranceState.Response> {
     return this._client.call(
       'app.bsky.unspecced.getAgeAssuranceState',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  getAtmosphereExploreTab(
+    params?: AppBskyUnspeccedGetAtmosphereExploreTab.QueryParams,
+    opts?: AppBskyUnspeccedGetAtmosphereExploreTab.CallOptions,
+  ): Promise<AppBskyUnspeccedGetAtmosphereExploreTab.Response> {
+    return this._client.call(
+      'app.bsky.unspecced.getAtmosphereExploreTab',
       params,
       undefined,
       opts,
@@ -6616,6 +6828,17 @@ export class ComParaCivicNS {
       .call('com.para.civic.getOpenQuestionThread', params, undefined, opts)
       .catch((e) => {
         throw ComParaCivicGetOpenQuestionThread.toKnownErr(e)
+      })
+  }
+
+  getPolicyCommunityVotes(
+    params?: ComParaCivicGetPolicyCommunityVotes.QueryParams,
+    opts?: ComParaCivicGetPolicyCommunityVotes.CallOptions,
+  ): Promise<ComParaCivicGetPolicyCommunityVotes.Response> {
+    return this._client
+      .call('com.para.civic.getPolicyCommunityVotes', params, undefined, opts)
+      .catch((e) => {
+        throw ComParaCivicGetPolicyCommunityVotes.toKnownErr(e)
       })
   }
 
@@ -11319,6 +11542,7 @@ export class ToolsOzoneNS {
   communication: ToolsOzoneCommunicationNS
   history: ToolsOzoneHistoryNS
   hosting: ToolsOzoneHostingNS
+  inbox: ToolsOzoneInboxNS
   moderation: ToolsOzoneModerationNS
   queue: ToolsOzoneQueueNS
   report: ToolsOzoneReportNS
@@ -11335,6 +11559,7 @@ export class ToolsOzoneNS {
     this.communication = new ToolsOzoneCommunicationNS(client)
     this.history = new ToolsOzoneHistoryNS(client)
     this.hosting = new ToolsOzoneHostingNS(client)
+    this.inbox = new ToolsOzoneInboxNS(client)
     this.moderation = new ToolsOzoneModerationNS(client)
     this.queue = new ToolsOzoneQueueNS(client)
     this.report = new ToolsOzoneReportNS(client)
@@ -11461,6 +11686,143 @@ export class ToolsOzoneHostingNS {
       'tools.ozone.hosting.getAccountHistory',
       params,
       undefined,
+      opts,
+    )
+  }
+}
+
+export class ToolsOzoneInboxNS {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  appealActionedSubject(
+    data?: ToolsOzoneInboxAppealActionedSubject.InputSchema,
+    opts?: ToolsOzoneInboxAppealActionedSubject.CallOptions,
+  ): Promise<ToolsOzoneInboxAppealActionedSubject.Response> {
+    return this._client
+      .call('tools.ozone.inbox.appealActionedSubject', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ToolsOzoneInboxAppealActionedSubject.toKnownErr(e)
+      })
+  }
+
+  getAccountStatus(
+    params?: ToolsOzoneInboxGetAccountStatus.QueryParams,
+    opts?: ToolsOzoneInboxGetAccountStatus.CallOptions,
+  ): Promise<ToolsOzoneInboxGetAccountStatus.Response> {
+    return this._client.call(
+      'tools.ozone.inbox.getAccountStatus',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  getActionedSubject(
+    params?: ToolsOzoneInboxGetActionedSubject.QueryParams,
+    opts?: ToolsOzoneInboxGetActionedSubject.CallOptions,
+  ): Promise<ToolsOzoneInboxGetActionedSubject.Response> {
+    return this._client
+      .call('tools.ozone.inbox.getActionedSubject', params, undefined, opts)
+      .catch((e) => {
+        throw ToolsOzoneInboxGetActionedSubject.toKnownErr(e)
+      })
+  }
+
+  getNotificationPreferences(
+    params?: ToolsOzoneInboxGetNotificationPreferences.QueryParams,
+    opts?: ToolsOzoneInboxGetNotificationPreferences.CallOptions,
+  ): Promise<ToolsOzoneInboxGetNotificationPreferences.Response> {
+    return this._client.call(
+      'tools.ozone.inbox.getNotificationPreferences',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  getReport(
+    params?: ToolsOzoneInboxGetReport.QueryParams,
+    opts?: ToolsOzoneInboxGetReport.CallOptions,
+  ): Promise<ToolsOzoneInboxGetReport.Response> {
+    return this._client
+      .call('tools.ozone.inbox.getReport', params, undefined, opts)
+      .catch((e) => {
+        throw ToolsOzoneInboxGetReport.toKnownErr(e)
+      })
+  }
+
+  getUnreadCount(
+    params?: ToolsOzoneInboxGetUnreadCount.QueryParams,
+    opts?: ToolsOzoneInboxGetUnreadCount.CallOptions,
+  ): Promise<ToolsOzoneInboxGetUnreadCount.Response> {
+    return this._client.call(
+      'tools.ozone.inbox.getUnreadCount',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  listActionedSubjects(
+    params?: ToolsOzoneInboxListActionedSubjects.QueryParams,
+    opts?: ToolsOzoneInboxListActionedSubjects.CallOptions,
+  ): Promise<ToolsOzoneInboxListActionedSubjects.Response> {
+    return this._client.call(
+      'tools.ozone.inbox.listActionedSubjects',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  listNotifications(
+    params?: ToolsOzoneInboxListNotifications.QueryParams,
+    opts?: ToolsOzoneInboxListNotifications.CallOptions,
+  ): Promise<ToolsOzoneInboxListNotifications.Response> {
+    return this._client.call(
+      'tools.ozone.inbox.listNotifications',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  listReports(
+    params?: ToolsOzoneInboxListReports.QueryParams,
+    opts?: ToolsOzoneInboxListReports.CallOptions,
+  ): Promise<ToolsOzoneInboxListReports.Response> {
+    return this._client.call(
+      'tools.ozone.inbox.listReports',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  putNotificationPreferences(
+    data?: ToolsOzoneInboxPutNotificationPreferences.InputSchema,
+    opts?: ToolsOzoneInboxPutNotificationPreferences.CallOptions,
+  ): Promise<ToolsOzoneInboxPutNotificationPreferences.Response> {
+    return this._client.call(
+      'tools.ozone.inbox.putNotificationPreferences',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
+
+  updateSeen(
+    data?: ToolsOzoneInboxUpdateSeen.InputSchema,
+    opts?: ToolsOzoneInboxUpdateSeen.CallOptions,
+  ): Promise<ToolsOzoneInboxUpdateSeen.Response> {
+    return this._client.call(
+      'tools.ozone.inbox.updateSeen',
+      opts?.qp,
+      data,
       opts,
     )
   }
@@ -12006,6 +12368,18 @@ export class ToolsOzoneServerNS {
 
   constructor(client: XrpcClient) {
     this._client = client
+  }
+
+  getCapabilities(
+    params?: ToolsOzoneServerGetCapabilities.QueryParams,
+    opts?: ToolsOzoneServerGetCapabilities.CallOptions,
+  ): Promise<ToolsOzoneServerGetCapabilities.Response> {
+    return this._client.call(
+      'tools.ozone.server.getCapabilities',
+      params,
+      undefined,
+      opts,
+    )
   }
 
   getConfig(

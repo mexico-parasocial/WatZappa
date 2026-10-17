@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { assert, describe, expect, it } from 'vitest'
 import { isLegacyBlobRef, isTypedBlobRef, parseCid } from '@atproto/lex-data'
 import { blob } from './blob.js'

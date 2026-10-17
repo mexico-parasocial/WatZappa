@@ -1,6 +1,10 @@
 import { app } from '../../lexicons/index.js'
-import { ActorDb } from '../db/index.js'
-import { PrefAllowedOptions, getAgeFromDatestring, prefAllowed } from './util.js'
+import type { ActorDb } from '../db/index.js'
+import {
+  type PrefAllowedOptions,
+  getAgeFromDatestring,
+  prefAllowed,
+} from './util.js'
 
 export class PreferenceReader {
   constructor(public db: ActorDb) {}

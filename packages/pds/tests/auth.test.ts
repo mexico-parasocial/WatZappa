@@ -33,7 +33,7 @@ describe('auth', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   const createAccount = async (info) => {

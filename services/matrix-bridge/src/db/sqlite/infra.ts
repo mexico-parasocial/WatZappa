@@ -1,8 +1,99 @@
 import type { SyncLogEntry, UserPushToken } from '../interface.js'
+import type { PushDelivery } from '../records.js'
 import { IdentityMatrixArea } from './identity-matrix.js'
 
 export class InfraArea extends IdentityMatrixArea {
+  claimPushDelivery(
+    id: string,
+    token: string,
+    owner: string,
+    now: number,
+  ): boolean {
+    return (
+      this.db
+        .prepare(
+          `INSERT INTO push_delivery
+      (id, token, state, owner, lease_until, created_at, check_after)
+      VALUES (?, ?, 'sending', ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET owner = excluded.owner, lease_until = excluded.lease_until
+      WHERE push_delivery.state = 'sending' AND push_delivery.lease_until <= ?`,
+        )
+        .run(id, token, owner, now + 300_000, now, now + 900_000, now)
+        .changes === 1
+    )
+  }
+
+  getPushDelivery(id: string): PushDelivery | undefined {
+    return this.db
+      .prepare(
+        `SELECT id, token, state, receipt_id AS receiptId, created_at AS createdAt
+      FROM push_delivery WHERE id = ?`,
+      )
+      .get(id) as PushDelivery | undefined
+  }
+
+  completePushDelivery(
+    id: string,
+    owner: string,
+    receiptId: string | null,
+    rejected: boolean,
+    now: number,
+  ): void {
+    this.db
+      .prepare(
+        `UPDATE push_delivery SET state = ?, receipt_id = ?, check_after = ?
+      WHERE id = ? AND owner = ? AND state = 'sending'`,
+      )
+      .run(
+        rejected ? 'rejected' : 'submitted',
+        receiptId,
+        now + 900_000,
+        id,
+        owner,
+      )
+  }
+
+  releasePushDelivery(id: string, owner: string): void {
+    this.db
+      .prepare(
+        "DELETE FROM push_delivery WHERE id = ? AND owner = ? AND state = 'sending'",
+      )
+      .run(id, owner)
+  }
+
+  getPendingPushReceipts(now: number): PushDelivery[] {
+    return this.db
+      .prepare(
+        `SELECT id, token, state, receipt_id AS receiptId, created_at AS createdAt
+      FROM push_delivery WHERE state = 'submitted' AND check_after <= ?
+      ORDER BY check_after LIMIT 1000`,
+      )
+      .all(now) as PushDelivery[]
+  }
+
+  resolvePushReceipt(
+    id: string,
+    state: 'provider_accepted' | 'rejected' | 'failed' | 'submitted',
+    error: string | null,
+    now: number,
+  ): void {
+    this.db
+      .prepare(
+        `UPDATE push_delivery SET state = ?, error_code = ?, check_after = ?
+      WHERE id = ? AND state = 'submitted'`,
+      )
+      .run(state, error, now + 60_000, id)
+  }
+
   // Sync logging
+  prunePushDeliveries(before: number): void {
+    this.db
+      .prepare(
+        "DELETE FROM push_delivery WHERE state <> 'submitted' AND created_at < ?",
+      )
+      .run(before)
+  }
+
   logSync(
     eventType: string,
     communityUri: string,
@@ -32,6 +123,17 @@ export class InfraArea extends IdentityMatrixArea {
           did, space_id AS "spaceId", success, retry_count AS "retryCount",
           error, created_at AS "createdAt"
          FROM sync_log WHERE success = 0 ORDER BY created_at DESC, id DESC LIMIT ?`,
+      )
+      .all(limit) as SyncLogEntry[]
+  }
+
+  getProvisioningRetryJobs(limit = 50): SyncLogEntry[] {
+    return this.db
+      .prepare(
+        `SELECT id, event_type AS "eventType", community_uri AS "communityUri",
+      did, space_id AS "spaceId", success, retry_count AS "retryCount", error, created_at AS "createdAt"
+      FROM sync_log WHERE success = 0 AND event_type = 'create_space'
+      ORDER BY retry_count ASC, id ASC LIMIT ?`,
       )
       .all(limit) as SyncLogEntry[]
   }

@@ -25,7 +25,35 @@ export interface ModerationStore {
     days?: number,
   ): Promise<any[]>
 
-  getActiveSanctions(did: string, communityUri: string): Promise<any[]>
+  /**
+   * Every mute, ban and lift recorded for a member in a community, oldest
+   * first, with no time window: a permanent ban must not age out. Feed it to
+   * `effectiveSanction`.
+   */
+  getSanctionEvents(did: string, communityUri: string): Promise<any[]>
+
+  /** Members with a time-limited mute/ban recorded in the last `sinceDays`. */
+  getSubjectsWithTimedSanctions(
+    sinceDays: number,
+  ): Promise<{ did: string; communityUri: string }[]>
+
+  /** Moderators' dismissals of reports, newest first. */
+  getReportDismissalsForCommunity(
+    communityUri: string,
+    days?: number,
+  ): Promise<any[]>
+
+  /**
+   * Whether `reporterDid` already reported this message (or, with no event,
+   * this member) within `days`. One person's repeat reports are one report.
+   */
+  hasReportFrom(
+    reporterDid: string,
+    did: string,
+    communityUri: string,
+    reportedEventId: string | null,
+    days: number,
+  ): Promise<boolean>
 
   setUserBadge(badge: {
     did: string

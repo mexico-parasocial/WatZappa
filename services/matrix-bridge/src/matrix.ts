@@ -12,6 +12,7 @@ export class MatrixAdminClient {
   private baseUrl: string
   private adminToken: string
   private appServiceToken: string | undefined
+  private serverName: string
   private enableEncryption: boolean
   readonly botUserId: string | undefined
   private client: MatrixClient
@@ -22,6 +23,7 @@ export class MatrixAdminClient {
     this.adminToken = config.matrixAdminToken
     this.appServiceToken = config.matrixAppServiceToken
     this.botUserId = config.matrixBotUserId
+    this.serverName = config.matrixServerName
     this.enableEncryption = config.matrixEnableEncryption
     this.client = new MatrixClient(this.baseUrl, this.adminToken)
     this.admin = new AdminApis(this.client)
@@ -64,31 +66,85 @@ export class MatrixAdminClient {
     ]
   }
 
-  async createSpace(name: string, slug: string): Promise<string> {
-    return this.client.createRoom({
-      room_alias_name: slug,
-      name,
-      preset: 'private_chat',
-      creation_content: {
-        type: 'm.space',
-      },
-      initial_state: this.encryptedInitialState(),
-      power_level_content_override: {
-        users_default: 0,
-        events_default: 50,
-        state_default: 50,
-        ban: 50,
-        kick: 50,
-        redact: 50,
-        invite: 50,
-      },
-    })
+  /** Reuse only rooms this operator created for exactly this community. */
+  private async createOrReuse(
+    alias: string,
+    communityUri: string | undefined,
+    parentSpaceId: string | undefined,
+    isSpace: boolean,
+    create: () => Promise<string>,
+  ): Promise<string> {
+    try {
+      return await create()
+    } catch (error) {
+      if (
+        (error as { errcode?: string }).errcode !== 'M_ROOM_IN_USE' ||
+        !communityUri
+      )
+        throw error
+      const resolved = await this.client.resolveRoom(
+        `#${alias}:${this.serverName}`,
+      )
+      const state = await this.request(
+        `/_matrix/client/v3/rooms/${encodeURIComponent(resolved)}/state`,
+      )
+      const event = (type: string, key = '') =>
+        state.find((e: any) => e.type === type && e.state_key === key)
+      const creator = await this.client.getUserId()
+      const createEvent = event('m.room.create')
+      if (
+        createEvent?.sender !== creator ||
+        event('com.para.community')?.content?.uri !== communityUri ||
+        (createEvent.content.type === 'm.space') !== isSpace ||
+        (parentSpaceId && !event('m.space.parent', parentSpaceId)) ||
+        (this.enableEncryption &&
+          event('m.room.encryption')?.content?.algorithm !==
+            'm.megolm.v1.aes-sha2')
+      )
+        throw new Error(
+          'Existing room alias is not a matching bridge-managed community room',
+        )
+      return resolved
+    }
+  }
+
+  async createSpace(
+    name: string,
+    slug: string,
+    communityUri?: string,
+  ): Promise<string> {
+    return this.createOrReuse(slug, communityUri, undefined, true, () =>
+      this.client.createRoom({
+        room_alias_name: slug,
+        name,
+        preset: 'private_chat',
+        creation_content: {
+          type: 'm.space',
+        },
+        initial_state: [
+          ...this.encryptedInitialState(),
+          ...(communityUri
+            ? [{ type: 'com.para.community', content: { uri: communityUri } }]
+            : []),
+        ],
+        power_level_content_override: {
+          users_default: 0,
+          events_default: 0,
+          state_default: 50,
+          ban: 50,
+          kick: 50,
+          redact: 50,
+          invite: 50,
+        },
+      }),
+    )
   }
 
   async createRoom(
     name: string,
     alias: string,
     parentSpaceId?: string,
+    communityUri?: string,
   ): Promise<string> {
     const initialState: Array<{
       type: string
@@ -99,24 +155,31 @@ export class MatrixAdminClient {
       initialState.push({
         type: 'm.space.parent',
         state_key: parentSpaceId,
-        content: { via: [extractServerName(this.baseUrl)] },
+        content: { via: [this.serverName] },
       })
     }
-    return this.client.createRoom({
-      room_alias_name: alias,
-      name,
-      preset: 'private_chat',
-      initial_state: initialState,
-      power_level_content_override: {
-        users_default: 0,
-        events_default: 50,
-        state_default: 50,
-        ban: 50,
-        kick: 50,
-        redact: 50,
-        invite: 50,
-      },
-    })
+    if (communityUri)
+      initialState.push({
+        type: 'com.para.community',
+        content: { uri: communityUri },
+      })
+    return this.createOrReuse(alias, communityUri, parentSpaceId, false, () =>
+      this.client.createRoom({
+        room_alias_name: alias,
+        name,
+        preset: 'private_chat',
+        initial_state: initialState,
+        power_level_content_override: {
+          users_default: 0,
+          events_default: 0,
+          state_default: 50,
+          ban: 50,
+          kick: 50,
+          redact: 50,
+          invite: 50,
+        },
+      }),
+    )
   }
 
   async addChildSpace(
@@ -477,6 +540,28 @@ export class MatrixAdminClient {
    */
   async unmuteUser(roomId: string, userId: string): Promise<void> {
     await this.setPowerLevel(roomId, userId, 0)
+  }
+
+  /**
+   * Lift a ban. Reads the member state first: unbanning someone who is not
+   * banned is an error on the homeserver, and a lift must not fail for rooms
+   * where there was nothing to lift.
+   */
+  async unbanUser(roomId: string, userId: string): Promise<void> {
+    let membership: string | undefined
+    try {
+      const state = await this.client.getRoomStateEvent(
+        roomId,
+        'm.room.member',
+        userId,
+      )
+      membership = state?.membership
+    } catch (err) {
+      const e = err as { errcode?: string; statusCode?: number }
+      if (e.errcode === 'M_NOT_FOUND' || e.statusCode === 404) return
+      throw err
+    }
+    if (membership === 'ban') await this.client.unbanUser(userId, roomId)
   }
 }
 

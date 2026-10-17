@@ -1,8 +1,9 @@
 import assert from 'node:assert'
 import fs from 'node:fs/promises'
 import { wait } from '@atproto/common'
-import { DidString, isValidDid } from '@atproto/syntax'
-import { Sequencer } from '../sequencer/index.js'
+import { isDidString } from '@atproto/lex'
+import type { DidString } from '@atproto/syntax'
+import type { Sequencer } from '../sequencer/index.js'
 import { parseIntArg } from './util.js'
 
 export type PublishIdentityContext = {
@@ -14,11 +15,8 @@ export const publishIdentity = async (
   args: string[],
 ) => {
   const dids = args
-  assert(
-    dids.every((did) => isValidDid(did)),
-    'All arguments must be DIDs',
-  )
-  await publishIdentityEvtForDids(ctx, dids as DidString[])
+  assert(dids.every(isDidString), 'All arguments must be DIDs')
+  await publishIdentityEvtForDids(ctx, dids)
   console.log('DONE')
 }
 
@@ -37,12 +35,9 @@ export const publishIdentityFromFile = async (
     .split('\n')
     .map((did) => did.trim())
 
-  assert(
-    dids.every((did) => did.startsWith('did:')),
-    'File contains invalid DIDs',
-  )
+  assert(dids.every(isDidString), 'File contains invalid DIDs')
 
-  await publishIdentityEvtForDids(ctx, dids as DidString[], timeBetween)
+  await publishIdentityEvtForDids(ctx, dids, timeBetween)
   console.log('DONE')
 }
 
@@ -53,7 +48,7 @@ export const publishIdentityEvtForDids = async (
 ) => {
   for (const did of dids) {
     try {
-      await ctx.sequencer.sequenceIdentityEvt(did)
+      await ctx.sequencer.sequenceIdentity(did)
       console.log(`published identity evt for ${did}`)
     } catch (err) {
       console.error(`failed to sequence new identity evt for ${did}: ${err}`)

@@ -10,7 +10,7 @@ import {
 } from '@atproto/lexicon'
 import { type $Typed, is$typed, maybe$typed } from './util.js'
 
-export const schemaDict = {
+export const schemaDict: Record<string, LexiconDoc> = {
   AppBskyActorDefs: {
     lexicon: 1,
     id: 'app.bsky.actor.defs',
@@ -215,6 +215,15 @@ export const schemaDict = {
             type: 'ref',
             ref: 'lex:com.atproto.repo.strongRef',
           },
+          links: {
+            type: 'array',
+            description:
+              "The profile's links, in display order. Links that were taken down or don't resolve are left out.",
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.actor.defs#profileLinkView',
+            },
+          },
           verification: {
             type: 'ref',
             ref: 'lex:app.bsky.actor.defs#verificationState',
@@ -283,6 +292,44 @@ export const schemaDict = {
           showButtonTo: {
             type: 'string',
             knownValues: ['usersIFollow', 'everyone'],
+          },
+        },
+      },
+      profileLinkView: {
+        type: 'object',
+        required: ['uri', 'cid', 'url'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+            description:
+              'The app.bsky.actor.link record, e.g. for reporting the link.',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          url: {
+            type: 'string',
+            format: 'uri',
+            description: 'The link destination.',
+          },
+          title: {
+            type: 'string',
+            maxGraphemes: 40,
+            maxLength: 320,
+          },
+          icon: {
+            type: 'string',
+            format: 'uri',
+            description: "Image URL for the destination site's icon.",
+          },
+          labels: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.label.defs#label',
+            },
           },
         },
       },
@@ -1085,6 +1132,52 @@ export const schemaDict = {
       },
     },
   },
+  AppBskyActorLink: {
+    lexicon: 1,
+    id: 'app.bsky.actor.link',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "A link shown on the account's profile. The profile record's links field sets which links are shown, and in what order.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['url', 'createdAt'],
+          properties: {
+            url: {
+              type: 'string',
+              format: 'uri',
+              description: 'The link destination, an https URL.',
+            },
+            title: {
+              type: 'string',
+              description:
+                "Optional label for the link. Clients can fall back to the destination's domain.",
+              maxGraphemes: 40,
+              maxLength: 320,
+            },
+            icon: {
+              type: 'blob',
+              description:
+                "The destination site's icon, uploaded when the link is saved.",
+              accept: ['image/png', 'image/jpeg', 'image/webp'],
+              maxSize: 100000,
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            labels: {
+              type: 'union',
+              description: 'Self-label values for this link.',
+              refs: ['lex:com.atproto.label.defs#selfLabels'],
+            },
+          },
+        },
+      },
+    },
+  },
   AppBskyActorProfile: {
     lexicon: 1,
     id: 'app.bsky.actor.profile',
@@ -1144,6 +1237,16 @@ export const schemaDict = {
             pinnedPost: {
               type: 'ref',
               ref: 'lex:com.atproto.repo.strongRef',
+            },
+            links: {
+              type: 'array',
+              description:
+                'Links shown on the profile, in display order. Each ref points to an app.bsky.actor.link record in this repo.',
+              maxLength: 10,
+              items: {
+                type: 'ref',
+                ref: 'lex:com.atproto.repo.strongRef',
+              },
             },
             createdAt: {
               type: 'string',
@@ -2928,6 +3031,326 @@ export const schemaDict = {
           },
         },
       },
+      viewArticle: {
+        type: 'object',
+        required: ['uri', 'title', 'description'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'uri',
+          },
+          title: {
+            type: 'string',
+          },
+          description: {
+            type: 'string',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          updatedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          labels: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.label.defs#label',
+            },
+          },
+          associatedRefs: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.repo.strongRef',
+            },
+          },
+          associatedProfiles: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.actor.defs#profileViewBasic',
+            },
+          },
+          image: {
+            type: 'string',
+            format: 'uri',
+          },
+          publisher: {
+            type: 'ref',
+            ref: 'lex:app.bsky.embed.external#viewArticlePublication',
+          },
+          readingTime: {
+            type: 'integer',
+            minimum: 1,
+          },
+          likeCount: {
+            type: 'integer',
+            minimum: 0,
+          },
+          likers: {
+            type: 'array',
+            maxLength: 3,
+            description:
+              'Available profile previews. Selected deterministically by DID; not a ranking.',
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.actor.defs#profileViewBasic',
+            },
+          },
+        },
+      },
+      viewArticlePublication: {
+        type: 'object',
+        required: ['uri', 'title', 'description'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'uri',
+          },
+          title: {
+            type: 'string',
+          },
+          description: {
+            type: 'string',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          updatedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          labels: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.label.defs#label',
+            },
+          },
+          associatedRefs: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.repo.strongRef',
+            },
+          },
+          associatedProfiles: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.actor.defs#profileViewBasic',
+            },
+          },
+          logo: {
+            type: 'string',
+            format: 'uri',
+          },
+          image: {
+            type: 'string',
+            format: 'uri',
+          },
+          theme: {
+            type: 'ref',
+            ref: 'lex:app.bsky.embed.external#viewArticlePublicationTheme',
+          },
+          subscriptionCount: {
+            type: 'integer',
+            minimum: 0,
+          },
+          subscribers: {
+            type: 'array',
+            maxLength: 3,
+            description:
+              'Available profile previews. Selected deterministically by DID; not a ranking.',
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.actor.defs#profileViewBasic',
+            },
+          },
+        },
+      },
+      viewArticlePublicationTheme: {
+        type: 'object',
+        properties: {
+          background: {
+            type: 'string',
+            description: "Hex color string, if available. Example: '#ffffff'.",
+          },
+          foreground: {
+            type: 'string',
+            description: "Hex color string, if available. Example: '#ffffff'.",
+          },
+          accent: {
+            type: 'string',
+            description: "Hex color string, if available. Example: '#ffffff'.",
+          },
+          accentForeground: {
+            type: 'string',
+            description: "Hex color string, if available. Example: '#ffffff'.",
+          },
+        },
+      },
+      viewGallery: {
+        type: 'object',
+        required: ['uri', 'title', 'description', 'items'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'uri',
+          },
+          title: {
+            type: 'string',
+          },
+          description: {
+            type: 'string',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          updatedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          labels: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.label.defs#label',
+            },
+          },
+          associatedRefs: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.repo.strongRef',
+            },
+          },
+          associatedProfiles: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.actor.defs#profileViewBasic',
+            },
+          },
+          items: {
+            type: 'array',
+            items: {
+              type: 'union',
+              refs: ['lex:app.bsky.embed.external#viewGalleryImage'],
+            },
+            description:
+              'The media items in the gallery. Each item may be of a different type, but all types must be supported by the client.',
+          },
+          likeCount: {
+            type: 'integer',
+            minimum: 0,
+          },
+          likers: {
+            type: 'array',
+            maxLength: 3,
+            description:
+              'Available profile previews. Selected deterministically by DID; not a ranking.',
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.actor.defs#profileViewBasic',
+            },
+          },
+        },
+      },
+      viewGalleryImage: {
+        type: 'object',
+        required: ['thumbnail', 'fullsize'],
+        properties: {
+          thumbnail: {
+            type: 'string',
+            format: 'uri',
+            description:
+              'Fully-qualified URL where a thumbnail of the image can be fetched. For example, CDN location provided by the App View.',
+          },
+          fullsize: {
+            type: 'string',
+            format: 'uri',
+            description:
+              'Fully-qualified URL where a large version of the image can be fetched. May or may not be the exact original blob. For example, CDN location provided by the App View.',
+          },
+          alt: {
+            type: 'string',
+            description:
+              'Alt text description of the image, for accessibility.',
+          },
+          aspectRatio: {
+            type: 'ref',
+            ref: 'lex:app.bsky.embed.defs#aspectRatio',
+          },
+        },
+      },
+      viewLivestream: {
+        type: 'object',
+        required: ['uri', 'title', 'description', 'active'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'uri',
+          },
+          title: {
+            type: 'string',
+          },
+          description: {
+            type: 'string',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          updatedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          labels: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.label.defs#label',
+            },
+          },
+          associatedRefs: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.repo.strongRef',
+            },
+          },
+          associatedProfiles: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.actor.defs#profileViewBasic',
+            },
+          },
+          image: {
+            type: 'string',
+            format: 'uri',
+          },
+          active: {
+            type: 'boolean',
+            description:
+              'True if the livestream is currently active at the time this view is served, false if it has ended.',
+          },
+          startedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          endedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
     },
   },
   AppBskyEmbedGallery: {
@@ -3023,21 +3446,27 @@ export const schemaDict = {
       main: {
         type: 'query',
         description:
-          "Resolve one or more AT-URIs into the data needed to render an enhanced external embed. Returns `associatedRefs` (strongRefs to embed into a post's external.associatedRefs) and the raw `associatedRecords`; `view` is also included when the resolved records can produce a renderable view, but may be omitted when no records were hydratable.",
+          "Resolve one AT-URI record into the data needed to render an enhanced external embed. The records are validated against the requested `url` before any view is built. When validation passes, returns `data`, `associatedRefs` (strongRefs to embed into a post's external.associatedRefs) and the raw `associatedRecords`, plus a legacy `view` for Standard.site records only. When validation fails, only `unverifiedAssociatedRefs` and `unverifiedAssociatedRecords` are returned and no view or data is built. The response is empty (`{}`) when no record URI was usable or the record could not be resolved; clients should fall back to their own link-card rendering in that case and skip writing strongRefs to the post.",
         parameters: {
           type: 'params',
-          required: ['url', 'uris'],
+          required: ['url'],
           properties: {
             url: {
               type: 'string',
               format: 'uri',
               description:
-                "The canonical web URL the embed represents (typically the URL the user pasted into the composer). Used as the returned view's `uri`. May be used for validation in the future.",
+                "The canonical web URL the embed represents (typically the URL the user pasted into the composer). Used as the returned view's `uri`, and validated against the resolved records.",
+            },
+            canonicalUri: {
+              type: 'string',
+              format: 'at-uri',
+              description:
+                'The canonical AT URI of the atproto record found on the webpage. When provided, takes precedence over `uris`, which is then ignored.',
             },
             uris: {
               type: 'array',
               description:
-                'AT-URIs of any Atmosphere records that can be resolved and used to construct #externalView views. Example: a site.standard.document and optionally its associated site.standard.publication.',
+                "Legacy input for Standard.site callers, ignored when `canonicalUri` is provided. A single record is selected from it: the first site.standard.document URI, otherwise the first site.standard.publication URI. Other entries are ignored; a document's publication is discovered from the document itself.",
               items: {
                 type: 'string',
                 format: 'at-uri',
@@ -3054,6 +3483,19 @@ export const schemaDict = {
               view: {
                 type: 'ref',
                 ref: 'lex:app.bsky.embed.external#view',
+                description:
+                  'Legacy hydrated view of the embed, returned for Standard.site records only. Present only when validation passed and the records supply enough information to populate the required `viewExternal` fields.',
+              },
+              data: {
+                type: 'union',
+                refs: [
+                  'lex:app.bsky.embed.external#viewArticle',
+                  'lex:app.bsky.embed.external#viewArticlePublication',
+                  'lex:app.bsky.embed.external#viewGallery',
+                  'lex:app.bsky.embed.external#viewLivestream',
+                ],
+                description:
+                  'Preferred to #view. Hydrated data of the embed. Present only when validation passed and the records supply enough information to populate the required fields.',
               },
               associatedRefs: {
                 type: 'array',
@@ -3062,24 +3504,32 @@ export const schemaDict = {
                   ref: 'lex:com.atproto.repo.strongRef',
                 },
                 description:
-                  "StrongRefs (URI+CID) of the Atmosphere records that backed this view, suitable for embedding into a post's external.associatedRefs.",
+                  'StrongRefs (URI+CID) of the Atmosphere records selected for persistence in a post, suitable for embedding into its external.associatedRefs: the canonical record, plus only the additional records the service chooses to persist for its collection. This can be a subset of the records used to render `data`, which may also draw on other hydrated records such as recommendations, subscriptions, or favorites. Present only when validation passed. Index-aligned with `associatedRecords`.',
               },
               associatedRecords: {
                 type: 'array',
                 items: {
                   type: 'unknown',
                   description:
-                    'The raw record data of the Atmosphere records that backed this view. This is returned for convenience, to avoid the need for the client to separately fetch the record data for the associatedRefs. Example: the site.standard.document and site.standard.publication records that backed this view.',
+                    'The raw record data of the Atmosphere records selected for persistence, index-aligned with `associatedRefs`. Returned for convenience, to avoid the client separately fetching them. Present only when validation passed.',
                 },
               },
-              associatedProfiles: {
+              unverifiedAssociatedRefs: {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.bsky.actor.defs#profileViewBasic',
+                  ref: 'lex:com.atproto.repo.strongRef',
                 },
                 description:
-                  'Profiles of the owners of the Atmosphere records that backed this view.',
+                  'StrongRefs (URI+CID) of the same persistence-selected Atmosphere records (the canonical record plus chosen additional records) when validation of the requested `url` failed. These must not be written to a post. Index-aligned with `unverifiedAssociatedRecords`.',
+              },
+              unverifiedAssociatedRecords: {
+                type: 'array',
+                items: {
+                  type: 'unknown',
+                  description:
+                    'The raw record data of the persistence-selected Atmosphere records, index-aligned with `unverifiedAssociatedRefs`. Present only when validation failed.',
+                },
               },
             },
           },
@@ -3244,6 +3694,16 @@ export const schemaDict = {
           },
           quoteCount: {
             type: 'integer',
+          },
+          opThreadPostIndex: {
+            type: 'integer',
+            description:
+              'The 1-indexed position of this post within the contiguous OP thread. Only present when this post is part of the OP thread.',
+          },
+          opThreadPostCount: {
+            type: 'integer',
+            description:
+              'The total number of posts in the contiguous OP thread that this post belongs to. Only present when this post is part of the OP thread.',
           },
           embeds: {
             type: 'array',
@@ -5870,6 +6330,12 @@ export const schemaDict = {
             type: 'ref',
             ref: 'lex:app.bsky.actor.defs#profileView',
           },
+          subjectOptedOut: {
+            type: 'boolean',
+            const: true,
+            description:
+              'Set to true when the subject has opted out of appearing in the reference list. Only set when the viewer owns the list.',
+          },
         },
       },
       starterPackView: {
@@ -6008,6 +6474,12 @@ export const schemaDict = {
           blocked: {
             type: 'string',
             format: 'at-uri',
+          },
+          referenceListOptOut: {
+            type: 'string',
+            format: 'at-uri',
+            description:
+              "The authenticated viewer's app.bsky.graph.referencelistoptout record URI for this reference list. Only set for reference lists. A client can delete this record to undo the opt-out.",
           },
         },
       },
@@ -7126,6 +7598,34 @@ export const schemaDict = {
       },
     },
   },
+  AppBskyGraphReferencelistoptout: {
+    lexicon: 1,
+    id: 'app.bsky.graph.referencelistoptout',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "Record requesting that its author be omitted from the public presentation of a reference list. This record is only enforced when the subject list's current purpose is app.bsky.graph.defs#referencelist. AppView indexes at most one record per actor and list pair, and ignores duplicate records.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['subject', 'createdAt'],
+          properties: {
+            subject: {
+              type: 'string',
+              format: 'at-uri',
+              description:
+                'Canonical, DID-based AT URI of the app.bsky.graph.list record from which the author requests omission.',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
   AppBskyGraphSearchStarterPacks: {
     lexicon: 1,
     id: 'app.bsky.graph.searchStarterPacks',
@@ -7853,14 +8353,6 @@ export const schemaDict = {
               ],
               default: 'all',
             },
-            utcOffset: {
-              type: 'integer',
-              description:
-                'Offset from UTC in minutes, positive east, used to determine local day boundaries when grouping. Groups never span the current day boundary. Defaults to UTC.',
-              minimum: -720,
-              maximum: 840,
-              default: 0,
-            },
             limit: {
               type: 'integer',
               description: 'Maximum number of groups to return.',
@@ -7897,15 +8389,21 @@ export const schemaDict = {
                 type: 'string',
                 format: 'datetime',
               },
-              relatedProfileViews: {
-                type: 'unknown',
+              relatedViews: {
+                type: 'array',
                 description:
-                  'A map of actor DID to app.bsky.actor.defs#profileViewDetailed. Typed dictionary values are unsupported by this lexicon version.',
-              },
-              relatedRecordViews: {
-                type: 'unknown',
-                description:
-                  'A map of AT URI to reusable app.bsky.feed.defs#postView, app.bsky.feed.defs#notFoundPost, app.bsky.feed.defs#blockedPost, app.bsky.graph.defs#starterPackView, or app.bsky.feed.defs#generatorView. Views shared across notifications appear once to avoid duplication. Typed dictionary values are unsupported by this lexicon version.',
+                  'Reusable views referenced by notifications. Views shared across notifications appear once to avoid duplication. Each group contributes only its first 10 of each related view to this array. Ex: for a group containing likes in a post, we might have a large number of likeItem (e.g., 50) in a group, but only the profile views for the newest 10 items will be included here.',
+                items: {
+                  type: 'union',
+                  refs: [
+                    'lex:app.bsky.actor.defs#profileViewBasic',
+                    'lex:app.bsky.feed.defs#blockedPost',
+                    'lex:app.bsky.feed.defs#generatorView',
+                    'lex:app.bsky.feed.defs#notFoundPost',
+                    'lex:app.bsky.feed.defs#postView',
+                    'lex:app.bsky.graph.defs#starterPackViewBasic',
+                  ],
+                },
               },
             },
           },
@@ -7937,6 +8435,9 @@ export const schemaDict = {
             refs: [
               'lex:app.bsky.notification.getGroupedNotifications#likeGroup',
               'lex:app.bsky.notification.getGroupedNotifications#multiPostLikeGroup',
+              'lex:app.bsky.notification.getGroupedNotifications#multiPostRepostGroup',
+              'lex:app.bsky.notification.getGroupedNotifications#multiPostLikeViaRepostGroup',
+              'lex:app.bsky.notification.getGroupedNotifications#multiPostRepostViaRepostGroup',
               'lex:app.bsky.notification.getGroupedNotifications#repostGroup',
               'lex:app.bsky.notification.getGroupedNotifications#likeViaRepostGroup',
               'lex:app.bsky.notification.getGroupedNotifications#repostViaRepostGroup',
@@ -8010,6 +8511,108 @@ export const schemaDict = {
         required: ['post'],
         properties: {
           post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+      multiPostRepostGroup: {
+        type: 'object',
+        description: 'Group of reposts by the same actor of different posts.',
+        required: ['actor', 'items'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+          items: {
+            type: 'array',
+            minLength: 2,
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.notification.getGroupedNotifications#multiPostRepostItem',
+            },
+          },
+        },
+      },
+      multiPostRepostItem: {
+        type: 'object',
+        description: "One post which was reposted by the group's actor.",
+        required: ['post'],
+        properties: {
+          post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+      multiPostLikeViaRepostGroup: {
+        type: 'object',
+        description:
+          "Group of likes by the same actor on different posts via the requesting account's reposts.",
+        required: ['actor', 'items'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+          items: {
+            type: 'array',
+            minLength: 2,
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.notification.getGroupedNotifications#multiPostLikeViaRepostItem',
+            },
+          },
+        },
+      },
+      multiPostLikeViaRepostItem: {
+        type: 'object',
+        description:
+          "One post which was liked by the group's actor via the requesting account's repost.",
+        required: ['post', 'viaRepost'],
+        properties: {
+          post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          viaRepost: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+      multiPostRepostViaRepostGroup: {
+        type: 'object',
+        description:
+          "Group of reposts by the same actor of different posts via the requesting account's reposts.",
+        required: ['actor', 'items'],
+        properties: {
+          actor: {
+            type: 'string',
+            format: 'did',
+          },
+          items: {
+            type: 'array',
+            minLength: 2,
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.notification.getGroupedNotifications#multiPostRepostViaRepostItem',
+            },
+          },
+        },
+      },
+      multiPostRepostViaRepostItem: {
+        type: 'object',
+        description:
+          "One post which was reposted by the group's actor via the requesting account's repost.",
+        required: ['post', 'viaRepost'],
+        properties: {
+          post: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          viaRepost: {
             type: 'string',
             format: 'at-uri',
           },
@@ -9196,6 +9799,226 @@ export const schemaDict = {
           schema: {
             type: 'ref',
             ref: 'lex:app.bsky.unspecced.defs#ageAssuranceState',
+          },
+        },
+      },
+    },
+  },
+  AppBskyUnspeccedGetAtmosphereExploreTab: {
+    lexicon: 1,
+    id: 'app.bsky.unspecced.getAtmosphereExploreTab',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Get curated Atmosphere Explore content. Authentication is optional; authenticated requests include viewer-specific profile state.',
+        parameters: {
+          type: 'params',
+          properties: {
+            langs: {
+              type: 'array',
+              description: 'Preferred languages. Currently ignored.',
+              items: {
+                type: 'string',
+                format: 'language',
+              },
+            },
+            countryCode: {
+              type: 'string',
+              description:
+                'The ISO 3166-1 alpha-2 country code used to select curated content.',
+            },
+            regionCode: {
+              type: 'string',
+              description:
+                'The ISO 3166-2 region code used to select curated content.',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: [
+              'articles',
+              'publications',
+              'photos',
+              'livestreams',
+              'apps',
+            ],
+            properties: {
+              announcementBanner: {
+                type: 'ref',
+                ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#announcementBanner',
+              },
+              articles: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#articleItem',
+                },
+              },
+              publications: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#publicationItem',
+                },
+              },
+              photos: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#galleryItem',
+                },
+              },
+              livestreams: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#livestreamItem',
+                },
+              },
+              apps: {
+                type: 'array',
+                maxLength: 100,
+                items: {
+                  type: 'ref',
+                  ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#appCard',
+                },
+              },
+            },
+          },
+        },
+      },
+      articleItem: {
+        type: 'object',
+        required: ['featured', 'view'],
+        properties: {
+          featured: {
+            type: 'boolean',
+          },
+          view: {
+            type: 'ref',
+            ref: 'lex:app.bsky.embed.external#viewArticle',
+          },
+        },
+      },
+      publicationItem: {
+        type: 'object',
+        required: ['featured', 'view'],
+        properties: {
+          featured: {
+            type: 'boolean',
+          },
+          view: {
+            type: 'ref',
+            ref: 'lex:app.bsky.embed.external#viewArticlePublication',
+          },
+        },
+      },
+      galleryItem: {
+        type: 'object',
+        required: ['featured', 'view'],
+        properties: {
+          featured: {
+            type: 'boolean',
+          },
+          view: {
+            type: 'ref',
+            ref: 'lex:app.bsky.embed.external#viewGallery',
+          },
+        },
+      },
+      livestreamItem: {
+        type: 'object',
+        required: ['featured', 'view'],
+        properties: {
+          featured: {
+            type: 'boolean',
+          },
+          view: {
+            type: 'ref',
+            ref: 'lex:app.bsky.embed.external#viewLivestream',
+          },
+        },
+      },
+      announcementBanner: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          title: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          description: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          url: {
+            type: 'string',
+            format: 'uri',
+            maxLength: 4096,
+          },
+          image: {
+            type: 'string',
+            format: 'uri',
+            maxLength: 4096,
+          },
+          overlayColor: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          textColor: {
+            type: 'string',
+            maxLength: 4096,
+          },
+        },
+      },
+      appCard: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          title: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          description: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          logo: {
+            type: 'string',
+            format: 'uri',
+            maxLength: 4096,
+          },
+          backgroundImage: {
+            type: 'string',
+            format: 'uri',
+            maxLength: 4096,
+          },
+          overlayColor: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          textColor: {
+            type: 'string',
+            maxLength: 4096,
+          },
+          url: {
+            type: 'string',
+            format: 'uri',
+            maxLength: 4096,
+          },
+          category: {
+            type: 'string',
+            maxLength: 4096,
           },
         },
       },
@@ -23864,6 +24687,144 @@ export const schemaDict = {
       },
     },
   },
+  ComParaCivicGetPolicyCommunityVotes: {
+    lexicon: 1,
+    id: 'com.para.civic.getPolicyCommunityVotes',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          "How the members of one community voted on a policy, from -3 to +3: who voted, how, and the community's average. The viewer must be an active member of that community.",
+        parameters: {
+          type: 'params',
+          required: ['post', 'community'],
+          properties: {
+            post: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'The policy post.',
+            },
+            community: {
+              type: 'string',
+              maxLength: 1024,
+              description: 'The community, as its board AT-URI or its slug.',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: [
+              'community',
+              'memberCount',
+              'voterCount',
+              'signalAverage',
+              'breakdown',
+              'votes',
+            ],
+            properties: {
+              community: {
+                type: 'ref',
+                ref: 'lex:com.para.civic.getPolicyCommunityVotes#communityRef',
+              },
+              memberCount: {
+                type: 'integer',
+                minimum: 0,
+                description: 'Active members of the community.',
+              },
+              voterCount: {
+                type: 'integer',
+                minimum: 0,
+                description: 'Members who voted on the policy.',
+              },
+              signalAverage: {
+                type: 'string',
+                maxLength: 32,
+                description:
+                  'Mean signal among those members, as a decimal string; "0" when nobody voted.',
+              },
+              breakdown: {
+                type: 'array',
+                maxLength: 7,
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.civic.defs#policySignalBucket',
+                },
+              },
+              votes: {
+                type: 'array',
+                description: 'The most recent votes, newest first.',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.civic.getPolicyCommunityVotes#memberVote',
+                },
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'NotFound',
+          },
+          {
+            name: 'CommunityMembershipRequired',
+          },
+        ],
+      },
+      communityRef: {
+        type: 'object',
+        required: ['uri', 'name'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          name: {
+            type: 'string',
+            maxLength: 200,
+          },
+        },
+      },
+      memberVote: {
+        type: 'object',
+        required: ['did', 'signal', 'createdAt'],
+        properties: {
+          did: {
+            type: 'string',
+            format: 'did',
+          },
+          handle: {
+            type: 'string',
+            maxLength: 253,
+          },
+          displayName: {
+            type: 'string',
+            maxLength: 640,
+          },
+          avatar: {
+            type: 'string',
+            format: 'uri',
+          },
+          signal: {
+            type: 'integer',
+            minimum: -3,
+            maximum: 3,
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+    },
+  },
   ComParaCivicGetPolicyTally: {
     lexicon: 1,
     id: 'com.para.civic.getPolicyTally',
@@ -25281,6 +26242,13 @@ export const schemaDict = {
                 'Spatial mapping token indicating the nonant or 25th block.',
               maxLength: 64,
             },
+            region: {
+              type: 'string',
+              description:
+                "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
+              maxGraphemes: 64,
+              maxLength: 128,
+            },
             geo: {
               type: 'ref',
               ref: 'lex:com.para.community.board#geoPoint',
@@ -25680,6 +26648,13 @@ export const schemaDict = {
               quadrant: {
                 type: 'string',
                 maxLength: 64,
+              },
+              region: {
+                type: 'string',
+                description:
+                  "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
+                maxGraphemes: 64,
+                maxLength: 128,
               },
               description: {
                 type: 'string',
@@ -27810,6 +28785,13 @@ export const schemaDict = {
             maxGraphemes: 64,
             maxLength: 128,
           },
+          region: {
+            type: 'string',
+            description:
+              "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
+            maxGraphemes: 64,
+            maxLength: 128,
+          },
           delegatesChatId: {
             type: 'string',
           },
@@ -28914,6 +29896,12 @@ export const schemaDict = {
               description:
                 'Optional territory quadrant to filter communities by',
             },
+            region: {
+              type: 'string',
+              description: 'Optional Mexican state to filter communities by',
+              maxGraphemes: 64,
+              maxLength: 128,
+            },
           },
         },
         output: {
@@ -28984,6 +29972,13 @@ export const schemaDict = {
           },
           quadrant: {
             type: 'string',
+            maxGraphemes: 64,
+            maxLength: 128,
+          },
+          region: {
+            type: 'string',
+            description:
+              "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
             maxGraphemes: 64,
             maxLength: 128,
           },
@@ -34652,6 +35647,1238 @@ export const schemaDict = {
       },
     },
   },
+  ToolsOzoneInboxAppealActionedSubject: {
+    lexicon: 1,
+    id: 'tools.ozone.inbox.appealActionedSubject',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          "Appeal a moderation action affecting the user's account or content.",
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['subject'],
+            properties: {
+              action: {
+                type: 'union',
+                refs: [
+                  'lex:tools.ozone.inbox.appealActionedSubject#actionRef',
+                  'lex:tools.ozone.inbox.appealActionedSubject#labelRef',
+                  'lex:tools.ozone.inbox.appealActionedSubject#takedownRef',
+                ],
+                closed: true,
+                description: 'Moderation action being appealed.',
+              },
+              subject: {
+                type: 'union',
+                refs: [
+                  'lex:com.atproto.admin.defs#repoRef',
+                  'lex:com.atproto.repo.strongRef',
+                ],
+                description: 'Subject being appealed.',
+              },
+              reason: {
+                type: 'string',
+                maxGraphemes: 2000,
+                maxLength: 20000,
+                description: 'Optional explanation supplied by the user.',
+              },
+              modTool: {
+                type: 'ref',
+                ref: 'lex:com.atproto.moderation.createReport#modTool',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'ref',
+            ref: 'lex:tools.ozone.inbox.defs#subjectView',
+          },
+        },
+        errors: [
+          {
+            name: 'InvalidAppealSubject',
+            description: 'Invalid appeal subject input.',
+          },
+          {
+            name: 'AlreadyAppealed',
+            description: 'An active appeal already exists for this action.',
+          },
+          {
+            name: 'NotAppealable',
+            description: 'The subject cannot be appealed.',
+          },
+          {
+            name: 'AppealWindowExpired',
+            description: 'The appeal window for this action has closed.',
+          },
+        ],
+      },
+      actionRef: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+          id: {
+            type: 'integer',
+            minimum: 1,
+            description:
+              'ID of the moderation action being appealed, available via actions in mod inbox.',
+          },
+        },
+      },
+      labelRef: {
+        type: 'object',
+        required: ['val'],
+        properties: {
+          val: {
+            type: 'string',
+            minLength: 1,
+            description: 'Label being appealed.',
+          },
+        },
+      },
+      takedownRef: {
+        type: 'object',
+        properties: {},
+      },
+    },
+  },
+  ToolsOzoneInboxDefs: {
+    lexicon: 1,
+    id: 'tools.ozone.inbox.defs',
+    defs: {
+      subjectView: {
+        type: 'object',
+        description:
+          'A subject belonging to the viewer that has moderation actions against it.',
+        required: [
+          'src',
+          'subject',
+          'enforcement',
+          'isRead',
+          'createdAt',
+          'updatedAt',
+        ],
+        properties: {
+          src: {
+            type: 'string',
+            format: 'did',
+            description: 'DID of the moderation service that took the actions.',
+          },
+          subject: {
+            type: 'union',
+            refs: [
+              'lex:com.atproto.admin.defs#repoRef',
+              'lex:com.atproto.repo.strongRef',
+            ],
+          },
+          enforcement: {
+            type: 'ref',
+            ref: 'lex:tools.ozone.inbox.defs#enforcementView',
+          },
+          appeal: {
+            type: 'ref',
+            ref: 'lex:tools.ozone.inbox.defs#appealView',
+          },
+          availableActions: {
+            type: 'array',
+            items: {
+              type: 'string',
+              knownValues: ['appeal'],
+            },
+          },
+          latestAction: {
+            type: 'ref',
+            ref: 'lex:tools.ozone.inbox.defs#actionView',
+          },
+          actionCount: {
+            type: 'integer',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          updatedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          isRead: {
+            type: 'boolean',
+          },
+        },
+      },
+      enforcementView: {
+        type: 'object',
+        description: 'The current enforcement state of a subject.',
+        required: ['state'],
+        properties: {
+          state: {
+            type: 'string',
+            knownValues: [
+              'none',
+              'labeled',
+              'removed',
+              'suspended',
+              'takendown',
+            ],
+          },
+          scope: {
+            type: 'string',
+            knownValues: ['network', 'app', 'labelOnly'],
+          },
+          expiresAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          labels: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+            description:
+              'Active label values on the subject, excluding negated and expired labels.',
+          },
+        },
+      },
+      appealView: {
+        type: 'object',
+        description:
+          "The state of the viewer's appeal against the actions on a subject.",
+        required: ['state'],
+        properties: {
+          state: {
+            type: 'string',
+            knownValues: [
+              'none',
+              'pending',
+              'resolved',
+              'superseded',
+              'expired',
+            ],
+          },
+          appealedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          resolvedAt: {
+            type: 'string',
+            format: 'datetime',
+            description: "When the appeal's report was closed.",
+          },
+          outcome: {
+            type: 'string',
+            knownValues: ['approved', 'denied'],
+            description:
+              'Decision on a resolved appeal. Approved means its closing action reverses a takedown or removes a label; denied means no-action closure or an action that upholds enforcement. Omitted for unresolved appeals or historical closures without sufficient resolution data.',
+          },
+          appealableUntil: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      actionView: {
+        type: 'object',
+        description: 'A single moderation action taken against a subject.',
+        required: ['id', 'type', 'createdAt'],
+        properties: {
+          id: {
+            type: 'integer',
+            description: 'Action ID (moderation event ID).',
+          },
+          type: {
+            type: 'string',
+            description: 'Public action type.',
+          },
+          scope: {
+            type: 'string',
+            knownValues: ['network', 'app', 'labelOnly'],
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          reversedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          expiresAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          labels: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+            description: 'Label values, for labelApplied/labelRemoved.',
+          },
+          policies: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:tools.ozone.inbox.defs#policyView',
+            },
+            description: 'Policies applied by a takedown action.',
+          },
+        },
+      },
+      policyView: {
+        type: 'object',
+        required: ['key', 'displayName', 'link'],
+        properties: {
+          key: {
+            type: 'string',
+          },
+          displayName: {
+            type: 'string',
+          },
+          link: {
+            type: 'string',
+            format: 'uri',
+          },
+        },
+      },
+      subjectViewDetail: {
+        type: 'object',
+        description:
+          'A subject with a page of its action history and an aggregate report summary. Follow cursor to retrieve older actions; enforcement and appeal describe the current subject state on every page.',
+        required: [
+          'src',
+          'subject',
+          'enforcement',
+          'isRead',
+          'actions',
+          'createdAt',
+          'updatedAt',
+        ],
+        properties: {
+          src: {
+            type: 'string',
+            format: 'did',
+          },
+          isRead: {
+            type: 'boolean',
+          },
+          subject: {
+            type: 'union',
+            refs: [
+              'lex:com.atproto.admin.defs#repoRef',
+              'lex:com.atproto.repo.strongRef',
+            ],
+          },
+          record: {
+            type: 'unknown',
+            description:
+              'Raw record JSON for the subject, when the subject is a record and the record is available.',
+          },
+          enforcement: {
+            type: 'ref',
+            ref: 'lex:tools.ozone.inbox.defs#enforcementView',
+          },
+          appeal: {
+            type: 'ref',
+            ref: 'lex:tools.ozone.inbox.defs#appealView',
+          },
+          availableActions: {
+            type: 'array',
+            items: {
+              type: 'string',
+              knownValues: ['appeal'],
+            },
+          },
+          actions: {
+            type: 'array',
+            description:
+              'A page of action history, most recent first. Reversal timestamps include changes outside this page.',
+            maxLength: 100,
+            items: {
+              type: 'ref',
+              ref: 'lex:tools.ozone.inbox.defs#actionView',
+            },
+          },
+          cursor: {
+            type: 'string',
+            description:
+              'Cursor for the next page of action history. Omitted when no older actions remain.',
+          },
+          reports: {
+            type: 'ref',
+            ref: 'lex:tools.ozone.inbox.defs#reportsSummary',
+            description:
+              'Omitted when the subject has never been reported, e.g. proactive enforcement.',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          updatedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      reportsSummary: {
+        type: 'object',
+        description:
+          'Aggregate view of reports filed against this subject. Deliberately carries no report IDs, no count, and no reporter identities.',
+        required: ['reasonTypes', 'firstReportedOn', 'lastReportedOn'],
+        properties: {
+          reasonTypes: {
+            type: 'array',
+            description:
+              'Distinct reason types reported, deduplicated and unordered. Excludes reasonAppeal.',
+            items: {
+              type: 'string',
+            },
+          },
+          firstReportedOn: {
+            type: 'string',
+            format: 'datetime',
+            description:
+              'Day of the earliest report, truncated to midnight UTC. Render as a date; the time component is not meaningful.',
+          },
+          lastReportedOn: {
+            type: 'string',
+            format: 'datetime',
+            description:
+              'Day of the most recent report, truncated to midnight UTC. Render as a date; the time component is not meaningful.',
+          },
+        },
+      },
+      notification: {
+        type: 'object',
+        required: ['id', 'reason', 'target', 'isRead', 'createdAt'],
+        properties: {
+          id: {
+            type: 'integer',
+          },
+          reason: {
+            type: 'string',
+            knownValues: [
+              'reportResolved',
+              'reportReopened',
+              'actionTaken',
+              'actionReversed',
+              'appealResolved',
+              'standingChanged',
+            ],
+          },
+          target: {
+            type: 'union',
+            refs: [
+              'lex:tools.ozone.inbox.defs#reportRef',
+              'lex:tools.ozone.inbox.defs#subjectRef',
+              'lex:tools.ozone.inbox.defs#standingRef',
+            ],
+          },
+          isRead: {
+            type: 'boolean',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      notificationPreferences: {
+        type: 'object',
+        description:
+          'Push notification preferences by moderation notification category. These preferences do not hide in-app inbox activity. Each category defaults to enabled.',
+        required: ['reports', 'account', 'labels'],
+        properties: {
+          reports: {
+            type: 'boolean',
+            description:
+              'Notify about outcomes of reports filed by the account (reportResolved and reportReopened).',
+          },
+          account: {
+            type: 'boolean',
+            description:
+              'Notify about moderation actions against the account or its content, action reversals, appeal outcomes, and standing changes. Label application and removal are controlled by labels.',
+          },
+          labels: {
+            type: 'boolean',
+            description:
+              'Notify when labels are applied to or removed from the account or its content (labelApplied and labelRemoved actions).',
+          },
+        },
+      },
+      reportRef: {
+        type: 'object',
+        description:
+          "Reference to a report by its report table ID, as used by getReport and Ozone's report detail page.",
+        required: ['reportId'],
+        properties: {
+          reportId: {
+            type: 'integer',
+          },
+          subject: {
+            type: 'union',
+            refs: [
+              'lex:com.atproto.admin.defs#repoRef',
+              'lex:com.atproto.repo.strongRef',
+            ],
+          },
+          status: {
+            type: 'string',
+            knownValues: ['pending', 'resolved'],
+          },
+        },
+      },
+      subjectRef: {
+        type: 'object',
+        required: ['subject'],
+        properties: {
+          appealOutcome: {
+            type: 'string',
+            knownValues: ['approved', 'denied'],
+            description:
+              'Decision captured when an appealResolved notification was created. Omitted when the outcome is unknown.',
+          },
+          subject: {
+            type: 'union',
+            refs: [
+              'lex:com.atproto.admin.defs#repoRef',
+              'lex:com.atproto.repo.strongRef',
+            ],
+          },
+          actionType: {
+            type: 'string',
+          },
+          actionId: {
+            type: 'integer',
+          },
+        },
+      },
+      standingRef: {
+        type: 'object',
+        required: ['standing'],
+        properties: {
+          standing: {
+            type: 'string',
+            knownValues: ['good', 'warning', 'atRisk'],
+          },
+          previousStanding: {
+            type: 'string',
+            knownValues: ['good', 'warning', 'atRisk'],
+          },
+        },
+      },
+    },
+  },
+  ToolsOzoneInboxGetAccountStatus: {
+    lexicon: 1,
+    id: 'tools.ozone.inbox.getAccountStatus',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          "Get the authenticated account's current standing with this moderation service.",
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['src', 'standing', 'updatedAt'],
+            properties: {
+              src: {
+                type: 'string',
+                format: 'did',
+                description:
+                  'DID of the moderation service returning this status.',
+              },
+              standing: {
+                type: 'string',
+                knownValues: ['good', 'warning', 'atRisk'],
+              },
+              updatedAt: {
+                type: 'string',
+                format: 'datetime',
+                description:
+                  'Newest account-status update or strike timestamp used to derive this standing, or the Unix epoch when neither exists. This is not a standing-transition timestamp; expiry can change standing without changing this value.',
+              },
+              expiresAt: {
+                type: 'string',
+                format: 'datetime',
+                description:
+                  'Time at which the current suspension expires. Present only for a temporary suspension.',
+              },
+            },
+          },
+        },
+        parameters: {
+          type: 'params',
+          properties: {
+            did: {
+              type: 'string',
+              format: 'did',
+              description:
+                'Account to preview. Only Ozone staff can read another account; this does not change its read state.',
+            },
+          },
+        },
+      },
+    },
+  },
+  ToolsOzoneInboxGetActionedSubject: {
+    lexicon: 1,
+    id: 'tools.ozone.inbox.getActionedSubject',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Get a subject belonging to the authenticated account, including its moderation action history from this moderation service.',
+        parameters: {
+          type: 'params',
+          required: ['subject'],
+          properties: {
+            did: {
+              type: 'string',
+              format: 'did',
+              description:
+                'Account to preview. Defaults to the authenticated account; another account requires an active moderator, triage, or admin credential.',
+            },
+            subject: {
+              type: 'string',
+              format: 'uri',
+              description: 'DID or AT-URI of the subject to retrieve.',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+              description: 'Maximum number of actions to return.',
+            },
+            cursor: {
+              type: 'string',
+              description:
+                "Opaque cursor for the next page of this subject's action history.",
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'ref',
+            ref: 'lex:tools.ozone.inbox.defs#subjectViewDetail',
+          },
+        },
+        errors: [
+          {
+            name: 'NotFound',
+            description:
+              'No subject was found, or the authenticated account does not own the subject.',
+          },
+        ],
+      },
+    },
+  },
+  ToolsOzoneInboxGetNotificationPreferences: {
+    lexicon: 1,
+    id: 'tools.ozone.inbox.getNotificationPreferences',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Get moderation push notification preferences for report outcomes, account actions, and labeling. Returns all three categories, defaulting to enabled for an account without saved preferences.',
+        parameters: {
+          type: 'params',
+          properties: {
+            did: {
+              type: 'string',
+              format: 'did',
+              description:
+                'Account to preview. Only Ozone staff can read another account; this does not change its read state.',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['preferences'],
+            properties: {
+              preferences: {
+                type: 'ref',
+                ref: 'lex:tools.ozone.inbox.defs#notificationPreferences',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ToolsOzoneInboxGetReport: {
+    lexicon: 1,
+    id: 'tools.ozone.inbox.getReport',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Get a moderation report submitted by the authenticated account to this moderation service.',
+        parameters: {
+          type: 'params',
+          required: ['id'],
+          properties: {
+            did: {
+              type: 'string',
+              format: 'did',
+              description:
+                'Reporter to preview. Defaults to the authenticated account; another account requires an active moderator, triage, or admin credential.',
+            },
+            id: {
+              type: 'integer',
+              description:
+                'Report ID (report table ID), as returned by listReports.',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['report'],
+            properties: {
+              report: {
+                type: 'ref',
+                ref: 'lex:tools.ozone.inbox.getReport#reportView',
+              },
+              resolution: {
+                type: 'ref',
+                ref: 'lex:tools.ozone.inbox.getReport#resolutionView',
+                description: 'Present only when the report is resolved.',
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'NotFound',
+            description:
+              'No report was found, or the authenticated account did not submit it.',
+          },
+        ],
+      },
+      reportView: {
+        type: 'object',
+        required: [
+          'src',
+          'id',
+          'reasonType',
+          'subject',
+          'status',
+          'createdAt',
+          'updatedAt',
+        ],
+        properties: {
+          src: {
+            type: 'string',
+            format: 'did',
+            description:
+              'DID of the moderation service that received the report.',
+          },
+          id: {
+            type: 'integer',
+            description:
+              "Report ID (report table ID), used by Ozone's report detail page.",
+          },
+          reasonType: {
+            type: 'string',
+            description:
+              'The exact fully-qualified reason NSID submitted with and stored on the report.',
+          },
+          reason: {
+            type: 'string',
+            maxGraphemes: 2000,
+            maxLength: 20000,
+          },
+          subject: {
+            type: 'union',
+            refs: [
+              'lex:com.atproto.admin.defs#repoRef',
+              'lex:com.atproto.repo.strongRef',
+              'lex:chat.bsky.convo.defs#messageRef',
+              'lex:chat.bsky.convo.defs#convoRef',
+            ],
+          },
+          record: {
+            type: 'unknown',
+            description:
+              'Raw record JSON for the subject, when the subject is a record and the record is available.',
+          },
+          status: {
+            type: 'string',
+            knownValues: ['pending', 'resolved'],
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          updatedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      resolutionView: {
+        type: 'object',
+        required: ['outcome', 'resolvedAt'],
+        properties: {
+          outcome: {
+            type: 'string',
+            knownValues: ['actionTaken', 'noAction', 'other'],
+          },
+          actionTaken: {
+            type: 'string',
+            description:
+              "Public action associated with this report's resolution. See the public action vocabulary table.",
+          },
+          scope: {
+            type: 'string',
+            knownValues: ['network', 'app', 'labelOnly'],
+          },
+          resolvedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+    },
+  },
+  ToolsOzoneInboxGetUnreadCount: {
+    lexicon: 1,
+    id: 'tools.ozone.inbox.getUnreadCount',
+    defs: {
+      main: {
+        type: 'query',
+        parameters: {
+          type: 'params',
+          properties: {
+            section: {
+              type: 'string',
+              knownValues: ['reports', 'subjects', 'accountStatus'],
+            },
+            did: {
+              type: 'string',
+              format: 'did',
+              description:
+                'Account to preview. Only Ozone staff can read another account; this does not change its read state.',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['unreadCounts'],
+            properties: {
+              unreadCounts: {
+                type: 'ref',
+                ref: 'lex:tools.ozone.inbox.getUnreadCount#unreadCounts',
+              },
+            },
+          },
+        },
+      },
+      unreadCounts: {
+        type: 'object',
+        required: ['total'],
+        properties: {
+          total: {
+            type: 'integer',
+            minimum: 0,
+          },
+          reports: {
+            type: 'integer',
+            minimum: 0,
+          },
+          subjects: {
+            type: 'integer',
+            minimum: 0,
+          },
+          accountStatus: {
+            type: 'integer',
+            minimum: 0,
+            maximum: 1,
+          },
+        },
+      },
+    },
+  },
+  ToolsOzoneInboxListActionedSubjects: {
+    lexicon: 1,
+    id: 'tools.ozone.inbox.listActionedSubjects',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'List subjects belonging to the authenticated account that have moderation actions from this moderation service.',
+        parameters: {
+          type: 'params',
+          properties: {
+            did: {
+              type: 'string',
+              format: 'did',
+              description:
+                'Account to preview. Defaults to the authenticated account; another account requires an active moderator, triage, or admin credential.',
+            },
+            filter: {
+              type: 'string',
+              default: 'all',
+              enum: ['all', 'pending', 'resolved', 'unread'],
+              description:
+                "Filter subject activity. pending includes subjects whose latest appeal report is not closed; resolved includes subjects whose latest appeal report is closed. unread includes subjects whose public updatedAt is after the subjects section's seenAt watermark.",
+            },
+            sortField: {
+              type: 'string',
+              default: 'updatedAt',
+              enum: ['createdAt', 'updatedAt'],
+            },
+            sortDirection: {
+              type: 'string',
+              default: 'desc',
+              enum: ['asc', 'desc'],
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+              description: 'An opaque cursor for pagination.',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['subjects'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              subjects: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:tools.ozone.inbox.defs#subjectView',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ToolsOzoneInboxListNotifications: {
+    lexicon: 1,
+    id: 'tools.ozone.inbox.listNotifications',
+    defs: {
+      main: {
+        type: 'query',
+        parameters: {
+          type: 'params',
+          properties: {
+            section: {
+              type: 'string',
+              knownValues: ['reports', 'subjects', 'accountStatus'],
+            },
+            reasons: {
+              type: 'array',
+              items: {
+                type: 'string',
+                knownValues: [
+                  'reportResolved',
+                  'reportReopened',
+                  'actionTaken',
+                  'actionReversed',
+                  'appealResolved',
+                  'standingChanged',
+                ],
+              },
+            },
+            unreadOnly: {
+              type: 'boolean',
+              default: false,
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+            },
+            did: {
+              type: 'string',
+              format: 'did',
+              description:
+                'Account to preview. Only Ozone staff can read another account; this does not change its read state.',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['notifications'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              notifications: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:tools.ozone.inbox.defs#notification',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ToolsOzoneInboxListReports: {
+    lexicon: 1,
+    id: 'tools.ozone.inbox.listReports',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'List moderation reports submitted by the authenticated account to this moderation service.',
+        parameters: {
+          type: 'params',
+          properties: {
+            did: {
+              type: 'string',
+              format: 'did',
+              description:
+                'Account to preview. Defaults to the authenticated account; another account requires an active moderator, triage, or admin credential.',
+            },
+            filter: {
+              type: 'string',
+              default: 'all',
+              enum: ['all', 'pending', 'resolved', 'unread'],
+              description:
+                "Filter report activity. unread includes reports whose updatedAt is after the reports section's seenAt watermark.",
+            },
+            sortField: {
+              type: 'string',
+              default: 'updatedAt',
+              enum: ['createdAt', 'updatedAt'],
+            },
+            sortDirection: {
+              type: 'string',
+              default: 'desc',
+              enum: ['asc', 'desc'],
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+              description: 'An opaque cursor for pagination.',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['reports'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              reports: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:tools.ozone.inbox.listReports#reportView',
+                },
+              },
+            },
+          },
+        },
+      },
+      reportView: {
+        type: 'object',
+        required: [
+          'src',
+          'id',
+          'isRead',
+          'reasonType',
+          'subject',
+          'status',
+          'createdAt',
+          'updatedAt',
+        ],
+        properties: {
+          src: {
+            type: 'string',
+            format: 'did',
+            description:
+              'DID of the moderation service that received the report.',
+          },
+          id: {
+            type: 'integer',
+            description:
+              "Report ID (report table ID), used by getReport and Ozone's report detail page.",
+          },
+          isRead: {
+            type: 'boolean',
+          },
+          reasonType: {
+            type: 'string',
+            description:
+              'The exact fully-qualified reason NSID submitted with and stored on the report.',
+          },
+          reason: {
+            type: 'string',
+            maxGraphemes: 2000,
+            maxLength: 20000,
+          },
+          lastActionTaken: {
+            type: 'string',
+            description:
+              "Public action associated with this report's transition to resolved. See the public action vocabulary table.",
+          },
+          scope: {
+            type: 'string',
+            knownValues: ['network', 'app', 'labelOnly'],
+          },
+          subject: {
+            type: 'union',
+            refs: [
+              'lex:com.atproto.admin.defs#repoRef',
+              'lex:com.atproto.repo.strongRef',
+              'lex:chat.bsky.convo.defs#messageRef',
+              'lex:chat.bsky.convo.defs#convoRef',
+            ],
+          },
+          status: {
+            type: 'string',
+            knownValues: ['pending', 'resolved'],
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          updatedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+    },
+  },
+  ToolsOzoneInboxPutNotificationPreferences: {
+    lexicon: 1,
+    id: 'tools.ozone.inbox.putNotificationPreferences',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          "Update the authenticated account's moderation push notification preferences. Only provided categories are updated; omitted categories retain their values. At least one category must be provided. Returns all three preferences. These preferences do not hide in-app inbox activity.",
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              reports: {
+                type: 'boolean',
+                description:
+                  'Notify about outcomes of reports filed by the account.',
+              },
+              account: {
+                type: 'boolean',
+                description:
+                  'Notify about moderation actions against the account or its content, excluding labeling.',
+              },
+              labels: {
+                type: 'boolean',
+                description:
+                  'Notify about labels applied to or removed from the account or its content.',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['preferences'],
+            properties: {
+              preferences: {
+                type: 'ref',
+                ref: 'lex:tools.ozone.inbox.defs#notificationPreferences',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ToolsOzoneInboxUpdateSeen: {
+    lexicon: 1,
+    id: 'tools.ozone.inbox.updateSeen',
+    defs: {
+      main: {
+        type: 'procedure',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['sections'],
+            properties: {
+              sections: {
+                type: 'array',
+                minLength: 1,
+                items: {
+                  type: 'string',
+                  knownValues: ['reports', 'subjects', 'accountStatus'],
+                },
+              },
+              seenAt: {
+                type: 'string',
+                format: 'datetime',
+                description:
+                  'Mark each requested section read up to this instant. Defaults to server time and is clamped to server time when in the future. Newer existing watermarks are preserved independently for each section.',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['seenAt'],
+            properties: {
+              seenAt: {
+                type: 'string',
+                format: 'datetime',
+                description:
+                  'The earliest resulting watermark across the requested sections, in UTC. Every requested section is read through this instant; individual sections may already have newer watermarks.',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   ToolsOzoneModerationCancelScheduledActions: {
     lexicon: 1,
     id: 'tools.ozone.moderation.cancelScheduledActions',
@@ -35291,6 +37518,23 @@ export const schemaDict = {
         description: 'Report a subject',
         required: ['reportType'],
         properties: {
+          appealSubmittedBy: {
+            type: 'string',
+            format: 'did',
+            description:
+              'Moderator who submitted this appeal on behalf of the affected account. Returned by moderator event APIs.',
+          },
+          appealActionType: {
+            type: 'string',
+            description:
+              'Action reference type recorded when this appeal was submitted.',
+          },
+          appealActionId: {
+            type: 'integer',
+          },
+          appealLabel: {
+            type: 'string',
+          },
           comment: {
             type: 'string',
           },
@@ -37642,6 +39886,14 @@ export const schemaDict = {
                 description:
                   'Policy keys to recommend when actioning reports in this queue',
               },
+              recommendedLabels: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+                description:
+                  'Labels to recommend for this queue and use as fallback appeal routing mappings',
+              },
             },
           },
         },
@@ -37731,6 +39983,14 @@ export const schemaDict = {
             description:
               'Policy keys recommended when actioning reports in this queue',
           },
+          recommendedLabels: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+            description:
+              'Labels recommended for this queue and used as a fallback when routing label appeals',
+          },
           createdBy: {
             type: 'string',
             format: 'did',
@@ -37766,7 +40026,28 @@ export const schemaDict = {
         properties: {
           pendingCount: {
             type: 'integer',
-            description: "Number of reports in 'open' status",
+            description: 'Number of unmuted reports currently not closed.',
+          },
+          closureTargetOverdueCount: {
+            type: 'integer',
+            minimum: 0,
+            description: 'Unmuted pending reports past their closure target.',
+          },
+          closureTargetMetCount: {
+            type: 'integer',
+            minimum: 0,
+            description: 'Reports whose closure meets their closure target.',
+          },
+          closureTargetMissedCount: {
+            type: 'integer',
+            minimum: 0,
+            description: 'Reports whose closure exceeds their closure target.',
+          },
+          closureTargetMetRate: {
+            type: 'integer',
+            minimum: 0,
+            maximum: 100,
+            description: 'Percent of reports meeting their closure target.',
           },
           actionedCount: {
             type: 'integer',
@@ -38133,6 +40414,14 @@ export const schemaDict = {
                 description:
                   'Policy keys to recommend when actioning reports in this queue',
               },
+              recommendedLabels: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+                description:
+                  'Labels to recommend for this queue and use as fallback appeal routing mappings',
+              },
             },
           },
         },
@@ -38154,6 +40443,11 @@ export const schemaDict = {
             name: 'InvalidRecommendedPolicies',
             description:
               'One or more recommended policy keys do not exist in the configured policy list',
+          },
+          {
+            name: 'ConflictingQueue',
+            description:
+              'The queue configuration conflicts with an existing queue',
           },
         ],
       },
@@ -38641,6 +40935,33 @@ export const schemaDict = {
             ref: 'lex:com.atproto.moderation.defs#reasonType',
             description: 'Type of report',
           },
+          priorityLevel: {
+            type: 'string',
+            description: 'Priority level assigned to the report.',
+          },
+          priorityScore: {
+            type: 'integer',
+            minimum: 0,
+            maximum: 100,
+            description:
+              'Report priority score. Higher scores have higher priority.',
+          },
+          priorityTargetMinutes: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 2147483647,
+            description: 'Target resolution duration in minutes.',
+          },
+          resolutionTimeSec: {
+            type: 'integer',
+            minimum: 0,
+            description: 'Time from report creation to its last closure.',
+          },
+          priorityTargetMet: {
+            type: 'boolean',
+            description:
+              "Whether the current closure occurred within the report's snapshotted target.",
+          },
           reportedBy: {
             type: 'string',
             format: 'did',
@@ -38676,7 +40997,7 @@ export const schemaDict = {
               type: 'integer',
             },
             description:
-              'Array of moderation event IDs representing actions taken on this report (sorted DESC, most recent first)',
+              'Array of moderation event IDs representing actions taken on this report, in append order (most recently linked event last)',
           },
           actions: {
             type: 'array',
@@ -38748,6 +41069,25 @@ export const schemaDict = {
           },
         },
       },
+      unassignmentActivity: {
+        type: 'object',
+        description:
+          'Activity recording a moderator being unassigned from a report.',
+        properties: {
+          previousStatus: {
+            type: 'string',
+            knownValues: ['open', 'closed', 'escalated', 'queued', 'assigned'],
+            description:
+              "The report's status immediately before the moderator was unassigned. May be absent on older activities.",
+          },
+          nextStatus: {
+            type: 'string',
+            knownValues: ['open', 'closed', 'escalated', 'queued', 'assigned'],
+            description:
+              "The report's status immediately after the moderator was unassigned. May equal previousStatus if unassignment did not change the report's status, or be absent on older activities.",
+          },
+        },
+      },
       escalationActivity: {
         type: 'object',
         description: 'Activity recording a report being escalated.',
@@ -38816,6 +41156,7 @@ export const schemaDict = {
             refs: [
               'lex:tools.ozone.report.defs#queueActivity',
               'lex:tools.ozone.report.defs#assignmentActivity',
+              'lex:tools.ozone.report.defs#unassignmentActivity',
               'lex:tools.ozone.report.defs#escalationActivity',
               'lex:tools.ozone.report.defs#closeActivity',
               'lex:tools.ozone.report.defs#reopenActivity',
@@ -38874,29 +41215,96 @@ export const schemaDict = {
         properties: {
           pendingCount: {
             type: 'integer',
-            description: 'Number of reports currently not closed.',
+            description: 'Number of unmuted reports currently not closed.',
+          },
+          closureTargetOverdueCount: {
+            type: 'integer',
+            minimum: 0,
+            description: 'Unmuted pending reports past their closure target.',
+          },
+          closureTargetMetCount: {
+            type: 'integer',
+            minimum: 0,
+            description: 'Reports whose closure meets their closure target.',
+          },
+          closureTargetMissedCount: {
+            type: 'integer',
+            minimum: 0,
+            description: 'Reports whose closure exceeds their closure target.',
+          },
+          closureTargetMetRate: {
+            type: 'integer',
+            minimum: 0,
+            maximum: 100,
+            description: 'Percent of reports meeting their closure target.',
+          },
+          closedCount: {
+            type: 'integer',
+            description: 'Number of close transitions.',
           },
           actionedCount: {
             type: 'integer',
-            description: 'Number of reports closed today.',
+            description:
+              'Number of closures whose last report action is label, tag, or takedown.',
+          },
+          acknowledgedCount: {
+            type: 'integer',
+            description:
+              'Number of closures whose last report action is not label, tag, or takedown.',
           },
           escalatedCount: {
             type: 'integer',
-            description: 'Number of reports escalated today.',
+            description: 'Number of reports escalated.',
           },
           inboundCount: {
             type: 'integer',
-            description: 'Reports received today.',
+            description: 'Reports received.',
+          },
+          labelActionCount: {
+            type: 'integer',
+            description: 'Closures whose last report action is a label event.',
+          },
+          tagActionCount: {
+            type: 'integer',
+            description: 'Closures whose last report action is a tag event.',
+          },
+          takedownActionCount: {
+            type: 'integer',
+            description:
+              'Closures whose last report action is a takedown event.',
+          },
+          ahtDurationSec: {
+            type: 'integer',
+            description: 'Sum of report assignment-to-close seconds.',
+          },
+          ahtSampleCount: {
+            type: 'integer',
+            description:
+              'Number of assigned closed-report samples in ahtDurationSec.',
+          },
+          resolutionDurationSec: {
+            type: 'integer',
+            description: 'Sum of report creation-to-close seconds.',
+          },
+          resolutionSampleCount: {
+            type: 'integer',
+            description:
+              'Number of closed-report samples in resolutionDurationSec.',
           },
           actionRate: {
             type: 'integer',
             description:
-              'Percentage of reports actioned (actionedCount / inboundCount * 100), rounded to nearest integer.',
+              'Percentage of closures actioned (actionedCount / closedCount * 100), rounded to nearest integer.',
           },
           avgHandlingTimeSec: {
             type: 'integer',
             description:
-              'Average time in seconds from report creation (or moderator assignment) to close.',
+              'Average handling time in seconds from report assignment to close.',
+          },
+          avgResolutionTimeSec: {
+            type: 'integer',
+            description:
+              'Average resolution time in seconds from report creation to close.',
           },
           lastUpdated: {
             type: 'string',
@@ -38922,11 +41330,44 @@ export const schemaDict = {
           },
           pendingCount: {
             type: 'integer',
-            description: 'Number of reports not closed at time of computation.',
+            description:
+              'Number of unmuted reports not closed at the end of this UTC day, or at computation time for the current day.',
+          },
+          closureTargetOverdueCount: {
+            type: 'integer',
+            minimum: 0,
+            description:
+              'Unmuted pending reports past their closure target at the snapshot time.',
+          },
+          closureTargetMetCount: {
+            type: 'integer',
+            minimum: 0,
+            description: 'Reports whose closure meets their closure target.',
+          },
+          closureTargetMissedCount: {
+            type: 'integer',
+            minimum: 0,
+            description: 'Reports whose closure exceeds their closure target.',
+          },
+          closureTargetMetRate: {
+            type: 'integer',
+            minimum: 0,
+            maximum: 100,
+            description: 'Percent of reports meeting their closure target.',
+          },
+          closedCount: {
+            type: 'integer',
+            description: 'Number of close transitions during this day.',
           },
           actionedCount: {
             type: 'integer',
-            description: 'Number of reports closed during this day.',
+            description:
+              'Number of closures whose last report action is label, tag, or takedown during this day.',
+          },
+          acknowledgedCount: {
+            type: 'integer',
+            description:
+              'Number of closures whose last report action is not label, tag, or takedown during this day.',
           },
           escalatedCount: {
             type: 'integer',
@@ -38936,15 +41377,55 @@ export const schemaDict = {
             type: 'integer',
             description: 'Reports received during this day.',
           },
+          labelActionCount: {
+            type: 'integer',
+            description:
+              'Closures whose last report action is a label event during this day.',
+          },
+          tagActionCount: {
+            type: 'integer',
+            description:
+              'Closures whose last report action is a tag event during this day.',
+          },
+          takedownActionCount: {
+            type: 'integer',
+            description:
+              'Closures whose last report action is a takedown event during this day.',
+          },
+          ahtDurationSec: {
+            type: 'integer',
+            description:
+              "Sum of report assignment-to-close seconds for this day's samples.",
+          },
+          ahtSampleCount: {
+            type: 'integer',
+            description:
+              'Number of assigned closed-report samples in ahtDurationSec.',
+          },
+          resolutionDurationSec: {
+            type: 'integer',
+            description:
+              "Sum of report creation-to-close seconds for this day's samples.",
+          },
+          resolutionSampleCount: {
+            type: 'integer',
+            description:
+              'Number of closed-report samples in resolutionDurationSec.',
+          },
           actionRate: {
             type: 'integer',
             description:
-              'Percentage of reports actioned (actionedCount / inboundCount * 100), rounded to nearest integer.',
+              'Percentage of closures actioned (actionedCount / closedCount * 100), rounded to nearest integer.',
           },
           avgHandlingTimeSec: {
             type: 'integer',
             description:
-              'Average time in seconds from report creation (or moderator assignment) to close.',
+              'Average handling time in seconds from report assignment to close.',
+          },
+          avgResolutionTimeSec: {
+            type: 'integer',
+            description:
+              'Average resolution time in seconds from report creation to close.',
           },
         },
       },
@@ -40075,6 +42556,41 @@ export const schemaDict = {
             description: 'No active rule found for this URL/domain',
           },
         ],
+      },
+    },
+  },
+  ToolsOzoneServerGetCapabilities: {
+    lexicon: 1,
+    id: 'tools.ozone.server.getCapabilities',
+    defs: {
+      main: {
+        type: 'query',
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              notifications: {
+                type: 'ref',
+                ref: 'lex:tools.ozone.server.getCapabilities#notificationConfig',
+              },
+            },
+          },
+        },
+      },
+      notificationConfig: {
+        type: 'object',
+        required: ['channels'],
+        properties: {
+          channels: {
+            type: 'array',
+            minLength: 1,
+            items: {
+              type: 'string',
+              knownValues: ['inApp', 'push'],
+            },
+          },
+        },
       },
     },
   },
@@ -41466,6 +43982,7 @@ export const ids = {
   AppBskyActorGetProfile: 'app.bsky.actor.getProfile',
   AppBskyActorGetProfiles: 'app.bsky.actor.getProfiles',
   AppBskyActorGetSuggestions: 'app.bsky.actor.getSuggestions',
+  AppBskyActorLink: 'app.bsky.actor.link',
   AppBskyActorProfile: 'app.bsky.actor.profile',
   AppBskyActorPutPreferences: 'app.bsky.actor.putPreferences',
   AppBskyActorSearchActors: 'app.bsky.actor.searchActors',
@@ -41555,6 +44072,7 @@ export const ids = {
   AppBskyGraphMuteActor: 'app.bsky.graph.muteActor',
   AppBskyGraphMuteActorList: 'app.bsky.graph.muteActorList',
   AppBskyGraphMuteThread: 'app.bsky.graph.muteThread',
+  AppBskyGraphReferencelistoptout: 'app.bsky.graph.referencelistoptout',
   AppBskyGraphSearchStarterPacks: 'app.bsky.graph.searchStarterPacks',
   AppBskyGraphSearchStarterPacksV2: 'app.bsky.graph.searchStarterPacksV2',
   AppBskyGraphStarterpack: 'app.bsky.graph.starterpack',
@@ -41586,6 +44104,8 @@ export const ids = {
   AppBskyUnspeccedDefs: 'app.bsky.unspecced.defs',
   AppBskyUnspeccedGetAgeAssuranceState:
     'app.bsky.unspecced.getAgeAssuranceState',
+  AppBskyUnspeccedGetAtmosphereExploreTab:
+    'app.bsky.unspecced.getAtmosphereExploreTab',
   AppBskyUnspeccedGetConfig: 'app.bsky.unspecced.getConfig',
   AppBskyUnspeccedGetOnboardingSuggestedStarterPacks:
     'app.bsky.unspecced.getOnboardingSuggestedStarterPacks',
@@ -41851,6 +44371,7 @@ export const ids = {
   ComParaCivicDelegation: 'com.para.civic.delegation',
   ComParaCivicGetCabildeo: 'com.para.civic.getCabildeo',
   ComParaCivicGetOpenQuestionThread: 'com.para.civic.getOpenQuestionThread',
+  ComParaCivicGetPolicyCommunityVotes: 'com.para.civic.getPolicyCommunityVotes',
   ComParaCivicGetPolicyTally: 'com.para.civic.getPolicyTally',
   ComParaCivicListCabildeoPositions: 'com.para.civic.listCabildeoPositions',
   ComParaCivicListCabildeos: 'com.para.civic.listCabildeos',
@@ -41983,6 +44504,21 @@ export const ids = {
     'tools.ozone.history.getReportedSubjects',
   ToolsOzoneHistoryGetSubjectHistory: 'tools.ozone.history.getSubjectHistory',
   ToolsOzoneHostingGetAccountHistory: 'tools.ozone.hosting.getAccountHistory',
+  ToolsOzoneInboxAppealActionedSubject:
+    'tools.ozone.inbox.appealActionedSubject',
+  ToolsOzoneInboxDefs: 'tools.ozone.inbox.defs',
+  ToolsOzoneInboxGetAccountStatus: 'tools.ozone.inbox.getAccountStatus',
+  ToolsOzoneInboxGetActionedSubject: 'tools.ozone.inbox.getActionedSubject',
+  ToolsOzoneInboxGetNotificationPreferences:
+    'tools.ozone.inbox.getNotificationPreferences',
+  ToolsOzoneInboxGetReport: 'tools.ozone.inbox.getReport',
+  ToolsOzoneInboxGetUnreadCount: 'tools.ozone.inbox.getUnreadCount',
+  ToolsOzoneInboxListActionedSubjects: 'tools.ozone.inbox.listActionedSubjects',
+  ToolsOzoneInboxListNotifications: 'tools.ozone.inbox.listNotifications',
+  ToolsOzoneInboxListReports: 'tools.ozone.inbox.listReports',
+  ToolsOzoneInboxPutNotificationPreferences:
+    'tools.ozone.inbox.putNotificationPreferences',
+  ToolsOzoneInboxUpdateSeen: 'tools.ozone.inbox.updateSeen',
   ToolsOzoneModerationCancelScheduledActions:
     'tools.ozone.moderation.cancelScheduledActions',
   ToolsOzoneModerationDefs: 'tools.ozone.moderation.defs',
@@ -42035,6 +44571,7 @@ export const ids = {
   ToolsOzoneSafelinkQueryRules: 'tools.ozone.safelink.queryRules',
   ToolsOzoneSafelinkRemoveRule: 'tools.ozone.safelink.removeRule',
   ToolsOzoneSafelinkUpdateRule: 'tools.ozone.safelink.updateRule',
+  ToolsOzoneServerGetCapabilities: 'tools.ozone.server.getCapabilities',
   ToolsOzoneServerGetConfig: 'tools.ozone.server.getConfig',
   ToolsOzoneSetAddValues: 'tools.ozone.set.addValues',
   ToolsOzoneSetDefs: 'tools.ozone.set.defs',

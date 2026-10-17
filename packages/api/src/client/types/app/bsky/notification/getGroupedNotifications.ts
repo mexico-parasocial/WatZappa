@@ -11,6 +11,9 @@ import {
   is$typed as _is$typed,
   type OmitKey,
 } from '../../../../util.js'
+import type * as AppBskyActorDefs from '../actor/defs.js'
+import type * as AppBskyFeedDefs from '../feed/defs.js'
+import type * as AppBskyGraphDefs from '../graph/defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -25,8 +28,6 @@ export type QueryParams = {
     | 'followers'
     | 'activity'
     | (string & {})
-  /** Offset from UTC in minutes, positive east, used to determine local day boundaries when grouping. Groups never span the current day boundary. Defaults to UTC. */
-  utcOffset?: number
   /** Maximum number of groups to return. */
   limit?: number
   cursor?: string
@@ -38,10 +39,16 @@ export interface OutputSchema {
   /** Notification groups or individual notifications, newest first. Clients should ignore kinds they do not recognize. Grouping behavior depends on the kind and selected feed. */
   groups: Group[]
   seenAt?: string
-  /** A map of actor DID to app.bsky.actor.defs#profileViewDetailed. Typed dictionary values are unsupported by this lexicon version. */
-  relatedProfileViews?: { [_ in string]: unknown }
-  /** A map of AT URI to reusable app.bsky.feed.defs#postView, app.bsky.feed.defs#notFoundPost, app.bsky.feed.defs#blockedPost, app.bsky.graph.defs#starterPackView, or app.bsky.feed.defs#generatorView. Views shared across notifications appear once to avoid duplication. Typed dictionary values are unsupported by this lexicon version. */
-  relatedRecordViews?: { [_ in string]: unknown }
+  /** Reusable views referenced by notifications. Views shared across notifications appear once to avoid duplication. Each group contributes only its first 10 of each related view to this array. Ex: for a group containing likes in a post, we might have a large number of likeItem (e.g., 50) in a group, but only the profile views for the newest 10 items will be included here. */
+  relatedViews?: (
+    | $Typed<AppBskyActorDefs.ProfileViewBasic>
+    | $Typed<AppBskyFeedDefs.BlockedPost>
+    | $Typed<AppBskyFeedDefs.GeneratorView>
+    | $Typed<AppBskyFeedDefs.NotFoundPost>
+    | $Typed<AppBskyFeedDefs.PostView>
+    | $Typed<AppBskyGraphDefs.StarterPackViewBasic>
+    | { $type: string }
+  )[]
 }
 
 export interface CallOptions {
@@ -69,6 +76,9 @@ export interface Group {
   kind:
     | $Typed<LikeGroup>
     | $Typed<MultiPostLikeGroup>
+    | $Typed<MultiPostRepostGroup>
+    | $Typed<MultiPostLikeViaRepostGroup>
+    | $Typed<MultiPostRepostViaRepostGroup>
     | $Typed<RepostGroup>
     | $Typed<LikeViaRepostGroup>
     | $Typed<RepostViaRepostGroup>
@@ -160,6 +170,123 @@ export function isMultiPostLikeItem<V>(v: V) {
 
 export function validateMultiPostLikeItem<V>(v: V) {
   return validate<MultiPostLikeItem & V>(v, id, hashMultiPostLikeItem)
+}
+
+/** Group of reposts by the same actor of different posts. */
+export interface MultiPostRepostGroup {
+  $type?: 'app.bsky.notification.getGroupedNotifications#multiPostRepostGroup'
+  actor: string
+  items: MultiPostRepostItem[]
+}
+
+const hashMultiPostRepostGroup = 'multiPostRepostGroup'
+
+export function isMultiPostRepostGroup<V>(v: V) {
+  return is$typed(v, id, hashMultiPostRepostGroup)
+}
+
+export function validateMultiPostRepostGroup<V>(v: V) {
+  return validate<MultiPostRepostGroup & V>(v, id, hashMultiPostRepostGroup)
+}
+
+/** One post which was reposted by the group's actor. */
+export interface MultiPostRepostItem {
+  $type?: 'app.bsky.notification.getGroupedNotifications#multiPostRepostItem'
+  post: string
+}
+
+const hashMultiPostRepostItem = 'multiPostRepostItem'
+
+export function isMultiPostRepostItem<V>(v: V) {
+  return is$typed(v, id, hashMultiPostRepostItem)
+}
+
+export function validateMultiPostRepostItem<V>(v: V) {
+  return validate<MultiPostRepostItem & V>(v, id, hashMultiPostRepostItem)
+}
+
+/** Group of likes by the same actor on different posts via the requesting account's reposts. */
+export interface MultiPostLikeViaRepostGroup {
+  $type?: 'app.bsky.notification.getGroupedNotifications#multiPostLikeViaRepostGroup'
+  actor: string
+  items: MultiPostLikeViaRepostItem[]
+}
+
+const hashMultiPostLikeViaRepostGroup = 'multiPostLikeViaRepostGroup'
+
+export function isMultiPostLikeViaRepostGroup<V>(v: V) {
+  return is$typed(v, id, hashMultiPostLikeViaRepostGroup)
+}
+
+export function validateMultiPostLikeViaRepostGroup<V>(v: V) {
+  return validate<MultiPostLikeViaRepostGroup & V>(
+    v,
+    id,
+    hashMultiPostLikeViaRepostGroup,
+  )
+}
+
+/** One post which was liked by the group's actor via the requesting account's repost. */
+export interface MultiPostLikeViaRepostItem {
+  $type?: 'app.bsky.notification.getGroupedNotifications#multiPostLikeViaRepostItem'
+  post: string
+  viaRepost: string
+}
+
+const hashMultiPostLikeViaRepostItem = 'multiPostLikeViaRepostItem'
+
+export function isMultiPostLikeViaRepostItem<V>(v: V) {
+  return is$typed(v, id, hashMultiPostLikeViaRepostItem)
+}
+
+export function validateMultiPostLikeViaRepostItem<V>(v: V) {
+  return validate<MultiPostLikeViaRepostItem & V>(
+    v,
+    id,
+    hashMultiPostLikeViaRepostItem,
+  )
+}
+
+/** Group of reposts by the same actor of different posts via the requesting account's reposts. */
+export interface MultiPostRepostViaRepostGroup {
+  $type?: 'app.bsky.notification.getGroupedNotifications#multiPostRepostViaRepostGroup'
+  actor: string
+  items: MultiPostRepostViaRepostItem[]
+}
+
+const hashMultiPostRepostViaRepostGroup = 'multiPostRepostViaRepostGroup'
+
+export function isMultiPostRepostViaRepostGroup<V>(v: V) {
+  return is$typed(v, id, hashMultiPostRepostViaRepostGroup)
+}
+
+export function validateMultiPostRepostViaRepostGroup<V>(v: V) {
+  return validate<MultiPostRepostViaRepostGroup & V>(
+    v,
+    id,
+    hashMultiPostRepostViaRepostGroup,
+  )
+}
+
+/** One post which was reposted by the group's actor via the requesting account's repost. */
+export interface MultiPostRepostViaRepostItem {
+  $type?: 'app.bsky.notification.getGroupedNotifications#multiPostRepostViaRepostItem'
+  post: string
+  viaRepost: string
+}
+
+const hashMultiPostRepostViaRepostItem = 'multiPostRepostViaRepostItem'
+
+export function isMultiPostRepostViaRepostItem<V>(v: V) {
+  return is$typed(v, id, hashMultiPostRepostViaRepostItem)
+}
+
+export function validateMultiPostRepostViaRepostItem<V>(v: V) {
+  return validate<MultiPostRepostViaRepostItem & V>(
+    v,
+    id,
+    hashMultiPostRepostViaRepostItem,
+  )
 }
 
 /** Group of reposts by different actors of the same post. */

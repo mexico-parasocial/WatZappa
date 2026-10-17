@@ -1,13 +1,12 @@
-import { Cid } from '@atproto/lex-data'
-import { AtUri, DatetimeString } from '@atproto/syntax'
-import { app, com } from '../lexicons/index.js'
-import { LocalViewer } from './viewer.js'
+import type { Cid } from '@atproto/lex-data'
+import type { AtUri, DatetimeString } from '@atproto/syntax'
+import type { app } from '../lexicons/index.js'
+import type { LocalViewer } from './viewer.js'
 
 export type LocalRecords = {
   count: number
   profile: RecordDescript<app.bsky.actor.profile.Main> | null
   posts: RecordDescript<app.bsky.feed.post.Main>[]
-  paraPosts: RecordDescript<com.para.post.Main>[]
 }
 
 export type RecordDescript<T> = {

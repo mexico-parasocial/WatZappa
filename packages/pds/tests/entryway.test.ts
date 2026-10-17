@@ -1,4 +1,3 @@
-// @ts-nocheck
 import assert from 'node:assert'
 import * as plcLib from '@did-plc/lib'
 import getPort from 'get-port'

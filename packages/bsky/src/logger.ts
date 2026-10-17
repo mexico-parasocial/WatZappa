@@ -1,4 +1,4 @@
-import { IncomingMessage } from 'node:http'
+import type { IncomingMessage } from 'node:http'
 import { stdSerializers } from 'pino'
 import { pinoHttp } from 'pino-http'
 import { obfuscateHeaders, subsystemLogger } from '@atproto/common'
@@ -36,6 +36,8 @@ export const loggerMiddleware = pinoHttp({
     req: (req: IncomingMessage) => {
       const serialized = stdSerializers.req(req)
       const headers = obfuscateHeaders(serialized.headers)
+      if ('x-para-authority-service-token' in headers)
+        headers['x-para-authority-service-token'] = '[redacted]'
       return { ...serialized, headers }
     },
   },

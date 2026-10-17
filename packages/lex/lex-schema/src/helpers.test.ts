@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, expect, expectTypeOf, it, test } from 'vitest'
 import * as l from './external.js'
 

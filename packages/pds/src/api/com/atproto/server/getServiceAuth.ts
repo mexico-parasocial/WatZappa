@@ -1,9 +1,9 @@
 import { HOUR, MINUTE } from '@atproto/common'
 import { isAtprotoDid, isAtprotoDidRefAbsolute } from '@atproto/did'
-import { l } from '@atproto/lex'
+import type { l } from '@atproto/lex'
 import {
   InvalidRequestError,
-  Server,
+  type Server,
   createServiceJwt,
 } from '@atproto/xrpc-server'
 import {
@@ -11,9 +11,12 @@ import {
   isAccessPrivileged,
   isTakendown,
 } from '../../../../auth-scope.js'
-import { AppContext } from '../../../../context.js'
+import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
-import { PRIVILEGED_METHODS, PROTECTED_METHODS } from '../../../../pipethrough.js'
+import {
+  PRIVILEGED_METHODS,
+  PROTECTED_METHODS,
+} from '../../../../pipethrough.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.add(com.atproto.server.getServiceAuth, {

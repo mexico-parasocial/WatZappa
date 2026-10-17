@@ -13,6 +13,7 @@ import {
 import type * as ComAtprotoRepoStrongRef from '../../../com/atproto/repo/strongRef.js'
 import type * as ComAtprotoLabelDefs from '../../../com/atproto/label/defs.js'
 import type * as AppBskyActorDefs from '../actor/defs.js'
+import type * as AppBskyEmbedDefs from './defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -160,4 +161,161 @@ export function isColorRGB<V>(v: V) {
 
 export function validateColorRGB<V>(v: V) {
   return validate<ColorRGB & V>(v, id, hashColorRGB)
+}
+
+export interface ViewArticle {
+  $type?: 'app.bsky.embed.external#viewArticle'
+  uri: string
+  title: string
+  description: string
+  createdAt?: string
+  updatedAt?: string
+  labels?: ComAtprotoLabelDefs.Label[]
+  associatedRefs?: ComAtprotoRepoStrongRef.Main[]
+  associatedProfiles?: AppBskyActorDefs.ProfileViewBasic[]
+  image?: string
+  publisher?: ViewArticlePublication
+  readingTime?: number
+  likeCount?: number
+  /** Available profile previews. Selected deterministically by DID; not a ranking. */
+  likers?: AppBskyActorDefs.ProfileViewBasic[]
+}
+
+const hashViewArticle = 'viewArticle'
+
+export function isViewArticle<V>(v: V) {
+  return is$typed(v, id, hashViewArticle)
+}
+
+export function validateViewArticle<V>(v: V) {
+  return validate<ViewArticle & V>(v, id, hashViewArticle)
+}
+
+export interface ViewArticlePublication {
+  $type?: 'app.bsky.embed.external#viewArticlePublication'
+  uri: string
+  title: string
+  description: string
+  createdAt?: string
+  updatedAt?: string
+  labels?: ComAtprotoLabelDefs.Label[]
+  associatedRefs?: ComAtprotoRepoStrongRef.Main[]
+  associatedProfiles?: AppBskyActorDefs.ProfileViewBasic[]
+  logo?: string
+  image?: string
+  theme?: ViewArticlePublicationTheme
+  subscriptionCount?: number
+  /** Available profile previews. Selected deterministically by DID; not a ranking. */
+  subscribers?: AppBskyActorDefs.ProfileViewBasic[]
+}
+
+const hashViewArticlePublication = 'viewArticlePublication'
+
+export function isViewArticlePublication<V>(v: V) {
+  return is$typed(v, id, hashViewArticlePublication)
+}
+
+export function validateViewArticlePublication<V>(v: V) {
+  return validate<ViewArticlePublication & V>(v, id, hashViewArticlePublication)
+}
+
+export interface ViewArticlePublicationTheme {
+  $type?: 'app.bsky.embed.external#viewArticlePublicationTheme'
+  /** Hex color string, if available. Example: '#ffffff'. */
+  background?: string
+  /** Hex color string, if available. Example: '#ffffff'. */
+  foreground?: string
+  /** Hex color string, if available. Example: '#ffffff'. */
+  accent?: string
+  /** Hex color string, if available. Example: '#ffffff'. */
+  accentForeground?: string
+}
+
+const hashViewArticlePublicationTheme = 'viewArticlePublicationTheme'
+
+export function isViewArticlePublicationTheme<V>(v: V) {
+  return is$typed(v, id, hashViewArticlePublicationTheme)
+}
+
+export function validateViewArticlePublicationTheme<V>(v: V) {
+  return validate<ViewArticlePublicationTheme & V>(
+    v,
+    id,
+    hashViewArticlePublicationTheme,
+  )
+}
+
+export interface ViewGallery {
+  $type?: 'app.bsky.embed.external#viewGallery'
+  uri: string
+  title: string
+  description: string
+  createdAt?: string
+  updatedAt?: string
+  labels?: ComAtprotoLabelDefs.Label[]
+  associatedRefs?: ComAtprotoRepoStrongRef.Main[]
+  associatedProfiles?: AppBskyActorDefs.ProfileViewBasic[]
+  /** The media items in the gallery. Each item may be of a different type, but all types must be supported by the client. */
+  items: ($Typed<ViewGalleryImage> | { $type: string })[]
+  likeCount?: number
+  /** Available profile previews. Selected deterministically by DID; not a ranking. */
+  likers?: AppBskyActorDefs.ProfileViewBasic[]
+}
+
+const hashViewGallery = 'viewGallery'
+
+export function isViewGallery<V>(v: V) {
+  return is$typed(v, id, hashViewGallery)
+}
+
+export function validateViewGallery<V>(v: V) {
+  return validate<ViewGallery & V>(v, id, hashViewGallery)
+}
+
+export interface ViewGalleryImage {
+  $type?: 'app.bsky.embed.external#viewGalleryImage'
+  /** Fully-qualified URL where a thumbnail of the image can be fetched. For example, CDN location provided by the App View. */
+  thumbnail: string
+  /** Fully-qualified URL where a large version of the image can be fetched. May or may not be the exact original blob. For example, CDN location provided by the App View. */
+  fullsize: string
+  /** Alt text description of the image, for accessibility. */
+  alt?: string
+  aspectRatio?: AppBskyEmbedDefs.AspectRatio
+}
+
+const hashViewGalleryImage = 'viewGalleryImage'
+
+export function isViewGalleryImage<V>(v: V) {
+  return is$typed(v, id, hashViewGalleryImage)
+}
+
+export function validateViewGalleryImage<V>(v: V) {
+  return validate<ViewGalleryImage & V>(v, id, hashViewGalleryImage)
+}
+
+export interface ViewLivestream {
+  $type?: 'app.bsky.embed.external#viewLivestream'
+  uri: string
+  title: string
+  description: string
+  createdAt?: string
+  updatedAt?: string
+  labels?: ComAtprotoLabelDefs.Label[]
+  associatedRefs?: ComAtprotoRepoStrongRef.Main[]
+  associatedProfiles?: AppBskyActorDefs.ProfileViewBasic[]
+  image?: string
+  /** True if the livestream is currently active at the time this view is served, false if it has ended. */
+  active: boolean
+  startedAt?: string
+  endedAt?: string
+}
+
+const hashViewLivestream = 'viewLivestream'
+
+export function isViewLivestream<V>(v: V) {
+  return is$typed(v, id, hashViewLivestream)
+}
+
+export function validateViewLivestream<V>(v: V) {
+  return validate<ViewLivestream & V>(v, id, hashViewLivestream)
 }
