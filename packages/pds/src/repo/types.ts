@@ -52,6 +52,14 @@ export type SyncEvtData = {
 
 export class InvalidRecordError extends Error {}
 
+export class BallotRefusedError extends InvalidRecordError {
+  name = 'BallotRefusedError'
+}
+
+export class UnsupportedRecordError extends InvalidRecordError {
+  name = 'UnsupportedRecordError'
+}
+
 export class BadCommitSwapError extends Error {
   constructor(public cid: Cid) {
     super(`Commit was at ${cid.toString()}`)

@@ -1,8 +1,9 @@
+import type { Kysely } from 'kysely'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { REPOST_COLLECTION, TID, cidForCbor } from '@atproto/common'
 import { type SeedClient, TestNetwork, usersSeed } from '@atproto/dev-env'
 import { WriteOpAction } from '@atproto/repo'
-import { AtUri } from '@atproto/syntax'
+import { AtUri, type DidString } from '@atproto/syntax'
 import { up as dropParaReposts } from '../src/data-plane/server/db/migrations/20260925T120000000Z-drop-para-reposts.js'
 
 const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
@@ -15,9 +16,9 @@ maybeDescribe('PARA repost policy (AppView)', () => {
   const previous = process.env.PARA_REPOSTS_ENABLED
   let network: TestNetwork
   let sc: SeedClient
-  let alice: string
-  let bob: string
-  let carol: string
+  let alice: DidString
+  let bob: DidString
+  let carol: DidString
   let post: { uri: string; cid: string }
 
   const db = () => network.bsky.db.db
@@ -80,7 +81,7 @@ maybeDescribe('PARA repost policy (AppView)', () => {
     ])
 
     process.env.PARA_REPOSTS_ENABLED = '0'
-    await dropParaReposts(db())
+    await dropParaReposts(db() as unknown as Kysely<unknown>)
 
     expect(await repostRows()).toHaveLength(0)
     expect(await repostNotifs()).toHaveLength(0)

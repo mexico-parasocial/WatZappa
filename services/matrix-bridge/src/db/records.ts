@@ -73,3 +73,34 @@ export interface PushDelivery {
   receiptId: string | null
   createdAt: number
 }
+
+/**
+ * A request for a Matrix direct message. It holds the requester's MXID, which
+ * the requester consented to share with the recipient, only while pending:
+ * accepting hands it to the recipient once and blanks it; declining,
+ * cancelling or expiry delete the row.
+ */
+export interface DmRequest {
+  id: string
+  requesterDid: string
+  requesterMxid: string
+  recipientDid: string
+  createdAt: string
+  expiresAt: string
+}
+
+export type DmRequestStatus = 'pending' | 'accepted'
+
+/**
+ * What either party may see of a request: never the MXID. An accepted request
+ * stays (MXID removed) until it expires, so the requester knows an invite is
+ * coming and can recognise it by the id.
+ */
+export interface DmRequestSummary {
+  id: string
+  requesterDid: string
+  recipientDid: string
+  status: DmRequestStatus
+  createdAt: string
+  expiresAt: string
+}

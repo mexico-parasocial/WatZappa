@@ -1,0 +1,45 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.wikiPage",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A community wiki page or megathread shown in the community menu. The body may link to other pages as [[slug]] or [[slug|label]].",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "communityUri",
+          "kind",
+          "slug",
+          "title",
+          "body",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "communityUri": {"type": "string", "format": "at-uri"},
+          "kind": {
+            "type": "string",
+            "maxLength": 32,
+            "knownValues": ["page", "megathread"]
+          },
+          "slug": {"type": "string", "maxLength": 80},
+          "title": {"type": "string", "maxLength": 300},
+          "body": {"type": "string", "maxLength": 50000},
+          "threadUri": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "For megathreads: the post that hosts the discussion."
+          },
+          "pinned": {"type": "boolean"},
+          "sortOrder": {"type": "integer", "minimum": 0},
+          "createdBy": {"type": "string", "format": "did"},
+          "createdAt": {"type": "string", "format": "datetime"},
+          "updatedAt": {"type": "string", "format": "datetime"}
+        }
+      }
+    }
+  }
+}

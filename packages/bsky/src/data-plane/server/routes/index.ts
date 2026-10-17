@@ -11,6 +11,7 @@ import briefingPack from './briefing-pack.js'
 import cabildeo from './cabildeo.js'
 import civicTree from './civic-tree.js'
 import collections from './collections.js'
+import communityActivities from './community-activities.js'
 import communityCivicTree from './community-civic-tree.js'
 import community from './community.js'
 import discourse from './discourse.js'
@@ -88,6 +89,7 @@ export default (db: Database, idResolver: IdResolver) =>
         ...cabildeo(db),
         ...collections(db),
         ...community(db),
+        ...communityActivities(db),
         ...civicTree(db),
         ...communityCivicTree(db),
         ...discourse(db),

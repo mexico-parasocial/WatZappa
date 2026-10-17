@@ -9,7 +9,12 @@ import type {
   SyncLogEntry,
   UserPushToken,
 } from './pg/index.js'
-import type { BridgeEvent, PushDelivery } from './records.js'
+import type {
+  BridgeEvent,
+  DmRequest,
+  DmRequestSummary,
+  PushDelivery,
+} from './records.js'
 import { BridgeDatabase } from './sqlite/index.js'
 
 /**
@@ -684,6 +689,45 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
 
   setChatPreferences(did: string, showChatBadges: boolean): Promise<void> {
     return this.wrap(() => this.inner.setChatPreferences(did, showChatBadges))
+  }
+
+  upsertDmRequest(
+    request: DmRequest,
+    now: string,
+  ): Promise<{ id: string; expiresAt: string; created: boolean }> {
+    return this.wrap(() => this.inner.upsertDmRequest(request, now))
+  }
+
+  countPendingDmRequestsFrom(
+    requesterDid: string,
+    now: string,
+  ): Promise<number> {
+    return this.wrap(() =>
+      this.inner.countPendingDmRequestsFrom(requesterDid, now),
+    )
+  }
+
+  listDmRequests(
+    did: string,
+    now: string,
+  ): Promise<{ incoming: DmRequestSummary[]; outgoing: DmRequestSummary[] }> {
+    return this.wrap(() => this.inner.listDmRequests(did, now))
+  }
+
+  takeDmRequest(
+    id: string,
+    recipientDid: string,
+    now: string,
+  ): Promise<{ requesterDid: string; requesterMxid: string } | undefined> {
+    return this.wrap(() => this.inner.takeDmRequest(id, recipientDid, now))
+  }
+
+  deleteDmRequest(id: string, did: string): Promise<boolean> {
+    return this.wrap(() => this.inner.deleteDmRequest(id, did))
+  }
+
+  purgeExpiredDmRequests(now: string): Promise<number> {
+    return this.wrap(() => this.inner.purgeExpiredDmRequests(now))
   }
 
   getAiConsent(did: string): Promise<AiConsentRecord> {

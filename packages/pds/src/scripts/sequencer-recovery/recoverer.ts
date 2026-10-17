@@ -267,6 +267,7 @@ const parseCommitEvt = async (
           rkey,
           record,
           validate: false,
+          replay: true,
         })
       } else {
         return prepareUpdate({
@@ -275,6 +276,7 @@ const parseCommitEvt = async (
           rkey,
           record,
           validate: false,
+          replay: true,
         })
       }
     }),

@@ -1,4 +1,11 @@
-import { TID } from '@atproto/common'
+import {
+  TID,
+  ballotWriteRefusal,
+  reactionWriteRefusal,
+  repostWriteRefusal,
+  verifyCabildeoDelegation,
+  verifyPublicBallotProof,
+} from '@atproto/common'
 import { RecordSchema, walk } from '@atproto/lex'
 import { encode } from '@atproto/lex-cbor'
 import {
@@ -27,11 +34,13 @@ import {
 import { hasExplicitSlur } from '../handle/explicit-slurs.js'
 import * as lexicons from '../lexicons/index.js'
 import {
+  BallotRefusedError,
   InvalidRecordError,
   type PreparedCreate,
   type PreparedDelete,
   type PreparedUpdate,
   type PreparedWrite,
+  UnsupportedRecordError,
   type ValidationStatus,
 } from './types.js'
 
@@ -97,6 +106,7 @@ export const prepareCreate = async (opts: {
   record: LexMap
   validate?: boolean
   validationPath?: (string | number)[]
+  replay?: boolean
 }): Promise<PreparedCreate> => {
   const { cid, uri, record, blobs, validationStatus } = await prepareWrite(opts)
 
@@ -119,6 +129,7 @@ export const prepareUpdate = async (opts: {
   record: LexMap
   validate?: boolean
   validationPath?: (string | number)[]
+  replay?: boolean
 }): Promise<PreparedUpdate> => {
   const { cid, uri, record, blobs, validationStatus } = await prepareWrite(opts)
 
@@ -140,6 +151,7 @@ async function prepareWrite(opts: {
   record: LexMap
   validate?: boolean
   validationPath?: (string | number)[]
+  replay?: boolean
 }): Promise<{
   record: TypedLexMap
   blobs: TypedBlobRef[]
@@ -147,6 +159,46 @@ async function prepareWrite(opts: {
   uri: AtUri
   cid: Cid
 }> {
+  // @NOTE deliberately ahead of, and independent of, validateRecord: `validate:
+  // false` waives schema checking, not the ballot policy. prepareDelete does not
+  // route through here, so removing an existing ballot stays possible. `replay`
+  // is the sole escape and belongs to sequencer recovery re-emitting history that
+  // was already committed — never set it from an XRPC handler.
+  if (!opts.replay) {
+    const refusal =
+      ballotWriteRefusal(opts.collection, opts.record) ??
+      reactionWriteRefusal(opts.collection, opts.record)
+    if (refusal) throw new BallotRefusedError(refusal)
+    const repostRefusal = repostWriteRefusal(opts.collection)
+    if (repostRefusal) throw new UnsupportedRecordError(repostRefusal)
+    if (opts.collection === 'com.para.civic.vote') {
+      try {
+        if (!(await verifyPublicBallotProof(opts.did, opts.record))) {
+          throw new BallotRefusedError('A valid civic vote proof is required')
+        }
+      } catch (error) {
+        if (error instanceof BallotRefusedError) throw error
+        throw new BallotRefusedError(
+          'Civic vote verification is unavailable; no vote was written',
+        )
+      }
+    }
+    if (opts.collection === 'com.para.civic.delegation') {
+      try {
+        if (!(await verifyCabildeoDelegation(opts.did, opts.record))) {
+          throw new BallotRefusedError(
+            'A valid civic delegation proof is required',
+          )
+        }
+      } catch (error) {
+        if (error instanceof BallotRefusedError) throw error
+        throw new BallotRefusedError(
+          'Civic delegation verification is unavailable; no delegation was written',
+        )
+      }
+    }
+  }
+
   const record: null | TypedLexMap =
     opts.record.$type === undefined
       ? { ...opts.record, $type: opts.collection }

@@ -110,3 +110,4 @@ export * as _20261004T120000000Z from './20261004T120000000Z-drop-self-declared-
 export * as _20261005T120000000Z from './20261005T120000000Z-reindex-para-community-governance.js'
 export * as _20261005T130000000Z from './20261005T130000000Z-revalidate-community-authority.js'
 export * as _20261013T120000000Z from './20261013T120000000Z-reference-list-opt-outs.js'
+export * as _20261016T120000000Z from './20261016T120000000Z-add-community-activities.js'

@@ -1,0 +1,180 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.economicActivity",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A community activity that moves money: a sale, a raffle, a fundraiser. The business model (financialPlan) and the pricing terms in `details` are committed before publishing; ledger entries pin a digest of both, so later changes are publicly detectable.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "communityUri",
+          "title",
+          "startsAt",
+          "status",
+          "details",
+          "financialPlan",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "communityUri": {"type": "string", "format": "at-uri"},
+          "title": {"type": "string", "maxLength": 300},
+          "description": {"type": "string", "maxLength": 5000},
+          "startsAt": {"type": "string", "format": "datetime"},
+          "endsAt": {"type": "string", "format": "datetime"},
+          "location": {"type": "string", "maxLength": 300},
+          "status": {
+            "type": "string",
+            "maxLength": 32,
+            "knownValues": ["planned", "active", "completed", "cancelled"]
+          },
+          "details": {
+            "type": "union",
+            "refs": ["#sale", "#raffle", "#fundraiser"]
+          },
+          "financialPlan": {"type": "ref", "ref": "#financialPlan"},
+          "links": {
+            "type": "array",
+            "items": {"type": "string", "format": "uri"},
+            "maxLength": 20
+          },
+          "createdBy": {"type": "string", "format": "did"},
+          "createdAt": {"type": "string", "format": "datetime"},
+          "updatedAt": {"type": "string", "format": "datetime"}
+        }
+      }
+    },
+    "sale": {
+      "type": "object",
+      "required": ["items", "channel"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "minLength": 1,
+          "maxLength": 50,
+          "items": {"type": "ref", "ref": "#saleItem"}
+        },
+        "channel": {
+          "type": "string",
+          "maxLength": 32,
+          "knownValues": ["in_person", "online", "mixed"]
+        }
+      }
+    },
+    "saleItem": {
+      "type": "object",
+      "required": ["name", "unitPriceMinor"],
+      "properties": {
+        "name": {"type": "string", "maxLength": 120},
+        "unitPriceMinor": {"type": "integer", "minimum": 0},
+        "quantityAvailable": {"type": "integer", "minimum": 0}
+      }
+    },
+    "raffle": {
+      "type": "object",
+      "required": [
+        "ticketPriceMinor",
+        "ticketsAvailable",
+        "prizes",
+        "drawAt",
+        "drawMethod"
+      ],
+      "properties": {
+        "ticketPriceMinor": {"type": "integer", "minimum": 0},
+        "ticketsAvailable": {"type": "integer", "minimum": 1},
+        "prizes": {
+          "type": "array",
+          "minLength": 1,
+          "maxLength": 20,
+          "items": {"type": "ref", "ref": "#prize"}
+        },
+        "drawAt": {"type": "string", "format": "datetime"},
+        "drawMethod": {"type": "string", "maxLength": 1000},
+        "permitReference": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Authorization number for the raffle where the law requires one."
+        },
+        "winningTickets": {
+          "type": "array",
+          "description": "Published after the draw; the only field of `details` excluded from the terms digest.",
+          "items": {"type": "string", "maxLength": 100},
+          "maxLength": 20
+        }
+      }
+    },
+    "prize": {
+      "type": "object",
+      "required": ["description"],
+      "properties": {
+        "description": {"type": "string", "maxLength": 300},
+        "estimatedValueMinor": {"type": "integer", "minimum": 0}
+      }
+    },
+    "fundraiser": {
+      "type": "object",
+      "required": ["purpose"],
+      "properties": {
+        "purpose": {"type": "string", "maxLength": 1000},
+        "beneficiary": {"type": "string", "maxLength": 300},
+        "suggestedDonationMinor": {"type": "integer", "minimum": 0},
+        "donationChannels": {
+          "type": "array",
+          "description": "Public ways to give, e.g. the organization's account or a collection box location.",
+          "items": {"type": "string", "maxLength": 300},
+          "maxLength": 10
+        }
+      }
+    },
+    "financialPlan": {
+      "type": "object",
+      "description": "Where the money goes, committed before any money moves. Amounts are integers in the currency's minor unit (e.g. centavos).",
+      "required": ["currency", "allocationBase", "allocations", "committedAt"],
+      "properties": {
+        "currency": {"type": "string", "minLength": 3, "maxLength": 3},
+        "allocationBase": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Whether allocation shares apply to net proceeds (income minus expenses) or to gross income.",
+          "knownValues": ["net_proceeds", "gross_income"]
+        },
+        "fundingGoalMinor": {"type": "integer", "minimum": 0},
+        "expenseBudgetMinor": {"type": "integer", "minimum": 0},
+        "allocations": {
+          "type": "array",
+          "minLength": 1,
+          "maxLength": 10,
+          "items": {"type": "ref", "ref": "#allocation"}
+        },
+        "committedAt": {"type": "string", "format": "datetime"}
+      }
+    },
+    "allocation": {
+      "type": "object",
+      "required": ["recipient", "label", "shareBps"],
+      "properties": {
+        "recipient": {
+          "type": "string",
+          "maxLength": 32,
+          "knownValues": [
+            "community",
+            "party",
+            "cause",
+            "organizers",
+            "reinvestment"
+          ]
+        },
+        "label": {"type": "string", "maxLength": 120},
+        "shareBps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000,
+          "description": "Share in basis points; all allocations must sum to 10000."
+        }
+      }
+    }
+  }
+}

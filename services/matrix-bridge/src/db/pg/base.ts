@@ -295,6 +295,20 @@ export class PgBase {
       CREATE INDEX IF NOT EXISTS idx_badges_did_community ON chat_user_badges(did, community_uri);
       CREATE INDEX IF NOT EXISTS idx_badges_expires ON chat_user_badges(expires_at);
 
+      -- Pending Matrix DM requests (see db/records.ts DmRequest).
+      CREATE TABLE IF NOT EXISTS dm_requests (
+        id TEXT PRIMARY KEY,
+        requester_did TEXT NOT NULL,
+        requester_mxid TEXT NOT NULL,
+        -- 'pending' | 'accepted'. Accepting blanks requester_mxid.
+        status TEXT NOT NULL DEFAULT 'pending',
+        recipient_did TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        UNIQUE (requester_did, recipient_did)
+      );
+      CREATE INDEX IF NOT EXISTS idx_dm_requests_recipient ON dm_requests (recipient_did);
+
       CREATE TABLE IF NOT EXISTS user_chat_preferences (
         did TEXT PRIMARY KEY,
         show_chat_badges INTEGER NOT NULL DEFAULT 0,

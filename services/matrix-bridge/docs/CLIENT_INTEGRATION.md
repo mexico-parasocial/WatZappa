@@ -262,6 +262,36 @@ next `membership.changed` for the caller's DID.
   open the room via the Matrix client.
 - Sortition push data payload: `{ type: "sortition_selected", runId, cabildeoUri, communityUri }`.
 
+## 4.1 Direct messages by consent
+
+The homeserver cannot name the Matrix account behind a DID, so a DM starts as
+a request. All four endpoints take the M8 bearer token.
+
+1. **Ask** — `POST /api/matrix-challenge`, have iM8 sign it with audience
+   `para-matrix-bridge/dm.v1` (iM8 shows it as sharing your chat identity),
+   then `POST /api/dm-requests` `{ recipientDid, assertion, signature }` (or the
+   SignedAssertion nested under `assertion`) →
+   `201 { id, expiresAt }` (`200` refreshes an existing request to the same
+   recipient). `429 TOO_MANY_PENDING_DM_REQUESTS` past 20 pending.
+2. **List** — `GET /api/dm-requests` → `{ incoming: [{ id, requesterDid,
+   createdAt, expiresAt }], outgoing: [{ id, recipientDid, status,
+   createdAt, expiresAt }] }`. No MXIDs. Incoming lists pending requests only;
+   outgoing shows the caller's own as `pending` or `accepted`.
+3. **Accept** (recipient only) — `POST /api/dm-requests/accept` `{ id }` →
+   `{ requesterDid, requesterMxid }`, once; the request becomes `accepted`
+   with the MXID blanked. The recipient's client then creates the encrypted
+   direct room (`is_direct`, `m.room.encryption`), invites `requesterMxid`
+   and sends, encrypted, `com.para.dm.intro` `{ requestId, did }`.
+4. **Recognise the invite** (requester) — join only invites while it has an
+   `accepted` request; keep the room if its intro carries that request's id
+   and its recipient's DID, otherwise leave. Anyone sharing a community room
+   can see an MXID, so an invite alone proves nothing.
+5. **Decline / cancel / dismiss** — `POST /api/dm-requests/decline` `{ id }`,
+   by the recipient (pending) or the requester (pending or accepted). Returns
+   nothing about the other party.
+
+Requests expire after 14 days.
+
 ## 5. Institutions and identity links
 
 - `POST /api/institutions` authenticates M8 and returns 201 `{ institutionId }`

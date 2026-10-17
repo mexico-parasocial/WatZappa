@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, expect, it } from 'vitest'
 import { TestNetwork, seedDemoMemes } from '@atproto/dev-env'
 import { Client } from '@atproto/lex'
+import type { AtUriString } from '@atproto/syntax'
 import { app, com } from '../../src/lexicons/index.js'
 
 let network: TestNetwork
@@ -47,7 +48,9 @@ it('does not discard normal Bluesky posts when hydrating PARA posts', async () =
   await agent.login({ identifier: 'memes.test', password: 'memes-password' })
   const { uri } = await agent.post({ text: 'A normal post' })
   await network.processAll()
-  const result = await client.call(app.bsky.feed.getPosts, { uris: [uri] })
+  const result = await client.call(app.bsky.feed.getPosts, {
+    uris: [uri as AtUriString],
+  })
   expect(result.posts).toHaveLength(1)
   expect(app.bsky.feed.post.$matches(result.posts[0].record)).toBe(true)
 })

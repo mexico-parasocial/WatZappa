@@ -1,13 +1,9 @@
 /* eslint-env node */
 
-'use strict'
-
-const assert = require('node:assert')
-const cluster = require('node:cluster')
-const path = require('node:path')
-
-const { BskyAppView, ServerConfig } = require('@atproto/bsky')
-const { Secp256k1Keypair } = require('@atproto/crypto')
+import assert from 'node:assert'
+import cluster from 'node:cluster'
+import { BskyAppView, ServerConfig } from '@atproto/bsky'
+import { Secp256k1Keypair } from '@atproto/crypto'
 
 const main = async () => {
   const env = getEnv()

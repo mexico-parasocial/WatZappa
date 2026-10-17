@@ -1,5 +1,6 @@
 export * from './client.js'
 export * from './para-checkpoints.js'
+export * from './para-community-activities.js'
 export * from './para-factory.js'
 
 export { default as authorFeedSeed } from './author-feed.js'
