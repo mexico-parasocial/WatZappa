@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, expect, test } from 'vitest'
 import { parseCid } from '@atproto/lex-data'
 import { lexValue } from './lex-value.js'

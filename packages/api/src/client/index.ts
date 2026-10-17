@@ -102,6 +102,7 @@ import * as AppBskyGraphListitem from './types/app/bsky/graph/listitem.js'
 import * as AppBskyGraphMuteActor from './types/app/bsky/graph/muteActor.js'
 import * as AppBskyGraphMuteActorList from './types/app/bsky/graph/muteActorList.js'
 import * as AppBskyGraphMuteThread from './types/app/bsky/graph/muteThread.js'
+import * as AppBskyGraphReferencelistoptout from './types/app/bsky/graph/referencelistoptout.js'
 import * as AppBskyGraphSearchStarterPacks from './types/app/bsky/graph/searchStarterPacks.js'
 import * as AppBskyGraphSearchStarterPacksV2 from './types/app/bsky/graph/searchStarterPacksV2.js'
 import * as AppBskyGraphStarterpack from './types/app/bsky/graph/starterpack.js'
@@ -361,6 +362,7 @@ import * as ComParaCivicDefs from './types/com/para/civic/defs.js'
 import * as ComParaCivicDelegation from './types/com/para/civic/delegation.js'
 import * as ComParaCivicGetCabildeo from './types/com/para/civic/getCabildeo.js'
 import * as ComParaCivicGetOpenQuestionThread from './types/com/para/civic/getOpenQuestionThread.js'
+import * as ComParaCivicGetPolicyCommunityVotes from './types/com/para/civic/getPolicyCommunityVotes.js'
 import * as ComParaCivicGetPolicyTally from './types/com/para/civic/getPolicyTally.js'
 import * as ComParaCivicListCabildeoPositions from './types/com/para/civic/listCabildeoPositions.js'
 import * as ComParaCivicListCabildeos from './types/com/para/civic/listCabildeos.js'
@@ -652,6 +654,7 @@ export * as AppBskyGraphListitem from './types/app/bsky/graph/listitem.js'
 export * as AppBskyGraphMuteActor from './types/app/bsky/graph/muteActor.js'
 export * as AppBskyGraphMuteActorList from './types/app/bsky/graph/muteActorList.js'
 export * as AppBskyGraphMuteThread from './types/app/bsky/graph/muteThread.js'
+export * as AppBskyGraphReferencelistoptout from './types/app/bsky/graph/referencelistoptout.js'
 export * as AppBskyGraphSearchStarterPacks from './types/app/bsky/graph/searchStarterPacks.js'
 export * as AppBskyGraphSearchStarterPacksV2 from './types/app/bsky/graph/searchStarterPacksV2.js'
 export * as AppBskyGraphStarterpack from './types/app/bsky/graph/starterpack.js'
@@ -911,6 +914,7 @@ export * as ComParaCivicDefs from './types/com/para/civic/defs.js'
 export * as ComParaCivicDelegation from './types/com/para/civic/delegation.js'
 export * as ComParaCivicGetCabildeo from './types/com/para/civic/getCabildeo.js'
 export * as ComParaCivicGetOpenQuestionThread from './types/com/para/civic/getOpenQuestionThread.js'
+export * as ComParaCivicGetPolicyCommunityVotes from './types/com/para/civic/getPolicyCommunityVotes.js'
 export * as ComParaCivicGetPolicyTally from './types/com/para/civic/getPolicyTally.js'
 export * as ComParaCivicListCabildeoPositions from './types/com/para/civic/listCabildeoPositions.js'
 export * as ComParaCivicListCabildeos from './types/com/para/civic/listCabildeos.js'
@@ -2584,6 +2588,7 @@ export class AppBskyGraphNS {
   list: AppBskyGraphListRecord
   listblock: AppBskyGraphListblockRecord
   listitem: AppBskyGraphListitemRecord
+  referencelistoptout: AppBskyGraphReferencelistoptoutRecord
   starterpack: AppBskyGraphStarterpackRecord
   verification: AppBskyGraphVerificationRecord
 
@@ -2594,6 +2599,7 @@ export class AppBskyGraphNS {
     this.list = new AppBskyGraphListRecord(client)
     this.listblock = new AppBskyGraphListblockRecord(client)
     this.listitem = new AppBskyGraphListitemRecord(client)
+    this.referencelistoptout = new AppBskyGraphReferencelistoptoutRecord(client)
     this.starterpack = new AppBskyGraphStarterpackRecord(client)
     this.verification = new AppBskyGraphVerificationRecord(client)
   }
@@ -3250,6 +3256,89 @@ export class AppBskyGraphListitemRecord {
       'com.atproto.repo.deleteRecord',
       undefined,
       { collection: 'app.bsky.graph.listitem', ...params },
+      { headers },
+    )
+  }
+}
+
+export class AppBskyGraphReferencelistoptoutRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: AppBskyGraphReferencelistoptout.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'app.bsky.graph.referencelistoptout',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: AppBskyGraphReferencelistoptout.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'app.bsky.graph.referencelistoptout',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<AppBskyGraphReferencelistoptout.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'app.bsky.graph.referencelistoptout'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<AppBskyGraphReferencelistoptout.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'app.bsky.graph.referencelistoptout'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'app.bsky.graph.referencelistoptout', ...params },
       { headers },
     )
   }
@@ -6725,6 +6814,17 @@ export class ComParaCivicNS {
       .call('com.para.civic.getOpenQuestionThread', params, undefined, opts)
       .catch((e) => {
         throw ComParaCivicGetOpenQuestionThread.toKnownErr(e)
+      })
+  }
+
+  getPolicyCommunityVotes(
+    params?: ComParaCivicGetPolicyCommunityVotes.QueryParams,
+    opts?: ComParaCivicGetPolicyCommunityVotes.CallOptions,
+  ): Promise<ComParaCivicGetPolicyCommunityVotes.Response> {
+    return this._client
+      .call('com.para.civic.getPolicyCommunityVotes', params, undefined, opts)
+      .catch((e) => {
+        throw ComParaCivicGetPolicyCommunityVotes.toKnownErr(e)
       })
   }
 

@@ -447,7 +447,7 @@
             "title": "Tandeo y acceso al agua",
             "sourceRef": "tandeo",
             "flairId": "matter_industria_hidrica",
-            "policyCategory": "||#IndustriaHidrica"
+            "policyCategory": "|#IndustriaHidrica"
           }
         ],
         "relations": [
@@ -580,7 +580,7 @@
             "title": "Emisiones y congestión del corredor",
             "sourceRef": "aire",
             "flairId": "matter_emisiones_co2",
-            "policyCategory": "||#EmisionesCO2"
+            "policyCategory": "|#EmisionesCO2"
           }
         ],
         "relations": [
@@ -707,7 +707,7 @@
             "title": "Bacheo pendiente en la calle Hidalgo",
             "sourceRef": "bache",
             "flairId": "matter_corrupcion",
-            "policyCategory": "||#Corrupcion"
+            "policyCategory": "|#Corrupción"
           }
         ],
         "relations": [
@@ -797,6 +797,16 @@
           "content": "Reducción, reciclaje y quién paga los costos.",
           "metadata": {
             "flairId": "policy_impuesto_plastico"
+          }
+        },
+        {
+          "key": "t-hidrica",
+          "author": "gabriela.test",
+          "sourceType": "topic",
+          "title": "Industria hídrica y tandeo",
+          "content": "Quién opera la red, con qué infraestructura y con qué horarios de servicio.",
+          "metadata": {
+            "flairId": "matter_industria_hidrica"
           }
         },
         {
@@ -984,6 +994,30 @@
           "to": "t-agua",
           "type": "references",
           "author": "fernando.test"
+        },
+        {
+          "from": "source-tandeo",
+          "to": "t-hidrica",
+          "type": "references",
+          "author": "hector.test"
+        },
+        {
+          "from": "source-agua",
+          "to": "t-hidrica",
+          "type": "references",
+          "author": "gabriela.test"
+        },
+        {
+          "from": "research-inegi",
+          "to": "t-hidrica",
+          "type": "helpful",
+          "author": "isabel.test"
+        },
+        {
+          "from": "claim-captacion",
+          "to": "t-hidrica",
+          "type": "addresses",
+          "author": "fernando.test"
         }
       ]
     },
@@ -1018,6 +1052,16 @@
           "content": "Ciclovías, estacionamiento de bicis y seguridad vial.",
           "metadata": {
             "flairId": "matter_congestion_trafico"
+          }
+        },
+        {
+          "key": "t-emisiones",
+          "author": "sofia.test",
+          "sourceType": "topic",
+          "title": "Emisiones de CO2 del corredor",
+          "content": "Cuánto emite el corredor hoy y cómo medir el cambio.",
+          "metadata": {
+            "flairId": "matter_emisiones_co2"
           }
         },
         {
@@ -1199,6 +1243,24 @@
           "to": "t-transporte",
           "type": "references",
           "author": "jorge.test"
+        },
+        {
+          "from": "source-aire",
+          "to": "t-emisiones",
+          "type": "references",
+          "author": "sofia.test"
+        },
+        {
+          "from": "source-bus",
+          "to": "t-emisiones",
+          "type": "references",
+          "author": "jorge.test"
+        },
+        {
+          "from": "research-itdp",
+          "to": "t-emisiones",
+          "type": "helpful",
+          "author": "jorge.test"
         }
       ]
     }
@@ -1211,6 +1273,7 @@
       "title": "Captación de lluvia en escuelas",
       "text": "Proponemos instalar captación de lluvia en tres escuelas. El piloto debe publicar costos, litros recuperados y mantenimiento.",
       "flair": "||#EmpresaPublicaDeAgua",
+      "matter": "|#IndustriaHidrica",
       "createdAt": "2026-09-30T10:00:00.000Z"
     },
     {
@@ -1219,7 +1282,7 @@
       "postType": "matter",
       "title": "Tandeo y acceso al agua",
       "text": "El calendario de tandeo afecta a las familias del centro. Necesitamos datos por colonia antes de priorizar inversiones.",
-      "flair": "||#IndustriaHidrica",
+      "flair": "|#IndustriaHidrica",
       "createdAt": "2026-09-30T10:05:00.000Z"
     },
     {
@@ -1229,6 +1292,7 @@
       "title": "Carril exclusivo de transporte público",
       "text": "Proponemos un carril exclusivo con paradas accesibles. El piloto medirá tiempos de viaje y acceso a los comercios.",
       "flair": "||#TransportePublico",
+      "matter": "|#CarrilBus",
       "createdAt": "2026-09-30T10:10:00.000Z"
     },
     {
@@ -1237,7 +1301,7 @@
       "postType": "matter",
       "title": "Emisiones y congestión del corredor",
       "text": "Comparemos emisiones y congestión antes y después del carril bus. Los datos deben incluir las horas de mayor tráfico.",
-      "flair": "||#EmisionesCO2",
+      "flair": "|#EmisionesCO2",
       "createdAt": "2026-09-30T10:15:00.000Z"
     },
     {
@@ -1247,6 +1311,7 @@
       "title": "Seguimiento público del presupuesto vecinal",
       "text": "Proponemos publicar contratos y avances del presupuesto vecinal. Cada obra debe tener un responsable y un calendario visible.",
       "flair": "||#TransparenciaFiscal",
+      "matter": "|#TransparenciaFiscal",
       "createdAt": "2026-09-30T10:20:00.000Z"
     },
     {
@@ -1255,7 +1320,7 @@
       "postType": "matter",
       "title": "Bacheo pendiente en la calle Hidalgo",
       "text": "El bache de la calle Hidalgo sigue pendiente. Reunamos fotografías y reportes para revisar el presupuesto de mantenimiento.",
-      "flair": "||#Corrupcion",
+      "flair": "|#Corrupción",
       "createdAt": "2026-09-30T10:25:00.000Z"
     }
   ],

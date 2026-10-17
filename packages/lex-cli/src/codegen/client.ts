@@ -1,7 +1,7 @@
 import {
   IndentationText,
   Project,
-  SourceFile,
+  type SourceFile,
   VariableDeclarationKind,
 } from 'ts-morph'
 import { type LexRecord, type LexiconDoc, Lexicons } from '@atproto/lexicon'
@@ -451,7 +451,7 @@ const lexiconTs = (
           moduleSpecifier: '@atproto/xrpc',
         })
         xrpcImport.addNamedImports([
-          { name: 'HeadersMap' },
+          { name: 'HeadersMap', isTypeOnly: true },
           { name: 'XRPCError' },
         ])
       }
@@ -472,6 +472,8 @@ const lexiconTs = (
             continue
           } else if (def.type === 'record') {
             genRecord(file, imports, lexicons, lexUri)
+          } else if (def.type === 'permission-set') {
+            continue
           } else {
             genUserType(file, imports, lexicons, lexUri)
           }

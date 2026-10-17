@@ -1,5 +1,133 @@
 # @atproto/oauth-client-browser
 
+## 0.5.10
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto-labs/did-resolver@0.3.11
+  - @atproto/oauth-client@0.8.10
+
+## 0.5.9
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.8.9
+
+## 0.5.8
+
+### Patch Changes
+
+- Updated dependencies [[`5019f55`](https://github.com/bluesky-social/atproto/commit/5019f5537317ee75ad4527db212bc27c3085fe67)]:
+  - @atproto/did@0.5.6
+  - @atproto-labs/did-resolver@0.3.10
+  - @atproto-labs/handle-resolver@0.4.10
+  - @atproto/oauth-client@0.8.8
+  - @atproto/oauth-types@0.7.7
+
+## 0.5.7
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto-labs/did-resolver@0.3.9
+  - @atproto/oauth-client@0.8.7
+
+## 0.5.6
+
+### Patch Changes
+
+- Updated dependencies [[`fe4087e`](https://github.com/bluesky-social/atproto/commit/fe4087ecb7a7cc53c7081c9f97d49121e5251c36)]:
+  - @atproto/did@0.5.5
+  - @atproto-labs/did-resolver@0.3.8
+  - @atproto-labs/handle-resolver@0.4.9
+  - @atproto/oauth-client@0.8.6
+  - @atproto/oauth-types@0.7.6
+
+## 0.5.5
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.8.5
+
+## 0.5.4
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.8.4
+
+## 0.5.3
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.8.3
+
+## 0.5.2
+
+### Patch Changes
+
+- Updated dependencies [[`6a3d607`](https://github.com/bluesky-social/atproto/commit/6a3d6073cb66c527b5b109242049c85c36b9658c)]:
+  - @atproto-labs/handle-resolver@0.4.8
+  - @atproto-labs/simple-store@0.5.1
+  - @atproto/oauth-client@0.8.2
+  - @atproto-labs/did-resolver@0.3.7
+
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.8.1
+
+## 0.5.0
+
+### Minor Changes
+
+- [#5266](https://github.com/bluesky-social/atproto/pull/5266) [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a) Thanks [@matthieusieben](https://github.com/matthieusieben)! - **BREAKING:** The session hooks exposed on `BrowserOAuthClientOptions` have been renamed: `onUpdate` → `onSessionUpdated` and `onDelete` → `onSessionDeleted` (following the rename in `@atproto/oauth-client`).
+
+### Patch Changes
+
+- Updated dependencies [[`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a), [`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a)]:
+  - @atproto/oauth-client@0.8.0
+  - @atproto-labs/handle-resolver@0.4.7
+  - @atproto-labs/simple-store@0.5.0
+  - @atproto-labs/did-resolver@0.3.6
+
+## 0.4.9
+
+### Patch Changes
+
+- Updated dependencies [[`ce386ee`](https://github.com/bluesky-social/atproto/commit/ce386eed324f813601db57f873fbb3b987492001)]:
+  - @atproto-labs/handle-resolver@0.4.6
+  - @atproto/oauth-client@0.7.11
+
+## 0.4.8
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-client@0.7.10
+
+## 0.4.7
+
+### Patch Changes
+
+- [#5197](https://github.com/bluesky-social/atproto/pull/5197) [`a0c49d9`](https://github.com/bluesky-social/atproto/commit/a0c49d9e8bc685c5a747a8d3b2775c73c63fdb6f) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Rewrite import statements to be compatible with TypeScript's `verbatimModuleSyntax` config.
+
+- Updated dependencies [[`a0c49d9`](https://github.com/bluesky-social/atproto/commit/a0c49d9e8bc685c5a747a8d3b2775c73c63fdb6f)]:
+  - @atproto-labs/handle-resolver@0.4.5
+  - @atproto-labs/did-resolver@0.3.5
+  - @atproto-labs/simple-store@0.4.4
+  - @atproto/jwk-webcrypto@0.3.4
+  - @atproto/oauth-client@0.7.9
+  - @atproto/oauth-types@0.7.5
+  - @atproto/jwk@0.7.4
+  - @atproto/did@0.5.4
+
 ## 0.4.6
 
 ### Patch Changes

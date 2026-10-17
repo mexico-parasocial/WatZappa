@@ -1,6 +1,30 @@
-import type { SyncLogEntry, UserPushToken } from '../records.js'
+import type { PushDelivery, SyncLogEntry, UserPushToken } from '../records.js'
 
 export interface InfraStore {
+  claimPushDelivery(
+    id: string,
+    token: string,
+    owner: string,
+    now: number,
+  ): Promise<boolean>
+  getPushDelivery(id: string): Promise<PushDelivery | undefined>
+  completePushDelivery(
+    id: string,
+    owner: string,
+    receiptId: string | null,
+    rejected: boolean,
+    now: number,
+  ): Promise<void>
+  releasePushDelivery(id: string, owner: string): Promise<void>
+  getPendingPushReceipts(now: number): Promise<PushDelivery[]>
+  resolvePushReceipt(
+    id: string,
+    state: 'provider_accepted' | 'rejected' | 'failed' | 'submitted',
+    error: string | null,
+    now: number,
+  ): Promise<void>
+  prunePushDeliveries(before: number): Promise<void>
+
   logSync(
     eventType: string,
     communityUri: string,

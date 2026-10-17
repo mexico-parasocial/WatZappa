@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals'
-import { Selectable } from 'kysely'
-import { AtpAgent } from '@atproto/api'
+import type { Selectable } from 'kysely'
+import type { AtpAgent } from '@atproto/api'
 import { fileExists } from '@atproto/common'
 import {
   type Account as SeedAccount,
@@ -8,15 +8,15 @@ import {
   TestNetworkNoAppView,
 } from '@atproto/dev-env'
 import { BlobNotFoundError } from '@atproto/repo'
-import {
+import type {
   Account,
   AppPassword,
   EmailToken,
   RefreshToken,
   RepoRoot,
 } from '../src/account-manager/db/index.js'
-import { AppContext } from '../src/index.js'
-import { RepoSeq } from '../src/sequencer/db/index.js'
+import type { AppContext } from '../src/index.js'
+import type { RepoSeq } from '../src/sequencer/db/index.js'
 import basicSeed from './seeds/basic.js'
 
 describe('account deletion', () => {
@@ -200,6 +200,7 @@ describe('account deletion', () => {
 
   it('can delete an empty user', async () => {
     using sendAccountDeleteMock = jest.spyOn(ctx.mailer, 'sendAccountDelete')
+
     const eve = await sc.createAccount('eve', {
       handle: 'eve.test',
       email: 'eve@test.com',
@@ -212,7 +213,6 @@ describe('account deletion', () => {
 
     expect(sendAccountDeleteMock).toHaveBeenCalledTimes(1)
     const [params] = sendAccountDeleteMock.mock.lastCall!
-
 
     await agent.api.com.atproto.server.deleteAccount({
       token: params.token,

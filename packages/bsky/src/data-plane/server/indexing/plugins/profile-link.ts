@@ -40,7 +40,7 @@ const notifsForDelete = () => {
 export type PluginType = ReturnType<typeof makePlugin>
 export const makePlugin = (
   db: Database,
-  background: BackgroundQueue<Database>,
+  background: BackgroundQueue,
 ) => {
   return new RecordProcessor(db, background, {
     schema: app.bsky.actor.link.main,

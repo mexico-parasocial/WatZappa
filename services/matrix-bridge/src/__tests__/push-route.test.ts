@@ -1,19 +1,22 @@
 import { createServer, request } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import pino from 'pino'
-import { afterEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { SqliteBridgeDatabase } from '../db/sqlite-wrapper.js'
 import type { RouteContext } from '../routes/context.js'
 import { matrixPushV1NotifyHandler } from '../routes/push.js'
 
-afterEach(() => vi.unstubAllGlobals())
+let db: SqliteBridgeDatabase
+beforeEach(() => {
+  db = new SqliteBridgeDatabase({ dbPath: ':memory:' } as never)
+})
+afterEach(async () => {
+  vi.unstubAllGlobals()
+  await db.close()
+})
 async function notify(notification: unknown) {
   const ctx = {
-    db: {
-      getCommunityByRoomId: async () => ({
-        communityUri: 'at://community',
-        slug: 'Community',
-      }),
-    },
+    db,
     log: pino({ level: 'silent' }),
   } as unknown as RouteContext
   const server = createServer((req, res) => {
@@ -52,6 +55,42 @@ async function notify(notification: unknown) {
   }
 }
 const devices = [{ app_id: 'com.para.app', pushkey: 'ExpoPushToken[test]' }]
+it('does not resend an accepted event, including after a partial provider failure', async () => {
+  const fetch = vi
+    .fn()
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          data: [
+            { status: 'ok', id: 'receipt' },
+            { status: 'error', details: { error: 'MessageRateExceeded' } },
+          ],
+        }),
+      ),
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ data: [{ status: 'ok', id: 'receipt-two' }] }),
+      ),
+    )
+  vi.stubGlobal('fetch', fetch)
+  const notification = {
+    devices: [
+      ...devices,
+      { app_id: 'com.para.app', pushkey: 'ExpoPushToken[second]' },
+    ],
+    event_id: '$event',
+    room_id: '!room',
+  }
+  expect((await notify(notification)).status).toBe(502)
+  expect((await notify(notification)).status).toBe(200)
+  expect(JSON.parse(fetch.mock.calls[1][1].body)).toHaveLength(1)
+  expect(JSON.parse(fetch.mock.calls[1][1].body)[0].to).toBe(
+    'ExpoPushToken[second]',
+  )
+  expect((await notify(notification)).status).toBe(200)
+  expect(fetch).toHaveBeenCalledTimes(2)
+})
 it('rejects invalid provider tokens without copying message content to Expo', async () => {
   const fetch = vi.fn().mockResolvedValue(
     new Response(

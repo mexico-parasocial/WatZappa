@@ -10,7 +10,7 @@ import {
 } from '@atproto/lexicon'
 import { type $Typed, is$typed, maybe$typed } from './util.js'
 
-export const schemaDict = {
+export const schemaDict: Record<string, LexiconDoc> = {
   AppBskyActorDefs: {
     lexicon: 1,
     id: 'app.bsky.actor.defs',
@@ -323,6 +323,13 @@ export const schemaDict = {
             type: 'string',
             format: 'uri',
             description: "Image URL for the destination site's icon.",
+          },
+          labels: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.label.defs#label',
+            },
           },
         },
       },
@@ -1160,6 +1167,11 @@ export const schemaDict = {
             createdAt: {
               type: 'string',
               format: 'datetime',
+            },
+            labels: {
+              type: 'union',
+              description: 'Self-label values for this link.',
+              refs: ['lex:com.atproto.label.defs#selfLabels'],
             },
           },
         },
@@ -3434,21 +3446,27 @@ export const schemaDict = {
       main: {
         type: 'query',
         description:
-          "Resolve one or more AT-URIs into the data needed to render an enhanced external embed. Returns `associatedRefs` (strongRefs to embed into a post's external.associatedRefs), the raw `associatedRecords`, and a hydrated `view`. The response is empty (`{}`) when no records were resolvable, or when validation determined the resolved records don't actually back the requested URL; clients should fall back to their own link-card rendering in that case and skip writing strongRefs to the post.",
+          "Resolve one AT-URI record into the data needed to render an enhanced external embed. The records are validated against the requested `url` before any view is built. When validation passes, returns `data`, `associatedRefs` (strongRefs to embed into a post's external.associatedRefs) and the raw `associatedRecords`, plus a legacy `view` for Standard.site records only. When validation fails, only `unverifiedAssociatedRefs` and `unverifiedAssociatedRecords` are returned and no view or data is built. The response is empty (`{}`) when no record URI was usable or the record could not be resolved; clients should fall back to their own link-card rendering in that case and skip writing strongRefs to the post.",
         parameters: {
           type: 'params',
-          required: ['url', 'uris'],
+          required: ['url'],
           properties: {
             url: {
               type: 'string',
               format: 'uri',
               description:
-                "The canonical web URL the embed represents (typically the URL the user pasted into the composer). Used as the returned view's `uri`. May be used for validation in the future.",
+                "The canonical web URL the embed represents (typically the URL the user pasted into the composer). Used as the returned view's `uri`, and validated against the resolved records.",
+            },
+            canonicalUri: {
+              type: 'string',
+              format: 'at-uri',
+              description:
+                'The canonical AT URI of the atproto record found on the webpage. When provided, takes precedence over `uris`, which is then ignored.',
             },
             uris: {
               type: 'array',
               description:
-                'AT-URIs of any Atmosphere records that can be resolved and used to construct #externalView views. Example: a site.standard.document and optionally its associated site.standard.publication.',
+                "Legacy input for Standard.site callers, ignored when `canonicalUri` is provided. A single record is selected from it: the first site.standard.document URI, otherwise the first site.standard.publication URI. Other entries are ignored; a document's publication is discovered from the document itself.",
               items: {
                 type: 'string',
                 format: 'at-uri',
@@ -3466,7 +3484,7 @@ export const schemaDict = {
                 type: 'ref',
                 ref: 'lex:app.bsky.embed.external#view',
                 description:
-                  'Hydrated view of the embed. Present only when the resolved records back the requested URL and supply enough information to populate the required `viewExternal` fields. Omitted alongside the rest of the response when no records resolved or validation failed.',
+                  'Legacy hydrated view of the embed, returned for Standard.site records only. Present only when validation passed and the records supply enough information to populate the required `viewExternal` fields.',
               },
               data: {
                 type: 'union',
@@ -3477,7 +3495,7 @@ export const schemaDict = {
                   'lex:app.bsky.embed.external#viewLivestream',
                 ],
                 description:
-                  'Preferred to #view. Hydrated data of the embed. Present only when the resolved records back the requested URL and supply enough information to populate the required fields. Omitted alongside the rest of the response when no records resolved or validation failed.',
+                  'Preferred to #view. Hydrated data of the embed. Present only when validation passed and the records supply enough information to populate the required fields.',
               },
               associatedRefs: {
                 type: 'array',
@@ -3486,14 +3504,31 @@ export const schemaDict = {
                   ref: 'lex:com.atproto.repo.strongRef',
                 },
                 description:
-                  "StrongRefs (URI+CID) of the Atmosphere records that backed this view, suitable for embedding into a post's external.associatedRefs.",
+                  'StrongRefs (URI+CID) of the Atmosphere records selected for persistence in a post, suitable for embedding into its external.associatedRefs: the canonical record, plus only the additional records the service chooses to persist for its collection. This can be a subset of the records used to render `data`, which may also draw on other hydrated records such as recommendations, subscriptions, or favorites. Present only when validation passed. Index-aligned with `associatedRecords`.',
               },
               associatedRecords: {
                 type: 'array',
                 items: {
                   type: 'unknown',
                   description:
-                    'The raw record data of the Atmosphere records that backed this view. This is returned for convenience, to avoid the need for the client to separately fetch the record data for the associatedRefs. Example: the site.standard.document and site.standard.publication records that backed this view.',
+                    'The raw record data of the Atmosphere records selected for persistence, index-aligned with `associatedRefs`. Returned for convenience, to avoid the client separately fetching them. Present only when validation passed.',
+                },
+              },
+              unverifiedAssociatedRefs: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.atproto.repo.strongRef',
+                },
+                description:
+                  'StrongRefs (URI+CID) of the same persistence-selected Atmosphere records (the canonical record plus chosen additional records) when validation of the requested `url` failed. These must not be written to a post. Index-aligned with `unverifiedAssociatedRecords`.',
+              },
+              unverifiedAssociatedRecords: {
+                type: 'array',
+                items: {
+                  type: 'unknown',
+                  description:
+                    'The raw record data of the persistence-selected Atmosphere records, index-aligned with `unverifiedAssociatedRefs`. Present only when validation failed.',
                 },
               },
             },
@@ -6292,6 +6327,12 @@ export const schemaDict = {
             type: 'ref',
             ref: 'lex:app.bsky.actor.defs#profileView',
           },
+          subjectOptedOut: {
+            type: 'boolean',
+            const: true,
+            description:
+              'Set to true when the subject has opted out of appearing in the reference list. Only set when the viewer owns the list.',
+          },
         },
       },
       starterPackView: {
@@ -6430,6 +6471,12 @@ export const schemaDict = {
           blocked: {
             type: 'string',
             format: 'at-uri',
+          },
+          referenceListOptOut: {
+            type: 'string',
+            format: 'at-uri',
+            description:
+              "The authenticated viewer's app.bsky.graph.referencelistoptout record URI for this reference list. Only set for reference lists. A client can delete this record to undo the opt-out.",
           },
         },
       },
@@ -7548,6 +7595,34 @@ export const schemaDict = {
       },
     },
   },
+  AppBskyGraphReferencelistoptout: {
+    lexicon: 1,
+    id: 'app.bsky.graph.referencelistoptout',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "Record requesting that its author be omitted from the public presentation of a reference list. This record is only enforced when the subject list's current purpose is app.bsky.graph.defs#referencelist. AppView indexes at most one record per actor and list pair, and ignores duplicate records.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['subject', 'createdAt'],
+          properties: {
+            subject: {
+              type: 'string',
+              format: 'at-uri',
+              description:
+                'Canonical, DID-based AT URI of the app.bsky.graph.list record from which the author requests omission.',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
   AppBskyGraphSearchStarterPacks: {
     lexicon: 1,
     id: 'app.bsky.graph.searchStarterPacks',
@@ -8318,12 +8393,12 @@ export const schemaDict = {
                 items: {
                   type: 'union',
                   refs: [
-                    'lex:app.bsky.actor.defs#profileViewDetailed',
+                    'lex:app.bsky.actor.defs#profileViewBasic',
                     'lex:app.bsky.feed.defs#blockedPost',
                     'lex:app.bsky.feed.defs#generatorView',
                     'lex:app.bsky.feed.defs#notFoundPost',
                     'lex:app.bsky.feed.defs#postView',
-                    'lex:app.bsky.graph.defs#starterPackView',
+                    'lex:app.bsky.graph.defs#starterPackViewBasic',
                   ],
                 },
               },
@@ -24609,6 +24684,144 @@ export const schemaDict = {
       },
     },
   },
+  ComParaCivicGetPolicyCommunityVotes: {
+    lexicon: 1,
+    id: 'com.para.civic.getPolicyCommunityVotes',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          "How the members of one community voted on a policy, from -3 to +3: who voted, how, and the community's average. The viewer must be an active member of that community.",
+        parameters: {
+          type: 'params',
+          required: ['post', 'community'],
+          properties: {
+            post: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'The policy post.',
+            },
+            community: {
+              type: 'string',
+              maxLength: 1024,
+              description: 'The community, as its board AT-URI or its slug.',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: [
+              'community',
+              'memberCount',
+              'voterCount',
+              'signalAverage',
+              'breakdown',
+              'votes',
+            ],
+            properties: {
+              community: {
+                type: 'ref',
+                ref: 'lex:com.para.civic.getPolicyCommunityVotes#communityRef',
+              },
+              memberCount: {
+                type: 'integer',
+                minimum: 0,
+                description: 'Active members of the community.',
+              },
+              voterCount: {
+                type: 'integer',
+                minimum: 0,
+                description: 'Members who voted on the policy.',
+              },
+              signalAverage: {
+                type: 'string',
+                maxLength: 32,
+                description:
+                  'Mean signal among those members, as a decimal string; "0" when nobody voted.',
+              },
+              breakdown: {
+                type: 'array',
+                maxLength: 7,
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.civic.defs#policySignalBucket',
+                },
+              },
+              votes: {
+                type: 'array',
+                description: 'The most recent votes, newest first.',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.civic.getPolicyCommunityVotes#memberVote',
+                },
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'NotFound',
+          },
+          {
+            name: 'CommunityMembershipRequired',
+          },
+        ],
+      },
+      communityRef: {
+        type: 'object',
+        required: ['uri', 'name'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          name: {
+            type: 'string',
+            maxLength: 200,
+          },
+        },
+      },
+      memberVote: {
+        type: 'object',
+        required: ['did', 'signal', 'createdAt'],
+        properties: {
+          did: {
+            type: 'string',
+            format: 'did',
+          },
+          handle: {
+            type: 'string',
+            maxLength: 253,
+          },
+          displayName: {
+            type: 'string',
+            maxLength: 640,
+          },
+          avatar: {
+            type: 'string',
+            format: 'uri',
+          },
+          signal: {
+            type: 'integer',
+            minimum: -3,
+            maximum: 3,
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+    },
+  },
   ComParaCivicGetPolicyTally: {
     lexicon: 1,
     id: 'com.para.civic.getPolicyTally',
@@ -34683,6 +34896,12 @@ export const schemaDict = {
             format: 'datetime',
             description: "When the appeal's report was closed.",
           },
+          outcome: {
+            type: 'string',
+            knownValues: ['approved', 'denied'],
+            description:
+              'Decision on a resolved appeal. Approved means its closing action reverses a takedown or removes a label; denied means no-action closure or an action that upholds enforcement. Omitted for unresolved appeals or historical closures without sufficient resolution data.',
+          },
           appealableUntil: {
             type: 'string',
             format: 'datetime',
@@ -34895,10 +35114,24 @@ export const schemaDict = {
       },
       notificationPreferences: {
         type: 'object',
-        required: ['push'],
+        description:
+          'Push notification preferences by moderation notification category. These preferences do not hide in-app inbox activity. Each category defaults to enabled.',
+        required: ['reports', 'account', 'labels'],
         properties: {
-          push: {
+          reports: {
             type: 'boolean',
+            description:
+              'Notify about outcomes of reports filed by the account (reportResolved and reportReopened).',
+          },
+          account: {
+            type: 'boolean',
+            description:
+              'Notify about moderation actions against the account or its content, action reversals, appeal outcomes, and standing changes. Label application and removal are controlled by labels.',
+          },
+          labels: {
+            type: 'boolean',
+            description:
+              'Notify when labels are applied to or removed from the account or its content (labelApplied and labelRemoved actions).',
           },
         },
       },
@@ -34928,6 +35161,12 @@ export const schemaDict = {
         type: 'object',
         required: ['subject'],
         properties: {
+          appealOutcome: {
+            type: 'string',
+            knownValues: ['approved', 'denied'],
+            description:
+              'Decision captured when an appealResolved notification was created. Omitted when the outcome is unknown.',
+          },
           subject: {
             type: 'union',
             refs: [
@@ -35072,6 +35311,8 @@ export const schemaDict = {
     defs: {
       main: {
         type: 'query',
+        description:
+          'Get moderation push notification preferences for report outcomes, account actions, and labeling. Returns all three categories, defaulting to enabled for an account without saved preferences.',
         parameters: {
           type: 'params',
           properties: {
@@ -35577,14 +35818,27 @@ export const schemaDict = {
     defs: {
       main: {
         type: 'procedure',
+        description:
+          "Update the authenticated account's moderation push notification preferences. Only provided categories are updated; omitted categories retain their values. At least one category must be provided. Returns all three preferences. These preferences do not hide in-app inbox activity.",
         input: {
           encoding: 'application/json',
           schema: {
             type: 'object',
-            required: ['push'],
             properties: {
-              push: {
+              reports: {
                 type: 'boolean',
+                description:
+                  'Notify about outcomes of reports filed by the account.',
+              },
+              account: {
+                type: 'boolean',
+                description:
+                  'Notify about moderation actions against the account or its content, excluding labeling.',
+              },
+              labels: {
+                type: 'boolean',
+                description:
+                  'Notify about labels applied to or removed from the account or its content.',
               },
             },
           },
@@ -42845,6 +43099,7 @@ export const ids = {
   AppBskyGraphMuteActor: 'app.bsky.graph.muteActor',
   AppBskyGraphMuteActorList: 'app.bsky.graph.muteActorList',
   AppBskyGraphMuteThread: 'app.bsky.graph.muteThread',
+  AppBskyGraphReferencelistoptout: 'app.bsky.graph.referencelistoptout',
   AppBskyGraphSearchStarterPacks: 'app.bsky.graph.searchStarterPacks',
   AppBskyGraphSearchStarterPacksV2: 'app.bsky.graph.searchStarterPacksV2',
   AppBskyGraphStarterpack: 'app.bsky.graph.starterpack',
@@ -43143,6 +43398,7 @@ export const ids = {
   ComParaCivicDelegation: 'com.para.civic.delegation',
   ComParaCivicGetCabildeo: 'com.para.civic.getCabildeo',
   ComParaCivicGetOpenQuestionThread: 'com.para.civic.getOpenQuestionThread',
+  ComParaCivicGetPolicyCommunityVotes: 'com.para.civic.getPolicyCommunityVotes',
   ComParaCivicGetPolicyTally: 'com.para.civic.getPolicyTally',
   ComParaCivicListCabildeoPositions: 'com.para.civic.listCabildeoPositions',
   ComParaCivicListCabildeos: 'com.para.civic.listCabildeos',

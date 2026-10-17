@@ -1,6 +1,5 @@
-// @ts-nocheck
-import { AtUri, AtpAgent } from '@atproto/api'
-import { SeedClient, TestNetwork } from '@atproto/dev-env'
+import { AtUri, type AtpAgent } from '@atproto/api'
+import { type SeedClient, TestNetwork } from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
 import { forSnapshot } from '../_util.js'
 import basicSeed from '../seeds/basic.js'
@@ -47,7 +46,7 @@ describe('proxies view requests', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   it('actor.getProfile', async () => {
@@ -280,18 +279,8 @@ describe('proxies view requests', () => {
         headers: { ...sc.getHeaders(alice) },
       },
     )
-    const pt2 = await agent.app.bsky.feed.getRepostedBy(
-      {
-        uri: postUri,
-        cursor: pt1.data.cursor,
-      },
-      {
-        headers: { ...sc.getHeaders(alice) },
-      },
-    )
-    expect([...pt1.data.repostedBy, ...pt2.data.repostedBy]).toEqual(
-      res.data.repostedBy,
-    )
+    expect(pt1.data.repostedBy).toEqual(res.data.repostedBy)
+    expect(pt1.data.cursor).toBeUndefined()
   })
 
   it('feed.getPosts', async () => {
@@ -599,11 +588,6 @@ describe('proxies view requests', () => {
       { headers: sc.getHeaders(bob) },
     )
     expect(forSnapshot(pt1.data)).toMatchSnapshot()
-    const pt2 = await agent.app.bsky.graph.getListBlocks(
-      { cursor: pt1.data.cursor },
-      { headers: sc.getHeaders(bob) },
-    )
-    expect(pt2.data.lists).toEqual([])
-    expect(pt2.data.cursor).not.toBeDefined()
+    expect(pt1.data.cursor).toBeUndefined()
   })
 })

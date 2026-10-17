@@ -1,1086 +1,754 @@
 import { Timestamp } from '@bufbuild/protobuf'
 import { createPromiseClient, createRouterTransport } from '@connectrpc/connect'
-import { assert, describe, expect, it, test, vi } from 'vitest'
-import { DAY, MINUTE, SECOND } from '@atproto/common'
-import {
-  type AtUriString,
-  type DatetimeString,
-  type DidString,
-  type TypedLexMap,
-  asDatetimeString,
-  atUri,
-  lexStringify,
-  parseCid,
-} from '@atproto/lex'
-import type { ScopedFeatureGatesClient } from '../feature-gates/index.js'
-import { ActorHydrator } from '../hydration/actor.js'
-import type {
-  ExternalRecordBacklinkCounts,
-  ExternalRecordBacklinks,
-  ExternalRecords,
-} from '../hydration/external.js'
-import {
-  HydrateCtx,
-  type HydrationState,
-  mergeStates,
-} from '../hydration/hydrator.js'
-import { Labels } from '../hydration/label.js'
-import { HydrationMap, VideoUriBuilder } from '../hydration/util.js'
-import { ImageUriBuilder } from '../image/uri.js'
-import { app, com, place, site, social } from '../lexicons/index.js'
+import { describe, expect, expectTypeOf, it, test, vi } from 'vitest'
+import { type AtUriString, lexStringify, parseCid } from '@atproto/lex'
+import { site } from '../lexicons/index.js'
 import { Service } from '../proto/bsky_connect.js'
-import { ActorInfo, GetActorsResponse } from '../proto/bsky_pb.js'
-import { LIVESTREAM_HEARTBEAT_WINDOW_MS } from './external.js'
-import { Views } from './index.js'
-import type { Label } from './types.js'
+import {
+  GetAtmosphereBacklinkCountsResponse,
+  GetAtmosphereBacklinksByActorResponse,
+  GetAtmosphereBacklinksResponse,
+  GetAtmosphereTimelineResponse,
+  GetRecordsByRefResponse,
+  GetRecordsByURIResponse,
+  Record as RecordEntry,
+  RecordLookupStatus,
+} from '../proto/bsky_pb.js'
+import {
+  type ExactRecordKey,
+  ExternalHydrator,
+  type ExternalRecordsByRef,
+  type SiteStandardDocument,
+  type SiteStandardDocuments,
+  type SiteStandardPublication,
+  type SiteStandardPublications,
+  genericRecordKey,
+  getSiteStandardRecordsFromHydrationMapsByRefs,
+  parseGenericRecordKey,
+} from './external.js'
+import { HydrationMap, type ItemRef } from './util.js'
 
-const did = 'did:plc:author'
-const publisherDid = 'did:plc:publisher'
-const docUri = atUri(did, site.standard.document.$type, 'article')
-const pubUri = atUri(
-  publisherDid,
-  site.standard.publication.$type,
-  'publication',
-)
-const galleryUri = atUri(did, social.grain.gallery.$type, 'gallery')
-const streamUri = atUri(did, place.stream.livestream.$type, 'stream')
-const createdAt = '2026-01-01T00:00:00.000Z'
-const cid = 'bafyreid6c2mfvztew4wrg7ld3m4o4ssbxz4miklv7u46mko3sjqdvaxzfa'
-const blob = {
-  $type: 'blob' as const,
-  ref: parseCid('bafkreigh2akiscaildc5tww2o3w4g5ucuzji75ltsiqg2wfswnns66cinu'),
-  mimeType: 'image/jpeg',
-  size: 100,
-}
+const docDid = 'did:plc:doc'
+const pubDid = 'did:plc:pub'
+const otherPubDid = 'did:plc:other'
 
-const views = new Views({
-  imgUriBuilder: new ImageUriBuilder('https://cdn.example.com/img'),
-  videoUriBuilder: new VideoUriBuilder({
-    playlistUrlPattern: '',
-    thumbnailUrlPattern: '',
-  }),
-  indexedAtEpoch: undefined,
-  threadTagsBumpDown: [],
-  threadTagsHide: [],
-  visibilityTagHide: '',
-  visibilityTagRankPrefix: '',
-})
+const docUri = `at://${docDid}/site.standard.document/abc`
+const pubUri = `at://${pubDid}/site.standard.publication/self`
+const otherPubUri = `at://${otherPubDid}/site.standard.publication/self`
 
-function createState() {
-  return {
-    externalRecords: new HydrationMap() as ExternalRecords,
-    externalRecordBacklinks: new HydrationMap() as ExternalRecordBacklinks,
-    externalRecordBacklinkCounts:
-      new HydrationMap() as ExternalRecordBacklinkCounts,
-    actors: new HydrationMap(),
-    profileViewers: new HydrationMap(),
-    labels: new Labels(),
-  } satisfies HydrationState
-}
+const docCid = 'bafydoc'
+const pubCid = 'bafypub'
 
-function addRecord(
-  state: HydrationState,
-  uri: AtUriString,
-  record: TypedLexMap,
-) {
-  state.externalRecords!.set(uri, {
+const makeDocInfo = (
+  record: { site: string; path?: string; title?: string },
+  cid = docCid,
+): SiteStandardDocument =>
+  ({
     record,
     cid,
-    indexedAt: new Date(createdAt),
-    sortedAt: new Date(createdAt),
+    sortedAt: new Date(0),
+    indexedAt: new Date(0),
     takedownRef: undefined,
+  }) as unknown as SiteStandardDocument
+
+const makePubInfo = (
+  record: { url: string; name?: string },
+  cid = pubCid,
+): SiteStandardPublication =>
+  ({
+    record,
+    cid,
+    sortedAt: new Date(0),
+    indexedAt: new Date(0),
+    takedownRef: undefined,
+  }) as unknown as SiteStandardPublication
+
+const makeDocuments = (
+  entries: [
+    uri: AtUriString,
+    cid: string,
+    info: SiteStandardDocument | null,
+  ][] = [],
+): SiteStandardDocuments => {
+  const map: SiteStandardDocuments = new HydrationMap()
+  for (const [uri, cid, info] of entries) {
+    map.set(genericRecordKey({ uri, cid }), info)
+  }
+  return map
+}
+
+const makePublications = (
+  entries: [
+    uri: AtUriString,
+    cid: string,
+    info: SiteStandardPublication | null,
+  ][] = [],
+): SiteStandardPublications => {
+  const map: SiteStandardPublications = new HydrationMap()
+  for (const [uri, cid, info] of entries) {
+    map.set(genericRecordKey({ uri, cid }), info)
+  }
+  return map
+}
+
+describe(genericRecordKey, () => {
+  it('keys latest lookups by URI and exact lookups by uri@cid', () => {
+    const latest = genericRecordKey({ uri: docUri })
+    const exact = genericRecordKey({ uri: docUri, cid: docCid })
+    expect(latest).toBe(docUri)
+    expect(exact).toBe(`${docUri}@${docCid}`)
+    expectTypeOf(latest).toEqualTypeOf<string>()
+    expectTypeOf(exact).toEqualTypeOf<ExactRecordKey>()
   })
-}
 
-function addActor(state: HydrationState, did: DidString) {
-  state.actors!.set(did, {
-    did,
-    handle: 'user.example.com',
-    isLabeler: false,
-    verifications: [],
-    allowActivitySubscriptionsFrom: 'none',
-    accountModerationTags: new Set(),
-    profileModerationTags: new Set(),
+  it('rejects an empty CID rather than treating it as a latest lookup', () => {
+    expect(() => genericRecordKey({ uri: docUri, cid: '' })).toThrow()
   })
-}
 
-function addLabel(
-  state: HydrationState,
-  uri: AtUriString,
-  val: string,
-  isTakendown = false,
-) {
-  const label: Label = { src: 'did:plc:labeler', uri, val, cts: createdAt }
-  state.labels!.set(uri, {
-    isImpersonation: false,
-    isTakendown,
-    needsReview: false,
-    labels: new HydrationMap([[Labels.key(label), label]]),
+  it('only admits exact keys into exact-ref maps', () => {
+    const map: ExternalRecordsByRef = new HydrationMap()
+    const ref: ItemRef = { uri: docUri }
+    // @ts-expect-error a latest lookup key is not an exact key
+    map.set(genericRecordKey(ref), null)
+    // @ts-expect-error a bare string is not an exact key
+    map.set(`${docUri}@${docCid}`, null)
+    map.set(genericRecordKey({ uri: docUri, cid: docCid }), null)
   })
-}
+})
 
-function addPublication(state: HydrationState) {
-  addRecord(
-    state,
-    pubUri,
-    site.standard.publication.$build({
-      name: 'A publication',
-      url: 'https://example.com/blog',
-      icon: blob,
-      basicTheme: site.standard.theme.basic.$build({
-        background: site.standard.theme.color.rgb.$build({
-          r: 0,
-          g: 15,
-          b: 255,
-        }),
-        foreground: site.standard.theme.color.rgb.$build({
-          r: 255,
-          g: 128,
-          b: 0,
-        }),
-        accent: site.standard.theme.color.rgb.$build({ r: 0, g: 0, b: 0 }),
-        accentForeground: site.standard.theme.color.rgb.$build({
-          r: 255,
-          g: 255,
-          b: 255,
-        }),
-      }),
-    }),
-  )
-}
-
-function addArticle(state: HydrationState, documentSite: string = pubUri) {
-  addRecord(
-    state,
+describe(parseGenericRecordKey, () => {
+  test.each([
     docUri,
-    site.standard.document.$build({
-      site: documentSite as site.standard.document.Main['site'],
-      path: '/article',
-      title: 'An article',
-      publishedAt: createdAt,
-      coverImage: blob,
-      textContent: 'word '.repeat(201),
-    }),
-  )
-}
+    `at://${docDid}/${site.standard.document.$type}/a@b`,
+  ] as const)('round-trips %s', (uri) => {
+    expect(
+      parseGenericRecordKey(genericRecordKey({ uri, cid: docCid })),
+    ).toEqual({ uri, cid: docCid })
+  })
 
-function addGallery(state: HydrationState) {
-  addRecord(
-    state,
-    galleryUri,
-    social.grain.gallery.$build({ title: 'Photos', createdAt }),
-  )
-}
+  it('does not accept latest lookup keys', () => {
+    // @ts-expect-error a latest lookup key is not an exact key
+    const parse = () => parseGenericRecordKey(genericRecordKey({ uri: docUri }))
+    expect(parse).toThrow('Malformed exact record key')
+  })
 
-function addPhoto(
-  state: HydrationState,
-  rkey: string,
-  position?: number,
-  owner: DidString = did,
-  gallery: AtUriString = galleryUri,
-) {
-  const photoUri = atUri(owner, social.grain.photo.$type, rkey)
-  const linkUri = atUri(owner, social.grain.gallery.item.$type, rkey)
-  addRecord(
-    state,
-    photoUri,
-    social.grain.photo.$build({
-      photo: blob,
-      alt: rkey,
-      aspectRatio: { width: 3, height: 2 },
-    }),
-  )
-  addRecord(
-    state,
-    linkUri,
-    social.grain.gallery.item.$build({
-      gallery,
-      item: photoUri,
-      createdAt,
-      ...(position === undefined ? {} : { position }),
-    }),
-  )
-  state.externalRecordBacklinks!.set(galleryUri, [
-    ...(state.externalRecordBacklinks!.get(galleryUri) ?? []),
-    linkUri,
-  ])
-  return { photoUri, linkUri }
-}
+  test.each([
+    ['a missing separator', docUri],
+    ['an empty URI', `@${docCid}`],
+    ['an empty CID', `${docUri}@`],
+  ])('rejects %s', (_, key) => {
+    // Deliberately malformed, to exercise the runtime safeguard.
+    expect(() => parseGenericRecordKey(key as ExactRecordKey)).toThrow(
+      'Malformed exact record key',
+    )
+  })
+})
 
-function assertValid(view: ReturnType<Views['externalRecordView']>) {
-  assert(view)
-  app.bsky.embed.getEmbedExternalView.$output.schema.validate({ data: view })
-}
+describe(getSiteStandardRecordsFromHydrationMapsByRefs, () => {
+  it('returns both slots when refs resolve and doc.site matches the publication', () => {
+    const docs = makeDocuments([
+      [docUri, docCid, makeDocInfo({ site: pubUri })],
+    ])
+    const pubs = makePublications([
+      [pubUri, pubCid, makePubInfo({ url: 'https://example.com' })],
+    ])
+    const { document, publication } =
+      getSiteStandardRecordsFromHydrationMapsByRefs(
+        [
+          { uri: docUri, cid: docCid },
+          { uri: pubUri, cid: pubCid },
+        ],
+        docs,
+        pubs,
+      )
+    expect(document?.ref).toEqual({ uri: docUri, cid: docCid })
+    expect(publication?.ref).toEqual({ uri: pubUri, cid: pubCid })
+  })
 
-describe('record modality views', () => {
-  it('builds an article with its publisher, refs, profiles, labels, images, and reading time', () => {
-    const state = createState()
-    addPublication(state)
-    addArticle(state)
-    addActor(state, did)
-    addActor(state, publisherDid)
-    addLabel(state, docUri, 'article-label')
-    addLabel(state, pubUri, 'publication-label')
-    state.externalRecords.get(docUri)!.record.labels =
-      com.atproto.label.defs.selfLabels.$build({ values: [{ val: 'nudity' }] })
-    state.externalRecordBacklinkCounts.set(docUri, {
-      [site.standard.graph.recommend.$type]: 25,
-    })
-    state.externalRecordBacklinkCounts.set(pubUri, {
-      [site.standard.graph.subscription.$type]: 50,
-    })
-
-    const view = views.externalRecordView(docUri, state)
-    assert(view && app.bsky.embed.external.viewArticle.$isTypeOf(view))
-    assertValid(view)
-    expect(view).toMatchObject({
-      uri: 'https://example.com/blog/article',
-      title: 'An article',
-      description: '',
-      createdAt,
-      readingTime: 2,
-      likeCount: 25,
-      image: `https://cdn.example.com/img/feed_thumbnail/plain/${did}/${blob.ref}`,
-      associatedRefs: [
-        { uri: docUri, cid },
-        { uri: pubUri, cid },
+  it('rejects the whole pair when doc.site does not match the resolved publication', () => {
+    const docs = makeDocuments([
+      [docUri, docCid, makeDocInfo({ site: otherPubUri })],
+    ])
+    const pubs = makePublications([
+      [pubUri, pubCid, makePubInfo({ url: 'https://example.com' })],
+    ])
+    const result = getSiteStandardRecordsFromHydrationMapsByRefs(
+      [
+        { uri: docUri, cid: docCid },
+        { uri: pubUri, cid: pubCid },
       ],
-      publisher: {
-        uri: 'https://example.com/blog',
-        description: '',
-        logo: `https://cdn.example.com/img/avatar/plain/${publisherDid}/${blob.ref}`,
-        subscriptionCount: 50,
-        associatedRefs: [{ uri: pubUri, cid }],
-        theme: {
-          background: '#000fff',
-          foreground: '#ff8000',
-          accent: '#000000',
-          accentForeground: '#ffffff',
-        },
-      },
-    })
-    expect(view.associatedProfiles?.map((p) => p.did)).toEqual([
-      did,
-      publisherDid,
-    ])
-    expect(view.labels?.map((l) => l.val)).toEqual([
-      'article-label',
-      'nudity',
-      'publication-label',
-    ])
-    expect(view.labels?.find((l) => l.val === 'nudity')).toEqual({
-      src: did,
-      uri: docUri,
-      cid,
-      val: 'nudity',
-      cts: createdAt,
-    })
-    expect(view.likers).toBeUndefined()
-  })
-
-  it('builds a standalone publication without inventing timestamps or engagement', () => {
-    const state = createState()
-    addPublication(state)
-    const view = views.externalRecordView(pubUri, state)
-    assert(
-      view && app.bsky.embed.external.viewArticlePublication.$isTypeOf(view),
+      docs,
+      pubs,
     )
-    assertValid(view)
-    expect(view.createdAt).toBeUndefined()
-    expect(view.subscriptionCount).toBeUndefined()
-    expect(view.subscribers).toBeUndefined()
-    expect(view.associatedProfiles).toEqual([])
+    expect(result).toEqual({ document: undefined, publication: undefined })
   })
 
-  it('builds a loose document and omits reading time for blank text', () => {
-    const state = createState()
-    addArticle(state, 'https://example.com/blog/')
-    state.externalRecords.get(docUri)!.record.textContent = '  \n\t '
-    const view = views.externalRecordView(docUri, state)
-    assert(view && app.bsky.embed.external.viewArticle.$isTypeOf(view))
-    assertValid(view)
-    expect(view.uri).toBe('https://example.com/blog/article')
-    expect(view.publisher).toBeUndefined()
-    expect(view.readingTime).toBeUndefined()
-    expect(view.associatedRefs).toEqual([
-      com.atproto.repo.strongRef.$build({ uri: docUri, cid }),
+  it('rejects the whole pair when doc declares an at-uri site but no publication ref was supplied', () => {
+    const docs = makeDocuments([
+      [docUri, docCid, makeDocInfo({ site: pubUri })],
     ])
-  })
-
-  test.each(['missing', 'invalid', 'taken-down', 'blocked'] as const)(
-    'rejects an article with a %s publisher',
-    (kind) => {
-      const state = createState()
-      addArticle(state)
-      if (kind !== 'missing') addPublication(state)
-      if (kind === 'invalid') state.externalRecords.get(pubUri)!.record.name = 1
-      if (kind === 'taken-down') addLabel(state, pubUri, '!takedown', true)
-      if (kind === 'blocked')
-        state.profileViewers.set(publisherDid, {
-          did: publisherDid,
-          blocking: atUri(did, app.bsky.graph.block.$type, 'block'),
-        })
-      expect(views.externalRecordView(docUri, state)).toBeUndefined()
-    },
-  )
-
-  test.each(['javascript:alert(1)', 'not a url'])(
-    'rejects an unsafe article site: %s',
-    (url) => {
-      const state = createState()
-      addArticle(state, url)
-      expect(views.externalRecordView(docUri, state)).toBeUndefined()
-    },
-  )
-
-  it('builds a gallery in position order, defaulting missing positions without mutating records', () => {
-    const state = createState()
-    addGallery(state)
-    const second = addPhoto(state, 'second', 2)
-    const first = addPhoto(state, 'first')
-    const other = addPhoto(state, 'other', 0)
-    Object.freeze(state.externalRecords.get(first.linkUri)!.record)
-    addLabel(state, first.photoUri, 'photo-label')
-    const before = [...state.externalRecordBacklinks.get(galleryUri)!]
-
-    const view = views.externalRecordView(galleryUri, state)
-    assert(view && app.bsky.embed.external.viewGallery.$isTypeOf(view))
-    assertValid(view)
-    expect(view.uri).toBe(galleryUri)
-    expect(view.description).toBe('')
-    expect(
-      view.items
-        .filter(app.bsky.embed.external.viewGalleryImage.$isTypeOf)
-        .map((item) => item.alt),
-    ).toEqual(['first', 'other', 'second'])
-    expect(view.items[0]).toMatchObject({
-      $type: app.bsky.embed.external.viewGalleryImage.$type,
-      thumbnail: `https://cdn.example.com/img/feed_thumbnail/plain/${did}/${blob.ref}`,
-      fullsize: `https://cdn.example.com/img/feed_fullsize/plain/${did}/${blob.ref}`,
-      aspectRatio: { width: 3, height: 2 },
-    })
-    expect(view.associatedRefs?.map((ref) => ref.uri)).toEqual([
-      galleryUri,
-      first.linkUri,
-      first.photoUri,
-      other.linkUri,
-      other.photoUri,
-      second.linkUri,
-      second.photoUri,
-    ])
-    expect(view.labels?.map((l) => l.val)).toEqual(['photo-label'])
-    expect(state.externalRecords.get(first.linkUri)!.record).not.toHaveProperty(
-      'position',
+    const pubs = makePublications()
+    const result = getSiteStandardRecordsFromHydrationMapsByRefs(
+      [{ uri: docUri, cid: docCid }],
+      docs,
+      pubs,
     )
-    expect(state.externalRecordBacklinks.get(galleryUri)).toEqual(before)
+    expect(result).toEqual({ document: undefined, publication: undefined })
   })
 
-  it('drops unrelated, foreign-authored, duplicate, missing, invalid, and taken-down gallery items', () => {
-    const state = createState()
-    addGallery(state)
-    const good = addPhoto(state, 'good')
-    addPhoto(state, 'foreign', 0, publisherDid)
-    addPhoto(
-      state,
-      'unrelated',
-      0,
-      did,
-      atUri(did, social.grain.gallery.$type, 'other'),
-    )
-    const missing = addPhoto(state, 'missing')
-    state.externalRecords.set(missing.photoUri, null)
-    const invalid = addPhoto(state, 'invalid')
-    state.externalRecords.get(invalid.photoUri)!.record.alt = 123
-    const takenDown = addPhoto(state, 'taken-down')
-    addLabel(state, takenDown.photoUri, '!takedown', true)
-    state.externalRecordBacklinks.get(galleryUri)!.push(good.linkUri)
-    const view = views.externalRecordView(galleryUri, state)
-    assert(view && app.bsky.embed.external.viewGallery.$isTypeOf(view))
-    assertValid(view)
-    expect(
-      view.items
-        .filter(app.bsky.embed.external.viewGalleryImage.$isTypeOf)
-        .map((item) => item.alt),
-    ).toEqual(['good'])
-    expect(view.associatedRefs?.map((ref) => ref.uri)).toEqual([
-      galleryUri,
-      good.linkUri,
-      good.photoUri,
+  it('returns only the doc when site is a web URL (loose doc)', () => {
+    const docs = makeDocuments([
+      [docUri, docCid, makeDocInfo({ site: 'https://example.com' })],
     ])
-  })
-
-  it('allows an empty gallery', () => {
-    const state = createState()
-    addGallery(state)
-    const view = views.externalRecordView(galleryUri, state)
-    assert(view && app.bsky.embed.external.viewGallery.$isTypeOf(view))
-    assertValid(view)
-    expect(view.items).toEqual([])
-  })
-
-  describe('livestream activity', () => {
-    const now = Date.parse('2026-01-01T01:00:00.000Z')
-    const window = LIVESTREAM_HEARTBEAT_WINDOW_MS
-
-    function seenAgo(ms: number) {
-      return asDatetimeString(new Date(now - ms).toISOString())
-    }
-
-    function streamView(fields: Partial<place.stream.livestream.Main>) {
-      const state = createState()
-      addRecord(
-        state,
-        streamUri,
-        place.stream.livestream.$build({
-          title: 'A stream',
-          createdAt,
-          canonicalUrl: 'https://stream.example.com/canonical',
-          url: 'https://station.example.com/replication',
-          thumb: blob,
-          ...fields,
-        }),
+    const pubs = makePublications()
+    const { document, publication } =
+      getSiteStandardRecordsFromHydrationMapsByRefs(
+        [{ uri: docUri, cid: docCid }],
+        docs,
+        pubs,
       )
-      const before = lexStringify(state.externalRecords.get(streamUri)!.record)
-      const view = views.externalRecordView(streamUri, state, now)
-      expect(lexStringify(state.externalRecords.get(streamUri)!.record)).toBe(
-        before,
+    expect(document?.ref).toEqual({ uri: docUri, cid: docCid })
+    expect(publication).toBeUndefined()
+  })
+
+  it('returns only the publication when no doc ref is supplied', () => {
+    const docs = makeDocuments()
+    const pubs = makePublications([
+      [pubUri, pubCid, makePubInfo({ url: 'https://example.com' })],
+    ])
+    const { document, publication } =
+      getSiteStandardRecordsFromHydrationMapsByRefs(
+        [{ uri: pubUri, cid: pubCid }],
+        docs,
+        pubs,
       )
-      return view
-    }
+    expect(document).toBeUndefined()
+    expect(publication?.ref).toEqual({ uri: pubUri, cid: pubCid })
+  })
 
-    function activity(fields: Partial<place.stream.livestream.Main>) {
-      const view = streamView(fields)
-      assert(view && app.bsky.embed.external.viewLivestream.$isTypeOf(view))
-      assertValid(view)
-      return view.active
-    }
+  it('returns nothing when the version-exact lookup misses', () => {
+    // Doc indexed at one cid; ref points at a different cid.
+    const docs = makeDocuments([
+      [docUri, docCid, makeDocInfo({ site: pubUri })],
+    ])
+    const pubs = makePublications()
+    const result = getSiteStandardRecordsFromHydrationMapsByRefs(
+      [{ uri: docUri, cid: 'bafy-different' }],
+      docs,
+      pubs,
+    )
+    expect(result).toEqual({ document: undefined, publication: undefined })
+  })
 
-    test.each([
-      { note: 'a recent heartbeat', ago: SECOND, active: true },
-      { note: 'just inside the window', ago: window - 1, active: true },
-      { note: 'exactly the window', ago: window, active: false },
-      { note: 'just outside the window', ago: window + 1, active: false },
-      { note: 'a stale heartbeat', ago: 10 * MINUTE, active: false },
-      { note: 'a slightly future heartbeat', ago: -SECOND, active: true },
-      {
-        note: 'a future heartbeat just inside the window',
-        ago: -(window - 1),
-        active: true,
-      },
-      {
-        note: 'a future heartbeat exactly the window ahead',
-        ago: -window,
-        active: false,
-      },
-      { note: 'a far-future heartbeat', ago: -DAY, active: false },
-    ])('treats $note as active: $active', ({ ago, active }) => {
-      expect(activity({ lastSeenAt: seenAgo(ago) })).toBe(active)
+  it('returns nothing when associatedRefs is empty or undefined', () => {
+    const docs = makeDocuments([
+      [docUri, docCid, makeDocInfo({ site: pubUri })],
+    ])
+    const pubs = makePublications([
+      [pubUri, pubCid, makePubInfo({ url: 'https://example.com' })],
+    ])
+    expect(
+      getSiteStandardRecordsFromHydrationMapsByRefs([], docs, pubs),
+    ).toEqual({ document: undefined, publication: undefined })
+    expect(
+      getSiteStandardRecordsFromHydrationMapsByRefs(undefined, docs, pubs),
+    ).toEqual({ document: undefined, publication: undefined })
+  })
+
+  it('skips null entries (taken-down records) and reports them as misses', () => {
+    const docs = makeDocuments([[docUri, docCid, null]])
+    const pubs = makePublications()
+    const result = getSiteStandardRecordsFromHydrationMapsByRefs(
+      [{ uri: docUri, cid: docCid }],
+      docs,
+      pubs,
+    )
+    expect(result).toEqual({ document: undefined, publication: undefined })
+  })
+})
+
+describe(ExternalHydrator, () => {
+  const dataplane = createPromiseClient(
+    Service,
+    createRouterTransport(() => {}),
+  )
+  const hydrator = new ExternalHydrator(dataplane)
+  const collection = site.standard.document.$type
+  const sortedAt = new Date('2026-10-01T00:00:00Z')
+  const indexedAt = new Date('2026-10-02T00:00:00Z')
+  const record = {
+    $type: collection,
+    title: 'Document',
+    extra: {
+      link: parseCid(
+        'bafyreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku',
+      ),
+      bytes: new Uint8Array([1, 2, 3]),
+    },
+  }
+  const entry = new RecordEntry({
+    cid: docCid,
+    record: Buffer.from(lexStringify(record)),
+    sortedAt: Timestamp.fromDate(sortedAt),
+    indexedAt: Timestamp.fromDate(indexedAt),
+  })
+
+  it('short-circuits empty batches without calling the dataplane', async () => {
+    using byRef = vi.spyOn(dataplane, 'getRecordsByRef')
+    using byURI = vi.spyOn(dataplane, 'getRecordsByURI')
+    using counts = vi.spyOn(dataplane, 'getAtmosphereBacklinkCounts')
+    using byActor = vi.spyOn(dataplane, 'getAtmosphereBacklinksByActor')
+
+    expect(await hydrator.getRecordsByRef([])).toEqual(new HydrationMap())
+    expect(await hydrator.getRecordsByURI([])).toEqual(new HydrationMap())
+    expect(await hydrator.getAtmosphereBacklinkCounts([])).toEqual(
+      new HydrationMap(),
+    )
+    expect(
+      await hydrator.getAtmosphereBacklinksByActor([], docDid, collection),
+    ).toEqual({
+      backlinks: new HydrationMap(),
+      truncated: false,
     })
+    expect(byRef).not.toHaveBeenCalled()
+    expect(byURI).not.toHaveBeenCalled()
+    expect(counts).not.toHaveBeenCalled()
+    expect(byActor).not.toHaveBeenCalled()
+  })
 
-    test.each([undefined, 0, 1, 1_000_000_000])(
-      'ignores a record idleTimeoutSeconds of %s',
-      (idleTimeoutSeconds) => {
-        expect(
-          activity({ lastSeenAt: seenAgo(10 * MINUTE), idleTimeoutSeconds }),
-        ).toBe(false)
-        expect(
-          activity({ lastSeenAt: seenAgo(MINUTE), idleTimeoutSeconds }),
-        ).toBe(true)
-      },
+  it('hydrates mixed collections by URI without altering record bodies', async () => {
+    const publication = site.standard.publication.$build({
+      url: 'https://example.com',
+      name: 'Publication',
+    })
+    using lookup = vi.spyOn(dataplane, 'getRecordsByURI').mockResolvedValue(
+      new GetRecordsByURIResponse({
+        results: [
+          {
+            ref: { uri: docUri, cid: docCid },
+            status: RecordLookupStatus.FOUND,
+            record: entry,
+          },
+          {
+            ref: { uri: pubUri, cid: pubCid },
+            status: RecordLookupStatus.FOUND,
+            record: {
+              cid: pubCid,
+              record: Buffer.from(lexStringify(publication)),
+            },
+          },
+          { ref: { uri: otherPubUri }, status: RecordLookupStatus.NOT_FOUND },
+        ],
+      }),
     )
 
-    it('uses a two-minute window', () => {
-      expect(window).toBe(2 * MINUTE)
+    const records = await hydrator.getRecordsByURI([
+      docUri,
+      pubUri,
+      otherPubUri,
+    ])
+    expect(lookup).toHaveBeenCalledExactlyOnceWith({
+      uris: [docUri, pubUri, otherPubUri],
     })
+    expect(records.get(docUri)).toEqual({
+      record,
+      cid: docCid,
+      sortedAt,
+      indexedAt,
+      takedownRef: undefined,
+    })
+    expect(records.get(pubUri)?.record).toEqual(publication)
+    expect(records.get(otherPubUri)).toBeNull()
+  })
 
-    it('treats an explicit endedAt as ended despite a fresh heartbeat', () => {
-      const endedAt = seenAgo(30 * SECOND)
-      const view = streamView({
-        lastSeenAt: seenAgo(SECOND),
-        endedAt,
-      })
-      assert(view && app.bsky.embed.external.viewLivestream.$isTypeOf(view))
-      assertValid(view)
-      expect(view).toMatchObject({
-        uri: 'https://stream.example.com/canonical',
-        active: false,
-        createdAt,
-        startedAt: createdAt,
-        endedAt,
-        description: '',
-        image: `https://cdn.example.com/img/feed_thumbnail/plain/${did}/${blob.ref}`,
-      })
-    })
+  it('keeps exact versions distinct and forwards duplicate refs', async () => {
+    const refs: Required<ItemRef>[] = [
+      { uri: docUri, cid: docCid },
+      { uri: docUri, cid: 'other-cid' },
+      { uri: pubUri, cid: pubCid },
+      { uri: docUri, cid: docCid },
+    ]
+    using lookup = vi.spyOn(dataplane, 'getRecordsByRef').mockResolvedValue(
+      new GetRecordsByRefResponse({
+        results: [
+          { ref: refs[0], status: RecordLookupStatus.FOUND, record: entry },
+          {
+            ref: refs[1],
+            status: RecordLookupStatus.FOUND,
+            record: { ...entry, cid: 'other-cid' },
+          },
+          { ref: refs[2], status: RecordLookupStatus.NOT_FOUND },
+          { ref: refs[3], status: RecordLookupStatus.FOUND, record: entry },
+        ],
+      }),
+    )
 
-    it('does not fall back to a recent createdAt without a heartbeat', () => {
-      const view = streamView({ createdAt: seenAgo(SECOND) })
-      assert(view && app.bsky.embed.external.viewLivestream.$isTypeOf(view))
-      assertValid(view)
-      expect(view.active).toBe(false)
-      expect(view.endedAt).toBeUndefined()
-    })
+    const records = await hydrator.getRecordsByRef(refs)
+    expect(lookup).toHaveBeenCalledExactlyOnceWith({ refs })
+    expect(records.size).toBe(3)
+    expect(
+      records.get(genericRecordKey({ uri: docUri, cid: docCid }))?.cid,
+    ).toBe(docCid)
+    expect(
+      records.get(genericRecordKey({ uri: docUri, cid: 'other-cid' }))?.cid,
+    ).toBe('other-cid')
+    expect(
+      records.get(genericRecordKey({ uri: pubUri, cid: pubCid })),
+    ).toBeNull()
+  })
 
-    it('rejects a record with an invalid lastSeenAt', () => {
-      expect(
-        streamView({ lastSeenAt: 'not a date' as DatetimeString }),
-      ).toBeUndefined()
-    })
+  test.each([
+    RecordLookupStatus.UNSPECIFIED,
+    RecordLookupStatus.NOT_FOUND,
+    RecordLookupStatus.INVALID_REF,
+    RecordLookupStatus.UNSUPPORTED_COLLECTION,
+  ])('does not hydrate unsuccessful lookup status %s', async (status) => {
+    using lookup = vi
+      .spyOn(dataplane, 'getRecordsByURI')
+      .mockResolvedValue(
+        new GetRecordsByURIResponse({ results: [{ status, record: entry }] }),
+      )
+    expect((await hydrator.getRecordsByURI([docUri])).get(docUri)).toBeNull()
+    expect(
+      (await hydrator.getRecordsByURI([docUri], true)).get(docUri),
+    ).toBeNull()
+    expect(lookup).toHaveBeenCalledTimes(2)
   })
 
   test.each([
     {
-      url: 'https://station.example.com/stream',
-      expected: 'https://station.example.com/stream',
+      status: RecordLookupStatus.TAKEN_DOWN,
+      takenDown: true,
+      takedownRef: 'moderation-ref',
+      expected: 'moderation-ref',
     },
-    { url: undefined, expected: streamUri },
-    { url: 'javascript:alert(1)', expected: streamUri },
+    {
+      status: RecordLookupStatus.FOUND,
+      takenDown: true,
+      takedownRef: '',
+      expected: 'BSKY-TAKEDOWN-UNKNOWN',
+    },
+    {
+      status: RecordLookupStatus.TAKEN_DOWN,
+      takenDown: false,
+      takedownRef: 'moderation-ref',
+      expected: 'moderation-ref',
+    },
   ])(
-    'falls back from missing canonical URL to $expected',
-    ({ url, expected }) => {
-      const state = createState()
-      addRecord(
-        state,
-        streamUri,
-        place.stream.livestream.$build({
-          title: 'A stream',
-          createdAt,
-          url: url as place.stream.livestream.Main['url'],
+    'filters takedowns for $status/$takenDown unless explicitly included',
+    async ({ status, takenDown, takedownRef, expected }) => {
+      using lookup = vi.spyOn(dataplane, 'getRecordsByURI').mockResolvedValue(
+        new GetRecordsByURIResponse({
+          results: [{ status, record: { ...entry, takenDown, takedownRef } }],
         }),
       )
-      expect(views.externalRecordView(streamUri, state)?.uri).toBe(expected)
-    },
-  )
-
-  it('deduplicates and sorts available liker profiles by DID, caps at three, and keeps total counts', () => {
-    const state = createState()
-    addGallery(state)
-    const backlinks: AtUriString[] = []
-    for (const name of ['e', 'b', 'c', 'a', 'd', 'b']) {
-      const actorDid = `did:plc:${name}` as const
-      const uri = atUri(
-        actorDid,
-        social.grain.favorite.$type,
-        String(backlinks.length),
-      )
-      addRecord(
-        state,
-        uri,
-        social.grain.favorite.$build({ subject: galleryUri, createdAt }),
-      )
-      if (name !== 'a') addActor(state, actorDid)
-      backlinks.push(uri)
-    }
-    const unrelated = atUri(
-      'did:plc:unrelated',
-      social.grain.favorite.$type,
-      'like',
-    )
-    addRecord(
-      state,
-      unrelated,
-      social.grain.favorite.$build({ subject: docUri, createdAt }),
-    )
-    addActor(state, 'did:plc:unrelated')
-    backlinks.push(unrelated)
-    state.externalRecordBacklinks.set(galleryUri, backlinks)
-    state.externalRecordBacklinkCounts.set(galleryUri, {
-      [social.grain.favorite.$type]: 100,
-    })
-    const view = views.externalRecordView(galleryUri, state)
-    assert(view && app.bsky.embed.external.viewGallery.$isTypeOf(view))
-    assertValid(view)
-    expect(view.likeCount).toBe(100)
-    expect(view.likers?.map((p) => p.did)).toEqual([
-      'did:plc:b',
-      'did:plc:c',
-      'did:plc:d',
-    ])
-    state.externalRecordBacklinks.set(galleryUri, backlinks.toReversed())
-    expect(views.externalRecordView(galleryUri, state)).toEqual(view)
-
-    state.profileViewers.set('did:plc:c', {
-      did: 'did:plc:c',
-      blocking: atUri(did, app.bsky.graph.block.$type, 'block'),
-    })
-    addLabel(
-      state,
-      atUri('did:plc:d', social.grain.favorite.$type, '4'),
-      '!takedown',
-      true,
-    )
-    const filtered = views.externalRecordView(galleryUri, state)
-    assert(filtered && app.bsky.embed.external.viewGallery.$isTypeOf(filtered))
-    expect(filtered.likers?.map((p) => p.did)).toEqual([
-      'did:plc:b',
-      'did:plc:e',
-    ])
-    expect(filtered.likeCount).toBe(100)
-  })
-
-  it('selects recommendation and subscription previews using the correct target fields', () => {
-    const state = createState()
-    addPublication(state)
-    addArticle(state)
-    addActor(state, 'did:plc:reader')
-    const recommend = atUri(
-      'did:plc:reader',
-      site.standard.graph.recommend.$type,
-      'recommend',
-    )
-    const subscribe = atUri(
-      'did:plc:reader',
-      site.standard.graph.subscription.$type,
-      'subscription',
-    )
-    addRecord(
-      state,
-      recommend,
-      site.standard.graph.recommend.$build({ document: docUri, createdAt }),
-    )
-    addRecord(
-      state,
-      subscribe,
-      site.standard.graph.subscription.$build({ publication: pubUri }),
-    )
-    state.externalRecordBacklinks.set(docUri, [recommend, subscribe])
-    state.externalRecordBacklinks.set(pubUri, [recommend, subscribe])
-    const view = views.externalRecordView(docUri, state)
-    assert(view && app.bsky.embed.external.viewArticle.$isTypeOf(view))
-    assertValid(view)
-    expect(view.likers?.map((p) => p.did)).toEqual(['did:plc:reader'])
-    expect(view.publisher?.subscribers?.map((p) => p.did)).toEqual([
-      'did:plc:reader',
-    ])
-  })
-
-  test.each([undefined, 0, -1, Number.MAX_SAFE_INTEGER + 1])(
-    'handles an engagement count of %s',
-    (count) => {
-      const state = createState()
-      addGallery(state)
-      state.externalRecordBacklinkCounts.set(
-        galleryUri,
-        count === undefined ? {} : { [social.grain.favorite.$type]: count },
-      )
-      const view = views.externalRecordView(galleryUri, state)
-      assert(view && app.bsky.embed.external.viewGallery.$isTypeOf(view))
-      expect(view.likeCount).toBe(
-        count === undefined || count === 0 ? 0 : undefined,
-      )
-      expect(view.likers).toBeUndefined()
-    },
-  )
-
-  test.each([
-    'missing',
-    'invalid',
-    'wrong-collection',
-    'taken-down',
-    'takedown-label',
-    'blocked',
-    'deactivated',
-    'needs-review',
-  ] as const)('omits a %s record', (kind) => {
-    const state = createState()
-    addGallery(state)
-    if (kind === 'missing') state.externalRecords.set(galleryUri, null)
-    if (kind === 'invalid')
-      state.externalRecords.get(galleryUri)!.record.title = 1
-    if (kind === 'wrong-collection')
-      state.externalRecords.get(galleryUri)!.record =
-        place.stream.livestream.$build({
-          title: 'Wrong collection',
-          createdAt,
-        })
-    if (kind === 'taken-down')
-      state.externalRecords.get(galleryUri)!.takedownRef = 'ref'
-    if (kind === 'takedown-label')
-      addLabel(state, galleryUri, '!takedown', true)
-    if (kind === 'blocked')
-      state.profileViewers.set(did, {
-        did,
-        blockedBy: atUri(did, app.bsky.graph.block.$type, 'block'),
-      })
-    if (kind === 'deactivated') {
-      addActor(state, did)
-      state.actors.get(did)!.upstreamStatus = 'deactivated'
-    }
-    if (kind === 'needs-review') {
-      addLabel(state, galleryUri, 'needs-review')
-      state.labels.get(galleryUri)!.needsReview = true
-    }
-    expect(views.externalRecordView(galleryUri, state)).toBeUndefined()
-  })
-
-  describe('with actors from normal hydration', () => {
-    const dataplane = createPromiseClient(
-      Service,
-      createRouterTransport(() => {}),
-    )
-    const actorHydrator = new ActorHydrator(dataplane)
-    const reader = 'did:plc:reader'
-    const unavailableStatuses = {
-      deactivated: { upstreamStatus: 'deactivated' },
-      'taken-down': { takenDown: true },
-      suspended: { upstreamStatus: 'suspended' },
-      deleted: { exists: false },
-      tombstoned: { tombstonedAt: Timestamp.fromDate(new Date(createdAt)) },
-    } satisfies Record<string, Partial<ActorInfo>>
-    type Status = 'active' | keyof typeof unavailableStatuses
-
-    async function hydrateActors(
-      state: HydrationState,
-      statuses: Partial<Record<DidString, Status>>,
-      includeTakedowns = false,
-    ) {
-      const dids = Object.keys(statuses) as DidString[]
-      using _ = vi.spyOn(dataplane, 'getActors').mockResolvedValue(
-        new GetActorsResponse({
-          actors: dids.map((actorDid) => {
-            const status = statuses[actorDid]!
-            return new ActorInfo({
-              exists: true,
-              handle: 'user.example.com',
-              ...(status === 'active' ? {} : unavailableStatuses[status]),
-            })
-          }),
-        }),
-      )
-      state.actors = await actorHydrator.getActors(dids, { includeTakedowns })
-      state.ctx = new HydrateCtx({
-        labelers: { dids: [], redact: new Set() },
-        viewer: null,
-        includeTakedowns,
-        features: {} as ScopedFeatureGatesClient,
-      })
-    }
-
-    test.each(Object.keys(unavailableStatuses) as Status[])(
-      'omits a record whose owner is %s',
-      async (status) => {
-        const state = createState()
-        addGallery(state)
-        await hydrateActors(state, { [did]: status })
-        expect(state.actors.get(did)).toBeNull()
-        expect(views.externalRecordView(galleryUri, state)).toBeUndefined()
-      },
-    )
-
-    test.each([
-      { status: 'deactivated', available: true },
-      { status: 'taken-down', available: true },
-      { status: 'suspended', available: true },
-      { status: 'deleted', available: false },
-      { status: 'tombstoned', available: false },
-    ] as const)(
-      'with includeTakedowns, a $status owner keeps the record available: $available',
-      async ({ status, available }) => {
-        const state = createState()
-        addGallery(state)
-        await hydrateActors(state, { [did]: status }, true)
-        expect(state.actors.get(did) === null).toBe(!available)
-        const view = views.externalRecordView(galleryUri, state)
-        if (available) {
-          assertValid(view)
-          expect(view?.associatedProfiles?.map((p) => p.did)).toEqual([did])
-        } else {
-          expect(view).toBeUndefined()
-        }
-      },
-    )
-
-    it('keeps records whose owner is absent from hydration state', async () => {
-      const state = createState()
-      addGallery(state)
-      await hydrateActors(state, { [reader]: 'active' })
-      expect(state.actors.has(did)).toBe(false)
-      const view = views.externalRecordView(galleryUri, state)
-      assertValid(view)
-      expect(view?.associatedProfiles).toEqual([])
-    })
-
-    test.each(Object.keys(unavailableStatuses) as Status[])(
-      'omits an article and publication whose publisher is %s',
-      async (status) => {
-        const state = createState()
-        addPublication(state)
-        addArticle(state)
-        await hydrateActors(state, { [did]: 'active', [publisherDid]: status })
-        expect(views.externalRecordView(pubUri, state)).toBeUndefined()
-        expect(views.externalRecordView(docUri, state)).toBeUndefined()
-      },
-    )
-
-    test.each(Object.keys(unavailableStatuses) as Status[])(
-      'drops gallery photos and likers from a %s actor without changing counts',
-      async (status) => {
-        const state = createState()
-        addGallery(state)
-        const kept = addPhoto(state, 'kept')
-        const photoUri = atUri(reader, social.grain.photo.$type, 'photo')
-        const linkUri = atUri(did, social.grain.gallery.item.$type, 'photo')
-        addRecord(
-          state,
-          photoUri,
-          social.grain.photo.$build({ photo: blob, alt: 'leaked' }),
-        )
-        addRecord(
-          state,
-          linkUri,
-          social.grain.gallery.item.$build({
-            gallery: galleryUri,
-            item: photoUri,
-            createdAt,
-            position: -1,
-          }),
-        )
-        const favoriteUri = atUri(reader, social.grain.favorite.$type, 'fav')
-        addRecord(
-          state,
-          favoriteUri,
-          social.grain.favorite.$build({ subject: galleryUri, createdAt }),
-        )
-        state.externalRecordBacklinks
-          .get(galleryUri)!
-          .push(linkUri, favoriteUri)
-        state.externalRecordBacklinkCounts.set(galleryUri, {
-          [social.grain.favorite.$type]: 7,
-        })
-        await hydrateActors(state, { [did]: 'active', [reader]: status })
-
-        const view = views.externalRecordView(galleryUri, state)
-        assert(view && app.bsky.embed.external.viewGallery.$isTypeOf(view))
-        assertValid(view)
-        expect(
-          view.items
-            .filter(app.bsky.embed.external.viewGalleryImage.$isTypeOf)
-            .map((item) => item.alt),
-        ).toEqual(['kept'])
-        expect(view.associatedRefs?.map((ref) => ref.uri)).toEqual([
-          galleryUri,
-          kept.linkUri,
-          kept.photoUri,
-        ])
-        expect(view.associatedProfiles?.map((p) => p.did)).toEqual([did])
-        expect(view.likers).toEqual([])
-        expect(view.likeCount).toBe(7)
-      },
-    )
-  })
-
-  describe('strict source record validation', () => {
-    const naive = '2026-01-01T00:00:00'
-
-    function addStream(state: HydrationState, fields: object = {}) {
-      addRecord(state, streamUri, {
-        ...place.stream.livestream.$build({ title: 'A stream', createdAt }),
-        ...fields,
-      })
-    }
-
-    test.each([
-      {
-        note: 'article publishedAt',
-        uri: docUri,
-        add: (state: HydrationState) => {
-          addArticle(state, 'https://example.com/blog')
-          state.externalRecords!.get(docUri)!.record.publishedAt = naive
-        },
-      },
-      {
-        note: 'article updatedAt',
-        uri: docUri,
-        add: (state: HydrationState) => {
-          addArticle(state, 'https://example.com/blog')
-          state.externalRecords!.get(docUri)!.record.updatedAt = naive
-        },
-      },
-      {
-        note: 'gallery createdAt',
-        uri: galleryUri,
-        add: (state: HydrationState) => {
-          addGallery(state)
-          state.externalRecords!.get(galleryUri)!.record.createdAt = naive
-        },
-      },
-      {
-        note: 'livestream createdAt',
-        uri: streamUri,
-        add: (state: HydrationState) => addStream(state, { createdAt: naive }),
-      },
-      {
-        note: 'livestream endedAt',
-        uri: streamUri,
-        add: (state: HydrationState) => addStream(state, { endedAt: naive }),
-      },
-      {
-        note: 'livestream lastSeenAt',
-        uri: streamUri,
-        add: (state: HydrationState) => addStream(state, { lastSeenAt: naive }),
-      },
-    ])('rejects a timezone-less $note', ({ uri, add }) => {
-      const state = createState()
-      add(state)
-      const before = lexStringify(state.externalRecords.get(uri)!.record)
-      expect(views.externalRecordView(uri, state)).toBeUndefined()
-      expect(lexStringify(state.externalRecords.get(uri)!.record)).toBe(before)
-    })
-
-    it('rejects an article whose publisher fails strict blob validation', () => {
-      const state = createState()
-      addPublication(state)
-      addArticle(state)
-      state.externalRecords.get(pubUri)!.record.icon = {
-        ...blob,
-        mimeType: 'application/pdf',
-      }
-      expect(views.externalRecordView(pubUri, state)).toBeUndefined()
-      expect(views.externalRecordView(docUri, state)).toBeUndefined()
-    })
-
-    it('omits gallery items and photos with timezone-less timestamps', () => {
-      const state = createState()
-      addGallery(state)
-      const kept = addPhoto(state, 'kept')
-      const badLink = addPhoto(state, 'bad-link')
-      state.externalRecords.get(badLink.linkUri)!.record.createdAt = naive
-      const badPhoto = addPhoto(state, 'bad-photo')
-      state.externalRecords.get(badPhoto.photoUri)!.record.createdAt = naive
-      const view = views.externalRecordView(galleryUri, state)
-      assert(view && app.bsky.embed.external.viewGallery.$isTypeOf(view))
-      assertValid(view)
-      expect(view.associatedRefs?.map((ref) => ref.uri)).toEqual([
-        galleryUri,
-        kept.linkUri,
-        kept.photoUri,
-      ])
-    })
-
-    it('omits backlink samples with timezone-less timestamps but keeps counts', () => {
-      const state = createState()
-      addPublication(state)
-      addArticle(state)
-      addGallery(state)
-      const reader = 'did:plc:reader'
-      addActor(state, reader)
-      const recommend = atUri(
-        reader,
-        site.standard.graph.recommend.$type,
-        'recommend',
-      )
-      const subscribe = atUri(
-        reader,
-        site.standard.graph.subscription.$type,
-        'subscription',
-      )
-      const favorite = atUri(reader, social.grain.favorite.$type, 'favorite')
-      addRecord(state, recommend, {
-        ...site.standard.graph.recommend.$build({
-          document: docUri,
-          createdAt,
-        }),
-        createdAt: naive,
-      })
-      addRecord(
-        state,
-        subscribe,
-        site.standard.graph.subscription.$build({
-          publication: pubUri,
-          createdAt: asDatetimeString(createdAt),
-        }),
-      )
-      state.externalRecords.get(subscribe)!.record.createdAt = naive
-      addRecord(state, favorite, {
-        ...social.grain.favorite.$build({ subject: galleryUri, createdAt }),
-        createdAt: naive,
-      })
-      state.externalRecordBacklinks.set(docUri, [recommend])
-      state.externalRecordBacklinks.set(pubUri, [subscribe])
-      state.externalRecordBacklinks.set(galleryUri, [favorite])
-      state.externalRecordBacklinkCounts.set(docUri, {
-        [site.standard.graph.recommend.$type]: 3,
-      })
-      state.externalRecordBacklinkCounts.set(pubUri, {
-        [site.standard.graph.subscription.$type]: 4,
-      })
-      state.externalRecordBacklinkCounts.set(galleryUri, {
-        [social.grain.favorite.$type]: 5,
-      })
-
-      const article = views.externalRecordView(docUri, state)
-      assert(article && app.bsky.embed.external.viewArticle.$isTypeOf(article))
-      assertValid(article)
-      expect(article.likers).toEqual([])
-      expect(article.likeCount).toBe(3)
-      expect(article.publisher?.subscribers).toEqual([])
-      expect(article.publisher?.subscriptionCount).toBe(4)
-      const gallery = views.externalRecordView(galleryUri, state)
-      assert(gallery && app.bsky.embed.external.viewGallery.$isTypeOf(gallery))
-      assertValid(gallery)
-      expect(gallery.likers).toEqual([])
-      expect(gallery.likeCount).toBe(5)
-    })
-
-    it('preserves valid timestamps and leaves source records untouched', () => {
-      const state = createState()
-      addArticle(state, 'https://example.com/blog')
-      const updatedAt = '2026-01-02T03:04:05.678+02:00'
-      state.externalRecords.get(docUri)!.record.updatedAt = updatedAt
-      addStream(state, {
-        endedAt: '2026-01-01T00:30:00Z',
-        lastSeenAt: '2026-01-01T00:20:00Z',
-      })
-      const before = [docUri, streamUri].map((uri) =>
-        lexStringify(state.externalRecords.get(uri)!.record),
-      )
-      const article = views.externalRecordView(docUri, state)
-      assertValid(article)
-      expect(article).toMatchObject({ createdAt, updatedAt })
-      const stream = views.externalRecordView(streamUri, state)
-      assertValid(stream)
-      expect(stream).toMatchObject({
-        createdAt,
-        startedAt: createdAt,
-        endedAt: '2026-01-01T00:30:00Z',
-        active: false,
-      })
+      expect((await hydrator.getRecordsByURI([docUri])).get(docUri)).toBeNull()
       expect(
-        [docUri, streamUri].map((uri) =>
-          lexStringify(state.externalRecords.get(uri)!.record),
-        ),
-      ).toEqual(before)
+        (await hydrator.getRecordsByURI([docUri], true)).get(docUri),
+      ).toEqual({
+        record,
+        cid: docCid,
+        sortedAt,
+        indexedAt,
+        takedownRef: expected,
+      })
+      expect(lookup).toHaveBeenCalledTimes(2)
+    },
+  )
+
+  test.each(['', '{', 'null', '[]', '{}', '{"$type":42}'])(
+    'treats invalid record body %j as unavailable',
+    async (body) => {
+      using lookup = vi.spyOn(dataplane, 'getRecordsByURI').mockResolvedValue(
+        new GetRecordsByURIResponse({
+          results: [
+            {
+              status: RecordLookupStatus.FOUND,
+              record: { ...entry, record: Buffer.from(body) },
+            },
+          ],
+        }),
+      )
+      expect((await hydrator.getRecordsByURI([docUri])).get(docUri)).toBeNull()
+      expect(lookup).toHaveBeenCalledOnce()
+    },
+  )
+
+  it('handles missing record entries, missing CIDs, and short responses', async () => {
+    using lookup = vi.spyOn(dataplane, 'getRecordsByURI').mockResolvedValue(
+      new GetRecordsByURIResponse({
+        results: [
+          { status: RecordLookupStatus.FOUND },
+          { status: RecordLookupStatus.FOUND, record: { ...entry, cid: '' } },
+        ],
+      }),
+    )
+    const records = await hydrator.getRecordsByURI([
+      docUri,
+      pubUri,
+      otherPubUri,
+    ])
+    expect([...records.values()]).toEqual([null, null, null])
+    expect(lookup).toHaveBeenCalledOnce()
+  })
+
+  it('normalizes missing and Go zero-value record timestamps to the epoch', async () => {
+    using lookup = vi.spyOn(dataplane, 'getRecordsByURI').mockResolvedValue(
+      new GetRecordsByURIResponse({
+        results: [
+          {
+            status: RecordLookupStatus.FOUND,
+            record: {
+              ...entry,
+              sortedAt: undefined,
+              indexedAt: Timestamp.fromDate(new Date('0001-01-01T00:00:00Z')),
+            },
+          },
+        ],
+      }),
+    )
+    expect((await hydrator.getRecordsByURI([docUri])).get(docUri)).toEqual({
+      record,
+      cid: docCid,
+      sortedAt: new Date(0),
+      indexedAt: new Date(0),
+      takedownRef: undefined,
+    })
+    expect(lookup).toHaveBeenCalledOnce()
+  })
+
+  it('propagates dataplane failures instead of turning them into misses', async () => {
+    const error = new Error('dataplane unavailable')
+    using lookup = vi
+      .spyOn(dataplane, 'getRecordsByURI')
+      .mockRejectedValue(error)
+    await expect(hydrator.getRecordsByURI([docUri])).rejects.toThrow(error)
+    expect(lookup).toHaveBeenCalledOnce()
+  })
+
+  it('hydrates timeline pages in order and preserves pagination', async () => {
+    using timeline = vi
+      .spyOn(dataplane, 'getAtmosphereTimeline')
+      .mockResolvedValueOnce(
+        new GetAtmosphereTimelineResponse({
+          items: [
+            { uri: docUri, sortedAt: Timestamp.fromDate(sortedAt) },
+            { uri: pubUri },
+          ],
+          cursor: 'next-page',
+        }),
+      )
+      .mockResolvedValueOnce(new GetAtmosphereTimelineResponse())
+
+    expect(
+      await hydrator.getAtmosphereTimeline(docDid, {
+        limit: 2,
+        cursor: 'previous-page',
+      }),
+    ).toEqual({
+      items: [
+        { uri: docUri, sortedAt },
+        { uri: pubUri, sortedAt: new Date(0) },
+      ],
+      cursor: 'next-page',
+    })
+    expect(timeline).toHaveBeenNthCalledWith(1, {
+      viewerDid: docDid,
+      limit: 2,
+      cursor: 'previous-page',
+    })
+    expect(await hydrator.getAtmosphereTimeline(docDid)).toEqual({
+      items: [],
+      cursor: undefined,
+    })
+    expect(timeline).toHaveBeenNthCalledWith(2, { viewerDid: docDid })
+  })
+
+  it('hydrates counts per target and collection as numbers', async () => {
+    using counts = vi
+      .spyOn(dataplane, 'getAtmosphereBacklinkCounts')
+      .mockResolvedValue(
+        new GetAtmosphereBacklinkCountsResponse({
+          results: [
+            {
+              targetUri: docUri,
+              counts: {
+                [collection]: 12n,
+                [site.standard.publication.$type]: 0n,
+              },
+            },
+            { targetUri: pubUri },
+          ],
+        }),
+      )
+    const result = await hydrator.getAtmosphereBacklinkCounts([docUri, pubUri])
+    expect(result.get(docUri)).toEqual({
+      [collection]: 12,
+      [site.standard.publication.$type]: 0,
+    })
+    expect(result.get(pubUri)).toEqual({})
+    expect(counts).toHaveBeenNthCalledWith(1, {
+      targetUris: [docUri, pubUri],
+      collection: undefined,
+    })
+
+    await hydrator.getAtmosphereBacklinkCounts([docUri], collection)
+    expect(counts).toHaveBeenNthCalledWith(2, {
+      targetUris: [docUri],
+      collection,
     })
   })
 
-  it('omits unsupported collections', () => {
-    const state = createState()
-    const uri = atUri(did, app.bsky.feed.post.$type, 'post')
-    addRecord(
-      state,
-      uri,
-      app.bsky.feed.post.$build({ text: 'Not a modality', createdAt }),
-    )
-    expect(views.externalRecordView(uri, state)).toBeUndefined()
+  it('hydrates backlink pages and normalizes the terminal cursor', async () => {
+    using backlinks = vi
+      .spyOn(dataplane, 'getAtmosphereBacklinks')
+      .mockResolvedValueOnce(
+        new GetAtmosphereBacklinksResponse({
+          backlinks: [{ uri: pubUri, sortedAt: Timestamp.fromDate(sortedAt) }],
+          cursor: 'next-page',
+        }),
+      )
+      .mockResolvedValueOnce(new GetAtmosphereBacklinksResponse())
+
+    expect(
+      await hydrator.getAtmosphereBacklinks(docUri, collection, {
+        limit: 1,
+        cursor: 'previous-page',
+      }),
+    ).toEqual({
+      backlinks: [{ uri: pubUri, sortedAt }],
+      cursor: 'next-page',
+    })
+    expect(backlinks).toHaveBeenNthCalledWith(1, {
+      targetUri: docUri,
+      collection,
+      limit: 1,
+      cursor: 'previous-page',
+    })
+    expect(await hydrator.getAtmosphereBacklinks(docUri, collection)).toEqual({
+      backlinks: [],
+      cursor: undefined,
+    })
+    expect(backlinks).toHaveBeenNthCalledWith(2, {
+      targetUri: docUri,
+      collection,
+    })
   })
 
-  it('preserves generic record hydration when merging states', () => {
-    const first = createState()
-    const second = createState()
-    addGallery(first)
-    addArticle(second, 'https://example.com')
-    first.externalRecordBacklinks.set(galleryUri, [])
-    second.externalRecordBacklinks.set(docUri, [])
-    first.externalRecordBacklinkCounts.set(galleryUri, {})
-    second.externalRecordBacklinkCounts.set(docUri, {})
-    const merged = mergeStates(first, second)
-    expect([...merged.externalRecords!.keys()]).toEqual([galleryUri, docUri])
-    expect([...merged.externalRecordBacklinks!.keys()]).toEqual([
-      galleryUri,
-      docUri,
-    ])
-    expect([...merged.externalRecordBacklinkCounts!.keys()]).toEqual([
-      galleryUri,
-      docUri,
-    ])
+  test.each([false, true])(
+    'retains all actor backlinks and truncated=%s',
+    async (truncated) => {
+      using byActor = vi
+        .spyOn(dataplane, 'getAtmosphereBacklinksByActor')
+        .mockResolvedValue(
+          new GetAtmosphereBacklinksByActorResponse({
+            results: [
+              { targetUri: docUri, uris: [pubUri, otherPubUri] },
+              { targetUri: pubUri, uris: [] },
+            ],
+            truncated,
+          }),
+        )
+      const result = await hydrator.getAtmosphereBacklinksByActor(
+        [docUri, pubUri],
+        pubDid,
+        collection,
+      )
+      expect(result.backlinks.get(docUri)).toEqual([pubUri, otherPubUri])
+      expect(result.backlinks.get(pubUri)).toEqual([])
+      expect(result.truncated).toBe(truncated)
+      expect(byActor).toHaveBeenCalledExactlyOnceWith({
+        targetUris: [docUri, pubUri],
+        actorDid: pubDid,
+        collection,
+      })
+    },
+  )
+})
+
+describe('ExternalHydrator site.standard lookups', () => {
+  const dataplane = createPromiseClient(
+    Service,
+    createRouterTransport(() => {}),
+  )
+  const hydrator = new ExternalHydrator(dataplane)
+
+  const doc = site.standard.document.$build({
+    site: pubUri,
+    path: '/post',
+    title: 'Document',
+    publishedAt: '2026-10-01T00:00:00.000Z',
+  })
+  const pub = site.standard.publication.$build({
+    url: 'https://example.com',
+    name: 'Publication',
+  })
+  const found = (uri: AtUriString, cid: string, body: object) => ({
+    ref: { uri, cid },
+    status: RecordLookupStatus.FOUND,
+    record: { cid, record: Buffer.from(lexStringify(body)) },
+  })
+  const notFound = (uri: AtUriString) => ({
+    ref: { uri },
+    status: RecordLookupStatus.NOT_FOUND,
+  })
+  const key = (uri: AtUriString, cid: string) => genericRecordKey({ uri, cid })
+
+  describe('getSiteStandardRecordsByRef', () => {
+    it('short-circuits when no refs are site.standard records with a cid', async () => {
+      using byRef = vi.spyOn(dataplane, 'getRecordsByRef')
+      const res = await hydrator.getSiteStandardRecordsByRef([
+        { uri: 'at://did:plc:a/app.bsky.feed.post/1' as AtUriString, cid: 'x' },
+        { uri: docUri },
+      ])
+      expect(res.documents.size).toBe(0)
+      expect(byRef).not.toHaveBeenCalled()
+    })
+
+    it('hydrates exact versions into the matching maps', async () => {
+      const refs: ItemRef[] = [
+        { uri: docUri, cid: docCid },
+        { uri: pubUri, cid: pubCid },
+      ]
+      using byRef = vi.spyOn(dataplane, 'getRecordsByRef').mockResolvedValue(
+        new GetRecordsByRefResponse({
+          results: [found(docUri, docCid, doc), found(pubUri, pubCid, pub)],
+        }),
+      )
+      const res = await hydrator.getSiteStandardRecordsByRef(refs)
+      expect(byRef).toHaveBeenCalledExactlyOnceWith({ refs })
+      expect(res.documents.get(key(docUri, docCid))?.record).toEqual(doc)
+      expect(res.publications.get(key(pubUri, pubCid))?.record).toEqual(pub)
+    })
+
+    it('does not fetch a document-referenced publication that was not pinned', async () => {
+      using byRef = vi.spyOn(dataplane, 'getRecordsByRef').mockResolvedValue(
+        new GetRecordsByRefResponse({
+          results: [found(docUri, docCid, doc)],
+        }),
+      )
+      const res = await hydrator.getSiteStandardRecordsByRef([
+        { uri: docUri, cid: docCid },
+      ])
+      expect(byRef).toHaveBeenCalledOnce()
+      expect(res.publications.size).toBe(0)
+    })
+
+    it('records missing and invalid versions as null', async () => {
+      using _ = vi.spyOn(dataplane, 'getRecordsByRef').mockResolvedValue(
+        new GetRecordsByRefResponse({
+          results: [
+            notFound(docUri),
+            found(pubUri, pubCid, { ...pub, name: 42 }),
+          ],
+        }),
+      )
+      const res = await hydrator.getSiteStandardRecordsByRef([
+        { uri: docUri, cid: docCid },
+        { uri: pubUri, cid: pubCid },
+      ])
+      expect(res.documents.get(key(docUri, docCid))).toBeNull()
+      expect(res.publications.get(key(pubUri, pubCid))).toBeNull()
+    })
   })
 })

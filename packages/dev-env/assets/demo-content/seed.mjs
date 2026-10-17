@@ -465,6 +465,10 @@ export function validateContent(content) {
   const posts = new Map(content.posts.map((post) => [post.alias, post]))
   if (posts.size !== content.posts.length)
     throw new Error('Duplicate demo post alias')
+  for (const post of content.posts) {
+    if (post.matter && !/^\|#[^|#]/.test(post.matter))
+      throw new Error(`Matter flair of ${post.alias} must be single-pipe`)
+  }
   const highlights = new Set()
   for (const highlight of content.highlights) {
     const post = posts.get(highlight.subject)
@@ -509,6 +513,8 @@ async function seedArtifacts(ctx, content) {
   const refs = new Map()
   for (const spec of content.posts) {
     const author = await login(ctx, spec.author)
+    // A policy is filed under its matter by a second, single-pipe flair.
+    const flairs = spec.matter ? [spec.flair, spec.matter] : [spec.flair]
     const post = await putRecord(
       ctx,
       author,
@@ -519,7 +525,7 @@ async function seedArtifacts(ctx, content) {
         text: spec.text,
         title: spec.title,
         postType: spec.postType,
-        flairs: [spec.flair],
+        flairs,
         tags: ['demo', 'civic-tree'],
         langs: ['es'],
         createdAt: spec.createdAt,
@@ -535,7 +541,7 @@ async function seedArtifacts(ctx, content) {
         post: post.uri,
         postType: spec.postType,
         category: spec.flair,
-        flairs: [spec.flair],
+        flairs,
         voteScore: 0,
         createdAt: spec.createdAt,
       },

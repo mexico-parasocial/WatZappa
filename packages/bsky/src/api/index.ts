@@ -87,7 +87,7 @@ import getConfig from './app/bsky/unspecced/getConfig.js'
 import getOnboardingSuggestedStarterPacks from './app/bsky/unspecced/getOnboardingSuggestedStarterPacks.js'
 import getPopularFeedGenerators from './app/bsky/unspecced/getPopularFeedGenerators.js'
 import getPostThreadOtherV2 from './app/bsky/unspecced/getPostThreadOtherV2.js'
-import getPostThreadV2 from './app/unspecced/getPostThreadV2.js'
+import getPostThreadV2 from './app/bsky/unspecced/getPostThreadV2.js'
 import getUnspeccedSuggestedFeeds from './app/bsky/unspecced/getSuggestedFeeds.js'
 import getSuggestedOnboardingUsers from './app/bsky/unspecced/getSuggestedOnboardingUsers.js'
 import getSuggestedStarterPacks from './app/bsky/unspecced/getSuggestedStarterPacks.js'
@@ -116,7 +116,9 @@ import { bookSchemas } from './com/para/book/schemas.js'
 import searchParaBooks from './com/para/book/searchBooks.js'
 import getParaCabildeo from './com/para/civic/getCabildeo.js'
 import getParaOpenQuestionThread from './com/para/civic/getOpenQuestionThread.js'
+import getParaPolicyCommunityVotes from './com/para/civic/getPolicyCommunityVotes.js'
 import getParaPolicyTally from './com/para/civic/getPolicyTally.js'
+import { civicSchemas } from './com/para/civic/schemas.js'
 import listParaCabildeoPositions from './com/para/civic/listCabildeoPositions.js'
 import listParaCabildeos from './com/para/civic/listCabildeos.js'
 import listParaDelegationCandidates from './com/para/civic/listDelegationCandidates.js'
@@ -161,7 +163,7 @@ import getParaDiscourseTopics from './com/para/discourse/getTopics.js'
 import getParaDiscourseTopology from './com/para/discourse/getTopology.js'
 import getParaAuthorFeed from './com/para/feed/getAuthorFeed.js'
 import getParaMemes from './com/para/feed/getMemes.js'
-import getParaPostThread frobsky/m './com/para/feed/getPostThread.js'
+import getParaPostThread from './com/para/feed/getPostThread.js'
 import getParaPosts from './com/para/feed/getPosts.js'
 import getParaTimeline from './com/para/feed/getTimeline.js'
 import searchParaPosts from './com/para/feed/searchPosts.js'
@@ -189,6 +191,7 @@ export default function (server: Server, ctx: AppContext) {
   // The civicTree procedure lexicons postdate the frozen generated registry.
   server.addLexicons(civicTreeProcedureSchemas)
   server.addLexicons(bookSchemas)
+  server.addLexicons(civicSchemas)
   server.addLexicons([applyOpsSchema])
 
   const paraServer = { xrpc: server } as unknown as ParaLexiconServer
@@ -322,6 +325,7 @@ export default function (server: Server, ctx: AppContext) {
   getParaAuditTrail(paraServer, ctx)
   getParaCivicTree(paraServer, ctx)
   searchParaBooks(paraServer, ctx)
+  getParaPolicyCommunityVotes(paraServer, ctx)
   listParaCivicTreeContributions(paraServer, ctx)
   submitParaCivicTreeContribution(paraServer, ctx)
   voteParaCivicTreeContribution(paraServer, ctx)

@@ -9,7 +9,7 @@ import type {
   SyncLogEntry,
   UserPushToken,
 } from './pg/index.js'
-import type { BridgeEvent } from './records.js'
+import type { BridgeEvent, PushDelivery } from './records.js'
 import { BridgeDatabase } from './sqlite/index.js'
 
 /**
@@ -56,7 +56,47 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     })
   }
 
+  claimPushDelivery(
+    id: string,
+    token: string,
+    owner: string,
+    now: number,
+  ): Promise<boolean> {
+    return this.wrap(() => this.inner.claimPushDelivery(id, token, owner, now))
+  }
+  getPushDelivery(id: string): Promise<PushDelivery | undefined> {
+    return this.wrap(() => this.inner.getPushDelivery(id))
+  }
+  completePushDelivery(
+    id: string,
+    owner: string,
+    receiptId: string | null,
+    rejected: boolean,
+    now: number,
+  ): Promise<void> {
+    return this.wrap(() =>
+      this.inner.completePushDelivery(id, owner, receiptId, rejected, now),
+    )
+  }
+  releasePushDelivery(id: string, owner: string): Promise<void> {
+    return this.wrap(() => this.inner.releasePushDelivery(id, owner))
+  }
+  getPendingPushReceipts(now: number): Promise<PushDelivery[]> {
+    return this.wrap(() => this.inner.getPendingPushReceipts(now))
+  }
+  resolvePushReceipt(
+    id: string,
+    state: 'provider_accepted' | 'rejected' | 'failed' | 'submitted',
+    error: string | null,
+    now: number,
+  ): Promise<void> {
+    return this.wrap(() => this.inner.resolvePushReceipt(id, state, error, now))
+  }
+
   // ── Community / Space ──
+  prunePushDeliveries(before: number): Promise<void> {
+    return this.wrap(() => this.inner.prunePushDeliveries(before))
+  }
 
   getSpaceForCommunity(
     communityUri: string,

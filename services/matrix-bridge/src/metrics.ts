@@ -2,6 +2,18 @@ import { Counter, Gauge, Histogram, Registry } from 'prom-client'
 
 export class BridgeMetrics {
   readonly registry = new Registry()
+  readonly pushReceiptResults = new Counter({
+    name: 'para_matrix_push_receipt_results_total',
+    help: 'Expo receipt outcomes; provider acceptance is not device delivery',
+    labelNames: ['result'],
+    registers: [this.registry],
+  })
+
+  readonly pushReceiptBatch = new Gauge({
+    name: 'para_matrix_push_receipt_due_batch',
+    help: 'Due receipt batch size, capped at 1000',
+    registers: [this.registry],
+  })
 
   readonly asTransactionsTotal = new Counter({
     name: 'bridge_as_transactions_total',

@@ -1,18 +1,18 @@
 import {
-  OAuthAuthorizationServerMetadata,
+  type OAuthAuthorizationServerMetadata,
   oauthAuthorizationServerMetadataValidator,
   oauthIssuerIdentifierSchema,
 } from '@atproto/oauth-types'
 import {
-  Fetch,
+  type Fetch,
   FetchResponseError,
   bindFetch,
   cancelBody,
 } from '@atproto-labs/fetch'
 import {
   CachedGetter,
-  GetCachedOptions,
-  SimpleStore,
+  type GetCachedOptions,
+  type SimpleStore,
   type StoreErrorHandler,
   swallowStoreErrors,
 } from '@atproto-labs/simple-store'
@@ -27,6 +27,7 @@ export type AuthorizationServerMetadataCache = SimpleStore<
 
 export type OAuthAuthorizationServerMetadataResolverConfig = {
   allowHttpIssuer?: boolean
+
   /**
    * Called when the metadata cache throws. The cache is best-effort: failures
    * are logged (by default) and degrade to a cache miss + refetch, rather than

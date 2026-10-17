@@ -1,6 +1,6 @@
-import { Cid, LexMap, TypedBlobRef } from '@atproto/lex-data'
-import { BlockMap, CommitData, WriteOpAction } from '@atproto/repo'
-import { AtUri } from '@atproto/syntax'
+import type { Cid, LexMap, TypedBlobRef } from '@atproto/lex-data'
+import type { BlockMap, CommitData, WriteOpAction } from '@atproto/repo'
+import type { AtUri } from '@atproto/syntax'
 
 export type ValidationStatus = 'valid' | 'unknown'
 
@@ -51,24 +51,6 @@ export type SyncEvtData = {
 }
 
 export class InvalidRecordError extends Error {}
-
-/**
- * A write refused by the PARA ballot policy. Subclasses
- * {@link InvalidRecordError} so that every handler already mapping that to a
- * 400 refuses the write without a per-handler change.
- */
-export class BallotRefusedError extends InvalidRecordError {
-  name = 'BallotRefusedError'
-}
-
-/**
- * A write refused because PARA does not support its record type (e.g.
- * reposts). Subclasses {@link InvalidRecordError} so every handler maps it to
- * a 400 without a per-handler change.
- */
-export class UnsupportedRecordError extends InvalidRecordError {
-  name = 'UnsupportedRecordError'
-}
 
 export class BadCommitSwapError extends Error {
   constructor(public cid: Cid) {

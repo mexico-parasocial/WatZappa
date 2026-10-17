@@ -632,6 +632,7 @@ message GetBlockExistenceResponse {
 message ListItemInfo {
   string uri = 1;
   string did = 2;
+  bool subject_opted_out = 3;
 }
 
 // - Return dids of users in list A
@@ -640,6 +641,7 @@ message GetListMembersRequest {
   string list_uri = 1;
   int32 limit = 2;
   string cursor = 3;
+  string viewer_did = 4;
 }
 
 message GetListMembersResponse {
@@ -680,6 +682,15 @@ message GetActorListsRequest {
 message GetActorListsResponse {
   repeated string list_uris = 1;
   string cursor = 2;
+}
+
+message GetReferencelistoptoutsByActorAndSubjectsRequest {
+  string actor_did = 1;
+  repeated string subject_uris = 2;
+}
+
+message GetReferencelistoptoutsByActorAndSubjectsResponse {
+  repeated string uris = 1;
 }
 
 //
@@ -1872,6 +1883,34 @@ message GetParaPolicyTallyResponse {
   ParaPolicyTally tally = 1;
 }
 
+// One member of a community who voted on a policy, and how.
+message ParaPolicyCommunityVote {
+  string did = 1;
+  string handle = 2;
+  string display_name = 3;
+  string avatar = 4;
+  int32 signal = 5;
+  string created_at = 6;
+}
+// How the members of one community voted on a policy. The viewer must be an
+// active member of that community.
+message GetParaPolicyCommunityVotesRequest {
+  string post_uri = 1;
+  string community_id = 2;
+  string viewer_did = 3;
+  bool viewer_is_admin = 4;
+  int32 limit = 5;
+}
+message GetParaPolicyCommunityVotesResponse {
+  string community_uri = 1;
+  string community_name = 2;
+  int32 member_count = 3;
+  int32 voter_count = 4;
+  double signal_average = 5;
+  repeated ParaPolicySignalBucket breakdown = 6;
+  repeated ParaPolicyCommunityVote votes = 7;
+}
+
 message ParaJsonPageResponse {
   string items_json = 1;
   string cursor = 2;
@@ -2717,6 +2756,7 @@ service Service {
   rpc GetListMembers(GetListMembersRequest) returns (GetListMembersResponse);
   rpc GetListMembership(GetListMembershipRequest) returns (GetListMembershipResponse);
   rpc GetListCount(GetListCountRequest) returns (GetListCountResponse);
+  rpc GetReferencelistoptoutsByActorAndSubjects(GetReferencelistoptoutsByActorAndSubjectsRequest) returns (GetReferencelistoptoutsByActorAndSubjectsResponse);
 
   // Mutes
   rpc GetActorMutesActor(GetActorMutesActorRequest) returns (GetActorMutesActorResponse);
@@ -2824,6 +2864,7 @@ service Service {
   rpc GetCollectionByKey(GetCollectionByKeyRequest) returns (GetCollectionByKeyResponse);
   rpc GetParaPostMeta(GetParaPostMetaRequest) returns (GetParaPostMetaResponse);
   rpc GetParaPolicyTally(GetParaPolicyTallyRequest) returns (GetParaPolicyTallyResponse);
+  rpc GetParaPolicyCommunityVotes(GetParaPolicyCommunityVotesRequest) returns (GetParaPolicyCommunityVotesResponse);
   rpc GetParaVotes(GetParaVotesRequest) returns (ParaJsonPageResponse);
   rpc GetParaDeliberations(GetParaDeliberationsRequest) returns (ParaJsonPageResponse);
   rpc GetParaIntensities(GetParaIntensitiesRequest) returns (ParaJsonPageResponse);

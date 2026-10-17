@@ -1,7 +1,10 @@
 import { base64url } from 'multiformats/bases/base64'
 import type { Jwk, Key } from '@atproto/jwk'
 import { requestLocalLock } from './lock.js'
-import { RuntimeImplementation, RuntimeLock } from './runtime-implementation.js'
+import type {
+  RuntimeImplementation,
+  RuntimeLock,
+} from './runtime-implementation.js'
 
 export class Runtime {
   readonly hasImplementationLock: boolean

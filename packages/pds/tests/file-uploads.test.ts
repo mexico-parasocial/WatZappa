@@ -1,4 +1,3 @@
-// @ts-nocheck
 import assert from 'node:assert'
 import fs from 'node:fs/promises'
 import { gzipSync } from 'node:zlib'

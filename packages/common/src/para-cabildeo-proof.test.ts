@@ -1,6 +1,6 @@
 import { type Server, createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { verifyCabildeoProof } from './para-cabildeo-proof.js'
+import { verifyPublicBallotProof } from './para-cabildeo-proof.js'
 
 const did = 'did:plc:example'
 const record = {
@@ -48,9 +48,9 @@ afterAll(async () => {
   )
 })
 
-describe('public cabildeo proof verification', () => {
+describe('public ballot proof verification', () => {
   it('sends the authenticated author, subject and option without session credentials', async () => {
-    await expect(verifyCabildeoProof(did, record, url)).resolves.toBe(true)
+    await expect(verifyPublicBallotProof(did, record, url)).resolves.toBe(true)
     expect(received).toEqual({
       actorDid: did,
       subjectUri: record.subject,
@@ -71,20 +71,20 @@ describe('public cabildeo proof verification', () => {
     'rejects malformed or ambiguous records before networking: %j',
     async (change) => {
       await expect(
-        verifyCabildeoProof(did, { ...record, ...change }, url),
+        verifyPublicBallotProof(did, { ...record, ...change }, url),
       ).resolves.toBe(false)
       expect(requests).toBe(0)
     },
   )
   it('rejects a claim rejected by the issuer', async () => {
     responseStatus = 422
-    await expect(verifyCabildeoProof(did, record, url)).resolves.toBe(false)
+    await expect(verifyPublicBallotProof(did, record, url)).resolves.toBe(false)
   })
   it.each([200, 302, 401, 404, 500, 503])(
     'fails closed on unexpected HTTP status %s',
     async (status) => {
       responseStatus = status
-      await expect(verifyCabildeoProof(did, record, url)).rejects.toThrow(
+      await expect(verifyPublicBallotProof(did, record, url)).rejects.toThrow(
         /unavailable/,
       )
     },
@@ -93,7 +93,7 @@ describe('public cabildeo proof verification', () => {
     'fails closed on %s',
     async (mode) => {
       responseStatus = mode
-      await expect(verifyCabildeoProof(did, record, url)).rejects.toThrow(
+      await expect(verifyPublicBallotProof(did, record, url)).rejects.toThrow(
         /unavailable/,
       )
     },
@@ -103,7 +103,59 @@ describe('public cabildeo proof verification', () => {
     'http://untrusted.example/verify',
     'https://user:secret@example.org/verify',
   ])('refuses missing or insecure configuration', async (configured) => {
-    await expect(verifyCabildeoProof(did, record, configured)).rejects.toThrow()
+    await expect(
+      verifyPublicBallotProof(did, record, configured),
+    ).rejects.toThrow()
+    expect(requests).toBe(0)
+  })
+})
+
+describe('public policy ballot verification', () => {
+  const policy = {
+    subjectType: 'policy',
+    subject: 'at://did:plc:board/app.bsky.feed.post/policy',
+    signal: -2,
+    isDirect: true,
+    voteNullifier: 'c'.repeat(64),
+    eligibilityProofRef: 'm8:policy:v1:' + 'd'.repeat(43),
+  }
+
+  it('sends the signal m8 bound, not an option', async () => {
+    await expect(verifyPublicBallotProof(did, policy, url)).resolves.toBe(true)
+    expect(received).toEqual({
+      actorDid: did,
+      subjectUri: policy.subject,
+      signal: -2,
+      voteNullifier: policy.voteNullifier,
+      eligibilityProofRef: policy.eligibilityProofRef,
+    })
+  })
+
+  it.each([
+    { signal: 4 },
+    { signal: -4 },
+    { signal: 0.5 },
+    { signal: undefined },
+    { selectedOption: 1 },
+    { cabildeo: 'at://did:plc:board/app.bsky.feed.post/policy' },
+    // A cabildeo authorization cannot stand in for a policy one.
+    { eligibilityProofRef: 'm8:cabildeo:v1:' + 'b'.repeat(43) },
+    { isDirect: false },
+  ])('rejects before networking: %j', async (change) => {
+    await expect(
+      verifyPublicBallotProof(did, { ...policy, ...change }, url),
+    ).resolves.toBe(false)
+    expect(requests).toBe(0)
+  })
+
+  it('rejects a cabildeo ballot carrying a policy authorization', async () => {
+    await expect(
+      verifyPublicBallotProof(
+        did,
+        { ...record, eligibilityProofRef: policy.eligibilityProofRef },
+        url,
+      ),
+    ).resolves.toBe(false)
     expect(requests).toBe(0)
   })
 })

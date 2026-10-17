@@ -10,6 +10,7 @@ import {
   is$typed as _is$typed,
   type OmitKey,
 } from '../../../../util.js'
+import type * as ComAtprotoLabelDefs from '../../../com/atproto/label/defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -24,6 +25,7 @@ export interface Main {
   /** The destination site's icon, uploaded when the link is saved. */
   icon?: BlobRef
   createdAt: string
+  labels?: $Typed<ComAtprotoLabelDefs.SelfLabels> | { $type: string }
   [k: string]: unknown
 }
 

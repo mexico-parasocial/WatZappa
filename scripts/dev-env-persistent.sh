@@ -18,7 +18,7 @@ if ! command -v docker >/dev/null || ! docker info >/dev/null 2>&1; then
   exit 2
 fi
 
-for port in 2581 2582 2583 2584 2587 2590 "${BRIDGE_PORT:-3001}"; do
+for port in "${DEV_ENV_INTROSPECT_PORT:-2581}" "${DEV_ENV_PLC_PORT:-2582}" "${DEV_ENV_PDS_PORT:-2583}" "${DEV_ENV_BSKY_PORT:-2584}" "${DEV_ENV_OZONE_PORT:-2587}" "${DEV_ENV_CHAT_PORT:-2590}" "${BRIDGE_PORT:-3001}"; do
   if command -v lsof >/dev/null && lsof -nP -tiTCP:"$port" -sTCP:LISTEN | grep -q .; then
     echo "Port $port is already in use. Stop that dev stack before starting another." >&2
     exit 2
@@ -46,15 +46,19 @@ cd "$ROOT/packages/bsky"
 ../../node_modules/.bin/tsc --build tsconfig.build.json --force
 
 # The durable db and redis containers are deliberately left running on exit.
-docker compose -f "$INFRA/docker-compose.yaml" up -d --wait db redis
+COMPOSE_ARGS=(-f "$INFRA/docker-compose.yaml")
+if [[ -n "${DEV_ENV_COMPOSE_PROJECT:-}" ]]; then
+  COMPOSE_ARGS=(-p "$DEV_ENV_COMPOSE_PROJECT" "${COMPOSE_ARGS[@]}")
+fi
+docker compose "${COMPOSE_ARGS[@]}" up -d --wait db redis
 node "$ROOT/scripts/check-dev-migrations.mjs"
 
 cd "$ROOT/packages/dev-env"
 
 export NODE_ENV=development
-export DB_POSTGRES_URL=postgresql://pg:password@127.0.0.1:5434/postgres
-export REDIS_HOST=127.0.0.1:6381
-export DB_POSTGRES_SCHEMA=para_local
+export DB_POSTGRES_URL="postgresql://pg:password@127.0.0.1:${DEV_ENV_PG_PORT:-5434}/postgres"
+export REDIS_HOST="127.0.0.1:${DEV_ENV_REDIS_PORT:-6381}"
+export DB_POSTGRES_SCHEMA="${DB_POSTGRES_SCHEMA:-para_local}"
 export DEV_ENV_PDS_DATA_DIRECTORY="$DATA_DIR/pds"
 export DEV_ENV_PDS_BLOBSTORE_DIRECTORY="$DATA_DIR/blobs"
 export DEV_ENV_PLC_DIRECTORY="$DATA_DIR/plc"
@@ -68,8 +72,12 @@ export BRIDGE_DB_PATH="$DATA_DIR/bridge/bridge.db"
 export BRIDGE_PDS_SOURCE_ID="$(cat "$SOURCE_FILE")"
 export BRIDGE_BACKFILL_FROM_START=1
 export DEV_ENV_M8_URL="${DEV_ENV_M8_URL:-http://localhost:8787/v1}"
-MUBEZ_ENV="${MUBEZ_DIR:-$ROOT/../mubEZ}/.env"
+MUBEZ_ENV="${MUBEZ_ENV:-${MUBEZ_DIR:-$ROOT/../mubEZ}/.env}"
 export DEV_ENV_M8_RESOLVER_SECRET="${DEV_ENV_M8_RESOLVER_SECRET:-$(sed -n 's/^CIVIC_DELEGATION_RESOLVER_SECRET=//p' "$MUBEZ_ENV" 2>/dev/null | tail -n1)}"
+
+export PDS_HEALTH_URL="http://localhost:${DEV_ENV_PDS_PORT:-2583}/xrpc/_health"
+export PDS_FIREHOSE_URL="ws://localhost:${DEV_ENV_PDS_PORT:-2583}"
+export PLC_URL="http://localhost:${DEV_ENV_PLC_PORT:-2582}"
 
 echo "Persistent dev profile: $DATA_DIR (PostgreSQL schema: $DB_POSTGRES_SCHEMA)"
 exec "$ROOT/scripts/with-matrix-bridge.sh" \

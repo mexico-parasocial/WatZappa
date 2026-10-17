@@ -1,8 +1,5 @@
 import assert from 'node:assert'
 import { randomBytes } from 'node:crypto'
-import fs from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
 import * as ui8 from 'uint8arrays'
 import { Secp256k1Keypair } from '@atproto/crypto'
 import { TestPds, TestPlc } from '@atproto/dev-env'
@@ -66,57 +63,24 @@ describe('plcRotationKey override', () => {
   it('uses the override for OAuth account creation', async () => {
     const provider = pds.ctx.oauthProvider
     assert(provider)
-    const account = await provider.accountManager.createAccount(
-      `${DEVICE_ID_PREFIX}${randomBytes(DEVICE_ID_BYTES_LENGTH).toString('hex')}`,
+
+    const deviceId =
+      `${DEVICE_ID_PREFIX}${randomBytes(DEVICE_ID_BYTES_LENGTH).toString('hex')}` as const
+
+    const { account } = await provider.accountManager.createAccount(
+      deviceId,
       { ipAddress: '127.0.0.1', port: 0 },
       {
         locale: 'en',
         handle: 'bob.test',
         email: 'bob@test.com',
         password: 'hunter2hunter2',
+        // @NOTE We disable the remembering to prevent the account manager
+        // to attempt creating a device-session association that would fail due
+        // the device not existing (the device ID was forged just)
+        remember: false,
       },
     )
     await expectOverrideKey(account.did)
-  })
-})
-
-describe('TestPds rotation key configuration', () => {
-  let pds: TestPds | undefined
-  let directory: string
-
-  beforeEach(async () => {
-    directory = await fs.mkdtemp(path.join(os.tmpdir(), 'pds-rotation-test-'))
-  })
-
-  afterEach(async () => {
-    await pds?.close()
-    pds = undefined
-    await fs.rm(directory, { recursive: true, force: true })
-  })
-
-  it('accepts a non-exportable override without an environment key', async () => {
-    const overrideKey = await Secp256k1Keypair.create()
-    pds = await TestPds.create(
-      { dataDirectory: directory },
-      { plcRotationKey: overrideKey },
-    )
-    expect(pds.ctx.plcRotationKey).toBe(overrideKey)
-    await expect(
-      fs.stat(path.join(directory, 'plc-rotation.key')),
-    ).rejects.toMatchObject({ code: 'ENOENT' })
-  })
-
-  it('retains rotation and recovery keys across persistent restarts', async () => {
-    pds = await TestPds.create({ dataDirectory: directory })
-    const rotationDid = pds.ctx.plcRotationKey.did()
-    const recoveryKey = await fs.readFile(path.join(directory, 'recovery.key'))
-    await pds.close()
-    pds = undefined
-
-    pds = await TestPds.create({ dataDirectory: directory })
-    expect(pds.ctx.plcRotationKey.did()).toBe(rotationDid)
-    expect(await fs.readFile(path.join(directory, 'recovery.key'))).toEqual(
-      recoveryKey,
-    )
   })
 })

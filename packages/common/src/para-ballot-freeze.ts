@@ -8,8 +8,9 @@
  * 1. It publishes a magnitude (a -3..+3 position) or the delegation graph:
  *    FROZEN until a private ballot exists. Refused on write and on index.
  * 2. Its count decides something: REDEMPTION REQUIRED, a valid m8
- *    authorization checked fail-closed (`para-cabildeo-proof.ts`). Only the
- *    cabildeo ballot is here today.
+ *    authorization checked fail-closed (`para-cabildeo-proof.ts`). The
+ *    cabildeo ballot and the policy ballot are here: both public and
+ *    attributable to the identity that casts them.
  * 3. Its count decides nothing: a PUBLIC REACTION, deduplicated per account and
  *    carrying no m8 proof. Asking m8 for a nullifier makes the issuer store a
  *    durable (person, subject) row; for a vote that decides nothing that is a
@@ -60,11 +61,13 @@ const FROZEN_REASONS: Record<FrozenBallotCollection, string> = {
 }
 
 /**
- * Not frozen, but narrowed to the one shape whose publicness has been accepted:
- * a cabildeo ballot. The record lands in the voter's own public repo either way,
- * so a `policy` ballot here would publish a -3..+3 signal, and `delegatedFrom`
- * would publish the delegation graph (§5b names it as more re-identifying than
- * the ballots themselves). Those need the replacement ballot, not this record.
+ * Not frozen, but narrowed to the two shapes whose publicness has been
+ * accepted: a cabildeo ballot (one option, OD-7 §5d) and a policy ballot (a
+ * -3..+3 signal, decided 2026-09-29 in PARA revocable-mandates-spec §4.0: the
+ * casting identity is anonymous by default and m8 holds no legal identity).
+ * `delegatedFrom` stays refused on both: it would publish the delegation graph
+ * (§5b names it as more re-identifying than the ballots themselves). A lent
+ * vote is cast as the lender's own ballot instead.
  */
 export const CABILDEO_BALLOT_COLLECTION = 'com.para.civic.vote'
 
@@ -99,13 +102,13 @@ export function ballotWriteRefusal(
   }
 
   if (collection === CABILDEO_BALLOT_COLLECTION) {
-    const refusal = cabildeoBallotRefusal(record)
+    const refusal = publicBallotRefusal(record)
     if (refusal) {
       return (
-        `${collection} is accepted only as a cabildeo ballot, and this one is not: ${refusal}. ` +
+        `${collection} is accepted only as a cabildeo or policy ballot, and this one is not: ${refusal}. ` +
         `The record is written to the voter's own public repo and signed by their DID, so it is permanently ` +
-        `attributable to them. That is accepted for cabildeo votes and only for those (${DOCS} §5c); ` +
-        `a signal ballot or a named delegation needs the replacement ballot (§5a/§5b), not this record.`
+        `attributable to them. That is accepted for cabildeo and policy votes and only for those (${DOCS} §5d); ` +
+        `a named delegation needs the replacement ballot (§5b), not this record.`
       )
     }
   }
@@ -113,7 +116,7 @@ export function ballotWriteRefusal(
   return undefined
 }
 
-function cabildeoBallotRefusal(record: unknown): string | undefined {
+function publicBallotRefusal(record: unknown): string | undefined {
   if (typeof record !== 'object' || record === null) {
     return 'the record is not an object'
   }
@@ -123,19 +126,32 @@ function cabildeoBallotRefusal(record: unknown): string | undefined {
     signal?: unknown
     delegatedFrom?: unknown
   }
-  if (subjectType !== 'cabildeo') {
-    return `\`subjectType\` is ${JSON.stringify(subjectType)} rather than "cabildeo"`
-  }
-  if (!Number.isInteger(selectedOption)) {
-    return '`selectedOption` is missing or not an integer'
-  }
-  if (signal !== undefined) {
-    return '`signal` is set, which publishes a -3..+3 position'
-  }
   if (Array.isArray(delegatedFrom) && delegatedFrom.length > 0) {
     return '`delegatedFrom` is set, which publishes the delegation graph'
   }
-  return undefined
+  if (subjectType === 'cabildeo') {
+    if (!Number.isInteger(selectedOption)) {
+      return '`selectedOption` is missing or not an integer'
+    }
+    if (signal !== undefined) {
+      return 'a cabildeo ballot takes an option, not a `signal`'
+    }
+    return undefined
+  }
+  if (subjectType === 'policy') {
+    if (
+      !Number.isInteger(signal) ||
+      (signal as number) < -3 ||
+      (signal as number) > 3
+    ) {
+      return '`signal` is missing or outside -3..+3'
+    }
+    if (selectedOption !== undefined) {
+      return 'a policy ballot takes a `signal`, not an option'
+    }
+    return undefined
+  }
+  return `\`subjectType\` is ${JSON.stringify(subjectType)} rather than "cabildeo" or "policy"`
 }
 
 /**

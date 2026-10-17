@@ -1,3 +1,4 @@
+import { createHash, randomUUID } from 'node:crypto'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { sendExpoNotifications } from '../push.js'
 import type { RouteContext } from './context.js'
@@ -61,20 +62,41 @@ export async function matrixPushV1NotifyHandler(
     senderName: senderMxid?.split(':')[0]?.replace('@', '') || 'Alguien',
   }
 
-  const pushTokens = devices
-    .map((d) => d.pushkey)
-    .filter(
-      (k) =>
-        typeof k === 'string' && /^Expo(nent)?PushToken\[[^\]]+\]$/.test(k),
-    )
+  const pushTokens = [
+    ...new Set(
+      devices
+        .map((d) => d.pushkey)
+        .filter(
+          (k) =>
+            typeof k === 'string' && /^Expo(nent)?PushToken\[[^\]]+\]$/.test(k),
+        ),
+    ),
+  ]
 
   const rejected = devices
     .map((d) => d.pushkey)
     .filter((k) => !pushTokens.includes(k))
   if (pushTokens.length > 0) {
+    const owner = randomUUID()
+    const claims = new Map<string, string>()
     try {
+      if (eventId) {
+        for (const token of pushTokens) {
+          const id = createHash('sha256')
+            .update(JSON.stringify([roomId, eventId, token]))
+            .digest('hex')
+          if (await ctx.db.claimPushDelivery(id, token, owner, Date.now()))
+            claims.set(token, id)
+          else {
+            const previous = await ctx.db.getPushDelivery(id)
+            if (!previous || previous.state === 'sending')
+              throw new Error('Push delivery is in progress')
+            if (previous.state === 'rejected') rejected.push(token)
+          }
+        }
+      }
       const expired = await sendExpoNotifications({
-        tokens: pushTokens,
+        tokens: eventId ? [...claims.keys()] : pushTokens,
         title: eventId ? community?.slug || 'PARA Chat' : undefined,
         body: eventId
           ? `Nuevo mensaje en ${community?.slug || 'tu comunidad'}`
@@ -85,16 +107,31 @@ export async function matrixPushV1NotifyHandler(
           notification.counts.unread >= 0
             ? notification.counts.unread
             : undefined,
+        onTicket: eventId
+          ? async (token, ticket) => {
+              await ctx.db.completePushDelivery(
+                claims.get(token)!,
+                owner,
+                ticket.id ?? null,
+                ticket.status === 'error',
+                Date.now(),
+              )
+            }
+          : undefined,
       })
       rejected.push(...expired)
       ctx.log.debug(
         { roomId, tokens: pushTokens.length },
-        'Sent push notification',
+        'Push request processed; provider acceptance pending',
       )
     } catch (err: any) {
       ctx.log.error({ err, roomId }, 'Failed to send push notification')
       writeJson(res, 502, { error: 'Push delivery unavailable' })
       return
+    } finally {
+      // @NOTE accepted tickets survive partial failures; only unsubmitted claims are retryable.
+      for (const id of claims.values())
+        await ctx.db.releasePushDelivery(id, owner)
     }
   }
 

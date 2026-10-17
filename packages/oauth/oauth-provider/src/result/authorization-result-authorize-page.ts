@@ -14,7 +14,7 @@ export type AuthorizationResultAuthorizePage = {
   sessions: readonly Session[]
   selectedDid?: Account['did']
 
-    /**
+  /**
    * User-facing value of the `login_hint` parameter. Same as
    * `parameters.login_hint`, except that a DID hint is resolved to the
    * account's handle when the account is known to this server.

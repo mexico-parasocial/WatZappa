@@ -74,7 +74,6 @@ export const proxyHandler = (ctx: AppContext): CatchallHandler => {
   const performAuth = ctx.authVerifier.authorization<RpcPermissionMatch>({
     authorize: (permissions, { params }) => permissions.assertRpc(params),
   })
-
   const performInboxAuth = ctx.authVerifier.authorization<RpcPermissionMatch>({
     additional: [AuthScope.Takendown],
     authorize: (permissions, { params }) => permissions.assertRpc(params),

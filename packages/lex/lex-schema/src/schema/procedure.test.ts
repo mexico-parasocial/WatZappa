@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, expect, it } from 'vitest'
 import { object } from './object.js'
 import { params } from './params.js'

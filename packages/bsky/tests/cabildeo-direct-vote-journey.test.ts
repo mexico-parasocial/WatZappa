@@ -173,9 +173,7 @@ maybeDescribe('cabildeo direct vote from PDS to AppView', () => {
   })
 
   it('rejects an invalid proof and a verifier outage', async () => {
-    await expect(cast(1, 'invented')).rejects.toThrow(
-      /valid cabildeo vote proof/,
-    )
+    await expect(cast(1, 'invented')).rejects.toThrow(/valid civic vote proof/)
     const configured = process.env.PARA_CIVIC_VOTE_VERIFIER_URL
     process.env.PARA_CIVIC_VOTE_VERIFIER_URL = 'https://issuer.invalid/verify'
     try {

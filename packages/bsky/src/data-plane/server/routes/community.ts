@@ -15,6 +15,7 @@ import {
   GetParaCommunityGovernanceResponse,
   GetParaCommunityMembersResponse,
   GetParaCommunityPostsResponse,
+  GetParaPolicyCommunityVotesResponse,
   GetParaCommunityRelationsResponse,
   GetParaCommunitySharedContentResponse,
   ParaAuthorFeedItem,
@@ -31,6 +32,8 @@ import {
   ParaCommunityRelationView,
   ParaCommunitySharedContentView,
   ParaCommunitySummary,
+  ParaPolicyCommunityVote,
+  ParaPolicySignalBucket,
   ParaRoleDefinition,
   ParaRoleHolder,
   ParaSharedContentActionView,
@@ -262,6 +265,86 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         (member) => new ParaCommunityMemberView(member),
       ),
       cursor: result.cursor,
+    })
+  },
+
+  async getParaPolicyCommunityVotes(req) {
+    const board = await selectBoard(db, req.communityId, undefined)
+    if (!board) {
+      return new GetParaPolicyCommunityVotesResponse({})
+    }
+    // Who voted is public (the ballots live in public repos), but "my
+    // community" is a view for its own members.
+    await assertActiveCommunityViewer(db, {
+      communityUri: board.uri,
+      viewerDid: req.viewerDid,
+      viewerIsAdmin: req.viewerIsAdmin,
+    })
+
+    const members = db.db
+      .selectFrom('para_community_membership as membership')
+      .where('membership.communityUri', '=', board.uri)
+      .where('membership.membershipState', '=', 'active')
+    const voters = members
+      .innerJoin('para_policy_vote as vote', 'vote.creator', 'membership.creator')
+      .where('vote.subject', '=', req.postUri)
+      .where('vote.subjectType', '=', 'policy')
+
+    const [memberCount, breakdown, rows] = await Promise.all([
+      members
+        .select(sql<number>`count(*)`.as('count'))
+        .executeTakeFirst(),
+      voters
+        .select(['vote.signal as signal', sql<number>`count(*)`.as('count')])
+        .groupBy('vote.signal')
+        .orderBy('vote.signal', 'asc')
+        .execute(),
+      voters
+        .leftJoin('actor as actor', 'actor.did', 'vote.creator')
+        .leftJoin('profile as profile', 'profile.creator', 'vote.creator')
+        .select([
+          'vote.creator as did',
+          'vote.signal as signal',
+          'vote.createdAt as createdAt',
+          'actor.handle as handle',
+          'profile.displayName as displayName',
+        ])
+        .orderBy('vote.createdAt', 'desc')
+        .orderBy('vote.creator', 'asc')
+        .limit(normalizeLimit(req.limit))
+        .execute(),
+    ])
+
+    const voterCount = breakdown.reduce((sum, row) => sum + Number(row.count), 0)
+    const signalSum = breakdown.reduce(
+      (sum, row) => sum + Number(row.signal) * Number(row.count),
+      0,
+    )
+
+    return new GetParaPolicyCommunityVotesResponse({
+      communityUri: board.uri,
+      communityName: board.name ?? '',
+      memberCount: Number(memberCount?.count) || 0,
+      voterCount,
+      signalAverage: voterCount > 0 ? signalSum / voterCount : 0,
+      breakdown: breakdown.map(
+        (row) =>
+          new ParaPolicySignalBucket({
+            signal: Number(row.signal),
+            count: Number(row.count),
+          }),
+      ),
+      votes: rows.map(
+        (row) =>
+          new ParaPolicyCommunityVote({
+            did: row.did,
+            handle: row.handle ?? '',
+            displayName: row.displayName ?? '',
+            avatar: '',
+            signal: Number(row.signal),
+            createdAt: row.createdAt,
+          }),
+      ),
     })
   },
 

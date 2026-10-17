@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, expect, it } from 'vitest'
 import { discriminatedUnion } from './discriminated-union.js'
 import { enumSchema } from './enum.js'

@@ -20,7 +20,12 @@ const id = 'tools.ozone.inbox.putNotificationPreferences'
 export type QueryParams = {}
 
 export interface InputSchema {
-  push: boolean
+  /** Notify about outcomes of reports filed by the account. */
+  reports?: boolean
+  /** Notify about moderation actions against the account or its content, excluding labeling. */
+  account?: boolean
+  /** Notify about labels applied to or removed from the account or its content. */
+  labels?: boolean
 }
 
 export interface OutputSchema {

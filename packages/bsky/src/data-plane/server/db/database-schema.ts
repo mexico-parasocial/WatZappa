@@ -62,6 +62,7 @@ import * as post from './tables/post.js'
 import * as privateData from './tables/private-data.js'
 import * as profileAgg from './tables/profile-agg.js'
 import * as profile from './tables/profile.js'
+import type * as referenceListOptOut from './tables/reference-list-opt-out.js'
 import * as quote from './tables/quote.js'
 import * as raqAssessment from './tables/raq-assessment.js'
 import * as raqAxisVote from './tables/raq-axis-vote.js'
@@ -81,6 +82,7 @@ import * as verification from './tables/verification.js'
 import * as viewParam from './tables/view-param.js'
 
 export type DatabaseSchemaType = duplicateRecord.PartialDB &
+  referenceListOptOut.PartialDB &
   profile.PartialDB &
   profileAgg.PartialDB &
   post.PartialDB &

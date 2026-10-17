@@ -75,6 +75,8 @@ export interface AppealView {
   appealedAt?: string
   /** When the appeal's report was closed. */
   resolvedAt?: string
+  /** Decision on a resolved appeal. Approved means its closing action reverses a takedown or removes a label; denied means no-action closure or an action that upholds enforcement. Omitted for unresolved appeals or historical closures without sufficient resolution data. */
+  outcome?: 'approved' | 'denied' | (string & {})
   appealableUntil?: string
 }
 
@@ -216,9 +218,15 @@ export function validateNotification<V>(v: V) {
   return validate<Notification & V>(v, id, hashNotification)
 }
 
+/** Push notification preferences by moderation notification category. These preferences do not hide in-app inbox activity. Each category defaults to enabled. */
 export interface NotificationPreferences {
   $type?: 'tools.ozone.inbox.defs#notificationPreferences'
-  push: boolean
+  /** Notify about outcomes of reports filed by the account (reportResolved and reportReopened). */
+  reports: boolean
+  /** Notify about moderation actions against the account or its content, action reversals, appeal outcomes, and standing changes. Label application and removal are controlled by labels. */
+  account: boolean
+  /** Notify when labels are applied to or removed from the account or its content (labelApplied and labelRemoved actions). */
+  labels: boolean
 }
 
 const hashNotificationPreferences = 'notificationPreferences'
@@ -258,6 +266,8 @@ export function validateReportRef<V>(v: V) {
 
 export interface SubjectRef {
   $type?: 'tools.ozone.inbox.defs#subjectRef'
+  /** Decision captured when an appealResolved notification was created. Omitted when the outcome is unknown. */
+  appealOutcome?: 'approved' | 'denied' | (string & {})
   subject:
     | $Typed<ComAtprotoAdminDefs.RepoRef>
     | $Typed<ComAtprotoRepoStrongRef.Main>

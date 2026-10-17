@@ -1,8 +1,7 @@
-// @ts-nocheck
-import { AtpAgent } from '@atproto/api'
+import type { AtpAgent } from '@atproto/api'
 import {
-  ImageRef,
-  SeedClient,
+  type ImageRef,
+  type SeedClient,
   TestNetworkNoAppView,
   basicSeed,
 } from '@atproto/dev-env'
@@ -41,7 +40,7 @@ describe('account deactivation', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   it('deactivates account', async () => {

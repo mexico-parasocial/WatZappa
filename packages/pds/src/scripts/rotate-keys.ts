@@ -1,14 +1,13 @@
 import assert from 'node:assert'
 import fs from 'node:fs/promises'
-import * as plc from '@did-plc/lib'
+import type * as plc from '@did-plc/lib'
 import PQueue from 'p-queue'
-import AtpAgent from '@atproto/api'
-import { Keypair } from '@atproto/crypto'
-import { IdResolver } from '@atproto/identity'
-import { DidString } from '@atproto/syntax'
-import { ActorStore } from '../actor-store/actor-store.js'
-import { SyncEvtData } from '../repo/index.js'
-import { Sequencer } from '../sequencer/index.js'
+import type { Keypair } from '@atproto/crypto'
+import type { IdResolver } from '@atproto/identity'
+import { type DidString, isDidString } from '@atproto/lex'
+import type { ActorStore } from '../actor-store/actor-store.js'
+import type { SyncEvtData } from '../repo/index.js'
+import type { Sequencer } from '../sequencer/index.js'
 import { getRecoveryDbFromSequencerLoc } from './sequencer-recovery/recovery-db.js'
 import { parseIntArg } from './util.js'
 
@@ -18,16 +17,12 @@ export type RotateKeysContext = {
   idResolver: IdResolver
   plcClient: plc.Client
   plcRotationKey: Keypair
-  entrywayAdminAgent?: AtpAgent
 }
 
 export const rotateKeys = async (ctx: RotateKeysContext, args: string[]) => {
   const dids = args
-  assert(
-    dids.every((did) => did.startsWith('did:')),
-    'All arguments must be DIDs',
-  )
-  await rotateKeysForRepos(ctx, dids as DidString[], 10)
+  assert(dids.every(isDidString), 'All arguments must be DIDs')
+  await rotateKeysForRepos(ctx, dids, 10)
 }
 
 export const rotateKeysFromFile = async (
@@ -46,12 +41,9 @@ export const rotateKeysFromFile = async (
     .map((did) => did.trim())
     .filter((did) => did.startsWith('did:plc'))
 
-  assert(
-    dids.every((did) => did.startsWith('did:')),
-    'File contains invalid DIDs',
-  )
+  assert(dids.every(isDidString), 'File contains invalid DIDs')
 
-  await rotateKeysForRepos(ctx, dids as DidString[], concurrency)
+  await rotateKeysForRepos(ctx, dids, concurrency)
 }
 
 export const rotateKeysRecovery = async (
@@ -106,13 +98,13 @@ const rotateKeysForRepos = async (
         return
       }
       try {
-        await ctx.sequencer.sequenceIdentityEvt(did)
+        await ctx.sequencer.sequenceIdentity(did)
       } catch (err) {
         console.error(`failed to sequence new identity evt for ${did}: ${err}`)
         return
       }
       try {
-        await ctx.sequencer.sequenceSyncEvt(did, syncData)
+        await ctx.sequencer.sequenceSync(did, syncData)
       } catch (err) {
         console.error(`failed to sequence for ${did}: ${err}`)
         return
@@ -137,16 +129,5 @@ const updatePlcSigningKey = async (ctx: RotateKeysContext, did: DidString) => {
     // already up to date
     return
   }
-  if (ctx.entrywayAdminAgent) {
-    await ctx.entrywayAdminAgent.api.com.atproto.admin.updateAccountSigningKey({
-      did,
-      signingKey: updateTo.did(),
-    })
-  } else {
-    await ctx.plcClient.updateAtprotoKey(
-      did,
-      ctx.plcRotationKey,
-      updateTo.did(),
-    )
-  }
+  await ctx.plcClient.updateAtprotoKey(did, ctx.plcRotationKey, updateTo.did())
 }

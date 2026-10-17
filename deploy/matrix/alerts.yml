@@ -17,3 +17,18 @@ groups:
         annotations:
           summary: Community rooms repeatedly fail to provision
           description: Inspect create_space failures in sync_log and Synapse health or alias ownership. Jobs remain durable and retry automatically; do not reset the firehose cursor.
+      - alert: ParaMatrixPushProviderFailure
+        expr: increase(para_matrix_push_receipt_results_total{result=~"failed|check_error"}[10m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Chat push provider acceptance could not be confirmed
+          description: Check Expo receipts and push credentials. A ticket alone does not establish device delivery.
+      - alert: ParaMatrixPushReceiptBacklog
+        expr: para_matrix_push_receipt_due_batch >= 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Chat receipt checks remain at the batch limit

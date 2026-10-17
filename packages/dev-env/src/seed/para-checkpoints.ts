@@ -9,6 +9,7 @@ export type ParaSeedCheckpointName =
   | 'positions'
   | 'delegations'
   | 'posts'
+  | 'policyVotes'
   | 'engagement'
   | 'highlights'
   | 'liveSessions'

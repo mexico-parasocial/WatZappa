@@ -96,7 +96,13 @@ export async function queryInboxReports(
     )
     .where('r.reporterDid', '=', reporter)
     .where('r.reportType', '!=', APPEAL_REASON_TYPE)
-    .$if(startAt !== undefined, (qb) => qb.where('r.createdAt', '>=', startAt!))
+    // @NOTE updatedAt never precedes createdAt. The redundant bound lets the
+    // updated-time index skip pre-cutoff history instead of filtering it.
+    .$if(startAt !== undefined, (qb) =>
+      qb
+        .where('r.createdAt', '>=', startAt!)
+        .where('r.updatedAt', '>=', startAt!),
+    )
   if (params.filter === 'pending')
     query = query.where('r.status', '!=', 'closed')
   if (params.filter === 'resolved')
@@ -258,8 +264,9 @@ export function toReportDetail(
     const closingEvent = findClosingEvent(row, actions)
     const outcome = action
       ? 'actionTaken'
-      : closingEvent?.action ===
-          tools.ozone.moderation.defs.modEventAcknowledge.$type
+      : !actions.closingEventIds.has(row.internalReportId) ||
+          closingEvent?.action ===
+            tools.ozone.moderation.defs.modEventAcknowledge.$type
         ? 'noAction'
         : 'other'
     body.resolution = {
@@ -289,7 +296,6 @@ function latestReportAction(row: InboxReportRow, actions: ReportActions) {
 
 function findClosingEvent(row: InboxReportRow, actions: ReportActions) {
   const id = actions.closingEventIds.get(row.internalReportId)
-  // @NOTE A nearby action is not evidence of what closed a report. Legacy
-  // or manual closures without an explicit link have an unknown outcome.
+  // @NOTE Do not attribute nearby subject actions to an unlinked closure.
   return id === undefined ? null : (actions.events.get(id) ?? null)
 }

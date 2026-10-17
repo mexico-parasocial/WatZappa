@@ -38,7 +38,7 @@ if [ $# -eq 0 ]; then
   exit 64
 fi
 
-for port in 2583 "$BRIDGE_PORT"; do
+for port in "${DEV_ENV_PDS_PORT:-2583}" "$BRIDGE_PORT"; do
   if command -v lsof >/dev/null 2>&1 && lsof -nP -tiTCP:"$port" -sTCP:LISTEN | grep -q .; then
     echo "Port $port is already in use; refusing to start a second dev stack." >&2
     exit 2

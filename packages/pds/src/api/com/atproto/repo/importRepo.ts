@@ -1,16 +1,17 @@
 import { TID } from '@atproto/common'
-import { LexMap, enumBlobRefs } from '@atproto/lex-data'
+import { type LexMap, enumBlobRefs } from '@atproto/lex-data'
 import {
   BlockMap,
+  VisitedCidError,
   WriteOpAction,
   getAndParseRecord,
   readCarStream,
   verifyDiff,
 } from '@atproto/repo'
 import { AtUri } from '@atproto/syntax'
-import { InvalidRequestError, Server } from '@atproto/xrpc-server'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import { ACCESS_FULL } from '../../../../auth-scope.js'
-import { AppContext } from '../../../../context.js'
+import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 
 export default function (server: Server, ctx: AppContext) {
@@ -58,7 +59,16 @@ export default function (server: Server, ctx: AppContext) {
           undefined,
           undefined,
           { ensureLeaves: false },
-        )
+        ).catch((cause) => {
+          if (cause instanceof VisitedCidError) {
+            throw new InvalidRequestError(
+              `invalid MST: node referenced more than once: ${cause.cid}`,
+              undefined,
+              { cause },
+            )
+          }
+          throw cause
+        })
         diff.commit.rev = rev
         await store.repo.storage.applyCommit(diff.commit, currRepo === null)
 

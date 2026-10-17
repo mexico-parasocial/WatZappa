@@ -1,7 +1,6 @@
 import type express from 'express'
 import { type DidString, type LexValue, l } from '@atproto/lex'
 import { lexParse } from '@atproto/lex-json'
-import type { HeadersMap } from '@atproto/xrpc'
 import type {
   HandlerPipeThrough,
   HandlerPipeThroughBuffer,
@@ -15,20 +14,9 @@ import {
 } from '../pipethrough.js'
 import type { HandlerResponse, LocalRecords, MungeFn } from './types.js'
 
-const REPO_REV_HEADER = 'atproto-repo-rev'
-
-export const getRepoRev = (headers: HeadersMap): string | undefined => {
-  return headers[REPO_REV_HEADER]
-}
-
 export const getLocalLag = (local: LocalRecords): number | undefined => {
   let oldest: string | undefined = local.profile?.indexedAt
   for (const post of local.posts) {
-    if (!oldest || post.indexedAt < oldest) {
-      oldest = post.indexedAt
-    }
-  }
-  for (const post of local.paraPosts) {
     if (!oldest || post.indexedAt < oldest) {
       oldest = post.indexedAt
     }
@@ -55,7 +43,7 @@ export const pipethroughReadAfterWrite = async <
 
   const streamRes = await pipethrough(ctx, req, { iss: requester })
 
-  const rev = getRepoRev(streamRes.headers)
+  const rev = streamRes.headers['atproto-repo-rev']
   if (!rev) return streamRes
 
   if (isJsonContentType(streamRes.headers['content-type']) === false) {

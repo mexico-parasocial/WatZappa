@@ -212,12 +212,16 @@ Exit: a reproducible supported-client acceptance record. S4's remaining QA is
 here; its completed backend implementation has been removed from the backlog.
 
 
-2026-10-08 messaging source and automated evidence is appended to the
-[local acceptance record](./MATRIX-LOCAL-ACCEPTANCE-2026-09-26.md#2026-10-08--connectivity-provisioning-and-release-update)
-and PARA's linked device ledger. P2/P4 remain open: bridge 3001 is absent, the
-persistent platform build fails, the active demo needs a complete restore unit,
-and the user has no working iPhone. The native engine remains opt-in; room
-migration and VLPDS work remain gated on messaging acceptance.
+2026-10-14 messaging evidence is appended to the
+[local acceptance record](./MATRIX-LOCAL-ACCEPTANCE-2026-09-26.md#2026-10-14--isolated-persistent-profile-restored)
+and PARA's linked device ledger. The isolated persistent profile now serves the
+bridge on 3001 and passes a restart identity/cursor check; the existing demo is
+retained separately. Push ticket persistence/receipt checks and overall app
+logout are implemented locally. Platform checks pass. A format-2 Matrix backup
+and component restore drill pass, but full deployment/client recovery, off-host
+backup and alert delivery remain open. The user still has no working iPhone.
+P2/P4, the native opt-in default, room migration and VLPDS remain gated on actual
+messaging acceptance. Do not mix the isolated profile with demo accounts/cursors.
 
 ### P3 — real pilot data and moderation
 

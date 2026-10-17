@@ -5,7 +5,7 @@ import {
   ballotWriteRefusal,
   repostWriteRefusal,
   verifyCabildeoDelegation,
-  verifyCabildeoProof,
+  verifyPublicBallotProof,
 } from '@atproto/common'
 import { type IdResolver, getPds } from '@atproto/identity'
 import { type Cid, l, parseCid, xrpc, xrpcSafe } from '@atproto/lex'
@@ -69,6 +69,7 @@ import * as RaqAxisVote from './plugins/raq-axis-vote.js'
 import * as RaqProposalAnswer from './plugins/raq-proposal-answer.js'
 import * as RaqProposalVote from './plugins/raq-proposal-vote.js'
 import * as RaqProposal from './plugins/raq-proposal.js'
+import * as ReferenceListOptOut from './plugins/reference-list-opt-out.js'
 import * as Repost from './plugins/repost.js'
 import * as StarterPack from './plugins/starter-pack.js'
 import * as Status from './plugins/status.js'
@@ -86,6 +87,7 @@ export class IndexingService {
     profile: Profile.PluginType
     list: List.PluginType
     listItem: ListItem.PluginType
+    referenceListOptOut: ReferenceListOptOut.PluginType
     listBlock: ListBlock.PluginType
     block: Block.PluginType
     feedGenerator: FeedGenerator.PluginType
@@ -145,6 +147,10 @@ export class IndexingService {
       profile: Profile.makePlugin(this.db, this.background),
       list: List.makePlugin(this.db, this.background),
       listItem: ListItem.makePlugin(this.db, this.background),
+      referenceListOptOut: ReferenceListOptOut.makePlugin(
+        this.db,
+        this.background,
+      ),
       listBlock: ListBlock.makePlugin(this.db, this.background),
       block: Block.makePlugin(this.db, this.background),
       feedGenerator: FeedGenerator.makePlugin(this.db, this.background),
@@ -273,7 +279,7 @@ export class IndexingService {
     this.db.assertNotTransaction()
     if (
       uri.collection === 'com.para.civic.vote' &&
-      !(await verifyCabildeoProof(uri.host, obj))
+      !(await verifyPublicBallotProof(uri.host, obj))
     ) {
       return
     }
@@ -507,6 +513,10 @@ export class IndexingService {
     // lists
     await this.db.db
       .deleteFrom('list_item')
+      .where('creator', '=', did)
+      .execute()
+    await this.db.db
+      .deleteFrom('reference_list_opt_out')
       .where('creator', '=', did)
       .execute()
     await this.db.db.deleteFrom('list').where('creator', '=', did).execute()

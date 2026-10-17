@@ -1,8 +1,90 @@
 import type { SyncLogEntry, UserPushToken } from '../interface.js'
+import type { PushDelivery } from '../records.js'
 import { IdentityMatrixArea } from './identity-matrix.js'
 
 export class InfraArea extends IdentityMatrixArea {
+  async claimPushDelivery(
+    id: string,
+    token: string,
+    owner: string,
+    now: number,
+  ): Promise<boolean> {
+    const result = await this.query(
+      `INSERT INTO push_delivery
+      (id, token, state, owner, lease_until, created_at, check_after)
+      VALUES ($1, $2, 'sending', $3, $4, $5, $6)
+      ON CONFLICT(id) DO UPDATE SET owner = excluded.owner, lease_until = excluded.lease_until
+      WHERE push_delivery.state = 'sending' AND push_delivery.lease_until <= $5`,
+      [id, token, owner, now + 300_000, now, now + 900_000],
+    )
+    return result.rowCount === 1
+  }
+
+  async getPushDelivery(id: string): Promise<PushDelivery | undefined> {
+    return this.queryOne<PushDelivery>(
+      `SELECT id, token, state, receipt_id AS "receiptId", created_at::float8 AS "createdAt"
+      FROM push_delivery WHERE id = $1`,
+      [id],
+    )
+  }
+
+  async completePushDelivery(
+    id: string,
+    owner: string,
+    receiptId: string | null,
+    rejected: boolean,
+    now: number,
+  ): Promise<void> {
+    await this.query(
+      `UPDATE push_delivery SET state = $1, receipt_id = $2, check_after = $3
+      WHERE id = $4 AND owner = $5 AND state = 'sending'`,
+      [
+        rejected ? 'rejected' : 'submitted',
+        receiptId,
+        now + 900_000,
+        id,
+        owner,
+      ],
+    )
+  }
+
+  async releasePushDelivery(id: string, owner: string): Promise<void> {
+    await this.query(
+      "DELETE FROM push_delivery WHERE id = $1 AND owner = $2 AND state = 'sending'",
+      [id, owner],
+    )
+  }
+
+  async getPendingPushReceipts(now: number): Promise<PushDelivery[]> {
+    return this.queryAll<PushDelivery>(
+      `SELECT id, token, state, receipt_id AS "receiptId", created_at::float8 AS "createdAt"
+      FROM push_delivery WHERE state = 'submitted' AND check_after <= $1
+      ORDER BY check_after LIMIT 1000`,
+      [now],
+    )
+  }
+
+  async resolvePushReceipt(
+    id: string,
+    state: 'provider_accepted' | 'rejected' | 'failed' | 'submitted',
+    error: string | null,
+    now: number,
+  ): Promise<void> {
+    await this.query(
+      `UPDATE push_delivery SET state = $1, error_code = $2, check_after = $3
+      WHERE id = $4 AND state = 'submitted'`,
+      [state, error, now + 60_000, id],
+    )
+  }
+
   // Sync logging
+  async prunePushDeliveries(before: number): Promise<void> {
+    await this.query(
+      "DELETE FROM push_delivery WHERE state <> 'submitted' AND created_at < $1",
+      [before],
+    )
+  }
+
   async logSync(
     eventType: string,
     communityUri: string,

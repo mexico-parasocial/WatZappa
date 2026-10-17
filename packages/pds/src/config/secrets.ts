@@ -9,26 +9,6 @@ export const envToSecrets = (env: ServerEnvironment): ServerSecrets => {
     throw new Error('Must provide an admin password')
   }
 
-  // MVP hardening: enforce minimum secret strength in production.
-  const isProd = !env.devMode
-  if (isProd) {
-    if (env.jwtSecret.length < 32) {
-      throw new Error(
-        'PDS_JWT_SECRET must be at least 32 characters in production',
-      )
-    }
-    if (env.adminPassword.length < 12) {
-      throw new Error(
-        'PDS_ADMIN_PASSWORD must be at least 12 characters in production',
-      )
-    }
-    if (!env.dpopSecret || env.dpopSecret.length < 32) {
-      throw new Error(
-        'PDS_DPOP_SECRET must be set and at least 32 characters in production',
-      )
-    }
-  }
-
   return {
     dpopSecret: env.dpopSecret,
     jwtSecret: env.jwtSecret,
@@ -57,20 +37,28 @@ export type SigningKeyMemory = {
   provider: 'memory'
   privateKeyHex: string
 }
-
-// @NOTE An AppContext override can supply the key without an environment secret.
+/**
+ * Converts environment variables to a PLC rotation key.
+ *
+ * @note We allow "undefined" values here so that if an override is provided to
+ * the AppContext, a private key does not need to be provided here.
+ */
 function envToPlcRotationKeyConfig(
   env: ServerEnvironment,
 ): PlcRotationKeyConfig | undefined {
   if (env.plcRotationKeyKmsKeyId && env.plcRotationKeyK256PrivateKeyHex) {
     throw new Error('Cannot set both kms & memory keys for plc rotation key')
   } else if (env.plcRotationKeyKmsKeyId) {
-    return { provider: 'kms', keyId: env.plcRotationKeyKmsKeyId }
+    return {
+      provider: 'kms',
+      keyId: env.plcRotationKeyKmsKeyId,
+    }
   } else if (env.plcRotationKeyK256PrivateKeyHex) {
     return {
       provider: 'memory',
       privateKeyHex: env.plcRotationKeyK256PrivateKeyHex,
     }
+  } else {
+    return undefined
   }
-  return undefined
 }

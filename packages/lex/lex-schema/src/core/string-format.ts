@@ -7,14 +7,12 @@ import {
   type HandleString,
   type NsidString,
   type RecordKeyString,
-  type SpaceRefString,
   type TidString,
   type UriString,
   isAtIdentifierString,
   isAtUriString,
   isDatetimeString,
   isDatetimeStringLenient,
-  isSpaceRefString,
   isValidDid,
   isValidHandle,
   isValidLanguage,
@@ -65,8 +63,6 @@ export {
   ifAtUriString,
   isAtUriString,
 } from '@atproto/syntax'
-
-export { type SpaceRefString, isSpaceRefString } from '@atproto/syntax'
 
 /**
  * Lenient version of {@link isAtUriString} that does not enforce the validity
@@ -241,7 +237,6 @@ type StringFormats = {
   language: LanguageString
   nsid: NsidString
   'record-key': RecordKeyString
-  'space-ref': SpaceRefString
   tid: TidString
   uri: UriString
 }
@@ -268,7 +263,6 @@ const stringFormatVerifiers: {
   language: [isLanguageString, isLanguageStringLenient],
   nsid: [isNsidString],
   'record-key': [isRecordKeyString],
-  'space-ref': [isSpaceRefString],
   tid: [isTidString],
   uri: [isUriString],
 })

@@ -2,9 +2,9 @@ import { parseCid } from '@atproto/lex-data'
 import {
   AuthRequiredError,
   InvalidRequestError,
-  Server,
+  type Server,
 } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 import { dbLogger } from '../../../../logger.js'
 import {
@@ -72,9 +72,6 @@ export default function (server: Server, ctx: AppContext) {
         rkey,
         swapCid: swapRecordCid,
       })
-      if (collection === 'com.para.community.authorityEvent') {
-        throw new InvalidRequestError('Authority events are immutable.')
-      }
       const commit = await ctx.actorStore.transact(did, async (actorTxn) => {
         const record = await actorTxn.record.getRecord(write.uri, null, true)
         if (!record) {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { type AtpAgent, ComAtprotoModerationDefs } from '@atproto/api'
 import { type SeedClient, TestNetwork } from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
@@ -27,7 +26,7 @@ describe('appeal account takedown', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   it('actor takedown allows appeal request.', async () => {
@@ -106,36 +105,6 @@ describe('appeal account takedown', () => {
     ).toMatchSnapshot()
   })
 
-  it('takendown actor is not allowed to create reports.', async () => {
-    const { data: auth } = await agent.com.atproto.server.createSession({
-      identifier: 'jeff.test',
-      password: 'password',
-      allowTakendown: true,
-    })
-
-    // send appeal event as the takendown account
-    await expect(
-      agent.com.atproto.moderation.createReport(
-        {
-          reasonType: ComAtprotoModerationDefs.REASONRUDE,
-          reason: 'reporting others',
-          subject: {
-            $type: 'com.atproto.admin.defs#repoRef',
-            did: 'did:plc:test',
-          },
-        },
-        {
-          headers: {
-            authorization: `Bearer ${auth.accessJwt}`,
-          },
-        },
-      ),
-    ).rejects.toMatchObject({
-      error: 'AccountTakedown',
-      message: 'Report not accepted from takendown account',
-    })
-  })
-
   it('allows a takendown actor to appeal an action through the PDS', async () => {
     const { data: account } = await agent.com.atproto.server.createAccount({
       handle: 'newappeal.test',
@@ -191,6 +160,36 @@ describe('appeal account takedown', () => {
 
     expect(view.appeal?.state).toBe('pending')
     expect(view.subject).toMatchObject({ did: account.did })
+  })
+
+  it('takendown actor is not allowed to create reports.', async () => {
+    const { data: auth } = await agent.com.atproto.server.createSession({
+      identifier: 'jeff.test',
+      password: 'password',
+      allowTakendown: true,
+    })
+
+    // send appeal event as the takendown account
+    await expect(
+      agent.com.atproto.moderation.createReport(
+        {
+          reasonType: ComAtprotoModerationDefs.REASONRUDE,
+          reason: 'reporting others',
+          subject: {
+            $type: 'com.atproto.admin.defs#repoRef',
+            did: 'did:plc:test',
+          },
+        },
+        {
+          headers: {
+            authorization: `Bearer ${auth.accessJwt}`,
+          },
+        },
+      ),
+    ).rejects.toMatchObject({
+      error: 'AccountTakedown',
+      message: 'Report not accepted from takendown account',
+    })
   })
 
   it('takendown actor is not allowed to create records.', async () => {

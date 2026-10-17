@@ -69,5 +69,6 @@ deploy/matrix/seed/
 # — delete the directory to start over. Never version it.
 .dev-env-data/
 .dev-env-data-*/
+.messaging-dev-data/
 # Credentials for the seeded test accounts (scripts/seed-test-accounts.sh).
 test-accounts.json

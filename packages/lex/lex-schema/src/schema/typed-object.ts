@@ -11,7 +11,8 @@ import {
   type NsidString,
   Schema,
   type Unknown$TypedObject,
-  ValidationContext,
+  type ValidationContext,
+  type ValidationResult,
   type Validator,
 } from '../core.js'
 import { lazyProperty } from '../util/lazy-property.js'
@@ -50,14 +51,19 @@ export class TypedObjectSchema<
 > {
   readonly type = 'typedObject' as const
 
-  constructor(
-    readonly $type: TType,
-    readonly schema: TShape,
-  ) {
+  readonly $type: TType
+  readonly schema: TShape
+
+  constructor($type: TType, schema: TShape) {
     super()
+    this.$type = $type
+    this.schema = schema
   }
 
-  validateInContext(input: unknown, ctx: ValidationContext) {
+  validateInContext(
+    input: unknown,
+    ctx: ValidationContext,
+  ): ValidationResult<InferInput<TShape>> {
     if (!isPlainObject(input)) {
       return ctx.issueUnexpectedType(input, 'object')
     }

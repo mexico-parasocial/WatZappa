@@ -7,6 +7,7 @@ import {
   type AtUriString,
   type DatetimeString,
   type DidString,
+  type HandleString,
   asStringFormat,
   toDatetimeString,
 } from '@atproto/lex'
@@ -1555,7 +1556,7 @@ describe.each(['algoGravity', 'algoLookback'] as const)(
               ...(remaining
                 ? [
                     {
-                      $type: app.bsky.actor.defs.profileViewDetailed.$type,
+                      $type: app.bsky.actor.defs.profileViewBasic.$type,
                       did: sc.dids.bob,
                     },
                   ]
@@ -1580,6 +1581,128 @@ describe.each(['algoGravity', 'algoLookback'] as const)(
     const allActors = Array.from({ length: 8 }, (_, index) => ({
       actor: `did:plc:cap-actor-${index}` as DidString,
     }))
+
+    it('returns basic related profiles with filtered known followers', async () => {
+      const { recipient, headers } = await seedSpotlight()
+      const { bob, carol, dan } = sc.dids
+      await sc.follow(bob, recipient)
+      await sc.follow(recipient, carol)
+      await sc.follow(recipient, dan)
+      await sc.follow(carol, bob)
+      await sc.follow(dan, bob)
+      await sc.block(bob, dan)
+      await network.processAll()
+      const client = network.bsky.getClient()
+      const detailed = await client.call(
+        app.bsky.actor.getProfile,
+        { actor: bob },
+        {
+          headers: await network.serviceHeaders(
+            recipient,
+            app.bsky.actor.getProfile.$lxm,
+          ),
+        },
+      )
+      using aggregates = vi.spyOn(
+        network.bsky.ctx.hydrator.dataplane,
+        'getCountsForUsers',
+      )
+
+      const response = await client.call(defs, { limit: 4 }, { headers })
+
+      const profile = response.relatedViews?.find(
+        app.bsky.actor.defs.profileViewBasic.$isTypeOf,
+      )
+      assert(profile)
+      expect(profile.did).toBe(bob)
+      expect(profile.viewer).toEqual(detailed.viewer)
+      expect(profile.viewer?.knownFollowers).toMatchObject({
+        count: 2,
+        followers: [{ did: carol }],
+      })
+      expect(profile.viewer?.knownFollowers?.followers).toHaveLength(1)
+      expect(
+        profile.viewer?.knownFollowers?.followers[0]?.viewer?.knownFollowers,
+      ).toBeUndefined()
+      expect(profile.labels).toEqual(detailed.labels)
+      expect(profile.verification).toEqual(detailed.verification)
+      expect(profile).not.toHaveProperty('description')
+      expect(profile).not.toHaveProperty('followersCount')
+      expect(aggregates).not.toHaveBeenCalled()
+    })
+
+    it.each(['all', 'followers'] as const)(
+      'hydrates known followers for the first ten actors per follow group in the %s feed',
+      async (feed) => {
+        const { recipient, headers } = await seedSpotlight()
+        const { carol, dan } = sc.dids
+        await sc.follow(recipient, carol)
+        await sc.follow(recipient, dan)
+        await network.processAll()
+        await sc.follow(carol, recipient)
+
+        const followers: DidString[] = []
+        const name = `social-proof-${fixtureIndex++}`
+        for (let index = 0; index < 12; index++) {
+          const handle: HandleString = `${name}-${index}.test`
+          const { did } = await sc.createAccount(`${name}-${index}`, {
+            email: `${handle}@test.com`,
+            handle,
+            password: 'social-proof-pass',
+          })
+          followers.push(did)
+          await sc.follow(did, recipient)
+          await sc.follow(dan, did)
+        }
+        await network.processAll()
+        using knownFollowers = vi.spyOn(
+          network.bsky.ctx.hydrator.dataplane,
+          'sampleFollowsFollowing',
+        )
+
+        const response = await network.bsky
+          .getClient()
+          .call(defs, { feed, limit: 30 }, { headers })
+
+        const followGroups = response.groups
+          .map(({ kind }) => kind)
+          .filter(defs.followGroup.$isTypeOf)
+        expect(followGroups.map(({ items }) => items.length)).toEqual(
+          feed === 'all' ? [12] : Array(12).fill(1),
+        )
+        expect(
+          response.groups.filter(({ kind }) =>
+            defs.followBackNotification.$isTypeOf(kind),
+          ),
+        ).toHaveLength(1)
+        const expectedDids = followers
+          .slice()
+          .reverse()
+          .slice(0, feed === 'all' ? 10 : 12)
+        expect(
+          followGroups.flatMap(({ items }) =>
+            items.slice(0, 10).map(({ actor }) => actor),
+          ),
+        ).toEqual(expectedDids)
+        expect(
+          knownFollowers.mock.calls.flatMap(([req]) => req.targetDids),
+        ).toEqual(expectedDids)
+        const profiles = response.relatedViews?.filter(
+          app.bsky.actor.defs.profileViewBasic.$isTypeOf,
+        )
+        expect(
+          profiles
+            ?.filter((profile) => profile.viewer?.knownFollowers)
+            .map(({ did }) => did),
+        ).toEqual(expectedDids)
+        for (const did of expectedDids) {
+          expect(
+            profiles?.find((profile) => profile.did === did)?.viewer
+              ?.knownFollowers,
+          ).toMatchObject({ count: 1, followers: [{ did: dan }] })
+        }
+      },
+    )
 
     it.each([
       {
@@ -1774,7 +1897,7 @@ describe.each(['algoGravity', 'algoLookback'] as const)(
       expect(group.kind.items).toEqual(follows.map(({ actor }) => ({ actor })))
       expect(response.relatedViews).toMatchObject(
         follows.slice(0, 10).map(({ actor }) => ({
-          $type: app.bsky.actor.defs.profileViewDetailed.$type,
+          $type: app.bsky.actor.defs.profileViewBasic.$type,
           did: actor,
         })),
       )
@@ -1810,7 +1933,7 @@ describe.each(['algoGravity', 'algoLookback'] as const)(
         expect(group.indexedAt).toBe(remaining[0]!.indexedAt)
         expect(response.relatedViews).toMatchObject([
           {
-            $type: app.bsky.actor.defs.profileViewDetailed.$type,
+            $type: app.bsky.actor.defs.profileViewBasic.$type,
             did: sc.dids.bob,
           },
           ...remaining.slice(0, 10).map(({ post }) => ({
@@ -1869,7 +1992,7 @@ describe.each(['algoGravity', 'algoLookback'] as const)(
       )
       expect(response.relatedViews).toMatchObject([
         ...authors.map((did) => ({
-          $type: app.bsky.actor.defs.profileViewDetailed.$type,
+          $type: app.bsky.actor.defs.profileViewBasic.$type,
           did,
         })),
         ...postGroups.flatMap(({ posts }) =>
@@ -1880,6 +2003,62 @@ describe.each(['algoGravity', 'algoLookback'] as const)(
         ),
       ])
       expect(response.cursor).toBeUndefined()
+    })
+
+    it('names the parent of a subscribed post that is a reply, with its view', async () => {
+      const root = await sc.post(sc.dids.dan, 'Subscribed root')
+      const reply = await sc.reply(
+        sc.dids.bob,
+        root.ref,
+        root.ref,
+        'Subscribed reply',
+      )
+      await network.processAll()
+      // The test dataplane doesn't generate subscribed-post notifications.
+      using notifications = vi
+        .spyOn(network.bsky.ctx.hydrator.dataplane, 'getNotificationsV2')
+        .mockResolvedValue(
+          new GetNotificationsV2Response({
+            notifications: [reply, root].map(
+              ({ ref }, index) =>
+                new Notification({
+                  recipientDid: sc.dids.carol,
+                  uri: ref.uriStr,
+                  reason: NOTIFICATION_REASON.SUBSCRIBED_POST,
+                  timestamp: Timestamp.fromJson(minutesAgo(index)),
+                }),
+            ),
+          }),
+        )
+      const headers = await network.serviceHeaders(sc.dids.carol, defs.$lxm)
+
+      const response = await network.bsky
+        .getClient()
+        .call(defs, { limit: 2 }, { headers })
+
+      expect(notifications).toHaveBeenCalledTimes(1)
+      expect(response.groups.map(({ kind }) => kind)).toEqual([
+        defs.subscribedPostGroup.$build({
+          items: [
+            {
+              actor: sc.dids.bob,
+              post: reply.ref.uriStr,
+              parent: root.ref.uriStr,
+            },
+          ],
+        }),
+        // Not a reply, so no parent
+        defs.subscribedPostGroup.$build({
+          items: [{ actor: sc.dids.dan, post: root.ref.uriStr }],
+        }),
+      ])
+      expect(response.groups[1]!.kind).not.toHaveProperty('items.0.parent')
+      expect(response.relatedViews).toMatchObject([
+        { $type: app.bsky.actor.defs.profileViewBasic.$type, did: sc.dids.bob },
+        { $type: app.bsky.actor.defs.profileViewBasic.$type, did: sc.dids.dan },
+        { $type: app.bsky.feed.defs.postView.$type, uri: reply.ref.uriStr },
+        { $type: app.bsky.feed.defs.postView.$type, uri: root.ref.uriStr },
+      ])
     })
 
     it.each([4, 3, 2, 1, 0])(
@@ -1939,7 +2118,7 @@ describe.each(['algoGravity', 'algoLookback'] as const)(
           ...(remaining
             ? [
                 {
-                  $type: app.bsky.actor.defs.profileViewDetailed.$type,
+                  $type: app.bsky.actor.defs.profileViewBasic.$type,
                   did: sc.dids.bob,
                 },
               ]
@@ -1951,7 +2130,7 @@ describe.each(['algoGravity', 'algoLookback'] as const)(
         ])
         for (const view of response.relatedViews ?? []) {
           expect(
-            app.bsky.actor.defs.profileViewDetailed.$matches(view) ||
+            app.bsky.actor.defs.profileViewBasic.$matches(view) ||
               app.bsky.feed.defs.postView.$matches(view),
           ).toBe(true)
         }
@@ -1982,7 +2161,7 @@ describe.each(['algoGravity', 'algoLookback'] as const)(
       expect(response.groups).toHaveLength(4)
       const expectedViews = [
         ...[sc.dids.bob, sc.dids.carol].map((did) => ({
-          $type: app.bsky.actor.defs.profileViewDetailed.$type,
+          $type: app.bsky.actor.defs.profileViewBasic.$type,
           did,
         })),
         ...records.map(({ post }) => ({
@@ -1994,7 +2173,7 @@ describe.each(['algoGravity', 'algoLookback'] as const)(
           uri: generator.uriStr,
         },
         {
-          $type: app.bsky.graph.defs.starterPackView.$type,
+          $type: app.bsky.graph.defs.starterPackViewBasic.$type,
           uri: starterPack.uriStr,
         },
       ]
@@ -2194,7 +2373,7 @@ describe.each(['algoGravity', 'algoLookback'] as const)(
       expect(first.cursor).toBe(records[3]!.indexedAt)
       expect(first.relatedViews).toMatchObject([
         ...[sc.dids.carol, sc.dids.bob].map((did) => ({
-          $type: app.bsky.actor.defs.profileViewDetailed.$type,
+          $type: app.bsky.actor.defs.profileViewBasic.$type,
           did,
         })),
         ...records.map(({ post }) => ({
@@ -2219,7 +2398,7 @@ describe.each(['algoGravity', 'algoLookback'] as const)(
       expect(second.cursor).toBeUndefined()
       expect(second.relatedViews).toMatchObject([
         {
-          $type: app.bsky.actor.defs.profileViewDetailed.$type,
+          $type: app.bsky.actor.defs.profileViewBasic.$type,
           did: sc.dids.carol,
         },
         {
@@ -2292,9 +2471,9 @@ describe('adaptive raw notification fetch limit', () => {
   ])(
     '$description',
     ({ itemsFetched, groupsBuilt, groupsNeeded, expected }) => {
-      expect(getNextRawLimit(itemsFetched, groupsBuilt, groupsNeeded)).toBe(
-        expected,
-      )
+      expect(
+        getNextRawLimit(itemsFetched, groupsBuilt, groupsNeeded, 300, 3000),
+      ).toBe(expected)
     },
   )
 })

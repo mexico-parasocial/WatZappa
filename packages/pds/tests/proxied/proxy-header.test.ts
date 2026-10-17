@@ -1,12 +1,16 @@
-// @ts-nocheck
 import assert from 'node:assert'
 import { once } from 'node:events'
-import http from 'node:http'
+import type http from 'node:http'
 import type { AddressInfo } from 'node:net'
 import * as plc from '@did-plc/lib'
 import express from 'express'
-import { Keypair } from '@atproto/crypto'
-import { SeedClient, TestNetworkNoAppView, usersSeed } from '@atproto/dev-env'
+import { type HttpTerminator, createHttpTerminator } from 'http-terminator'
+import type { Keypair } from '@atproto/crypto'
+import {
+  type SeedClient,
+  TestNetworkNoAppView,
+  usersSeed,
+} from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
 import { verifyJwt } from '@atproto/xrpc-server'
 import { parseProxyHeader } from '../../src/pipethrough.js'
@@ -37,8 +41,8 @@ describe('proxy header', () => {
   }, 20_000) // @NOTE seeding can take a while
 
   afterAll(async () => {
-    await proxyServer.close()
-    await network.close()
+    await proxyServer?.close()
+    await network?.close()
   })
 
   it('parses proxy header', async () => {
@@ -173,12 +177,16 @@ type ProxyReq = {
 }
 
 class ProxyServer {
+  private terminator: HttpTerminator
+
   constructor(
-    public server: http.Server,
+    server: http.Server,
     public url: string,
     public did: string,
     public requests: ProxyReq[],
-  ) {}
+  ) {
+    this.terminator = createHttpTerminator({ server })
+  }
 
   static async create(
     plcClient: plc.Client,
@@ -228,9 +236,7 @@ class ProxyServer {
     return new ProxyServer(server, url, did, requests)
   }
 
-  close(): Promise<void> {
-    return new Promise<void>((resolve) => {
-      this.server.close(() => resolve())
-    })
+  async close(): Promise<void> {
+    await this.terminator.terminate()
   }
 }

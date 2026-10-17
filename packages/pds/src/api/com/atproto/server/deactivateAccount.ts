@@ -26,6 +26,7 @@ export default function (server: Server, ctx: AppContext) {
           auth.credentials.did,
           com.atproto.server.deactivateAccount.$lxm,
         )
+
         await entrywayClient.xrpc(com.atproto.server.deactivateAccount, {
           headers,
           body,

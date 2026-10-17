@@ -179,6 +179,7 @@ export interface ProfileLinkView {
   title?: string
   /** Image URL for the destination site's icon. */
   icon?: string
+  labels?: ComAtprotoLabelDefs.Label[]
 }
 
 const hashProfileLinkView = 'profileLinkView'

@@ -57,9 +57,9 @@ const ifNumber = (val: unknown): number | undefined =>
 // `meta` is a free-form jsonb column, so these narrow to the branded scalar the
 // lexicon field expects rather than a bare string.
 const ifDatetime = (val: unknown): DatetimeString | undefined =>
-  typeof val === 'string' && isDatetimeString(val) ? val : undefined
+  isDatetimeString(val) ? val : undefined
 const ifHandle = (val: unknown): HandleString | undefined =>
-  typeof val === 'string' && isHandleString(val) ? val : undefined
+  isHandleString(val) ? val : undefined
 
 export type AuthHeaders = {
   headers: {
@@ -259,8 +259,7 @@ export class ModerationViews {
     if (tools.ozone.moderation.defs.modEventReport.$isTypeOf(event)) {
       event.isReporterMuted = !!meta.isReporterMuted
       event.reportType = ifString(meta.reportType)!
-      event.appealSubmittedBy = typeof meta.appealSubmittedBy === 'string' &&
-      isDidString(meta.appealSubmittedBy)
+      event.appealSubmittedBy = isDidString(meta.appealSubmittedBy)
         ? meta.appealSubmittedBy
         : undefined
       event.appealActionType = ifString(meta.appealActionType)

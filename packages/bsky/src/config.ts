@@ -44,6 +44,7 @@ export interface ServerConfigValues {
   serverDid: DidString
   alternateAudienceDids: DidString[]
   entrywayJwtPublicKeyHex?: string
+  bffJwtSecret?: string
   liveNowConfig?: LiveNowConfig
   // external services
   etcdHosts: string[]
@@ -63,11 +64,12 @@ export interface ServerConfigValues {
   rolodexApiKey?: string
   rolodexHttpVersion?: '1.1' | '2'
   rolodexIgnoreBadTls?: boolean
+  externalRecordsSafeDomains?: string[]
   searchUrl?: string
   searchTagsHide: Set<string>
   searchTagsHideAll: Set<string>
   suggestionsUrl?: string
-  suggestionsApiKey?:
+  suggestionsApiKey?: string
   atmosphereExploreTabService?: string
   topicsUrl?: string
   topicsApiKey?: string
@@ -77,6 +79,7 @@ export interface ServerConfigValues {
   irisStagingServiceDid?: DidString
   trendingFeedDid?: DidString
   bskyFeedgenDids: Set<string>
+  irisApiKey?: string
   irisFeedUris?: Set<string> // allowlist iris may serve instead of seeemore; whats-hot is gated by `iris:feed:enable`, other feeds by their per-rkey `iris:feed:<rkey>:enable` gate
   irisStagingUrl?: string
   irisStagingFeedUris?: Set<string> // serve via iris staging instead of the registered feed generator
@@ -112,6 +115,10 @@ export interface ServerConfigValues {
   // notifications
   notificationsDelayMs?: number
   notificationsV2Algorithm?: NotificationsV2Algorithm
+  notificationsV2MinRawLimit: number
+  notificationsV2MaxRawItems: number
+  notificationsV2MaxReads: number
+  notificationsV2MaxGroupItemsWithRelatedViews: number
   // client config
   clientCheckEmailConfirmed?: boolean
   topicsEnabled?: boolean
@@ -125,23 +132,20 @@ export interface ServerConfigValues {
   proxyMaxRetries?: number
   proxyPreferCompressed?: boolean
   kws?: KwsConfig
-  openai?: {
-    apiKey: string
-    model: string
-  }
   debugFieldAllowedDids: Set<string>
   draftsLimit: number
-  communityCreatorDids: string[]
   searchV2OverrideHeader?: string
-  redis?: {
-    host: string
-    password?: string
-  }
 }
 
 export class ServerConfig {
   private assignedPort?: number
-  constructor(private cfg: ServerConfigValues) {}
+  constructor(private cfg: ServerConfigValues) {
+    assert(
+      cfg.bffJwtSecret == null ||
+        Buffer.byteLength(cfg.bffJwtSecret, 'utf8') >= 32,
+      'BSKY_BFF_JWT_SECRET must be generated from at least 32 random bytes (minimum key length: 32 bytes)',
+    )
+  }
 
   static readEnv(overrides?: Partial<ServerConfigValues>) {
     const version = process.env.BSKY_VERSION || undefined
@@ -158,6 +162,7 @@ export class ServerConfig {
     assert(alternateAudienceDids.every(isDidString))
     const entrywayJwtPublicKeyHex =
       process.env.BSKY_ENTRYWAY_JWT_PUBLIC_KEY_HEX || undefined
+    const bffJwtSecret = process.env.BSKY_BFF_JWT_SECRET || undefined
     let liveNowConfig: LiveNowConfig | undefined
     if (process.env.BSKY_LIVE_NOW_CONFIG) {
       try {
@@ -211,6 +216,7 @@ export class ServerConfig {
     const bskyFeedgenDids = new Set(
       envList(process.env.BSKY_FEEDGEN_DIDS).filter(isDidString),
     )
+    const irisApiKey = process.env.BSKY_IRIS_API_KEY || undefined
     const irisFeedUris = new Set(envList(process.env.BSKY_IRIS_FEED_URIS))
     const irisStagingUrl = process.env.BSKY_IRIS_STAGING_URL || undefined
     const irisStagingFeedUris = new Set(
@@ -257,6 +263,11 @@ export class ServerConfig {
     const rolodexIgnoreBadTls =
       process.env.BSKY_ROLODEX_IGNORE_BAD_TLS === 'true'
     assert(rolodexHttpVersion === '1.1' || rolodexHttpVersion === '2')
+    const externalRecordsSafeDomains = envList(
+      process.env.BSKY_EXTERNAL_RECORDS_SAFE_DOMAINS,
+    )
+      .map((value) => value.trim())
+      .filter(Boolean)
     const blobRateLimitBypassKey =
       process.env.BSKY_BLOB_RATE_LIMIT_BYPASS_KEY || undefined
     // single domain would be e.g. "mypds.com", subdomains are supported with a leading dot e.g. ".mypds.com"
@@ -314,6 +325,44 @@ export class ServerConfig {
       process.env.BSKY_NOTIFICATIONS_V2_ALGORITHM === 'algoLookback'
         ? 'algoLookback'
         : 'algoGravity'
+    const notificationsV2MinRawLimit = process.env
+      .BSKY_NOTIFICATIONS_V2_MIN_RAW_LIMIT
+      ? parseInt(process.env.BSKY_NOTIFICATIONS_V2_MIN_RAW_LIMIT, 10)
+      : 300
+    assert(
+      Number.isInteger(notificationsV2MinRawLimit),
+      'invalid BSKY_NOTIFICATIONS_V2_MIN_RAW_LIMIT',
+    )
+    const notificationsV2MaxRawItems = process.env
+      .BSKY_NOTIFICATIONS_V2_MAX_RAW_ITEMS
+      ? parseInt(process.env.BSKY_NOTIFICATIONS_V2_MAX_RAW_ITEMS, 10)
+      : 3000
+    assert(
+      Number.isInteger(notificationsV2MaxRawItems),
+      'invalid BSKY_NOTIFICATIONS_V2_MAX_RAW_ITEMS',
+    )
+    assert(
+      notificationsV2MinRawLimit <= notificationsV2MaxRawItems,
+      'notificationsV2MinRawLimit must not exceed notificationsV2MaxRawItems',
+    )
+    const notificationsV2MaxReads = process.env.BSKY_NOTIFICATIONS_V2_MAX_READS
+      ? parseInt(process.env.BSKY_NOTIFICATIONS_V2_MAX_READS, 10)
+      : 3
+    assert(
+      Number.isInteger(notificationsV2MaxReads),
+      'invalid BSKY_NOTIFICATIONS_V2_MAX_READS',
+    )
+    const notificationsV2MaxGroupItemsWithRelatedViews = process.env
+      .BSKY_NOTIFICATIONS_V2_MAX_GROUP_ITEMS_WITH_RELATED_VIEWS
+      ? parseInt(
+          process.env.BSKY_NOTIFICATIONS_V2_MAX_GROUP_ITEMS_WITH_RELATED_VIEWS,
+          10,
+        )
+      : 10
+    assert(
+      Number.isInteger(notificationsV2MaxGroupItemsWithRelatedViews),
+      'invalid BSKY_NOTIFICATIONS_V2_MAX_GROUP_ITEMS_WITH_RELATED_VIEWS',
+    )
 
     const disableSsrfProtection = process.env.BSKY_DISABLE_SSRF_PROTECTION
       ? process.env.BSKY_DISABLE_SSRF_PROTECTION === 'true'
@@ -392,22 +441,9 @@ export class ServerConfig {
     const draftsLimit = process.env.BSKY_DRAFTS_LIMIT
       ? parseInt(process.env.BSKY_DRAFTS_LIMIT || '', 10)
       : 500
+
     const searchV2OverrideHeader =
       process.env.BSKY_SEARCH_V2_OVERRIDE_HEADER || undefined
-    const communityCreatorDids = envList(
-      process.env.BSKY_PARA_COMMUNITY_CREATOR_DIDS,
-    )
-    const redisHost = process.env.BSKY_REDIS_HOST || undefined
-    const redisPassword = process.env.BSKY_REDIS_PASSWORD || undefined
-    const redis = redisHost
-      ? { host: redisHost, password: redisPassword }
-      : undefined
-
-    const openaiApiKey = process.env.OPENAI_API_KEY || undefined
-    const openaiModel = process.env.OPENAI_MODEL || 'gpt-4o'
-    const openai = openaiApiKey
-      ? { apiKey: openaiApiKey, model: openaiModel }
-      : undefined
 
     return new ServerConfig({
       version,
@@ -417,6 +453,7 @@ export class ServerConfig {
       serverDid,
       alternateAudienceDids,
       entrywayJwtPublicKeyHex,
+      bffJwtSecret,
       liveNowConfig,
       etcdHosts,
       dataplaneUrls,
@@ -437,6 +474,7 @@ export class ServerConfig {
       irisStagingServiceDid,
       trendingFeedDid,
       bskyFeedgenDids,
+      irisApiKey,
       irisFeedUris,
       irisStagingUrl,
       irisStagingFeedUris,
@@ -460,6 +498,7 @@ export class ServerConfig {
       rolodexApiKey,
       rolodexHttpVersion,
       rolodexIgnoreBadTls,
+      externalRecordsSafeDomains,
       blobRateLimitBypassKey,
       blobRateLimitBypassHostname,
       adminPasswords,
@@ -482,6 +521,10 @@ export class ServerConfig {
       visibilityTagRankPrefix,
       notificationsDelayMs,
       notificationsV2Algorithm,
+      notificationsV2MinRawLimit,
+      notificationsV2MaxRawItems,
+      notificationsV2MaxReads,
+      notificationsV2MaxGroupItemsWithRelatedViews,
       disableSsrfProtection,
       proxyAllowHTTP2,
       proxyConnectTimeout,
@@ -491,12 +534,9 @@ export class ServerConfig {
       proxyMaxRetries,
       proxyPreferCompressed,
       kws,
-      openai,
       debugFieldAllowedDids,
       draftsLimit,
-      communityCreatorDids,
       searchV2OverrideHeader,
-      redis,
       ...noUndefinedVals(overrides ?? {}),
     })
   }
@@ -535,6 +575,10 @@ export class ServerConfig {
 
   get entrywayJwtPublicKeyHex() {
     return this.cfg.entrywayJwtPublicKeyHex
+  }
+
+  get bffJwtSecret() {
+    return this.cfg.bffJwtSecret
   }
 
   get liveNowConfig() {
@@ -660,6 +704,10 @@ export class ServerConfig {
 
   get bskyFeedgenDids() {
     return this.cfg.bskyFeedgenDids
+  }
+
+  get irisApiKey() {
+    return this.cfg.irisApiKey
   }
 
   get irisFeedUris() {
@@ -790,6 +838,22 @@ export class ServerConfig {
     return this.cfg.notificationsV2Algorithm ?? 'algoGravity'
   }
 
+  get notificationsV2MinRawLimit(): number {
+    return this.cfg.notificationsV2MinRawLimit
+  }
+
+  get notificationsV2MaxRawItems(): number {
+    return this.cfg.notificationsV2MaxRawItems
+  }
+
+  get notificationsV2MaxReads(): number {
+    return this.cfg.notificationsV2MaxReads
+  }
+
+  get notificationsV2MaxGroupItemsWithRelatedViews(): number {
+    return this.cfg.notificationsV2MaxGroupItemsWithRelatedViews
+  }
+
   get disableSsrfProtection(): boolean {
     return this.cfg.disableSsrfProtection ?? false
   }
@@ -826,10 +890,6 @@ export class ServerConfig {
     return this.cfg.kws
   }
 
-  get openai() {
-    return this.cfg.openai
-  }
-
   get debugFieldAllowedDids() {
     return this.cfg.debugFieldAllowedDids
   }
@@ -842,12 +902,8 @@ export class ServerConfig {
     return this.cfg.searchV2OverrideHeader
   }
 
-  get communityCreatorDids() {
-    return this.cfg.communityCreatorDids
-  }
-
-  get redis() {
-    return this.cfg.redis
+  get externalRecordsSafeDomains() {
+    return this.cfg.externalRecordsSafeDomains ?? []
   }
 }
 

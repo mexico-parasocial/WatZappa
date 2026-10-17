@@ -1,6 +1,5 @@
-// @ts-nocheck
-import { AtpAgent } from '@atproto/api'
-import { SeedClient, TestNetwork } from '@atproto/dev-env'
+import type { AtpAgent } from '@atproto/api'
+import { type SeedClient, TestNetwork } from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
 import { forSnapshot } from '../_util.js'
 import basicSeed from '../seeds/basic.js'
@@ -71,7 +70,7 @@ describe('proxies admin requests', () => {
   })
 
   afterAll(async () => {
-    await network.close()
+    await network?.close()
   })
 
   it('creates reports of a repo.', async () => {

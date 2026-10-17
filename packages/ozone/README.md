@@ -5,11 +5,23 @@ Backend service for moderating the Bluesky network.
 [![NPM](https://img.shields.io/npm/v/@atproto/ozone)](https://www.npmjs.com/package/@atproto/ozone)
 [![Github CI Status](https://github.com/bluesky-social/atproto/actions/workflows/repo.yaml/badge.svg)](https://github.com/bluesky-social/atproto/actions/workflows/repo.yaml)
 
+## Report tags
+
+Reports automatically add a reason tag such as `report:spam` to their subject by default. Set `OZONE_REPORT_TAGS_DISABLED=true` and restart the API to disable these automatic report tags. Unset or `false` keeps them enabled.
+
+The setting applies to reports submitted through both `com.atproto.moderation.createReport` and `tools.ozone.moderation.emitEvent`.
+
+Language and embed tags, manually applied tags, and existing report tags are unaffected.
+
 ## Wildcard label queries
 
 Wildcard patterns in `com.atproto.label.queryLabels` are disabled by default, including `*` and requests mixing wildcard and exact patterns. They return HTTP 400 (`InvalidRequest`) with the message "Support for wildcard label queries is temporarily disabled" before accessing the database. Exact URI queries remain available.
 
 Set `OZONE_LABEL_QUERY_WILDCARDS_ENABLED=true` and restart the API to restore wildcard support. Unset or `false` disables it.
+
+## Moderation query cancellation
+
+`queryEvents` and `queryStatuses` cancel their listing SQL when the HTTP client disconnects, using Kysely's `cancel query` abort strategy. Kysely uses a separate PostgreSQL connection for cancellation and holds the listing connection until SQL and cancellation finish. This adds no query deadline.
 
 ## Moderation inbox standing
 

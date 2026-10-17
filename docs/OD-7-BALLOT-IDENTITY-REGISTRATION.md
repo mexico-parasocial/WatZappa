@@ -431,6 +431,18 @@ does not tell a voter that their ballot is published under their DID,
 permanently, before they cast it. Under this project's own standard that is the
 remaining half of this decision, and it belongs in the PARA client, not here.
 
+**Extended 2026-09-29: policy ballots are public too.** A `com.para.civic.vote`
+with `subjectType: "policy"` and an integer `signal` from -3 to +3 is now
+accepted, on the same terms as a cabildeo ballot: public, attributable to the
+identity that casts it, and written only with an m8 authorization
+(`m8:policy:v1`) whose MAC binds the signal. The reasoning is PARA
+`docs/revocable-mandates-spec.md` §4.0: the casting identity is anonymous by
+default (iM8 also offers an isolated identity and an opt-in public profile), m8
+holds no legal identity (§5g), and the nullifier is anchored to the person, so
+a second identity of the same person replaces the first ballot instead of
+adding one. `delegatedFrom` stays refused on both kinds. Anonymous proofs remain
+for age checks and for any vote a community marks as secret.
+
 ## 5e. Quadratic voting is an experiment, gated and off
 
 **Decided 2026-09-20.** QV-LD is not retired and not canonical: it becomes a
@@ -774,7 +786,9 @@ participates in it. Hence: this decision first.
 - [ ] The -3..+3 control still writes nowhere. Either give it a destination or
       retire it from the feed, where it discards what people tell it (§5f). The
       RAQ call site did persist, into `proposalAnswer`, and is retired with that
-      record's freeze (§5h).
+      record's freeze (§5h). **Destination decided 2026-09-29:** a public
+      policy ballot (§5d, extended); the PDS and AppView accept it with an
+      `m8:policy:v1` authorization. The PARA write path is the remaining step.
 - [x] Every ballot-shaped record assigned a box: frozen, redemption required,
       or public reaction without a proof (§5h). Box 1 refused at both layers,
       box 3's proof fields refused on write.

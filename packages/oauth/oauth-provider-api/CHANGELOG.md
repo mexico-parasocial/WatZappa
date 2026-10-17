@@ -1,5 +1,97 @@
 # @atproto/oauth-provider-api
 
+## 0.10.1
+
+### Patch Changes
+
+- Updated dependencies [[`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2)]:
+  - @atproto/syntax@0.7.7
+
+## 0.10.0
+
+### Minor Changes
+
+- [#5629](https://github.com/bluesky-social/atproto/pull/5629) [`32f8e45`](https://github.com/bluesky-social/atproto/commit/32f8e454f199f4355574e452f660098a55365706) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Update sign-out endpoint input
+
+## 0.9.0
+
+### Minor Changes
+
+- [#5207](https://github.com/bluesky-social/atproto/pull/5207) [`f5f0aab`](https://github.com/bluesky-social/atproto/commit/f5f0aab4cf3046de3dddd9251a07003d29e3c0be) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm)! - Add email-based authentication factor (2FA) for account sign-in
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/oauth-types@0.7.7
+
+## 0.8.3
+
+### Patch Changes
+
+- [#5488](https://github.com/bluesky-social/atproto/pull/5488) [`fe4087e`](https://github.com/bluesky-social/atproto/commit/fe4087ecb7a7cc53c7081c9f97d49121e5251c36) Thanks [@dependabot](https://github.com/apps/dependabot)! - Export `ASSETS_ENDPOINT_PREFIX` constant
+
+- Updated dependencies []:
+  - @atproto/oauth-types@0.7.6
+
+## 0.8.2
+
+### Patch Changes
+
+- Updated dependencies [[`ed0b7d3`](https://github.com/bluesky-social/atproto/commit/ed0b7d38811bb24952a3f1da988b02e39934d222)]:
+  - @atproto/syntax@0.7.6
+
+## 0.8.1
+
+### Patch Changes
+
+- Updated dependencies [[`6af9f14`](https://github.com/bluesky-social/atproto/commit/6af9f141d18c1f41a04828af8256567d5f17a35e)]:
+  - @atproto/syntax@0.7.5
+
+## 0.8.0
+
+### Minor Changes
+
+- [#5387](https://github.com/bluesky-social/atproto/pull/5387) [`4e18a00`](https://github.com/bluesky-social/atproto/commit/4e18a00b2de97e36b9b00a7fcb8713efd87964d1) Thanks [@bigmoves](https://github.com/bigmoves)! - Remove the `ISODateString` and `ActiveDeviceSession` types, which duplicated
+  `ISODatetimeString` from `@atproto/syntax` and `Session` respectively. Remove
+  the `deleteAfter` property from `DeactivateAccountInput`, which the
+  `/deactivate-account` endpoint never accepted.
+
+## 0.7.9
+
+### Patch Changes
+
+- Updated dependencies [[`8b55a4a`](https://github.com/bluesky-social/atproto/commit/8b55a4ab69c24e5038f67c479b3b9953666ea0c2)]:
+  - @atproto/syntax@0.7.4
+
+## 0.7.8
+
+### Patch Changes
+
+- Updated dependencies [[`6a3d607`](https://github.com/bluesky-social/atproto/commit/6a3d6073cb66c527b5b109242049c85c36b9658c)]:
+  - @atproto/syntax@0.7.3
+
+## 0.7.7
+
+### Patch Changes
+
+- [#5273](https://github.com/bluesky-social/atproto/pull/5273) [`87e6a95`](https://github.com/bluesky-social/atproto/commit/87e6a95c39f199e53b6a68b7d1fa23fbe8459753) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Fix a bug that would cause oauth session not recently refreshed not to be listed in the UI.
+
+## 0.7.6
+
+### Patch Changes
+
+- Updated dependencies [[`9e1da84`](https://github.com/bluesky-social/atproto/commit/9e1da84cc00a1cc5b453705539a2766403f3ee55)]:
+  - @atproto/syntax@0.7.2
+
+## 0.7.5
+
+### Patch Changes
+
+- Updated dependencies [[`a0c49d9`](https://github.com/bluesky-social/atproto/commit/a0c49d9e8bc685c5a747a8d3b2775c73c63fdb6f)]:
+  - @atproto/oauth-types@0.7.5
+  - @atproto/jwk@0.7.4
+  - @atproto/syntax@0.7.1
+
 ## 0.7.4
 
 ### Patch Changes

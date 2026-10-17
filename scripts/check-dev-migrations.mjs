@@ -34,11 +34,19 @@ if (
 }
 
 const compose = path.join(root, 'packages/dev-infra/docker-compose.yaml')
+const schema = process.env.DB_POSTGRES_SCHEMA || 'para_local'
+if (!/^[a-z][a-z0-9_]*$/.test(schema))
+  throw new Error('DB_POSTGRES_SCHEMA must be a lowercase SQL identifier')
+const appviewSchema = `appview_${schema}`
+const projectArgs = process.env.DEV_ENV_COMPOSE_PROJECT
+  ? ['-p', process.env.DEV_ENV_COMPOSE_PROJECT]
+  : []
 const query = (sql) =>
   execFileSync(
     'docker',
     [
       'compose',
+      ...projectArgs,
       '-f',
       compose,
       'exec',
@@ -56,9 +64,9 @@ const query = (sql) =>
     { encoding: 'utf8' },
   ).trim()
 
-if (query("SELECT to_regclass('appview_para_local.kysely_migration')") !== '') {
+if (query(`SELECT to_regclass('${appviewSchema}.kysely_migration')`) !== '') {
   const applied = query(
-    'SELECT name FROM appview_para_local.kysely_migration ORDER BY timestamp',
+    `SELECT name FROM ${appviewSchema}.kysely_migration ORDER BY timestamp`,
   )
     .split('\n')
     .filter(Boolean)

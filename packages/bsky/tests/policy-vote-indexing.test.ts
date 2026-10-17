@@ -7,25 +7,57 @@ import { AtUri } from '@atproto/syntax'
 
 const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
 
-// A `com.para.civic.vote` carrying `subjectType: 'policy'` and a `signal`
-// publishes a -3..+3 position in the voter's own repo, which OD-7 §5d refuses
-// until the replacement ballot exists. This pins both halves of that refusal:
-// our own PDS will not write one, and the AppView will not index one that
-// reaches it from somewhere else.
-maybeDescribe('policy votes are refused', () => {
+// A `com.para.civic.vote` carrying `subjectType: 'policy'` publishes a -3..+3
+// position under the identity that cast it, which is accepted (PARA
+// revocable-mandates-spec §4.0) once m8 has authorized it with the signal
+// bound. These pin that the AppView indexes only an authorized one, and keeps
+// one row per person even when the person votes from a second identity.
+maybeDescribe('policy votes', () => {
   let network: TestNetwork
   let sc: SeedClient
   let db: any
 
-  const policyVote = (subject: string) => ({
+  const policyVote = (subject: string, signal = 2) => ({
     $type: 'com.para.civic.vote',
     subject,
     subjectType: 'policy',
-    signal: 2,
+    signal,
     isDirect: true,
-    voteNullifier: 'm8-policy-shared-person',
+    voteNullifier: 'e'.repeat(64),
+    eligibilityProofRef: 'm8:policy:v1:' + 'f'.repeat(43),
     createdAt: new Date().toISOString(),
   })
+
+  const withVerifier = async (status: number, run: () => Promise<void>) => {
+    const previousUrl = process.env.PARA_CIVIC_VOTE_VERIFIER_URL
+    process.env.PARA_CIVIC_VOTE_VERIFIER_URL = 'https://issuer.test/verify'
+    using _request = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status }))
+    try {
+      await run()
+    } finally {
+      if (previousUrl === undefined)
+        delete process.env.PARA_CIVIC_VOTE_VERIFIER_URL
+      else process.env.PARA_CIVIC_VOTE_VERIFIER_URL = previousUrl
+    }
+  }
+
+  const index = async (did: string, record: Record<string, unknown>) =>
+    network.bsky.sub.indexingSvc.indexRecord(
+      AtUri.make(did, 'com.para.civic.vote', TID.nextStr()),
+      await cidForCbor(record),
+      record,
+      WriteOpAction.Create,
+      new Date().toISOString(),
+    )
+
+  const rowsFor = (subject: string) =>
+    db.db
+      .selectFrom('para_policy_vote')
+      .selectAll()
+      .where('subject', '=', subject)
+      .execute()
 
   beforeAll(async () => {
     network = await TestNetwork.create({
@@ -41,39 +73,37 @@ maybeDescribe('policy votes are refused', () => {
     await network.close()
   })
 
-  it('the PDS refuses to write one', async () => {
-    const subject = `at://${sc.dids.alice}/com.para.civic.policy/refused-on-write`
+  it('the PDS refuses one without a valid authorization', async () => {
+    const subject = `at://${sc.dids.alice}/app.bsky.feed.post/unauthorized`
     const attempt = sc.agent.com.atproto.repo.createRecord(
       {
         repo: sc.dids.alice,
         collection: 'com.para.civic.vote',
-        record: policyVote(subject),
+        record: { ...policyVote(subject), eligibilityProofRef: 'invented' },
       },
       { encoding: 'application/json', headers: sc.getHeaders(sc.dids.alice) },
     )
-    await expect(attempt).rejects.toThrow(/accepted only as a cabildeo ballot/)
+    await expect(attempt).rejects.toThrow(/civic vote/)
   })
 
-  it('the AppView refuses to index one reaching it from elsewhere', async () => {
-    const subject = `at://${sc.dids.alice}/com.para.civic.policy/refused-on-index`
-    const record = policyVote(subject)
-
-    await network.bsky.sub.indexingSvc.indexRecord(
-      AtUri.make(sc.dids.alice, 'com.para.civic.vote', TID.nextStr()),
-      await cidForCbor(record),
-      record,
-      WriteOpAction.Create,
-      new Date().toISOString(),
-    )
-
-    const rows = await db.db
-      .selectFrom('para_policy_vote')
-      .selectAll()
-      .where('subject', '=', subject)
-      .execute()
-
-    expect(rows).toHaveLength(0)
+  it('indexes an authorized one, one row per person across identities', async () => {
+    const subject = `at://${sc.dids.alice}/app.bsky.feed.post/indexed`
+    await withVerifier(204, async () => {
+      await index(sc.dids.alice, policyVote(subject, 2))
+      // Same person (same nullifier), voting again from another identity.
+      await index(sc.dids.bob, policyVote(subject, -1))
+    })
+    const rows = await rowsFor(subject)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ creator: sc.dids.bob, signal: -1 })
   })
+
+  it('refuses one m8 does not authorize', async () => {
+    const subject = `at://${sc.dids.alice}/app.bsky.feed.post/rejected`
+    await withVerifier(422, () => index(sc.dids.alice, policyVote(subject)))
+    expect(await rowsFor(subject)).toHaveLength(0)
+  })
+
   it('refuses foreign cabildeo records without issuer authorization', async () => {
     using transaction = vi.spyOn(network.bsky.sub.indexingSvc.db, 'transaction')
     const subject = `at://${sc.dids.alice}/com.para.civic.cabildeo/unverified`

@@ -14,6 +14,7 @@ import { MatrixAdminClient } from './matrix.js'
 import { sweepExpiredMembershipLeases } from './membership-lease.js'
 import { BridgeMetrics } from './metrics.js'
 import { ProposalEngine } from './proposals.js'
+import { PushReceiptWorker } from './push-receipts.js'
 import { RetryWorker } from './retry.js'
 import type { RouteContext } from './routes/context.js'
 import { writeJson } from './routes/http.js'
@@ -82,6 +83,7 @@ async function main() {
     (community, did) => firehose.retryCommunityProvision(community, did),
   )
   const syncPoller = new MatrixSyncPoller(config, db, matrix, chatMod, log)
+  const pushReceipts = new PushReceiptWorker(db, log, metrics)
 
   chatMod.setEventBus(events)
   syncPoller.setEventBus(events)
@@ -153,6 +155,7 @@ async function main() {
 
   // Start workers
   retryWorker.start()
+  pushReceipts.start()
   syncPoller.start()
   await firehose.start()
 
@@ -230,6 +233,7 @@ async function main() {
     log.info({ signal }, 'Shutting down...')
     retryWorker.stop()
     syncPoller.stop()
+    await pushReceipts.stop()
     await firehose.stop()
     clearInterval(authoritySweep)
     clearInterval(proposalCron)

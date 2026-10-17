@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, expect, it } from 'vitest'
 import { parseCid } from '@atproto/lex-data'
 import { cid } from './cid.js'
