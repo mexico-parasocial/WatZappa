@@ -350,7 +350,7 @@ export default function (server: Server, ctx: AppContext) {
   getParaPosts(server, ctx)
   searchParaPosts(server, ctx)
   getParaTimeline(server, ctx)
-  getParaPostMeta(paraServer, ctx)
+  getParaPostMeta(server, ctx)
   getParaDiscourseSnapshot(server, ctx)
   listParaCollections(server, ctx)
   getParaCollection(server, ctx)
