@@ -121,9 +121,7 @@ import listParaCabildeoPositions from './com/para/civic/listCabildeoPositions.js
 import listParaCabildeos from './com/para/civic/listCabildeos.js'
 import listParaDelegationCandidates from './com/para/civic/listDelegationCandidates.js'
 import putParaLivePresence from './com/para/civic/putLivePresence.js'
-import applyParaCollectionOps, {
-  applyOpsSchema,
-} from './com/para/collection/applyOps.js'
+import applyParaCollectionOps from './com/para/collection/applyOps.js'
 import createParaCollection from './com/para/collection/createCollection.js'
 import deleteParaCollection from './com/para/collection/deleteCollection.js'
 import getParaCollection from './com/para/collection/getCollection.js'
@@ -188,7 +186,6 @@ export * as sitemap from './sitemap.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.addLexicons(paraSchemas)
-  server.addLexicons([applyOpsSchema])
 
   const paraServer = { xrpc: server } as unknown as ParaLexiconServer
   const para = new ComParaNS(paraServer)
@@ -359,7 +356,7 @@ export default function (server: Server, ctx: AppContext) {
   getParaCollection(paraServer, ctx)
   createParaCollection(paraServer, ctx)
   updateParaCollection(paraServer, ctx)
-  applyParaCollectionOps(paraServer, ctx)
+  applyParaCollectionOps(server, ctx)
   deleteParaCollection(paraServer, ctx)
   getParaDiscourseTopics(paraServer, ctx)
   getParaUserAlignment(paraServer, ctx)
