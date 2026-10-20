@@ -1,10 +1,10 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.discourse.getTopology({
+  server.add(com.para.discourse.getTopology, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
