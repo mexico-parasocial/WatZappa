@@ -202,12 +202,6 @@ export default function (server: Server, ctx: AppContext) {
   const paraServer = { xrpc: server } as unknown as ParaLexiconServer
   const para = new ComParaNS(paraServer)
   ;(paraServer as any).com = { para }
-  ;(para as any).notification = {
-    getPostSubscription: (cfg) =>
-      paraServer.xrpc.method('com.para.notification.getPostSubscription', cfg),
-    putPostSubscription: (cfg) =>
-      paraServer.xrpc.method('com.para.notification.putPostSubscription', cfg),
-  }
 
   // app.bsky
   getTimeline(server, ctx)
@@ -360,8 +354,8 @@ export default function (server: Server, ctx: AppContext) {
   exportParaObsidianVault(paraServer, ctx)
   listParaHighlights(paraServer, ctx)
   getParaHighlight(paraServer, ctx)
-  getParaPostSubscription(paraServer, ctx)
-  putParaPostSubscription(paraServer, ctx)
+  getParaPostSubscription(server, ctx)
+  putParaPostSubscription(server, ctx)
   getParaAuthorFeed(paraServer, ctx)
   getParaMemes(server, ctx)
   getParaPostThread(paraServer, ctx)
