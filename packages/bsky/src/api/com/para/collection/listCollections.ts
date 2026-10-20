@@ -1,10 +1,11 @@
+import type { DatetimeString } from '@atproto/lex'
 import { lexParseJsonBytes } from '@atproto/lex'
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
-import * as ComParaCollectionDefs from '../../../../lexicon/types/com/para/collection/defs.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.collection.listCollections({
+  server.add(com.para.collection.listCollections, {
     auth: ctx.authVerifier.standard,
     handler: async ({ params, auth }) => {
       const viewer = auth.credentials.iss
@@ -19,7 +20,7 @@ export default function (server: Server, ctx: AppContext) {
       const collectionViews = collections.map((c) => {
         const collection = lexParseJsonBytes(
           c.payload,
-        ) as unknown as ComParaCollectionDefs.Collection
+        ) as unknown as com.para.collection.defs.Collection
         return {
           id: collection.id,
           name: collection.name,
@@ -27,8 +28,12 @@ export default function (server: Server, ctx: AppContext) {
           color: collection.color,
           items: collection.items || [],
           relations: collection.relations || [],
-          createdAt: (c.createdAt?.toDate() ?? new Date(0)).toISOString(),
-          updatedAt: (c.updatedAt?.toDate() ?? new Date(0)).toISOString(),
+          createdAt: (
+            c.createdAt?.toDate() ?? new Date(0)
+          ).toISOString() as DatetimeString,
+          updatedAt: (
+            c.updatedAt?.toDate() ?? new Date(0)
+          ).toISOString() as DatetimeString,
         }
       })
 
