@@ -132,7 +132,6 @@ import updateParaCollection from './com/para/collection/updateCollection.js'
 import getParaCommunityActivity from './com/para/community/activities/getActivity.js'
 import listParaCommunityActivities from './com/para/community/activities/listActivities.js'
 import listParaCommunityWikiPages from './com/para/community/activities/listWikiPages.js'
-import { communityActivitySchemas } from './com/para/community/activities/schemas.js'
 import createParaCivicTreeRelationship from './com/para/community/civicTree/createRelationship.js'
 import listParaCivicTreeContributions from './com/para/community/civicTree/listContributions.js'
 import submitParaCivicTreeContribution from './com/para/community/civicTree/submitContribution.js'
@@ -189,7 +188,6 @@ export * as sitemap from './sitemap.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.addLexicons(paraSchemas)
-  server.addLexicons(communityActivitySchemas)
   server.addLexicons([applyOpsSchema])
 
   const paraServer = { xrpc: server } as unknown as ParaLexiconServer
@@ -318,9 +316,9 @@ export default function (server: Server, ctx: AppContext) {
   getParaCivicTree(paraServer, ctx)
   searchParaBooks(server, ctx)
   getParaPolicyCommunityVotes(server, ctx)
-  listParaCommunityActivities(paraServer, ctx)
-  getParaCommunityActivity(paraServer, ctx)
-  listParaCommunityWikiPages(paraServer, ctx)
+  listParaCommunityActivities(server, ctx)
+  getParaCommunityActivity(server, ctx)
+  listParaCommunityWikiPages(server, ctx)
   listParaCivicTreeContributions(server, ctx)
   submitParaCivicTreeContribution(server, ctx)
   voteParaCivicTreeContribution(server, ctx)
