@@ -121,7 +121,6 @@ import listParaCabildeoPositions from './com/para/civic/listCabildeoPositions.js
 import listParaCabildeos from './com/para/civic/listCabildeos.js'
 import listParaDelegationCandidates from './com/para/civic/listDelegationCandidates.js'
 import putParaLivePresence from './com/para/civic/putLivePresence.js'
-import { civicSchemas } from './com/para/civic/schemas.js'
 import applyParaCollectionOps, {
   applyOpsSchema,
 } from './com/para/collection/applyOps.js'
@@ -193,7 +192,6 @@ export default function (server: Server, ctx: AppContext) {
   server.addLexicons(paraSchemas)
   // The civicTree procedure lexicons postdate the frozen generated registry.
   server.addLexicons(civicTreeProcedureSchemas)
-  server.addLexicons(civicSchemas)
   server.addLexicons(communityActivitySchemas)
   server.addLexicons([applyOpsSchema])
 
@@ -322,7 +320,7 @@ export default function (server: Server, ctx: AppContext) {
   getParaAuditTrail(paraServer, ctx)
   getParaCivicTree(paraServer, ctx)
   searchParaBooks(server, ctx)
-  getParaPolicyCommunityVotes(paraServer, ctx)
+  getParaPolicyCommunityVotes(server, ctx)
   listParaCommunityActivities(paraServer, ctx)
   getParaCommunityActivity(paraServer, ctx)
   listParaCommunityWikiPages(paraServer, ctx)
