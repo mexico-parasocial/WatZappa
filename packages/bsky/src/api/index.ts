@@ -359,7 +359,7 @@ export default function (server: Server, ctx: AppContext) {
   applyParaCollectionOps(server, ctx)
   deleteParaCollection(server, ctx)
   getParaDiscourseTopics(server, ctx)
-  getParaUserAlignment(paraServer, ctx)
-  getParaCommunityAlignment(paraServer, ctx)
-  getParaProposals(paraServer, ctx)
+  getParaUserAlignment(server, ctx)
+  getParaCommunityAlignment(server, ctx)
+  getParaProposals(server, ctx)
 }
