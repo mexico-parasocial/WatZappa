@@ -294,9 +294,9 @@ export default function (server: Server, ctx: AppContext) {
   getRecord(server, ctx)
   queryLabels(server, ctx)
   // com.para
-  getParaProfileStats(paraServer, ctx)
-  getParaSuggestedUsers(paraServer, ctx)
-  exportParaCivicTree(paraServer, ctx)
+  getParaProfileStats(server, ctx)
+  getParaSuggestedUsers(server, ctx)
+  exportParaCivicTree(server, ctx)
   getParaAgentConversation(paraServer, ctx)
   sendParaAgentMessage(paraServer, ctx)
   listParaCabildeos(paraServer, ctx)
