@@ -1,10 +1,5 @@
 import type { Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../context.js'
-import {
-  ComParaNS,
-  type Server as ParaLexiconServer,
-} from '../lexicon/index.js'
-import { schemas as paraSchemas } from '../lexicon/lexicons.js'
 import getProfile from './app/bsky/actor/getProfile.js'
 import getProfiles from './app/bsky/actor/getProfiles.js'
 import getSuggestions from './app/bsky/actor/getSuggestions.js'
@@ -185,12 +180,6 @@ export * as external from './external.js'
 export * as sitemap from './sitemap.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.addLexicons(paraSchemas)
-
-  const paraServer = { xrpc: server } as unknown as ParaLexiconServer
-  const para = new ComParaNS(paraServer)
-  ;(paraServer as any).com = { para }
-
   // app.bsky
   getTimeline(server, ctx)
   createBookmark(server, ctx)

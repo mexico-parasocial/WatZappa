@@ -12,7 +12,8 @@ import { Server as XrpcServer } from '@atproto/xrpc-server'
 // The real API module is invoked against an empty server with a stub context:
 // handlers only touch `ctx.authVerifier` (and `ctx.bskyAppView` truthiness) at
 // registration time, so no infrastructure is needed. Registrations are
-// captured by intercepting `server.method`.
+// captured by intercepting `server.add` (and the legacy `server.method`, so a
+// route registered that way still shows up).
 
 const LEXICONS_DIR = join(__dirname, '../../../lexicons/com/para')
 const EXCEPTIONS_PATH = join(

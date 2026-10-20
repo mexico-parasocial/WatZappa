@@ -1,5 +1,4 @@
-import type { DatetimeString } from '@atproto/lex'
-import { lexParseJsonBytes } from '@atproto/lex'
+import { type DatetimeString, lexParseJsonBytes } from '@atproto/lex'
 import type { Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'

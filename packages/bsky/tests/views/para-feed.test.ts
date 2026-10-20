@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { request } from 'undici'
-import type { AtpAgent } from '@atproto/api'
+import { type AtpAgent, ids } from '@atproto/api'
 import {
   type SeedClient,
   TestNetwork,
@@ -20,7 +20,6 @@ import {
   usersSeed,
   writeParaFixture,
 } from '@atproto/dev-env'
-import { ids } from '../../src/lexicon/lexicons.js'
 
 type ParaPostView = {
   uri: string
@@ -501,10 +500,15 @@ describe('para feed views', () => {
   })
 
   it('returns para profile stats and status view for an actor', async () => {
-    await sc.agent.com.atproto.repo.putRecord({
-      repo: alice, collection: 'app.bsky.actor.profile', rkey: 'self',
-      record: {displayName: 'Alice', revealInfluence: true},
-    }, {headers: sc.getHeaders(alice)})
+    await sc.agent.com.atproto.repo.putRecord(
+      {
+        repo: alice,
+        collection: 'app.bsky.actor.profile',
+        rkey: 'self',
+        record: { displayName: 'Alice', revealInfluence: true },
+      },
+      { headers: sc.getHeaders(alice) },
+    )
     await createParaStatus(sc, alice, {
       status: 'Building cross-party policy drafts',
       party: 'Independent',
