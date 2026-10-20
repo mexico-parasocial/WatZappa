@@ -135,7 +135,6 @@ import listParaCommunityWikiPages from './com/para/community/activities/listWiki
 import { communityActivitySchemas } from './com/para/community/activities/schemas.js'
 import createParaCivicTreeRelationship from './com/para/community/civicTree/createRelationship.js'
 import listParaCivicTreeContributions from './com/para/community/civicTree/listContributions.js'
-import { civicTreeProcedureSchemas } from './com/para/community/civicTree/schemas.js'
 import submitParaCivicTreeContribution from './com/para/community/civicTree/submitContribution.js'
 import voteParaCivicTreeContribution from './com/para/community/civicTree/voteContribution.js'
 import exportParaObsidianVault from './com/para/community/exportObsidianVault.js'
@@ -190,8 +189,6 @@ export * as sitemap from './sitemap.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.addLexicons(paraSchemas)
-  // The civicTree procedure lexicons postdate the frozen generated registry.
-  server.addLexicons(civicTreeProcedureSchemas)
   server.addLexicons(communityActivitySchemas)
   server.addLexicons([applyOpsSchema])
 
@@ -324,10 +321,10 @@ export default function (server: Server, ctx: AppContext) {
   listParaCommunityActivities(paraServer, ctx)
   getParaCommunityActivity(paraServer, ctx)
   listParaCommunityWikiPages(paraServer, ctx)
-  listParaCivicTreeContributions(paraServer, ctx)
-  submitParaCivicTreeContribution(paraServer, ctx)
-  voteParaCivicTreeContribution(paraServer, ctx)
-  createParaCivicTreeRelationship(paraServer, ctx)
+  listParaCivicTreeContributions(server, ctx)
+  submitParaCivicTreeContribution(server, ctx)
+  voteParaCivicTreeContribution(server, ctx)
+  createParaCivicTreeRelationship(server, ctx)
   getParaTallySimulation(paraServer, ctx)
   listParaCommunityBoards(paraServer, ctx)
   listParaDelegations(paraServer, ctx)
