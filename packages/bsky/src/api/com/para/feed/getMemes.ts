@@ -1,11 +1,11 @@
-import { AtUriString, DidString } from '@atproto/lex'
-import { Server } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { DataPlaneClient } from '../../../../data-plane/index.js'
-import { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
+import type { AtUriString, DidString } from '@atproto/lex'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import type { DataPlaneClient } from '../../../../data-plane/index.js'
+import type { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
 import { parseString } from '../../../../hydration/util.js'
 import { com } from '../../../../lexicons/index.js'
-import { Views } from '../../../../views/index.js'
+import type { Views } from '../../../../views/index.js'
 import { clearlyBadCursor, resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
@@ -123,8 +123,7 @@ const formatPostMeta = (meta: {
     voteScore: meta.voteScore,
     interactionMode: asInteractionMode(meta.interactionMode),
     createdAt: parseString(meta.createdAt) as
-      | com.para.social.getPostMeta.PostMeta['createdAt']
-      | undefined,
+      com.para.social.getPostMeta.PostMeta['createdAt'] | undefined,
   }
 }
 
