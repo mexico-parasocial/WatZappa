@@ -112,7 +112,6 @@ import getParaAgentConversation from './com/para/agent/getConversation.js'
 import sendParaAgentMessage from './com/para/agent/sendMessage.js'
 import getParaAlphaAccess from './com/para/alpha/getAccess.js'
 import getParaAlphaRolloutStatus from './com/para/alpha/getRolloutStatus.js'
-import { bookSchemas } from './com/para/book/schemas.js'
 import searchParaBooks from './com/para/book/searchBooks.js'
 import getParaCabildeo from './com/para/civic/getCabildeo.js'
 import getParaOpenQuestionThread from './com/para/civic/getOpenQuestionThread.js'
@@ -194,7 +193,6 @@ export default function (server: Server, ctx: AppContext) {
   server.addLexicons(paraSchemas)
   // The civicTree procedure lexicons postdate the frozen generated registry.
   server.addLexicons(civicTreeProcedureSchemas)
-  server.addLexicons(bookSchemas)
   server.addLexicons(civicSchemas)
   server.addLexicons(communityActivitySchemas)
   server.addLexicons([applyOpsSchema])
@@ -323,7 +321,7 @@ export default function (server: Server, ctx: AppContext) {
   getParaCommunityGovernance(paraServer, ctx)
   getParaAuditTrail(paraServer, ctx)
   getParaCivicTree(paraServer, ctx)
-  searchParaBooks(paraServer, ctx)
+  searchParaBooks(server, ctx)
   getParaPolicyCommunityVotes(paraServer, ctx)
   listParaCommunityActivities(paraServer, ctx)
   getParaCommunityActivity(paraServer, ctx)
