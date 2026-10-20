@@ -1,13 +1,15 @@
-// @ts-nocheck
+import type { AtUriString, DatetimeString, DidString } from '@atproto/lex'
+import type { Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import { parseCid, parseString } from '../../../../hydration/util.js'
-import type { Server } from '../../../../lexicon/index.js'
-import type { QueryParams } from '../../../../lexicon/types/com/para/civic/listCabildeos.js'
+import { com } from '../../../../lexicons/index.js'
 import { clearlyBadCursor, resHeaders } from '../../../util.js'
 import { getVisibleParticipantDids, parseDataplaneJson } from './util.js'
 
+type CabildeoView = com.para.civic.defs.CabildeoView
+
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.civic.listCabildeos({
+  server.add(com.para.civic.listCabildeos, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -32,7 +34,7 @@ export default function (server: Server, ctx: AppContext) {
 
 const listCabildeos = async (inputs: {
   ctx: AppContext
-  params: QueryParams
+  params: com.para.civic.listCabildeos.$Params
   viewer?: string
   labelers: ReturnType<AppContext['reqLabelers']>
 }) => {
@@ -86,10 +88,10 @@ const listCabildeos = async (inputs: {
 }
 
 const mapCabildeoView = (view: {
-  uri: string
+  uri: AtUriString
   cid: string
-  creator: string
-  indexedAt: string
+  creator: DidString
+  indexedAt: DatetimeString
   title: string
   description: string
   community: string
@@ -103,7 +105,7 @@ const mapCabildeoView = (view: {
   voteVisibility?: string
   phase: string
   phaseDeadline: string
-  createdAt: string
+  createdAt: DatetimeString
   optionSummary: Array<{
     optionIndex: number
     label: string
@@ -159,12 +161,12 @@ const mapCabildeoView = (view: {
   }
   liveSession?: {
     isLive: boolean
-    hostDid: string
+    hostDid: DidString
     activeParticipantCount: number
-    startedAt: string
-    participantPreviewDids: string[]
+    startedAt: DatetimeString
+    participantPreviewDids: DidString[]
   }
-}) => ({
+}): CabildeoView => ({
   uri: view.uri,
   cid: parseCidOrThrow(view.cid),
   creator: view.creator,
@@ -178,7 +180,7 @@ const mapCabildeoView = (view: {
   geoRestricted: view.geoRestricted,
   geo:
     Number.isInteger(view.geo?.latE7) && Number.isInteger(view.geo?.lngE7)
-      ? { latE7: view.geo.latE7, lngE7: view.geo.lngE7 }
+      ? { latE7: view.geo!.latE7, lngE7: view.geo!.lngE7 }
       : undefined,
   options: view.options.map((option) => ({
     label: option.label,
