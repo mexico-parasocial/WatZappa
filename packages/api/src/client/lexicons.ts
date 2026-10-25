@@ -37693,6 +37693,12 @@ export const schemaDict: Record<string, LexiconDoc> = {
             description:
               "Number of strikes to subtract from the user's strike count. Usually set from the last policy infraction's severity.",
           },
+          strikeExpiresAt: {
+            type: 'string',
+            format: 'datetime',
+            description:
+              'When the strike should expire. If not provided, the strike never expires.',
+          },
         },
       },
       modEventResolveAppeal: {
@@ -40047,7 +40053,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'procedure',
         description:
-          "Create a new moderation queue. A queue can have optional matching criteria that ozone's queue router will use to match reports. A queue with no criteria must have reports assigned to it manually via (1) `modTool.meta.queueId` in `tools.ozone.moderation.emitEvent` or (2) `tools.ozone.report.reassignQueue`.",
+          'Create a new moderation queue. A queue with omitted or empty subjectTypes or reportTypes must have reports assigned to it manually via (1) `modTool.meta.queueId` in `tools.ozone.moderation.emitEvent` or (2) `tools.ozone.report.reassignQueue`.',
         input: {
           encoding: 'application/json',
           schema: {
@@ -40070,15 +40076,34 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 type: 'string',
                 format: 'nsid',
                 description:
-                  "Collection name for record subjects. Required if subjectTypes includes 'record'.",
+                  'Collection name for record subjects. Omit to accept every collection.',
               },
               reportTypes: {
                 type: 'array',
                 items: {
                   type: 'string',
                 },
-                maxLength: 25,
                 description: 'Report reason types (fully qualified NSIDs)',
+              },
+              reporterTags: {
+                type: 'array',
+                maxLength: 25,
+                items: {
+                  type: 'string',
+                  minLength: 1,
+                },
+                description:
+                  'Match any listed tag on the account submitting the report.',
+              },
+              accountTags: {
+                type: 'array',
+                maxLength: 25,
+                items: {
+                  type: 'string',
+                  minLength: 1,
+                },
+                description:
+                  'Match any of these tags on the account that is being reported against.',
               },
               description: {
                 type: 'string',
@@ -40167,7 +40192,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
             format: 'nsid',
             description:
-              "Collection name for record subjects (e.g., 'app.bsky.feed.post')",
+              'Collection name for record subjects. Omit to accept every collection.',
           },
           reportTypes: {
             type: 'array',
@@ -40176,6 +40201,26 @@ export const schemaDict: Record<string, LexiconDoc> = {
             },
             description:
               'Report reason types this queue accepts (fully qualified NSIDs)',
+          },
+          reporterTags: {
+            type: 'array',
+            maxLength: 25,
+            items: {
+              type: 'string',
+              minLength: 1,
+            },
+            description:
+              'Match any listed tag on the account submitting the report.',
+          },
+          accountTags: {
+            type: 'array',
+            maxLength: 25,
+            items: {
+              type: 'string',
+              minLength: 1,
+            },
+            description:
+              'Match tags on the account that is being reported against. For record subjects, use the author account. Match any listed tag.',
           },
           description: {
             type: 'string',

@@ -26,10 +26,14 @@ export interface InputSchema {
   subjectTypes?: (
     'account' | 'record' | 'message' | 'conversation' | (string & {})
   )[]
-  /** Collection name for record subjects. Required if subjectTypes includes 'record'. */
+  /** Collection name for record subjects. Omit to accept every collection. */
   collection?: string
   /** Report reason types (fully qualified NSIDs) */
   reportTypes?: string[]
+  /** Match any listed tag on the account submitting the report. */
+  reporterTags?: string[]
+  /** Match any of these tags on the account that is being reported against. */
+  accountTags?: string[]
   /** Optional description of the queue */
   description?: string
   /** Policy keys to recommend when actioning reports in this queue */

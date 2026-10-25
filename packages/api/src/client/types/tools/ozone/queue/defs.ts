@@ -26,10 +26,14 @@ export interface QueueView {
   subjectTypes?: (
     'account' | 'record' | 'message' | 'conversation' | (string & {})
   )[]
-  /** Collection name for record subjects (e.g., 'app.bsky.feed.post') */
+  /** Collection name for record subjects. Omit to accept every collection. */
   collection?: string
   /** Report reason types this queue accepts (fully qualified NSIDs) */
   reportTypes?: string[]
+  /** Match any listed tag on the account submitting the report. */
+  reporterTags?: string[]
+  /** Match tags on the account that is being reported against. For record subjects, use the author account. Match any listed tag. */
+  accountTags?: string[]
   /** Optional description of the queue */
   description?: string
   /** Policy keys recommended when actioning reports in this queue */
