@@ -10185,6 +10185,236 @@ export class GetLabelsResponse extends Message<GetLabelsResponse> {
 }
 
 /**
+ * @generated from message bsky.Tag
+ */
+export class Tag extends Message<Tag> {
+  /**
+   * @generated from field: string subject = 1;
+   */
+  subject = "";
+
+  /**
+   * DID of the moderator or service that created the event.
+   *
+   * @generated from field: string issuer = 2;
+   */
+  issuer = "";
+
+  /**
+   * @generated from field: string value = 3;
+   */
+  value = "";
+
+  /**
+   * Time Atlantis stored the tag.
+   *
+   * @generated from field: google.protobuf.Timestamp indexed_at = 4;
+   */
+  indexedAt?: Timestamp;
+
+  /**
+   * Ozone event metadata; absent for ordinary tag writes.
+   *
+   * @generated from field: bsky.TagEvent event = 5;
+   */
+  event?: TagEvent;
+
+  /**
+   * absent means permanent
+   *
+   * @generated from field: google.protobuf.Timestamp expires_at = 6;
+   */
+  expiresAt?: Timestamp;
+
+  /**
+   * Removal retained to ignore older events.
+   *
+   * @generated from field: bool removed = 7;
+   */
+  removed = false;
+
+  constructor(data?: PartialMessage<Tag>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.Tag";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "subject", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "issuer", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "value", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "indexed_at", kind: "message", T: Timestamp },
+    { no: 5, name: "event", kind: "message", T: TagEvent },
+    { no: 6, name: "expires_at", kind: "message", T: Timestamp },
+    { no: 7, name: "removed", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Tag {
+    return new Tag().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Tag {
+    return new Tag().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Tag {
+    return new Tag().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: Tag | PlainMessage<Tag> | undefined, b: Tag | PlainMessage<Tag> | undefined): boolean {
+    return proto3.util.equals(Tag, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetTagsForSubjectsRequest
+ */
+export class GetTagsForSubjectsRequest extends Message<GetTagsForSubjectsRequest> {
+  /**
+   * @generated from field: repeated string subjects = 1;
+   */
+  subjects: string[] = [];
+
+  /**
+   * Ozone service DIDs; empty selects all sources.
+   *
+   * @generated from field: repeated string sources = 2;
+   */
+  sources: string[] = [];
+
+  constructor(data?: PartialMessage<GetTagsForSubjectsRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetTagsForSubjectsRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "subjects", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 2, name: "sources", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetTagsForSubjectsRequest {
+    return new GetTagsForSubjectsRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetTagsForSubjectsRequest {
+    return new GetTagsForSubjectsRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetTagsForSubjectsRequest {
+    return new GetTagsForSubjectsRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetTagsForSubjectsRequest | PlainMessage<GetTagsForSubjectsRequest> | undefined, b: GetTagsForSubjectsRequest | PlainMessage<GetTagsForSubjectsRequest> | undefined): boolean {
+    return proto3.util.equals(GetTagsForSubjectsRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetTagsForSubjectsResponse
+ */
+export class GetTagsForSubjectsResponse extends Message<GetTagsForSubjectsResponse> {
+  /**
+   * @generated from field: repeated bsky.Tag tags = 1;
+   */
+  tags: Tag[] = [];
+
+  constructor(data?: PartialMessage<GetTagsForSubjectsResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetTagsForSubjectsResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "tags", kind: "message", T: Tag, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetTagsForSubjectsResponse {
+    return new GetTagsForSubjectsResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetTagsForSubjectsResponse {
+    return new GetTagsForSubjectsResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetTagsForSubjectsResponse {
+    return new GetTagsForSubjectsResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetTagsForSubjectsResponse | PlainMessage<GetTagsForSubjectsResponse> | undefined, b: GetTagsForSubjectsResponse | PlainMessage<GetTagsForSubjectsResponse> | undefined): boolean {
+    return proto3.util.equals(GetTagsForSubjectsResponse, a, b);
+  }
+}
+
+/**
+ * Ozone event that added or removed a tag.
+ *
+ * @generated from message bsky.TagEvent
+ */
+export class TagEvent extends Message<TagEvent> {
+  /**
+   * Ozone service DID.
+   *
+   * @generated from field: string source = 1;
+   */
+  source = "";
+
+  /**
+   * Ozone moderation event ID.
+   *
+   * @generated from field: int64 event_id = 2;
+   */
+  eventId = protoInt64.zero;
+
+  /**
+   * Time Ozone created the event.
+   *
+   * @generated from field: google.protobuf.Timestamp created_at = 3;
+   */
+  createdAt?: Timestamp;
+
+  /**
+   * Subject record CID; empty for account tags.
+   *
+   * @generated from field: string cid = 4;
+   */
+  cid = "";
+
+  constructor(data?: PartialMessage<TagEvent>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.TagEvent";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "source", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "event_id", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
+    { no: 3, name: "created_at", kind: "message", T: Timestamp },
+    { no: 4, name: "cid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): TagEvent {
+    return new TagEvent().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): TagEvent {
+    return new TagEvent().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): TagEvent {
+    return new TagEvent().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: TagEvent | PlainMessage<TagEvent> | undefined, b: TagEvent | PlainMessage<TagEvent> | undefined): boolean {
+    return proto3.util.equals(TagEvent, a, b);
+  }
+}
+
+/**
  * @generated from message bsky.GetActorStarterPacksRequest
  */
 export class GetActorStarterPacksRequest extends Message<GetActorStarterPacksRequest> {

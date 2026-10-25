@@ -1,4 +1,5 @@
 import events from 'node:events'
+import fs from 'node:fs'
 import http from 'node:http'
 import * as plc from '@did-plc/lib'
 import express from 'express'
@@ -11,13 +12,53 @@ import {
 } from '@atproto/api'
 import { Secp256k1Keypair } from '@atproto/crypto'
 import { IdResolver } from '@atproto/identity'
-import { createLexiconServer } from '@atproto/pds'
 import {
   AuthRequiredError,
   InvalidRequestError,
   parseReqNsid,
+  createServer,
   verifyJwt,
 } from '@atproto/xrpc-server'
+
+/**
+ * The generated server no longer exposes `server.chat.bsky.convo.getConvo(fn)`,
+ * and the PDS lexicon set omits most chat methods. This keeps the test chat's
+ * handlers readable: a call on a namespace path registers that NSID with the
+ * lexicon documents installed for the AppView.
+ * Handlers receive the same `{req, params, input}` they always have.
+ */
+const LEXICONS_DIR = new URL('../../bsky/lexicons/', import.meta.url)
+
+function loadLexiconDocs() {
+  return fs
+    .readdirSync(LEXICONS_DIR, { recursive: true, encoding: 'utf8' })
+    .filter((name) => name.endsWith('.json'))
+    .map((name) =>
+      JSON.parse(fs.readFileSync(new URL(name, LEXICONS_DIR), 'utf8')),
+    )
+}
+
+function createLexiconServer(options: Parameters<typeof createServer>[1]) {
+  const server = createServer(loadLexiconDocs(), options)
+  type Handler = (args: any) => unknown
+  const namespace = (path: string[]): any =>
+    new Proxy(() => {}, {
+      get: (_, key) =>
+        typeof key === 'string' ? namespace([...path, key]) : undefined,
+      apply: (_, __, [handler]: [Handler]) => {
+        server.method(path.join('.'), handler as any)
+      },
+    })
+  return {
+    xrpc: server,
+    chat: namespace(['chat']),
+    com: namespace(['com']),
+  } as {
+    xrpc: typeof server
+    chat: any
+    com: any
+  }
+}
 
 type ConvoStatus = 'request' | 'accepted'
 
@@ -1224,7 +1265,7 @@ export class TestChat {
         unreadAcceptedConvos += 1
       }
     }
-    return {unreadRequestConvos, unreadAcceptedConvos}
+    return { unreadRequestConvos, unreadAcceptedConvos }
   }
 
   private getVisibleMessages(

@@ -33,7 +33,10 @@ export interface ProfileViewBasic {
   chatDisabled?: boolean
   verification?: AppBskyActorDefs.VerificationState
   kind?:
-    $Typed<DirectConvoMember> | $Typed<GroupConvoMember> | { $type: string }
+    | $Typed<DirectConvoMember>
+    | $Typed<GroupConvoMember>
+    | $Typed<PastGroupConvoMember>
+    | { $type: string }
 }
 
 const hashProfileViewBasic = 'profileViewBasic'
@@ -46,7 +49,6 @@ export function validateProfileViewBasic<V>(v: V) {
   return validate<ProfileViewBasic & V>(v, id, hashProfileViewBasic)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. */
 export interface DirectConvoMember {
   $type?: 'chat.bsky.actor.defs#directConvoMember'
 }
@@ -61,7 +63,7 @@ export function validateDirectConvoMember<V>(v: V) {
   return validate<DirectConvoMember & V>(v, id, hashDirectConvoMember)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. */
+/** A current group convo member. */
 export interface GroupConvoMember {
   $type?: 'chat.bsky.actor.defs#groupConvoMember'
   addedBy?: ProfileViewBasic
@@ -76,4 +78,19 @@ export function isGroupConvoMember<V>(v: V) {
 
 export function validateGroupConvoMember<V>(v: V) {
   return validate<GroupConvoMember & V>(v, id, hashGroupConvoMember)
+}
+
+/** A past group convo member. */
+export interface PastGroupConvoMember {
+  $type?: 'chat.bsky.actor.defs#pastGroupConvoMember'
+}
+
+const hashPastGroupConvoMember = 'pastGroupConvoMember'
+
+export function isPastGroupConvoMember<V>(v: V) {
+  return is$typed(v, id, hashPastGroupConvoMember)
+}
+
+export function validatePastGroupConvoMember<V>(v: V) {
+  return validate<PastGroupConvoMember & V>(v, id, hashPastGroupConvoMember)
 }

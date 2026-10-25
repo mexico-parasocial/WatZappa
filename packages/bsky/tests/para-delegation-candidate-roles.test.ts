@@ -7,6 +7,7 @@ import {
   createCommunityBoardRecord,
   usersSeed,
 } from '@atproto/dev-env'
+import type { DidString } from '@atproto/syntax'
 
 const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
 
@@ -19,16 +20,16 @@ type Candidate = { did: string; roles: string[] }
 maybeDescribe('delegation candidate roles (AppView)', () => {
   let network: TestNetwork
   let sc: SeedClient
-  let alice: string // board creator and owner; official by her governance record
-  let bob: string // moderator appointed by alice
-  let carol: string // member who declares offices in her membership record
-  let dan: string // member who nominates himself as a delegate
-  let erin: string // self-nominated, then removed by authority events
+  let alice: DidString // board creator and owner; official by her governance record
+  let bob: DidString // moderator appointed by alice
+  let carol: DidString // member who declares offices in her membership record
+  let dan: DidString // member who nominates himself as a delegate
+  let erin: DidString // self-nominated, then removed by authority events
   let board: string
   let cabildeo: string
 
   const write = async (
-    by: string,
+    by: DidString,
     collection: string,
     record: Record<string, unknown>,
     rkey?: string,
@@ -38,7 +39,10 @@ maybeDescribe('delegation candidate roles (AppView)', () => {
       collection,
       record: { $type: collection, ...record },
     }
-    const opts = { encoding: 'application/json', headers: sc.getHeaders(by) }
+    const opts = {
+      encoding: 'application/json' as const,
+      headers: sc.getHeaders(by),
+    }
     const { data } = rkey
       ? await sc.agent.com.atproto.repo.putRecord({ ...input, rkey }, opts)
       : await sc.agent.com.atproto.repo.createRecord(input, opts)
@@ -46,7 +50,7 @@ maybeDescribe('delegation candidate roles (AppView)', () => {
   }
 
   const authorityEvent = async (
-    issuer: string,
+    issuer: DidString,
     event: {
       subject: string
       action: string
@@ -66,7 +70,7 @@ maybeDescribe('delegation candidate roles (AppView)', () => {
       })
     ).uri
 
-  const membership = (by: string, roles: string[]) =>
+  const membership = (by: DidString, roles: string[]) =>
     write(by, 'com.para.community.membership', {
       community: board,
       membershipState: 'active',
@@ -75,7 +79,7 @@ maybeDescribe('delegation candidate roles (AppView)', () => {
     })
 
   const governanceRecord = (
-    by: string,
+    by: DidString,
     rkey: string,
     officials: Array<{ did: string; office: string }>,
     moderators: string[] = [],

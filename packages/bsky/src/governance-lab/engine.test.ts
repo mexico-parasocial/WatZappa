@@ -463,3 +463,111 @@ describe('synthetic integrated governance', () => {
     ).toThrow()
   })
 })
+
+describe('g1-follow-signal-v2 (product rules of 2026-10-20)', () => {
+  const v2 = { ...demoElection, rulesVersion: 'g1-follow-signal-v2' as const }
+  const run2 = (events: ElectionEvent[] = demoEvents, asOf = 50000) =>
+    evaluateElection(v2, events, asOf)
+  // Carla's park vote, re-signalled; everything else is the shared fixture.
+  const withCarlaPark = (signal: number) =>
+    demoEvents.map((e) => (e.id === 'demo:event-1' ? { ...e, signal } : e))
+  const park2 = (events: ElectionEvent[]) =>
+    run2(events).results.find((r) => r.proposal === park)!
+
+  it('decides the shared vectors: positive net intensity with quorum passes', () => {
+    const result = run2()
+    expect(result.rulesVersion).toBe('g1-follow-signal-v2')
+    expect(
+      result.results.map((r) => [r.proposal, r.quorumTarget, r.outcome]),
+    ).toEqual([
+      [library, 2, { decision: 'passed', reason: 'net-support' }],
+      [park, 2, { decision: 'passed', reason: 'net-support' }],
+    ])
+  })
+
+  it("drops all of a follower's delegated units instead of rejecting the delegate's vote", () => {
+    // Carla +3 on park costs each follower 9; Ana then spends 4 directly.
+    const events = [
+      ...withCarlaPark(3),
+      extra({ actor: ana, kind: 'vote', proposal: library, signal: 2 }),
+    ]
+    expect(() => run(events)).toThrow(/budget/)
+    const result = run2(events)
+    expect(
+      result.resolutions.find(
+        (r) => r.participant === ana && r.proposal === park,
+      ),
+    ).toMatchObject({ status: 'over-budget', signal: null, cost: 0 })
+    expect(result.budgets.find((b) => b.participant === ana)).toEqual({
+      participant: ana,
+      spent: 4,
+      remaining: 6,
+    })
+    // Over-budget units are not participation.
+    expect(park2(events)).toMatchObject({
+      represented: 2,
+      delegated: 1,
+      unresolved: 2,
+      intensitySignalSum: 6,
+      outcome: { decision: 'passed', reason: 'net-support' },
+    })
+  })
+
+  it('restores the delegated unit when the follower frees their budget', () => {
+    const events = [
+      ...withCarlaPark(3),
+      extra({ actor: ana, kind: 'vote', proposal: library, signal: 2 }),
+      extra({ actor: ana, kind: 'withdraw', proposal: library }, 6),
+    ]
+    expect(
+      run2(events).resolutions.find(
+        (r) => r.participant === ana && r.proposal === park,
+      ),
+    ).toMatchObject({ status: 'delegated', signal: 3, cost: 9 })
+  })
+
+  it("still refuses a person's own votes that overspend their budget", () => {
+    const events = [
+      ...demoEvents,
+      extra({ actor: diego, kind: 'vote', proposal: park, signal: 3 }),
+      extra({ actor: diego, kind: 'vote', proposal: library, signal: 2 }, 6),
+    ]
+    expect(() => run2(events)).toThrow(/budget/)
+  })
+
+  it('keeps the status quo on a tie and fails on net opposition', () => {
+    const tie = [
+      ...withCarlaPark(1),
+      extra({ actor: diego, kind: 'vote', proposal: park, signal: -3 }),
+    ]
+    expect(park2(tie)).toMatchObject({
+      intensitySignalSum: 0,
+      outcome: { decision: 'failed', reason: 'tie-status-quo' },
+    })
+    expect(park2(withCarlaPark(-1)).outcome).toEqual({
+      decision: 'failed',
+      reason: 'net-opposition',
+    })
+  })
+
+  it('fails without quorum even when the represented signal is positive', () => {
+    const lone = [
+      { ...demoEvents[0], actor: diego, signal: 3 },
+    ] as ElectionEvent[]
+    expect(park2(lone)).toMatchObject({
+      represented: 1,
+      quorumTarget: 2,
+      outcome: { decision: 'failed', reason: 'quorum-not-met' },
+    })
+  })
+
+  it('fixes quorum at 50 % of the electorate', () => {
+    expect(() =>
+      evaluateElection({ ...v2, quorumBps: 3000 }, demoEvents, 50000),
+    ).toThrow(/50 %/)
+  })
+
+  it('leaves v1 snapshots without a decision', () => {
+    expect(run().results.every((r) => r.outcome === undefined)).toBe(true)
+  })
+})

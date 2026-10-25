@@ -9,6 +9,19 @@ export const envToSecrets = (env: ServerEnvironment): ServerSecrets => {
     throw new Error('Must provide an admin password')
   }
 
+  // PARA hardening: enforce minimum secret strength outside dev mode.
+  if (!env.devMode) {
+    if (env.jwtSecret.length < 32) {
+      throw new Error('PDS_JWT_SECRET must be at least 32 characters')
+    }
+    if (env.adminPassword.length < 12) {
+      throw new Error('PDS_ADMIN_PASSWORD must be at least 12 characters')
+    }
+    if (!env.dpopSecret || env.dpopSecret.length < 32) {
+      throw new Error('PDS_DPOP_SECRET must be set and at least 32 characters')
+    }
+  }
+
   return {
     dpopSecret: env.dpopSecret,
     jwtSecret: env.jwtSecret,

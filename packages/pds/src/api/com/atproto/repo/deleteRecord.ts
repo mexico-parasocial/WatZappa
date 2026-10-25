@@ -12,6 +12,7 @@ import {
   BadRecordSwapError,
   prepareDelete,
 } from '../../../../repo/index.js'
+import { assertCommunityRepoWrites } from '../../para/community/util.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.add(com.atproto.repo.deleteRecord, {
@@ -77,6 +78,7 @@ export default function (server: Server, ctx: AppContext) {
         if (!record) {
           return null // No-op if record already doesn't exist
         }
+        await assertCommunityRepoWrites(actorTxn, did, [write])
 
         const commit = await actorTxn.repo
           .processWrites([write], swapCommitCid)

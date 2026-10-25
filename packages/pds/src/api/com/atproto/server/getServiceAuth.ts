@@ -14,8 +14,8 @@ import {
 import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 import {
-  PRIVILEGED_METHODS,
-  PROTECTED_METHODS,
+  isPrivilegedMethod,
+  isProtectedMethod,
   isSpacesMethod,
 } from '../../../../pipethrough.js'
 
@@ -57,7 +57,7 @@ export default function (server: Server, ctx: AppContext) {
         // set in "authorize" method above.
         if (
           lxm != null &&
-          PRIVILEGED_METHODS.has(lxm) &&
+          isPrivilegedMethod(lxm) &&
           !isAccessPrivileged(auth.credentials.scope)
         ) {
           throw new InvalidRequestError(
@@ -86,7 +86,7 @@ export default function (server: Server, ctx: AppContext) {
         }
       }
 
-      if (lxm && PROTECTED_METHODS.has(lxm)) {
+      if (lxm && isProtectedMethod(lxm)) {
         throw new InvalidRequestError(
           `cannot request a service auth token for the following protected method: ${lxm}`,
         )

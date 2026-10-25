@@ -16,7 +16,7 @@ import type { HandlerResponse, LocalRecords, MungeFn } from './types.js'
 
 export const getLocalLag = (local: LocalRecords): number | undefined => {
   let oldest: string | undefined = local.profile?.indexedAt
-  for (const post of local.posts) {
+  for (const post of [...local.posts, ...local.paraPosts]) {
     if (!oldest || post.indexedAt < oldest) {
       oldest = post.indexedAt
     }

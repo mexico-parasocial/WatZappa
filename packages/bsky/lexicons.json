@@ -4,7 +4,7 @@
     {
       "type": "directory",
       "path": "../../lexicons",
-      "include": ["com.atproto.*", "tools.ozone.*"]
+      "include": ["com.atproto.*", "com.para.*", "tools.ozone.*"]
     },
     { "type": "directory", "path": "../../lexicons-overrides" },
     {
@@ -337,6 +337,158 @@
     "com.atproto.temp.requestPhoneVerification",
     "com.atproto.temp.revokeAccountCredentials",
     "com.germnetwork.declaration",
+    "com.para.account.getAuthFactor",
+    "com.para.account.setAuthFactor",
+    "com.para.actor.defs",
+    "com.para.actor.exportCivicTree",
+    "com.para.actor.getProfileStats",
+    "com.para.actor.getSuggestedUsers",
+    "com.para.agent.defs",
+    "com.para.agent.getConversation",
+    "com.para.agent.sendMessage",
+    "com.para.alpha.createInvite",
+    "com.para.alpha.getAccess",
+    "com.para.alpha.getRolloutStatus",
+    "com.para.alpha.requestAccess",
+    "com.para.book.searchBooks",
+    "com.para.civic.amendment",
+    "com.para.civic.cabildeo",
+    "com.para.civic.castVote",
+    "com.para.civic.defs",
+    "com.para.civic.delegation",
+    "com.para.civic.getCabildeo",
+    "com.para.civic.getOpenQuestionThread",
+    "com.para.civic.getPolicyCommunityVotes",
+    "com.para.civic.getPolicyTally",
+    "com.para.civic.listCabildeoPositions",
+    "com.para.civic.listCabildeos",
+    "com.para.civic.listDelegationCandidates",
+    "com.para.civic.openQuestion",
+    "com.para.civic.openQuestionVote",
+    "com.para.civic.position",
+    "com.para.civic.putLivePresence",
+    "com.para.civic.vote",
+    "com.para.collection.applyOps",
+    "com.para.collection.createCollection",
+    "com.para.collection.defs",
+    "com.para.collection.deleteCollection",
+    "com.para.collection.getCollection",
+    "com.para.collection.listCollections",
+    "com.para.collection.updateCollection",
+    "com.para.community.acceptDraftInvite",
+    "com.para.community.activityLedgerEntry",
+    "com.para.community.authorityEvent",
+    "com.para.community.board",
+    "com.para.community.briefingPack",
+    "com.para.community.civicTree",
+    "com.para.community.civicTree.acceptSuggestion",
+    "com.para.community.civicTree.card",
+    "com.para.community.civicTree.cardVote",
+    "com.para.community.civicTree.castCardVote",
+    "com.para.community.civicTree.config",
+    "com.para.community.civicTree.contribution",
+    "com.para.community.civicTree.contributionVote",
+    "com.para.community.civicTree.createRelationship",
+    "com.para.community.civicTree.defs",
+    "com.para.community.civicTree.getCardVote",
+    "com.para.community.civicTree.getGraph",
+    "com.para.community.civicTree.getPulse",
+    "com.para.community.civicTree.getSummary",
+    "com.para.community.civicTree.listContributions",
+    "com.para.community.civicTree.listSuggestions",
+    "com.para.community.civicTree.moderateContribution",
+    "com.para.community.civicTree.rejectSuggestion",
+    "com.para.community.civicTree.relationship",
+    "com.para.community.civicTree.submitContribution",
+    "com.para.community.civicTree.voteContribution",
+    "com.para.community.civicTreeVote",
+    "com.para.community.constitution",
+    "com.para.community.createBoard",
+    "com.para.community.createBriefingPack",
+    "com.para.community.decision",
+    "com.para.community.defs",
+    "com.para.community.delegation",
+    "com.para.community.deliberation",
+    "com.para.community.deliberationVote",
+    "com.para.community.economicActivity",
+    "com.para.community.eigenstate",
+    "com.para.community.exportObsidianVault",
+    "com.para.community.getActivity",
+    "com.para.community.getAuditTrail",
+    "com.para.community.getAuthorization",
+    "com.para.community.getBoard",
+    "com.para.community.getBriefingPack",
+    "com.para.community.getCivicTree",
+    "com.para.community.getGovernance",
+    "com.para.community.getTallySimulation",
+    "com.para.community.governance",
+    "com.para.community.governanceConfig",
+    "com.para.community.intensity",
+    "com.para.community.join",
+    "com.para.community.leave",
+    "com.para.community.listActivities",
+    "com.para.community.listBoards",
+    "com.para.community.listBriefingPacks",
+    "com.para.community.listChildCommunities",
+    "com.para.community.listCivicTreeVotes",
+    "com.para.community.listCivicTrees",
+    "com.para.community.listCommunityRelations",
+    "com.para.community.listDelegations",
+    "com.para.community.listDeliberations",
+    "com.para.community.listIntensities",
+    "com.para.community.listMembers",
+    "com.para.community.listParentCommunities",
+    "com.para.community.listPosts",
+    "com.para.community.listSharedContent",
+    "com.para.community.listVotes",
+    "com.para.community.listWikiPages",
+    "com.para.community.membership",
+    "com.para.community.proposal",
+    "com.para.community.relation",
+    "com.para.community.removeSharedContent",
+    "com.para.community.restoreSharedContent",
+    "com.para.community.roleAcceptance",
+    "com.para.community.shareContent",
+    "com.para.community.sharedContent",
+    "com.para.community.sharedContentAction",
+    "com.para.community.socialActivity",
+    "com.para.community.updateBriefingPack",
+    "com.para.community.vote",
+    "com.para.community.wikiPage",
+    "com.para.discourse.getAnalysis",
+    "com.para.discourse.getSnapshot",
+    "com.para.discourse.getTopics",
+    "com.para.discourse.getTopology",
+    "com.para.feed.getAuthorFeed",
+    "com.para.feed.getMemes",
+    "com.para.feed.getPostThread",
+    "com.para.feed.getPosts",
+    "com.para.feed.getTimeline",
+    "com.para.feed.searchPosts",
+    "com.para.highlight.annotation",
+    "com.para.highlight.defs",
+    "com.para.highlight.getHighlight",
+    "com.para.highlight.listHighlights",
+    "com.para.identity.linkedChat",
+    "com.para.notification.getPostSubscription",
+    "com.para.notification.putPostSubscription",
+    "com.para.official.action",
+    "com.para.official.controller",
+    "com.para.official.entity",
+    "com.para.post",
+    "com.para.raq.assessment",
+    "com.para.raq.axisVote",
+    "com.para.raq.defs",
+    "com.para.raq.getCommunityAlignment",
+    "com.para.raq.getProposals",
+    "com.para.raq.getUserAlignment",
+    "com.para.raq.proposal",
+    "com.para.raq.proposalAnswer",
+    "com.para.raq.proposalVote",
+    "com.para.social.getPostMeta",
+    "com.para.social.postMeta",
+    "com.para.sortition.proof",
+    "com.para.status",
     "internal.bsky.actor.getProfiles",
     "place.stream.badge.defs",
     "place.stream.chat.defs",
@@ -477,8 +629,8 @@
       "cid": "bafyreiaql2xx47oojyole7dqdipcwes7nrjdc2cuxrcpaboulw45f5pgea"
     },
     "app.bsky.actor.profile": {
-      "uri": "https://raw.githubusercontent.com/bluesky-social/bsky/refs/heads/main/lexicons/app/bsky/actor/profile.json",
-      "cid": "bafyreicxydzixifmkms7d6mndfsq6kdzcajakutdakcaqt2qvgzrscfqcm"
+      "uri": "file://../../lexicons-overrides/app/bsky/actor/profile.json",
+      "cid": "bafyreidakd2k73xkiaelfb33sk67axzpfbnu26kd7w4yrwyy5vcyyivham"
     },
     "app.bsky.actor.putPreferences": {
       "uri": "https://raw.githubusercontent.com/bluesky-social/bsky/refs/heads/main/lexicons/app/bsky/actor/putPreferences.json",
@@ -653,8 +805,8 @@
       "cid": "bafyreienkrtmhhf45ah742jkltbt53kbk7om53yl42rvjho4vkbka5zg3m"
     },
     "app.bsky.feed.defs": {
-      "uri": "https://raw.githubusercontent.com/bluesky-social/bsky/refs/heads/main/lexicons/app/bsky/feed/defs.json",
-      "cid": "bafyreihkshyata32ry6z6akz6upbvcogvomocptg5vdigrwswgugt2g7iy"
+      "uri": "file://../../lexicons-overrides/app/bsky/feed/defs.json",
+      "cid": "bafyreifl2fpirula2ttkbkjafpxf5h72zaa7kximl3eeg7oeksq35ux76i"
     },
     "app.bsky.feed.describeFeedGenerator": {
       "uri": "https://raw.githubusercontent.com/bluesky-social/bsky/refs/heads/main/lexicons/app/bsky/feed/describeFeedGenerator.json",
@@ -745,8 +897,8 @@
       "cid": "bafyreieyeblnzqdi25lrx7kzkzlzkxx2ehtpir267o67hchuczvw4itkoq"
     },
     "app.bsky.feed.searchPostsV2": {
-      "uri": "https://raw.githubusercontent.com/bluesky-social/bsky/refs/heads/main/lexicons/app/bsky/feed/searchPostsV2.json",
-      "cid": "bafyreieiif2m6k4xjii22jupbrzfwagtojcwxtnar7u6zml4pv6c6ct56u"
+      "uri": "file://../../lexicons-overrides/app/bsky/feed/searchPostsV2.json",
+      "cid": "bafyreia4jom7zqv2emhzzghma5fyrmawnwbub4w2i4pju5iegwee4ulgm4"
     },
     "app.bsky.feed.sendInteractions": {
       "uri": "https://raw.githubusercontent.com/bluesky-social/bsky/refs/heads/main/lexicons/app/bsky/feed/sendInteractions.json",
@@ -1482,7 +1634,7 @@
     },
     "com.atproto.moderation.createReport": {
       "uri": "file://../../lexicons/com/atproto/moderation/createReport.json",
-      "cid": "bafyreigli77c67ucvy4zsgcbt3vsocrdxqf62pbwoxdb6jq5ygfjcvxbim"
+      "cid": "bafyreifqn5zk2gkmrs6k5vqmqjfvds6nfiuzkehzrmz2gvzjoqz6fucmja"
     },
     "com.atproto.moderation.defs": {
       "uri": "file://../../lexicons/com/atproto/moderation/defs.json",
@@ -1722,11 +1874,11 @@
     },
     "com.atproto.temp.dereferenceScope": {
       "uri": "file://../../lexicons/com/atproto/temp/dereferenceScope.json",
-      "cid": "bafyreiffd64ajl5rjf5v2cky4fyvatrmwrgzlu7ueiosfjvg4sacbyswki"
+      "cid": "bafyreid5xltpxxr66i5oc2rl2hokt4undy3d7xsqzgl3v2c6cd7ncwmeeu"
     },
     "com.atproto.temp.fetchLabels": {
       "uri": "file://../../lexicons/com/atproto/temp/fetchLabels.json",
-      "cid": "bafyreigfpztfhtmyicn6ck3qjp7goo5datsktxid3uqe7urjtkfmvdlggu"
+      "cid": "bafyreignadvzl2ukcrxub4x7vqejzhzddb34cdw3g52rilltt32juli42u"
     },
     "com.atproto.temp.requestPhoneVerification": {
       "uri": "file://../../lexicons/com/atproto/temp/requestPhoneVerification.json",
@@ -1734,11 +1886,619 @@
     },
     "com.atproto.temp.revokeAccountCredentials": {
       "uri": "file://../../lexicons/com/atproto/temp/revokeAccountCredentials.json",
-      "cid": "bafyreibspeagqwk57gin3zfxprgceqziootq5t7wogauo37avbrapr5ziy"
+      "cid": "bafyreifezlydmt6cazifr2crxeobcdmckswdqi4e53iyjbrts2whc4m5ua"
     },
     "com.germnetwork.declaration": {
       "uri": "file://../../lexicons-overrides/com/germnetwork/declaration.json",
       "cid": "bafyreiekwjmxshje655olra4mata7npso7bbgytc4fop77ycjtrbewwi3y"
+    },
+    "com.para.account.getAuthFactor": {
+      "uri": "file://../../lexicons/com/para/account/getAuthFactor.json",
+      "cid": "bafyreig2tso6ndw5nchx7yhnh4wc4eyer4ktrh35jjzwbunmxc3n24y2we"
+    },
+    "com.para.account.setAuthFactor": {
+      "uri": "file://../../lexicons/com/para/account/setAuthFactor.json",
+      "cid": "bafyreidofcvmwuwiegexp2xwrb5p4oroxrzbhuc2uuc3e3yf3wwh3mqtqa"
+    },
+    "com.para.actor.defs": {
+      "uri": "file://../../lexicons/com/para/actor/defs.json",
+      "cid": "bafyreidmsa6rqejang3cajfp6yotng2n4soku6ueitlayxtswzfdkbipia"
+    },
+    "com.para.actor.exportCivicTree": {
+      "uri": "file://../../lexicons/com/para/actor/exportCivicTree.json",
+      "cid": "bafyreictn4o735gacdpkzpwy3p3zbkqcpp452h25zofbx5fg2pow7f6hv4"
+    },
+    "com.para.actor.getProfileStats": {
+      "uri": "file://../../lexicons/com/para/actor/getProfileStats.json",
+      "cid": "bafyreieo7yjik63v5wisur4ftmhv7kl7fb3257qg3b3tr3qqvl3ryttacu"
+    },
+    "com.para.actor.getSuggestedUsers": {
+      "uri": "file://../../lexicons/com/para/actor/getSuggestedUsers.json",
+      "cid": "bafyreidsxxljiog3kit2a2cwevfqp7toprq6g3burxjrzeh36mfrbgysl4"
+    },
+    "com.para.agent.defs": {
+      "uri": "file://../../lexicons/com/para/agent/defs.json",
+      "cid": "bafyreih545sgn2rzwbvbx5dm5wfqq7kd4lcdaxr7f7zybcvdtdweslqtqu"
+    },
+    "com.para.agent.getConversation": {
+      "uri": "file://../../lexicons/com/para/agent/getConversation.json",
+      "cid": "bafyreifl7mb2nr3ytqr7k2rzv27ktg4m2ltogjuuhqcijpksn5bl7bh3sa"
+    },
+    "com.para.agent.sendMessage": {
+      "uri": "file://../../lexicons/com/para/agent/sendMessage.json",
+      "cid": "bafyreigwgegh5foentn6dnn7qkrsbfguhha7uh6v36dfs6msfymxojfvsq"
+    },
+    "com.para.alpha.createInvite": {
+      "uri": "file://../../lexicons/com/para/alpha/createInvite.json",
+      "cid": "bafyreihqsxjg2rf775slahblv55oj7ndxqsmvytw6djzr7v44lmlrewhnu"
+    },
+    "com.para.alpha.getAccess": {
+      "uri": "file://../../lexicons/com/para/alpha/getAccess.json",
+      "cid": "bafyreidrnuhyu7gfolbw6vygcfeixyf3uddx6gwybmaxumorrstfk7yrym"
+    },
+    "com.para.alpha.getRolloutStatus": {
+      "uri": "file://../../lexicons/com/para/alpha/getRolloutStatus.json",
+      "cid": "bafyreib5nshjtpbkusx6mdwuslwtppc4rrvb7ui2vk6jrfsx7q72265qcy"
+    },
+    "com.para.alpha.requestAccess": {
+      "uri": "file://../../lexicons/com/para/alpha/requestAccess.json",
+      "cid": "bafyreiegvlrxffup4eudjheggsojqr6o57vmt2t2zvtxwnhyqd6jl77kde"
+    },
+    "com.para.book.searchBooks": {
+      "uri": "file://../../lexicons/com/para/book/searchBooks.json",
+      "cid": "bafyreia7u4fmy2edprjnzs3fm6kcszdpwiacvqco5ox7aybgwrbvt6pv5q"
+    },
+    "com.para.civic.amendment": {
+      "uri": "file://../../lexicons/com/para/civic/amendment.json",
+      "cid": "bafyreieyw3uzaqwkld7bre72pmovnqq5iuhyas3k2mg4tq2a3nvv4apkc4"
+    },
+    "com.para.civic.cabildeo": {
+      "uri": "file://../../lexicons/com/para/civic/cabildeo.json",
+      "cid": "bafyreigu56rzbzbbwc2zabmv3wxbsjtocputlykktcd4dticapzqfpq3k4"
+    },
+    "com.para.civic.castVote": {
+      "uri": "file://../../lexicons/com/para/civic/castVote.json",
+      "cid": "bafyreiecfnzs2diraq3zg3jwpfoic6f26xc6anhhmy73xcti5efyh222zu"
+    },
+    "com.para.civic.defs": {
+      "uri": "file://../../lexicons/com/para/civic/defs.json",
+      "cid": "bafyreigtrxse6y2amzil32w4idwmsy4d2mz4sfajiszmkkpfb6eye62tf4"
+    },
+    "com.para.civic.delegation": {
+      "uri": "file://../../lexicons/com/para/civic/delegation.json",
+      "cid": "bafyreidnuldaubdy2e3vxvjrirazf6igkkzryk2p6nn2yvepaxobhzro4m"
+    },
+    "com.para.civic.getCabildeo": {
+      "uri": "file://../../lexicons/com/para/civic/getCabildeo.json",
+      "cid": "bafyreiczuqxi43zjodscsjghwzh45dtqlvcoy2qvh7szxhthlm4qtu4k4m"
+    },
+    "com.para.civic.getOpenQuestionThread": {
+      "uri": "file://../../lexicons/com/para/civic/getOpenQuestionThread.json",
+      "cid": "bafyreihezobxrufjua5i2qe5j7ez4rve6w7w6ikg5x4futhinmwyxa4uge"
+    },
+    "com.para.civic.getPolicyCommunityVotes": {
+      "uri": "file://../../lexicons/com/para/civic/getPolicyCommunityVotes.json",
+      "cid": "bafyreih56zvj2s44354vl3j253k7xu3g5nqghjtlh7gfpobfnssux7woda"
+    },
+    "com.para.civic.getPolicyTally": {
+      "uri": "file://../../lexicons/com/para/civic/getPolicyTally.json",
+      "cid": "bafyreiab2ii3qy737ld6eutitpzi5bxqxnshmfdgzw6iu2ov3drfrem7cu"
+    },
+    "com.para.civic.listCabildeoPositions": {
+      "uri": "file://../../lexicons/com/para/civic/listCabildeoPositions.json",
+      "cid": "bafyreian2ypb63zfi4astwmifyds4gizrejlf4jie2vmbkrieszjkkaobi"
+    },
+    "com.para.civic.listCabildeos": {
+      "uri": "file://../../lexicons/com/para/civic/listCabildeos.json",
+      "cid": "bafyreiaglfxgubjojo7unsl3jb5nodml6yk7pehgy5nb4asyr6u4xui6ou"
+    },
+    "com.para.civic.listDelegationCandidates": {
+      "uri": "file://../../lexicons/com/para/civic/listDelegationCandidates.json",
+      "cid": "bafyreihnwokk73t3eedmhnciysirydlz4wrjoyallp6buc2t327rjjjsri"
+    },
+    "com.para.civic.openQuestion": {
+      "uri": "file://../../lexicons/com/para/civic/openQuestion.json",
+      "cid": "bafyreibtgxxkgfmi3flndjtofzl3nsuacpiitvqy5yckduhw6iukzqgxy4"
+    },
+    "com.para.civic.openQuestionVote": {
+      "uri": "file://../../lexicons/com/para/civic/openQuestionVote.json",
+      "cid": "bafyreiaiuny7fvm4zc5g2ymyfg6n4mot3g2ly5xrjlbg7aatiharebajsa"
+    },
+    "com.para.civic.position": {
+      "uri": "file://../../lexicons/com/para/civic/position.json",
+      "cid": "bafyreiahxzzjykx7tp5qevasoqu4jhxef3bhjvkbsgxrhuuxww3y6hxmvm"
+    },
+    "com.para.civic.putLivePresence": {
+      "uri": "file://../../lexicons/com/para/civic/putLivePresence.json",
+      "cid": "bafyreiferxoquu2fxxfxivo7lowchiedk6k4vomrxi5oym76v2d7n66ihy"
+    },
+    "com.para.civic.vote": {
+      "uri": "file://../../lexicons/com/para/civic/vote.json",
+      "cid": "bafyreicbqy2dn7jutxxl4km7vii2dhcnip7ygbyphj57zhdfrnbjph3zh4"
+    },
+    "com.para.collection.applyOps": {
+      "uri": "file://../../lexicons/com/para/collection/applyOps.json",
+      "cid": "bafyreib2njpkkk7pohgkbftlmtpfqvewq6yzdh7zjlkb4zus6wtxiuudsu"
+    },
+    "com.para.collection.createCollection": {
+      "uri": "file://../../lexicons/com/para/collection/createCollection.json",
+      "cid": "bafyreibm7tqqmhh6utggzr2zmkdiekdf6pctnc6won4muwt2kitf7ozune"
+    },
+    "com.para.collection.defs": {
+      "uri": "file://../../lexicons/com/para/collection/defs.json",
+      "cid": "bafyreidxj7pl3cd4rpkjl6mv6zylirnpgsrxjnqotfov5qxmzxafl25fuy"
+    },
+    "com.para.collection.deleteCollection": {
+      "uri": "file://../../lexicons/com/para/collection/deleteCollection.json",
+      "cid": "bafyreig472bn7pnzjzjjgx7lc5gsqcamstkifdxzmdzekpmomlpjvmsf7i"
+    },
+    "com.para.collection.getCollection": {
+      "uri": "file://../../lexicons/com/para/collection/getCollection.json",
+      "cid": "bafyreic6m5ei537eulajqdpwz7dohfncqcnzvtdf2gof7uoganfo235jsm"
+    },
+    "com.para.collection.listCollections": {
+      "uri": "file://../../lexicons/com/para/collection/listCollections.json",
+      "cid": "bafyreibmm4ihpde6iravuvmcmmkcolyffcefcjhmn3mvvctyozantcxgzy"
+    },
+    "com.para.collection.updateCollection": {
+      "uri": "file://../../lexicons/com/para/collection/updateCollection.json",
+      "cid": "bafyreiflosnhbu5jydley7bbjohwnudmz3dixiztvvstb7lk24v5v76qmi"
+    },
+    "com.para.community.acceptDraftInvite": {
+      "uri": "file://../../lexicons/com/para/community/acceptDraftInvite.json",
+      "cid": "bafyreigvwbl6bs7snrh5pyjek7sojvxbiese43lk4uixpiqrk6vgozigsq"
+    },
+    "com.para.community.activityLedgerEntry": {
+      "uri": "file://../../lexicons/com/para/community/activityLedgerEntry.json",
+      "cid": "bafyreihdddeupjriu7juprezsdcnahyuy32rcsyy23634qafanipx3faci"
+    },
+    "com.para.community.authorityEvent": {
+      "uri": "file://../../lexicons/com/para/community/authorityEvent.json",
+      "cid": "bafyreienm6vi2ildpr2qdewf4dss4vlpa5veakjjydqkpi6my7nxewpbr4"
+    },
+    "com.para.community.board": {
+      "uri": "file://../../lexicons/com/para/community/board.json",
+      "cid": "bafyreieeaf5mwxx2hfapyczzaeczyy7efz6r7j7nrnyju62gnnumzz54zu"
+    },
+    "com.para.community.briefingPack": {
+      "uri": "file://../../lexicons/com/para/community/briefingPack.json",
+      "cid": "bafyreihabpd5m76fkvfnnjfwsx2rwn4zxnsiazmunzueehjkr5e7i6chli"
+    },
+    "com.para.community.civicTree": {
+      "uri": "file://../../lexicons/com/para/community/civicTree.json",
+      "cid": "bafyreif6ad5e4v5rxlex5kkxu2wwpdb33os7fz56o3wxdtm4qcrggklq2u"
+    },
+    "com.para.community.civicTree.acceptSuggestion": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/acceptSuggestion.json",
+      "cid": "bafyreifzja4itkb5b3bho2ucug3ze2qo3mb2jhyyxnrw4vbpffbfefmtqu"
+    },
+    "com.para.community.civicTree.card": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/card.json",
+      "cid": "bafyreihuxx6rfpn7pyz2cfmxuecvdou452u2o4mf543guidgxpb4cpnm5i"
+    },
+    "com.para.community.civicTree.cardVote": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/cardVote.json",
+      "cid": "bafyreiamc7gfh7r4vl552wls7wnardufrijfxaynehwx74gbai32c3wtiq"
+    },
+    "com.para.community.civicTree.castCardVote": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/castCardVote.json",
+      "cid": "bafyreifxwn5nayi7ooqxmhm5anar467pirobwkliefiypm6sb5dggf5b54"
+    },
+    "com.para.community.civicTree.config": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/config.json",
+      "cid": "bafyreihqf3zdmai54qilxr7kwkv35bcc5nklxn7cfrjdmly6ewkw3hgxte"
+    },
+    "com.para.community.civicTree.contribution": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/contribution.json",
+      "cid": "bafyreie65666hblwqjfowv34tr7t5pr7l3b7nbbrn5ggn3punl4bqmua3a"
+    },
+    "com.para.community.civicTree.contributionVote": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/contributionVote.json",
+      "cid": "bafyreibv44nu4sncdb5lg567272v54pzz73ahgimh7pjqh47h3ktwpmqga"
+    },
+    "com.para.community.civicTree.createRelationship": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/createRelationship.json",
+      "cid": "bafyreiey3o3ylmdtgdejqd66aw5obkic5aniurehpzpqtzjntae7jnurdy"
+    },
+    "com.para.community.civicTree.defs": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/defs.json",
+      "cid": "bafyreiezvqtdvxthck76ippofms4gzyl2ssxps64vgve34bgpoq7wq2a2q"
+    },
+    "com.para.community.civicTree.getCardVote": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/getCardVote.json",
+      "cid": "bafyreihccg26dl3rczbiqylxdwjiwyqybtqodef44ceq46nkv6ppkybuou"
+    },
+    "com.para.community.civicTree.getGraph": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/getGraph.json",
+      "cid": "bafyreiaukgj7h6amgrpfvsgbwe5dfrfjikfdmp3l5cgp26lf4oimufimxe"
+    },
+    "com.para.community.civicTree.getPulse": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/getPulse.json",
+      "cid": "bafyreigw27qvg5wbvk64ajvns3rqa3xpxdkqcn2p2tsgi7h24sdjqk2ca4"
+    },
+    "com.para.community.civicTree.getSummary": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/getSummary.json",
+      "cid": "bafyreicqvpkf2n3ubinzpmpyncrjfngdkhwtlcji5aj3gukruslv2nf3kq"
+    },
+    "com.para.community.civicTree.listContributions": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/listContributions.json",
+      "cid": "bafyreigkyjckrbvwfsue76eoictqb6esvledhsftfsmmti45hk76bqr57m"
+    },
+    "com.para.community.civicTree.listSuggestions": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/listSuggestions.json",
+      "cid": "bafyreifp7jhzsqrqa5tlreyjak2z2gau43yylc5s3bhdnive2qisx4vhye"
+    },
+    "com.para.community.civicTree.moderateContribution": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/moderateContribution.json",
+      "cid": "bafyreidhlhi4eqtadyzntixfcpoxljexqjqr5dvwoh4rlk4p2ybpvm2hna"
+    },
+    "com.para.community.civicTree.rejectSuggestion": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/rejectSuggestion.json",
+      "cid": "bafyreia6d2vghkqodxbl4ololqjypdb4ppwfwj6ut6ml5a4oqbzvi34hji"
+    },
+    "com.para.community.civicTree.relationship": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/relationship.json",
+      "cid": "bafyreidt4lq2h2j6ywybjwdwluqkdq6xzycphhhm3v6bheciutwj3shcdu"
+    },
+    "com.para.community.civicTree.submitContribution": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/submitContribution.json",
+      "cid": "bafyreihrbculh7ipczjc5uz3vnwypsququ2hajwihb2rsgbtshxof6srdi"
+    },
+    "com.para.community.civicTree.voteContribution": {
+      "uri": "file://../../lexicons/com/para/community/civicTree/voteContribution.json",
+      "cid": "bafyreieskup3cwozz24ab34tigak2dd3rwr5rhlairbqtrcfo2ctfu2nbe"
+    },
+    "com.para.community.civicTreeVote": {
+      "uri": "file://../../lexicons/com/para/community/civicTreeVote.json",
+      "cid": "bafyreifh22fvttsyh7rjdljuxn3wzda5uii4bpfmdsist67kyn435qfsqe"
+    },
+    "com.para.community.constitution": {
+      "uri": "file://../../lexicons/com/para/community/constitution.json",
+      "cid": "bafyreibb6a7tm77f7jzerpzyekjb3tbk6det5dba7wveimxj4l2nxy7lu4"
+    },
+    "com.para.community.createBoard": {
+      "uri": "file://../../lexicons/com/para/community/createBoard.json",
+      "cid": "bafyreid2ldzx5nh4w77oziskberdyxegypphcdv5wditmlqueeioi5guzi"
+    },
+    "com.para.community.createBriefingPack": {
+      "uri": "file://../../lexicons/com/para/community/createBriefingPack.json",
+      "cid": "bafyreidcuagthdantal7gpijwnlwbphtxdtn6gfzc4vulzor6h3h4j24sq"
+    },
+    "com.para.community.decision": {
+      "uri": "file://../../lexicons/com/para/community/decision.json",
+      "cid": "bafyreibddnf5kp5teq6f3vyqfp3ktpn7ljrhci6gsn4rli42hp7wz4ntvi"
+    },
+    "com.para.community.defs": {
+      "uri": "file://../../lexicons/com/para/community/defs.json",
+      "cid": "bafyreignn3wgcb2ljeowegbugltzvfklung2vdpmsv5tftduhctyi2z3le"
+    },
+    "com.para.community.delegation": {
+      "uri": "file://../../lexicons/com/para/community/delegation.json",
+      "cid": "bafyreigt7s74hssnvv3prvnsyo7ggr7cdn6qxa4htgocq3ewehy5lbybay"
+    },
+    "com.para.community.deliberation": {
+      "uri": "file://../../lexicons/com/para/community/deliberation.json",
+      "cid": "bafyreihrnox7w3bsvdhxefu5tyk33tdj7ulzwlnb2oxlsvtcqqzen4572u"
+    },
+    "com.para.community.deliberationVote": {
+      "uri": "file://../../lexicons/com/para/community/deliberationVote.json",
+      "cid": "bafyreifiaglneftguleq4pdcnmacyemmvhsjqxr5bb223ttx2k4jezyk2a"
+    },
+    "com.para.community.economicActivity": {
+      "uri": "file://../../lexicons/com/para/community/economicActivity.json",
+      "cid": "bafyreiezcuwjyj7od2p4rrsr3v7ipbssqeik63vphn3qrcyh5codnbqe5u"
+    },
+    "com.para.community.eigenstate": {
+      "uri": "file://../../lexicons/com/para/community/eigenstate.json",
+      "cid": "bafyreigqbmaa62o5ledmolouwsgtha56vaj2f2c5jashqic5mzfp4s2ndy"
+    },
+    "com.para.community.exportObsidianVault": {
+      "uri": "file://../../lexicons/com/para/community/exportObsidianVault.json",
+      "cid": "bafyreiftyehxjzxnbgguyqliu2lnnupb7std4lxzyy5qbomxunvux3y6si"
+    },
+    "com.para.community.getActivity": {
+      "uri": "file://../../lexicons/com/para/community/getActivity.json",
+      "cid": "bafyreiavx3ppefxiwgfg6yzhwrjevutlqbdsdmntne3l23hvfi3ndzyxhq"
+    },
+    "com.para.community.getAuditTrail": {
+      "uri": "file://../../lexicons/com/para/community/getAuditTrail.json",
+      "cid": "bafyreibtfw72xis7rat7et6uz264m2jxzfoi7egzvn5ss7rl4fsd2iyyoi"
+    },
+    "com.para.community.getAuthorization": {
+      "uri": "file://../../lexicons/com/para/community/getAuthorization.json",
+      "cid": "bafyreid6a5uhs3icnpsuiarrxdqohaukizuzrc2c4mpovtxavyhencft4u"
+    },
+    "com.para.community.getBoard": {
+      "uri": "file://../../lexicons/com/para/community/getBoard.json",
+      "cid": "bafyreibtbcoad7eenow6ne5dbfb676hrc5elyfbflbete4it6vhjzgsf3u"
+    },
+    "com.para.community.getBriefingPack": {
+      "uri": "file://../../lexicons/com/para/community/getBriefingPack.json",
+      "cid": "bafyreia2knc6gpuwa2lq2ftlg4tjyrr55yer7rilppzmnucgd4ldi3ytka"
+    },
+    "com.para.community.getCivicTree": {
+      "uri": "file://../../lexicons/com/para/community/getCivicTree.json",
+      "cid": "bafyreiaec3f5ddg7vxy3yamcum24gbneass5nj2aexsld3twxmq5dyvhfq"
+    },
+    "com.para.community.getGovernance": {
+      "uri": "file://../../lexicons/com/para/community/getGovernance.json",
+      "cid": "bafyreihhz4yva3uwj7vzpjbdxilxt4iz6vpy7svjamerqfbtmohaxahnru"
+    },
+    "com.para.community.getTallySimulation": {
+      "uri": "file://../../lexicons/com/para/community/getTallySimulation.json",
+      "cid": "bafyreidlhyfy4rr3rasgxl2seu32tggks2le7xrv53avhuyeqebguwvkza"
+    },
+    "com.para.community.governance": {
+      "uri": "file://../../lexicons/com/para/community/governance.json",
+      "cid": "bafyreigp2ebpj6wmjqvdqcfxizh7if5janpg5mcxsmb4tfwezed2q45hma"
+    },
+    "com.para.community.governanceConfig": {
+      "uri": "file://../../lexicons/com/para/community/governanceConfig.json",
+      "cid": "bafyreib4ey4l3kcrqmxtrg5ayjhzgd4vh5rgm4p52e5bnha5eytbr4fzuy"
+    },
+    "com.para.community.intensity": {
+      "uri": "file://../../lexicons/com/para/community/intensity.json",
+      "cid": "bafyreidjjrtqgll5urpihveeq64a5bycljqy4uamlqqmmvvdozmgq2uaee"
+    },
+    "com.para.community.join": {
+      "uri": "file://../../lexicons/com/para/community/join.json",
+      "cid": "bafyreialoec6krljhik5djvuj7bnocueeftflbnozpwkr3rprfgqkhkhii"
+    },
+    "com.para.community.leave": {
+      "uri": "file://../../lexicons/com/para/community/leave.json",
+      "cid": "bafyreigfcpdwjlwshadjrwdexuf563q4anz65p53l2d24etqb23h2jcvxe"
+    },
+    "com.para.community.listActivities": {
+      "uri": "file://../../lexicons/com/para/community/listActivities.json",
+      "cid": "bafyreihmqejk546lvniltytcltdvam7wfpt5fd3fwdkqndz2kvyz2irlna"
+    },
+    "com.para.community.listBoards": {
+      "uri": "file://../../lexicons/com/para/community/listBoards.json",
+      "cid": "bafyreiezfplfyihzkpzhyruejqq6rferfqzhtvioma3uvmcpoes6mg7igi"
+    },
+    "com.para.community.listBriefingPacks": {
+      "uri": "file://../../lexicons/com/para/community/listBriefingPacks.json",
+      "cid": "bafyreiatvngmbqar5uzsjq6k5frjzelfuhcdz7nnbuukrlpp36vxojhezq"
+    },
+    "com.para.community.listChildCommunities": {
+      "uri": "file://../../lexicons/com/para/community/listChildCommunities.json",
+      "cid": "bafyreid2s62h74ccnrl23uuquw3qudke3kbvjh7wxtdv34hj7vlaq5rasm"
+    },
+    "com.para.community.listCivicTreeVotes": {
+      "uri": "file://../../lexicons/com/para/community/listCivicTreeVotes.json",
+      "cid": "bafyreicruyuadsews24bgepryun3ym4lemsd6txvhnep2hcqhwx5bp3z7q"
+    },
+    "com.para.community.listCivicTrees": {
+      "uri": "file://../../lexicons/com/para/community/listCivicTrees.json",
+      "cid": "bafyreig5aigl7x5ekuyg7d7zdrriukww6d3vxhy4doe4hsaw74jyncmqau"
+    },
+    "com.para.community.listCommunityRelations": {
+      "uri": "file://../../lexicons/com/para/community/listCommunityRelations.json",
+      "cid": "bafyreic6gx6xeuqid3f7z77vkj46ru2lolbwovgondzrjmjnbgnfznvpom"
+    },
+    "com.para.community.listDelegations": {
+      "uri": "file://../../lexicons/com/para/community/listDelegations.json",
+      "cid": "bafyreiczivbranxk7e5y2iuos2ejlevhlzxs6fqmxl66aqqmavl5n4mkvq"
+    },
+    "com.para.community.listDeliberations": {
+      "uri": "file://../../lexicons/com/para/community/listDeliberations.json",
+      "cid": "bafyreih5oh36spraf6xvftcsxd7y2v5pqkocxpbws6apr4np6gqexy3sni"
+    },
+    "com.para.community.listIntensities": {
+      "uri": "file://../../lexicons/com/para/community/listIntensities.json",
+      "cid": "bafyreihyqjvwk7hxky5lx2qqschmpskrx5fwiihle2oliiqomhe6cqbluq"
+    },
+    "com.para.community.listMembers": {
+      "uri": "file://../../lexicons/com/para/community/listMembers.json",
+      "cid": "bafyreihmdhlctssbujj6typnivcglbxyba3c44iohob3yzsvw32qqxnxmu"
+    },
+    "com.para.community.listParentCommunities": {
+      "uri": "file://../../lexicons/com/para/community/listParentCommunities.json",
+      "cid": "bafyreibj4jrmnzdj5ifuzna6pfwqsletcl5zvzmsbcktjnop2odrahsile"
+    },
+    "com.para.community.listPosts": {
+      "uri": "file://../../lexicons/com/para/community/listPosts.json",
+      "cid": "bafyreigdcaoqztwty5nwuez7trwh7kszclw6wuaecz6z3mazguaj5ew5hm"
+    },
+    "com.para.community.listSharedContent": {
+      "uri": "file://../../lexicons/com/para/community/listSharedContent.json",
+      "cid": "bafyreienz6hboqunhb772frfhy5ma2b5b3wsq3orfdp6dzh2ayfbl73ywi"
+    },
+    "com.para.community.listVotes": {
+      "uri": "file://../../lexicons/com/para/community/listVotes.json",
+      "cid": "bafyreieujwpkxc3vtt347knb3dc7dgmyd5athsjfeqwghcenkrax7a37z4"
+    },
+    "com.para.community.listWikiPages": {
+      "uri": "file://../../lexicons/com/para/community/listWikiPages.json",
+      "cid": "bafyreidbaijv2534r6pz6fxwfwh36k5zb6hdol4zfgej7buhmaab5oxu44"
+    },
+    "com.para.community.membership": {
+      "uri": "file://../../lexicons/com/para/community/membership.json",
+      "cid": "bafyreiegciu5f5yuinam3k7tuzsblvzwehbe5nbslet72ouhvtwvkfbgre"
+    },
+    "com.para.community.proposal": {
+      "uri": "file://../../lexicons/com/para/community/proposal.json",
+      "cid": "bafyreienr7adlx2ef5svjtaprhj4l7hp5v5k62ggfvr4wrwvs55afimcci"
+    },
+    "com.para.community.relation": {
+      "uri": "file://../../lexicons/com/para/community/relation.json",
+      "cid": "bafyreidxsp2k6iizlwtrlszn5ipl7au4iwo5idnkx36sp73kjm6hfmz6ti"
+    },
+    "com.para.community.removeSharedContent": {
+      "uri": "file://../../lexicons/com/para/community/removeSharedContent.json",
+      "cid": "bafyreiec4zangltjobauugg447nxuyhljukqtfarbipogzi4upqvwz7ksu"
+    },
+    "com.para.community.restoreSharedContent": {
+      "uri": "file://../../lexicons/com/para/community/restoreSharedContent.json",
+      "cid": "bafyreieylkrdqmmrq4th57dmc6q5ge53z64l56crpnvr43nzmdcxjap6l4"
+    },
+    "com.para.community.roleAcceptance": {
+      "uri": "file://../../lexicons/com/para/community/roleAcceptance.json",
+      "cid": "bafyreif5vfj4gkpcib5odylhfybdrgizk4rdv4whe7clqfvtaurz2leg7u"
+    },
+    "com.para.community.shareContent": {
+      "uri": "file://../../lexicons/com/para/community/shareContent.json",
+      "cid": "bafyreicdgnokfvu3mww2w3rplojwxobnrywyb7a3vqfqrulcmpr2gtcflm"
+    },
+    "com.para.community.sharedContent": {
+      "uri": "file://../../lexicons/com/para/community/sharedContent.json",
+      "cid": "bafyreiciokgf22ryys77hgnpv5f5no2kzlsoao54b2kjonvljg5siw5jbu"
+    },
+    "com.para.community.sharedContentAction": {
+      "uri": "file://../../lexicons/com/para/community/sharedContentAction.json",
+      "cid": "bafyreieubvyldrdf2yexm6byo5uru2qvtqivj5byzqn7s2d7pdzbkn6hyy"
+    },
+    "com.para.community.socialActivity": {
+      "uri": "file://../../lexicons/com/para/community/socialActivity.json",
+      "cid": "bafyreih6j7hus3tawn6g4eprdpxrdlcldpk5rfb5hlepimgfenh6u3gjmi"
+    },
+    "com.para.community.updateBriefingPack": {
+      "uri": "file://../../lexicons/com/para/community/updateBriefingPack.json",
+      "cid": "bafyreidjvs5647ga32e526t2cgfnxxyau2flzk3ijikmvywwb4pma24po4"
+    },
+    "com.para.community.vote": {
+      "uri": "file://../../lexicons/com/para/community/vote.json",
+      "cid": "bafyreibz4ydwaa345tbmbwbbj6rrtym3zrcg4hk4c7aawkckzm5fwehzpq"
+    },
+    "com.para.community.wikiPage": {
+      "uri": "file://../../lexicons/com/para/community/wikiPage.json",
+      "cid": "bafyreidt6mfw6sl7i6hxcfa222q5cigzsdkgbf3oa4m2hxs4dzaa66atpe"
+    },
+    "com.para.discourse.getAnalysis": {
+      "uri": "file://../../lexicons/com/para/discourse/getAnalysis.json",
+      "cid": "bafyreif77jhf4osvombueqy5rj6nuxgykclcitavl53dehre2qj4j576ie"
+    },
+    "com.para.discourse.getSnapshot": {
+      "uri": "file://../../lexicons/com/para/discourse/getSnapshot.json",
+      "cid": "bafyreicbcx7ftds375eua4wglbiw3bszwkiwvpvzewqdgrxga2vcl2qdtm"
+    },
+    "com.para.discourse.getTopics": {
+      "uri": "file://../../lexicons/com/para/discourse/getTopics.json",
+      "cid": "bafyreie7vjiegxrkbr42tji42lhu2mcleieguu764cavxm5kwwj2cynkyu"
+    },
+    "com.para.discourse.getTopology": {
+      "uri": "file://../../lexicons/com/para/discourse/getTopology.json",
+      "cid": "bafyreicmsccl4b4zm27dr4eb6sz6yuqopap6xvyq6w6zcics5srz76a3fa"
+    },
+    "com.para.feed.getAuthorFeed": {
+      "uri": "file://../../lexicons/com/para/feed/getAuthorFeed.json",
+      "cid": "bafyreierai6vluwv32lyjjrkwrdayonhixbbgtp72jx5c4y77q2s44i5s4"
+    },
+    "com.para.feed.getMemes": {
+      "uri": "file://../../lexicons/com/para/feed/getMemes.json",
+      "cid": "bafyreiaed5a6tskzulrw3dp6kr2psm3gxy6ktbs3nnjulxlcuhv2f7ywy4"
+    },
+    "com.para.feed.getPostThread": {
+      "uri": "file://../../lexicons/com/para/feed/getPostThread.json",
+      "cid": "bafyreigufm6x7q3b2fos3qbietndarr5mtsvlzjt73de635hoxv2nr3pte"
+    },
+    "com.para.feed.getPosts": {
+      "uri": "file://../../lexicons/com/para/feed/getPosts.json",
+      "cid": "bafyreifexwwauplpbfoepalw6gzpro2l7444vj7vmn55bfci3gbatqicpm"
+    },
+    "com.para.feed.getTimeline": {
+      "uri": "file://../../lexicons/com/para/feed/getTimeline.json",
+      "cid": "bafyreibmajokpc47kuiagnhhmahxv5ev4zp34wisifle52ghgusoa4ie5a"
+    },
+    "com.para.feed.searchPosts": {
+      "uri": "file://../../lexicons/com/para/feed/searchPosts.json",
+      "cid": "bafyreid2mynhys7jb5inlr2bwbpkoxlfyqy3wkf4jwzft6cfi5ja2mnxj4"
+    },
+    "com.para.highlight.annotation": {
+      "uri": "file://../../lexicons/com/para/highlight/annotation.json",
+      "cid": "bafyreidksiwaipwlajpmozywhjirlsm7su4b4xsjd433jrexdnftz5omxm"
+    },
+    "com.para.highlight.defs": {
+      "uri": "file://../../lexicons/com/para/highlight/defs.json",
+      "cid": "bafyreidyd2peno45nsjkovumpwwru6gkfsvfmk6xns2twggjuqd5uylktq"
+    },
+    "com.para.highlight.getHighlight": {
+      "uri": "file://../../lexicons/com/para/highlight/getHighlight.json",
+      "cid": "bafyreieh5krq32se3nzqqmvi2lejfn2gzkxqcnrjkxkdmthfkg3dh2aid4"
+    },
+    "com.para.highlight.listHighlights": {
+      "uri": "file://../../lexicons/com/para/highlight/listHighlights.json",
+      "cid": "bafyreicjvi6rrlqd6hezc2r3ilfj7cb5lulwogt2hr7aphyr6mvxdkrmpa"
+    },
+    "com.para.identity.linkedChat": {
+      "uri": "file://../../lexicons/com/para/identity/linkedChat.json",
+      "cid": "bafyreiaku3kz6fqrxk5eew3qjiaxau7zlbim4vesnm7kt5rkwfwnebo5lu"
+    },
+    "com.para.notification.getPostSubscription": {
+      "uri": "file://../../lexicons/com/para/notification/getPostSubscription.json",
+      "cid": "bafyreigbtt6v5ohgm3xsm3up2kjyho3kng2cx7of2hkuxbys5m53ct35uy"
+    },
+    "com.para.notification.putPostSubscription": {
+      "uri": "file://../../lexicons/com/para/notification/putPostSubscription.json",
+      "cid": "bafyreib3wubyfs7bzajz35c5cwho7x6ofdydjx4glvin5ipcyax4uedloi"
+    },
+    "com.para.official.action": {
+      "uri": "file://../../lexicons/com/para/official/action.json",
+      "cid": "bafyreia4tasp6wqhn37phvc44s3gbns4jmui7gu52mnnmx5wviqu2yxrbu"
+    },
+    "com.para.official.controller": {
+      "uri": "file://../../lexicons/com/para/official/controller.json",
+      "cid": "bafyreig7xuzubjiikwltq33wqypnnwwyn6jjryfzsuewmqduxoc3dhmgl4"
+    },
+    "com.para.official.entity": {
+      "uri": "file://../../lexicons/com/para/official/entity.json",
+      "cid": "bafyreib2zcrinksiwwrleyhayve3ztn2fei6ytaoe56vzqb6lw7bdcjhga"
+    },
+    "com.para.post": {
+      "uri": "file://../../lexicons/com/para/post.json",
+      "cid": "bafyreigj2d6dkwv6apws53u3teprmyw4jqfbuzlbo6y7gjhwuhgszc5l5a"
+    },
+    "com.para.raq.assessment": {
+      "uri": "file://../../lexicons/com/para/raq/assessment.json",
+      "cid": "bafyreid7dlucnfy43nrnwcu7t3qwq55gingmnms6k27efxj5ticcsqaxsm"
+    },
+    "com.para.raq.axisVote": {
+      "uri": "file://../../lexicons/com/para/raq/axisVote.json",
+      "cid": "bafyreibm2uomj7w6rqvxlh3m7fyq4yrgohetkwv4vrkgkd72aqt53zqw3m"
+    },
+    "com.para.raq.defs": {
+      "uri": "file://../../lexicons/com/para/raq/defs.json",
+      "cid": "bafyreifxbfwz5p5zsw5ltoz3gsvhn4w6x3qw2zdts4rr3uijocdoy442ky"
+    },
+    "com.para.raq.getCommunityAlignment": {
+      "uri": "file://../../lexicons/com/para/raq/getCommunityAlignment.json",
+      "cid": "bafyreiail6vhplvupfodf2gz5utxo2t6auc422rxnm2srbwpyi2xft5wc4"
+    },
+    "com.para.raq.getProposals": {
+      "uri": "file://../../lexicons/com/para/raq/getProposals.json",
+      "cid": "bafyreib43wlifgzbpw6x767hvngadibga4d4cqdlf7u2ag7x6awluoou3i"
+    },
+    "com.para.raq.getUserAlignment": {
+      "uri": "file://../../lexicons/com/para/raq/getUserAlignment.json",
+      "cid": "bafyreibgvmxj6v4nogjs3nznvmorpdgetdx5mqpfbe6uam6t6i4titvw6i"
+    },
+    "com.para.raq.proposal": {
+      "uri": "file://../../lexicons/com/para/raq/proposal.json",
+      "cid": "bafyreieifseobnhqdqm2aw5oniiv4p6zuo5xl3iw3fzcvdi4lrsrbc3wcy"
+    },
+    "com.para.raq.proposalAnswer": {
+      "uri": "file://../../lexicons/com/para/raq/proposalAnswer.json",
+      "cid": "bafyreigccop6mafjkf5bsfmsh6pagwtcprmdnurj4l7syegujuqzgqey3q"
+    },
+    "com.para.raq.proposalVote": {
+      "uri": "file://../../lexicons/com/para/raq/proposalVote.json",
+      "cid": "bafyreih4dlu6rlim4224tjihzjhtryie4farldidjofjyannjd763pjm6i"
+    },
+    "com.para.social.getPostMeta": {
+      "uri": "file://../../lexicons/com/para/social/getPostMeta.json",
+      "cid": "bafyreidiswlkbguwzqqcjoanbwa6kuo3j63qlvsmyjywiyrlzdux222mua"
+    },
+    "com.para.social.postMeta": {
+      "uri": "file://../../lexicons/com/para/social/postMeta.json",
+      "cid": "bafyreigycdv4vhjuxbv4cu65vcc6pd6nvfbtdqdzslcv4wn3xwamktd5vi"
+    },
+    "com.para.sortition.proof": {
+      "uri": "file://../../lexicons/com/para/sortition/proof.json",
+      "cid": "bafyreic3olmgnbvkkt5vwfpwh3ynk3wop6c56pgj76tqii5xbv7mx4crju"
+    },
+    "com.para.status": {
+      "uri": "file://../../lexicons/com/para/status.json",
+      "cid": "bafyreicnit3wemxjcdvgidgsc57gox6xbtq6n3reseoohdvz7vfpyy7gkq"
     },
     "internal.bsky.actor.getProfiles": {
       "uri": "file://../../lexicons-overrides/internal/bsky/actor/getProfiles.json",
@@ -1809,8 +2569,8 @@
       "cid": "bafyreiawd6n4mlqng7w4kdbux7qzidpzhda3qun7n7xnilurtsxvwdpmje"
     },
     "social.grain.photo": {
-      "uri": "at://did:plc:e7rftrdyz5e2rw4y6ocszew2/com.atproto.lexicon.schema/social.grain.photo",
-      "cid": "bafyreiec24azdo2caoijpefea3x6qfewjvkfu3zcjj3u3lwf3nx3q7nunu"
+      "uri": "file://../../lexicons-overrides/social/grain/photo.json",
+      "cid": "bafyreicyugyl45yfydyxrhy4ii5zrxsnl75yqq6nopevaw7cv5do4pl5oa"
     },
     "tools.ozone.communication.createTemplate": {
       "uri": "file://../../lexicons/tools/ozone/communication/createTemplate.json",
@@ -1890,11 +2650,11 @@
     },
     "tools.ozone.moderation.defs": {
       "uri": "file://../../lexicons/tools/ozone/moderation/defs.json",
-      "cid": "bafyreib5p2d7gxoihcufeh4r6gvmlt4ydl5t5ueoqnib4vh2ce6hm4b674"
+      "cid": "bafyreiaxhnfxwxaf4q6lpgmgv5pijoqo7szmgyzxm35k7pynq6d2amjcq4"
     },
     "tools.ozone.moderation.emitEvent": {
       "uri": "file://../../lexicons/tools/ozone/moderation/emitEvent.json",
-      "cid": "bafyreihjduqk6bsk4dncxkb7ljmw3jpxffzcsm57aany2cn377n5536m4y"
+      "cid": "bafyreid2i6yp2odwlrwvvweogifnc2vdasvfr47o6tqywxzswm232asbka"
     },
     "tools.ozone.moderation.getAccountPreferences": {
       "uri": "file://../../lexicons/tools/ozone/moderation/getAccountPreferences.json",
@@ -1938,11 +2698,11 @@
     },
     "tools.ozone.moderation.queryEvents": {
       "uri": "file://../../lexicons/tools/ozone/moderation/queryEvents.json",
-      "cid": "bafyreihegwqrlobye3aiinziom4xgapezcjur2qbkxfiu27cc32nubudra"
+      "cid": "bafyreifsnlejqmp6wmauifjnsixifwrkefuwvcnv5u7ew7jwh3gq4hrh5u"
     },
     "tools.ozone.moderation.queryStatuses": {
       "uri": "file://../../lexicons/tools/ozone/moderation/queryStatuses.json",
-      "cid": "bafyreicnr6vxwjlsr7524mg4fhd6ts6parx7rdwqwefvwql6uz7jxp3dfu"
+      "cid": "bafyreifid64kxxu2x4j4u2bltbvh3sc664sy6felbvvrgpyajlzhu5mknq"
     },
     "tools.ozone.moderation.scheduleAction": {
       "uri": "file://../../lexicons/tools/ozone/moderation/scheduleAction.json",
@@ -1958,11 +2718,11 @@
     },
     "tools.ozone.queue.createQueue": {
       "uri": "file://../../lexicons/tools/ozone/queue/createQueue.json",
-      "cid": "bafyreiaulfeg4asvtrkrfmf7eevxvwtajjayzoakhtxtum6fnqfzntowgq"
+      "cid": "bafyreieki67iksvwot6yzy6y5drmkovzrvhikqq3g5pcvib64vwsnewakm"
     },
     "tools.ozone.queue.defs": {
       "uri": "file://../../lexicons/tools/ozone/queue/defs.json",
-      "cid": "bafyreihubkxmnd6f2ohpuvehdgrijd4njcn2s6aruif6fbnqvdqojtn3qi"
+      "cid": "bafyreifkrs2lqxc5y5gcp6suxznxkj6yxjkqogsy72of4tdpebdntcsu2q"
     },
     "tools.ozone.queue.deleteQueue": {
       "uri": "file://../../lexicons/tools/ozone/queue/deleteQueue.json",
@@ -1986,7 +2746,7 @@
     },
     "tools.ozone.queue.updateQueue": {
       "uri": "file://../../lexicons/tools/ozone/queue/updateQueue.json",
-      "cid": "bafyreidsfjtpeypvzgkvq5ui26f47jnciswg3xlmfolz4nssiiue377mrm"
+      "cid": "bafyreigf7unuoiyhfbkipcmtj5yuk3trs3nsflkjkchfeforp5rzxo7wq4"
     },
     "tools.ozone.report.assignModerator": {
       "uri": "file://../../lexicons/tools/ozone/report/assignModerator.json",
@@ -2018,7 +2778,7 @@
     },
     "tools.ozone.report.getLiveStats": {
       "uri": "file://../../lexicons/tools/ozone/report/getLiveStats.json",
-      "cid": "bafyreieggp7nbptjtxxo5rqswdooagoyohjh36mhwhb4yxydojhtg7wfa4"
+      "cid": "bafyreicgt7arh472m42ooxwggagfuphmxphzwpp6w6lnf267xghwi2vjhu"
     },
     "tools.ozone.report.getReport": {
       "uri": "file://../../lexicons/tools/ozone/report/getReport.json",
@@ -2042,7 +2802,7 @@
     },
     "tools.ozone.report.refreshStats": {
       "uri": "file://../../lexicons/tools/ozone/report/refreshStats.json",
-      "cid": "bafyreigmyiorsyxryyvjvev5dkxgtcvccqhibon4panwj2ton2x4xcpaym"
+      "cid": "bafyreibbky3flklow7znpzqjx5btqizbq4l3sizcey3zri6xitlu6exs64"
     },
     "tools.ozone.report.unassignModerator": {
       "uri": "file://../../lexicons/tools/ozone/report/unassignModerator.json",
@@ -2050,11 +2810,11 @@
     },
     "tools.ozone.safelink.addRule": {
       "uri": "file://../../lexicons/tools/ozone/safelink/addRule.json",
-      "cid": "bafyreigsxudmpaaxu4iblhr2ytzxwipmm4pwbpzjhnjauibbfblm25l5di"
+      "cid": "bafyreidv4bj3jvq7qvdqks5w2to6muwxm77h2ijchiq57vqy4szzeumuii"
     },
     "tools.ozone.safelink.defs": {
       "uri": "file://../../lexicons/tools/ozone/safelink/defs.json",
-      "cid": "bafyreihk3ybpjqdrtxsp6uhoe5agsxmmy2j4sigbf35bfltxehrr3ypabi"
+      "cid": "bafyreigis3zcu7ltkr7eaagftr7gj3pu53r7dsnoc4cmrvq7vervue3hky"
     },
     "tools.ozone.safelink.queryEvents": {
       "uri": "file://../../lexicons/tools/ozone/safelink/queryEvents.json",
@@ -2062,15 +2822,15 @@
     },
     "tools.ozone.safelink.queryRules": {
       "uri": "file://../../lexicons/tools/ozone/safelink/queryRules.json",
-      "cid": "bafyreia6v3ux6wcyyuwwijl55zep4f7cl5ykj36pnceax7ogcauvsb5npu"
+      "cid": "bafyreia2n7uvr4mscjvh4s7y4paonjxfqd72te5j7hsmhwxluvj3d22faa"
     },
     "tools.ozone.safelink.removeRule": {
       "uri": "file://../../lexicons/tools/ozone/safelink/removeRule.json",
-      "cid": "bafyreigikalah724nhr34sp6nfoyqs6zjelgcm6xidq2hqsswv6jnjk5y4"
+      "cid": "bafyreid4v36yqar42fowjeunh75hay3k34rmqcrb7lfqg4n3wisajixw5e"
     },
     "tools.ozone.safelink.updateRule": {
       "uri": "file://../../lexicons/tools/ozone/safelink/updateRule.json",
-      "cid": "bafyreiglv4brdeezg7fnkml3ls7td6c7u4cp2kshoj7jzwelea3oa5xlra"
+      "cid": "bafyreie47djxecwya2qnbhgcmbi3x2ozklsegfljdmsmoynnwcuavusloy"
     },
     "tools.ozone.server.getCapabilities": {
       "uri": "file://../../lexicons/tools/ozone/server/getCapabilities.json",

@@ -193,8 +193,19 @@ from para-platform inside the deployed broker, including its public probes, and
 record the deployed revisions separately. Then prove fresh real-provider login, cancel/back,
 expiry/replay, account switching, refresh and logout on the supported native
 and web clients. Verify native SecureStore and access JWT lifetime semantics.
-Confirm whether reconnecting after a web reload meets the pilot requirement;
-persistent web sessions need implementation and acceptance if required.
+**Decided 2026-10-20: web users stay signed in across reloads** (a pilot
+requirement). Implemented locally, unmerged and undeployed: mubEZ
+`feat/web-refresh-cookie` `516d694` (worktree `../mubEZ-web-session`; 8 new
+cookie tests plus the existing exchange/session/preflight suites pass) and PARA
+`feat/m8-web-persistent-session` `8750444c5` (worktree `../PARA-web-session`;
+58 im8 tests pass, no new type errors). The broker keeps the web refresh token
+in an encrypted HttpOnly SameSite=Strict cookie (`__Host-m8_refresh` in
+production) when a request sends `x-m8-refresh-transport: cookie` from an Origin
+in an explicit `CORS_ORIGIN` list; the access token stays in PARA memory and
+`useEnsureM8Session` resumes after reload. Never return to JS-readable token
+storage. Acceptance requires the broker to be same-site with the PARA web
+origin, an explicit `CORS_ORIGIN` (`'*'` disables cookie mode), and a web
+access TTL well below the 86400 s default.
 
 Exit: recorded configuration, exact revisions and supported-client results.
 M8 broker auth does not replace Matrix's separate MAS/OIDC client session.

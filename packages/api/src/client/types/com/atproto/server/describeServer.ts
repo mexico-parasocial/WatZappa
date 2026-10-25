@@ -2,7 +2,7 @@
 /**
  * GENERATED CODE - DO NOT MODIFY
  */
-import { HeadersMap, XRPCError } from '@atproto/xrpc'
+import { type HeadersMap, XRPCError } from '@atproto/xrpc'
 import { type ValidationResult, BlobRef } from '@atproto/lexicon'
 import { CID } from 'multiformats/cid'
 import { validate as _validate } from '../../../../lexicons.js'
@@ -24,6 +24,8 @@ export interface OutputSchema {
   inviteCodeRequired?: boolean
   /** If true, a phone verification token must be supplied to create an account on this instance. */
   phoneVerificationRequired?: boolean
+  /** Maximum size of a blob that can be uploaded via com.atproto.repo.uploadBlob, in bytes. */
+  blobUploadLimit?: number
   /** List of domain suffixes that can be used in account handles. */
   availableUserDomains: string[]
   links?: Links

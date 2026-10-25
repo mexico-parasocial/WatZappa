@@ -34,7 +34,11 @@ export function validateMain<V>(v: V) {
 
 export interface View {
   $type?: 'chat.bsky.embed.joinLink#view'
-  joinLinkPreview: ChatBskyGroupDefs.JoinLinkPreviewView
+  joinLinkPreview:
+    | $Typed<ChatBskyGroupDefs.JoinLinkPreviewView>
+    | $Typed<ChatBskyGroupDefs.DisabledJoinLinkPreviewView>
+    | $Typed<ChatBskyGroupDefs.InvalidJoinLinkPreviewView>
+    | { $type: string }
 }
 
 const hashView = 'view'

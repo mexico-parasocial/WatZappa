@@ -9,4 +9,5 @@
 # are symlinked from the repo-wide canonical lexicons (see "resolvers" in
 # lexicons.json) and can be ignored from Git.
 /lexicons/com/atproto
+/lexicons/com/para
 /lexicons/tools/ozone

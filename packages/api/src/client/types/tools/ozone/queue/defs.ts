@@ -26,10 +26,14 @@ export interface QueueView {
   subjectTypes?: (
     'account' | 'record' | 'message' | 'conversation' | (string & {})
   )[]
-  /** Collection name for record subjects (e.g., 'app.bsky.feed.post') */
+  /** Collection name for record subjects. Omit to accept every collection. */
   collection?: string
   /** Report reason types this queue accepts (fully qualified NSIDs) */
   reportTypes?: string[]
+  /** Match any listed tag on the account submitting the report. */
+  reporterTags?: string[]
+  /** Match tags on the account that is being reported against. For record subjects, use the author account. Match any listed tag. */
+  accountTags?: string[]
   /** Optional description of the queue */
   description?: string
   /** Policy keys recommended when actioning reports in this queue */
@@ -45,6 +49,8 @@ export interface QueueView {
   /** When the queue was deleted, if applicable */
   deletedAt?: string
   stats: QueueStats
+  /** Admins can always list this queue and browse its reports. Other roles require an active queue assignment. Individual report and moderation event access is unchanged. */
+  strictAccess?: boolean
 }
 
 const hashQueueView = 'queueView'
@@ -69,17 +75,37 @@ export interface QueueStats {
   closureTargetMissedCount?: number
   /** Percent of reports meeting their closure target. */
   closureTargetMetRate?: number
-  /** Number of reports in 'closed' status */
+  /** Number of reports whose current closure falls within this UTC calendar day. */
+  closedCount?: number
+  /** Number of closures whose last report action is label, tag, or takedown. */
   actionedCount?: number
-  /** Number of reports in 'escalated' status */
+  /** Number of closures whose last report action is not label, tag, or takedown. */
+  acknowledgedCount?: number
+  /** Number of report escalation events during this UTC calendar day. */
   escalatedCount?: number
-  /** Reports received in this queue in the last 24 hours. */
+  /** Reports received in this queue during this UTC calendar day. */
   inboundCount?: number
-  /** Percentage of reports actioned (actionedCount / inboundCount * 100), rounded to nearest integer. Absent when inboundCount is 0. */
+  /** Closures whose last report action is a label event. */
+  labelActionCount?: number
+  /** Closures whose last report action is a tag event. */
+  tagActionCount?: number
+  /** Closures whose last report action is a takedown event. */
+  takedownActionCount?: number
+  /** Sum of report assignment-to-close seconds. */
+  ahtDurationSec?: number
+  /** Number of assigned closed-report samples in ahtDurationSec. */
+  ahtSampleCount?: number
+  /** Sum of report creation-to-close seconds. */
+  resolutionDurationSec?: number
+  /** Number of closed-report samples in resolutionDurationSec. */
+  resolutionSampleCount?: number
+  /** Percentage of closures actioned (actionedCount / closedCount * 100), rounded to nearest integer. */
   actionRate?: number
-  /** Average time in seconds from report creation to close, for reports closed in this period. */
+  /** Average handling time in seconds from report assignment to close. */
   avgHandlingTimeSec?: number
-  /** When these statistics were last computed */
+  /** Average resolution time in seconds from report creation to close. */
+  avgResolutionTimeSec?: number
+  /** When these statistics were last computed. */
   lastUpdated?: string
 }
 
