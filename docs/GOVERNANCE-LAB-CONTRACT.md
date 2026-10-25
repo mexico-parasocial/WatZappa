@@ -40,6 +40,25 @@ previas de créditos, mandatos con límites o reglas de no ejercicio necesitan
 especificación y evaluación antes de elegir una. No se implementó agrupación
 de créditos ni se la presenta como equivalente a esta regla.
 
+## Versión g1-follow-signal-v2 (decisión de producto, 20 de octubre de 2026)
+
+El usuario decidió las reglas pendientes de G1-02. `rulesVersion:
+'g1-follow-signal-v2'` las aplica en el mismo motor; v1 se conserva sin cambios
+para los vectores anteriores y la demo actual.
+
+| Aspecto     | Regla v2                                                                                                                                                                                                 |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Delegación  | Igual que v1: se transfiere la señal, no los créditos; cada seguidor paga con su propio presupuesto                                                                                                     |
+| Saldo       | Si los votos directos de una persona exceden su presupuesto, se rechaza el estado. Si solo lo excede la suma con lo delegado, **todas** sus unidades delegadas pasan a `over-budget`: sin señal, costo cero y sin contar para quórum. Retirar votos directos las restablece. No depende del orden de llegada y un seguidor no puede bloquear a su representante |
+| Quórum      | Fijo en 50 % del padrón (`quorumBps: 5000`); otra configuración se rechaza                                                                                                                                 |
+| Aprobación  | Con quórum, intensidad neta > 0 aprueba (`passed`/`net-support`); < 0 rechaza (`net-opposition`). Sin quórum: `quorum-not-met`                                                                            |
+| Desempate   | Intensidad neta exactamente 0 mantiene el statu quo (`failed`/`tie-status-quo`)                                                                                                                           |
+| Abstención  | Sin cambio respecto de v1                                                                                                                                                                                |
+
+El resultado sigue siendo sintético y publicable solo tras el cierre con el
+mínimo de participantes. Decidir una propuesta no habilita votación privada
+vinculante: G2 (ledger y admisión atómica) y G3 (protocolo) siguen pendientes.
+
 ## Frontera de admisión y almacenamiento
 
 `evaluateElection` calcula un estado para un instante, verifica forma, autoridad
