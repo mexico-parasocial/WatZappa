@@ -32,6 +32,8 @@ export interface InputSchema {
   actions?: string[]
   /** Filter by reason type */
   reason?: string
+  /** Filter by exact rule source. Omit to include all sources. */
+  source?: string
   /** Filter by rule creator */
   createdBy?: string
   /** Sort direction */

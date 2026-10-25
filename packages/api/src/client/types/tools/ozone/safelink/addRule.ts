@@ -25,6 +25,8 @@ export interface InputSchema {
   pattern: ToolsOzoneSafelinkDefs.PatternType
   action: ToolsOzoneSafelinkDefs.ActionType
   reason: ToolsOzoneSafelinkDefs.ReasonType
+  /** Source of the rule */
+  source?: string
   /** Optional comment about the decision */
   comment?: string
   /** Author DID. Only respected when using admin auth */
@@ -58,10 +60,17 @@ export class RuleAlreadyExistsError extends XRPCError {
   }
 }
 
+export class RuleSourceConflictError extends XRPCError {
+  constructor(src: XRPCError) {
+    super(src.status, src.error, src.message, src.headers, { cause: src })
+  }
+}
+
 export function toKnownErr(e: any) {
   if (e instanceof XRPCError) {
     if (e.error === 'InvalidUrl') return new InvalidUrlError(e)
     if (e.error === 'RuleAlreadyExists') return new RuleAlreadyExistsError(e)
+    if (e.error === 'RuleSourceConflict') return new RuleSourceConflictError(e)
   }
 
   return e

@@ -25,6 +25,8 @@ export interface InputSchema {
   pattern: ToolsOzoneSafelinkDefs.PatternType
   action: ToolsOzoneSafelinkDefs.ActionType
   reason: ToolsOzoneSafelinkDefs.ReasonType
+  /** Source of the rule to update */
+  source?: string
   /** Optional comment about the update */
   comment?: string
   /** Optional DID to credit as the creator. Only respected for admin_token authentication. */
@@ -52,9 +54,16 @@ export class RuleNotFoundError extends XRPCError {
   }
 }
 
+export class RuleSourceConflictError extends XRPCError {
+  constructor(src: XRPCError) {
+    super(src.status, src.error, src.message, src.headers, { cause: src })
+  }
+}
+
 export function toKnownErr(e: any) {
   if (e instanceof XRPCError) {
     if (e.error === 'RuleNotFound') return new RuleNotFoundError(e)
+    if (e.error === 'RuleSourceConflict') return new RuleSourceConflictError(e)
   }
 
   return e

@@ -23,6 +23,8 @@ export interface InputSchema {
   /** The URL or domain to remove the rule for */
   url: string
   pattern: ToolsOzoneSafelinkDefs.PatternType
+  /** Source of the rule to remove */
+  source?: string
   /** Optional comment about why the rule is being removed */
   comment?: string
   /** Optional DID of the user. Only respected when using admin auth. */

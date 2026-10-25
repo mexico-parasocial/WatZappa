@@ -49,6 +49,8 @@ export interface QueueView {
   /** When the queue was deleted, if applicable */
   deletedAt?: string
   stats: QueueStats
+  /** Admins can always list this queue and browse its reports. Other roles require an active queue assignment. Individual report and moderation event access is unchanged. */
+  strictAccess?: boolean
 }
 
 const hashQueueView = 'queueView'

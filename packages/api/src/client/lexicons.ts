@@ -40125,6 +40125,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 description:
                   'Labels to recommend for this queue and use as fallback appeal routing mappings',
               },
+              strictAccess: {
+                type: 'boolean',
+                description:
+                  'Admins can always list this queue and browse its reports. Other roles require an active queue assignment. Individual report and moderation event access is unchanged.',
+              },
             },
           },
         },
@@ -40268,6 +40273,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'ref',
             ref: 'lex:tools.ozone.queue.defs#queueStats',
             description: 'Statistics about this queue',
+          },
+          strictAccess: {
+            type: 'boolean',
+            description:
+              'Admins can always list this queue and browse its reports. Other roles require an active queue assignment. Individual report and moderation event access is unchanged.',
           },
         },
       },
@@ -40721,6 +40731,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 },
                 description:
                   'Labels to recommend for this queue and use as fallback appeal routing mappings',
+              },
+              strictAccess: {
+                type: 'boolean',
+                description:
+                  'Admins can always list this queue and browse its reports. Other roles require an active queue assignment. Individual report and moderation event access is unchanged.',
               },
             },
           },
@@ -42443,6 +42458,12 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 type: 'ref',
                 ref: 'lex:tools.ozone.safelink.defs#reasonType',
               },
+              source: {
+                type: 'string',
+                maxLength: 128,
+                default: 'ozone/default',
+                description: 'Source of the rule',
+              },
               comment: {
                 type: 'string',
                 description: 'Optional comment about the decision',
@@ -42470,6 +42491,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
           {
             name: 'RuleAlreadyExists',
             description: 'A rule for this URL/domain already exists',
+          },
+          {
+            name: 'RuleSourceConflict',
+            description:
+              'A rule for this URL/domain is owned by another source',
           },
         ],
       },
@@ -42517,6 +42543,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'ref',
             ref: 'lex:tools.ozone.safelink.defs#reasonType',
           },
+          source: {
+            type: 'string',
+            default: 'ozone/default',
+            description: 'Source of the decision',
+          },
           createdBy: {
             type: 'string',
             format: 'did',
@@ -42550,7 +42581,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
       urlRule: {
         type: 'object',
-        description: 'Input for creating a URL safety rule',
+        description: 'An active URL safety rule',
         required: [
           'url',
           'pattern',
@@ -42576,6 +42607,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
           reason: {
             type: 'ref',
             ref: 'lex:tools.ozone.safelink.defs#reasonType',
+          },
+          source: {
+            type: 'string',
+            default: 'ozone/default',
+            description: 'Source of the rule',
           },
           comment: {
             type: 'string',
@@ -42712,6 +42748,12 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 type: 'string',
                 description: 'Filter by reason type',
               },
+              source: {
+                type: 'string',
+                maxLength: 128,
+                description:
+                  'Filter by exact rule source. Omit to include all sources.',
+              },
               createdBy: {
                 type: 'string',
                 format: 'did',
@@ -42771,6 +42813,12 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 type: 'ref',
                 ref: 'lex:tools.ozone.safelink.defs#patternType',
               },
+              source: {
+                type: 'string',
+                maxLength: 128,
+                default: 'ozone/default',
+                description: 'Source of the rule to remove',
+              },
               comment: {
                 type: 'string',
                 description:
@@ -42798,6 +42846,80 @@ export const schemaDict: Record<string, LexiconDoc> = {
             description: 'No active rule found for this URL/domain',
           },
         ],
+      },
+    },
+  },
+  ToolsOzoneSafelinkSyncSource: {
+    lexicon: 1,
+    id: 'tools.ozone.safelink.syncSource',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          'Replace stored rules for one source from a complete snapshot. Existing rules owned by another source remain unchanged.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['source', 'rules'],
+            properties: {
+              source: {
+                type: 'string',
+                maxLength: 128,
+                description: 'Source whose rules are being synchronized',
+              },
+              rules: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:tools.ozone.safelink.syncSource#sourceRule',
+                },
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['added', 'updated', 'removed', 'events'],
+            properties: {
+              added: {
+                type: 'integer',
+              },
+              updated: {
+                type: 'integer',
+              },
+              removed: {
+                type: 'integer',
+              },
+              events: {
+                type: 'integer',
+              },
+            },
+          },
+        },
+      },
+      sourceRule: {
+        type: 'object',
+        required: ['url', 'pattern', 'action', 'reason'],
+        properties: {
+          url: {
+            type: 'string',
+          },
+          pattern: {
+            type: 'ref',
+            ref: 'lex:tools.ozone.safelink.defs#patternType',
+          },
+          action: {
+            type: 'ref',
+            ref: 'lex:tools.ozone.safelink.defs#actionType',
+          },
+          reason: {
+            type: 'ref',
+            ref: 'lex:tools.ozone.safelink.defs#reasonType',
+          },
+        },
       },
     },
   },
@@ -42830,6 +42952,12 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 type: 'ref',
                 ref: 'lex:tools.ozone.safelink.defs#reasonType',
               },
+              source: {
+                type: 'string',
+                maxLength: 128,
+                default: 'ozone/default',
+                description: 'Source of the rule to update',
+              },
               comment: {
                 type: 'string',
                 description: 'Optional comment about the update',
@@ -42854,6 +42982,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
           {
             name: 'RuleNotFound',
             description: 'No active rule found for this URL/domain',
+          },
+          {
+            name: 'RuleSourceConflict',
+            description:
+              'A rule for this URL/domain is owned by another source',
           },
         ],
       },
@@ -44882,6 +45015,7 @@ export const ids = {
   ToolsOzoneSafelinkQueryEvents: 'tools.ozone.safelink.queryEvents',
   ToolsOzoneSafelinkQueryRules: 'tools.ozone.safelink.queryRules',
   ToolsOzoneSafelinkRemoveRule: 'tools.ozone.safelink.removeRule',
+  ToolsOzoneSafelinkSyncSource: 'tools.ozone.safelink.syncSource',
   ToolsOzoneSafelinkUpdateRule: 'tools.ozone.safelink.updateRule',
   ToolsOzoneServerGetCapabilities: 'tools.ozone.server.getCapabilities',
   ToolsOzoneServerGetConfig: 'tools.ozone.server.getConfig',

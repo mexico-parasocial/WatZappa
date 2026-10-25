@@ -40,6 +40,8 @@ export interface InputSchema {
   recommendedPolicies?: string[]
   /** Labels to recommend for this queue and use as fallback appeal routing mappings */
   recommendedLabels?: string[]
+  /** Admins can always list this queue and browse its reports. Other roles require an active queue assignment. Individual report and moderation event access is unchanged. */
+  strictAccess?: boolean
 }
 
 export interface OutputSchema {

@@ -538,6 +538,7 @@ import * as ToolsOzoneSafelinkDefs from './types/tools/ozone/safelink/defs.js'
 import * as ToolsOzoneSafelinkQueryEvents from './types/tools/ozone/safelink/queryEvents.js'
 import * as ToolsOzoneSafelinkQueryRules from './types/tools/ozone/safelink/queryRules.js'
 import * as ToolsOzoneSafelinkRemoveRule from './types/tools/ozone/safelink/removeRule.js'
+import * as ToolsOzoneSafelinkSyncSource from './types/tools/ozone/safelink/syncSource.js'
 import * as ToolsOzoneSafelinkUpdateRule from './types/tools/ozone/safelink/updateRule.js'
 import * as ToolsOzoneServerGetCapabilities from './types/tools/ozone/server/getCapabilities.js'
 import * as ToolsOzoneServerGetConfig from './types/tools/ozone/server/getConfig.js'
@@ -1094,6 +1095,7 @@ export * as ToolsOzoneSafelinkDefs from './types/tools/ozone/safelink/defs.js'
 export * as ToolsOzoneSafelinkQueryEvents from './types/tools/ozone/safelink/queryEvents.js'
 export * as ToolsOzoneSafelinkQueryRules from './types/tools/ozone/safelink/queryRules.js'
 export * as ToolsOzoneSafelinkRemoveRule from './types/tools/ozone/safelink/removeRule.js'
+export * as ToolsOzoneSafelinkSyncSource from './types/tools/ozone/safelink/syncSource.js'
 export * as ToolsOzoneSafelinkUpdateRule from './types/tools/ozone/safelink/updateRule.js'
 export * as ToolsOzoneServerGetCapabilities from './types/tools/ozone/server/getCapabilities.js'
 export * as ToolsOzoneServerGetConfig from './types/tools/ozone/server/getConfig.js'
@@ -12867,6 +12869,18 @@ export class ToolsOzoneSafelinkNS {
       .catch((e) => {
         throw ToolsOzoneSafelinkRemoveRule.toKnownErr(e)
       })
+  }
+
+  syncSource(
+    data?: ToolsOzoneSafelinkSyncSource.InputSchema,
+    opts?: ToolsOzoneSafelinkSyncSource.CallOptions,
+  ): Promise<ToolsOzoneSafelinkSyncSource.Response> {
+    return this._client.call(
+      'tools.ozone.safelink.syncSource',
+      opts?.qp,
+      data,
+      opts,
+    )
   }
 
   updateRule(
