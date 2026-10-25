@@ -5,7 +5,13 @@ export type Scope =
 
 export interface Election {
   mode: 'synthetic'
-  rulesVersion: 'g1-follow-signal-v1'
+  /**
+   * v1 rejects any state that overspends a follower's budget. v2 (product
+   * decision 2026-10-20) drops that follower's delegated units instead, fixes
+   * quorum at 50 % and decides each proposal: net intensity > 0 passes, a tie
+   * keeps the status quo.
+   */
+  rulesVersion: 'g1-follow-signal-v1' | 'g1-follow-signal-v2'
   id: string
   community: string
   participants: string[]
@@ -43,8 +49,20 @@ export interface Resolution {
   signal: number | null
   cost: number
   depth: number
-  status: 'direct' | 'delegated' | 'no-vote' | 'cycle' | 'depth-limit'
+  status:
+    | 'direct'
+    | 'delegated'
+    | 'no-vote'
+    | 'cycle'
+    | 'depth-limit'
+    /** v2: the delegated signal would overspend this participant's own budget. */
+    | 'over-budget'
 }
+
+export type ProposalOutcome =
+  | { decision: 'passed'; reason: 'net-support' }
+  | { decision: 'failed'; reason: 'net-opposition' | 'tie-status-quo' }
+  | { decision: 'failed'; reason: 'quorum-not-met' }
 
 export interface ProposalResult {
   proposal: string
@@ -61,6 +79,8 @@ export interface ProposalResult {
   creditsSpent: number
   quorumTarget: number
   quorumMet: boolean
+  /** v2 only. v1 returns magnitudes without a decision. */
+  outcome?: ProposalOutcome
 }
 
 export interface LabSnapshot {

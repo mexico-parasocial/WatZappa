@@ -85,6 +85,9 @@ export class Database {
       db: this.db,
       migrationTableSchema: opts.schema,
       provider: new CtxMigrationProvider(migrations, 'pg'),
+      // Upstream migrations can be dated before PARA's own that were already
+      // applied on a persistent dev database; apply them rather than refuse.
+      allowUnorderedMigrations: true,
     })
   }
 

@@ -3,6 +3,7 @@ import type {
   Election,
   ElectionEvent,
   LabSnapshot,
+  ProposalOutcome,
   ProposalResult,
   Resolution,
   Scope,
@@ -73,10 +74,13 @@ function scopeKey(scope: Scope, election: Election): string {
   }
 }
 
+const V2_QUORUM_BPS = 5000
+
 function validateElection(election: Election): void {
   requireRule(
     election.mode === 'synthetic' &&
-      election.rulesVersion === 'g1-follow-signal-v1',
+      (election.rulesVersion === 'g1-follow-signal-v1' ||
+        election.rulesVersion === 'g1-follow-signal-v2'),
     'UnsupportedRules',
     'Only the synthetic follow-signal rules are implemented',
   )
@@ -128,6 +132,12 @@ function validateElection(election: Election): void {
     'Quorum must use the fixed electorate',
   )
   requireRule(
+    election.rulesVersion !== 'g1-follow-signal-v2' ||
+      election.quorumBps === V2_QUORUM_BPS,
+    'InvalidQuorum',
+    'g1-follow-signal-v2 fixes quorum at 50 % of the electorate',
+  )
+  requireRule(
     integer(election.maxDelegationDepth, 1, 64),
     'InvalidDepth',
     'Depth must be between 1 and 64',
@@ -139,10 +149,24 @@ function validateElection(election: Election): void {
   )
 }
 
+function decide(
+  quorumMet: boolean,
+  intensitySignalSum: number,
+): ProposalOutcome {
+  if (!quorumMet) return { decision: 'failed', reason: 'quorum-not-met' }
+  if (intensitySignalSum > 0)
+    return { decision: 'passed', reason: 'net-support' }
+  return {
+    decision: 'failed',
+    reason: intensitySignalSum < 0 ? 'net-opposition' : 'tie-status-quo',
+  }
+}
+
 /**
  * Computes one deterministic synthetic snapshot. No account, network, storage or
  * cryptographic proof is used. Throws if the candidate state overspends any
- * individual's budget; callers must retain their previous accepted state.
+ * individual's budget (v2: through their own direct votes); callers must retain
+ * their previous accepted state.
  */
 export function evaluateElection(
   election: Election,
@@ -316,6 +340,30 @@ export function evaluateElection(
     }
   }
 
+  if (election.rulesVersion === 'g1-follow-signal-v2') {
+    for (const participant of participants) {
+      const own = resolutions.filter((r) => r.participant === participant)
+      const total = own.reduce((sum, r) => sum + r.cost, 0)
+      const direct = own
+        .filter((r) => r.status === 'direct')
+        .reduce((sum, r) => sum + r.cost, 0)
+      // Only a person's own votes can overspend their budget and be refused.
+      // A delegate's choice never blocks them: the follower's delegated units
+      // stop counting, all at once, so the outcome is independent of order.
+      if (
+        direct > election.creditsPerParticipant ||
+        total <= election.creditsPerParticipant
+      )
+        continue
+      for (const r of own) {
+        if (r.status !== 'delegated') continue
+        r.status = 'over-budget'
+        r.signal = null
+        r.cost = 0
+      }
+    }
+  }
+
   const budgets = participants.map((participant) => {
     const spent = resolutions
       .filter((r) => r.participant === participant)
@@ -339,6 +387,8 @@ export function evaluateElection(
     const quorumTarget = Math.ceil(
       (participants.length * election.quorumBps) / 10000,
     )
+    const intensitySignalSum = counted.reduce((sum, r) => sum + r.signal!, 0)
+    const quorumMet = counted.length >= quorumTarget
     return {
       proposal: proposal.id,
       eligible: participants.length,
@@ -350,10 +400,13 @@ export function evaluateElection(
       oppose,
       abstain: counted.length - support - oppose,
       flatSignalSum: support - oppose,
-      intensitySignalSum: counted.reduce((sum, r) => sum + r.signal!, 0),
+      intensitySignalSum,
       creditsSpent: counted.reduce((sum, r) => sum + r.cost, 0),
       quorumTarget,
-      quorumMet: counted.length >= quorumTarget,
+      quorumMet,
+      ...(election.rulesVersion === 'g1-follow-signal-v2'
+        ? { outcome: decide(quorumMet, intensitySignalSum) }
+        : {}),
     }
   })
   const phase =

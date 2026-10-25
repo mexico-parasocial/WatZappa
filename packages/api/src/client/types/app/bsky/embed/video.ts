@@ -18,7 +18,7 @@ const id = 'app.bsky.embed.video'
 
 export interface Main {
   $type?: 'app.bsky.embed.video'
-  /** The mp4 video file. May be up to 100mb, formerly limited to 50mb. */
+  /** The mp4 video file. May be up to 300mb, formerly limited to 100mb. */
   video: BlobRef
   captions?: Caption[]
   /** Alt text description of the video, for accessibility. */

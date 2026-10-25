@@ -2,7 +2,7 @@
 /**
  * GENERATED CODE - DO NOT MODIFY
  */
-import { HeadersMap, XRPCError } from '@atproto/xrpc'
+import { type HeadersMap, XRPCError } from '@atproto/xrpc'
 import { type ValidationResult, BlobRef } from '@atproto/lexicon'
 import { CID } from 'multiformats/cid'
 import { validate as _validate } from '../../../../lexicons.js'
@@ -32,6 +32,8 @@ export interface InputSchema {
   recommendedPolicies?: string[]
   /** Labels to recommend for this queue and use as fallback appeal routing mappings */
   recommendedLabels?: string[]
+  /** Admins can always list this queue and browse its reports. Other roles require an active queue assignment. Individual report and moderation event access is unchanged. */
+  strictAccess?: boolean
 }
 
 export interface OutputSchema {

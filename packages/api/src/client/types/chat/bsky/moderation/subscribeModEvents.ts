@@ -2,7 +2,7 @@
 /**
  * GENERATED CODE - DO NOT MODIFY
  */
-import { HeadersMap, XRPCError } from '@atproto/xrpc'
+import { type HeadersMap, XRPCError } from '@atproto/xrpc'
 import { type ValidationResult, BlobRef } from '@atproto/lexicon'
 import { CID } from 'multiformats/cid'
 import { validate as _validate } from '../../../../lexicons.js'
@@ -334,8 +334,10 @@ export interface EventGroupChatUpdated {
     | 'owner_left'
     | 'owner_deactivated'
     | 'owner_deleted'
+    | 'owner_suspended'
     | 'owner_taken_down'
     | 'label_applied'
+    | 'convo_taken_down'
     | (string & {})
   /** The new group name. Only present when updateType is 'name_changed'. */
   newName?: string

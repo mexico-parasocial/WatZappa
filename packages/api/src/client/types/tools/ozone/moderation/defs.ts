@@ -339,6 +339,8 @@ export interface ModEventReverseTakedown {
   severityLevel?: string
   /** Number of strikes to subtract from the user's strike count. Usually set from the last policy infraction's severity. */
   strikeCount?: number
+  /** When the strike should expire. If not provided, the strike never expires. */
+  strikeExpiresAt?: string
 }
 
 const hashModEventReverseTakedown = 'modEventReverseTakedown'

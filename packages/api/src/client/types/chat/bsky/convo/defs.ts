@@ -25,6 +25,22 @@ export type ConvoLockStatus =
   'unlocked' | 'locked' | 'locked-permanently' | (string & {})
 export type ConvoStatus = 'request' | 'accepted' | (string & {})
 
+export interface ConvoRef {
+  $type?: 'chat.bsky.convo.defs#convoRef'
+  did: string
+  convoId: string
+}
+
+const hashConvoRef = 'convoRef'
+
+export function isConvoRef<V>(v: V) {
+  return is$typed(v, id, hashConvoRef)
+}
+
+export function validateConvoRef<V>(v: V) {
+  return validate<ConvoRef & V>(v, id, hashConvoRef)
+}
+
 export interface MessageRef {
   $type?: 'chat.bsky.convo.defs#messageRef'
   did: string
@@ -42,22 +58,6 @@ export function validateMessageRef<V>(v: V) {
   return validate<MessageRef & V>(v, id, hashMessageRef)
 }
 
-export interface ConvoRef {
-  $type?: 'chat.bsky.convo.defs#convoRef'
-  did: string
-  convoId: string
-}
-
-const hashConvoRef = 'convoRef'
-
-export function isConvoRef<V>(v: V) {
-  return is$typed(v, id, hashConvoRef)
-}
-
-export function validateConvoRef<V>(v: V) {
-  return validate<ConvoRef & V>(v, id, hashConvoRef)
-}
-
 export interface MessageInput {
   $type?: 'chat.bsky.convo.defs#messageInput'
   text: string
@@ -67,6 +67,7 @@ export interface MessageInput {
     | $Typed<AppBskyEmbedRecord.Main>
     | $Typed<ChatBskyEmbedJoinLink.Main>
     | { $type: string }
+  replyTo?: ReplyRef
 }
 
 const hashMessageInput = 'messageInput'
@@ -77,6 +78,22 @@ export function isMessageInput<V>(v: V) {
 
 export function validateMessageInput<V>(v: V) {
   return validate<MessageInput & V>(v, id, hashMessageInput)
+}
+
+/** A reference to another message within the same convo, used to indicate that a message is a reply to it. */
+export interface ReplyRef {
+  $type?: 'chat.bsky.convo.defs#replyRef'
+  messageId: string
+}
+
+const hashReplyRef = 'replyRef'
+
+export function isReplyRef<V>(v: V) {
+  return is$typed(v, id, hashReplyRef)
+}
+
+export function validateReplyRef<V>(v: V) {
+  return validate<ReplyRef & V>(v, id, hashReplyRef)
 }
 
 export interface MessageView {
@@ -92,6 +109,11 @@ export interface MessageView {
     | { $type: string }
   /** Reactions to this message, in ascending order of creation time. */
   reactions?: ReactionView[]
+  replyTo?:
+    | $Typed<MessageView>
+    | $Typed<DeletedMessageView>
+    | $Typed<MessageBeforeUserJoinedGroupView>
+    | { $type: string }
   sender: MessageViewSender
   sentAt: string
 }
@@ -106,7 +128,25 @@ export function validateMessageView<V>(v: V) {
   return validate<MessageView & V>(v, id, hashMessageView)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. */
+export interface SystemMessageReferredUser {
+  $type?: 'chat.bsky.convo.defs#systemMessageReferredUser'
+  did: string
+}
+
+const hashSystemMessageReferredUser = 'systemMessageReferredUser'
+
+export function isSystemMessageReferredUser<V>(v: V) {
+  return is$typed(v, id, hashSystemMessageReferredUser)
+}
+
+export function validateSystemMessageReferredUser<V>(v: V) {
+  return validate<SystemMessageReferredUser & V>(
+    v,
+    id,
+    hashSystemMessageReferredUser,
+  )
+}
+
 export interface SystemMessageView {
   $type?: 'chat.bsky.convo.defs#systemMessageView'
   id: string
@@ -138,12 +178,12 @@ export function validateSystemMessageView<V>(v: V) {
   return validate<SystemMessageView & V>(v, id, hashSystemMessageView)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating a user was added to the group convo. */
+/** System message indicating a user was added to the group convo. */
 export interface SystemMessageDataAddMember {
   $type?: 'chat.bsky.convo.defs#systemMessageDataAddMember'
-  member: ChatBskyActorDefs.ProfileViewBasic
+  member: SystemMessageReferredUser
   role: ChatBskyActorDefs.MemberRole
-  addedBy: ChatBskyActorDefs.ProfileViewBasic
+  addedBy: SystemMessageReferredUser
 }
 
 const hashSystemMessageDataAddMember = 'systemMessageDataAddMember'
@@ -160,11 +200,11 @@ export function validateSystemMessageDataAddMember<V>(v: V) {
   )
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating a user was removed from the group convo. */
+/** System message indicating a user was removed from the group convo. */
 export interface SystemMessageDataRemoveMember {
   $type?: 'chat.bsky.convo.defs#systemMessageDataRemoveMember'
-  member: ChatBskyActorDefs.ProfileViewBasic
-  removedBy: ChatBskyActorDefs.ProfileViewBasic
+  member: SystemMessageReferredUser
+  removedBy: SystemMessageReferredUser
 }
 
 const hashSystemMessageDataRemoveMember = 'systemMessageDataRemoveMember'
@@ -181,12 +221,12 @@ export function validateSystemMessageDataRemoveMember<V>(v: V) {
   )
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating a user joined the group convo via join link. */
+/** System message indicating a user joined the group convo via join link. */
 export interface SystemMessageDataMemberJoin {
   $type?: 'chat.bsky.convo.defs#systemMessageDataMemberJoin'
-  member: ChatBskyActorDefs.ProfileViewBasic
+  member: SystemMessageReferredUser
   role: ChatBskyActorDefs.MemberRole
-  approvedBy?: ChatBskyActorDefs.ProfileViewBasic
+  approvedBy?: SystemMessageReferredUser
 }
 
 const hashSystemMessageDataMemberJoin = 'systemMessageDataMemberJoin'
@@ -203,10 +243,10 @@ export function validateSystemMessageDataMemberJoin<V>(v: V) {
   )
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating a user voluntarily left the group convo. */
+/** System message indicating a user voluntarily left the group convo. */
 export interface SystemMessageDataMemberLeave {
   $type?: 'chat.bsky.convo.defs#systemMessageDataMemberLeave'
-  member: ChatBskyActorDefs.ProfileViewBasic
+  member: SystemMessageReferredUser
 }
 
 const hashSystemMessageDataMemberLeave = 'systemMessageDataMemberLeave'
@@ -223,10 +263,10 @@ export function validateSystemMessageDataMemberLeave<V>(v: V) {
   )
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating the group convo was locked. */
+/** System message indicating the group convo was locked. */
 export interface SystemMessageDataLockConvo {
   $type?: 'chat.bsky.convo.defs#systemMessageDataLockConvo'
-  lockedBy: ChatBskyActorDefs.ProfileViewBasic
+  lockedBy: SystemMessageReferredUser
 }
 
 const hashSystemMessageDataLockConvo = 'systemMessageDataLockConvo'
@@ -243,10 +283,10 @@ export function validateSystemMessageDataLockConvo<V>(v: V) {
   )
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating the group convo was unlocked. */
+/** System message indicating the group convo was unlocked. */
 export interface SystemMessageDataUnlockConvo {
   $type?: 'chat.bsky.convo.defs#systemMessageDataUnlockConvo'
-  unlockedBy: ChatBskyActorDefs.ProfileViewBasic
+  unlockedBy: SystemMessageReferredUser
 }
 
 const hashSystemMessageDataUnlockConvo = 'systemMessageDataUnlockConvo'
@@ -263,10 +303,10 @@ export function validateSystemMessageDataUnlockConvo<V>(v: V) {
   )
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating the group convo was locked permanently. */
+/** System message indicating the group convo was locked permanently. */
 export interface SystemMessageDataLockConvoPermanently {
   $type?: 'chat.bsky.convo.defs#systemMessageDataLockConvoPermanently'
-  lockedBy: ChatBskyActorDefs.ProfileViewBasic
+  lockedBy: SystemMessageReferredUser
 }
 
 const hashSystemMessageDataLockConvoPermanently =
@@ -284,7 +324,7 @@ export function validateSystemMessageDataLockConvoPermanently<V>(v: V) {
   )
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating the group info was edited. */
+/** System message indicating the group info was edited. */
 export interface SystemMessageDataEditGroup {
   $type?: 'chat.bsky.convo.defs#systemMessageDataEditGroup'
   /** Group name that was replaced. */
@@ -307,7 +347,7 @@ export function validateSystemMessageDataEditGroup<V>(v: V) {
   )
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating the group join link was created. */
+/** System message indicating the group join link was created. */
 export interface SystemMessageDataCreateJoinLink {
   $type?: 'chat.bsky.convo.defs#systemMessageDataCreateJoinLink'
 }
@@ -326,7 +366,7 @@ export function validateSystemMessageDataCreateJoinLink<V>(v: V) {
   )
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating the group join link was edited. */
+/** System message indicating the group join link was edited. */
 export interface SystemMessageDataEditJoinLink {
   $type?: 'chat.bsky.convo.defs#systemMessageDataEditJoinLink'
 }
@@ -345,7 +385,7 @@ export function validateSystemMessageDataEditJoinLink<V>(v: V) {
   )
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating the group join link was enabled. */
+/** System message indicating the group join link was enabled. */
 export interface SystemMessageDataEnableJoinLink {
   $type?: 'chat.bsky.convo.defs#systemMessageDataEnableJoinLink'
 }
@@ -364,7 +404,7 @@ export function validateSystemMessageDataEnableJoinLink<V>(v: V) {
   )
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating the group join link was disabled. */
+/** System message indicating the group join link was disabled. */
 export interface SystemMessageDataDisableJoinLink {
   $type?: 'chat.bsky.convo.defs#systemMessageDataDisableJoinLink'
 }
@@ -399,6 +439,25 @@ export function isDeletedMessageView<V>(v: V) {
 
 export function validateDeletedMessageView<V>(v: V) {
   return validate<DeletedMessageView & V>(v, id, hashDeletedMessageView)
+}
+
+/** Placeholder embedded in place of a reply's parent message when that parent was sent before the viewer joined the group convo. The viewer has no access to that history, so no message data is carried. */
+export interface MessageBeforeUserJoinedGroupView {
+  $type?: 'chat.bsky.convo.defs#messageBeforeUserJoinedGroupView'
+}
+
+const hashMessageBeforeUserJoinedGroupView = 'messageBeforeUserJoinedGroupView'
+
+export function isMessageBeforeUserJoinedGroupView<V>(v: V) {
+  return is$typed(v, id, hashMessageBeforeUserJoinedGroupView)
+}
+
+export function validateMessageBeforeUserJoinedGroupView<V>(v: V) {
+  return validate<MessageBeforeUserJoinedGroupView & V>(
+    v,
+    id,
+    hashMessageBeforeUserJoinedGroupView,
+  )
 }
 
 export interface MessageViewSender {
@@ -468,7 +527,7 @@ export interface ConvoView {
   $type?: 'chat.bsky.convo.defs#convoView'
   id: string
   rev: string
-  /** Members of this conversation. For direct convos, it will be an immutable list of the 2 members. For group convos, it will a list of important members (the first few members, the viewer, the member who invited the viewer, the member who sent the last message, the member who sent the last reaction), but will not contain the full list of members. NOTE: TBD an endpoint to list all members. */
+  /** Members of this conversation. For direct convos, it will be an immutable list of the 2 members. For group convos, it will a list of important members (the first few members, the viewer, the member who added the viewer, the member who sent the last message, the member who sent the last reaction), but will not contain the full list of members. Use chat.bsky.convo.getConvoMembers to list all members. */
   members: ChatBskyActorDefs.ProfileViewBasic[]
   lastMessage?:
     | $Typed<MessageView>
@@ -492,7 +551,6 @@ export function validateConvoView<V>(v: V) {
   return validate<ConvoView & V>(v, id, hashConvoView)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. */
 export interface DirectConvo {
   $type?: 'chat.bsky.convo.defs#directConvo'
 }
@@ -507,14 +565,15 @@ export function validateDirectConvo<V>(v: V) {
   return validate<DirectConvo & V>(v, id, hashDirectConvo)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. */
 export interface GroupConvo {
   $type?: 'chat.bsky.convo.defs#groupConvo'
   createdAt: string
   joinLink?: ChatBskyGroupDefs.JoinLinkView
-  /** The total number of pending join requests for the group conversation. This information is only visible to the owner and to moderators. Capped at 21. */
+  /** The total number of pending join requests for the group conversation. Only present for the owner. Capped at 21. */
   joinRequestCount?: number
   lockStatus: ConvoLockStatus
+  /** Whether the lock status is being forced by a moderation override (account inactivation or convo takedown) rather than the owner's own setting. */
+  lockStatusModerationOverride: boolean
   /** The total number of members in the group conversation. */
   memberCount: number
   /** The maximum number of members allowed in the group conversation. */
@@ -722,7 +781,7 @@ export function validateLogRemoveReaction<V>(v: V) {
   return validate<LogRemoveReaction & V>(v, id, hashLogRemoveReaction)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a convo was read up to a certain message. */
+/** Event indicating a convo was read up to a certain message. */
 export interface LogReadConvo {
   $type?: 'chat.bsky.convo.defs#logReadConvo'
   rev: string
@@ -744,12 +803,14 @@ export function validateLogReadConvo<V>(v: V) {
   return validate<LogReadConvo & V>(v, id, hashLogReadConvo)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a member was added to a group convo. The member who was added gets a logBeginConvo (to create the convo) but also a logAddMember (to show the system message as the first message the user sees). */
+/** Event indicating a member was added to a group convo. The member who was added gets a logBeginConvo (to create the convo) but also a logAddMember (to show the system message as the first message the user sees). */
 export interface LogAddMember {
   $type?: 'chat.bsky.convo.defs#logAddMember'
   rev: string
   convoId: string
-  message: SystemMessageDataAddMember
+  message: SystemMessageView
+  /** Profiles referred in the system message. */
+  relatedProfiles: ChatBskyActorDefs.ProfileViewBasic[]
 }
 
 const hashLogAddMember = 'logAddMember'
@@ -762,12 +823,14 @@ export function validateLogAddMember<V>(v: V) {
   return validate<LogAddMember & V>(v, id, hashLogAddMember)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a member was removed from a group convo. The member who was removed gets a logLeaveConvo (to leave the convo) but not a logRemoveMember (because they already left, so can't see the system message). */
+/** Event indicating a member was removed from a group convo. The member who was removed gets a logLeaveConvo (to leave the convo) but not a logRemoveMember (because they already left, so can't see the system message). */
 export interface LogRemoveMember {
   $type?: 'chat.bsky.convo.defs#logRemoveMember'
   rev: string
   convoId: string
-  message: SystemMessageDataRemoveMember
+  message: SystemMessageView
+  /** Profiles referred in the system message. */
+  relatedProfiles: ChatBskyActorDefs.ProfileViewBasic[]
 }
 
 const hashLogRemoveMember = 'logRemoveMember'
@@ -780,12 +843,14 @@ export function validateLogRemoveMember<V>(v: V) {
   return validate<LogRemoveMember & V>(v, id, hashLogRemoveMember)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a member joined a group convo via join link. The member who was added gets a logBeginConvo (to create the convo) but also a logMemberJoin (to show the system message as the first message the user sees). */
+/** Event indicating a member joined a group convo via join link. The member who was added gets a logBeginConvo (to create the convo) but also a logMemberJoin (to show the system message as the first message the user sees). */
 export interface LogMemberJoin {
   $type?: 'chat.bsky.convo.defs#logMemberJoin'
   rev: string
   convoId: string
-  message: SystemMessageDataMemberJoin
+  message: SystemMessageView
+  /** Profiles referred in the system message. */
+  relatedProfiles: ChatBskyActorDefs.ProfileViewBasic[]
 }
 
 const hashLogMemberJoin = 'logMemberJoin'
@@ -798,12 +863,14 @@ export function validateLogMemberJoin<V>(v: V) {
   return validate<LogMemberJoin & V>(v, id, hashLogMemberJoin)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a member voluntarily left a group convo. The member who was removed gets a logLeaveConvo (to leave the convo) but not a logMemberLeave (because they already left, so can't see the system message). */
+/** Event indicating a member voluntarily left a group convo. The member who was removed gets a logLeaveConvo (to leave the convo) but not a logMemberLeave (because they already left, so can't see the system message). */
 export interface LogMemberLeave {
   $type?: 'chat.bsky.convo.defs#logMemberLeave'
   rev: string
   convoId: string
-  message: SystemMessageDataMemberLeave
+  message: SystemMessageView
+  /** Profiles referred in the system message. */
+  relatedProfiles: ChatBskyActorDefs.ProfileViewBasic[]
 }
 
 const hashLogMemberLeave = 'logMemberLeave'
@@ -816,12 +883,14 @@ export function validateLogMemberLeave<V>(v: V) {
   return validate<LogMemberLeave & V>(v, id, hashLogMemberLeave)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a group convo was locked. */
+/** Event indicating a group convo was locked. */
 export interface LogLockConvo {
   $type?: 'chat.bsky.convo.defs#logLockConvo'
   rev: string
   convoId: string
-  message: SystemMessageDataLockConvo
+  message: SystemMessageView
+  /** Profiles referred in the system message. */
+  relatedProfiles: ChatBskyActorDefs.ProfileViewBasic[]
 }
 
 const hashLogLockConvo = 'logLockConvo'
@@ -834,12 +903,14 @@ export function validateLogLockConvo<V>(v: V) {
   return validate<LogLockConvo & V>(v, id, hashLogLockConvo)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a group convo was unlocked. */
+/** Event indicating a group convo was unlocked. */
 export interface LogUnlockConvo {
   $type?: 'chat.bsky.convo.defs#logUnlockConvo'
   rev: string
   convoId: string
-  message: SystemMessageDataUnlockConvo
+  message: SystemMessageView
+  /** Profiles referred in the system message. */
+  relatedProfiles: ChatBskyActorDefs.ProfileViewBasic[]
 }
 
 const hashLogUnlockConvo = 'logUnlockConvo'
@@ -852,12 +923,14 @@ export function validateLogUnlockConvo<V>(v: V) {
   return validate<LogUnlockConvo & V>(v, id, hashLogUnlockConvo)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a group convo was locked permanently. */
+/** Event indicating a group convo was locked permanently. */
 export interface LogLockConvoPermanently {
   $type?: 'chat.bsky.convo.defs#logLockConvoPermanently'
   rev: string
   convoId: string
-  message: SystemMessageDataLockConvoPermanently
+  message: SystemMessageView
+  /** Profiles referred in the system message. */
+  relatedProfiles: ChatBskyActorDefs.ProfileViewBasic[]
 }
 
 const hashLogLockConvoPermanently = 'logLockConvoPermanently'
@@ -874,12 +947,12 @@ export function validateLogLockConvoPermanently<V>(v: V) {
   )
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating info about group convo was edited. */
+/** Event indicating info about group convo was edited. */
 export interface LogEditGroup {
   $type?: 'chat.bsky.convo.defs#logEditGroup'
   rev: string
   convoId: string
-  message: SystemMessageDataEditGroup
+  message: SystemMessageView
 }
 
 const hashLogEditGroup = 'logEditGroup'
@@ -892,12 +965,12 @@ export function validateLogEditGroup<V>(v: V) {
   return validate<LogEditGroup & V>(v, id, hashLogEditGroup)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a join link was created for a group convo. */
+/** Event indicating a join link was created for a group convo. */
 export interface LogCreateJoinLink {
   $type?: 'chat.bsky.convo.defs#logCreateJoinLink'
   rev: string
   convoId: string
-  message: SystemMessageDataCreateJoinLink
+  message: SystemMessageView
 }
 
 const hashLogCreateJoinLink = 'logCreateJoinLink'
@@ -910,12 +983,12 @@ export function validateLogCreateJoinLink<V>(v: V) {
   return validate<LogCreateJoinLink & V>(v, id, hashLogCreateJoinLink)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a settings about a join link for a group convo were edited. */
+/** Event indicating a settings about a join link for a group convo were edited. */
 export interface LogEditJoinLink {
   $type?: 'chat.bsky.convo.defs#logEditJoinLink'
   rev: string
   convoId: string
-  message: SystemMessageDataEditJoinLink
+  message: SystemMessageView
 }
 
 const hashLogEditJoinLink = 'logEditJoinLink'
@@ -928,12 +1001,12 @@ export function validateLogEditJoinLink<V>(v: V) {
   return validate<LogEditJoinLink & V>(v, id, hashLogEditJoinLink)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a join link was enabled for a group convo. */
+/** Event indicating a join link was enabled for a group convo. */
 export interface LogEnableJoinLink {
   $type?: 'chat.bsky.convo.defs#logEnableJoinLink'
   rev: string
   convoId: string
-  message: SystemMessageDataEnableJoinLink
+  message: SystemMessageView
 }
 
 const hashLogEnableJoinLink = 'logEnableJoinLink'
@@ -946,12 +1019,12 @@ export function validateLogEnableJoinLink<V>(v: V) {
   return validate<LogEnableJoinLink & V>(v, id, hashLogEnableJoinLink)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a join link was disabled for a group convo. */
+/** Event indicating a join link was disabled for a group convo. */
 export interface LogDisableJoinLink {
   $type?: 'chat.bsky.convo.defs#logDisableJoinLink'
   rev: string
   convoId: string
-  message: SystemMessageDataDisableJoinLink
+  message: SystemMessageView
 }
 
 const hashLogDisableJoinLink = 'logDisableJoinLink'
@@ -964,7 +1037,7 @@ export function validateLogDisableJoinLink<V>(v: V) {
   return validate<LogDisableJoinLink & V>(v, id, hashLogDisableJoinLink)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a join request was made to a group the viewer owns. Only the owner gets this. */
+/** Event indicating a join request was made to a group the viewer owns. Only the owner gets this. */
 export interface LogIncomingJoinRequest {
   $type?: 'chat.bsky.convo.defs#logIncomingJoinRequest'
   rev: string
@@ -982,7 +1055,7 @@ export function validateLogIncomingJoinRequest<V>(v: V) {
   return validate<LogIncomingJoinRequest & V>(v, id, hashLogIncomingJoinRequest)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a join request was approved by the viewer. Only the owner gets this. The approved member gets a logBeginConvo. */
+/** Event indicating a join request was approved by the viewer. Only the owner gets this. The approved member gets a logBeginConvo. */
 export interface LogApproveJoinRequest {
   $type?: 'chat.bsky.convo.defs#logApproveJoinRequest'
   rev: string
@@ -1000,7 +1073,7 @@ export function validateLogApproveJoinRequest<V>(v: V) {
   return validate<LogApproveJoinRequest & V>(v, id, hashLogApproveJoinRequest)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a join request was rejected by the viewer. Only the owner gets this. */
+/** Event indicating a join request was rejected by the viewer. Only the owner gets this. */
 export interface LogRejectJoinRequest {
   $type?: 'chat.bsky.convo.defs#logRejectJoinRequest'
   rev: string
@@ -1018,7 +1091,7 @@ export function validateLogRejectJoinRequest<V>(v: V) {
   return validate<LogRejectJoinRequest & V>(v, id, hashLogRejectJoinRequest)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a join request was made by the viewer. */
+/** Event indicating a join request was made by the requester. Only requester actor gets this. */
 export interface LogOutgoingJoinRequest {
   $type?: 'chat.bsky.convo.defs#logOutgoingJoinRequest'
   rev: string
@@ -1035,7 +1108,7 @@ export function validateLogOutgoingJoinRequest<V>(v: V) {
   return validate<LogOutgoingJoinRequest & V>(v, id, hashLogOutgoingJoinRequest)
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a prospective member withdrew their join request. Only the owner gets this. */
+/** Event indicating a prospective member withdrew their join request. Only the owner gets this. */
 export interface LogWithdrawIncomingJoinRequest {
   $type?: 'chat.bsky.convo.defs#logWithdrawIncomingJoinRequest'
   rev: string
@@ -1057,7 +1130,7 @@ export function validateLogWithdrawIncomingJoinRequest<V>(v: V) {
   )
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating the viewer withdrew their own join request. Only requester actor gets this. */
+/** Event indicating the viewer withdrew their own join request. Only requester actor gets this. */
 export interface LogWithdrawOutgoingJoinRequest {
   $type?: 'chat.bsky.convo.defs#logWithdrawOutgoingJoinRequest'
   rev: string
@@ -1078,7 +1151,7 @@ export function validateLogWithdrawOutgoingJoinRequest<V>(v: V) {
   )
 }
 
-/** [NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating the group owner marked join requests as read. Only the owner gets this. */
+/** Event indicating the group owner marked join requests as read. Only the owner gets this. */
 export interface LogReadJoinRequests {
   $type?: 'chat.bsky.convo.defs#logReadJoinRequests'
   rev: string

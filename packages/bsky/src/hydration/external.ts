@@ -1,3 +1,5 @@
+import { performance } from 'node:perf_hooks'
+import { chunkArray } from '@atproto/common'
 import {
   type AtUriString,
   type DidString,
@@ -20,6 +22,7 @@ import {
   type ExternalHydrationOutcome,
   type ExternalHydrationRoot,
   type ExternalHydrationWork,
+  type HydrationXrpcEndpoint,
   events,
 } from '../telemetry/events.js'
 import { uriToDid } from '../util/uris.js'
@@ -108,41 +111,62 @@ export class ExternalHydrator {
   static readonly MAX_BACKLINK_FANOUT = 8
   /** Hard cap on generic batches per traversal, counting the root as pass 1. */
   static readonly MAX_EXTERNAL_HYDRATION_PASSES = 8
+  /**
+   * Entries per generic record RPC. The dataplane rejects larger URI lookups;
+   * exact-ref lookups use the same bound defensively.
+   */
+  static readonly MAX_RECORDS_PER_REQUEST = 100
 
   constructor(public dataplane: DataPlaneClient) {}
 
-  /** Fetch exact record versions; unavailable records are represented by null. */
+  /**
+   * Fetch exact record versions; unavailable records are represented by null.
+   * Large inputs are fetched in sequential bounded requests; any failed request
+   * rejects the whole call.
+   */
   async getRecordsByRef(
     refs: Required<ItemRef>[],
     includeTakedowns = false,
   ): Promise<ExternalRecordsByRef> {
     const map: ExternalRecordsByRef = new HydrationMap()
-    if (!refs.length) return map
-
-    const res = await this.dataplane.getRecordsByRef({ refs })
-    for (let i = 0; i < refs.length; i++) {
-      map.set(
-        genericRecordKey(refs[i]),
-        parseGenericRecord(res.results[i], includeTakedowns) ?? null,
-      )
+    for (const chunk of chunkArray(
+      refs,
+      ExternalHydrator.MAX_RECORDS_PER_REQUEST,
+    )) {
+      const res = await this.dataplane.getRecordsByRef({ refs: chunk })
+      // Results are positional within each request.
+      for (let i = 0; i < chunk.length; i++) {
+        map.set(
+          genericRecordKey(chunk[i]),
+          parseGenericRecord(res.results[i], includeTakedowns) ?? null,
+        )
+      }
     }
     return map
   }
 
-  /** Fetch the latest indexed versions without collection-specific validation. */
+  /**
+   * Fetch the latest indexed versions without collection-specific validation.
+   * Large inputs are fetched in sequential bounded requests; any failed request
+   * rejects the whole call.
+   */
   async getRecordsByURI(
     uris: AtUriString[],
     includeTakedowns = false,
   ): Promise<ExternalRecords> {
     const map: ExternalRecords = new HydrationMap()
-    if (!uris.length) return map
-
-    const res = await this.dataplane.getRecordsByURI({ uris })
-    for (let i = 0; i < uris.length; i++) {
-      map.set(
-        uris[i],
-        parseGenericRecord(res.results[i], includeTakedowns) ?? null,
-      )
+    for (const chunk of chunkArray(
+      uris,
+      ExternalHydrator.MAX_RECORDS_PER_REQUEST,
+    )) {
+      const res = await this.dataplane.getRecordsByURI({ uris: chunk })
+      // Results are positional within each request.
+      for (let i = 0; i < chunk.length; i++) {
+        map.set(
+          chunk[i],
+          parseGenericRecord(res.results[i], includeTakedowns) ?? null,
+        )
+      }
     }
     return map
   }
@@ -256,57 +280,6 @@ export class ExternalHydrator {
     }
     return out
   }
-
-  /**
-   * Fetch the latest `site.standard.{document,publication}` versions. The
-   * generic record lookup does not follow references, so publications named
-   * by the `site` field of the hydrated documents are fetched in a second
-   * call.
-   */
-  async getSiteStandardRecordsByURI(
-    uris: AtUriString[],
-    includeTakedowns = false,
-  ): Promise<SiteStandardRecords> {
-    const requested = [...new Set(uris.filter((u) => siteStandardKind(u)))]
-    const out = emptySiteStandardRecords()
-    if (!requested.length) return out
-
-    await this.addSiteStandardRecordsByURI(out, requested, includeTakedowns)
-
-    // Publications referenced by documents but not already requested.
-    const requestedSet = new Set<string>(requested)
-    const pubUris = new Set<AtUriString>()
-    for (const doc of out.documents.values()) {
-      const pubUri = doc && publicationUriFromSite(doc.record.site)
-      if (pubUri && !requestedSet.has(pubUri)) pubUris.add(pubUri)
-    }
-    if (pubUris.size) {
-      await this.addSiteStandardRecordsByURI(
-        out,
-        [...pubUris],
-        includeTakedowns,
-      )
-    }
-    return out
-  }
-
-  private async addSiteStandardRecordsByURI(
-    out: SiteStandardRecords,
-    uris: AtUriString[],
-    includeTakedowns: boolean,
-  ) {
-    const records = await this.getRecordsByURI(uris, includeTakedowns)
-    for (const [uri, info] of records) {
-      // Unavailable records have no CID to key on, so they are left out.
-      if (!info) continue
-      setSiteStandardRecord(
-        out,
-        uri,
-        genericRecordKey({ uri, cid: info.cid }),
-        info,
-      )
-    }
-  }
 }
 
 /**
@@ -380,39 +353,67 @@ export function actionExternalRecordTakedowns(
 
 /**
  * Generic lookup work of one external hydration traversal, shared by reference
- * through its nested passes. `capped` records hitting the pass limit.
+ * through its nested passes. `capped` records hitting the pass limit; `partial`
+ * records a recovered best-effort dependency failure.
  */
 export type ExternalHydrationTracker = ExternalHydrationWork & {
   capped: boolean
+  partial: boolean
+  /**
+   * Internal: set by the traversal's first dependency discovery, whose refs
+   * are its roots.
+   */
+  rootsCounted: boolean
 }
 
 /**
  * Run `fn` with the caller's tracker, or as the owner of a new traversal when
- * there is none. Only the owner reports, once, including on failure. Owners
- * that completed without scheduling a batch did no work and are not reported;
- * caps and failures always are.
+ * there is none. Only the owner reports, once, including on failure, with the
+ * context's XRPC endpoint (`'unknown'` if unset) and the traversal's wall time. A
+ * returned traversal is `capped` if it hit the pass limit, else `partial` if
+ * it recovered from a dependency failure. Owners that completed without
+ * scheduling a batch did no work and are not reported; other outcomes always
+ * are.
  */
 export async function trackExternalHydration<T>(
   root: ExternalHydrationRoot,
+  xrpcEndpoint: HydrationXrpcEndpoint | undefined,
   hydrationMetrics: ExternalHydrationTracker | undefined,
   fn: (hydrationMetrics: ExternalHydrationTracker) => Promise<T>,
 ): Promise<T> {
   if (hydrationMetrics) return fn(hydrationMetrics)
-  const owned = { recordLookups: 0, batches: 0, maxPass: 0, capped: false }
+  const owned: ExternalHydrationTracker = {
+    recordLookups: 0,
+    batches: 0,
+    maxPass: 0,
+    roots: 0,
+    rootsResolved: 0,
+    dependencies: 0,
+    dependenciesResolved: 0,
+    capped: false,
+    partial: false,
+    rootsCounted: false,
+  }
   let outcome: ExternalHydrationOutcome = 'failed'
+  const start = performance.now()
   try {
     const state = await fn(owned)
-    outcome = owned.capped ? 'capped' : 'completed'
+    outcome = owned.capped ? 'capped' : owned.partial ? 'partial' : 'completed'
     return state
   } finally {
     if (owned.batches || outcome !== 'completed') {
-      const { recordLookups, batches, maxPass } = owned
       events.externalHydrationTraversal({
+        xrpcEndpoint: xrpcEndpoint ?? 'unknown',
         root,
         outcome,
-        recordLookups,
-        batches,
-        maxPass,
+        durationMs: performance.now() - start,
+        recordLookups: owned.recordLookups,
+        batches: owned.batches,
+        maxPass: owned.maxPass,
+        roots: owned.roots,
+        rootsResolved: owned.rootsResolved,
+        dependencies: owned.dependencies,
+        dependenciesResolved: owned.dependenciesResolved,
       })
     }
   }
@@ -469,15 +470,6 @@ const siteStandardKind = (
   }
 }
 
-/** The AT-URI of the publication a document's `site` field points at. */
-const publicationUriFromSite = (value: string): AtUriString | undefined => {
-  const parsed = parseAtUriString(value)
-  return parsed.success &&
-    parsed.value.collection === site.standard.publication.$type
-    ? (value as AtUriString)
-    : undefined
-}
-
 /**
  * Generic record bodies are unvalidated, so check them against the Lexicon
  * before exposing typed fields. Parse mode is not used, to preserve the
@@ -524,14 +516,6 @@ export type AssociatedSiteStandardRecord<T> = {
  * the post at write time, and we honor those exact versions. Any pair
  * that doesn't structurally agree is rejected, so downstream callers can
  * trust the returned shape.
- *
- * Same observable contract as
- * `getSiteStandardRecordsFromHydrationMapsByDocumentUri` (the compose-path
- * sister) — both functions guarantee that a returned `(doc, pub)` pair
- * has matching site/uri, and reject orphan docs that claim a
- * non-hydrated publication. They differ only in how upstream availability
- * is asserted: this one trusts caller-supplied refs; the sister derives
- * everything from the dataplane response.
  *
  * Pairing rules:
  * - Both slots referenced: `doc.site` must equal `publication.ref.uri`,
@@ -593,8 +577,7 @@ export const getSiteStandardRecordsFromHydrationMapsByRefs = (
   }
 
   // Doc with at-uri `site` but no publication: the post should have
-  // pinned the publication too. Treat as misconstructed — same contract
-  // as the compose-path lookup.
+  // pinned the publication too. Treat as misconstructed.
   if (document && !publication) {
     const site = document.info.record.site
     if (site && site.startsWith('at://')) {
@@ -603,80 +586,6 @@ export const getSiteStandardRecordsFromHydrationMapsByRefs = (
         'site.standard byRefs lookup failed: document.site is AT URI but no matching publication was hydrated',
       )
       return { document: undefined, publication: undefined }
-    }
-  }
-
-  return { document, publication }
-}
-
-/**
- * Compose-path resolution: no caller-supplied refs — the dataplane
- * returned the latest version of each record (including any
- * publications it auto-resolved from a document's `site` field). Take
- * the first hydrated document and pair it with the publication its
- * `site` field points at.
- *
- * Same observable contract as
- * `getSiteStandardRecordsFromHydrationMapsByRefs` (the read-path
- * sister) — both functions guarantee that a returned `(doc, pub)` pair
- * has matching site/uri, and reject orphan docs that claim a
- * non-hydrated publication. They differ only in how upstream
- * availability is asserted: this one walks whatever was returned by the
- * dataplane; the sister checks against caller-supplied refs.
- *
- * Pairing rules:
- * - Doc with at-uri `site`: must find a hydrated publication at that
- *   URI. If none was hydrated, the doc/publication chain is incomplete
- *   and the function returns `undefined` for both slots; the doc alone
- *   isn't useful without its source (can't verify the pub)
- * - Doc with web-URL `site` (loose): no publication.
- * - No doc hydrated: fall through to the first hydrated publication for
- *   the publication-only resolution flow.
- */
-export const getSiteStandardRecordsFromHydrationMapsByDocumentUri = (
-  documents: SiteStandardDocuments | undefined,
-  publications: SiteStandardPublications | undefined,
-): {
-  document: AssociatedSiteStandardRecord<SiteStandardDocument> | undefined
-  publication: AssociatedSiteStandardRecord<SiteStandardPublication> | undefined
-} => {
-  // First hydrated doc.
-  let document: AssociatedSiteStandardRecord<SiteStandardDocument> | undefined
-  for (const [key, info] of documents ?? []) {
-    if (!info) continue
-    document = { ref: parseGenericRecordKey(key), info }
-    break
-  }
-
-  let publication:
-    AssociatedSiteStandardRecord<SiteStandardPublication> | undefined
-  if (document) {
-    const site = document.info.record.site
-    if (site && site.startsWith('at://')) {
-      // Doc declared an at-uri publication; we need it.
-      for (const [key, info] of publications ?? []) {
-        if (!info) continue
-        const ref = parseGenericRecordKey(key)
-        if (ref.uri === site) {
-          publication = { ref, info }
-          break
-        }
-      }
-      if (!publication) {
-        hydrationLogger.warn(
-          { documentUri: document.ref.uri, documentSite: site },
-          'site.standard byDocumentUri lookup failed: document.site is AT URI but no matching publication was hydrated',
-        )
-        return { document: undefined, publication: undefined }
-      }
-    }
-    // else: loose doc (web-URL site), no publication needed.
-  } else {
-    // Publication-only flow: no doc, take the first hydrated publication.
-    for (const [key, info] of publications ?? []) {
-      if (!info) continue
-      publication = { ref: parseGenericRecordKey(key), info }
-      break
     }
   }
 

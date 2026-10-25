@@ -2,7 +2,7 @@
 /**
  * GENERATED CODE - DO NOT MODIFY
  */
-import { HeadersMap, XRPCError } from '@atproto/xrpc'
+import { type HeadersMap, XRPCError } from '@atproto/xrpc'
 import { type ValidationResult, BlobRef } from '@atproto/lexicon'
 import { CID } from 'multiformats/cid'
 import { validate as _validate } from '../../../../lexicons.js'
@@ -25,6 +25,8 @@ export type InputSchema = undefined
 
 export interface OutputSchema {
   starterPacks: string[]
+  /** Snowflake for this recommendation, use when submitting recommendation events. */
+  recIdStr?: string
 }
 
 export interface CallOptions {

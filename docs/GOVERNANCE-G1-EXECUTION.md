@@ -1,6 +1,6 @@
 # G1 — ejecución y evidencia
 
-Actualizado el 21 de septiembre de 2026. Trabajo local iniciado por instrucción
+Actualizado el 20 de octubre de 2026 (reglas v2); antes, el 21 de septiembre. Trabajo local iniciado por instrucción
 del usuario, antes de la ventana originalmente propuesta. No hay despliegue ni
 habilitación de elecciones reales. El sprint **continúa abierto**.
 
@@ -9,7 +9,7 @@ habilitación de elecciones reales. El sprint **continúa abierto**.
 | Ticket | Estado | Evidencia y pendiente |
 | --- | --- | --- |
 | G1-01 | Diagnóstico realizado | Versiones y comandos reproducibles abajo. El paquete bsky y el motor pasan tipos; PARA mantiene errores generales de tipos que bloquean release. No equivale a build verde del monorepo. |
-| G1-02 | Contrato provisional | [Contrato y vectores](./GOVERNANCE-LAB-CONTRACT.md), con privacidad por actor. Falta resolver política electoral, problema de saldo de seguidores y seleccionar/evaluar protocolo criptográfico. |
+| G1-02 | Reglas decididas; protocolo pendiente | [Contrato y vectores](./GOVERNANCE-LAB-CONTRACT.md), con privacidad por actor. El 20 de octubre se decidieron delegación, saldo de seguidores, quórum 50 %, aprobación y desempate: `g1-follow-signal-v2`, implementada localmente sin commit en el checkout activo. Falta seleccionar/evaluar el protocolo criptográfico. |
 | G1-03 | Referencia sintética implementada | `packages/bsky/src/governance-lab`: motor puro, fixtures y dos adaptadores. 31 pruebas del motor/adaptadores; incluye 256 configuraciones de grafo dentro de una prueba. No es almacenamiento transaccional. |
 | G1-04 | Parcial | Congelaciones y validación de delegador comprobadas. Auditoría SQL de solo lectura probada en PostgreSQL sintético. No se ejecutó sobre históricos reales ni se realizó reindexación. El inventario de pruebas opcionales está documentado; verificar autoridad en esos flujos sigue pendiente. |
 | G1-05 | Recorrido web de laboratorio disponible | `../PARA/scripts/governance-lab` compila el mismo motor. Voto, delegación, revocación, saldo, cierre y estadísticas funcionan con datos ficticios. Falta integración con componentes ALF/navegación de PARA y validación nativa. |
@@ -18,11 +18,12 @@ habilitación de elecciones reales. El sprint **continúa abierto**.
 ## Validación ejecutada
 
 Entorno: WatZappa con Node **22.22.1** y pnpm **11.11.0**; PARA con Node
-**24.18.0** y pnpm **11.21.0**. Los comandos se ejecutan desde el paquete indicado.
+**24.18.0** y pnpm **11.28.5.0**. Los comandos se ejecutan desde el paquete indicado.
 Las pruebas de backend usan el wrapper del repositorio y su infraestructura Docker.
 
 | Ubicación | Comando | Resultado observado |
 | --- | --- | --- |
+| `packages/bsky` | `pnpm exec vitest run --configLoader runner src/governance-lab` | 20 oct: 2 archivos, 39 pruebas aprobadas (31 previas + 8 de v2). El cargador por defecto de Vite 8 falla con `sourcemapPathTransform` en el checkout actual |
 | `packages/bsky` | `pnpm test src/governance-lab tests/governance-delegation-audit.test.ts src/api/com/para/community/quadratic-voting-gate.test.ts src/data-plane/server/indexing/plugins/para-qvl-delegation.test.ts` | 5 archivos, 43 pruebas aprobadas: motor 27, adaptadores 4, SQL 1, gate 8 y delegación 3 |
 | `packages/pds` | `pnpm test:sqlite tests/ballot-freeze.test.ts --runInBand` | 13 pruebas aprobadas |
 | `PARA` | `pnpm test src/lib/qvl-status.test.ts --runInBand` | 6 pruebas aprobadas |
@@ -70,9 +71,9 @@ La referencia permite continuar pruebas de integración con datos sintéticos.
 **No es apta para elecciones reales y no garantiza anonimato.** El mínimo de
 publicación no soluciona inferencias ni diferencias entre agregados.
 
-1. Resolver las reglas pendientes del contrato: qué se delega, límites de gasto
-   de seguidores, abstención, quórum, aprobación y desempate. La variante
-   `g1-follow-signal-v1` no se convierte en política por falta de respuesta.
+1. ~~Resolver las reglas pendientes del contrato~~: decididas el 20 de octubre
+   e implementadas como `g1-follow-signal-v2`. Falta adoptar v2 en la demo de
+   PARA (`scripts/governance-lab`, hoy fija v1) y en sus vectores visuales.
 2. Integrar el recorrido sintético en PARA/ALF, probar accesibilidad y dispositivos;
    resolver el bloqueo de tipos y completar la evidencia de G1-05/G1-06.
 3. Ejecutar el diagnóstico histórico de solo lectura en un entorno identificado,

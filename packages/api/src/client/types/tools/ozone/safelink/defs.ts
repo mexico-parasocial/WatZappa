@@ -26,6 +26,8 @@ export interface Event {
   pattern: PatternType
   action: ActionType
   reason: ReasonType
+  /** Source of the decision */
+  source: string
   /** DID of the user who created this rule */
   createdBy: string
   createdAt: string
@@ -48,7 +50,7 @@ export type PatternType = 'domain' | 'url' | (string & {})
 export type ActionType = 'block' | 'warn' | 'whitelist' | (string & {})
 export type ReasonType = 'csam' | 'spam' | 'phishing' | 'none' | (string & {})
 
-/** Input for creating a URL safety rule */
+/** An active URL safety rule */
 export interface UrlRule {
   $type?: 'tools.ozone.safelink.defs#urlRule'
   /** The URL or domain to apply the rule to */
@@ -56,6 +58,8 @@ export interface UrlRule {
   pattern: PatternType
   action: ActionType
   reason: ReasonType
+  /** Source of the rule */
+  source: string
   /** Optional comment about the decision */
   comment?: string
   /** DID of the user added the rule. */

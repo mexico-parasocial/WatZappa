@@ -781,8 +781,10 @@ async function seedCommunityTree(ctx, tree, board, members) {
   }
 
   const haveEdges = new Set(
+    // The AppView names the ends source_card_id/target_card_id.
     (graph.edges || []).map(
-      (e) => `${e.source}|${e.target}|${e.relationship_type}`,
+      (e) =>
+        `${e.source_card_id ?? e.source}|${e.target_card_id ?? e.target}|${e.relationship_type}`,
     ),
   )
   let related = 0

@@ -2,7 +2,7 @@
 /**
  * GENERATED CODE - DO NOT MODIFY
  */
-import { HeadersMap, XRPCError } from '@atproto/xrpc'
+import { type HeadersMap, XRPCError } from '@atproto/xrpc'
 import { type ValidationResult, BlobRef } from '@atproto/lexicon'
 import { CID } from 'multiformats/cid'
 import { validate as _validate } from '../../../../lexicons.js'
@@ -26,16 +26,22 @@ export interface InputSchema {
   subjectTypes?: (
     'account' | 'record' | 'message' | 'conversation' | (string & {})
   )[]
-  /** Collection name for record subjects. Required if subjectTypes includes 'record'. */
+  /** Collection name for record subjects. Omit to accept every collection. */
   collection?: string
   /** Report reason types (fully qualified NSIDs) */
   reportTypes?: string[]
+  /** Match any listed tag on the account submitting the report. */
+  reporterTags?: string[]
+  /** Match any of these tags on the account that is being reported against. */
+  accountTags?: string[]
   /** Optional description of the queue */
   description?: string
   /** Policy keys to recommend when actioning reports in this queue */
   recommendedPolicies?: string[]
   /** Labels to recommend for this queue and use as fallback appeal routing mappings */
   recommendedLabels?: string[]
+  /** Admins can always list this queue and browse its reports. Other roles require an active queue assignment. Individual report and moderation event access is unchanged. */
+  strictAccess?: boolean
 }
 
 export interface OutputSchema {

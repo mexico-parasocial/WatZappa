@@ -20,6 +20,7 @@ export class RepoSubscription {
   indexingSvc: IndexingService
   private finalizerTimer?: ReturnType<typeof setInterval>
   private finalizing = false
+  private stopped = false
 
   constructor(
     public opts: {
@@ -68,8 +69,23 @@ export class RepoSubscription {
     }
   }
 
+  /** Stops ingesting the firehose, leaving the queued background work drained. */
+  async stop() {
+    if (this.finalizerTimer) clearInterval(this.finalizerTimer)
+    this.finalizerTimer = undefined
+    if (!this.stopped) {
+      this.stopped = true
+      try {
+        await this.firehose.destroy()
+      } finally {
+        await this.runner.destroy()
+      }
+    }
+    await this.background.processAll()
+  }
+
   async restart() {
-    await this.destroy()
+    await this.stop()
     const { runner, firehose } = createFirehose({
       idResolver: this.opts.idResolver,
       service: this.opts.service,
@@ -77,20 +93,17 @@ export class RepoSubscription {
     })
     this.runner = runner
     this.firehose = firehose
+    this.stopped = false
     this.start()
   }
 
   async processAll() {
-    await this.runner.processAll()
+    if (!this.stopped) await this.runner.processAll()
     await this.background.processAll()
   }
 
   async destroy() {
-    if (this.finalizerTimer) clearInterval(this.finalizerTimer)
-    this.finalizerTimer = undefined
-    await this.firehose.destroy()
-    await this.runner.destroy()
-    await this.background.processAll()
+    await this.stop()
   }
 }
 

@@ -2,7 +2,7 @@
 /**
  * GENERATED CODE - DO NOT MODIFY
  */
-import { HeadersMap, XRPCError } from '@atproto/xrpc'
+import { type HeadersMap, XRPCError } from '@atproto/xrpc'
 import { type ValidationResult, BlobRef } from '@atproto/lexicon'
 import { CID } from 'multiformats/cid'
 import { validate as _validate } from '../../../../lexicons.js'
@@ -12,6 +12,7 @@ import {
   type OmitKey,
 } from '../../../../util.js'
 import type * as ChatBskyConvoDefs from './defs.js'
+import type * as ChatBskyActorDefs from '../actor/defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -32,6 +33,8 @@ export interface OutputSchema {
     | $Typed<ChatBskyConvoDefs.SystemMessageView>
     | { $type: string }
   )[]
+  /** Set of all members who authored or reacted to the returned messages. Members referred to by system messages are also included. */
+  relatedProfiles?: ChatBskyActorDefs.ProfileViewBasic[]
 }
 
 export interface CallOptions {
