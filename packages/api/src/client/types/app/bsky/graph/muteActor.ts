@@ -2,7 +2,7 @@
 /**
  * GENERATED CODE - DO NOT MODIFY
  */
-import { HeadersMap, XRPCError } from '@atproto/xrpc'
+import { type HeadersMap, XRPCError } from '@atproto/xrpc'
 import { type ValidationResult, BlobRef } from '@atproto/lexicon'
 import { CID } from 'multiformats/cid'
 import { validate as _validate } from '../../../../lexicons.js'
@@ -20,6 +20,10 @@ export type QueryParams = {}
 
 export interface InputSchema {
   actor: string
+  /** Restrict the mute to the account's reposts. When any 'only' scope is set, just the scoped content is muted; when none are set, the account is fully muted. Repeat calls replace the stored scope rather than adding to it. */
+  onlyReposts?: boolean
+  /** Restrict the mute to the account's quote posts. See onlyReposts. */
+  onlyQuoteposts?: boolean
 }
 
 export interface CallOptions {

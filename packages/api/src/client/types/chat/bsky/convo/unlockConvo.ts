@@ -2,7 +2,7 @@
 /**
  * GENERATED CODE - DO NOT MODIFY
  */
-import { HeadersMap, XRPCError } from '@atproto/xrpc'
+import { type HeadersMap, XRPCError } from '@atproto/xrpc'
 import { type ValidationResult, BlobRef } from '@atproto/lexicon'
 import { CID } from 'multiformats/cid'
 import { validate as _validate } from '../../../../lexicons.js'
@@ -52,10 +52,18 @@ export class InsufficientRoleError extends XRPCError {
   }
 }
 
+export class ConvoLockedByModerationError extends XRPCError {
+  constructor(src: XRPCError) {
+    super(src.status, src.error, src.message, src.headers, { cause: src })
+  }
+}
+
 export function toKnownErr(e: any) {
   if (e instanceof XRPCError) {
     if (e.error === 'InvalidConvo') return new InvalidConvoError(e)
     if (e.error === 'InsufficientRole') return new InsufficientRoleError(e)
+    if (e.error === 'ConvoLockedByModeration')
+      return new ConvoLockedByModerationError(e)
   }
 
   return e

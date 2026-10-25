@@ -103,6 +103,9 @@ export function readEnv() {
     bskyAppViewDid: envStr('PDS_BSKY_APP_VIEW_DID'),
     bskyAppViewCdnUrlPattern: envStr('PDS_BSKY_APP_VIEW_CDN_URL_PATTERN'),
 
+    // PARA: m8 identity broker, verifies iM8 second-factor tokens
+    m8BaseUrl: envStr('PDS_M8_BASE_URL'),
+
     // mod service
     modServiceUrl: envStr('PDS_MOD_SERVICE_URL'),
     modServiceDid: envStr('PDS_MOD_SERVICE_DID'),

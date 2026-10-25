@@ -239,7 +239,10 @@ export const envToCfg = (env: ServerEnvironment): ServerConfig => {
       }
     : null
 
-  const rateLimitsCfg: ServerConfig['rateLimits'] = env.rateLimitsEnabled
+  // PARA hardening: rate limits default on outside dev mode unless explicitly
+  // disabled.
+  const rateLimitsEnabled = env.rateLimitsEnabled ?? !env.devMode
+  const rateLimitsCfg: ServerConfig['rateLimits'] = rateLimitsEnabled
     ? {
         enabled: true,
         bypassKey: env.rateLimitBypassKey,
@@ -363,6 +366,7 @@ export const envToCfg = (env: ServerEnvironment): ServerConfig => {
     proxy: proxyCfg,
     branding: brandingCfg,
     oauth: oauthCfg,
+    m8BaseUrl: env.m8BaseUrl ?? null,
   }
 }
 
@@ -388,6 +392,7 @@ export type ServerConfig = {
   branding: BrandingConfig
   oauth: OAuthConfig
   lexicon: LexiconResolverConfig
+  m8BaseUrl: string | null
 }
 
 export type ServiceConfig = {

@@ -2,7 +2,7 @@
 /**
  * GENERATED CODE - DO NOT MODIFY
  */
-import { HeadersMap, XRPCError } from '@atproto/xrpc'
+import { type HeadersMap, XRPCError } from '@atproto/xrpc'
 import { type ValidationResult, BlobRef } from '@atproto/lexicon'
 import { CID } from 'multiformats/cid'
 import { validate as _validate } from '../../../../lexicons.js'
@@ -18,7 +18,7 @@ const is$typed = _is$typed,
 const id = 'app.bsky.unspecced.getAtmosphereExploreTab'
 
 export type QueryParams = {
-  /** Preferred languages. Currently ignored. */
+  /** Preferred languages for article recommendations when algorithmic recommendations are enabled. Ignored otherwise. */
   langs?: string[]
   /** The ISO 3166-1 alpha-2 country code used to select curated content. */
   countryCode?: string
@@ -29,10 +29,10 @@ export type InputSchema = undefined
 
 export interface OutputSchema {
   announcementBanner?: AnnouncementBanner
-  articles: ArticleItem[]
-  publications: PublicationItem[]
-  photos: GalleryItem[]
-  livestreams: LivestreamItem[]
+  articles: ArticleList
+  publications: PublicationList
+  photos: GalleryList
+  livestreams: LivestreamList
   apps: AppCard[]
 }
 
@@ -49,6 +49,74 @@ export interface Response {
 
 export function toKnownErr(e: any) {
   return e
+}
+
+export interface ArticleList {
+  $type?: 'app.bsky.unspecced.getAtmosphereExploreTab#articleList'
+  items: ArticleItem[]
+  /** Snowflake for this list's recommendation, use when submitting recommendation events. Omitted when the list is not algorithmically recommended. */
+  recIdStr?: string
+}
+
+const hashArticleList = 'articleList'
+
+export function isArticleList<V>(v: V) {
+  return is$typed(v, id, hashArticleList)
+}
+
+export function validateArticleList<V>(v: V) {
+  return validate<ArticleList & V>(v, id, hashArticleList)
+}
+
+export interface PublicationList {
+  $type?: 'app.bsky.unspecced.getAtmosphereExploreTab#publicationList'
+  items: PublicationItem[]
+  /** Snowflake for this list's recommendation, use when submitting recommendation events. Omitted when the list is not algorithmically recommended. */
+  recIdStr?: string
+}
+
+const hashPublicationList = 'publicationList'
+
+export function isPublicationList<V>(v: V) {
+  return is$typed(v, id, hashPublicationList)
+}
+
+export function validatePublicationList<V>(v: V) {
+  return validate<PublicationList & V>(v, id, hashPublicationList)
+}
+
+export interface GalleryList {
+  $type?: 'app.bsky.unspecced.getAtmosphereExploreTab#galleryList'
+  items: GalleryItem[]
+  /** Snowflake for this list's recommendation, use when submitting recommendation events. Omitted when the list is not algorithmically recommended. */
+  recIdStr?: string
+}
+
+const hashGalleryList = 'galleryList'
+
+export function isGalleryList<V>(v: V) {
+  return is$typed(v, id, hashGalleryList)
+}
+
+export function validateGalleryList<V>(v: V) {
+  return validate<GalleryList & V>(v, id, hashGalleryList)
+}
+
+export interface LivestreamList {
+  $type?: 'app.bsky.unspecced.getAtmosphereExploreTab#livestreamList'
+  items: LivestreamItem[]
+  /** Snowflake for this list's recommendation, use when submitting recommendation events. Omitted when the list is not algorithmically recommended. */
+  recIdStr?: string
+}
+
+const hashLivestreamList = 'livestreamList'
+
+export function isLivestreamList<V>(v: V) {
+  return is$typed(v, id, hashLivestreamList)
+}
+
+export function validateLivestreamList<V>(v: V) {
+  return validate<LivestreamList & V>(v, id, hashLivestreamList)
 }
 
 export interface ArticleItem {

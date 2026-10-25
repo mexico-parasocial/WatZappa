@@ -12,7 +12,7 @@
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "22.x",
+      "version": "^22.23.4",
       "onFail": "error"
     },
     "packageManager": {

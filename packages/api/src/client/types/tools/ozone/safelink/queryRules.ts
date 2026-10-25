@@ -2,7 +2,7 @@
 /**
  * GENERATED CODE - DO NOT MODIFY
  */
-import { HeadersMap, XRPCError } from '@atproto/xrpc'
+import { type HeadersMap, XRPCError } from '@atproto/xrpc'
 import { type ValidationResult, BlobRef } from '@atproto/lexicon'
 import { CID } from 'multiformats/cid'
 import { validate as _validate } from '../../../../lexicons.js'
@@ -32,6 +32,8 @@ export interface InputSchema {
   actions?: string[]
   /** Filter by reason type */
   reason?: string
+  /** Filter by exact rule source. Omit to include all sources. */
+  source?: string
   /** Filter by rule creator */
   createdBy?: string
   /** Sort direction */
