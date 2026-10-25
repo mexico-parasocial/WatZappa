@@ -129,6 +129,7 @@ export default [
   {
     files: [
       '**/vite.config.js',
+      '.github/ci/*.mjs',
       'packages/dev-env/bin.js',
       'packages/lex-cli/bin.js',
       'packages/lex/*/scripts/*.js',

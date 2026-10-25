@@ -3,13 +3,18 @@ name: Repository CI
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+  # The fork gates main as well: a merge that bypassed or outran the PR run
+  # still gets built, tested and verified.
+  push:
+    branches: [main]
 
 permissions:
   contents: read
 
 concurrency:
-  group: '${{ github.workflow }}-${{ github.head_ref }}'
-  cancel-in-progress: true
+  group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
+  # Never cancel a run on main: each commit keeps its own result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   changeset:
@@ -23,6 +28,7 @@ jobs:
     # skipped. Note that in case, dependabot-changeset.yml will not trigger a
     # new commit, so this workflow will not be re-triggered. This is expected.
     if: >
+      github.event_name == 'pull_request' &&
       github.event.pull_request.draft == false &&
       github.event.sender.login != 'dependabot[bot]'
     steps:
@@ -44,7 +50,12 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     # Ensure a changeset is present before we spend time building and testing.
+    # Pushes to main have no changeset check (it diffs against a PR base), so
+    # the skipped job must not skip the build with it.
     needs: changeset
+    if: >
+      !cancelled() &&
+      (github.event_name == 'push' || needs.changeset.result == 'success')
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -58,12 +69,17 @@ jobs:
 
       # The "api" package generates its client with the legacy, slow `gen-api`.
       # Its `lex:gen` is mtime-guarded (only re-runs when some lexicon is newer
-      # than ./src/client/index.ts), but on a clean checkout ./src/client is
-      # absent, so it would always run. Cache it keyed on api's lexicon inputs
-      # and, on a hit, bump ./src/client/index.ts past the just-checked-out
-      # lexicon sources so the guard correctly reports nothing newer and skips
-      # `gen-api`. `lex install --ci` does not re-touch the committed/fetched
-      # lexicon files, so the guard stays satisfied through the build.
+      # than ./src/client/index.ts). Upstream gitignores ./src/client, so a
+      # clean checkout has none and the guard always runs `gen-api`. This fork
+      # tracks part of it (index.ts and the files that predate the ignore rule,
+      # not the later ones), and a fresh checkout stamps every file with the
+      # same time, so the guard skips `gen-api` and leaves a client whose
+      # index.ts imports modules that do not exist. Cache it keyed on api's
+      # lexicon inputs; on a hit, bump ./src/client/index.ts past the
+      # just-checked-out lexicon sources so the guard skips `gen-api`, and on a
+      # miss drop the tracked remnants so the guard regenerates it all. `lex
+      # install --ci` does not re-touch the committed/fetched lexicon files, so
+      # the guard stays satisfied through the build.
       - uses: actions/cache@v6
         id: gen-api-cache
         with:
@@ -71,6 +87,8 @@ jobs:
           key: gen-api-${{ hashFiles('packages/api/package.json', 'packages/api/lexicons.json', 'packages/lex-cli/src/**/*.ts') }}
       - if: steps.gen-api-cache.outputs.cache-hit == 'true'
         run: touch packages/api/src/client/index.ts
+      - if: steps.gen-api-cache.outputs.cache-hit != 'true'
+        run: rm -rf packages/api/src/client
 
       - run: pnpm build
 
@@ -130,7 +148,15 @@ jobs:
         with:
           name: build-artifacts
           path: packages
-      - run: pnpm test:withFlags --maxWorkers=1 --shard=${{ matrix.shard }} --passWithNoTests
+      # Not `pnpm test:withFlags`: recursive pnpm stops at the first failing
+      # package. The runner runs them all and gates on
+      # .github/ci/known-failing-tests.json (see docs/CI.md). The services
+      # below have their own jobs, with the infrastructure they need.
+      - run: >
+          ./packages/dev-infra/with-test-redis-and-db.sh
+          node .github/ci/run-tests.mjs
+          --skip services/matrix-bridge --skip services/para-idp
+          --maxWorkers=1 --shard=${{ matrix.shard }} --passWithNoTests
 
   verify:
     name: Verify
@@ -151,3 +177,56 @@ jobs:
           name: build-artifacts
           path: packages
       - run: pnpm verify
+
+  matrix-bridge:
+    name: Matrix bridge
+    needs: build
+    runs-on: ubuntu-latest
+    # Same fixture as services/matrix-bridge/scripts/test-postgres.sh: a
+    # disposable database, so the suite also runs its Postgres driver cases.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: bridge-test-only
+          POSTGRES_DB: bridge_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d bridge_test"
+          --health-interval 2s --health-timeout 5s --health-retries 30
+    env:
+      MATRIX_TEST_DATABASE_URL: postgresql://postgres:bridge-test-only@127.0.0.1:5432/bridge_test
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          cache: pnpm
+          node-version-file: package.json
+      - run: pnpm install --frozen-lockfile
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: build-artifacts
+          path: packages
+      - run: pnpm --filter @para/matrix-bridge typecheck
+      - run: pnpm --filter @para/matrix-bridge test
+
+  para-idp:
+    name: Para IdP
+    runs-on: ubuntu-latest
+    # No workspace dependencies, so it does not wait for the build.
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          cache: pnpm
+          node-version-file: package.json
+      - run: pnpm install --frozen-lockfile
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: true
+      - run: pnpm --filter @para/para-idp typecheck
+      - run: pnpm --filter @para/para-idp test
