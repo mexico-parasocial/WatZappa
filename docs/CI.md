@@ -17,8 +17,10 @@ merge; the ones that publish artifacts as Bluesky stay disabled on this repo.
 | Para IdP      | `@para/para-idp` typecheck and tests                                               |
 
 Node comes from `devEngines.runtime` (`^22.23.4`, a patched release). Do not
-widen it to make a tool or a local machine pass; export
-`pnpm_config_runtime_on_fail=ignore` locally if you are on an older 22.
+widen it to make a tool or a local machine pass. On an older 22, install a
+current one (`nvm install 22`). The `pnpm_config_runtime_on_fail=ignore`
+override works but makes pnpm rewrite `devEngines.runtime.onFail` in
+`package.json`; run `git checkout package.json` before you commit.
 
 ## Known-failing tests
 
