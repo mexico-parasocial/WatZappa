@@ -20021,6 +20021,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 description:
                   'If true, a phone verification token must be supplied to create an account on this instance.',
               },
+              blobUploadLimit: {
+                type: 'integer',
+                description:
+                  'Maximum size of a blob that can be uploaded via com.atproto.repo.uploadBlob, in bytes.',
+              },
               availableUserDomains: {
                 type: 'array',
                 description:

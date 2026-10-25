@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { sql } from 'kysely'
+import { type Kysely, sql } from 'kysely'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   type SeedClient,
@@ -8,6 +8,7 @@ import {
   createCommunityMembershipRecord,
   usersSeed,
 } from '@atproto/dev-env'
+import type { DidString } from '@atproto/syntax'
 import {
   getGovernanceAuthors,
   isCommunityOwnerSql,
@@ -30,10 +31,10 @@ type Governance = {
 maybeDescribe('community role forgery (AppView)', () => {
   let network: TestNetwork
   let sc: SeedClient
-  let alice: string // board creator and owner
-  let bob: string // moderator appointed by alice
-  let carol: string // member who declares herself owner and moderator
-  let dan: string // outsider
+  let alice: DidString // board creator and owner
+  let bob: DidString // moderator appointed by alice
+  let carol: DidString // member who declares herself owner and moderator
+  let dan: DidString // outsider
   let board: string
   let boardName: string
   let aliceOwner: string
@@ -71,7 +72,7 @@ maybeDescribe('community role forgery (AppView)', () => {
     ).body
 
   const write = async (
-    by: string,
+    by: DidString,
     collection: string,
     record: Record<string, unknown>,
     rkey?: string,
@@ -81,7 +82,10 @@ maybeDescribe('community role forgery (AppView)', () => {
       collection,
       record: { $type: collection, ...record },
     }
-    const opts = { encoding: 'application/json', headers: sc.getHeaders(by) }
+    const opts = {
+      encoding: 'application/json' as const,
+      headers: sc.getHeaders(by),
+    }
     const { data } = rkey
       ? await sc.agent.com.atproto.repo.putRecord({ ...input, rkey }, opts)
       : await sc.agent.com.atproto.repo.createRecord(input, opts)
@@ -89,7 +93,7 @@ maybeDescribe('community role forgery (AppView)', () => {
   }
 
   const authorityEvent = (
-    issuer: string,
+    issuer: DidString,
     event: {
       subject: string
       action: string
@@ -108,7 +112,7 @@ maybeDescribe('community role forgery (AppView)', () => {
       ...event,
     })
 
-  const selfDeclaredMembership = (by: string, community: string) =>
+  const selfDeclaredMembership = (by: DidString, community: string) =>
     write(by, 'com.para.community.membership', {
       community,
       membershipState: 'active',
@@ -120,7 +124,7 @@ maybeDescribe('community role forgery (AppView)', () => {
     })
 
   const governanceRecord = (
-    by: string,
+    by: DidString,
     rkey: string,
     community: string,
     moderators: string[],
@@ -532,7 +536,9 @@ maybeDescribe('community role forgery (AppView)', () => {
       .execute()
     await network.bsky.db.db
       .transaction()
-      .execute(async (tx) => revalidateAuthority(tx))
+      .execute(async (tx) =>
+        revalidateAuthority(tx as unknown as Kysely<unknown>),
+      )
     const poisoned = await network.bsky.db.db
       .selectFrom('para_community_authority_event')
       .where('uri', 'in', [forgedUri, dependentUri])
@@ -634,7 +640,7 @@ maybeDescribe('community role forgery (AppView)', () => {
         })
         .execute()
 
-      await reindexGovernance(db)
+      await reindexGovernance(db as unknown as Kysely<unknown>)
 
       const row = await db
         .selectFrom('para_community_governance')
@@ -704,7 +710,7 @@ maybeDescribe('community role forgery (AppView)', () => {
         .execute()
       expect(await rolesOf(carol)).toEqual(['member', 'moderator', 'owner'])
 
-      await dropSelfDeclaredRoles(db)
+      await dropSelfDeclaredRoles(db as unknown as Kysely<unknown>)
 
       expect(await rolesOf(carol)).toEqual(['member'])
       expect(await rolesOf(alice, legacyBoard)).toEqual(['member', 'owner'])

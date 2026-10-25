@@ -1,5 +1,6 @@
 import { jest } from '@jest/globals'
 import { type SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
+import type { DidString } from '@atproto/syntax'
 import type { AppContext } from '../src/index.js'
 
 /*
@@ -37,7 +38,7 @@ describe('PARA PDS methods', () => {
     const res = await fetch(url, {
       method: body === undefined ? 'GET' : 'POST',
       headers: {
-        ...(did ? sc.getHeaders(did) : {}),
+        ...(did ? sc.getHeaders(did as DidString) : {}),
         ...(body === undefined ? {} : { 'content-type': 'application/json' }),
         ...headers,
       },
@@ -199,7 +200,10 @@ describe('PARA PDS methods', () => {
       })
 
       const events = await xrpc('com.atproto.repo.listRecords', {
-        params: { repo: alice, collection: 'com.para.community.authorityEvent' },
+        params: {
+          repo: alice,
+          collection: 'com.para.community.authorityEvent',
+        },
       })
       expect(events.body.records).toHaveLength(2)
     })

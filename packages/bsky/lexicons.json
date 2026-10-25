@@ -1738,7 +1738,7 @@
     },
     "com.atproto.server.describeServer": {
       "uri": "file://../../lexicons/com/atproto/server/describeServer.json",
-      "cid": "bafyreidrqwnv3bytwtiupdlfftdtjfjldrmjjne7sftrdplnmbzvojmjgu"
+      "cid": "bafyreicz4vk2yexjgofg3hu367c3zc2dyin5msn2vo6gamtzroyhpdbuf4"
     },
     "com.atproto.server.getAccountInviteCodes": {
       "uri": "file://../../lexicons/com/atproto/server/getAccountInviteCodes.json",
