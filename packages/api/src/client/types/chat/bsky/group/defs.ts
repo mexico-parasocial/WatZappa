@@ -20,6 +20,7 @@ const id = 'chat.bsky.group.defs'
 export type LinkEnabledStatus = 'enabled' | 'disabled' | (string & {})
 export type JoinRule = 'anyone' | 'followedByOwner' | (string & {})
 
+/** Join link view to be used within a group view, so the convo is surrounding, not specified inside this view. */
 export interface JoinLinkView {
   $type?: 'chat.bsky.group.defs#joinLinkView'
   code: string
@@ -39,8 +40,10 @@ export function validateJoinLinkView<V>(v: V) {
   return validate<JoinLinkView & V>(v, id, hashJoinLinkView)
 }
 
+/** Preview that can be shown in feeds, including to unauthenticated viewers. */
 export interface JoinLinkPreviewView {
   $type?: 'chat.bsky.group.defs#joinLinkPreviewView'
+  convoId: string
   code: string
   name: string
   owner: ChatBskyActorDefs.ProfileViewBasic
@@ -48,7 +51,6 @@ export interface JoinLinkPreviewView {
   memberLimit: number
   requireApproval: boolean
   joinRule: JoinRule
-  enabledStatus: LinkEnabledStatus
   convo?: ChatBskyConvoDefs.ConvoView
   viewer?: JoinLinkViewerState
 }
@@ -61,6 +63,46 @@ export function isJoinLinkPreviewView<V>(v: V) {
 
 export function validateJoinLinkPreviewView<V>(v: V) {
   return validate<JoinLinkPreviewView & V>(v, id, hashJoinLinkPreviewView)
+}
+
+/** Preview for a disabled join link. Carries only the code so clients can correlate with the input and render a disabled state. */
+export interface DisabledJoinLinkPreviewView {
+  $type?: 'chat.bsky.group.defs#disabledJoinLinkPreviewView'
+  code: string
+}
+
+const hashDisabledJoinLinkPreviewView = 'disabledJoinLinkPreviewView'
+
+export function isDisabledJoinLinkPreviewView<V>(v: V) {
+  return is$typed(v, id, hashDisabledJoinLinkPreviewView)
+}
+
+export function validateDisabledJoinLinkPreviewView<V>(v: V) {
+  return validate<DisabledJoinLinkPreviewView & V>(
+    v,
+    id,
+    hashDisabledJoinLinkPreviewView,
+  )
+}
+
+/** Preview for a join link code that does not map to an existing link. Carries only the code so clients can correlate with the input and render an invalid state. */
+export interface InvalidJoinLinkPreviewView {
+  $type?: 'chat.bsky.group.defs#invalidJoinLinkPreviewView'
+  code: string
+}
+
+const hashInvalidJoinLinkPreviewView = 'invalidJoinLinkPreviewView'
+
+export function isInvalidJoinLinkPreviewView<V>(v: V) {
+  return is$typed(v, id, hashInvalidJoinLinkPreviewView)
+}
+
+export function validateInvalidJoinLinkPreviewView<V>(v: V) {
+  return validate<InvalidJoinLinkPreviewView & V>(
+    v,
+    id,
+    hashInvalidJoinLinkPreviewView,
+  )
 }
 
 export interface JoinLinkViewerState {
@@ -78,24 +120,7 @@ export function validateJoinLinkViewerState<V>(v: V) {
   return validate<JoinLinkViewerState & V>(v, id, hashJoinLinkViewerState)
 }
 
-export interface GroupPublicView {
-  $type?: 'chat.bsky.group.defs#groupPublicView'
-  name: string
-  owner: ChatBskyActorDefs.ProfileViewBasic
-  memberCount: number
-  requireApproval: boolean
-}
-
-const hashGroupPublicView = 'groupPublicView'
-
-export function isGroupPublicView<V>(v: V) {
-  return is$typed(v, id, hashGroupPublicView)
-}
-
-export function validateGroupPublicView<V>(v: V) {
-  return validate<GroupPublicView & V>(v, id, hashGroupPublicView)
-}
-
+/** A join request from the perspective of the group owner. */
 export interface JoinRequestView {
   $type?: 'chat.bsky.group.defs#joinRequestView'
   convoId: string
@@ -121,7 +146,7 @@ export interface JoinRequestConvoView {
   owner: ChatBskyActorDefs.ProfileViewBasic
   memberCount: number
   memberLimit: number
-  requestedAt: string
+  viewer: JoinLinkViewerState
 }
 
 const hashJoinRequestConvoView = 'joinRequestConvoView'

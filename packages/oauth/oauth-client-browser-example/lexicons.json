@@ -173,6 +173,22 @@
       "uri": "at://did:plc:4v4y5r3lwsbtmsxhile2ljac/com.atproto.lexicon.schema/app.bsky.richtext.facet",
       "cid": "bafyreidg56eo7zynf6ihz4xb627vwoqf5idnevkmwp7sxc4tijg6xngbu4"
     },
+    "chat.bsky.actor.defs": {
+      "uri": "at://did:plc:4v4y5r3lwsbtmsxhile2ljac/com.atproto.lexicon.schema/chat.bsky.actor.defs",
+      "cid": "bafyreigiv5fo5iufd3ahma6tgtozm35xibvx276nhjsjwuvsvxh3zj7u7q"
+    },
+    "chat.bsky.convo.defs": {
+      "uri": "at://did:plc:4v4y5r3lwsbtmsxhile2ljac/com.atproto.lexicon.schema/chat.bsky.convo.defs",
+      "cid": "bafyreibpb3r5pqc3yrjslx7ntfl5vvgdlgqanuwbcvq3q7sfhayi75x7uu"
+    },
+    "chat.bsky.embed.joinLink": {
+      "uri": "at://did:plc:4v4y5r3lwsbtmsxhile2ljac/com.atproto.lexicon.schema/chat.bsky.embed.joinLink",
+      "cid": "bafyreib3z65a2myai4hc55vxa7woue4bmelo2a4dlgnawps746w3l2y72q"
+    },
+    "chat.bsky.group.defs": {
+      "uri": "at://did:plc:4v4y5r3lwsbtmsxhile2ljac/com.atproto.lexicon.schema/chat.bsky.group.defs",
+      "cid": "bafyreiexck6gwns5nesq44mqgsikwrjkgplz33cemxaq365xwdcxeoqjje"
+    },
     "com.atproto.admin.defs": {
       "uri": "file://../../../lexicons/com/atproto/admin/defs.json",
       "cid": "bafyreiak73emfcmcmityemkvldgbbvi3dgxszlg6qvm6r73s2qofu3rkc4"
@@ -299,7 +315,7 @@
     },
     "com.atproto.moderation.createReport": {
       "uri": "file://../../../lexicons/com/atproto/moderation/createReport.json",
-      "cid": "bafyreigli77c67ucvy4zsgcbt3vsocrdxqf62pbwoxdb6jq5ygfjcvxbim"
+      "cid": "bafyreifqn5zk2gkmrs6k5vqmqjfvds6nfiuzkehzrmz2gvzjoqz6fucmja"
     },
     "com.atproto.moderation.defs": {
       "uri": "file://../../../lexicons/com/atproto/moderation/defs.json",
@@ -403,7 +419,7 @@
     },
     "com.atproto.server.describeServer": {
       "uri": "file://../../../lexicons/com/atproto/server/describeServer.json",
-      "cid": "bafyreicz4vk2yexjgofg3hu367c3zc2dyin5msn2vo6gamtzroyhpdbuf4"
+      "cid": "bafyreidrqwnv3bytwtiupdlfftdtjfjldrmjjne7sftrdplnmbzvojmjgu"
     },
     "com.atproto.server.getAccountInviteCodes": {
       "uri": "file://../../../lexicons/com/atproto/server/getAccountInviteCodes.json",

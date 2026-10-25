@@ -24,6 +24,7 @@ import {
   prepareCreate,
   prepareUpdate,
 } from '../../../../repo/index.js'
+import { assertCommunityRepoWrites } from '../../para/community/util.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.add(com.atproto.repo.putRecord, {
@@ -126,6 +127,8 @@ export default function (server: Server, ctx: AppContext) {
             }
             throw err
           }
+
+          await assertCommunityRepoWrites(actorTxn, did, [write])
 
           // no-op
           if (current && current.cid === write.cid.toString()) {

@@ -15,6 +15,7 @@ import {
   prepareCreate,
   prepareDelete,
 } from '../../../../repo/index.js'
+import { assertCommunityRepoWrites } from '../../para/community/util.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.add(com.atproto.repo.createRecord, {
@@ -105,6 +106,7 @@ export default function (server: Server, ctx: AppContext) {
           }),
         )
         const writes = [...backlinkDeletions, write]
+        await assertCommunityRepoWrites(actorTxn, did, writes)
         const commit = await actorTxn.repo
           .processWrites(writes, swapCommitCid)
           .catch((err) => {

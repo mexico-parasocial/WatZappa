@@ -75,7 +75,7 @@ export interface AppealView {
   appealedAt?: string
   /** When the appeal's report was closed. */
   resolvedAt?: string
-  /** Decision on a resolved appeal. Approved means its closing action reverses a takedown or removes a label; denied means no-action closure or an action that upholds enforcement. Omitted for unresolved appeals or historical closures without sufficient resolution data. */
+  /** Decision on a resolved appeal. */
   outcome?: 'approved' | 'denied' | (string & {})
   appealableUntil?: string
 }

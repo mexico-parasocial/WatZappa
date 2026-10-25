@@ -2,7 +2,7 @@
 /**
  * GENERATED CODE - DO NOT MODIFY
  */
-import { HeadersMap, XRPCError } from '@atproto/xrpc'
+import { type HeadersMap, XRPCError } from '@atproto/xrpc'
 import { type ValidationResult, BlobRef } from '@atproto/lexicon'
 import { CID } from 'multiformats/cid'
 import { validate as _validate } from '../../../../lexicons.js'
@@ -20,6 +20,7 @@ const id = 'chat.bsky.group.createGroup'
 export type QueryParams = {}
 
 export interface InputSchema {
+  /** The members to add to the group. The owner is automatically added. Implementations may enforce a lower maximum than the 10,000-item schema limit; Bluesky currently supports up to 100 total members. If the owner is included in this list, the list may contain up to the implementation's total member limit. Otherwise, it may contain one fewer. */
   members: string[]
   name: string
 }
@@ -59,7 +60,7 @@ export class BlockedSubjectError extends XRPCError {
   }
 }
 
-export class UserForbidsGroupsError extends XRPCError {
+export class NewAccountCannotCreateGroupError extends XRPCError {
   constructor(src: XRPCError) {
     super(src.status, src.error, src.message, src.headers, { cause: src })
   }
@@ -77,15 +78,23 @@ export class RecipientNotFoundError extends XRPCError {
   }
 }
 
+export class UserForbidsGroupsError extends XRPCError {
+  constructor(src: XRPCError) {
+    super(src.status, src.error, src.message, src.headers, { cause: src })
+  }
+}
+
 export function toKnownErr(e: any) {
   if (e instanceof XRPCError) {
     if (e.error === 'AccountSuspended') return new AccountSuspendedError(e)
     if (e.error === 'BlockedActor') return new BlockedActorError(e)
     if (e.error === 'BlockedSubject') return new BlockedSubjectError(e)
-    if (e.error === 'UserForbidsGroups') return new UserForbidsGroupsError(e)
+    if (e.error === 'NewAccountCannotCreateGroup')
+      return new NewAccountCannotCreateGroupError(e)
     if (e.error === 'NotFollowedBySender')
       return new NotFollowedBySenderError(e)
     if (e.error === 'RecipientNotFound') return new RecipientNotFoundError(e)
+    if (e.error === 'UserForbidsGroups') return new UserForbidsGroupsError(e)
   }
 
   return e

@@ -621,6 +621,7 @@ export class AccountManager {
     authFactorToken,
     locale,
     allowOtpBypassFor = [],
+    im8FactorVerifiedByCaller = false,
   }: {
     identifier: string
     password: string
@@ -630,6 +631,13 @@ export class AccountManager {
     // default template there.
     locale?: string | undefined
     allowOtpBypassFor?: readonly DidString[]
+    /**
+     * PARA: the caller checks the iM8 factor of accounts whose
+     * `authFactorType` is `im8` (see `com.atproto.server.createSession`). For
+     * those accounts `authFactorToken` is an m8 session token, not an email
+     * OTP, so the email-factor checks below are skipped.
+     */
+    im8FactorVerifiedByCaller?: boolean
   }): Promise<{
     // @TODO we should rename this "account" for consistency
     user: ActorAccount
@@ -673,7 +681,9 @@ export class AccountManager {
         }
       }
 
-      if (authFactorToken) {
+      if (im8FactorVerifiedByCaller && user.authFactorType === 'im8') {
+        // Verified by the caller against the m8 broker.
+      } else if (authFactorToken) {
         await this.assertValidEmailTokenAndCleanup(
           user.did,
           'auth_factor',
@@ -1104,6 +1114,22 @@ export class AccountManager {
 
     account.emailAuthFactorAt = null
 
+    return account
+  }
+
+  async updateAuthFactorType(
+    did: DidString,
+    authFactorType: 'im8' | null,
+  ): Promise<ActorAccount> {
+    const account = await this.getAccount(did, {
+      includeDeactivated: true,
+      includeTakenDown: true,
+    })
+    if (!account) {
+      throw new InvalidRequestError('account not found')
+    }
+    await accountHelpers.updateAuthFactorType(this.db, did, authFactorType)
+    account.authFactorType = authFactorType
     return account
   }
 

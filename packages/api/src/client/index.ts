@@ -10,6 +10,7 @@ import {
 import { schemas } from './lexicons.js'
 import { CID } from 'multiformats/cid'
 import { type OmitKey, type Un$Typed } from './util.js'
+import * as AppBskyActorContentVisibilityDeclaration from './types/app/bsky/actor/contentVisibilityDeclaration.js'
 import * as AppBskyActorDefs from './types/app/bsky/actor/defs.js'
 import * as AppBskyActorGetPreferences from './types/app/bsky/actor/getPreferences.js'
 import * as AppBskyActorGetProfile from './types/app/bsky/actor/getProfile.js'
@@ -159,9 +160,14 @@ import * as AppBskyUnspeccedInitAgeAssurance from './types/app/bsky/unspecced/in
 import * as AppBskyUnspeccedSearchActorsSkeleton from './types/app/bsky/unspecced/searchActorsSkeleton.js'
 import * as AppBskyUnspeccedSearchPostsSkeleton from './types/app/bsky/unspecced/searchPostsSkeleton.js'
 import * as AppBskyUnspeccedSearchStarterPacksSkeleton from './types/app/bsky/unspecced/searchStarterPacksSkeleton.js'
+import * as AppBskyVideoAbortUpload from './types/app/bsky/video/abortUpload.js'
 import * as AppBskyVideoDefs from './types/app/bsky/video/defs.js'
+import * as AppBskyVideoFinishUpload from './types/app/bsky/video/finishUpload.js'
 import * as AppBskyVideoGetJobStatus from './types/app/bsky/video/getJobStatus.js'
 import * as AppBskyVideoGetUploadLimits from './types/app/bsky/video/getUploadLimits.js'
+import * as AppBskyVideoGetUploadStatus from './types/app/bsky/video/getUploadStatus.js'
+import * as AppBskyVideoStartUpload from './types/app/bsky/video/startUpload.js'
+import * as AppBskyVideoUploadPart from './types/app/bsky/video/uploadPart.js'
 import * as AppBskyVideoUploadVideo from './types/app/bsky/video/uploadVideo.js'
 import * as ChatBskyActorDeclaration from './types/chat/bsky/actor/declaration.js'
 import * as ChatBskyActorDefs from './types/chat/bsky/actor/defs.js'
@@ -201,9 +207,9 @@ import * as ChatBskyGroupDisableJoinLink from './types/chat/bsky/group/disableJo
 import * as ChatBskyGroupEditGroup from './types/chat/bsky/group/editGroup.js'
 import * as ChatBskyGroupEditJoinLink from './types/chat/bsky/group/editJoinLink.js'
 import * as ChatBskyGroupEnableJoinLink from './types/chat/bsky/group/enableJoinLink.js'
-import * as ChatBskyGroupGetGroupPublicInfo from './types/chat/bsky/group/getGroupPublicInfo.js'
 import * as ChatBskyGroupGetJoinLinkPreviews from './types/chat/bsky/group/getJoinLinkPreviews.js'
 import * as ChatBskyGroupListJoinRequests from './types/chat/bsky/group/listJoinRequests.js'
+import * as ChatBskyGroupListMutualGroups from './types/chat/bsky/group/listMutualGroups.js'
 import * as ChatBskyGroupRejectJoinRequest from './types/chat/bsky/group/rejectJoinRequest.js'
 import * as ChatBskyGroupRemoveMembers from './types/chat/bsky/group/removeMembers.js'
 import * as ChatBskyGroupRequestJoin from './types/chat/bsky/group/requestJoin.js'
@@ -291,35 +297,6 @@ import * as ComAtprotoServerReserveSigningKey from './types/com/atproto/server/r
 import * as ComAtprotoServerResetPassword from './types/com/atproto/server/resetPassword.js'
 import * as ComAtprotoServerRevokeAppPassword from './types/com/atproto/server/revokeAppPassword.js'
 import * as ComAtprotoServerUpdateEmail from './types/com/atproto/server/updateEmail.js'
-import * as ComAtprotoSimplespaceAddMember from './types/com/atproto/simplespace/addMember.js'
-import * as ComAtprotoSimplespaceCheckUserAccess from './types/com/atproto/simplespace/checkUserAccess.js'
-import * as ComAtprotoSimplespaceCreateSpace from './types/com/atproto/simplespace/createSpace.js'
-import * as ComAtprotoSimplespaceDefs from './types/com/atproto/simplespace/defs.js'
-import * as ComAtprotoSimplespaceDeleteSpace from './types/com/atproto/simplespace/deleteSpace.js'
-import * as ComAtprotoSimplespaceGetSpace from './types/com/atproto/simplespace/getSpace.js'
-import * as ComAtprotoSimplespaceListMembers from './types/com/atproto/simplespace/listMembers.js'
-import * as ComAtprotoSimplespaceRemoveMember from './types/com/atproto/simplespace/removeMember.js'
-import * as ComAtprotoSimplespaceUpdateSpace from './types/com/atproto/simplespace/updateSpace.js'
-import * as ComAtprotoSpaceApplyWrites from './types/com/atproto/space/applyWrites.js'
-import * as ComAtprotoSpaceCreateRecord from './types/com/atproto/space/createRecord.js'
-import * as ComAtprotoSpaceDefs from './types/com/atproto/space/defs.js'
-import * as ComAtprotoSpaceDeleteRecord from './types/com/atproto/space/deleteRecord.js'
-import * as ComAtprotoSpaceGetBlob from './types/com/atproto/space/getBlob.js'
-import * as ComAtprotoSpaceGetDelegationToken from './types/com/atproto/space/getDelegationToken.js'
-import * as ComAtprotoSpaceGetLatestCommit from './types/com/atproto/space/getLatestCommit.js'
-import * as ComAtprotoSpaceGetRecord from './types/com/atproto/space/getRecord.js'
-import * as ComAtprotoSpaceGetRepo from './types/com/atproto/space/getRepo.js'
-import * as ComAtprotoSpaceGetSpaceCredential from './types/com/atproto/space/getSpaceCredential.js'
-import * as ComAtprotoSpaceListBlobs from './types/com/atproto/space/listBlobs.js'
-import * as ComAtprotoSpaceListRecords from './types/com/atproto/space/listRecords.js'
-import * as ComAtprotoSpaceListRepoOps from './types/com/atproto/space/listRepoOps.js'
-import * as ComAtprotoSpaceListRepos from './types/com/atproto/space/listRepos.js'
-import * as ComAtprotoSpaceListSpaces from './types/com/atproto/space/listSpaces.js'
-import * as ComAtprotoSpaceNotifySpaceDeleted from './types/com/atproto/space/notifySpaceDeleted.js'
-import * as ComAtprotoSpaceNotifyWrite from './types/com/atproto/space/notifyWrite.js'
-import * as ComAtprotoSpacePutRecord from './types/com/atproto/space/putRecord.js'
-import * as ComAtprotoSpaceRegisterNotify from './types/com/atproto/space/registerNotify.js'
-import * as ComAtprotoSpaceUnregisterNotify from './types/com/atproto/space/unregisterNotify.js'
 import * as ComAtprotoSyncDefs from './types/com/atproto/sync/defs.js'
 import * as ComAtprotoSyncGetBlob from './types/com/atproto/sync/getBlob.js'
 import * as ComAtprotoSyncGetBlocks from './types/com/atproto/sync/getBlocks.js'
@@ -337,8 +314,12 @@ import * as ComAtprotoSyncListReposByCollection from './types/com/atproto/sync/l
 import * as ComAtprotoSyncNotifyOfUpdate from './types/com/atproto/sync/notifyOfUpdate.js'
 import * as ComAtprotoSyncRequestCrawl from './types/com/atproto/sync/requestCrawl.js'
 import * as ComAtprotoSyncSubscribeRepos from './types/com/atproto/sync/subscribeRepos.js'
+import * as ComAtprotoTempAddReservedHandle from './types/com/atproto/temp/addReservedHandle.js'
+import * as ComAtprotoTempCheckHandleAvailability from './types/com/atproto/temp/checkHandleAvailability.js'
+import * as ComAtprotoTempCheckSignupQueue from './types/com/atproto/temp/checkSignupQueue.js'
 import * as ComAtprotoTempDereferenceScope from './types/com/atproto/temp/dereferenceScope.js'
 import * as ComAtprotoTempFetchLabels from './types/com/atproto/temp/fetchLabels.js'
+import * as ComAtprotoTempRequestPhoneVerification from './types/com/atproto/temp/requestPhoneVerification.js'
 import * as ComAtprotoTempRevokeAccountCredentials from './types/com/atproto/temp/revokeAccountCredentials.js'
 import * as ComGermnetworkDeclaration from './types/com/germnetwork/declaration.js'
 import * as ComParaAccountGetAuthFactor from './types/com/para/account/getAuthFactor.js'
@@ -385,6 +366,26 @@ import * as ComParaCommunityAuthorityEvent from './types/com/para/community/auth
 import * as ComParaCommunityBoard from './types/com/para/community/board.js'
 import * as ComParaCommunityBriefingPack from './types/com/para/community/briefingPack.js'
 import * as ComParaCommunityCivicTree from './types/com/para/community/civicTree.js'
+import * as ComParaCommunityCivicTreeAcceptSuggestion from './types/com/para/community/civicTree/acceptSuggestion.js'
+import * as ComParaCommunityCivicTreeCard from './types/com/para/community/civicTree/card.js'
+import * as ComParaCommunityCivicTreeCardVote from './types/com/para/community/civicTree/cardVote.js'
+import * as ComParaCommunityCivicTreeCastCardVote from './types/com/para/community/civicTree/castCardVote.js'
+import * as ComParaCommunityCivicTreeConfig from './types/com/para/community/civicTree/config.js'
+import * as ComParaCommunityCivicTreeContribution from './types/com/para/community/civicTree/contribution.js'
+import * as ComParaCommunityCivicTreeContributionVote from './types/com/para/community/civicTree/contributionVote.js'
+import * as ComParaCommunityCivicTreeCreateRelationship from './types/com/para/community/civicTree/createRelationship.js'
+import * as ComParaCommunityCivicTreeDefs from './types/com/para/community/civicTree/defs.js'
+import * as ComParaCommunityCivicTreeGetCardVote from './types/com/para/community/civicTree/getCardVote.js'
+import * as ComParaCommunityCivicTreeGetGraph from './types/com/para/community/civicTree/getGraph.js'
+import * as ComParaCommunityCivicTreeGetPulse from './types/com/para/community/civicTree/getPulse.js'
+import * as ComParaCommunityCivicTreeGetSummary from './types/com/para/community/civicTree/getSummary.js'
+import * as ComParaCommunityCivicTreeListContributions from './types/com/para/community/civicTree/listContributions.js'
+import * as ComParaCommunityCivicTreeListSuggestions from './types/com/para/community/civicTree/listSuggestions.js'
+import * as ComParaCommunityCivicTreeModerateContribution from './types/com/para/community/civicTree/moderateContribution.js'
+import * as ComParaCommunityCivicTreeRejectSuggestion from './types/com/para/community/civicTree/rejectSuggestion.js'
+import * as ComParaCommunityCivicTreeRelationship from './types/com/para/community/civicTree/relationship.js'
+import * as ComParaCommunityCivicTreeSubmitContribution from './types/com/para/community/civicTree/submitContribution.js'
+import * as ComParaCommunityCivicTreeVoteContribution from './types/com/para/community/civicTree/voteContribution.js'
 import * as ComParaCommunityCivicTreeVote from './types/com/para/community/civicTreeVote.js'
 import * as ComParaCommunityConstitution from './types/com/para/community/constitution.js'
 import * as ComParaCommunityCreateBoard from './types/com/para/community/createBoard.js'
@@ -478,10 +479,6 @@ import * as ToolsOzoneCommunicationDefs from './types/tools/ozone/communication/
 import * as ToolsOzoneCommunicationDeleteTemplate from './types/tools/ozone/communication/deleteTemplate.js'
 import * as ToolsOzoneCommunicationListTemplates from './types/tools/ozone/communication/listTemplates.js'
 import * as ToolsOzoneCommunicationUpdateTemplate from './types/tools/ozone/communication/updateTemplate.js'
-import * as ToolsOzoneHistoryDefs from './types/tools/ozone/history/defs.js'
-import * as ToolsOzoneHistoryGetAccountActions from './types/tools/ozone/history/getAccountActions.js'
-import * as ToolsOzoneHistoryGetReportedSubjects from './types/tools/ozone/history/getReportedSubjects.js'
-import * as ToolsOzoneHistoryGetSubjectHistory from './types/tools/ozone/history/getSubjectHistory.js'
 import * as ToolsOzoneHostingGetAccountHistory from './types/tools/ozone/hosting/getAccountHistory.js'
 import * as ToolsOzoneInboxAppealActionedSubject from './types/tools/ozone/inbox/appealActionedSubject.js'
 import * as ToolsOzoneInboxDefs from './types/tools/ozone/inbox/defs.js'
@@ -569,6 +566,7 @@ import * as ToolsOzoneVerificationGrantVerifications from './types/tools/ozone/v
 import * as ToolsOzoneVerificationListVerifications from './types/tools/ozone/verification/listVerifications.js'
 import * as ToolsOzoneVerificationRevokeVerifications from './types/tools/ozone/verification/revokeVerifications.js'
 
+export * as AppBskyActorContentVisibilityDeclaration from './types/app/bsky/actor/contentVisibilityDeclaration.js'
 export * as AppBskyActorDefs from './types/app/bsky/actor/defs.js'
 export * as AppBskyActorGetPreferences from './types/app/bsky/actor/getPreferences.js'
 export * as AppBskyActorGetProfile from './types/app/bsky/actor/getProfile.js'
@@ -718,9 +716,14 @@ export * as AppBskyUnspeccedInitAgeAssurance from './types/app/bsky/unspecced/in
 export * as AppBskyUnspeccedSearchActorsSkeleton from './types/app/bsky/unspecced/searchActorsSkeleton.js'
 export * as AppBskyUnspeccedSearchPostsSkeleton from './types/app/bsky/unspecced/searchPostsSkeleton.js'
 export * as AppBskyUnspeccedSearchStarterPacksSkeleton from './types/app/bsky/unspecced/searchStarterPacksSkeleton.js'
+export * as AppBskyVideoAbortUpload from './types/app/bsky/video/abortUpload.js'
 export * as AppBskyVideoDefs from './types/app/bsky/video/defs.js'
+export * as AppBskyVideoFinishUpload from './types/app/bsky/video/finishUpload.js'
 export * as AppBskyVideoGetJobStatus from './types/app/bsky/video/getJobStatus.js'
 export * as AppBskyVideoGetUploadLimits from './types/app/bsky/video/getUploadLimits.js'
+export * as AppBskyVideoGetUploadStatus from './types/app/bsky/video/getUploadStatus.js'
+export * as AppBskyVideoStartUpload from './types/app/bsky/video/startUpload.js'
+export * as AppBskyVideoUploadPart from './types/app/bsky/video/uploadPart.js'
 export * as AppBskyVideoUploadVideo from './types/app/bsky/video/uploadVideo.js'
 export * as ChatBskyActorDeclaration from './types/chat/bsky/actor/declaration.js'
 export * as ChatBskyActorDefs from './types/chat/bsky/actor/defs.js'
@@ -760,9 +763,9 @@ export * as ChatBskyGroupDisableJoinLink from './types/chat/bsky/group/disableJo
 export * as ChatBskyGroupEditGroup from './types/chat/bsky/group/editGroup.js'
 export * as ChatBskyGroupEditJoinLink from './types/chat/bsky/group/editJoinLink.js'
 export * as ChatBskyGroupEnableJoinLink from './types/chat/bsky/group/enableJoinLink.js'
-export * as ChatBskyGroupGetGroupPublicInfo from './types/chat/bsky/group/getGroupPublicInfo.js'
 export * as ChatBskyGroupGetJoinLinkPreviews from './types/chat/bsky/group/getJoinLinkPreviews.js'
 export * as ChatBskyGroupListJoinRequests from './types/chat/bsky/group/listJoinRequests.js'
+export * as ChatBskyGroupListMutualGroups from './types/chat/bsky/group/listMutualGroups.js'
 export * as ChatBskyGroupRejectJoinRequest from './types/chat/bsky/group/rejectJoinRequest.js'
 export * as ChatBskyGroupRemoveMembers from './types/chat/bsky/group/removeMembers.js'
 export * as ChatBskyGroupRequestJoin from './types/chat/bsky/group/requestJoin.js'
@@ -850,35 +853,6 @@ export * as ComAtprotoServerReserveSigningKey from './types/com/atproto/server/r
 export * as ComAtprotoServerResetPassword from './types/com/atproto/server/resetPassword.js'
 export * as ComAtprotoServerRevokeAppPassword from './types/com/atproto/server/revokeAppPassword.js'
 export * as ComAtprotoServerUpdateEmail from './types/com/atproto/server/updateEmail.js'
-export * as ComAtprotoSimplespaceAddMember from './types/com/atproto/simplespace/addMember.js'
-export * as ComAtprotoSimplespaceCheckUserAccess from './types/com/atproto/simplespace/checkUserAccess.js'
-export * as ComAtprotoSimplespaceCreateSpace from './types/com/atproto/simplespace/createSpace.js'
-export * as ComAtprotoSimplespaceDefs from './types/com/atproto/simplespace/defs.js'
-export * as ComAtprotoSimplespaceDeleteSpace from './types/com/atproto/simplespace/deleteSpace.js'
-export * as ComAtprotoSimplespaceGetSpace from './types/com/atproto/simplespace/getSpace.js'
-export * as ComAtprotoSimplespaceListMembers from './types/com/atproto/simplespace/listMembers.js'
-export * as ComAtprotoSimplespaceRemoveMember from './types/com/atproto/simplespace/removeMember.js'
-export * as ComAtprotoSimplespaceUpdateSpace from './types/com/atproto/simplespace/updateSpace.js'
-export * as ComAtprotoSpaceApplyWrites from './types/com/atproto/space/applyWrites.js'
-export * as ComAtprotoSpaceCreateRecord from './types/com/atproto/space/createRecord.js'
-export * as ComAtprotoSpaceDefs from './types/com/atproto/space/defs.js'
-export * as ComAtprotoSpaceDeleteRecord from './types/com/atproto/space/deleteRecord.js'
-export * as ComAtprotoSpaceGetBlob from './types/com/atproto/space/getBlob.js'
-export * as ComAtprotoSpaceGetDelegationToken from './types/com/atproto/space/getDelegationToken.js'
-export * as ComAtprotoSpaceGetLatestCommit from './types/com/atproto/space/getLatestCommit.js'
-export * as ComAtprotoSpaceGetRecord from './types/com/atproto/space/getRecord.js'
-export * as ComAtprotoSpaceGetRepo from './types/com/atproto/space/getRepo.js'
-export * as ComAtprotoSpaceGetSpaceCredential from './types/com/atproto/space/getSpaceCredential.js'
-export * as ComAtprotoSpaceListBlobs from './types/com/atproto/space/listBlobs.js'
-export * as ComAtprotoSpaceListRecords from './types/com/atproto/space/listRecords.js'
-export * as ComAtprotoSpaceListRepoOps from './types/com/atproto/space/listRepoOps.js'
-export * as ComAtprotoSpaceListRepos from './types/com/atproto/space/listRepos.js'
-export * as ComAtprotoSpaceListSpaces from './types/com/atproto/space/listSpaces.js'
-export * as ComAtprotoSpaceNotifySpaceDeleted from './types/com/atproto/space/notifySpaceDeleted.js'
-export * as ComAtprotoSpaceNotifyWrite from './types/com/atproto/space/notifyWrite.js'
-export * as ComAtprotoSpacePutRecord from './types/com/atproto/space/putRecord.js'
-export * as ComAtprotoSpaceRegisterNotify from './types/com/atproto/space/registerNotify.js'
-export * as ComAtprotoSpaceUnregisterNotify from './types/com/atproto/space/unregisterNotify.js'
 export * as ComAtprotoSyncDefs from './types/com/atproto/sync/defs.js'
 export * as ComAtprotoSyncGetBlob from './types/com/atproto/sync/getBlob.js'
 export * as ComAtprotoSyncGetBlocks from './types/com/atproto/sync/getBlocks.js'
@@ -896,8 +870,12 @@ export * as ComAtprotoSyncListReposByCollection from './types/com/atproto/sync/l
 export * as ComAtprotoSyncNotifyOfUpdate from './types/com/atproto/sync/notifyOfUpdate.js'
 export * as ComAtprotoSyncRequestCrawl from './types/com/atproto/sync/requestCrawl.js'
 export * as ComAtprotoSyncSubscribeRepos from './types/com/atproto/sync/subscribeRepos.js'
+export * as ComAtprotoTempAddReservedHandle from './types/com/atproto/temp/addReservedHandle.js'
+export * as ComAtprotoTempCheckHandleAvailability from './types/com/atproto/temp/checkHandleAvailability.js'
+export * as ComAtprotoTempCheckSignupQueue from './types/com/atproto/temp/checkSignupQueue.js'
 export * as ComAtprotoTempDereferenceScope from './types/com/atproto/temp/dereferenceScope.js'
 export * as ComAtprotoTempFetchLabels from './types/com/atproto/temp/fetchLabels.js'
+export * as ComAtprotoTempRequestPhoneVerification from './types/com/atproto/temp/requestPhoneVerification.js'
 export * as ComAtprotoTempRevokeAccountCredentials from './types/com/atproto/temp/revokeAccountCredentials.js'
 export * as ComGermnetworkDeclaration from './types/com/germnetwork/declaration.js'
 export * as ComParaAccountGetAuthFactor from './types/com/para/account/getAuthFactor.js'
@@ -944,6 +922,26 @@ export * as ComParaCommunityAuthorityEvent from './types/com/para/community/auth
 export * as ComParaCommunityBoard from './types/com/para/community/board.js'
 export * as ComParaCommunityBriefingPack from './types/com/para/community/briefingPack.js'
 export * as ComParaCommunityCivicTree from './types/com/para/community/civicTree.js'
+export * as ComParaCommunityCivicTreeAcceptSuggestion from './types/com/para/community/civicTree/acceptSuggestion.js'
+export * as ComParaCommunityCivicTreeCard from './types/com/para/community/civicTree/card.js'
+export * as ComParaCommunityCivicTreeCardVote from './types/com/para/community/civicTree/cardVote.js'
+export * as ComParaCommunityCivicTreeCastCardVote from './types/com/para/community/civicTree/castCardVote.js'
+export * as ComParaCommunityCivicTreeConfig from './types/com/para/community/civicTree/config.js'
+export * as ComParaCommunityCivicTreeContribution from './types/com/para/community/civicTree/contribution.js'
+export * as ComParaCommunityCivicTreeContributionVote from './types/com/para/community/civicTree/contributionVote.js'
+export * as ComParaCommunityCivicTreeCreateRelationship from './types/com/para/community/civicTree/createRelationship.js'
+export * as ComParaCommunityCivicTreeDefs from './types/com/para/community/civicTree/defs.js'
+export * as ComParaCommunityCivicTreeGetCardVote from './types/com/para/community/civicTree/getCardVote.js'
+export * as ComParaCommunityCivicTreeGetGraph from './types/com/para/community/civicTree/getGraph.js'
+export * as ComParaCommunityCivicTreeGetPulse from './types/com/para/community/civicTree/getPulse.js'
+export * as ComParaCommunityCivicTreeGetSummary from './types/com/para/community/civicTree/getSummary.js'
+export * as ComParaCommunityCivicTreeListContributions from './types/com/para/community/civicTree/listContributions.js'
+export * as ComParaCommunityCivicTreeListSuggestions from './types/com/para/community/civicTree/listSuggestions.js'
+export * as ComParaCommunityCivicTreeModerateContribution from './types/com/para/community/civicTree/moderateContribution.js'
+export * as ComParaCommunityCivicTreeRejectSuggestion from './types/com/para/community/civicTree/rejectSuggestion.js'
+export * as ComParaCommunityCivicTreeRelationship from './types/com/para/community/civicTree/relationship.js'
+export * as ComParaCommunityCivicTreeSubmitContribution from './types/com/para/community/civicTree/submitContribution.js'
+export * as ComParaCommunityCivicTreeVoteContribution from './types/com/para/community/civicTree/voteContribution.js'
 export * as ComParaCommunityCivicTreeVote from './types/com/para/community/civicTreeVote.js'
 export * as ComParaCommunityConstitution from './types/com/para/community/constitution.js'
 export * as ComParaCommunityCreateBoard from './types/com/para/community/createBoard.js'
@@ -1037,10 +1035,6 @@ export * as ToolsOzoneCommunicationDefs from './types/tools/ozone/communication/
 export * as ToolsOzoneCommunicationDeleteTemplate from './types/tools/ozone/communication/deleteTemplate.js'
 export * as ToolsOzoneCommunicationListTemplates from './types/tools/ozone/communication/listTemplates.js'
 export * as ToolsOzoneCommunicationUpdateTemplate from './types/tools/ozone/communication/updateTemplate.js'
-export * as ToolsOzoneHistoryDefs from './types/tools/ozone/history/defs.js'
-export * as ToolsOzoneHistoryGetAccountActions from './types/tools/ozone/history/getAccountActions.js'
-export * as ToolsOzoneHistoryGetReportedSubjects from './types/tools/ozone/history/getReportedSubjects.js'
-export * as ToolsOzoneHistoryGetSubjectHistory from './types/tools/ozone/history/getSubjectHistory.js'
 export * as ToolsOzoneHostingGetAccountHistory from './types/tools/ozone/hosting/getAccountHistory.js'
 export * as ToolsOzoneInboxAppealActionedSubject from './types/tools/ozone/inbox/appealActionedSubject.js'
 export * as ToolsOzoneInboxDefs from './types/tools/ozone/inbox/defs.js'
@@ -1302,12 +1296,15 @@ export class AppBskyNS {
 
 export class AppBskyActorNS {
   _client: XrpcClient
+  contentVisibilityDeclaration: AppBskyActorContentVisibilityDeclarationRecord
   link: AppBskyActorLinkRecord
   profile: AppBskyActorProfileRecord
   status: AppBskyActorStatusRecord
 
   constructor(client: XrpcClient) {
     this._client = client
+    this.contentVisibilityDeclaration =
+      new AppBskyActorContentVisibilityDeclarationRecord(client)
     this.link = new AppBskyActorLinkRecord(client)
     this.profile = new AppBskyActorProfileRecord(client)
     this.status = new AppBskyActorStatusRecord(client)
@@ -1394,6 +1391,97 @@ export class AppBskyActorNS {
       params,
       undefined,
       opts,
+    )
+  }
+}
+
+export class AppBskyActorContentVisibilityDeclarationRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: {
+      uri: string
+      value: AppBskyActorContentVisibilityDeclaration.Record
+    }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'app.bsky.actor.contentVisibilityDeclaration',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: AppBskyActorContentVisibilityDeclaration.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'app.bsky.actor.contentVisibilityDeclaration',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<AppBskyActorContentVisibilityDeclaration.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'app.bsky.actor.contentVisibilityDeclaration'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      {
+        collection,
+        rkey: 'self',
+        ...params,
+        record: { ...record, $type: collection },
+      },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<AppBskyActorContentVisibilityDeclaration.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'app.bsky.actor.contentVisibilityDeclaration'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'app.bsky.actor.contentVisibilityDeclaration', ...params },
+      { headers },
     )
   }
 }
@@ -4260,6 +4348,28 @@ export class AppBskyVideoNS {
     this._client = client
   }
 
+  abortUpload(
+    data?: AppBskyVideoAbortUpload.InputSchema,
+    opts?: AppBskyVideoAbortUpload.CallOptions,
+  ): Promise<AppBskyVideoAbortUpload.Response> {
+    return this._client
+      .call('app.bsky.video.abortUpload', opts?.qp, data, opts)
+      .catch((e) => {
+        throw AppBskyVideoAbortUpload.toKnownErr(e)
+      })
+  }
+
+  finishUpload(
+    data?: AppBskyVideoFinishUpload.InputSchema,
+    opts?: AppBskyVideoFinishUpload.CallOptions,
+  ): Promise<AppBskyVideoFinishUpload.Response> {
+    return this._client
+      .call('app.bsky.video.finishUpload', opts?.qp, data, opts)
+      .catch((e) => {
+        throw AppBskyVideoFinishUpload.toKnownErr(e)
+      })
+  }
+
   getJobStatus(
     params?: AppBskyVideoGetJobStatus.QueryParams,
     opts?: AppBskyVideoGetJobStatus.CallOptions,
@@ -4282,6 +4392,39 @@ export class AppBskyVideoNS {
       undefined,
       opts,
     )
+  }
+
+  getUploadStatus(
+    params?: AppBskyVideoGetUploadStatus.QueryParams,
+    opts?: AppBskyVideoGetUploadStatus.CallOptions,
+  ): Promise<AppBskyVideoGetUploadStatus.Response> {
+    return this._client
+      .call('app.bsky.video.getUploadStatus', params, undefined, opts)
+      .catch((e) => {
+        throw AppBskyVideoGetUploadStatus.toKnownErr(e)
+      })
+  }
+
+  startUpload(
+    data?: AppBskyVideoStartUpload.InputSchema,
+    opts?: AppBskyVideoStartUpload.CallOptions,
+  ): Promise<AppBskyVideoStartUpload.Response> {
+    return this._client
+      .call('app.bsky.video.startUpload', opts?.qp, data, opts)
+      .catch((e) => {
+        throw AppBskyVideoStartUpload.toKnownErr(e)
+      })
+  }
+
+  uploadPart(
+    data?: AppBskyVideoUploadPart.InputSchema,
+    opts?: AppBskyVideoUploadPart.CallOptions,
+  ): Promise<AppBskyVideoUploadPart.Response> {
+    return this._client
+      .call('app.bsky.video.uploadPart', opts?.qp, data, opts)
+      .catch((e) => {
+        throw AppBskyVideoUploadPart.toKnownErr(e)
+      })
   }
 
   uploadVideo(
@@ -4810,17 +4953,6 @@ export class ChatBskyGroupNS {
       })
   }
 
-  getGroupPublicInfo(
-    params?: ChatBskyGroupGetGroupPublicInfo.QueryParams,
-    opts?: ChatBskyGroupGetGroupPublicInfo.CallOptions,
-  ): Promise<ChatBskyGroupGetGroupPublicInfo.Response> {
-    return this._client
-      .call('chat.bsky.group.getGroupPublicInfo', params, undefined, opts)
-      .catch((e) => {
-        throw ChatBskyGroupGetGroupPublicInfo.toKnownErr(e)
-      })
-  }
-
   getJoinLinkPreviews(
     params?: ChatBskyGroupGetJoinLinkPreviews.QueryParams,
     opts?: ChatBskyGroupGetJoinLinkPreviews.CallOptions,
@@ -4842,6 +4974,18 @@ export class ChatBskyGroupNS {
       .catch((e) => {
         throw ChatBskyGroupListJoinRequests.toKnownErr(e)
       })
+  }
+
+  listMutualGroups(
+    params?: ChatBskyGroupListMutualGroups.QueryParams,
+    opts?: ChatBskyGroupListMutualGroups.CallOptions,
+  ): Promise<ChatBskyGroupListMutualGroups.Response> {
+    return this._client.call(
+      'chat.bsky.group.listMutualGroups',
+      params,
+      undefined,
+      opts,
+    )
   }
 
   rejectJoinRequest(
@@ -5033,8 +5177,6 @@ export class ComAtprotoNS {
   moderation: ComAtprotoModerationNS
   repo: ComAtprotoRepoNS
   server: ComAtprotoServerNS
-  simplespace: ComAtprotoSimplespaceNS
-  space: ComAtprotoSpaceNS
   sync: ComAtprotoSyncNS
   temp: ComAtprotoTempNS
 
@@ -5047,8 +5189,6 @@ export class ComAtprotoNS {
     this.moderation = new ComAtprotoModerationNS(client)
     this.repo = new ComAtprotoRepoNS(client)
     this.server = new ComAtprotoServerNS(client)
-    this.simplespace = new ComAtprotoSimplespaceNS(client)
-    this.space = new ComAtprotoSpaceNS(client)
     this.sync = new ComAtprotoSyncNS(client)
     this.temp = new ComAtprotoTempNS(client)
   }
@@ -5917,324 +6057,6 @@ export class ComAtprotoServerNS {
   }
 }
 
-export class ComAtprotoSimplespaceNS {
-  _client: XrpcClient
-
-  constructor(client: XrpcClient) {
-    this._client = client
-  }
-
-  addMember(
-    data?: ComAtprotoSimplespaceAddMember.InputSchema,
-    opts?: ComAtprotoSimplespaceAddMember.CallOptions,
-  ): Promise<ComAtprotoSimplespaceAddMember.Response> {
-    return this._client
-      .call('com.atproto.simplespace.addMember', opts?.qp, data, opts)
-      .catch((e) => {
-        throw ComAtprotoSimplespaceAddMember.toKnownErr(e)
-      })
-  }
-
-  checkUserAccess(
-    params?: ComAtprotoSimplespaceCheckUserAccess.QueryParams,
-    opts?: ComAtprotoSimplespaceCheckUserAccess.CallOptions,
-  ): Promise<ComAtprotoSimplespaceCheckUserAccess.Response> {
-    return this._client.call(
-      'com.atproto.simplespace.checkUserAccess',
-      params,
-      undefined,
-      opts,
-    )
-  }
-
-  createSpace(
-    data?: ComAtprotoSimplespaceCreateSpace.InputSchema,
-    opts?: ComAtprotoSimplespaceCreateSpace.CallOptions,
-  ): Promise<ComAtprotoSimplespaceCreateSpace.Response> {
-    return this._client
-      .call('com.atproto.simplespace.createSpace', opts?.qp, data, opts)
-      .catch((e) => {
-        throw ComAtprotoSimplespaceCreateSpace.toKnownErr(e)
-      })
-  }
-
-  deleteSpace(
-    data?: ComAtprotoSimplespaceDeleteSpace.InputSchema,
-    opts?: ComAtprotoSimplespaceDeleteSpace.CallOptions,
-  ): Promise<ComAtprotoSimplespaceDeleteSpace.Response> {
-    return this._client
-      .call('com.atproto.simplespace.deleteSpace', opts?.qp, data, opts)
-      .catch((e) => {
-        throw ComAtprotoSimplespaceDeleteSpace.toKnownErr(e)
-      })
-  }
-
-  getSpace(
-    params?: ComAtprotoSimplespaceGetSpace.QueryParams,
-    opts?: ComAtprotoSimplespaceGetSpace.CallOptions,
-  ): Promise<ComAtprotoSimplespaceGetSpace.Response> {
-    return this._client
-      .call('com.atproto.simplespace.getSpace', params, undefined, opts)
-      .catch((e) => {
-        throw ComAtprotoSimplespaceGetSpace.toKnownErr(e)
-      })
-  }
-
-  listMembers(
-    params?: ComAtprotoSimplespaceListMembers.QueryParams,
-    opts?: ComAtprotoSimplespaceListMembers.CallOptions,
-  ): Promise<ComAtprotoSimplespaceListMembers.Response> {
-    return this._client
-      .call('com.atproto.simplespace.listMembers', params, undefined, opts)
-      .catch((e) => {
-        throw ComAtprotoSimplespaceListMembers.toKnownErr(e)
-      })
-  }
-
-  removeMember(
-    data?: ComAtprotoSimplespaceRemoveMember.InputSchema,
-    opts?: ComAtprotoSimplespaceRemoveMember.CallOptions,
-  ): Promise<ComAtprotoSimplespaceRemoveMember.Response> {
-    return this._client
-      .call('com.atproto.simplespace.removeMember', opts?.qp, data, opts)
-      .catch((e) => {
-        throw ComAtprotoSimplespaceRemoveMember.toKnownErr(e)
-      })
-  }
-
-  updateSpace(
-    data?: ComAtprotoSimplespaceUpdateSpace.InputSchema,
-    opts?: ComAtprotoSimplespaceUpdateSpace.CallOptions,
-  ): Promise<ComAtprotoSimplespaceUpdateSpace.Response> {
-    return this._client
-      .call('com.atproto.simplespace.updateSpace', opts?.qp, data, opts)
-      .catch((e) => {
-        throw ComAtprotoSimplespaceUpdateSpace.toKnownErr(e)
-      })
-  }
-}
-
-export class ComAtprotoSpaceNS {
-  _client: XrpcClient
-
-  constructor(client: XrpcClient) {
-    this._client = client
-  }
-
-  applyWrites(
-    data?: ComAtprotoSpaceApplyWrites.InputSchema,
-    opts?: ComAtprotoSpaceApplyWrites.CallOptions,
-  ): Promise<ComAtprotoSpaceApplyWrites.Response> {
-    return this._client
-      .call('com.atproto.space.applyWrites', opts?.qp, data, opts)
-      .catch((e) => {
-        throw ComAtprotoSpaceApplyWrites.toKnownErr(e)
-      })
-  }
-
-  createRecord(
-    data?: ComAtprotoSpaceCreateRecord.InputSchema,
-    opts?: ComAtprotoSpaceCreateRecord.CallOptions,
-  ): Promise<ComAtprotoSpaceCreateRecord.Response> {
-    return this._client
-      .call('com.atproto.space.createRecord', opts?.qp, data, opts)
-      .catch((e) => {
-        throw ComAtprotoSpaceCreateRecord.toKnownErr(e)
-      })
-  }
-
-  deleteRecord(
-    data?: ComAtprotoSpaceDeleteRecord.InputSchema,
-    opts?: ComAtprotoSpaceDeleteRecord.CallOptions,
-  ): Promise<ComAtprotoSpaceDeleteRecord.Response> {
-    return this._client
-      .call('com.atproto.space.deleteRecord', opts?.qp, data, opts)
-      .catch((e) => {
-        throw ComAtprotoSpaceDeleteRecord.toKnownErr(e)
-      })
-  }
-
-  getBlob(
-    params?: ComAtprotoSpaceGetBlob.QueryParams,
-    opts?: ComAtprotoSpaceGetBlob.CallOptions,
-  ): Promise<ComAtprotoSpaceGetBlob.Response> {
-    return this._client
-      .call('com.atproto.space.getBlob', params, undefined, opts)
-      .catch((e) => {
-        throw ComAtprotoSpaceGetBlob.toKnownErr(e)
-      })
-  }
-
-  getDelegationToken(
-    params?: ComAtprotoSpaceGetDelegationToken.QueryParams,
-    opts?: ComAtprotoSpaceGetDelegationToken.CallOptions,
-  ): Promise<ComAtprotoSpaceGetDelegationToken.Response> {
-    return this._client.call(
-      'com.atproto.space.getDelegationToken',
-      params,
-      undefined,
-      opts,
-    )
-  }
-
-  getLatestCommit(
-    params?: ComAtprotoSpaceGetLatestCommit.QueryParams,
-    opts?: ComAtprotoSpaceGetLatestCommit.CallOptions,
-  ): Promise<ComAtprotoSpaceGetLatestCommit.Response> {
-    return this._client
-      .call('com.atproto.space.getLatestCommit', params, undefined, opts)
-      .catch((e) => {
-        throw ComAtprotoSpaceGetLatestCommit.toKnownErr(e)
-      })
-  }
-
-  getRecord(
-    params?: ComAtprotoSpaceGetRecord.QueryParams,
-    opts?: ComAtprotoSpaceGetRecord.CallOptions,
-  ): Promise<ComAtprotoSpaceGetRecord.Response> {
-    return this._client
-      .call('com.atproto.space.getRecord', params, undefined, opts)
-      .catch((e) => {
-        throw ComAtprotoSpaceGetRecord.toKnownErr(e)
-      })
-  }
-
-  getRepo(
-    params?: ComAtprotoSpaceGetRepo.QueryParams,
-    opts?: ComAtprotoSpaceGetRepo.CallOptions,
-  ): Promise<ComAtprotoSpaceGetRepo.Response> {
-    return this._client
-      .call('com.atproto.space.getRepo', params, undefined, opts)
-      .catch((e) => {
-        throw ComAtprotoSpaceGetRepo.toKnownErr(e)
-      })
-  }
-
-  getSpaceCredential(
-    data?: ComAtprotoSpaceGetSpaceCredential.InputSchema,
-    opts?: ComAtprotoSpaceGetSpaceCredential.CallOptions,
-  ): Promise<ComAtprotoSpaceGetSpaceCredential.Response> {
-    return this._client
-      .call('com.atproto.space.getSpaceCredential', opts?.qp, data, opts)
-      .catch((e) => {
-        throw ComAtprotoSpaceGetSpaceCredential.toKnownErr(e)
-      })
-  }
-
-  listBlobs(
-    params?: ComAtprotoSpaceListBlobs.QueryParams,
-    opts?: ComAtprotoSpaceListBlobs.CallOptions,
-  ): Promise<ComAtprotoSpaceListBlobs.Response> {
-    return this._client
-      .call('com.atproto.space.listBlobs', params, undefined, opts)
-      .catch((e) => {
-        throw ComAtprotoSpaceListBlobs.toKnownErr(e)
-      })
-  }
-
-  listRecords(
-    params?: ComAtprotoSpaceListRecords.QueryParams,
-    opts?: ComAtprotoSpaceListRecords.CallOptions,
-  ): Promise<ComAtprotoSpaceListRecords.Response> {
-    return this._client
-      .call('com.atproto.space.listRecords', params, undefined, opts)
-      .catch((e) => {
-        throw ComAtprotoSpaceListRecords.toKnownErr(e)
-      })
-  }
-
-  listRepoOps(
-    params?: ComAtprotoSpaceListRepoOps.QueryParams,
-    opts?: ComAtprotoSpaceListRepoOps.CallOptions,
-  ): Promise<ComAtprotoSpaceListRepoOps.Response> {
-    return this._client
-      .call('com.atproto.space.listRepoOps', params, undefined, opts)
-      .catch((e) => {
-        throw ComAtprotoSpaceListRepoOps.toKnownErr(e)
-      })
-  }
-
-  listRepos(
-    params?: ComAtprotoSpaceListRepos.QueryParams,
-    opts?: ComAtprotoSpaceListRepos.CallOptions,
-  ): Promise<ComAtprotoSpaceListRepos.Response> {
-    return this._client
-      .call('com.atproto.space.listRepos', params, undefined, opts)
-      .catch((e) => {
-        throw ComAtprotoSpaceListRepos.toKnownErr(e)
-      })
-  }
-
-  listSpaces(
-    params?: ComAtprotoSpaceListSpaces.QueryParams,
-    opts?: ComAtprotoSpaceListSpaces.CallOptions,
-  ): Promise<ComAtprotoSpaceListSpaces.Response> {
-    return this._client.call(
-      'com.atproto.space.listSpaces',
-      params,
-      undefined,
-      opts,
-    )
-  }
-
-  notifySpaceDeleted(
-    data?: ComAtprotoSpaceNotifySpaceDeleted.InputSchema,
-    opts?: ComAtprotoSpaceNotifySpaceDeleted.CallOptions,
-  ): Promise<ComAtprotoSpaceNotifySpaceDeleted.Response> {
-    return this._client.call(
-      'com.atproto.space.notifySpaceDeleted',
-      opts?.qp,
-      data,
-      opts,
-    )
-  }
-
-  notifyWrite(
-    data?: ComAtprotoSpaceNotifyWrite.InputSchema,
-    opts?: ComAtprotoSpaceNotifyWrite.CallOptions,
-  ): Promise<ComAtprotoSpaceNotifyWrite.Response> {
-    return this._client.call(
-      'com.atproto.space.notifyWrite',
-      opts?.qp,
-      data,
-      opts,
-    )
-  }
-
-  putRecord(
-    data?: ComAtprotoSpacePutRecord.InputSchema,
-    opts?: ComAtprotoSpacePutRecord.CallOptions,
-  ): Promise<ComAtprotoSpacePutRecord.Response> {
-    return this._client
-      .call('com.atproto.space.putRecord', opts?.qp, data, opts)
-      .catch((e) => {
-        throw ComAtprotoSpacePutRecord.toKnownErr(e)
-      })
-  }
-
-  registerNotify(
-    data?: ComAtprotoSpaceRegisterNotify.InputSchema,
-    opts?: ComAtprotoSpaceRegisterNotify.CallOptions,
-  ): Promise<ComAtprotoSpaceRegisterNotify.Response> {
-    return this._client
-      .call('com.atproto.space.registerNotify', opts?.qp, data, opts)
-      .catch((e) => {
-        throw ComAtprotoSpaceRegisterNotify.toKnownErr(e)
-      })
-  }
-
-  unregisterNotify(
-    data?: ComAtprotoSpaceUnregisterNotify.InputSchema,
-    opts?: ComAtprotoSpaceUnregisterNotify.CallOptions,
-  ): Promise<ComAtprotoSpaceUnregisterNotify.Response> {
-    return this._client
-      .call('com.atproto.space.unregisterNotify', opts?.qp, data, opts)
-      .catch((e) => {
-        throw ComAtprotoSpaceUnregisterNotify.toKnownErr(e)
-      })
-  }
-}
-
 export class ComAtprotoSyncNS {
   _client: XrpcClient
 
@@ -6420,6 +6242,41 @@ export class ComAtprotoTempNS {
     this._client = client
   }
 
+  addReservedHandle(
+    data?: ComAtprotoTempAddReservedHandle.InputSchema,
+    opts?: ComAtprotoTempAddReservedHandle.CallOptions,
+  ): Promise<ComAtprotoTempAddReservedHandle.Response> {
+    return this._client.call(
+      'com.atproto.temp.addReservedHandle',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
+
+  checkHandleAvailability(
+    params?: ComAtprotoTempCheckHandleAvailability.QueryParams,
+    opts?: ComAtprotoTempCheckHandleAvailability.CallOptions,
+  ): Promise<ComAtprotoTempCheckHandleAvailability.Response> {
+    return this._client
+      .call('com.atproto.temp.checkHandleAvailability', params, undefined, opts)
+      .catch((e) => {
+        throw ComAtprotoTempCheckHandleAvailability.toKnownErr(e)
+      })
+  }
+
+  checkSignupQueue(
+    params?: ComAtprotoTempCheckSignupQueue.QueryParams,
+    opts?: ComAtprotoTempCheckSignupQueue.CallOptions,
+  ): Promise<ComAtprotoTempCheckSignupQueue.Response> {
+    return this._client.call(
+      'com.atproto.temp.checkSignupQueue',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
   dereferenceScope(
     params?: ComAtprotoTempDereferenceScope.QueryParams,
     opts?: ComAtprotoTempDereferenceScope.CallOptions,
@@ -6439,6 +6296,18 @@ export class ComAtprotoTempNS {
       'com.atproto.temp.fetchLabels',
       params,
       undefined,
+      opts,
+    )
+  }
+
+  requestPhoneVerification(
+    data?: ComAtprotoTempRequestPhoneVerification.InputSchema,
+    opts?: ComAtprotoTempRequestPhoneVerification.CallOptions,
+  ): Promise<ComAtprotoTempRequestPhoneVerification.Response> {
+    return this._client.call(
+      'com.atproto.temp.requestPhoneVerification',
+      opts?.qp,
+      data,
       opts,
     )
   }
@@ -7574,9 +7443,11 @@ export class ComParaCommunityNS {
   socialActivity: ComParaCommunitySocialActivityRecord
   vote: ComParaCommunityVoteRecord
   wikiPage: ComParaCommunityWikiPageRecord
+  civicTree: ComParaCommunityCivicTreeNS
 
   constructor(client: XrpcClient) {
     this._client = client
+    this.civicTree = new ComParaCommunityCivicTreeNS(client)
     this.activityLedgerEntry = new ComParaCommunityActivityLedgerEntryRecord(
       client,
     )
@@ -8002,6 +7873,699 @@ export class ComParaCommunityNS {
       opts?.qp,
       data,
       opts,
+    )
+  }
+}
+
+export class ComParaCommunityCivicTreeNS {
+  _client: XrpcClient
+  card: ComParaCommunityCivicTreeCardRecord
+  cardVote: ComParaCommunityCivicTreeCardVoteRecord
+  config: ComParaCommunityCivicTreeConfigRecord
+  contribution: ComParaCommunityCivicTreeContributionRecord
+  contributionVote: ComParaCommunityCivicTreeContributionVoteRecord
+  relationship: ComParaCommunityCivicTreeRelationshipRecord
+
+  constructor(client: XrpcClient) {
+    this._client = client
+    this.card = new ComParaCommunityCivicTreeCardRecord(client)
+    this.cardVote = new ComParaCommunityCivicTreeCardVoteRecord(client)
+    this.config = new ComParaCommunityCivicTreeConfigRecord(client)
+    this.contribution = new ComParaCommunityCivicTreeContributionRecord(client)
+    this.contributionVote = new ComParaCommunityCivicTreeContributionVoteRecord(
+      client,
+    )
+    this.relationship = new ComParaCommunityCivicTreeRelationshipRecord(client)
+  }
+
+  acceptSuggestion(
+    data?: ComParaCommunityCivicTreeAcceptSuggestion.InputSchema,
+    opts?: ComParaCommunityCivicTreeAcceptSuggestion.CallOptions,
+  ): Promise<ComParaCommunityCivicTreeAcceptSuggestion.Response> {
+    return this._client.call(
+      'com.para.community.civicTree.acceptSuggestion',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
+
+  castCardVote(
+    data?: ComParaCommunityCivicTreeCastCardVote.InputSchema,
+    opts?: ComParaCommunityCivicTreeCastCardVote.CallOptions,
+  ): Promise<ComParaCommunityCivicTreeCastCardVote.Response> {
+    return this._client.call(
+      'com.para.community.civicTree.castCardVote',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
+
+  createRelationship(
+    data?: ComParaCommunityCivicTreeCreateRelationship.InputSchema,
+    opts?: ComParaCommunityCivicTreeCreateRelationship.CallOptions,
+  ): Promise<ComParaCommunityCivicTreeCreateRelationship.Response> {
+    return this._client.call(
+      'com.para.community.civicTree.createRelationship',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
+
+  getCardVote(
+    params?: ComParaCommunityCivicTreeGetCardVote.QueryParams,
+    opts?: ComParaCommunityCivicTreeGetCardVote.CallOptions,
+  ): Promise<ComParaCommunityCivicTreeGetCardVote.Response> {
+    return this._client.call(
+      'com.para.community.civicTree.getCardVote',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  getGraph(
+    params?: ComParaCommunityCivicTreeGetGraph.QueryParams,
+    opts?: ComParaCommunityCivicTreeGetGraph.CallOptions,
+  ): Promise<ComParaCommunityCivicTreeGetGraph.Response> {
+    return this._client.call(
+      'com.para.community.civicTree.getGraph',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  getPulse(
+    params?: ComParaCommunityCivicTreeGetPulse.QueryParams,
+    opts?: ComParaCommunityCivicTreeGetPulse.CallOptions,
+  ): Promise<ComParaCommunityCivicTreeGetPulse.Response> {
+    return this._client.call(
+      'com.para.community.civicTree.getPulse',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  getSummary(
+    params?: ComParaCommunityCivicTreeGetSummary.QueryParams,
+    opts?: ComParaCommunityCivicTreeGetSummary.CallOptions,
+  ): Promise<ComParaCommunityCivicTreeGetSummary.Response> {
+    return this._client.call(
+      'com.para.community.civicTree.getSummary',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  listContributions(
+    params?: ComParaCommunityCivicTreeListContributions.QueryParams,
+    opts?: ComParaCommunityCivicTreeListContributions.CallOptions,
+  ): Promise<ComParaCommunityCivicTreeListContributions.Response> {
+    return this._client.call(
+      'com.para.community.civicTree.listContributions',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  listSuggestions(
+    params?: ComParaCommunityCivicTreeListSuggestions.QueryParams,
+    opts?: ComParaCommunityCivicTreeListSuggestions.CallOptions,
+  ): Promise<ComParaCommunityCivicTreeListSuggestions.Response> {
+    return this._client.call(
+      'com.para.community.civicTree.listSuggestions',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  moderateContribution(
+    data?: ComParaCommunityCivicTreeModerateContribution.InputSchema,
+    opts?: ComParaCommunityCivicTreeModerateContribution.CallOptions,
+  ): Promise<ComParaCommunityCivicTreeModerateContribution.Response> {
+    return this._client.call(
+      'com.para.community.civicTree.moderateContribution',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
+
+  rejectSuggestion(
+    data?: ComParaCommunityCivicTreeRejectSuggestion.InputSchema,
+    opts?: ComParaCommunityCivicTreeRejectSuggestion.CallOptions,
+  ): Promise<ComParaCommunityCivicTreeRejectSuggestion.Response> {
+    return this._client.call(
+      'com.para.community.civicTree.rejectSuggestion',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
+
+  submitContribution(
+    data?: ComParaCommunityCivicTreeSubmitContribution.InputSchema,
+    opts?: ComParaCommunityCivicTreeSubmitContribution.CallOptions,
+  ): Promise<ComParaCommunityCivicTreeSubmitContribution.Response> {
+    return this._client.call(
+      'com.para.community.civicTree.submitContribution',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
+
+  voteContribution(
+    data?: ComParaCommunityCivicTreeVoteContribution.InputSchema,
+    opts?: ComParaCommunityCivicTreeVoteContribution.CallOptions,
+  ): Promise<ComParaCommunityCivicTreeVoteContribution.Response> {
+    return this._client.call(
+      'com.para.community.civicTree.voteContribution',
+      opts?.qp,
+      data,
+      opts,
+    )
+  }
+}
+
+export class ComParaCommunityCivicTreeCardRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: ComParaCommunityCivicTreeCard.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'com.para.community.civicTree.card',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: ComParaCommunityCivicTreeCard.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'com.para.community.civicTree.card',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityCivicTreeCard.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.civicTree.card'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityCivicTreeCard.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.civicTree.card'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'com.para.community.civicTree.card', ...params },
+      { headers },
+    )
+  }
+}
+
+export class ComParaCommunityCivicTreeCardVoteRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: ComParaCommunityCivicTreeCardVote.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'com.para.community.civicTree.cardVote',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: ComParaCommunityCivicTreeCardVote.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'com.para.community.civicTree.cardVote',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityCivicTreeCardVote.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.civicTree.cardVote'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityCivicTreeCardVote.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.civicTree.cardVote'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'com.para.community.civicTree.cardVote', ...params },
+      { headers },
+    )
+  }
+}
+
+export class ComParaCommunityCivicTreeConfigRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: ComParaCommunityCivicTreeConfig.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'com.para.community.civicTree.config',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: ComParaCommunityCivicTreeConfig.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'com.para.community.civicTree.config',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityCivicTreeConfig.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.civicTree.config'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      {
+        collection,
+        rkey: 'self',
+        ...params,
+        record: { ...record, $type: collection },
+      },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityCivicTreeConfig.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.civicTree.config'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'com.para.community.civicTree.config', ...params },
+      { headers },
+    )
+  }
+}
+
+export class ComParaCommunityCivicTreeContributionRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: {
+      uri: string
+      value: ComParaCommunityCivicTreeContribution.Record
+    }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'com.para.community.civicTree.contribution',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: ComParaCommunityCivicTreeContribution.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'com.para.community.civicTree.contribution',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityCivicTreeContribution.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.civicTree.contribution'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityCivicTreeContribution.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.civicTree.contribution'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'com.para.community.civicTree.contribution', ...params },
+      { headers },
+    )
+  }
+}
+
+export class ComParaCommunityCivicTreeContributionVoteRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: {
+      uri: string
+      value: ComParaCommunityCivicTreeContributionVote.Record
+    }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'com.para.community.civicTree.contributionVote',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: ComParaCommunityCivicTreeContributionVote.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'com.para.community.civicTree.contributionVote',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityCivicTreeContributionVote.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.civicTree.contributionVote'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityCivicTreeContributionVote.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.civicTree.contributionVote'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      {
+        collection: 'com.para.community.civicTree.contributionVote',
+        ...params,
+      },
+      { headers },
+    )
+  }
+}
+
+export class ComParaCommunityCivicTreeRelationshipRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: {
+      uri: string
+      value: ComParaCommunityCivicTreeRelationship.Record
+    }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'com.para.community.civicTree.relationship',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: ComParaCommunityCivicTreeRelationship.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'com.para.community.civicTree.relationship',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityCivicTreeRelationship.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.civicTree.relationship'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityCivicTreeRelationship.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.civicTree.relationship'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'com.para.community.civicTree.relationship', ...params },
+      { headers },
     )
   }
 }
@@ -11540,7 +12104,6 @@ export class ToolsNS {
 export class ToolsOzoneNS {
   _client: XrpcClient
   communication: ToolsOzoneCommunicationNS
-  history: ToolsOzoneHistoryNS
   hosting: ToolsOzoneHostingNS
   inbox: ToolsOzoneInboxNS
   moderation: ToolsOzoneModerationNS
@@ -11557,7 +12120,6 @@ export class ToolsOzoneNS {
   constructor(client: XrpcClient) {
     this._client = client
     this.communication = new ToolsOzoneCommunicationNS(client)
-    this.history = new ToolsOzoneHistoryNS(client)
     this.hosting = new ToolsOzoneHostingNS(client)
     this.inbox = new ToolsOzoneInboxNS(client)
     this.moderation = new ToolsOzoneModerationNS(client)
@@ -11624,50 +12186,6 @@ export class ToolsOzoneCommunicationNS {
       .catch((e) => {
         throw ToolsOzoneCommunicationUpdateTemplate.toKnownErr(e)
       })
-  }
-}
-
-export class ToolsOzoneHistoryNS {
-  _client: XrpcClient
-
-  constructor(client: XrpcClient) {
-    this._client = client
-  }
-
-  getAccountActions(
-    params?: ToolsOzoneHistoryGetAccountActions.QueryParams,
-    opts?: ToolsOzoneHistoryGetAccountActions.CallOptions,
-  ): Promise<ToolsOzoneHistoryGetAccountActions.Response> {
-    return this._client.call(
-      'tools.ozone.history.getAccountActions',
-      params,
-      undefined,
-      opts,
-    )
-  }
-
-  getReportedSubjects(
-    params?: ToolsOzoneHistoryGetReportedSubjects.QueryParams,
-    opts?: ToolsOzoneHistoryGetReportedSubjects.CallOptions,
-  ): Promise<ToolsOzoneHistoryGetReportedSubjects.Response> {
-    return this._client.call(
-      'tools.ozone.history.getReportedSubjects',
-      params,
-      undefined,
-      opts,
-    )
-  }
-
-  getSubjectHistory(
-    params?: ToolsOzoneHistoryGetSubjectHistory.QueryParams,
-    opts?: ToolsOzoneHistoryGetSubjectHistory.CallOptions,
-  ): Promise<ToolsOzoneHistoryGetSubjectHistory.Response> {
-    return this._client.call(
-      'tools.ozone.history.getSubjectHistory',
-      params,
-      undefined,
-      opts,
-    )
   }
 }
 

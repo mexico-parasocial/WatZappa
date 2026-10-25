@@ -2,6 +2,7 @@ import type * as accountDevice from './account-device.js'
 import type * as accountEmailAuthFactor from './account-email-auth-factor.js'
 import type * as account from './account.js'
 import type * as actor from './actor.js'
+import type * as alphaRollout from './alpha-rollout.js'
 import type * as appPassword from './app-password.js'
 import type * as oauthRequest from './authorization-request.js'
 import type * as authorizedClient from './authorized-client.js'
@@ -28,7 +29,8 @@ export type DatabaseSchema = actor.PartialDB &
   repoRoot.PartialDB &
   inviteCode.PartialDB &
   lexicon.PartialDB &
-  emailToken.PartialDB
+  emailToken.PartialDB &
+  alphaRollout.PartialDB
 
 export type { Actor, ActorEntry } from './actor.js'
 export type { Account, AccountEntry } from './account.js'

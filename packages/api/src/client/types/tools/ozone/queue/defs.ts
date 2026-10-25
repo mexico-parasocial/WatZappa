@@ -69,17 +69,37 @@ export interface QueueStats {
   closureTargetMissedCount?: number
   /** Percent of reports meeting their closure target. */
   closureTargetMetRate?: number
-  /** Number of reports in 'closed' status */
+  /** Number of reports whose current closure falls within this UTC calendar day. */
+  closedCount?: number
+  /** Number of closures whose last report action is label, tag, or takedown. */
   actionedCount?: number
-  /** Number of reports in 'escalated' status */
+  /** Number of closures whose last report action is not label, tag, or takedown. */
+  acknowledgedCount?: number
+  /** Number of report escalation events during this UTC calendar day. */
   escalatedCount?: number
-  /** Reports received in this queue in the last 24 hours. */
+  /** Reports received in this queue during this UTC calendar day. */
   inboundCount?: number
-  /** Percentage of reports actioned (actionedCount / inboundCount * 100), rounded to nearest integer. Absent when inboundCount is 0. */
+  /** Closures whose last report action is a label event. */
+  labelActionCount?: number
+  /** Closures whose last report action is a tag event. */
+  tagActionCount?: number
+  /** Closures whose last report action is a takedown event. */
+  takedownActionCount?: number
+  /** Sum of report assignment-to-close seconds. */
+  ahtDurationSec?: number
+  /** Number of assigned closed-report samples in ahtDurationSec. */
+  ahtSampleCount?: number
+  /** Sum of report creation-to-close seconds. */
+  resolutionDurationSec?: number
+  /** Number of closed-report samples in resolutionDurationSec. */
+  resolutionSampleCount?: number
+  /** Percentage of closures actioned (actionedCount / closedCount * 100), rounded to nearest integer. */
   actionRate?: number
-  /** Average time in seconds from report creation to close, for reports closed in this period. */
+  /** Average handling time in seconds from report assignment to close. */
   avgHandlingTimeSec?: number
-  /** When these statistics were last computed */
+  /** Average resolution time in seconds from report creation to close. */
+  avgResolutionTimeSec?: number
+  /** When these statistics were last computed. */
   lastUpdated?: string
 }
 

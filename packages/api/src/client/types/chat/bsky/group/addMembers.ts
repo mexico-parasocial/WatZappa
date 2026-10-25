@@ -2,7 +2,7 @@
 /**
  * GENERATED CODE - DO NOT MODIFY
  */
-import { HeadersMap, XRPCError } from '@atproto/xrpc'
+import { type HeadersMap, XRPCError } from '@atproto/xrpc'
 import { type ValidationResult, BlobRef } from '@atproto/lexicon'
 import { CID } from 'multiformats/cid'
 import { validate as _validate } from '../../../../lexicons.js'
@@ -12,6 +12,7 @@ import {
   type OmitKey,
 } from '../../../../util.js'
 import type * as ChatBskyConvoDefs from '../convo/defs.js'
+import type * as ChatBskyActorDefs from '../actor/defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -26,6 +27,7 @@ export interface InputSchema {
 
 export interface OutputSchema {
   convo: ChatBskyConvoDefs.ConvoView
+  addedMembers?: ChatBskyActorDefs.ProfileViewBasic[]
 }
 
 export interface CallOptions {
@@ -54,12 +56,6 @@ export class BlockedActorError extends XRPCError {
 }
 
 export class BlockedSubjectError extends XRPCError {
-  constructor(src: XRPCError) {
-    super(src.status, src.error, src.message, src.headers, { cause: src })
-  }
-}
-
-export class UserForbidsGroupsError extends XRPCError {
   constructor(src: XRPCError) {
     super(src.status, src.error, src.message, src.headers, { cause: src })
   }
@@ -101,12 +97,17 @@ export class RecipientNotFoundError extends XRPCError {
   }
 }
 
+export class UserForbidsGroupsError extends XRPCError {
+  constructor(src: XRPCError) {
+    super(src.status, src.error, src.message, src.headers, { cause: src })
+  }
+}
+
 export function toKnownErr(e: any) {
   if (e instanceof XRPCError) {
     if (e.error === 'AccountSuspended') return new AccountSuspendedError(e)
     if (e.error === 'BlockedActor') return new BlockedActorError(e)
     if (e.error === 'BlockedSubject') return new BlockedSubjectError(e)
-    if (e.error === 'UserForbidsGroups') return new UserForbidsGroupsError(e)
     if (e.error === 'ConvoLocked') return new ConvoLockedError(e)
     if (e.error === 'InsufficientRole') return new InsufficientRoleError(e)
     if (e.error === 'InvalidConvo') return new InvalidConvoError(e)
@@ -114,6 +115,7 @@ export function toKnownErr(e: any) {
     if (e.error === 'NotFollowedBySender')
       return new NotFollowedBySenderError(e)
     if (e.error === 'RecipientNotFound') return new RecipientNotFoundError(e)
+    if (e.error === 'UserForbidsGroups') return new UserForbidsGroupsError(e)
   }
 
   return e

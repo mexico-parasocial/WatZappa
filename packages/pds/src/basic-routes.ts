@@ -48,5 +48,35 @@ Most API routes are under /xrpc/
     res.send({ version })
   })
 
+  // PARA readiness probe (infrascripts/deploy-*.sh, smoke tests): checks the
+  // database and, when configured, Redis.
+  router.get('/xrpc/_ready', async function (req, res) {
+    const { version } = ctx.cfg.service
+    const checks: string[] = []
+
+    try {
+      await sql`select 1`.execute(ctx.accountManager.db.db)
+      checks.push('db:ok')
+    } catch (err) {
+      req.log.error({ err }, 'readiness check failed: db')
+      checks.push('db:fail')
+    }
+
+    if (ctx.cfg.redis) {
+      try {
+        await ctx.redisScratch?.ping()
+        checks.push('redis:ok')
+      } catch (err) {
+        req.log.error({ err }, 'readiness check failed: redis')
+        checks.push('redis:fail')
+      }
+    } else {
+      checks.push('redis:skipped')
+    }
+
+    const ready = checks.every((check) => !check.endsWith(':fail'))
+    res.status(ready ? 200 : 503).send({ version, checks, ready })
+  })
+
   return router
 }

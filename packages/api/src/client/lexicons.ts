@@ -11,6 +11,29 @@ import {
 import { type $Typed, is$typed, maybe$typed } from './util.js'
 
 export const schemaDict: Record<string, LexiconDoc> = {
+  AppBskyActorContentVisibilityDeclaration: {
+    lexicon: 1,
+    id: 'app.bsky.actor.contentVisibilityDeclaration',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "A declaration of an account's preferences for appearing in content discovery surfaces.",
+        key: 'literal:self',
+        record: {
+          type: 'object',
+          required: ['hideFromAlgorithmicRecommendations'],
+          properties: {
+            hideFromAlgorithmicRecommendations: {
+              type: 'boolean',
+              description:
+                'Whether the account requests that its posts be hidden from algorithmic recommendations. Consumers must treat a missing record as false.',
+            },
+          },
+        },
+      },
+    },
+  },
   AppBskyActorDefs: {
     lexicon: 1,
     id: 'app.bsky.actor.defs',
@@ -2459,6 +2482,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
             properties: {
               id: {
                 type: 'string',
+                format: 'tid',
                 description: 'The ID of the created draft.',
               },
             },
@@ -2585,6 +2609,10 @@ export const schemaDict: Record<string, LexiconDoc> = {
             },
             maxLength: 4,
           },
+          embedGallery: {
+            type: 'ref',
+            ref: 'lex:app.bsky.draft.defs#draftEmbedGallery',
+          },
           embedVideos: {
             type: 'array',
             items: {
@@ -2663,6 +2691,26 @@ export const schemaDict: Record<string, LexiconDoc> = {
             maxLength: 10000,
           },
         },
+      },
+      draftEmbedGallery: {
+        type: 'object',
+        required: ['items'],
+        properties: {
+          items: {
+            type: 'ref',
+            ref: 'lex:app.bsky.draft.defs#draftEmbedGalleryItems',
+          },
+        },
+      },
+      draftEmbedGalleryItems: {
+        type: 'array',
+        items: {
+          type: 'union',
+          refs: ['lex:app.bsky.draft.defs#draftEmbedImage'],
+        },
+        maxLength: 20,
+        description:
+          'The schema-level maxLength of 20 is a future-proof ceiling. Clients should currently enforce a soft limit of 10 items in authoring UIs.',
       },
       draftEmbedImage: {
         type: 'object',
@@ -3831,9 +3879,9 @@ export const schemaDict: Record<string, LexiconDoc> = {
           video: {
             type: 'blob',
             description:
-              'The mp4 video file. May be up to 100mb, formerly limited to 50mb.',
+              'The mp4 video file. May be up to 300mb, formerly limited to 100mb.',
             accept: ['video/mp4'],
-            maxSize: 100000000,
+            maxSize: 300000000,
           },
           captions: {
             type: 'array',
@@ -3952,11 +4000,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
           likeCount: {
             type: 'integer',
           },
-          voteScore: {
-            type: 'integer',
-            description:
-              "PARA: net public reactions (up minus down). A viewer's signed vote overrides their like.",
-          },
           quoteCount: {
             type: 'integer',
           },
@@ -3982,6 +4025,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
           debug: {
             type: 'unknown',
             description: 'Debug information for internal development',
+          },
+          voteScore: {
+            type: 'integer',
+            description:
+              "PARA: net public reactions (up minus down). A viewer's signed vote overrides their like.",
           },
         },
       },
@@ -7120,7 +7168,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'query',
         description:
-          'Enumerates accounts that the requesting account (actor) currently has muted. Requires auth.',
+          'Enumerates accounts that the requesting account (actor) currently has fully muted. Mutes scoped to specific kinds of content (only reposts, only quote posts) are not included. Responses may contain more items than the requested limit. Requires auth.',
         parameters: {
           type: 'params',
           properties: {
@@ -7533,7 +7581,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'procedure',
         description:
-          'Creates a mute relationship for the specified account. Mutes are private in Bluesky. Requires auth.',
+          'Creates a mute relationship for the specified account. If a mute already exists for the account, it is updated in place: the stored scope is replaced with the scope in this request. Mutes are private in Bluesky. Requires auth.',
         input: {
           encoding: 'application/json',
           schema: {
@@ -7543,6 +7591,16 @@ export const schemaDict: Record<string, LexiconDoc> = {
               actor: {
                 type: 'string',
                 format: 'at-identifier',
+              },
+              onlyReposts: {
+                type: 'boolean',
+                description:
+                  "Restrict the mute to the account's reposts. When any 'only' scope is set, just the scoped content is muted; when none are set, the account is fully muted. Repeat calls replace the stored scope rather than adding to it.",
+              },
+              onlyQuoteposts: {
+                type: 'boolean',
+                description:
+                  "Restrict the mute to the account's quote posts. See onlyReposts.",
               },
             },
           },
@@ -8781,6 +8839,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
             format: 'at-uri',
           },
+          parent: {
+            type: 'string',
+            format: 'at-uri',
+            description: 'The post this one replies to, if it is a reply.',
+          },
         },
       },
       generatorLikeGroup: {
@@ -9811,13 +9874,14 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'query',
         description:
-          'Get curated Atmosphere Explore content. Authentication is optional; authenticated requests include viewer-specific profile state.',
+          'Get Atmosphere Explore content. Articles are recommended when algorithmic recommendations are enabled for the request, and curated otherwise; other sections are curated. Authentication is optional; authenticated requests include viewer-specific profile state.',
         parameters: {
           type: 'params',
           properties: {
             langs: {
               type: 'array',
-              description: 'Preferred languages. Currently ignored.',
+              description:
+                'Preferred languages for article recommendations when algorithmic recommendations are enabled. Ignored otherwise.',
               items: {
                 type: 'string',
                 format: 'language',
@@ -9852,32 +9916,20 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#announcementBanner',
               },
               articles: {
-                type: 'array',
-                items: {
-                  type: 'ref',
-                  ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#articleItem',
-                },
+                type: 'ref',
+                ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#articleList',
               },
               publications: {
-                type: 'array',
-                items: {
-                  type: 'ref',
-                  ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#publicationItem',
-                },
+                type: 'ref',
+                ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#publicationList',
               },
               photos: {
-                type: 'array',
-                items: {
-                  type: 'ref',
-                  ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#galleryItem',
-                },
+                type: 'ref',
+                ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#galleryList',
               },
               livestreams: {
-                type: 'array',
-                items: {
-                  type: 'ref',
-                  ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#livestreamItem',
-                },
+                type: 'ref',
+                ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#livestreamList',
               },
               apps: {
                 type: 'array',
@@ -9888,6 +9940,78 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 },
               },
             },
+          },
+        },
+      },
+      articleList: {
+        type: 'object',
+        required: ['items'],
+        properties: {
+          items: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#articleItem',
+            },
+          },
+          recIdStr: {
+            type: 'string',
+            description:
+              "Snowflake for this list's recommendation, use when submitting recommendation events. Omitted when the list is not algorithmically recommended.",
+          },
+        },
+      },
+      publicationList: {
+        type: 'object',
+        required: ['items'],
+        properties: {
+          items: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#publicationItem',
+            },
+          },
+          recIdStr: {
+            type: 'string',
+            description:
+              "Snowflake for this list's recommendation, use when submitting recommendation events. Omitted when the list is not algorithmically recommended.",
+          },
+        },
+      },
+      galleryList: {
+        type: 'object',
+        required: ['items'],
+        properties: {
+          items: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#galleryItem',
+            },
+          },
+          recIdStr: {
+            type: 'string',
+            description:
+              "Snowflake for this list's recommendation, use when submitting recommendation events. Omitted when the list is not algorithmically recommended.",
+          },
+        },
+      },
+      livestreamList: {
+        type: 'object',
+        required: ['items'],
+        properties: {
+          items: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.unspecced.getAtmosphereExploreTab#livestreamItem',
+            },
+          },
+          recIdStr: {
+            type: 'string',
+            description:
+              "Snowflake for this list's recommendation, use when submitting recommendation events. Omitted when the list is not algorithmically recommended.",
           },
         },
       },
@@ -10100,6 +10224,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
                   ref: 'lex:app.bsky.graph.defs#starterPackView',
                 },
               },
+              recIdStr: {
+                type: 'string',
+                description:
+                  'Snowflake for this recommendation, use when submitting recommendation events.',
+              },
             },
           },
         },
@@ -10143,6 +10272,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
                   type: 'string',
                   format: 'at-uri',
                 },
+              },
+              recIdStr: {
+                type: 'string',
+                description:
+                  'Snowflake for this recommendation, use when submitting recommendation events.',
               },
             },
           },
@@ -10445,6 +10579,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
                   ref: 'lex:app.bsky.feed.defs#generatorView',
                 },
               },
+              recIdStr: {
+                type: 'string',
+                description:
+                  'Snowflake for this recommendation, use when submitting recommendation events.',
+              },
             },
           },
         },
@@ -10488,6 +10627,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
                   type: 'string',
                   format: 'at-uri',
                 },
+              },
+              recIdStr: {
+                type: 'string',
+                description:
+                  'Snowflake for this recommendation, use when submitting recommendation events.',
               },
             },
           },
@@ -10576,6 +10720,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
                   ref: 'lex:app.bsky.graph.defs#starterPackView',
                 },
               },
+              recIdStr: {
+                type: 'string',
+                description:
+                  'Snowflake for this recommendation, use when submitting recommendation events.',
+              },
             },
           },
         },
@@ -10619,6 +10768,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
                   type: 'string',
                   format: 'at-uri',
                 },
+              },
+              recIdStr: {
+                type: 'string',
+                description:
+                  'Snowflake for this recommendation, use when submitting recommendation events.',
               },
             },
           },
@@ -11221,11 +11375,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
                   type: 'ref',
                   ref: 'lex:app.bsky.unspecced.defs#trendView',
                 },
-                recIdStr: {
-                  type: 'string',
-                  description:
-                    'Snowflake for this recommendation, use when submitting recommendation events.',
-                },
+              },
+              recIdStr: {
+                type: 'string',
+                description:
+                  'Snowflake for this recommendation, use when submitting recommendation events.',
               },
             },
           },
@@ -11595,6 +11749,68 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
+  AppBskyVideoAbortUpload: {
+    lexicon: 1,
+    id: 'app.bsky.video.abortUpload',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          'Abort an upload only while it is created, releasing its quota reservation immediately. Terminal sessions are unchanged and return their terminal outcome. A finishing session returns UploadNotReady.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['jobId'],
+            properties: {
+              jobId: {
+                type: 'string',
+                minLength: 1,
+                maxLength: 256,
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['state'],
+            properties: {
+              state: {
+                type: 'string',
+                maxLength: 32,
+                knownValues: ['aborted', 'completed', 'failed', 'expired'],
+              },
+              completedJobId: {
+                type: 'string',
+                minLength: 1,
+                maxLength: 256,
+                description: 'Present only when state is completed.',
+              },
+              failureReason: {
+                type: 'string',
+                maxLength: 1024,
+                description: 'Present only when state is failed.',
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'UploadNotFound',
+            description:
+              'The job ID is unknown or aged out of retention; known terminal sessions return their outcome and are never reported as not found.',
+          },
+          {
+            name: 'UploadNotReady',
+            description:
+              'A finish is in progress; check getUploadStatus and retry.',
+          },
+        ],
+      },
+    },
+  },
   AppBskyVideoDefs: {
     lexicon: 1,
     id: 'app.bsky.video.defs',
@@ -11614,7 +11830,17 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
             description:
               'The state of the video processing job. All values not listed as a known value indicate that the job is in process.',
-            knownValues: ['JOB_STATE_COMPLETED', 'JOB_STATE_FAILED'],
+            knownValues: [
+              'JOB_STATE_CREATED',
+              'JOB_STATE_ENCODING',
+              'JOB_STATE_ENCODED',
+              'JOB_STATE_SCANNING',
+              'JOB_STATE_SCANNED',
+              'JOB_STATE_UPLOADING',
+              'JOB_STATE_UPLOADED',
+              'JOB_STATE_COMPLETED',
+              'JOB_STATE_FAILED',
+            ],
           },
           progress: {
             type: 'integer',
@@ -11628,10 +11854,108 @@ export const schemaDict: Record<string, LexiconDoc> = {
           error: {
             type: 'string',
           },
+          failureCode: {
+            type: 'string',
+            description:
+              'A machine-readable code for why the video processing job failed.',
+            knownValues: [
+              'validation_failure',
+              'encoding_failure',
+              'pds_upload_failure',
+              'pds_upload_unsupported_blob_size',
+              'generic_failure',
+            ],
+          },
           message: {
             type: 'string',
           },
         },
+      },
+    },
+  },
+  AppBskyVideoFinishUpload: {
+    lexicon: 1,
+    id: 'app.bsky.video.finishUpload',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          'Finish an upload. This call is idempotent and safe to retry. On deduplication completedJobId may differ from the input jobId; poll getJobStatus with completedJobId. Probe-based validation failures surface later as JOB_STATE_FAILED from getJobStatus, not as errors from this call.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['jobId'],
+            properties: {
+              jobId: {
+                type: 'string',
+                minLength: 1,
+                maxLength: 256,
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['completedJobId', 'jobStatus'],
+            properties: {
+              completedJobId: {
+                type: 'string',
+                minLength: 1,
+                maxLength: 256,
+                description:
+                  'The processing job to poll with getJobStatus; on deduplication this may differ from the input jobId.',
+              },
+              jobStatus: {
+                type: 'ref',
+                ref: 'lex:app.bsky.video.defs#jobStatus',
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'UploadNotFound',
+            description:
+              'The job ID is unknown or aged out of retention; known terminal sessions are never reported as not found.',
+          },
+          {
+            name: 'UploadExpired',
+            description:
+              'The upload session expired before finalization began.',
+          },
+          {
+            name: 'MissingParts',
+            description:
+              'Not all parts are recorded; the error message lists the missing part numbers.',
+          },
+          {
+            name: 'UploadNotReady',
+            description:
+              'A finish is in progress; check getUploadStatus and retry.',
+          },
+          {
+            name: 'UnsupportedContentType',
+            description:
+              "The assembled object's detected content type is not supported.",
+          },
+          {
+            name: 'UploadFailed',
+            description:
+              'The session is known to have failed; the error carries its failure reason.',
+          },
+          {
+            name: 'UploadAborted',
+            description: 'The session is known to have been aborted.',
+          },
+          {
+            name: 'ServiceOverloaded',
+            description:
+              'The service is draining or temporarily at capacity; retry later.',
+          },
+        ],
       },
     },
   },
@@ -11701,6 +12025,306 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
+  AppBskyVideoGetUploadStatus: {
+    lexicon: 1,
+    id: 'app.bsky.video.getUploadStatus',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Get the authoritative status of the upload phase. Terminal states remain readable. completedJobId and jobStatus are present only for completed sessions; failureReason is present only for failed sessions.',
+        parameters: {
+          type: 'params',
+          required: ['jobId'],
+          properties: {
+            jobId: {
+              type: 'string',
+              minLength: 1,
+              maxLength: 256,
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: [
+              'jobId',
+              'partSizeBytes',
+              'partCount',
+              'receivedParts',
+              'expiresAt',
+              'state',
+            ],
+            properties: {
+              jobId: {
+                type: 'string',
+                minLength: 1,
+                maxLength: 256,
+              },
+              partSizeBytes: {
+                type: 'integer',
+              },
+              partCount: {
+                type: 'integer',
+              },
+              receivedParts: {
+                type: 'array',
+                items: {
+                  type: 'integer',
+                  minimum: 1,
+                },
+              },
+              expiresAt: {
+                type: 'string',
+                format: 'datetime',
+              },
+              state: {
+                type: 'string',
+                maxLength: 32,
+                knownValues: [
+                  'created',
+                  'finishing',
+                  'completed',
+                  'failed',
+                  'aborted',
+                  'expired',
+                ],
+              },
+              completedJobId: {
+                type: 'string',
+                minLength: 1,
+                maxLength: 256,
+                description:
+                  'Present only when state is completed; may differ from jobId on deduplication.',
+              },
+              jobStatus: {
+                type: 'ref',
+                ref: 'lex:app.bsky.video.defs#jobStatus',
+                description: 'Present only when state is completed.',
+              },
+              failureReason: {
+                type: 'string',
+                maxLength: 1024,
+                description: 'Present only when state is failed.',
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'UploadNotFound',
+            description:
+              'The job ID is unknown or aged out of retention; known terminal sessions remain readable and are never reported as not found.',
+          },
+        ],
+      },
+    },
+  },
+  AppBskyVideoStartUpload: {
+    lexicon: 1,
+    id: 'app.bsky.video.startUpload',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          'Start a multipart video upload. The declared size is exact, while optional media properties are advisory and used only for early failure; the authoritative probe runs asynchronously after upload.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['sizeBytes', 'mimeType'],
+            properties: {
+              sizeBytes: {
+                type: 'integer',
+                minimum: 1,
+                description:
+                  'Exact byte size of the complete upload-ready video file before it is split into parts.',
+              },
+              mimeType: {
+                type: 'string',
+                minLength: 3,
+                maxLength: 255,
+                description: 'Declared MIME type of the video.',
+              },
+              name: {
+                type: 'string',
+                maxLength: 256,
+                description: 'Optional client-provided file name.',
+              },
+              durationMs: {
+                type: 'integer',
+                description:
+                  'Advisory, non-authoritative duration used only for early failure; the authoritative probe runs asynchronously after upload.',
+              },
+              width: {
+                type: 'integer',
+                description:
+                  'Advisory, non-authoritative width used only for early failure; the authoritative probe runs asynchronously after upload.',
+              },
+              height: {
+                type: 'integer',
+                description:
+                  'Advisory, non-authoritative height used only for early failure; the authoritative probe runs asynchronously after upload.',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['jobId', 'partSizeBytes', 'partCount', 'expiresAt'],
+            properties: {
+              jobId: {
+                type: 'string',
+                minLength: 1,
+                maxLength: 256,
+              },
+              partSizeBytes: {
+                type: 'integer',
+              },
+              partCount: {
+                type: 'integer',
+              },
+              expiresAt: {
+                type: 'string',
+                format: 'datetime',
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'UnsupportedContentType',
+            description: 'The declared MIME type is not supported.',
+          },
+          {
+            name: 'VideoTooLarge',
+            description:
+              'The exact file size exceeds the per-file cap or remaining daily byte allowance.',
+          },
+          {
+            name: 'VideoTooLong',
+            description: 'The advisory declared duration exceeds the limit.',
+          },
+          {
+            name: 'BadAspectRatio',
+            description:
+              'The advisory declared dimensions have an unsupported aspect ratio.',
+          },
+          {
+            name: 'DailyLimitExceeded',
+            description:
+              'The daily video or byte allowance, including active reservations, is exhausted.',
+          },
+          {
+            name: 'TooManyOpenUploads',
+            description:
+              'The account has reached its open multipart upload limit.',
+          },
+          {
+            name: 'UploadForbidden',
+            description: 'The account is not permitted to upload video.',
+          },
+          {
+            name: 'ServiceOverloaded',
+            description:
+              'The service is draining, at capacity, or temporarily unable to create the multipart upload.',
+          },
+        ],
+      },
+    },
+  },
+  AppBskyVideoUploadPart: {
+    lexicon: 1,
+    id: 'app.bsky.video.uploadPart',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          'Upload one part. Parts are idempotent and may be retried or re-sent while the session is created. Each expected length is derived from the upload size and part size, and Content-Length must match exactly. ETags are never exposed to clients.',
+        parameters: {
+          type: 'params',
+          required: ['jobId', 'partNumber'],
+          properties: {
+            jobId: {
+              type: 'string',
+              minLength: 1,
+              maxLength: 256,
+            },
+            partNumber: {
+              type: 'integer',
+              minimum: 1,
+            },
+          },
+        },
+        input: {
+          encoding: 'application/octet-stream',
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['partNumber', 'sizeBytes'],
+            properties: {
+              partNumber: {
+                type: 'integer',
+                minimum: 1,
+              },
+              sizeBytes: {
+                type: 'integer',
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'UploadNotFound',
+            description:
+              'The job ID is unknown or aged out of retention; known terminal sessions are never reported as not found.',
+          },
+          {
+            name: 'UploadExpired',
+            description: 'The upload session expired before completion.',
+          },
+          {
+            name: 'InvalidPartNumber',
+            description:
+              "The part number is outside the upload's valid part range.",
+          },
+          {
+            name: 'PartSizeMismatch',
+            description:
+              'Content-Length does not exactly match the expected size for this part.',
+          },
+          {
+            name: 'UploadNotReady',
+            description:
+              'A finish is in progress; check getUploadStatus and retry.',
+          },
+          {
+            name: 'UploadFailed',
+            description:
+              'The session is known to have failed; the error carries its failure reason.',
+          },
+          {
+            name: 'UploadAborted',
+            description: 'The session is known to have been aborted.',
+          },
+          {
+            name: 'UploadAlreadyCompleted',
+            description: 'The session is known to have already completed.',
+          },
+          {
+            name: 'ServiceOverloaded',
+            description:
+              'The service is draining or temporarily at capacity; retry on another worker.',
+          },
+        ],
+      },
+    },
+  },
   AppBskyVideoUploadVideo: {
     lexicon: 1,
     id: 'app.bsky.video.uploadVideo',
@@ -11745,7 +12369,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
             },
             allowGroupInvites: {
               description:
-                '[NOTE: This is under active development and should be considered unstable while this note is here]. Declaration about group chat invitation preferences for the record owner.',
+                'Declaration about group chat invitation preferences for the record owner.',
               type: 'string',
               knownValues: ['all', 'none', 'following'],
             },
@@ -11818,19 +12442,17 @@ export const schemaDict: Record<string, LexiconDoc> = {
             refs: [
               'lex:chat.bsky.actor.defs#directConvoMember',
               'lex:chat.bsky.actor.defs#groupConvoMember',
+              'lex:chat.bsky.actor.defs#pastGroupConvoMember',
             ],
           },
         },
       },
       directConvoMember: {
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here].',
         type: 'object',
         properties: {},
       },
       groupConvoMember: {
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here].',
+        description: 'A current group convo member.',
         type: 'object',
         required: ['role'],
         properties: {
@@ -11847,6 +12469,12 @@ export const schemaDict: Record<string, LexiconDoc> = {
             ref: 'lex:chat.bsky.actor.defs#memberRole',
           },
         },
+      },
+      pastGroupConvoMember: {
+        description: 'A past group convo member.',
+        type: 'object',
+        required: [],
+        properties: {},
       },
     },
   },
@@ -12041,6 +12669,19 @@ export const schemaDict: Record<string, LexiconDoc> = {
         type: 'string',
         knownValues: ['request', 'accepted'],
       },
+      convoRef: {
+        type: 'object',
+        required: ['did', 'convoId'],
+        properties: {
+          did: {
+            type: 'string',
+            format: 'did',
+          },
+          convoId: {
+            type: 'string',
+          },
+        },
+      },
       messageRef: {
         type: 'object',
         required: ['did', 'messageId', 'convoId'],
@@ -12053,19 +12694,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
           },
           messageId: {
-            type: 'string',
-          },
-        },
-      },
-      convoRef: {
-        type: 'object',
-        required: ['did', 'convoId'],
-        properties: {
-          did: {
-            type: 'string',
-            format: 'did',
-          },
-          convoId: {
             type: 'string',
           },
         },
@@ -12090,6 +12718,23 @@ export const schemaDict: Record<string, LexiconDoc> = {
           embed: {
             type: 'union',
             refs: ['lex:app.bsky.embed.record', 'lex:chat.bsky.embed.joinLink'],
+          },
+          replyTo: {
+            description:
+              'If set, the message this message is replying to. The referenced message must be in the same convo.',
+            type: 'ref',
+            ref: 'lex:chat.bsky.convo.defs#replyRef',
+          },
+        },
+      },
+      replyRef: {
+        description:
+          'A reference to another message within the same convo, used to indicate that a message is a reply to it.',
+        type: 'object',
+        required: ['messageId'],
+        properties: {
+          messageId: {
+            type: 'string',
           },
         },
       },
@@ -12132,6 +12777,16 @@ export const schemaDict: Record<string, LexiconDoc> = {
               ref: 'lex:chat.bsky.convo.defs#reactionView',
             },
           },
+          replyTo: {
+            description:
+              "If set, the message this message is replying to. The full view of the referenced message is embedded so the client can render it inline. Only a single level is embedded: the embedded message will not itself have a populated 'replyTo' field even if it was also a reply.",
+            type: 'union',
+            refs: [
+              'lex:chat.bsky.convo.defs#messageView',
+              'lex:chat.bsky.convo.defs#deletedMessageView',
+              'lex:chat.bsky.convo.defs#messageBeforeUserJoinedGroupView',
+            ],
+          },
           sender: {
             type: 'ref',
             ref: 'lex:chat.bsky.convo.defs#messageViewSender',
@@ -12142,9 +12797,17 @@ export const schemaDict: Record<string, LexiconDoc> = {
           },
         },
       },
+      systemMessageReferredUser: {
+        type: 'object',
+        required: ['did'],
+        properties: {
+          did: {
+            type: 'string',
+            format: 'did',
+          },
+        },
+      },
       systemMessageView: {
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here].',
         type: 'object',
         required: ['id', 'rev', 'sentAt', 'data'],
         properties: {
@@ -12179,14 +12842,14 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
       systemMessageDataAddMember: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating a user was added to the group convo.',
+          'System message indicating a user was added to the group convo.',
         type: 'object',
         required: ['member', 'role', 'addedBy'],
         properties: {
           member: {
             description: 'Current view of the member who was added.',
             type: 'ref',
-            ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageReferredUser',
           },
           role: {
             description:
@@ -12196,37 +12859,37 @@ export const schemaDict: Record<string, LexiconDoc> = {
           },
           addedBy: {
             type: 'ref',
-            ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageReferredUser',
           },
         },
       },
       systemMessageDataRemoveMember: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating a user was removed from the group convo.',
+          'System message indicating a user was removed from the group convo.',
         type: 'object',
         required: ['member', 'removedBy'],
         properties: {
           member: {
             description: 'Current view of the member who was removed.',
             type: 'ref',
-            ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageReferredUser',
           },
           removedBy: {
             type: 'ref',
-            ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageReferredUser',
           },
         },
       },
       systemMessageDataMemberJoin: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating a user joined the group convo via join link.',
+          'System message indicating a user joined the group convo via join link.',
         type: 'object',
         required: ['member', 'role'],
         properties: {
           member: {
             description: 'Current view of the member who joined.',
             type: 'ref',
-            ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageReferredUser',
           },
           role: {
             description:
@@ -12238,65 +12901,62 @@ export const schemaDict: Record<string, LexiconDoc> = {
             description:
               'If join link was configured to require approval, this will be set to who approved the request. Undefined if approval was not required.',
             type: 'ref',
-            ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageReferredUser',
           },
         },
       },
       systemMessageDataMemberLeave: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating a user voluntarily left the group convo.',
+          'System message indicating a user voluntarily left the group convo.',
         type: 'object',
         required: ['member'],
         properties: {
           member: {
             description: 'Current view of the member who left the group.',
             type: 'ref',
-            ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageReferredUser',
           },
         },
       },
       systemMessageDataLockConvo: {
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating the group convo was locked.',
+        description: 'System message indicating the group convo was locked.',
         type: 'object',
         required: ['lockedBy'],
         properties: {
           lockedBy: {
             description: 'Current view of the member who locked the group.',
             type: 'ref',
-            ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageReferredUser',
           },
         },
       },
       systemMessageDataUnlockConvo: {
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating the group convo was unlocked.',
+        description: 'System message indicating the group convo was unlocked.',
         type: 'object',
         required: ['unlockedBy'],
         properties: {
           unlockedBy: {
             description: 'Current view of the member who unlocked the group.',
             type: 'ref',
-            ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageReferredUser',
           },
         },
       },
       systemMessageDataLockConvoPermanently: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating the group convo was locked permanently.',
+          'System message indicating the group convo was locked permanently.',
         type: 'object',
         required: ['lockedBy'],
         properties: {
           lockedBy: {
             description: 'Current view of the member who locked the group.',
             type: 'ref',
-            ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageReferredUser',
           },
         },
       },
       systemMessageDataEditGroup: {
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating the group info was edited.',
+        description: 'System message indicating the group info was edited.',
         type: 'object',
         properties: {
           oldName: {
@@ -12311,25 +12971,25 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
       systemMessageDataCreateJoinLink: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating the group join link was created.',
+          'System message indicating the group join link was created.',
         type: 'object',
         properties: {},
       },
       systemMessageDataEditJoinLink: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating the group join link was edited.',
+          'System message indicating the group join link was edited.',
         type: 'object',
         properties: {},
       },
       systemMessageDataEnableJoinLink: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating the group join link was enabled.',
+          'System message indicating the group join link was enabled.',
         type: 'object',
         properties: {},
       },
       systemMessageDataDisableJoinLink: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. System message indicating the group join link was disabled.',
+          'System message indicating the group join link was disabled.',
         type: 'object',
         properties: {},
       },
@@ -12352,6 +13012,12 @@ export const schemaDict: Record<string, LexiconDoc> = {
             format: 'datetime',
           },
         },
+      },
+      messageBeforeUserJoinedGroupView: {
+        description:
+          "Placeholder embedded in place of a reply's parent message when that parent was sent before the viewer joined the group convo. The viewer has no access to that history, so no message data is carried.",
+        type: 'object',
+        properties: {},
       },
       messageViewSender: {
         type: 'object',
@@ -12416,7 +13082,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
           },
           members: {
             description:
-              'Members of this conversation. For direct convos, it will be an immutable list of the 2 members. For group convos, it will a list of important members (the first few members, the viewer, the member who invited the viewer, the member who sent the last message, the member who sent the last reaction), but will not contain the full list of members. NOTE: TBD an endpoint to list all members.',
+              'Members of this conversation. For direct convos, it will be an immutable list of the 2 members. For group convos, it will a list of important members (the first few members, the viewer, the member who added the viewer, the member who sent the last message, the member who sent the last reaction), but will not contain the full list of members. Use chat.bsky.convo.getConvoMembers to list all members.',
             type: 'array',
             items: {
               type: 'ref',
@@ -12459,18 +13125,15 @@ export const schemaDict: Record<string, LexiconDoc> = {
         },
       },
       directConvo: {
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here].',
         type: 'object',
         properties: {},
       },
       groupConvo: {
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here].',
         type: 'object',
         required: [
           'createdAt',
           'lockStatus',
+          'lockStatusModerationOverride',
           'memberCount',
           'memberLimit',
           'name',
@@ -12487,12 +13150,17 @@ export const schemaDict: Record<string, LexiconDoc> = {
           joinRequestCount: {
             type: 'integer',
             description:
-              'The total number of pending join requests for the group conversation. This information is only visible to the owner and to moderators. Capped at 21.',
+              'The total number of pending join requests for the group conversation. Only present for the owner. Capped at 21.',
           },
           lockStatus: {
             description: 'The lock status of the conversation.',
             type: 'ref',
             ref: 'lex:chat.bsky.convo.defs#convoLockStatus',
+          },
+          lockStatusModerationOverride: {
+            description:
+              "Whether the lock status is being forced by a moderation override (account inactivation or convo takedown) rather than the owner's own setting.",
+            type: 'boolean',
           },
           memberCount: {
             type: 'integer',
@@ -12507,8 +13175,8 @@ export const schemaDict: Record<string, LexiconDoc> = {
           name: {
             type: 'string',
             description: 'The display name of the group conversation.',
-            maxGraphemes: 128,
-            maxLength: 1280,
+            maxGraphemes: 50,
+            maxLength: 500,
           },
           unreadJoinRequestCount: {
             type: 'integer',
@@ -12728,7 +13396,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
       logReadConvo: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a convo was read up to a certain message.',
+          'Event indicating a convo was read up to a certain message.',
         type: 'object',
         required: ['rev', 'convoId', 'message'],
         properties: {
@@ -12750,9 +13418,9 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
       logAddMember: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a member was added to a group convo. The member who was added gets a logBeginConvo (to create the convo) but also a logAddMember (to show the system message as the first message the user sees).',
+          'Event indicating a member was added to a group convo. The member who was added gets a logBeginConvo (to create the convo) but also a logAddMember (to show the system message as the first message the user sees).',
         type: 'object',
-        required: ['rev', 'convoId', 'message'],
+        required: ['rev', 'convoId', 'message', 'relatedProfiles'],
         properties: {
           rev: {
             type: 'string',
@@ -12761,16 +13429,26 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
           },
           message: {
+            description:
+              'A system message with data of type #systemMessageDataAddMember',
             type: 'ref',
-            ref: 'lex:chat.bsky.convo.defs#systemMessageDataAddMember',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageView',
+          },
+          relatedProfiles: {
+            description: 'Profiles referred in the system message.',
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            },
           },
         },
       },
       logRemoveMember: {
         description:
-          "[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a member was removed from a group convo. The member who was removed gets a logLeaveConvo (to leave the convo) but not a logRemoveMember (because they already left, so can't see the system message).",
+          "Event indicating a member was removed from a group convo. The member who was removed gets a logLeaveConvo (to leave the convo) but not a logRemoveMember (because they already left, so can't see the system message).",
         type: 'object',
-        required: ['rev', 'convoId', 'message'],
+        required: ['rev', 'convoId', 'message', 'relatedProfiles'],
         properties: {
           rev: {
             type: 'string',
@@ -12779,16 +13457,26 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
           },
           message: {
+            description:
+              'A system message with data of type #systemMessageDataRemoveMember',
             type: 'ref',
-            ref: 'lex:chat.bsky.convo.defs#systemMessageDataRemoveMember',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageView',
+          },
+          relatedProfiles: {
+            description: 'Profiles referred in the system message.',
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            },
           },
         },
       },
       logMemberJoin: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a member joined a group convo via join link. The member who was added gets a logBeginConvo (to create the convo) but also a logMemberJoin (to show the system message as the first message the user sees).',
+          'Event indicating a member joined a group convo via join link. The member who was added gets a logBeginConvo (to create the convo) but also a logMemberJoin (to show the system message as the first message the user sees).',
         type: 'object',
-        required: ['rev', 'convoId', 'message'],
+        required: ['rev', 'convoId', 'message', 'relatedProfiles'],
         properties: {
           rev: {
             type: 'string',
@@ -12797,16 +13485,26 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
           },
           message: {
+            description:
+              'A system message with data of type #systemMessageDataMemberJoin',
             type: 'ref',
-            ref: 'lex:chat.bsky.convo.defs#systemMessageDataMemberJoin',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageView',
+          },
+          relatedProfiles: {
+            description: 'Profiles referred in the system message.',
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            },
           },
         },
       },
       logMemberLeave: {
         description:
-          "[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a member voluntarily left a group convo. The member who was removed gets a logLeaveConvo (to leave the convo) but not a logMemberLeave (because they already left, so can't see the system message).",
+          "Event indicating a member voluntarily left a group convo. The member who was removed gets a logLeaveConvo (to leave the convo) but not a logMemberLeave (because they already left, so can't see the system message).",
         type: 'object',
-        required: ['rev', 'convoId', 'message'],
+        required: ['rev', 'convoId', 'message', 'relatedProfiles'],
         properties: {
           rev: {
             type: 'string',
@@ -12815,16 +13513,25 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
           },
           message: {
+            description:
+              'A system message with data of type #systemMessageDataMemberLeave',
             type: 'ref',
-            ref: 'lex:chat.bsky.convo.defs#systemMessageDataMemberLeave',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageView',
+          },
+          relatedProfiles: {
+            description: 'Profiles referred in the system message.',
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            },
           },
         },
       },
       logLockConvo: {
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a group convo was locked.',
+        description: 'Event indicating a group convo was locked.',
         type: 'object',
-        required: ['rev', 'convoId', 'message'],
+        required: ['rev', 'convoId', 'message', 'relatedProfiles'],
         properties: {
           rev: {
             type: 'string',
@@ -12833,16 +13540,25 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
           },
           message: {
+            description:
+              'A system message with data of type #systemMessageDataLockConvo',
             type: 'ref',
-            ref: 'lex:chat.bsky.convo.defs#systemMessageDataLockConvo',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageView',
+          },
+          relatedProfiles: {
+            description: 'Profiles referred in the system message.',
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            },
           },
         },
       },
       logUnlockConvo: {
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a group convo was unlocked.',
+        description: 'Event indicating a group convo was unlocked.',
         type: 'object',
-        required: ['rev', 'convoId', 'message'],
+        required: ['rev', 'convoId', 'message', 'relatedProfiles'],
         properties: {
           rev: {
             type: 'string',
@@ -12851,16 +13567,25 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
           },
           message: {
+            description:
+              'A system message with data of type #systemMessageDataUnlockConvo',
             type: 'ref',
-            ref: 'lex:chat.bsky.convo.defs#systemMessageDataUnlockConvo',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageView',
+          },
+          relatedProfiles: {
+            description: 'Profiles referred in the system message.',
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            },
           },
         },
       },
       logLockConvoPermanently: {
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a group convo was locked permanently.',
+        description: 'Event indicating a group convo was locked permanently.',
         type: 'object',
-        required: ['rev', 'convoId', 'message'],
+        required: ['rev', 'convoId', 'message', 'relatedProfiles'],
         properties: {
           rev: {
             type: 'string',
@@ -12869,14 +13594,23 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
           },
           message: {
+            description:
+              'A system message with data of type #systemMessageDataLockConvoPermanently',
             type: 'ref',
-            ref: 'lex:chat.bsky.convo.defs#systemMessageDataLockConvoPermanently',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageView',
+          },
+          relatedProfiles: {
+            description: 'Profiles referred in the system message.',
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+            },
           },
         },
       },
       logEditGroup: {
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating info about group convo was edited.',
+        description: 'Event indicating info about group convo was edited.',
         type: 'object',
         required: ['rev', 'convoId', 'message'],
         properties: {
@@ -12887,14 +13621,16 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
           },
           message: {
+            description:
+              'A system message with data of type #systemMessageDataEditGroup',
             type: 'ref',
-            ref: 'lex:chat.bsky.convo.defs#systemMessageDataEditGroup',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageView',
           },
         },
       },
       logCreateJoinLink: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a join link was created for a group convo.',
+          'Event indicating a join link was created for a group convo.',
         type: 'object',
         required: ['rev', 'convoId', 'message'],
         properties: {
@@ -12905,14 +13641,16 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
           },
           message: {
+            description:
+              'A system message with data of type #systemMessageDataCreateJoinLink',
             type: 'ref',
-            ref: 'lex:chat.bsky.convo.defs#systemMessageDataCreateJoinLink',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageView',
           },
         },
       },
       logEditJoinLink: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a settings about a join link for a group convo were edited.',
+          'Event indicating a settings about a join link for a group convo were edited.',
         type: 'object',
         required: ['rev', 'convoId', 'message'],
         properties: {
@@ -12923,14 +13661,16 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
           },
           message: {
+            description:
+              'A system message with data of type #systemMessageDataEditJoinLink',
             type: 'ref',
-            ref: 'lex:chat.bsky.convo.defs#systemMessageDataEditJoinLink',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageView',
           },
         },
       },
       logEnableJoinLink: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a join link was enabled for a group convo.',
+          'Event indicating a join link was enabled for a group convo.',
         type: 'object',
         required: ['rev', 'convoId', 'message'],
         properties: {
@@ -12941,14 +13681,16 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
           },
           message: {
+            description:
+              'A system message with data of type #systemMessageDataEnableJoinLink',
             type: 'ref',
-            ref: 'lex:chat.bsky.convo.defs#systemMessageDataEnableJoinLink',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageView',
           },
         },
       },
       logDisableJoinLink: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a join link was disabled for a group convo.',
+          'Event indicating a join link was disabled for a group convo.',
         type: 'object',
         required: ['rev', 'convoId', 'message'],
         properties: {
@@ -12959,14 +13701,16 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
           },
           message: {
+            description:
+              'A system message with data of type #systemMessageDataDisableJoinLink',
             type: 'ref',
-            ref: 'lex:chat.bsky.convo.defs#systemMessageDataDisableJoinLink',
+            ref: 'lex:chat.bsky.convo.defs#systemMessageView',
           },
         },
       },
       logIncomingJoinRequest: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a join request was made to a group the viewer owns. Only the owner gets this.',
+          'Event indicating a join request was made to a group the viewer owns. Only the owner gets this.',
         type: 'object',
         required: ['rev', 'convoId', 'member'],
         properties: {
@@ -12985,7 +13729,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
       logApproveJoinRequest: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a join request was approved by the viewer. Only the owner gets this. The approved member gets a logBeginConvo.',
+          'Event indicating a join request was approved by the viewer. Only the owner gets this. The approved member gets a logBeginConvo.',
         type: 'object',
         required: ['rev', 'convoId', 'member'],
         properties: {
@@ -13004,7 +13748,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
       logRejectJoinRequest: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a join request was rejected by the viewer. Only the owner gets this.',
+          'Event indicating a join request was rejected by the viewer. Only the owner gets this.',
         type: 'object',
         required: ['rev', 'convoId', 'member'],
         properties: {
@@ -13023,7 +13767,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
       logOutgoingJoinRequest: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a join request was made by the viewer.',
+          'Event indicating a join request was made by the requester. Only requester actor gets this.',
         type: 'object',
         required: ['rev', 'convoId'],
         properties: {
@@ -13037,7 +13781,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
       logWithdrawIncomingJoinRequest: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating a prospective member withdrew their join request. Only the owner gets this.',
+          'Event indicating a prospective member withdrew their join request. Only the owner gets this.',
         type: 'object',
         required: ['rev', 'convoId', 'member'],
         properties: {
@@ -13056,7 +13800,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
       logWithdrawOutgoingJoinRequest: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating the viewer withdrew their own join request. Only requester actor gets this.',
+          'Event indicating the viewer withdrew their own join request. Only requester actor gets this.',
         type: 'object',
         required: ['rev', 'convoId'],
         properties: {
@@ -13070,7 +13814,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
       logReadJoinRequests: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Event indicating the group owner marked join requests as read. Only the owner gets this.',
+          'Event indicating the group owner marked join requests as read. Only the owner gets this.',
         type: 'object',
         required: ['rev', 'convoId'],
         properties: {
@@ -13435,6 +14179,15 @@ export const schemaDict: Record<string, LexiconDoc> = {
                   ],
                 },
               },
+              relatedProfiles: {
+                description:
+                  'Set of all members who authored or reacted to the returned messages. Members referred to by system messages are also included.',
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+                },
+              },
             },
           },
         },
@@ -13448,13 +14201,15 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'query',
         description:
-          'Counts of convos with unread messages, split by membership status.',
+          "Returns unread conversation counts for conversations that are unlocked, not muted, split by convo status. Direct convos are excluded when a block relationship exists between the actor and the other member, or when the other member's account is deleted or deactivated. Group convos are considered unread if they have unread join request counts.",
         parameters: {
           type: 'params',
           properties: {
             includeGroupChats: {
               type: 'boolean',
               default: true,
+              description:
+                'When false, group convos are excluded from the counts.',
             },
           },
         },
@@ -13462,13 +14217,17 @@ export const schemaDict: Record<string, LexiconDoc> = {
           encoding: 'application/json',
           schema: {
             type: 'object',
-            required: ['unreadRequestConvos', 'unreadAcceptedConvos'],
+            required: ['unreadAcceptedConvos', 'unreadRequestConvos'],
             properties: {
-              unreadRequestConvos: {
-                type: 'integer',
-              },
               unreadAcceptedConvos: {
                 type: 'integer',
+                description:
+                  'Number of unread, unlocked accepted convos. Counts convos with unread messages and unread join requests. Capped at 100, where 100 means more than 99.',
+              },
+              unreadRequestConvos: {
+                type: 'integer',
+                description:
+                  'Number of unread, unlocked request convos. Includes convos with unread messages, but not with unread join request, since only the owner of a group has join requests to read, and the group would necessarily be accepted. Capped at 100, where 100 means more than 99.',
               },
             },
           },
@@ -13531,7 +14290,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'query',
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Returns a page of incoming conversation requests for the user. Direct convo requests are returned as convoView; group join requests mada by the user are returned as joinRequestConvoView.',
+          'Returns a page of incoming conversation requests for the user. Direct convo requests are returned as convoView; group join requests made by the user are returned as joinRequestConvoView.',
         parameters: {
           type: 'params',
           properties: {
@@ -13643,7 +14402,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'procedure',
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Locks a group convo so no more content (messages, reactions) can be added to it.',
+          'Locks a group convo so no more content (messages, reactions) can be added to it.',
         errors: [
           {
             name: 'ConvoLocked',
@@ -13804,6 +14563,9 @@ export const schemaDict: Record<string, LexiconDoc> = {
           {
             name: 'InvalidConvo',
           },
+          {
+            name: 'ReplyTargetNotFound',
+          },
         ],
         input: {
           encoding: 'application/json',
@@ -13844,6 +14606,9 @@ export const schemaDict: Record<string, LexiconDoc> = {
           },
           {
             name: 'InvalidConvo',
+          },
+          {
+            name: 'ReplyTargetNotFound',
           },
         ],
         input: {
@@ -13902,13 +14667,16 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'procedure',
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Unlocks a group convo so it is able to receive new content.',
+          'Unlocks a group convo so it is able to receive new content.',
         errors: [
           {
             name: 'InvalidConvo',
           },
           {
             name: 'InsufficientRole',
+          },
+          {
+            name: 'ConvoLockedByModeration',
           },
         ],
         input: {
@@ -14063,8 +14831,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
   ChatBskyEmbedJoinLink: {
     lexicon: 1,
     id: 'chat.bsky.embed.joinLink',
-    description:
-      '[NOTE: This is under active development and should be considered unstable while this note is here]. A join link embedded in a chat message.',
+    description: 'A join link embedded in a chat message.',
     defs: {
       main: {
         type: 'object',
@@ -14081,8 +14848,12 @@ export const schemaDict: Record<string, LexiconDoc> = {
         required: ['joinLinkPreview'],
         properties: {
           joinLinkPreview: {
-            type: 'ref',
-            ref: 'lex:chat.bsky.group.defs#joinLinkPreviewView',
+            type: 'union',
+            refs: [
+              'lex:chat.bsky.group.defs#joinLinkPreviewView',
+              'lex:chat.bsky.group.defs#disabledJoinLinkPreviewView',
+              'lex:chat.bsky.group.defs#invalidJoinLinkPreviewView',
+            ],
           },
         },
       },
@@ -14095,7 +14866,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'procedure',
         description:
-          "[NOTE: This is under active development and should be considered unstable while this note is here]. Adds members to a group. The members are added in 'request' status, so they have to accept it. This creates convo memberships.",
+          "Adds members to a group. The members are added in 'request' status, so they have to accept it. This creates convo memberships.",
         errors: [
           {
             name: 'AccountSuspended',
@@ -14105,9 +14876,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
           },
           {
             name: 'BlockedSubject',
-          },
-          {
-            name: 'UserForbidsGroups',
           },
           {
             name: 'ConvoLocked',
@@ -14126,6 +14894,9 @@ export const schemaDict: Record<string, LexiconDoc> = {
           },
           {
             name: 'RecipientNotFound',
+          },
+          {
+            name: 'UserForbidsGroups',
           },
         ],
         input: {
@@ -14158,6 +14929,13 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 type: 'ref',
                 ref: 'lex:chat.bsky.convo.defs#convoView',
               },
+              addedMembers: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
+                },
+              },
             },
           },
         },
@@ -14171,7 +14949,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'procedure',
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Approves a request to join a group (via join link) the user owns. Action taken by the group owner.',
+          'Approves a request to join a group (via join link) the user owns. Action taken by the group owner.',
         errors: [
           {
             name: 'InvalidConvo',
@@ -14222,7 +15000,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'procedure',
         description:
-          "[NOTE: This is under active development and should be considered unstable while this note is here]. Creates a group convo, specifying the members to be added to it. Unlike getConvoForMembers, this isn't idempotent. It will create new groups even if the membership is identical to pre-existing groups. Will create 'pending' membership for all members, except the owner who is 'accepted'.",
+          "Creates a group convo, specifying the members to be added to it. Unlike getConvoForMembers, this isn't idempotent. It will create new groups even if the membership is identical to pre-existing groups. Will create 'request' membership for all members, except the owner who is 'accepted'.",
         errors: [
           {
             name: 'AccountSuspended',
@@ -14234,13 +15012,16 @@ export const schemaDict: Record<string, LexiconDoc> = {
             name: 'BlockedSubject',
           },
           {
-            name: 'UserForbidsGroups',
+            name: 'NewAccountCannotCreateGroup',
           },
           {
             name: 'NotFollowedBySender',
           },
           {
             name: 'RecipientNotFound',
+          },
+          {
+            name: 'UserForbidsGroups',
           },
         ],
         input: {
@@ -14251,7 +15032,9 @@ export const schemaDict: Record<string, LexiconDoc> = {
             properties: {
               members: {
                 type: 'array',
-                maxLength: 49,
+                description:
+                  "The members to add to the group. The owner is automatically added. Implementations may enforce a lower maximum than the 10,000-item schema limit; Bluesky currently supports up to 100 total members. If the owner is included in this list, the list may contain up to the implementation's total member limit. Otherwise, it may contain one fewer.",
+                maxLength: 10000,
                 items: {
                   type: 'string',
                   format: 'did',
@@ -14288,8 +15071,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
     defs: {
       main: {
         type: 'procedure',
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Creates a join link for the group convo.',
+        description: 'Creates a join link for the group convo.',
         errors: [
           {
             name: 'EnabledJoinLinkAlreadyExists',
@@ -14340,8 +15122,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
   ChatBskyGroupDefs: {
     lexicon: 1,
     id: 'chat.bsky.group.defs',
-    description:
-      '[NOTE: This is under active development and should be considered unstable while this note is here].',
     defs: {
       linkEnabledStatus: {
         type: 'string',
@@ -14352,6 +15132,8 @@ export const schemaDict: Record<string, LexiconDoc> = {
         knownValues: ['anyone', 'followedByOwner'],
       },
       joinLinkView: {
+        description:
+          'Join link view to be used within a group view, so the convo is surrounding, not specified inside this view.',
         type: 'object',
         required: [
           'code',
@@ -14382,8 +15164,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
         },
       },
       joinLinkPreviewView: {
+        description:
+          'Preview that can be shown in feeds, including to unauthenticated viewers.',
         type: 'object',
         required: [
+          'convoId',
           'code',
           'name',
           'owner',
@@ -14391,9 +15176,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
           'memberLimit',
           'requireApproval',
           'joinRule',
-          'enabledStatus',
         ],
         properties: {
+          convoId: {
+            type: 'string',
+          },
           code: {
             type: 'string',
           },
@@ -14417,10 +15204,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'ref',
             ref: 'lex:chat.bsky.group.defs#joinRule',
           },
-          enabledStatus: {
-            type: 'ref',
-            ref: 'lex:chat.bsky.group.defs#linkEnabledStatus',
-          },
           convo: {
             type: 'ref',
             ref: 'lex:chat.bsky.convo.defs#convoView',
@@ -14433,6 +15216,28 @@ export const schemaDict: Record<string, LexiconDoc> = {
           },
         },
       },
+      disabledJoinLinkPreviewView: {
+        description:
+          'Preview for a disabled join link. Carries only the code so clients can correlate with the input and render a disabled state.',
+        type: 'object',
+        required: ['code'],
+        properties: {
+          code: {
+            type: 'string',
+          },
+        },
+      },
+      invalidJoinLinkPreviewView: {
+        description:
+          'Preview for a join link code that does not map to an existing link. Carries only the code so clients can correlate with the input and render an invalid state.',
+        type: 'object',
+        required: ['code'],
+        properties: {
+          code: {
+            type: 'string',
+          },
+        },
+      },
       joinLinkViewerState: {
         type: 'object',
         properties: {
@@ -14442,26 +15247,8 @@ export const schemaDict: Record<string, LexiconDoc> = {
           },
         },
       },
-      groupPublicView: {
-        type: 'object',
-        required: ['name', 'owner', 'memberCount', 'requireApproval'],
-        properties: {
-          name: {
-            type: 'string',
-          },
-          owner: {
-            type: 'ref',
-            ref: 'lex:chat.bsky.actor.defs#profileViewBasic',
-          },
-          memberCount: {
-            type: 'integer',
-          },
-          requireApproval: {
-            type: 'boolean',
-          },
-        },
-      },
       joinRequestView: {
+        description: 'A join request from the perspective of the group owner.',
         type: 'object',
         required: ['convoId', 'requestedBy', 'requestedAt'],
         properties: {
@@ -14488,7 +15275,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
           'owner',
           'memberCount',
           'memberLimit',
-          'requestedAt',
+          'viewer',
         ],
         properties: {
           convoId: {
@@ -14507,9 +15294,9 @@ export const schemaDict: Record<string, LexiconDoc> = {
           memberLimit: {
             type: 'integer',
           },
-          requestedAt: {
-            type: 'string',
-            format: 'datetime',
+          viewer: {
+            type: 'ref',
+            ref: 'lex:chat.bsky.group.defs#joinLinkViewerState',
           },
         },
       },
@@ -14521,8 +15308,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
     defs: {
       main: {
         type: 'procedure',
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Disables the active join link for the group convo.',
+        description: 'Disables the active join link for the group convo.',
         errors: [
           {
             name: 'InvalidConvo',
@@ -14568,8 +15354,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
     defs: {
       main: {
         type: 'procedure',
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Edits group settings.',
+        description: 'Edits group settings.',
         errors: [
           {
             name: 'ConvoLocked',
@@ -14593,8 +15378,8 @@ export const schemaDict: Record<string, LexiconDoc> = {
               name: {
                 type: 'string',
                 minLength: 1,
-                maxGraphemes: 128,
-                maxLength: 1280,
+                maxGraphemes: 50,
+                maxLength: 500,
               },
             },
           },
@@ -14622,7 +15407,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'procedure',
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Edits the existing join link settings for the group convo.',
+          'Edits the existing join link settings for the group convo.',
         errors: [
           {
             name: 'InvalidConvo',
@@ -14676,7 +15461,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'procedure',
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Re-enables a previously disabled join link for the group convo.',
+          'Re-enables a previously disabled join link for the group convo.',
         errors: [
           {
             name: 'InvalidConvo',
@@ -14719,44 +15504,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
-  ChatBskyGroupGetGroupPublicInfo: {
-    lexicon: 1,
-    id: 'chat.bsky.group.getGroupPublicInfo',
-    defs: {
-      main: {
-        type: 'query',
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Get public information about a group from an join link.',
-        errors: [
-          {
-            name: 'InvalidCode',
-          },
-        ],
-        parameters: {
-          type: 'params',
-          required: ['code'],
-          properties: {
-            code: {
-              type: 'string',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['group'],
-            properties: {
-              group: {
-                type: 'ref',
-                ref: 'lex:chat.bsky.group.defs#groupPublicView',
-              },
-            },
-          },
-        },
-      },
-    },
-  },
   ChatBskyGroupGetJoinLinkPreviews: {
     lexicon: 1,
     id: 'chat.bsky.group.getJoinLinkPreviews',
@@ -14764,7 +15511,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'query',
         description:
-          "[NOTE: This is under active development and should be considered unstable while this note is here]. Get public information about groups from join links. Invalid or disabled codes are silently omitted from results. Use the 'code' property on the views to correlate with the input codes, not array positions.",
+          "Get public information about groups from join links. The output array matches the input codes one-to-one by position (and each view also carries its 'code'). Disabled codes return a disabledJoinLinkPreviewView, and codes that do not map to a previewable link return an invalidJoinLinkPreviewView.",
         parameters: {
           type: 'params',
           required: ['codes'],
@@ -14788,8 +15535,12 @@ export const schemaDict: Record<string, LexiconDoc> = {
               joinLinkPreviews: {
                 type: 'array',
                 items: {
-                  type: 'ref',
-                  ref: 'lex:chat.bsky.group.defs#joinLinkPreviewView',
+                  type: 'union',
+                  refs: [
+                    'lex:chat.bsky.group.defs#joinLinkPreviewView',
+                    'lex:chat.bsky.group.defs#disabledJoinLinkPreviewView',
+                    'lex:chat.bsky.group.defs#invalidJoinLinkPreviewView',
+                  ],
                 },
               },
             },
@@ -14805,7 +15556,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'query',
         description:
-          "[NOTE: This is under active development and should be considered unstable while this note is here]. Lists a page of request to join a group (via join link) the user owns. Shows the data from the owner's point of view.",
+          "Lists a page of request to join a group (via join link) the user owns. Shows the data from the owner's point of view.",
         errors: [
           {
             name: 'InvalidConvo',
@@ -14854,6 +15605,55 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
+  ChatBskyGroupListMutualGroups: {
+    lexicon: 1,
+    id: 'chat.bsky.group.listMutualGroups',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Returns a page of group conversations that both the requester and the specified actor are members of.',
+        parameters: {
+          type: 'params',
+          required: ['subject'],
+          properties: {
+            subject: {
+              type: 'string',
+              format: 'did',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['convos'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              convos: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:chat.bsky.convo.defs#convoView',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   ChatBskyGroupRejectJoinRequest: {
     lexicon: 1,
     id: 'chat.bsky.group.rejectJoinRequest',
@@ -14861,7 +15661,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'procedure',
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Rejects a request to join a group (via join link) the user owns. Action taken by the group owner.',
+          'Rejects a request to join a group (via join link) the user owns. Action taken by the group owner.',
         errors: [
           {
             name: 'InvalidConvo',
@@ -14904,7 +15704,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'procedure',
         description:
-          "[NOTE: This is under active development and should be considered unstable while this note is here]. Removes members from a group. This deletes convo memberships, doesn't just set a status.",
+          "Removes members from a group. This deletes convo memberships, doesn't just set a status.",
         errors: [
           {
             name: 'InvalidConvo',
@@ -14956,7 +15756,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'procedure',
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Sends a request to join a group (via join link) to the group owner. Action taken by the prospective group member.',
+          'Sends a request to join a group (via join link) to the group owner. Action taken by the prospective group member.',
         errors: [
           {
             name: 'ConvoLocked',
@@ -15017,8 +15817,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
     defs: {
       main: {
         type: 'procedure',
-        description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Marks all join requests as read for the group owner.',
+        description: 'Marks all join requests as read for the group owner.',
         errors: [
           {
             name: 'InvalidConvo',
@@ -15057,7 +15856,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'procedure',
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Withdraws a pending request to join a group. Action taken by the prospective member who originally requested to join.',
+          'Withdraws a pending request to join a group. Action taken by the prospective member who originally requested to join.',
         errors: [
           {
             name: 'InvalidJoinRequest',
@@ -15092,7 +15891,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
     defs: {
       convoView: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. A view of a conversation for moderation purposes. Unlike chat.bsky.convo.defs#convoView, it does not include viewer-specific data (such as muted, unreadCount, status, lastMessage, lastReaction), since the requester is a moderator and not a member of the conversation. The member list is not included; use chat.bsky.moderation.getConvoMembers to list members.',
+          'A view of a conversation for moderation purposes. Unlike chat.bsky.convo.defs#convoView, it does not include viewer-specific data (such as muted, unreadCount, status, lastMessage, lastReaction), since the requester is a moderator and not a member of the conversation. The member list is not included; use chat.bsky.moderation.getConvoMembers to list members.',
         type: 'object',
         required: ['id', 'rev'],
         properties: {
@@ -15115,13 +15914,13 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
       directConvo: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Data specific to a direct conversation, for moderation purposes.',
+          'Data specific to a direct conversation, for moderation purposes.',
         type: 'object',
         properties: {},
       },
       groupConvo: {
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Data specific to a group conversation, for moderation purposes. Unlike chat.bsky.convo.defs#groupConvo, it does not include viewer-specific data (such as unreadJoinRequestCount), since the requester is a moderator and not a member of the conversation.',
+          'Data specific to a group conversation, for moderation purposes. Unlike chat.bsky.convo.defs#groupConvo, it does not include viewer-specific data (such as unreadJoinRequestCount), since the requester is a moderator and not a member of the conversation.',
         type: 'object',
         required: [
           'createdAt',
@@ -15163,8 +15962,8 @@ export const schemaDict: Record<string, LexiconDoc> = {
           name: {
             type: 'string',
             description: 'The display name of the group conversation.',
-            maxGraphemes: 128,
-            maxLength: 1280,
+            maxGraphemes: 50,
+            maxLength: 500,
           },
         },
       },
@@ -15240,7 +16039,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'query',
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Gets an existing conversation by its ID, for moderation purposes. Does not require the requester to be a member of the conversation.',
+          'Gets an existing conversation by its ID, for moderation purposes. Does not require the requester to be a member of the conversation.',
         errors: [
           {
             name: 'InvalidConvo',
@@ -15278,7 +16077,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'query',
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Returns a paginated list of members from a conversation, for moderation purposes. Does not require the requester to be a member of the conversation.',
+          'Returns a paginated list of members from a conversation, for moderation purposes. Does not require the requester to be a member of the conversation.',
         errors: [
           {
             name: 'InvalidConvo',
@@ -15331,7 +16130,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'query',
         description:
-          '[NOTE: This is under active development and should be considered unstable while this note is here]. Gets existing conversations by their IDs, for moderation purposes. Does not require the requester to be a member of the conversations. Unknown IDs are silently omitted from the response.',
+          'Gets existing conversations by their IDs, for moderation purposes. Does not require the requester to be a member of the conversations. Unknown IDs are silently omitted from the response.',
         parameters: {
           type: 'params',
           required: ['convoIds'],
@@ -16046,8 +16845,10 @@ export const schemaDict: Record<string, LexiconDoc> = {
               'owner_left',
               'owner_deactivated',
               'owner_deleted',
+              'owner_suspended',
               'owner_taken_down',
               'label_applied',
+              'convo_taken_down',
             ],
           },
           newName: {
@@ -19730,1881 +20531,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
-  ComAtprotoSimplespaceAddMember: {
-    lexicon: 1,
-    id: 'com.atproto.simplespace.addMember',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          "Add a member to a space's member list. The member list is host-internal state consulted at credential-mint time when the space's policy is 'member-list'. It is not a synced protocol structure and is not enumerated to the network. Requires auth as the space owner.",
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['space', 'did'],
-            properties: {
-              space: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'Reference to the space.',
-              },
-              did: {
-                type: 'string',
-                format: 'did',
-                description: 'The DID of the member to add.',
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'NotSpaceOwner',
-          },
-        ],
-      },
-    },
-  },
-  ComAtprotoSimplespaceCheckUserAccess: {
-    lexicon: 1,
-    id: 'com.atproto.simplespace.checkUserAccess',
-    defs: {
-      main: {
-        type: 'query',
-        description:
-          "Ask a space's managing app whether to authorize a requesting user for a space credential. Served by the managingApp (not the PDS), called by the space authority at mint time when policy is 'managing-app'. Authenticated with service auth from the authority.",
-        parameters: {
-          type: 'params',
-          required: ['space', 'user'],
-          properties: {
-            space: {
-              type: 'string',
-              format: 'space-ref',
-              description: 'Reference to the space.',
-            },
-            user: {
-              type: 'string',
-              format: 'did',
-              description: 'The DID of the requesting user.',
-            },
-            clientId: {
-              type: 'string',
-              description:
-                'The attested client_id, if a client attestation was presented.',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['authorized'],
-            properties: {
-              authorized: {
-                type: 'boolean',
-                description: 'Whether the managing app authorizes the request.',
-              },
-            },
-          },
-        },
-      },
-    },
-  },
-  ComAtprotoSimplespaceCreateSpace: {
-    lexicon: 1,
-    id: 'com.atproto.simplespace.createSpace',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          "Create a new space managed by the simplespace implementation. The space is anchored on the authenticated user's DID, who becomes the space owner. Requires auth, implemented by PDS.",
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['type', 'policy', 'appAccess'],
-            properties: {
-              type: {
-                type: 'string',
-                format: 'nsid',
-                description:
-                  'The NSID of the space type, describing the modality of the space (e.g. app.bsky.group, app.bsky.personal).',
-              },
-              skey: {
-                type: 'string',
-                format: 'record-key',
-                description:
-                  'The space key. Used to differentiate multiple spaces of the same type under the same owner. Same syntax requirements as a record key. If not provided, one will be auto-generated (TID).',
-              },
-              policy: {
-                type: 'union',
-                description:
-                  'How the authority decides whether to authorize a requesting user.',
-                refs: [
-                  'lex:com.atproto.simplespace.defs#publicPolicy',
-                  'lex:com.atproto.simplespace.defs#memberListPolicy',
-                  'lex:com.atproto.simplespace.defs#managingAppPolicy',
-                ],
-              },
-              appAccess: {
-                type: 'union',
-                description:
-                  'How the authority decides whether to authorize a requesting app.',
-                refs: [
-                  'lex:com.atproto.simplespace.defs#open',
-                  'lex:com.atproto.simplespace.defs#allowList',
-                ],
-              },
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['uri'],
-            properties: {
-              uri: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'URI of the created space.',
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceAlreadyExists',
-            description:
-              'A space with this owner, type, and skey already exists. A space that was previously deleted may be created again.',
-          },
-          {
-            name: 'UnsupportedPolicy',
-            description: 'The requested policy is not one the host implements.',
-          },
-          {
-            name: 'UnsupportedAppAccess',
-            description:
-              'The requested appAccess variant is not one the host implements. A host will not store an app access policy it cannot enforce.',
-          },
-        ],
-      },
-    },
-  },
-  ComAtprotoSimplespaceDefs: {
-    lexicon: 1,
-    id: 'com.atproto.simplespace.defs',
-    defs: {
-      publicPolicy: {
-        type: 'object',
-        description: 'User access policy: any user may access the space.',
-        properties: {},
-      },
-      memberListPolicy: {
-        type: 'object',
-        description:
-          "User access policy: only users on the space's member list may access it.",
-        properties: {},
-      },
-      managingAppPolicy: {
-        type: 'object',
-        description:
-          'User access policy: the managing app is asked, via checkUserAccess, whether to authorize each user.',
-        required: ['managingApp'],
-        properties: {
-          managingApp: {
-            type: 'string',
-            description:
-              "Service identifier of the managing app: a DID with an optional service fragment (e.g. 'did:web:example.com#forum').",
-          },
-        },
-      },
-      open: {
-        type: 'object',
-        description:
-          'App access policy: any app may access the space. No client attestation required.',
-        properties: {},
-      },
-      allowList: {
-        type: 'object',
-        description:
-          'App access policy: only the named clients may access the space, evaluated against the attested client_id.',
-        required: ['allowed'],
-        properties: {
-          allowed: {
-            type: 'array',
-            description: 'The OAuth client IDs permitted to access the space.',
-            items: {
-              type: 'string',
-              description: 'An OAuth client ID.',
-            },
-          },
-        },
-      },
-    },
-  },
-  ComAtprotoSimplespaceDeleteSpace: {
-    lexicon: 1,
-    id: 'com.atproto.simplespace.deleteSpace',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          "Delete a space. The authenticated user must be the space owner. The authority's own repo in the space is deleted along with it, since the space host and the repo host are the same service here; other members' repos are flagged as belonging to a deleted space rather than erased. After deletion, all reads and writes against the space fail with SpaceNotFound, and getSpaceCredential answers SpaceDeleted so a syncer that missed the notification still learns to drop its copy. Idempotent. Requires auth, implemented by PDS.",
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['space'],
-            properties: {
-              space: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'Reference to the space to delete.',
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'NotSpaceOwner',
-          },
-        ],
-      },
-    },
-  },
-  ComAtprotoSimplespaceGetSpace: {
-    lexicon: 1,
-    id: 'com.atproto.simplespace.getSpace',
-    defs: {
-      main: {
-        type: 'query',
-        description:
-          'Describe a space managed by the simplespace implementation, including its configuration. Served by the space host. Requires either OAuth (for a caller with an account on this host) or a space credential (for a member hosted elsewhere); either way the caller must be authorized for the space.',
-        parameters: {
-          type: 'params',
-          required: ['space'],
-          properties: {
-            space: {
-              type: 'string',
-              format: 'space-ref',
-              description: 'Reference to the space.',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['uri', 'policy', 'appAccess'],
-            properties: {
-              uri: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'URI of the space.',
-              },
-              policy: {
-                type: 'union',
-                description:
-                  'How the authority decides whether to authorize a requesting user.',
-                refs: [
-                  'lex:com.atproto.simplespace.defs#publicPolicy',
-                  'lex:com.atproto.simplespace.defs#memberListPolicy',
-                  'lex:com.atproto.simplespace.defs#managingAppPolicy',
-                ],
-              },
-              appAccess: {
-                type: 'union',
-                description:
-                  'How the authority decides whether to authorize a requesting app.',
-                refs: [
-                  'lex:com.atproto.simplespace.defs#open',
-                  'lex:com.atproto.simplespace.defs#allowList',
-                ],
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-        ],
-      },
-    },
-  },
-  ComAtprotoSimplespaceListMembers: {
-    lexicon: 1,
-    id: 'com.atproto.simplespace.listMembers',
-    defs: {
-      main: {
-        type: 'query',
-        description:
-          "List the members in a space's host-internal member list. Must be called on the space authority's PDS. Requires OAuth with a covering read grant; a space credential is not sufficient, so members hosted elsewhere cannot enumerate the list. This reflects the simplespace member list, not a protocol-level reader set.",
-        parameters: {
-          type: 'params',
-          required: ['space'],
-          properties: {
-            space: {
-              type: 'string',
-              format: 'space-ref',
-              description: 'Reference to the space.',
-            },
-            limit: {
-              type: 'integer',
-              minimum: 1,
-              maximum: 1000,
-              default: 100,
-              description: 'Maximum number of members to return.',
-            },
-            cursor: {
-              type: 'string',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['members'],
-            properties: {
-              cursor: {
-                type: 'string',
-              },
-              members: {
-                type: 'array',
-                items: {
-                  type: 'ref',
-                  ref: 'lex:com.atproto.simplespace.listMembers#member',
-                },
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-        ],
-      },
-      member: {
-        type: 'object',
-        required: ['did'],
-        properties: {
-          did: {
-            type: 'string',
-            format: 'did',
-          },
-        },
-      },
-    },
-  },
-  ComAtprotoSimplespaceRemoveMember: {
-    lexicon: 1,
-    id: 'com.atproto.simplespace.removeMember',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          "Remove a member from a space's member list. The member list is host-internal state consulted at credential-mint time when the space's policy is 'member-list'. Requires auth as the space owner.",
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['space', 'did'],
-            properties: {
-              space: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'Reference to the space.',
-              },
-              did: {
-                type: 'string',
-                format: 'did',
-                description: 'The DID of the member to remove.',
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'NotSpaceOwner',
-          },
-        ],
-      },
-    },
-  },
-  ComAtprotoSimplespaceUpdateSpace: {
-    lexicon: 1,
-    id: 'com.atproto.simplespace.updateSpace',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          'Update the configuration of a space. The authenticated user must be the space owner. Omitted fields are left unchanged. Requires auth, implemented by PDS.',
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['space'],
-            properties: {
-              space: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'Reference to the space to update.',
-              },
-              policy: {
-                type: 'union',
-                description:
-                  'How the authority decides whether to authorize a requesting user. When supplied, replaces the current policy wholesale.',
-                refs: [
-                  'lex:com.atproto.simplespace.defs#publicPolicy',
-                  'lex:com.atproto.simplespace.defs#memberListPolicy',
-                  'lex:com.atproto.simplespace.defs#managingAppPolicy',
-                ],
-              },
-              appAccess: {
-                type: 'union',
-                description:
-                  'How the authority decides whether to authorize a requesting app. When supplied, replaces the current policy wholesale.',
-                refs: [
-                  'lex:com.atproto.simplespace.defs#open',
-                  'lex:com.atproto.simplespace.defs#allowList',
-                ],
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'NotSpaceOwner',
-          },
-          {
-            name: 'UnsupportedPolicy',
-            description: 'The requested policy is not one the host implements.',
-          },
-          {
-            name: 'UnsupportedAppAccess',
-            description:
-              'The requested appAccess variant is not one the host implements. A host will not store an app access policy it cannot enforce.',
-          },
-        ],
-      },
-    },
-  },
-  ComAtprotoSpaceApplyWrites: {
-    lexicon: 1,
-    id: 'com.atproto.space.applyWrites',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          'Apply a batch transaction of creates, updates, and deletes in a permissioned space. Requires auth, implemented by PDS.',
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['space', 'repo', 'writes'],
-            properties: {
-              space: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'Reference to the space.',
-              },
-              repo: {
-                type: 'string',
-                format: 'did',
-                description:
-                  'The DID of the repo to write to (the authenticated member).',
-              },
-              validate: {
-                type: 'boolean',
-                description:
-                  "Can be set to 'false' to skip Lexicon schema validation of record data across all operations, 'true' to require it, or leave unset to validate only for known Lexicons.",
-              },
-              writes: {
-                type: 'array',
-                items: {
-                  type: 'union',
-                  refs: [
-                    'lex:com.atproto.space.applyWrites#create',
-                    'lex:com.atproto.space.applyWrites#update',
-                    'lex:com.atproto.space.applyWrites#delete',
-                  ],
-                  closed: true,
-                },
-              },
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            properties: {
-              results: {
-                type: 'array',
-                items: {
-                  type: 'union',
-                  refs: [
-                    'lex:com.atproto.space.applyWrites#createResult',
-                    'lex:com.atproto.space.applyWrites#updateResult',
-                    'lex:com.atproto.space.applyWrites#deleteResult',
-                  ],
-                  closed: true,
-                },
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'RecordNotFound',
-            description:
-              'An update or delete targeted a record that does not exist.',
-          },
-          {
-            name: 'RecordAlreadyExists',
-            description:
-              'A create targeted a collection and rkey that already holds a record.',
-          },
-        ],
-      },
-      create: {
-        type: 'object',
-        description: 'Operation which creates a new record.',
-        required: ['collection', 'value'],
-        properties: {
-          collection: {
-            type: 'string',
-            format: 'nsid',
-          },
-          rkey: {
-            type: 'string',
-            format: 'record-key',
-            maxLength: 512,
-          },
-          value: {
-            type: 'unknown',
-          },
-        },
-      },
-      update: {
-        type: 'object',
-        description: 'Operation which updates an existing record.',
-        required: ['collection', 'rkey', 'value'],
-        properties: {
-          collection: {
-            type: 'string',
-            format: 'nsid',
-          },
-          rkey: {
-            type: 'string',
-            format: 'record-key',
-          },
-          value: {
-            type: 'unknown',
-          },
-        },
-      },
-      delete: {
-        type: 'object',
-        description: 'Operation which deletes an existing record.',
-        required: ['collection', 'rkey'],
-        properties: {
-          collection: {
-            type: 'string',
-            format: 'nsid',
-          },
-          rkey: {
-            type: 'string',
-            format: 'record-key',
-          },
-        },
-      },
-      createResult: {
-        type: 'object',
-        required: ['uri', 'cid'],
-        properties: {
-          uri: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          cid: {
-            type: 'string',
-            format: 'cid',
-          },
-          validationStatus: {
-            type: 'string',
-            knownValues: ['valid', 'unknown'],
-          },
-        },
-      },
-      updateResult: {
-        type: 'object',
-        required: ['uri', 'cid'],
-        properties: {
-          uri: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          cid: {
-            type: 'string',
-            format: 'cid',
-          },
-          validationStatus: {
-            type: 'string',
-            knownValues: ['valid', 'unknown'],
-          },
-        },
-      },
-      deleteResult: {
-        type: 'object',
-        required: [],
-        properties: {},
-      },
-    },
-  },
-  ComAtprotoSpaceCreateRecord: {
-    lexicon: 1,
-    id: 'com.atproto.space.createRecord',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          'Create a single new record in a permissioned space. Requires auth, implemented by PDS.',
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['space', 'repo', 'collection', 'record'],
-            properties: {
-              space: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'Reference to the space.',
-              },
-              repo: {
-                type: 'string',
-                format: 'did',
-                description:
-                  'The DID of the repo to write to (the authenticated member).',
-              },
-              collection: {
-                type: 'string',
-                format: 'nsid',
-                description: 'The NSID of the record collection.',
-              },
-              rkey: {
-                type: 'string',
-                format: 'record-key',
-                description: 'The Record Key.',
-                maxLength: 512,
-              },
-              validate: {
-                type: 'boolean',
-                description:
-                  "Can be set to 'false' to skip Lexicon schema validation of record data, 'true' to require it, or leave unset to validate only for known Lexicons.",
-              },
-              record: {
-                type: 'unknown',
-                description: 'The record itself. Must contain a $type field.',
-              },
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['uri', 'cid'],
-            properties: {
-              uri: {
-                type: 'string',
-                format: 'at-uri',
-                description: 'URI of the created record.',
-              },
-              cid: {
-                type: 'string',
-                format: 'cid',
-              },
-              validationStatus: {
-                type: 'string',
-                knownValues: ['valid', 'unknown'],
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'RecordAlreadyExists',
-            description:
-              'A record already exists at this collection and rkey. Retry with a different rkey, or use putRecord.',
-          },
-        ],
-      },
-    },
-  },
-  ComAtprotoSpaceDefs: {
-    lexicon: 1,
-    id: 'com.atproto.space.defs',
-    defs: {
-      signedCommit: {
-        type: 'object',
-        description:
-          'A signed commit over the current state of a permissioned repo.',
-        required: ['ver', 'hash', 'mac', 'ikm', 'sig', 'rev'],
-        properties: {
-          ver: {
-            type: 'integer',
-            description:
-              'Commit format version, currently 1. Corresponds to the version in the ctx protocol tag (atproto-space-v1).',
-          },
-          hash: {
-            type: 'bytes',
-            description: 'sha256 digest of the LtHash state (32 bytes).',
-          },
-          ikm: {
-            type: 'bytes',
-            description:
-              'Per-signature input keying material (32 random bytes)',
-          },
-          sig: {
-            type: 'bytes',
-            description:
-              "Signature over ctx (space, author DID, rev, ikm) by the user's atproto signing key. Does not cover the repo hash.",
-          },
-          mac: {
-            type: 'bytes',
-            description:
-              "HMAC-SHA256 over hash, keyed by HKDF-SHA256(ikm, info=ctx). Binds the repo hash to this commit's context.",
-          },
-          rev: {
-            type: 'string',
-            format: 'tid',
-            description: 'Commit revision (TID), also bound into ctx.',
-          },
-        },
-      },
-    },
-  },
-  ComAtprotoSpaceDeleteRecord: {
-    lexicon: 1,
-    id: 'com.atproto.space.deleteRecord',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          "Delete a record from a permissioned space, or ensure it doesn't exist. Succeeds whether or not the record was present. Requires auth, implemented by PDS.",
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['space', 'repo', 'collection', 'rkey'],
-            properties: {
-              space: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'Reference to the space.',
-              },
-              repo: {
-                type: 'string',
-                format: 'did',
-                description:
-                  'The DID of the repo to delete from (the authenticated member).',
-              },
-              collection: {
-                type: 'string',
-                format: 'nsid',
-                description: 'The NSID of the record collection.',
-              },
-              rkey: {
-                type: 'string',
-                format: 'record-key',
-                description: 'The Record Key.',
-              },
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            properties: {},
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-        ],
-      },
-    },
-  },
-  ComAtprotoSpaceGetBlob: {
-    lexicon: 1,
-    id: 'com.atproto.space.getBlob',
-    defs: {
-      main: {
-        type: 'query',
-        description:
-          "Get a blob referenced from a record in a permissioned space. Returns the full blob as originally uploaded. Blobs are not uploaded through this namespace: a space record references a blob uploaded via com.atproto.repo.uploadBlob, so a client writing blob-bearing records into a space needs a blob permission alongside its space permission. Use listBlobs to enumerate a repo's blobs in a space. Callable with either OAuth (for the authenticated user's own data) or a space credential (for syncing services).",
-        parameters: {
-          type: 'params',
-          required: ['space', 'repo', 'cid'],
-          properties: {
-            space: {
-              type: 'string',
-              format: 'space-ref',
-              description: 'Reference to the space.',
-            },
-            repo: {
-              type: 'string',
-              format: 'did',
-              description: 'The DID of the account whose repo holds the blob.',
-            },
-            cid: {
-              type: 'string',
-              format: 'cid',
-              description: 'The CID of the blob to fetch.',
-            },
-          },
-        },
-        output: {
-          encoding: '*/*',
-        },
-        errors: [
-          {
-            name: 'BlobNotFound',
-          },
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'RepoNotFound',
-          },
-          {
-            name: 'RepoTakendown',
-          },
-          {
-            name: 'RepoSuspended',
-          },
-          {
-            name: 'RepoDeactivated',
-          },
-        ],
-      },
-    },
-  },
-  ComAtprotoSpaceGetDelegationToken: {
-    lexicon: 1,
-    id: 'com.atproto.space.getDelegationToken',
-    defs: {
-      main: {
-        type: 'query',
-        description:
-          "Mint a delegation token for a space, proving the requesting app is acting on the user's behalf. Exchanged with the space authority for a space credential. Served by the requesting user's PDS. Requires OAuth auth.",
-        parameters: {
-          type: 'params',
-          required: ['space'],
-          properties: {
-            space: {
-              type: 'string',
-              format: 'space-ref',
-              description: 'Reference to the space.',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['token'],
-            properties: {
-              token: {
-                type: 'string',
-                description: 'A signed JWT delegation token.',
-              },
-            },
-          },
-        },
-      },
-    },
-  },
-  ComAtprotoSpaceGetLatestCommit: {
-    lexicon: 1,
-    id: 'com.atproto.space.getLatestCommit',
-    defs: {
-      main: {
-        type: 'query',
-        description:
-          "Get the current signed commit for an account's permissioned repo within a space. Served by a repo host. Throws RepoNotFound when the account holds no repo in the space, including the case of a member that has never written to it. Callable with either OAuth (for the authenticated user's own data) or a space credential (for syncing services).",
-        parameters: {
-          type: 'params',
-          required: ['space', 'repo'],
-          properties: {
-            space: {
-              type: 'string',
-              format: 'space-ref',
-              description: 'Reference to the space.',
-            },
-            repo: {
-              type: 'string',
-              format: 'did',
-              description:
-                'The DID of the account whose latest commit to retrieve.',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            properties: {
-              commit: {
-                type: 'ref',
-                ref: 'lex:com.atproto.space.defs#signedCommit',
-                description: "The account's current signed commit.",
-              },
-            },
-            required: ['commit'],
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'RepoNotFound',
-          },
-          {
-            name: 'RepoTakendown',
-          },
-          {
-            name: 'RepoSuspended',
-          },
-          {
-            name: 'RepoDeactivated',
-          },
-        ],
-      },
-    },
-  },
-  ComAtprotoSpaceGetRecord: {
-    lexicon: 1,
-    id: 'com.atproto.space.getRecord',
-    defs: {
-      main: {
-        type: 'query',
-        description:
-          "Get a single record from a permissioned space. Callable with either OAuth (for the authenticated user's own data) or a space credential (for syncing services). Throws RepoNotFound when the account holds no repo in the space; this does not distinguish a member that has never written from a non-member.",
-        parameters: {
-          type: 'params',
-          required: ['space', 'repo', 'collection', 'rkey'],
-          properties: {
-            space: {
-              type: 'string',
-              format: 'space-ref',
-              description: 'Reference to the space.',
-            },
-            repo: {
-              type: 'string',
-              format: 'did',
-              description: 'The DID of the account whose repo to read from.',
-            },
-            collection: {
-              type: 'string',
-              format: 'nsid',
-              description: 'The NSID of the record collection.',
-            },
-            rkey: {
-              type: 'string',
-              format: 'record-key',
-              description: 'The Record Key.',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['uri', 'cid', 'value'],
-            properties: {
-              uri: {
-                type: 'string',
-                format: 'at-uri',
-              },
-              cid: {
-                type: 'string',
-                format: 'cid',
-              },
-              value: {
-                type: 'unknown',
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'RecordNotFound',
-          },
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'RepoNotFound',
-          },
-          {
-            name: 'RepoTakendown',
-          },
-          {
-            name: 'RepoSuspended',
-          },
-          {
-            name: 'RepoDeactivated',
-          },
-        ],
-      },
-    },
-  },
-  ComAtprotoSpaceGetRepo: {
-    lexicon: 1,
-    id: 'com.atproto.space.getRepo',
-    defs: {
-      main: {
-        type: 'query',
-        description:
-          "Download an account's permissioned repo within a space as a CAR file, for full-state recovery. The CAR declares two roots in order: the signed commit, then a DRISL (DAG-CBOR) index mapping '{collection}/{rkey}' to record CID. Record blocks follow, in the same canonical DAG-CBOR key order as the index (length-first, then bytewise). Blobs are not included and are fetched separately via getBlob. Served by a repo host. Callable with either OAuth (for the authenticated user's own data) or a space credential (for syncing services).",
-        parameters: {
-          type: 'params',
-          required: ['space', 'repo'],
-          properties: {
-            space: {
-              type: 'string',
-              format: 'space-ref',
-              description: 'Reference to the space.',
-            },
-            repo: {
-              type: 'string',
-              format: 'did',
-              description: 'The DID of the account whose repo to download.',
-            },
-            excludeValues: {
-              type: 'boolean',
-              default: false,
-              description:
-                'If true, omit the record blocks and return only the commit and index roots. The index is still fully authenticated by folding its entries into a set hash and comparing against the commit, so a syncer can diff it against a local copy and fetch just the records it lacks. Note the resulting CAR declares two roots and carries no non-root blocks.',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/vnd.ipld.car',
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'RepoNotFound',
-          },
-          {
-            name: 'RepoTakendown',
-          },
-          {
-            name: 'RepoSuspended',
-          },
-          {
-            name: 'RepoDeactivated',
-          },
-        ],
-      },
-    },
-  },
-  ComAtprotoSpaceGetSpaceCredential: {
-    lexicon: 1,
-    id: 'com.atproto.space.getSpaceCredential',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          "Exchange a delegation token for a space credential. Called on the space authority, with the delegation token as the request's authorization token and a DPoP proof signed by the key to bind the credential to. The resulting space credential reads repos across the space. Requires a delegation token and DPoP proof, plus a client attestation when the space gates on app identity.",
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['space'],
-            properties: {
-              space: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'Reference to the space.',
-              },
-              clientAttestation: {
-                type: 'string',
-                description:
-                  "Optional client attestation JWT establishing the app's identity. Required only when the space gates on app identity.",
-              },
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['credential'],
-            properties: {
-              credential: {
-                type: 'string',
-                description:
-                  "A signed JWT space credential, bound through its cnf.jkt claim to the key that signed the request's DPoP proof.",
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'SpaceDeleted',
-          },
-          {
-            name: 'UserNotAuthorized',
-            description: 'Refused on the basis of the requesting user.',
-          },
-          {
-            name: 'AppNotAuthorized',
-            description: 'Refused on the basis of the requesting app.',
-          },
-          {
-            name: 'NotAuthorized',
-            description:
-              'Refused without attributing the refusal to the user or the app. Authorities that do not wish to disclose which perimeter failed may return this in place of UserNotAuthorized or AppNotAuthorized.',
-          },
-          {
-            name: 'InvalidDelegationToken',
-          },
-          {
-            name: 'InvalidClientAttestation',
-          },
-        ],
-      },
-    },
-  },
-  ComAtprotoSpaceListBlobs: {
-    lexicon: 1,
-    id: 'com.atproto.space.listBlobs',
-    defs: {
-      main: {
-        type: 'query',
-        description:
-          "List the CIDs of blobs referenced by an account's records within a permissioned space, optionally since some revision of that repo. Lets a syncer discover which blobs to fetch via getBlob, and lets an account enumerate the blobs it must carry when migrating a permissioned repo. Scoped to one space: blobs behind permissioned records are never enumerated by com.atproto.sync.listBlobs, which is unauthenticated. Callable with either OAuth (for the authenticated user's own data) or a space credential (for syncing services).",
-        parameters: {
-          type: 'params',
-          required: ['space', 'repo'],
-          properties: {
-            space: {
-              type: 'string',
-              format: 'space-ref',
-              description: 'Reference to the space.',
-            },
-            repo: {
-              type: 'string',
-              format: 'did',
-              description: 'The DID of the account whose blobs to list.',
-            },
-            since: {
-              type: 'string',
-              format: 'tid',
-              description:
-                'Optional revision of the permissioned repo to list blobs since.',
-            },
-            limit: {
-              type: 'integer',
-              minimum: 1,
-              maximum: 1000,
-              default: 500,
-            },
-            cursor: {
-              type: 'string',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['cids'],
-            properties: {
-              cursor: {
-                type: 'string',
-              },
-              cids: {
-                type: 'array',
-                items: {
-                  type: 'string',
-                  format: 'cid',
-                },
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'RepoNotFound',
-          },
-          {
-            name: 'RepoTakendown',
-          },
-          {
-            name: 'RepoSuspended',
-          },
-          {
-            name: 'RepoDeactivated',
-          },
-        ],
-      },
-    },
-  },
-  ComAtprotoSpaceListRecords: {
-    lexicon: 1,
-    id: 'com.atproto.space.listRecords',
-    defs: {
-      main: {
-        type: 'query',
-        description:
-          "List the records in an account's repo within a permissioned space, optionally filtered by collection. By default each record's value is inlined; set excludeValues for a metadata-only listing (collection, rkey, cid). Used for full-state recovery. Callable with either OAuth (for the authenticated user's own data) or a space credential (for syncing services). Throws RepoNotFound when the account holds no repo in the space; this does not distinguish a member that has never written from a non-member.",
-        parameters: {
-          type: 'params',
-          required: ['space', 'repo'],
-          properties: {
-            space: {
-              type: 'string',
-              format: 'space-ref',
-              description: 'Reference to the space.',
-            },
-            repo: {
-              type: 'string',
-              format: 'did',
-              description: 'The DID of the account whose repo to list.',
-            },
-            collection: {
-              type: 'string',
-              format: 'nsid',
-              description:
-                'The NSID of the record collection. If omitted, lists records across all collections.',
-            },
-            limit: {
-              type: 'integer',
-              minimum: 1,
-              maximum: 1000,
-              default: 50,
-              description: 'The number of records to return.',
-            },
-            cursor: {
-              type: 'string',
-            },
-            reverse: {
-              type: 'boolean',
-              description: 'Flag to reverse the order of the returned records.',
-            },
-            excludeValues: {
-              type: 'boolean',
-              default: false,
-              description:
-                'If true, omit inlined record values and return only metadata (collection, rkey, cid).',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['records'],
-            properties: {
-              cursor: {
-                type: 'string',
-              },
-              records: {
-                type: 'array',
-                items: {
-                  type: 'ref',
-                  ref: 'lex:com.atproto.space.listRecords#record',
-                },
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'RepoNotFound',
-          },
-          {
-            name: 'RepoTakendown',
-          },
-          {
-            name: 'RepoSuspended',
-          },
-          {
-            name: 'RepoDeactivated',
-          },
-        ],
-      },
-      record: {
-        type: 'object',
-        required: ['collection', 'rkey', 'cid'],
-        properties: {
-          collection: {
-            type: 'string',
-            format: 'nsid',
-          },
-          rkey: {
-            type: 'string',
-            format: 'record-key',
-          },
-          cid: {
-            type: 'string',
-            format: 'cid',
-          },
-          value: {
-            type: 'unknown',
-            description:
-              "The record's value. Inlined by default; omitted when excludeValues is set.",
-          },
-        },
-      },
-    },
-  },
-  ComAtprotoSpaceListRepoOps: {
-    lexicon: 1,
-    id: 'com.atproto.space.listRepoOps',
-    defs: {
-      main: {
-        type: 'query',
-        description:
-          "List the operation log for an account's permissioned repo within a space, returning operations after a given revision. Primary incremental sync mechanism. By default each created or updated operation inlines the record's current value; set excludeValues for metadata-only entries. Note the oplog is a transport optimization with no history guarantee: a host may compact it or drop it, and it does not survive account migration, so omitting `since` returns the retained window rather than the repo's full history. Use getRepo for an initial sync or when a `since` revision is no longer available. Callable with either OAuth (for the authenticated user's own data) or a space credential (for syncing services).",
-        parameters: {
-          type: 'params',
-          required: ['space', 'repo'],
-          properties: {
-            space: {
-              type: 'string',
-              format: 'space-ref',
-              description: 'Reference to the space.',
-            },
-            repo: {
-              type: 'string',
-              format: 'did',
-              description: 'The DID of the account whose oplog to retrieve.',
-            },
-            since: {
-              type: 'string',
-              format: 'tid',
-              description:
-                "Return operations after this revision. The caller's own sync position; use `cursor` to continue a paginated response.",
-            },
-            limit: {
-              type: 'integer',
-              minimum: 1,
-              maximum: 1000,
-              default: 100,
-              description: 'Maximum number of operations to return.',
-            },
-            cursor: {
-              type: 'string',
-              description:
-                'Opaque pagination cursor from a previous response. Takes precedence over `since` when both are supplied.',
-            },
-            excludeValues: {
-              type: 'boolean',
-              default: false,
-              description:
-                'If true, omit inlined record values and return only operation metadata.',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['ops'],
-            properties: {
-              ops: {
-                type: 'array',
-                items: {
-                  type: 'ref',
-                  ref: 'lex:com.atproto.space.listRepoOps#opEntry',
-                },
-              },
-              commit: {
-                type: 'ref',
-                ref: 'lex:com.atproto.space.defs#signedCommit',
-                description:
-                  "The account's current signed commit. Included when the response reaches the head of the oplog; omitted on backfill responses.",
-              },
-              cursor: {
-                type: 'string',
-                description:
-                  'Pass as `cursor` to fetch the next page. Absent once the response reaches the head of the oplog.',
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'RepoNotFound',
-          },
-          {
-            name: 'RepoTakendown',
-          },
-          {
-            name: 'RepoSuspended',
-          },
-          {
-            name: 'RepoDeactivated',
-          },
-        ],
-      },
-      opEntry: {
-        type: 'object',
-        description:
-          "A single operation in a permissioned repo's oplog. cid is null for deletes; prev is null for creates. Operations sharing the same rev belong to the same batch. value carries the record's current value for creates and updates, unless excludeValues was set or the value is stale (superseded by a later operation).",
-        required: ['rev', 'collection', 'rkey', 'cid', 'prev'],
-        nullable: ['cid', 'prev'],
-        properties: {
-          rev: {
-            type: 'string',
-            format: 'tid',
-          },
-          collection: {
-            type: 'string',
-            format: 'nsid',
-          },
-          rkey: {
-            type: 'string',
-            format: 'record-key',
-          },
-          cid: {
-            type: 'string',
-            format: 'cid',
-          },
-          prev: {
-            type: 'string',
-            format: 'cid',
-          },
-          value: {
-            type: 'unknown',
-            description:
-              "The record's current value, inlined for create and update operations. Omitted when excludeValues is set, for deletes, or when the value has been superseded by a later operation.",
-          },
-        },
-      },
-    },
-  },
-  ComAtprotoSpaceListRepos: {
-    lexicon: 1,
-    id: 'com.atproto.space.listRepos',
-    defs: {
-      main: {
-        type: 'query',
-        description:
-          "List the known repos that hold data in a space (the writer set), with each repo's current rev and commit hash. Served by the space host. This is the sync boundary, not an access-control list: it enumerates only writers, never readers. The set is what the authority claims from write notifications and is not itself authoritative; a repo's host is the source of truth.",
-        parameters: {
-          type: 'params',
-          required: ['space'],
-          properties: {
-            space: {
-              type: 'string',
-              format: 'space-ref',
-              description: 'Reference to the space.',
-            },
-            limit: {
-              type: 'integer',
-              minimum: 1,
-              maximum: 1000,
-              default: 100,
-              description: 'Maximum number of repos to return.',
-            },
-            cursor: {
-              type: 'string',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['repos'],
-            properties: {
-              cursor: {
-                type: 'string',
-              },
-              repos: {
-                type: 'array',
-                items: {
-                  type: 'ref',
-                  ref: 'lex:com.atproto.space.listRepos#repo',
-                },
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-        ],
-      },
-      repo: {
-        type: 'object',
-        required: ['did', 'rev', 'hash'],
-        properties: {
-          did: {
-            type: 'string',
-            format: 'did',
-            description: 'The DID of a repo that holds data in the space.',
-          },
-          rev: {
-            type: 'string',
-            description:
-              "The repo's current revision (TID), as last reported to the authority. May lag the repo host, which is the source of truth.",
-            format: 'tid',
-          },
-          hash: {
-            type: 'bytes',
-            description:
-              "The repo's current commit hash (sha256 of the LtHash state), as last reported to the authority.",
-          },
-        },
-      },
-    },
-  },
-  ComAtprotoSpaceListSpaces: {
-    lexicon: 1,
-    id: 'com.atproto.space.listSpaces',
-    defs: {
-      main: {
-        type: 'query',
-        description:
-          "List the spaces the authenticated user holds a repo in (i.e. spaces the user has written data to), optionally filtered by type and/or authority DID. Note this is not 'spaces I'm a member of' — a member's PDS only tracks spaces its user has written to. Requires auth, implemented by PDS.",
-        parameters: {
-          type: 'params',
-          properties: {
-            type: {
-              type: 'string',
-              format: 'nsid',
-              description: 'Filter to spaces of this type.',
-            },
-            did: {
-              type: 'string',
-              format: 'did',
-              description: 'Filter to spaces under this authority DID.',
-            },
-            limit: {
-              type: 'integer',
-              minimum: 1,
-              maximum: 100,
-              default: 50,
-              description: 'The number of spaces to return.',
-            },
-            cursor: {
-              type: 'string',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['spaces'],
-            properties: {
-              cursor: {
-                type: 'string',
-              },
-              spaces: {
-                type: 'array',
-                items: {
-                  type: 'ref',
-                  ref: 'lex:com.atproto.space.listSpaces#spaceView',
-                },
-              },
-            },
-          },
-        },
-      },
-      spaceView: {
-        type: 'object',
-        required: ['uri'],
-        properties: {
-          uri: {
-            type: 'string',
-            format: 'space-ref',
-            description: 'URI of the space.',
-          },
-        },
-      },
-    },
-  },
-  ComAtprotoSpaceNotifySpaceDeleted: {
-    lexicon: 1,
-    id: 'com.atproto.space.notifySpaceDeleted',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          "Notify a syncing service that a space has been deleted, and that it should drop every copy of the space's data it holds. Sent by the space authority to the services registered for the space, best-effort. Authenticated with service auth addressed to the receiving service.",
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['space'],
-            properties: {
-              space: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'Reference to the deleted space.',
-              },
-            },
-          },
-        },
-      },
-    },
-  },
-  ComAtprotoSpaceNotifyWrite: {
-    lexicon: 1,
-    id: 'com.atproto.space.notifyWrite',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          'Notify that a repo in a space has advanced to a new revision. Sent by a repo host to the space host, and forwarded to registered syncers. Best-effort. Authenticated with service auth.',
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['space', 'repo', 'rev', 'hash'],
-            properties: {
-              space: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'Reference to the space.',
-              },
-              repo: {
-                type: 'string',
-                format: 'did',
-                description: 'The DID of the account whose repo advanced.',
-              },
-              rev: {
-                type: 'string',
-                description: 'The revision of the write.',
-                format: 'tid',
-              },
-              hash: {
-                type: 'bytes',
-                description:
-                  "The repo's current commit hash (sha256 of the LtHash state) after the write. Lets the space host maintain each repo's hash for listRepos.",
-              },
-            },
-          },
-        },
-      },
-    },
-  },
-  ComAtprotoSpacePutRecord: {
-    lexicon: 1,
-    id: 'com.atproto.space.putRecord',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          'Write a record in a permissioned space, creating or updating it as needed. Requires auth, implemented by PDS.',
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['space', 'repo', 'collection', 'rkey', 'record'],
-            properties: {
-              space: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'Reference to the space.',
-              },
-              repo: {
-                type: 'string',
-                format: 'did',
-                description:
-                  'The DID of the repo to write to (the authenticated member).',
-              },
-              collection: {
-                type: 'string',
-                format: 'nsid',
-                description: 'The NSID of the record collection.',
-              },
-              rkey: {
-                type: 'string',
-                format: 'record-key',
-                description: 'The Record Key.',
-                maxLength: 512,
-              },
-              validate: {
-                type: 'boolean',
-                description:
-                  "Can be set to 'false' to skip Lexicon schema validation of record data, 'true' to require it, or leave unset to validate only for known Lexicons.",
-              },
-              record: {
-                type: 'unknown',
-                description: 'The record to write.',
-              },
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['uri', 'cid'],
-            properties: {
-              uri: {
-                type: 'string',
-                format: 'at-uri',
-                description: 'URI of the written record.',
-              },
-              cid: {
-                type: 'string',
-                format: 'cid',
-              },
-              validationStatus: {
-                type: 'string',
-                knownValues: ['valid', 'unknown'],
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-        ],
-      },
-    },
-  },
-  ComAtprotoSpaceRegisterNotify: {
-    lexicon: 1,
-    id: 'com.atproto.space.registerNotify',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          "Register a service to be notified of writes to any repo in a space. Called on the space host. The registering service is named by its service identifier rather than a bare URL, because notifyWrite is delivered with service auth addressed to that identifier; the delivery endpoint is resolved from the service's DID document. Authenticated with a space credential. Re-registering an existing service replaces its registration and extends the expiry.",
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['space', 'service'],
-            properties: {
-              space: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'Reference to the space.',
-              },
-              service: {
-                type: 'string',
-                description:
-                  "Service identifier of the subscriber: a DID with an optional service fragment naming the entry in its DID document to deliver to (e.g. 'did:web:syncer.example.com#atproto_space_syncer'). notifyWrite calls are addressed to this identifier.",
-              },
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['expiresAt'],
-            properties: {
-              expiresAt: {
-                type: 'string',
-                format: 'datetime',
-                description:
-                  'When the registration expires. May be later than the expiry of the space credential the request was authenticated with; renew before this time to stay subscribed.',
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-          {
-            name: 'ServiceNotResolvable',
-            description:
-              'The service identifier could not be resolved to a DID document with a matching service endpoint.',
-          },
-        ],
-      },
-    },
-  },
-  ComAtprotoSpaceUnregisterNotify: {
-    lexicon: 1,
-    id: 'com.atproto.space.unregisterNotify',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          'Withdraw a write-notification registration made through registerNotify. Called on the space host. Idempotent: succeeds whether or not a matching registration existed. Registrations also lapse on their own at the expiry returned by registerNotify, so this is for explicit withdrawal rather than cleanup. Authenticated with a space credential.',
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['space', 'service'],
-            properties: {
-              space: {
-                type: 'string',
-                format: 'space-ref',
-                description: 'Reference to the space.',
-              },
-              service: {
-                type: 'string',
-                description:
-                  'Service identifier of the subscriber to remove, as passed to registerNotify.',
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'SpaceNotFound',
-          },
-        ],
-      },
-    },
-  },
   ComAtprotoSyncDefs: {
     lexicon: 1,
     id: 'com.atproto.sync.defs',
@@ -22639,6 +21565,161 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
+  ComAtprotoTempAddReservedHandle: {
+    lexicon: 1,
+    id: 'com.atproto.temp.addReservedHandle',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: 'Add a handle to the set of reserved handles.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['handle'],
+            properties: {
+              handle: {
+                type: 'string',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {},
+          },
+        },
+      },
+    },
+  },
+  ComAtprotoTempCheckHandleAvailability: {
+    lexicon: 1,
+    id: 'com.atproto.temp.checkHandleAvailability',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Checks whether the provided handle is available. If the handle is not available, available suggestions will be returned. Optional inputs will be used to generate suggestions.',
+        parameters: {
+          type: 'params',
+          required: ['handle'],
+          properties: {
+            handle: {
+              type: 'string',
+              format: 'handle',
+              description:
+                'Tentative handle. Will be checked for availability or used to build handle suggestions.',
+            },
+            email: {
+              type: 'string',
+              description:
+                'User-provided email. Might be used to build handle suggestions.',
+            },
+            birthDate: {
+              type: 'string',
+              format: 'datetime',
+              description:
+                'User-provided birth date. Might be used to build handle suggestions.',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['handle', 'result'],
+            properties: {
+              handle: {
+                type: 'string',
+                format: 'handle',
+                description: 'Echo of the input handle.',
+              },
+              result: {
+                type: 'union',
+                refs: [
+                  'lex:com.atproto.temp.checkHandleAvailability#resultAvailable',
+                  'lex:com.atproto.temp.checkHandleAvailability#resultUnavailable',
+                ],
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'InvalidEmail',
+            description: 'An invalid email was provided.',
+          },
+        ],
+      },
+      resultAvailable: {
+        type: 'object',
+        description: 'Indicates the provided handle is available.',
+        properties: {},
+      },
+      resultUnavailable: {
+        type: 'object',
+        description:
+          'Indicates the provided handle is unavailable and gives suggestions of available handles.',
+        required: ['suggestions'],
+        properties: {
+          suggestions: {
+            type: 'array',
+            description:
+              'List of suggested handles based on the provided inputs.',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.temp.checkHandleAvailability#suggestion',
+            },
+          },
+        },
+      },
+      suggestion: {
+        type: 'object',
+        required: ['handle', 'method'],
+        properties: {
+          handle: {
+            type: 'string',
+            format: 'handle',
+          },
+          method: {
+            type: 'string',
+            description:
+              'Method used to build this suggestion. Should be considered opaque to clients. Can be used for metrics.',
+          },
+        },
+      },
+    },
+  },
+  ComAtprotoTempCheckSignupQueue: {
+    lexicon: 1,
+    id: 'com.atproto.temp.checkSignupQueue',
+    defs: {
+      main: {
+        type: 'query',
+        description: 'Check accounts location in signup queue.',
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['activated'],
+            properties: {
+              activated: {
+                type: 'boolean',
+              },
+              placeInQueue: {
+                type: 'integer',
+              },
+              estimatedTimeMs: {
+                type: 'integer',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   ComAtprotoTempDereferenceScope: {
     lexicon: 1,
     id: 'com.atproto.temp.dereferenceScope',
@@ -22716,6 +21797,29 @@ export const schemaDict: Record<string, LexiconDoc> = {
                   type: 'ref',
                   ref: 'lex:com.atproto.label.defs#label',
                 },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ComAtprotoTempRequestPhoneVerification: {
+    lexicon: 1,
+    id: 'com.atproto.temp.requestPhoneVerification',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          'Request a verification code to be sent to the supplied phone number',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['phoneNumber'],
+            properties: {
+              phoneNumber: {
+                type: 'string',
               },
             },
           },
@@ -26465,6 +25569,1386 @@ export const schemaDict: Record<string, LexiconDoc> = {
             createdAt: {
               type: 'string',
               format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeAcceptSuggestion: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.acceptSuggestion',
+    defs: {
+      main: {
+        type: 'procedure',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['id', 'authorDid'],
+            properties: {
+              id: {
+                type: 'string',
+              },
+              communityUri: {
+                type: 'string',
+                format: 'at-uri',
+              },
+              authorDid: {
+                type: 'string',
+                format: 'did',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeCard: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.card',
+    defs: {
+      main: {
+        type: 'record',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: [
+            'communityUri',
+            'authorDid',
+            'title',
+            'cardType',
+            'createdAt',
+          ],
+          properties: {
+            communityUri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            authorDid: {
+              type: 'string',
+              format: 'did',
+            },
+            title: {
+              type: 'string',
+              maxLength: 500,
+            },
+            content: {
+              type: 'string',
+              maxLength: 10000,
+            },
+            cardType: {
+              type: 'string',
+              maxLength: 64,
+            },
+            stance: {
+              type: 'string',
+              knownValues: ['pro', 'con', 'neutral'],
+            },
+            compassQuadrant: {
+              type: 'string',
+              maxLength: 64,
+            },
+            sourceUri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            sourceUrl: {
+              type: 'string',
+              format: 'uri',
+            },
+            metadata: {
+              type: 'string',
+              maxLength: 20000,
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeCardVote: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.cardVote',
+    defs: {
+      main: {
+        type: 'record',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['card', 'voterDid', 'influence', 'createdAt'],
+          properties: {
+            card: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            voterDid: {
+              type: 'string',
+              format: 'did',
+            },
+            influence: {
+              type: 'integer',
+              minimum: -3,
+              maximum: 3,
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeCastCardVote: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.castCardVote',
+    defs: {
+      main: {
+        type: 'procedure',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['card', 'voterDid', 'influence'],
+            properties: {
+              card: {
+                type: 'string',
+              },
+              voterDid: {
+                type: 'string',
+                format: 'did',
+              },
+              influence: {
+                type: 'integer',
+                minimum: -3,
+                maximum: 3,
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['success'],
+            properties: {
+              success: {
+                type: 'boolean',
+              },
+              totalInfluence: {
+                type: 'integer',
+              },
+              voteCount: {
+                type: 'integer',
+                minimum: 0,
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeConfig: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.config',
+    defs: {
+      main: {
+        type: 'record',
+        key: 'literal:self',
+        record: {
+          type: 'object',
+          required: [
+            'communityUri',
+            'governanceMode',
+            'approvalsRequired',
+            'approvalMarginRequired',
+            'updatedAt',
+          ],
+          properties: {
+            communityUri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            governanceMode: {
+              type: 'string',
+              knownValues: ['votes_sortition', 'moderator_gate'],
+            },
+            approvalsRequired: {
+              type: 'integer',
+              minimum: 1,
+            },
+            approvalMarginRequired: {
+              type: 'integer',
+              minimum: 0,
+            },
+            moderatorGateEnabled: {
+              type: 'boolean',
+            },
+            sortitionEnabled: {
+              type: 'boolean',
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeContribution: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.contribution',
+    defs: {
+      main: {
+        type: 'record',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: [
+            'communityUri',
+            'authorDid',
+            'title',
+            'sourceType',
+            'status',
+            'createdAt',
+          ],
+          properties: {
+            communityUri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            authorDid: {
+              type: 'string',
+              format: 'did',
+            },
+            title: {
+              type: 'string',
+              maxLength: 500,
+            },
+            content: {
+              type: 'string',
+              maxLength: 10000,
+            },
+            sourceUri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            sourceUrl: {
+              type: 'string',
+              format: 'uri',
+            },
+            sourceType: {
+              type: 'string',
+              maxLength: 64,
+            },
+            metadata: {
+              type: 'string',
+              maxLength: 20000,
+            },
+            status: {
+              type: 'string',
+              knownValues: ['pending', 'approved', 'rejected'],
+            },
+            approvedCard: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            decidedAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeContributionVote: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.contributionVote',
+    defs: {
+      main: {
+        type: 'record',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['contribution', 'voterDid', 'vote', 'createdAt'],
+          properties: {
+            contribution: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            voterDid: {
+              type: 'string',
+              format: 'did',
+            },
+            vote: {
+              type: 'string',
+              knownValues: ['approve', 'reject'],
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeCreateRelationship: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.createRelationship',
+    defs: {
+      main: {
+        type: 'procedure',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: [
+              'communityUri',
+              'sourceCardId',
+              'targetCardId',
+              'relationshipType',
+              'authorDid',
+            ],
+            properties: {
+              communityUri: {
+                type: 'string',
+                format: 'at-uri',
+              },
+              sourceCardId: {
+                type: 'string',
+              },
+              targetCardId: {
+                type: 'string',
+              },
+              relationshipType: {
+                type: 'string',
+                maxLength: 64,
+              },
+              authorDid: {
+                type: 'string',
+                format: 'did',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['relationship'],
+            properties: {
+              relationship: {
+                type: 'ref',
+                ref: 'lex:com.para.community.civicTree.defs#relationshipView',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeDefs: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.defs',
+    defs: {
+      cardView: {
+        type: 'object',
+        required: ['id', 'community_uri', 'author_did', 'title', 'card_type'],
+        properties: {
+          id: {
+            type: 'string',
+          },
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          community_uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          author_did: {
+            type: 'string',
+            format: 'did',
+          },
+          title: {
+            type: 'string',
+            maxLength: 500,
+          },
+          content: {
+            type: 'string',
+            maxLength: 10000,
+          },
+          card_type: {
+            type: 'string',
+            maxLength: 64,
+          },
+          source_uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          source_url: {
+            type: 'string',
+            format: 'uri',
+          },
+          metadata: {
+            type: 'string',
+            maxLength: 20000,
+          },
+          influence: {
+            type: 'integer',
+          },
+          vote_count: {
+            type: 'integer',
+            minimum: 0,
+          },
+          stance: {
+            type: 'string',
+            knownValues: ['pro', 'con', 'neutral'],
+          },
+          compass_quadrant: {
+            type: 'string',
+            maxLength: 64,
+          },
+          created_at: {
+            type: 'string',
+            format: 'datetime',
+          },
+          updated_at: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      relationshipView: {
+        type: 'object',
+        required: [
+          'id',
+          'source_card_id',
+          'target_card_id',
+          'relationship_type',
+          'author_did',
+          'created_at',
+        ],
+        properties: {
+          id: {
+            type: 'string',
+          },
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          community_uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          source_card_id: {
+            type: 'string',
+          },
+          target_card_id: {
+            type: 'string',
+          },
+          relationship_type: {
+            type: 'string',
+            maxLength: 64,
+          },
+          author_did: {
+            type: 'string',
+            format: 'did',
+          },
+          created_at: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      contributionView: {
+        type: 'object',
+        required: [
+          'id',
+          'community_uri',
+          'author_did',
+          'title',
+          'source_type',
+          'status',
+          'created_at',
+          'approve_count',
+          'reject_count',
+        ],
+        properties: {
+          id: {
+            type: 'string',
+          },
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          community_uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          author_did: {
+            type: 'string',
+            format: 'did',
+          },
+          title: {
+            type: 'string',
+            maxLength: 500,
+          },
+          content: {
+            type: 'string',
+            maxLength: 10000,
+          },
+          source_uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          source_url: {
+            type: 'string',
+            format: 'uri',
+          },
+          source_type: {
+            type: 'string',
+            maxLength: 64,
+          },
+          metadata: {
+            type: 'string',
+            maxLength: 20000,
+          },
+          status: {
+            type: 'string',
+            knownValues: ['pending', 'approved', 'rejected'],
+          },
+          approved_card_id: {
+            type: 'string',
+          },
+          created_at: {
+            type: 'string',
+            format: 'datetime',
+          },
+          decided_at: {
+            type: 'string',
+            format: 'datetime',
+          },
+          approve_count: {
+            type: 'integer',
+            minimum: 0,
+          },
+          reject_count: {
+            type: 'integer',
+            minimum: 0,
+          },
+          viewer_vote: {
+            type: 'string',
+            knownValues: ['approve', 'reject'],
+          },
+        },
+      },
+      graphView: {
+        type: 'object',
+        required: ['nodes', 'edges'],
+        properties: {
+          nodes: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.community.civicTree.defs#cardView',
+            },
+          },
+          edges: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.community.civicTree.defs#relationshipView',
+            },
+          },
+        },
+      },
+      configView: {
+        type: 'object',
+        required: [
+          'community_uri',
+          'governance_mode',
+          'approvals_required',
+          'approval_margin_required',
+        ],
+        properties: {
+          community_uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          governance_mode: {
+            type: 'string',
+            knownValues: ['votes_sortition', 'moderator_gate'],
+          },
+          approvals_required: {
+            type: 'integer',
+            minimum: 1,
+          },
+          approval_margin_required: {
+            type: 'integer',
+            minimum: 0,
+          },
+          moderator_gate_enabled: {
+            type: 'boolean',
+          },
+          sortition_enabled: {
+            type: 'boolean',
+          },
+          updated_at: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      cardVoteView: {
+        type: 'object',
+        description: "A viewer's own influence vote on a card.",
+        required: ['influence'],
+        properties: {
+          influence: {
+            type: 'integer',
+            minimum: -3,
+            maximum: 3,
+          },
+        },
+      },
+      stanceDistribution: {
+        type: 'object',
+        required: ['pro', 'con', 'neutral'],
+        properties: {
+          pro: {
+            type: 'integer',
+          },
+          con: {
+            type: 'integer',
+          },
+          neutral: {
+            type: 'integer',
+          },
+        },
+      },
+      normalizedClaim: {
+        type: 'object',
+        required: ['claim', 'stance', 'sourceType'],
+        properties: {
+          claim: {
+            type: 'string',
+          },
+          stance: {
+            type: 'string',
+            knownValues: [
+              'support',
+              'oppose',
+              'unsure',
+              'amendment',
+              'needs_evidence',
+            ],
+          },
+          sourceType: {
+            type: 'string',
+          },
+          sourceId: {
+            type: 'string',
+          },
+        },
+      },
+      tensionLine: {
+        type: 'object',
+        required: ['axis', 'summary', 'sides'],
+        properties: {
+          axis: {
+            type: 'string',
+          },
+          summary: {
+            type: 'string',
+          },
+          sides: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+          relatedClaimIds: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+      },
+      openQuestion: {
+        type: 'object',
+        required: ['question', 'whyItMatters'],
+        properties: {
+          question: {
+            type: 'string',
+          },
+          whyItMatters: {
+            type: 'string',
+          },
+          relatedClaimIds: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+      },
+      consensusArea: {
+        type: 'object',
+        required: ['topic', 'claims'],
+        properties: {
+          topic: {
+            type: 'string',
+          },
+          claims: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+      },
+      unresolvedConflict: {
+        type: 'object',
+        required: ['topic', 'opposingClaims'],
+        properties: {
+          topic: {
+            type: 'string',
+          },
+          opposingClaims: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+      },
+      summaryView: {
+        type: 'object',
+        description:
+          'Derived reading of a community civic tree: what is claimed, where it conflicts, and what remains open.',
+        required: [
+          'normalizedClaims',
+          'tensionLines',
+          'openQuestions',
+          'consensusAreas',
+          'unresolvedConflicts',
+          'bridgeStatements',
+          'stanceDistribution',
+          'totalClaims',
+          'totalRelationships',
+          'generatedAt',
+        ],
+        properties: {
+          normalizedClaims: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.community.civicTree.defs#normalizedClaim',
+            },
+          },
+          tensionLines: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.community.civicTree.defs#tensionLine',
+            },
+          },
+          openQuestions: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.community.civicTree.defs#openQuestion',
+            },
+          },
+          consensusAreas: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.community.civicTree.defs#consensusArea',
+            },
+          },
+          unresolvedConflicts: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.community.civicTree.defs#unresolvedConflict',
+            },
+          },
+          bridgeStatements: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+          stanceDistribution: {
+            type: 'ref',
+            ref: 'lex:com.para.community.civicTree.defs#stanceDistribution',
+          },
+          totalClaims: {
+            type: 'integer',
+          },
+          totalRelationships: {
+            type: 'integer',
+          },
+          generatedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      topEntity: {
+        type: 'object',
+        required: ['value', 'type', 'count'],
+        properties: {
+          value: {
+            type: 'string',
+          },
+          type: {
+            type: 'string',
+          },
+          count: {
+            type: 'integer',
+          },
+        },
+      },
+      pulseClaim: {
+        type: 'object',
+        required: ['id', 'title', 'influence', 'voteCount', 'cardType'],
+        properties: {
+          id: {
+            type: 'string',
+          },
+          title: {
+            type: 'string',
+          },
+          stance: {
+            type: 'string',
+          },
+          influence: {
+            type: 'integer',
+          },
+          voteCount: {
+            type: 'integer',
+          },
+          cardType: {
+            type: 'string',
+          },
+        },
+      },
+      pulseUserStats: {
+        type: 'object',
+        required: ['votesCast', 'proVotes', 'conVotes', 'neutralVotes'],
+        properties: {
+          votesCast: {
+            type: 'integer',
+          },
+          proVotes: {
+            type: 'integer',
+          },
+          conVotes: {
+            type: 'integer',
+          },
+          neutralVotes: {
+            type: 'integer',
+          },
+        },
+      },
+      pulseView: {
+        type: 'object',
+        description: 'Live activity signals for a community civic tree.',
+        required: [
+          'stanceDistribution',
+          'topEntities',
+          'trendingClaims',
+          'controversialClaims',
+        ],
+        properties: {
+          stanceDistribution: {
+            type: 'ref',
+            ref: 'lex:com.para.community.civicTree.defs#stanceDistribution',
+          },
+          topEntities: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.community.civicTree.defs#topEntity',
+            },
+          },
+          trendingClaims: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.community.civicTree.defs#pulseClaim',
+            },
+          },
+          controversialClaims: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.community.civicTree.defs#pulseClaim',
+            },
+          },
+          userStats: {
+            type: 'ref',
+            ref: 'lex:com.para.community.civicTree.defs#pulseUserStats',
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeGetCardVote: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.getCardVote',
+    defs: {
+      main: {
+        type: 'query',
+        parameters: {
+          type: 'params',
+          required: ['card', 'voter'],
+          properties: {
+            card: {
+              type: 'string',
+            },
+            voter: {
+              type: 'string',
+              format: 'did',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              vote: {
+                type: 'ref',
+                ref: 'lex:com.para.community.civicTree.defs#cardVoteView',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeGetGraph: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.getGraph',
+    defs: {
+      main: {
+        type: 'query',
+        parameters: {
+          type: 'params',
+          required: ['community'],
+          properties: {
+            community: {
+              type: 'string',
+              format: 'at-uri',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'ref',
+            ref: 'lex:com.para.community.civicTree.defs#graphView',
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeGetPulse: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.getPulse',
+    defs: {
+      main: {
+        type: 'query',
+        parameters: {
+          type: 'params',
+          required: ['community'],
+          properties: {
+            community: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            voter: {
+              type: 'string',
+              format: 'did',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'ref',
+            ref: 'lex:com.para.community.civicTree.defs#pulseView',
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeGetSummary: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.getSummary',
+    defs: {
+      main: {
+        type: 'query',
+        parameters: {
+          type: 'params',
+          required: ['community'],
+          properties: {
+            community: {
+              type: 'string',
+              format: 'at-uri',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'ref',
+            ref: 'lex:com.para.community.civicTree.defs#summaryView',
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeListContributions: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.listContributions',
+    defs: {
+      main: {
+        type: 'query',
+        parameters: {
+          type: 'params',
+          required: ['community'],
+          properties: {
+            community: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            status: {
+              type: 'string',
+              knownValues: ['pending', 'approved', 'rejected'],
+            },
+            viewer: {
+              type: 'string',
+              format: 'did',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['contributions'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              contributions: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.community.civicTree.defs#contributionView',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeListSuggestions: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.listSuggestions',
+    defs: {
+      main: {
+        type: 'query',
+        parameters: {
+          type: 'params',
+          required: ['community'],
+          properties: {
+            community: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            status: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['suggestions'],
+            properties: {
+              suggestions: {
+                type: 'array',
+                items: {
+                  type: 'unknown',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeModerateContribution: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.moderateContribution',
+    defs: {
+      main: {
+        type: 'procedure',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['contribution', 'moderatorDid', 'decision'],
+            properties: {
+              contribution: {
+                type: 'string',
+              },
+              moderatorDid: {
+                type: 'string',
+                format: 'did',
+              },
+              decision: {
+                type: 'string',
+                knownValues: ['approve', 'reject'],
+              },
+              reason: {
+                type: 'string',
+                maxLength: 1000,
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['contribution'],
+            properties: {
+              contribution: {
+                type: 'ref',
+                ref: 'lex:com.para.community.civicTree.defs#contributionView',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeRejectSuggestion: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.rejectSuggestion',
+    defs: {
+      main: {
+        type: 'procedure',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['id'],
+            properties: {
+              id: {
+                type: 'string',
+              },
+              communityUri: {
+                type: 'string',
+                format: 'at-uri',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeRelationship: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.relationship',
+    defs: {
+      main: {
+        type: 'record',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: [
+            'communityUri',
+            'sourceCard',
+            'targetCard',
+            'relationshipType',
+            'authorDid',
+            'createdAt',
+          ],
+          properties: {
+            communityUri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            sourceCard: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            targetCard: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            relationshipType: {
+              type: 'string',
+              maxLength: 64,
+            },
+            authorDid: {
+              type: 'string',
+              format: 'did',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeSubmitContribution: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.submitContribution',
+    defs: {
+      main: {
+        type: 'procedure',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['communityUri', 'authorDid', 'title', 'sourceType'],
+            properties: {
+              communityUri: {
+                type: 'string',
+                format: 'at-uri',
+              },
+              authorDid: {
+                type: 'string',
+                format: 'did',
+              },
+              title: {
+                type: 'string',
+                maxLength: 500,
+              },
+              content: {
+                type: 'string',
+                maxLength: 10000,
+              },
+              sourceUri: {
+                type: 'string',
+                format: 'at-uri',
+              },
+              sourceUrl: {
+                type: 'string',
+                format: 'uri',
+              },
+              sourceType: {
+                type: 'string',
+                maxLength: 64,
+              },
+              metadata: {
+                type: 'string',
+                maxLength: 20000,
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['contribution'],
+            properties: {
+              contribution: {
+                type: 'ref',
+                ref: 'lex:com.para.community.civicTree.defs#contributionView',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityCivicTreeVoteContribution: {
+    lexicon: 1,
+    id: 'com.para.community.civicTree.voteContribution',
+    defs: {
+      main: {
+        type: 'procedure',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['contribution', 'voterDid', 'vote'],
+            properties: {
+              contribution: {
+                type: 'string',
+              },
+              voterDid: {
+                type: 'string',
+                format: 'did',
+              },
+              vote: {
+                type: 'string',
+                knownValues: ['approve', 'reject'],
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['contribution'],
+            properties: {
+              contribution: {
+                type: 'ref',
+                ref: 'lex:com.para.community.civicTree.defs#contributionView',
+              },
             },
           },
         },
@@ -35239,283 +35723,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
-  ToolsOzoneHistoryDefs: {
-    lexicon: 1,
-    id: 'tools.ozone.history.defs',
-    defs: {
-      reportedSubjectView: {
-        type: 'object',
-        required: ['subject', 'createdAt', 'status'],
-        properties: {
-          subject: {
-            type: 'string',
-            format: 'uri',
-          },
-          comment: {
-            type: 'string',
-          },
-          createdAt: {
-            type: 'string',
-            format: 'datetime',
-          },
-          status: {
-            type: 'string',
-            knownValues: ['open', 'closed', 'escalated', 'queued', 'assigned'],
-          },
-          actions: {
-            type: 'array',
-            items: {
-              type: 'ref',
-              ref: 'lex:tools.ozone.history.defs#eventView',
-            },
-          },
-        },
-      },
-      eventView: {
-        type: 'object',
-        required: ['subject', 'createdAt', 'event', 'isAutomated'],
-        properties: {
-          subject: {
-            type: 'string',
-            format: 'uri',
-          },
-          createdAt: {
-            type: 'string',
-            format: 'datetime',
-          },
-          isAutomated: {
-            type: 'boolean',
-          },
-          event: {
-            type: 'union',
-            refs: [
-              'lex:tools.ozone.history.defs#eventTakedown',
-              'lex:tools.ozone.history.defs#eventReverseTakedown',
-              'lex:tools.ozone.history.defs#eventLabel',
-              'lex:tools.ozone.history.defs#eventEmail',
-            ],
-          },
-        },
-      },
-      eventTakedown: {
-        type: 'object',
-        description: 'Permanently or temporarily taken down',
-        properties: {
-          comment: {
-            type: 'string',
-          },
-          durationInHours: {
-            type: 'integer',
-            description:
-              'Indicates how long the takedown should be in effect before automatically expiring.',
-          },
-        },
-      },
-      eventReverseTakedown: {
-        type: 'object',
-        description: 'Takedown reversed on the subject',
-        properties: {
-          comment: {
-            type: 'string',
-          },
-        },
-      },
-      eventLabel: {
-        type: 'object',
-        description: 'Label(s) applied/negated',
-        required: ['createLabelVals', 'negateLabelVals'],
-        properties: {
-          comment: {
-            type: 'string',
-          },
-          createLabelVals: {
-            type: 'array',
-            items: {
-              type: 'string',
-            },
-          },
-          negateLabelVals: {
-            type: 'array',
-            items: {
-              type: 'string',
-            },
-          },
-        },
-      },
-      eventEmail: {
-        type: 'object',
-        description: 'Moderation email sent to the author of the subject',
-        required: ['subjectLine'],
-        properties: {
-          subjectLine: {
-            type: 'string',
-            description: 'The subject line of the email sent to the user.',
-          },
-          content: {
-            type: 'string',
-            description: 'The content of the email sent to the user.',
-          },
-          comment: {
-            type: 'string',
-            description: 'Additional comment about the outgoing comm.',
-          },
-        },
-      },
-    },
-  },
-  ToolsOzoneHistoryGetAccountActions: {
-    lexicon: 1,
-    id: 'tools.ozone.history.getAccountActions',
-    defs: {
-      main: {
-        type: 'query',
-        description:
-          'Fetch moderation actions taken on subjects owned by the account.',
-        parameters: {
-          type: 'params',
-          properties: {
-            account: {
-              type: 'string',
-              format: 'did',
-            },
-            limit: {
-              type: 'integer',
-              minimum: 1,
-              default: 50,
-              maximum: 100,
-            },
-            sortDirection: {
-              type: 'string',
-              knownValues: ['asc', 'desc'],
-              default: 'desc',
-            },
-            cursor: {
-              type: 'string',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['events'],
-            properties: {
-              events: {
-                type: 'array',
-                items: {
-                  type: 'ref',
-                  ref: 'lex:tools.ozone.history.defs#eventView',
-                },
-              },
-              cursor: {
-                type: 'string',
-              },
-            },
-          },
-        },
-      },
-    },
-  },
-  ToolsOzoneHistoryGetReportedSubjects: {
-    lexicon: 1,
-    id: 'tools.ozone.history.getReportedSubjects',
-    defs: {
-      main: {
-        type: 'query',
-        description: 'Fetch all subjects reported by the account.',
-        parameters: {
-          type: 'params',
-          properties: {
-            account: {
-              type: 'string',
-              format: 'did',
-            },
-            limit: {
-              type: 'integer',
-              minimum: 1,
-              default: 50,
-              maximum: 100,
-            },
-            sortDirection: {
-              type: 'string',
-              knownValues: ['asc', 'desc'],
-              default: 'desc',
-            },
-            cursor: {
-              type: 'string',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['subjects'],
-            properties: {
-              subjects: {
-                type: 'array',
-                items: {
-                  type: 'ref',
-                  ref: 'lex:tools.ozone.history.defs#reportedSubjectView',
-                },
-              },
-              cursor: {
-                type: 'string',
-              },
-            },
-          },
-        },
-      },
-    },
-  },
-  ToolsOzoneHistoryGetSubjectHistory: {
-    lexicon: 1,
-    id: 'tools.ozone.history.getSubjectHistory',
-    defs: {
-      main: {
-        type: 'query',
-        description: 'Fetch the history of events for a specific subject.',
-        parameters: {
-          type: 'params',
-          required: ['subject'],
-          properties: {
-            subject: {
-              type: 'string',
-              format: 'uri',
-            },
-            limit: {
-              type: 'integer',
-              minimum: 1,
-              default: 50,
-              maximum: 100,
-            },
-            cursor: {
-              type: 'string',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['events'],
-            properties: {
-              events: {
-                type: 'array',
-                items: {
-                  type: 'ref',
-                  ref: 'lex:tools.ozone.history.defs#eventView',
-                },
-              },
-              cursor: {
-                type: 'string',
-              },
-            },
-          },
-        },
-      },
-    },
-  },
   ToolsOzoneHostingGetAccountHistory: {
     lexicon: 1,
     id: 'tools.ozone.hosting.getAccountHistory',
@@ -35872,8 +36079,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
           outcome: {
             type: 'string',
             knownValues: ['approved', 'denied'],
-            description:
-              'Decision on a resolved appeal. Approved means its closing action reverses a takedown or removes a label; denied means no-action closure or an action that upholds enforcement. Omitted for unresolved appeals or historical closures without sufficient resolution data.',
+            description: 'Decision on a resolved appeal.',
           },
           appealableUntil: {
             type: 'string',
@@ -40049,32 +40255,81 @@ export const schemaDict: Record<string, LexiconDoc> = {
             maximum: 100,
             description: 'Percent of reports meeting their closure target.',
           },
+          closedCount: {
+            type: 'integer',
+            description:
+              'Number of reports whose current closure falls within this UTC calendar day.',
+          },
           actionedCount: {
             type: 'integer',
-            description: "Number of reports in 'closed' status",
+            description:
+              'Number of closures whose last report action is label, tag, or takedown.',
+          },
+          acknowledgedCount: {
+            type: 'integer',
+            description:
+              'Number of closures whose last report action is not label, tag, or takedown.',
           },
           escalatedCount: {
             type: 'integer',
-            description: "Number of reports in 'escalated' status",
+            description:
+              'Number of report escalation events during this UTC calendar day.',
           },
           inboundCount: {
             type: 'integer',
-            description: 'Reports received in this queue in the last 24 hours.',
+            description:
+              'Reports received in this queue during this UTC calendar day.',
+          },
+          labelActionCount: {
+            type: 'integer',
+            description: 'Closures whose last report action is a label event.',
+          },
+          tagActionCount: {
+            type: 'integer',
+            description: 'Closures whose last report action is a tag event.',
+          },
+          takedownActionCount: {
+            type: 'integer',
+            description:
+              'Closures whose last report action is a takedown event.',
+          },
+          ahtDurationSec: {
+            type: 'integer',
+            description: 'Sum of report assignment-to-close seconds.',
+          },
+          ahtSampleCount: {
+            type: 'integer',
+            description:
+              'Number of assigned closed-report samples in ahtDurationSec.',
+          },
+          resolutionDurationSec: {
+            type: 'integer',
+            description: 'Sum of report creation-to-close seconds.',
+          },
+          resolutionSampleCount: {
+            type: 'integer',
+            description:
+              'Number of closed-report samples in resolutionDurationSec.',
           },
           actionRate: {
             type: 'integer',
             description:
-              'Percentage of reports actioned (actionedCount / inboundCount * 100), rounded to nearest integer. Absent when inboundCount is 0.',
+              'Percentage of closures actioned (actionedCount / closedCount * 100), rounded to nearest integer.',
           },
           avgHandlingTimeSec: {
             type: 'integer',
             description:
-              'Average time in seconds from report creation to close, for reports closed in this period.',
+              'Average handling time in seconds from report assignment to close.',
+          },
+          avgResolutionTimeSec: {
+            type: 'integer',
+            description:
+              'Average resolution time in seconds from report creation to close.',
           },
           lastUpdated: {
             type: 'string',
             format: 'datetime',
-            description: 'When these statistics were last computed',
+            description: 'When these statistics were last computed.',
           },
         },
       },
@@ -43977,6 +44232,8 @@ export function validate(
 }
 
 export const ids = {
+  AppBskyActorContentVisibilityDeclaration:
+    'app.bsky.actor.contentVisibilityDeclaration',
   AppBskyActorDefs: 'app.bsky.actor.defs',
   AppBskyActorGetPreferences: 'app.bsky.actor.getPreferences',
   AppBskyActorGetProfile: 'app.bsky.actor.getProfile',
@@ -44155,9 +44412,14 @@ export const ids = {
   AppBskyUnspeccedSearchPostsSkeleton: 'app.bsky.unspecced.searchPostsSkeleton',
   AppBskyUnspeccedSearchStarterPacksSkeleton:
     'app.bsky.unspecced.searchStarterPacksSkeleton',
+  AppBskyVideoAbortUpload: 'app.bsky.video.abortUpload',
   AppBskyVideoDefs: 'app.bsky.video.defs',
+  AppBskyVideoFinishUpload: 'app.bsky.video.finishUpload',
   AppBskyVideoGetJobStatus: 'app.bsky.video.getJobStatus',
   AppBskyVideoGetUploadLimits: 'app.bsky.video.getUploadLimits',
+  AppBskyVideoGetUploadStatus: 'app.bsky.video.getUploadStatus',
+  AppBskyVideoStartUpload: 'app.bsky.video.startUpload',
+  AppBskyVideoUploadPart: 'app.bsky.video.uploadPart',
   AppBskyVideoUploadVideo: 'app.bsky.video.uploadVideo',
   ChatBskyActorDeclaration: 'chat.bsky.actor.declaration',
   ChatBskyActorDefs: 'chat.bsky.actor.defs',
@@ -44197,9 +44459,9 @@ export const ids = {
   ChatBskyGroupEditGroup: 'chat.bsky.group.editGroup',
   ChatBskyGroupEditJoinLink: 'chat.bsky.group.editJoinLink',
   ChatBskyGroupEnableJoinLink: 'chat.bsky.group.enableJoinLink',
-  ChatBskyGroupGetGroupPublicInfo: 'chat.bsky.group.getGroupPublicInfo',
   ChatBskyGroupGetJoinLinkPreviews: 'chat.bsky.group.getJoinLinkPreviews',
   ChatBskyGroupListJoinRequests: 'chat.bsky.group.listJoinRequests',
+  ChatBskyGroupListMutualGroups: 'chat.bsky.group.listMutualGroups',
   ChatBskyGroupRejectJoinRequest: 'chat.bsky.group.rejectJoinRequest',
   ChatBskyGroupRemoveMembers: 'chat.bsky.group.removeMembers',
   ChatBskyGroupRequestJoin: 'chat.bsky.group.requestJoin',
@@ -44298,36 +44560,6 @@ export const ids = {
   ComAtprotoServerResetPassword: 'com.atproto.server.resetPassword',
   ComAtprotoServerRevokeAppPassword: 'com.atproto.server.revokeAppPassword',
   ComAtprotoServerUpdateEmail: 'com.atproto.server.updateEmail',
-  ComAtprotoSimplespaceAddMember: 'com.atproto.simplespace.addMember',
-  ComAtprotoSimplespaceCheckUserAccess:
-    'com.atproto.simplespace.checkUserAccess',
-  ComAtprotoSimplespaceCreateSpace: 'com.atproto.simplespace.createSpace',
-  ComAtprotoSimplespaceDefs: 'com.atproto.simplespace.defs',
-  ComAtprotoSimplespaceDeleteSpace: 'com.atproto.simplespace.deleteSpace',
-  ComAtprotoSimplespaceGetSpace: 'com.atproto.simplespace.getSpace',
-  ComAtprotoSimplespaceListMembers: 'com.atproto.simplespace.listMembers',
-  ComAtprotoSimplespaceRemoveMember: 'com.atproto.simplespace.removeMember',
-  ComAtprotoSimplespaceUpdateSpace: 'com.atproto.simplespace.updateSpace',
-  ComAtprotoSpaceApplyWrites: 'com.atproto.space.applyWrites',
-  ComAtprotoSpaceCreateRecord: 'com.atproto.space.createRecord',
-  ComAtprotoSpaceDefs: 'com.atproto.space.defs',
-  ComAtprotoSpaceDeleteRecord: 'com.atproto.space.deleteRecord',
-  ComAtprotoSpaceGetBlob: 'com.atproto.space.getBlob',
-  ComAtprotoSpaceGetDelegationToken: 'com.atproto.space.getDelegationToken',
-  ComAtprotoSpaceGetLatestCommit: 'com.atproto.space.getLatestCommit',
-  ComAtprotoSpaceGetRecord: 'com.atproto.space.getRecord',
-  ComAtprotoSpaceGetRepo: 'com.atproto.space.getRepo',
-  ComAtprotoSpaceGetSpaceCredential: 'com.atproto.space.getSpaceCredential',
-  ComAtprotoSpaceListBlobs: 'com.atproto.space.listBlobs',
-  ComAtprotoSpaceListRecords: 'com.atproto.space.listRecords',
-  ComAtprotoSpaceListRepoOps: 'com.atproto.space.listRepoOps',
-  ComAtprotoSpaceListRepos: 'com.atproto.space.listRepos',
-  ComAtprotoSpaceListSpaces: 'com.atproto.space.listSpaces',
-  ComAtprotoSpaceNotifySpaceDeleted: 'com.atproto.space.notifySpaceDeleted',
-  ComAtprotoSpaceNotifyWrite: 'com.atproto.space.notifyWrite',
-  ComAtprotoSpacePutRecord: 'com.atproto.space.putRecord',
-  ComAtprotoSpaceRegisterNotify: 'com.atproto.space.registerNotify',
-  ComAtprotoSpaceUnregisterNotify: 'com.atproto.space.unregisterNotify',
   ComAtprotoSyncDefs: 'com.atproto.sync.defs',
   ComAtprotoSyncGetBlob: 'com.atproto.sync.getBlob',
   ComAtprotoSyncGetBlocks: 'com.atproto.sync.getBlocks',
@@ -44345,8 +44577,14 @@ export const ids = {
   ComAtprotoSyncNotifyOfUpdate: 'com.atproto.sync.notifyOfUpdate',
   ComAtprotoSyncRequestCrawl: 'com.atproto.sync.requestCrawl',
   ComAtprotoSyncSubscribeRepos: 'com.atproto.sync.subscribeRepos',
+  ComAtprotoTempAddReservedHandle: 'com.atproto.temp.addReservedHandle',
+  ComAtprotoTempCheckHandleAvailability:
+    'com.atproto.temp.checkHandleAvailability',
+  ComAtprotoTempCheckSignupQueue: 'com.atproto.temp.checkSignupQueue',
   ComAtprotoTempDereferenceScope: 'com.atproto.temp.dereferenceScope',
   ComAtprotoTempFetchLabels: 'com.atproto.temp.fetchLabels',
+  ComAtprotoTempRequestPhoneVerification:
+    'com.atproto.temp.requestPhoneVerification',
   ComAtprotoTempRevokeAccountCredentials:
     'com.atproto.temp.revokeAccountCredentials',
   ComGermnetworkDeclaration: 'com.germnetwork.declaration',
@@ -44395,6 +44633,40 @@ export const ids = {
   ComParaCommunityBoard: 'com.para.community.board',
   ComParaCommunityBriefingPack: 'com.para.community.briefingPack',
   ComParaCommunityCivicTree: 'com.para.community.civicTree',
+  ComParaCommunityCivicTreeAcceptSuggestion:
+    'com.para.community.civicTree.acceptSuggestion',
+  ComParaCommunityCivicTreeCard: 'com.para.community.civicTree.card',
+  ComParaCommunityCivicTreeCardVote: 'com.para.community.civicTree.cardVote',
+  ComParaCommunityCivicTreeCastCardVote:
+    'com.para.community.civicTree.castCardVote',
+  ComParaCommunityCivicTreeConfig: 'com.para.community.civicTree.config',
+  ComParaCommunityCivicTreeContribution:
+    'com.para.community.civicTree.contribution',
+  ComParaCommunityCivicTreeContributionVote:
+    'com.para.community.civicTree.contributionVote',
+  ComParaCommunityCivicTreeCreateRelationship:
+    'com.para.community.civicTree.createRelationship',
+  ComParaCommunityCivicTreeDefs: 'com.para.community.civicTree.defs',
+  ComParaCommunityCivicTreeGetCardVote:
+    'com.para.community.civicTree.getCardVote',
+  ComParaCommunityCivicTreeGetGraph: 'com.para.community.civicTree.getGraph',
+  ComParaCommunityCivicTreeGetPulse: 'com.para.community.civicTree.getPulse',
+  ComParaCommunityCivicTreeGetSummary:
+    'com.para.community.civicTree.getSummary',
+  ComParaCommunityCivicTreeListContributions:
+    'com.para.community.civicTree.listContributions',
+  ComParaCommunityCivicTreeListSuggestions:
+    'com.para.community.civicTree.listSuggestions',
+  ComParaCommunityCivicTreeModerateContribution:
+    'com.para.community.civicTree.moderateContribution',
+  ComParaCommunityCivicTreeRejectSuggestion:
+    'com.para.community.civicTree.rejectSuggestion',
+  ComParaCommunityCivicTreeRelationship:
+    'com.para.community.civicTree.relationship',
+  ComParaCommunityCivicTreeSubmitContribution:
+    'com.para.community.civicTree.submitContribution',
+  ComParaCommunityCivicTreeVoteContribution:
+    'com.para.community.civicTree.voteContribution',
   ComParaCommunityCivicTreeVote: 'com.para.community.civicTreeVote',
   ComParaCommunityConstitution: 'com.para.community.constitution',
   ComParaCommunityCreateBoard: 'com.para.community.createBoard',
@@ -44498,11 +44770,6 @@ export const ids = {
     'tools.ozone.communication.listTemplates',
   ToolsOzoneCommunicationUpdateTemplate:
     'tools.ozone.communication.updateTemplate',
-  ToolsOzoneHistoryDefs: 'tools.ozone.history.defs',
-  ToolsOzoneHistoryGetAccountActions: 'tools.ozone.history.getAccountActions',
-  ToolsOzoneHistoryGetReportedSubjects:
-    'tools.ozone.history.getReportedSubjects',
-  ToolsOzoneHistoryGetSubjectHistory: 'tools.ozone.history.getSubjectHistory',
   ToolsOzoneHostingGetAccountHistory: 'tools.ozone.hosting.getAccountHistory',
   ToolsOzoneInboxAppealActionedSubject:
     'tools.ozone.inbox.appealActionedSubject',

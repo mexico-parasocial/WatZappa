@@ -43,8 +43,6 @@ export interface PostView {
   replyCount?: number
   repostCount?: number
   likeCount?: number
-  /** PARA: net public reactions (up minus down). A viewer's signed vote overrides their like. */
-  voteScore?: number
   quoteCount?: number
   indexedAt: string
   viewer?: ViewerState
@@ -52,6 +50,8 @@ export interface PostView {
   threadgate?: ThreadgateView
   /** Debug information for internal development */
   debug?: { [_ in string]: unknown }
+  /** PARA: net public reactions (up minus down). A viewer's signed vote overrides their like. */
+  voteScore?: number
 }
 
 const hashPostView = 'postView'

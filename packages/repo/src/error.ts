@@ -1,4 +1,4 @@
-import { Cid } from '@atproto/lex-data'
+import type { Cid } from '@atproto/lex-data'
 
 export class MissingBlockError extends Error {
   constructor(
@@ -30,6 +30,15 @@ export class MissingCommitBlocksError extends Error {
   ) {
     const cidStr = cids.map((c) => c.toString())
     super(`missing blocks for commit ${commit.toString()}: ${cidStr}`)
+  }
+}
+
+// Thrown by `CidSet.markVisited` when a CID is recorded a second time. For MST
+// traversals this means the tree references the same node more than once,
+// which a valid tree never does.
+export class VisitedCidError extends Error {
+  constructor(public cid: Cid) {
+    super(`cid visited more than once: ${cid.toString()}`)
   }
 }
 

@@ -79,6 +79,7 @@ export interface DraftPost {
   text: string
   labels?: $Typed<ComAtprotoLabelDefs.SelfLabels> | { $type: string }
   embedImages?: DraftEmbedImage[]
+  embedGallery?: DraftEmbedGallery
   embedVideos?: DraftEmbedVideo[]
   embedExternals?: DraftEmbedExternal[]
   embedRecords?: DraftEmbedRecord[]
@@ -147,6 +148,25 @@ export function isDraftEmbedCaption<V>(v: V) {
 export function validateDraftEmbedCaption<V>(v: V) {
   return validate<DraftEmbedCaption & V>(v, id, hashDraftEmbedCaption)
 }
+
+export interface DraftEmbedGallery {
+  $type?: 'app.bsky.draft.defs#draftEmbedGallery'
+  items: DraftEmbedGalleryItems
+}
+
+const hashDraftEmbedGallery = 'draftEmbedGallery'
+
+export function isDraftEmbedGallery<V>(v: V) {
+  return is$typed(v, id, hashDraftEmbedGallery)
+}
+
+export function validateDraftEmbedGallery<V>(v: V) {
+  return validate<DraftEmbedGallery & V>(v, id, hashDraftEmbedGallery)
+}
+
+export type DraftEmbedGalleryItems = (
+  $Typed<DraftEmbedImage> | { $type: string }
+)[]
 
 export interface DraftEmbedImage {
   $type?: 'app.bsky.draft.defs#draftEmbedImage'

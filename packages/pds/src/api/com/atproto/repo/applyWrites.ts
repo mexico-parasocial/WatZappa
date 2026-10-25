@@ -16,6 +16,7 @@ import {
   prepareDelete,
   prepareUpdate,
 } from '../../../../repo/index.js'
+import { assertCommunityRepoWrites } from '../../para/community/util.js'
 
 const ratelimitPoints = ({
   input,
@@ -167,6 +168,7 @@ export default function (server: Server, ctx: AppContext) {
       const swapCommitCid = swapCommit ? parseCid(swapCommit) : undefined
 
       const commit = await ctx.actorStore.transact(did, async (actorTxn) => {
+        await assertCommunityRepoWrites(actorTxn, did, preparedWrites)
         const commit = await actorTxn.repo
           .processWrites(preparedWrites, swapCommitCid)
           .catch((err) => {

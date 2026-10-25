@@ -10,6 +10,7 @@ import {
   type Server,
 } from '@atproto/xrpc-server'
 import { formatAccountStatus } from '../../../../account-manager/account-manager.js'
+import { validateIm8Token } from '../../../../account-manager/helpers/im8-token.js'
 import { OLD_PASSWORD_MAX_LENGTH } from '../../../../account-manager/helpers/scrypt.js'
 import type { AppContext } from '../../../../context.js'
 import { events } from '../../../../events.js'
@@ -67,7 +68,39 @@ export default function (server: Server, ctx: AppContext) {
         // throws `AuthFactorRequiredError`, already an `AuthRequiredError`
         // carrying this method's declared `AuthFactorTokenRequired` error name.
         const { user, isSoftDeleted, appPassword } =
-          await ctx.accountManager.login({ ...body, locale })
+          await ctx.accountManager.login({
+            ...body,
+            locale,
+            im8FactorVerifiedByCaller: true,
+          })
+
+        // PARA: accounts with an iM8 second factor sign in with an m8 session
+        // token for the same DID, app passwords included.
+        if (user.authFactorType === 'im8') {
+          if (!body.authFactorToken) {
+            throw new AuthRequiredError(
+              'Auth factor token required',
+              'AuthFactorTokenRequired',
+            )
+          }
+          const m8BaseUrl = ctx.cfg.m8BaseUrl
+          if (!m8BaseUrl) {
+            throw new AuthRequiredError(
+              'M8 identity broker is not configured',
+              'AuthFactorTokenRequired',
+            )
+          }
+          const session = await validateIm8Token(
+            m8BaseUrl,
+            body.authFactorToken,
+          ).catch(() => null)
+          if (session?.did !== user.did) {
+            throw new AuthRequiredError(
+              'Invalid auth factor token',
+              'AuthFactorTokenRequired',
+            )
+          }
+        }
 
         if (!body.allowTakendown && isSoftDeleted) {
           throw new AuthRequiredError(
