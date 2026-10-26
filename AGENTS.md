@@ -133,6 +133,8 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
 - **Every package touched by a change needs a changeset entry.** Add a file under [.changeset/](.changeset/) listing each modified package with an appropriate bump level (pre-v1 breaking changes are `minor` and everything else `patch`, post-v1 `major` for breaking changes, `minor` for new public API, `patch` otherwise). Dependency-only bumps are generated automatically — don't list them by hand. Create that file with `pnpm changeset`.
 - **Never buffer an unbounded stream from outside the process.** Decoding or buffering a request/response body that did not originate locally requires an explicit size bound on the _decoded_ bytes — a wire-size cap does not bound a compressed payload. Compose `createDecoders` with `MaxSizeChecker` in a `pipeline` (see `packages/xrpc-server/src/util.ts`), rather than passing a decoded stream straight to `streamToNodeBuffer`.
 
+- **Do not hide a failing test to get CI green.** `.github/ci/run-tests.mjs` gates on the failing files listed in `.github/ci/known-failing-tests.json`; a new failure is red, and a listed file that passes is red until its entry is deleted, so the list only shrinks. See [docs/CI.md](docs/CI.md).
+
 ## Agent files
 
 Agent files — this `AGENTS.md`, the skills under [.agents/skills/](.agents/skills/), and any package-level equivalents — are part of the codebase and must stay in sync with it.
