@@ -1,13 +1,13 @@
 // @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { DataPlaneClient } from '../../../../data-plane/index.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import type { DataPlaneClient } from '../../../../data-plane/index.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/community/getGovernance.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.community.getGovernance({
+  server.add(com.para.community.getGovernance, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -23,7 +23,10 @@ export default function (server: Server, ctx: AppContext) {
   })
 }
 
-const getGovernance = async (inputs: { ctx: Context; params: QueryParams }) => {
+const getGovernance = async (inputs: {
+  ctx: Context
+  params: com.para.community.getGovernance.$Params
+}) => {
   const { ctx, params } = inputs
   const res = await ctx.dataplane.getParaCommunityGovernance({
     community: params.community,

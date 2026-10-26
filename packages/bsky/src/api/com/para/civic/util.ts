@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { AppContext } from '../../../../context.js'
+import type { AppContext } from '../../../../context.js'
 
 type Labelers = ReturnType<AppContext['reqLabelers']>
 

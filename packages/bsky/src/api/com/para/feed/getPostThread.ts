@@ -1,19 +1,18 @@
-// @ts-nocheck
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { DataPlaneClient } from '../../../../data-plane/index.js'
-import { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
+import type { AtUriString, DatetimeString, DidString } from '@atproto/lex'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import type { DataPlaneClient } from '../../../../data-plane/index.js'
+import type { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/feed/getPostThread.js'
-import { Views } from '../../../../views/index.js'
+import { com } from '../../../../lexicons/index.js'
+import type { Views } from '../../../../views/index.js'
 import { resHeaders } from '../../../util.js'
 
 const DEFAULT_DEPTH = 6
 const DEFAULT_PARENT_HEIGHT = 80
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.feed.getPostThread({
+  server.add(com.para.feed.getPostThread, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer, includeTakedowns } = ctx.authVerifier.parseCreds(auth)
@@ -62,7 +61,7 @@ const getPostThread = async (inputs: { ctx: Context; params: Params }) => {
     thread.post.author,
     ...thread.parents.map((item) => item.author),
     ...thread.replies.map((item) => item.author),
-  ]
+  ] as DidString[]
   const hydration = await ctx.hydrator.hydrateProfileViewers(
     [...new Set(authors)],
     params.hydrateCtx,
@@ -70,8 +69,8 @@ const getPostThread = async (inputs: { ctx: Context; params: Params }) => {
 
   const shouldHide = (authorDid: string) => {
     return (
-      ctx.views.viewerBlockExists(authorDid, hydration) ||
-      ctx.views.viewerMuteExists(authorDid, hydration)
+      ctx.views.viewerBlockExists(authorDid as DidString, hydration) ||
+      ctx.views.viewerMuteExists(authorDid as DidString, hydration)
     )
   }
 
@@ -108,12 +107,12 @@ const mapPost = (item: {
   tags: string[]
   flairs: string[]
   postType?: string
-}) => ({
-  uri: item.uri,
+}): PostView => ({
+  uri: item.uri as AtUriString,
   cid: item.cid,
-  author: item.author,
+  author: item.author as DidString,
   text: item.text,
-  createdAt: item.createdAt,
+  createdAt: item.createdAt as DatetimeString,
   replyRoot: parseString(item.replyRoot),
   replyParent: parseString(item.replyParent),
   langs: item.langs.length ? item.langs : undefined,
@@ -122,12 +121,14 @@ const mapPost = (item: {
   postType: parseString(item.postType),
 })
 
+type PostView = com.para.feed.getAuthorFeed.PostView
+
 type Context = {
   dataplane: DataPlaneClient
   hydrator: Hydrator
   views: Views
 }
 
-type Params = QueryParams & {
+type Params = com.para.feed.getPostThread.$Params & {
   hydrateCtx: HydrateCtx
 }

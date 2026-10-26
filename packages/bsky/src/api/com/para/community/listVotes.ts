@@ -1,11 +1,11 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 import { assertQuadraticVotingEnabled } from './quadratic-voting-gate.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.community.listVotes({
+  server.add(com.para.community.listVotes, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -24,15 +24,18 @@ export default function (server: Server, ctx: AppContext) {
       return {
         encoding: 'application/json' as const,
         body: {
-          votes: votes.map((v) => ({
-            uri: v.uri,
-            cid: v.cid,
-            creator: v.creator,
-            proposal: v.proposal,
-            community: v.community,
-            signal: v.signal,
-            createdAt: v.createdAt,
-          })),
+          votes: votes.map(
+            (v) =>
+              ({
+                uri: v.uri,
+                cid: v.cid,
+                creator: v.creator,
+                proposal: v.proposal,
+                community: v.community,
+                signal: v.signal,
+                createdAt: v.createdAt,
+              }) as com.para.community.listVotes.VoteView,
+          ),
           cursor: res.cursor || undefined,
         },
         headers: resHeaders({ repoRev, labelers }),

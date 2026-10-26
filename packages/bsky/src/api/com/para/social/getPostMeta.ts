@@ -1,16 +1,15 @@
-// @ts-nocheck
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { DataPlaneClient } from '../../../../data-plane/index.js'
-import { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
+import type { AtUriString, DatetimeString, DidString } from '@atproto/lex'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import type { DataPlaneClient } from '../../../../data-plane/index.js'
+import type { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/social/getPostMeta.js'
-import { Views } from '../../../../views/index.js'
+import { com } from '../../../../lexicons/index.js'
+import type { Views } from '../../../../views/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.social.getPostMeta({
+  server.add(com.para.social.getPostMeta, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer, includeTakedowns } = ctx.authVerifier.parseCreds(auth)
@@ -48,13 +47,14 @@ const getPostMeta = async (inputs: { ctx: Context; params: Params }) => {
     throw new InvalidRequestError(`Post not found: ${post}`, 'NotFound')
   }
 
+  const author = meta.post.author as DidString
   const hydration = await ctx.hydrator.hydrateProfileViewers(
-    [meta.post.author],
+    [author],
     params.hydrateCtx,
   )
   const shouldHide =
-    ctx.views.viewerBlockExists(meta.post.author, hydration) ||
-    ctx.views.viewerMuteExists(meta.post.author, hydration)
+    ctx.views.viewerBlockExists(author, hydration) ||
+    ctx.views.viewerMuteExists(author, hydration)
   if (shouldHide) {
     throw new InvalidRequestError(`Post not found: ${post}`, 'NotFound')
   }
@@ -63,7 +63,7 @@ const getPostMeta = async (inputs: { ctx: Context; params: Params }) => {
   const interactionMode = asInteractionMode(meta.post.interactionMode)
 
   return {
-    uri: meta.post.uri,
+    uri: meta.post.uri as AtUriString,
     postType,
     official: meta.post.official,
     party: parseString(meta.post.party),
@@ -73,7 +73,7 @@ const getPostMeta = async (inputs: { ctx: Context; params: Params }) => {
     flairs: meta.post.flairs.length ? meta.post.flairs : undefined,
     voteScore: meta.post.voteScore,
     interactionMode,
-    createdAt: parseString(meta.post.createdAt),
+    createdAt: parseString<DatetimeString>(meta.post.createdAt),
   }
 }
 
@@ -101,6 +101,6 @@ type Context = {
   views: Views
 }
 
-type Params = QueryParams & {
+type Params = com.para.social.getPostMeta.$Params & {
   hydrateCtx: HydrateCtx
 }

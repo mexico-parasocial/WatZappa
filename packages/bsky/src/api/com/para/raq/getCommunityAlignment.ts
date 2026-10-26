@@ -1,7 +1,6 @@
-// @ts-nocheck
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 const isCompassPosition = (
@@ -21,7 +20,7 @@ const isCompassPosition = (
 }
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.raq.getCommunityAlignment({
+  server.add(com.para.raq.getCommunityAlignment, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -40,7 +39,7 @@ export default function (server: Server, ctx: AppContext) {
         )
       }
 
-      let axes: unknown[] = []
+      let axes: com.para.raq.defs.AxisResult[] = []
       let compass: unknown
       try {
         axes = JSON.parse(res.axesJson)

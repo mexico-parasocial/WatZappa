@@ -1,14 +1,14 @@
 // @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { DataPlaneClient } from '../../../../data-plane/index.js'
-import { Hydrator } from '../../../../hydration/hydrator.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/actor/getSuggestedUsers.js'
-import { Views } from '../../../../views/index.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import type { DataPlaneClient } from '../../../../data-plane/index.js'
+import type { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
+import { com } from '../../../../lexicons/index.js'
+import type { Views } from '../../../../views/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.actor.getSuggestedUsers({
+  server.add(com.para.actor.getSuggestedUsers, {
     auth: ctx.authVerifier.standardOptional,
     handler: async ({ params, auth, req }) => {
       const viewer = auth?.credentials.iss ?? null
@@ -21,7 +21,7 @@ export default function (server: Server, ctx: AppContext) {
 
       const result = await getParaSuggestedUsers({
         ctx,
-        params: {...params, hydrateCtx},
+        params: { ...params, hydrateCtx },
       })
 
       const repoRev = viewer
@@ -44,7 +44,7 @@ const getParaSuggestedUsers = async (inputs: {
   ctx: Context
   params: Params
 }) => {
-  const {ctx, params} = inputs
+  const { ctx, params } = inputs
   const viewerDid = params.hydrateCtx.viewer ?? undefined
 
   const res = await ctx.dataplane.getParaSuggestedUsers({
@@ -55,9 +55,9 @@ const getParaSuggestedUsers = async (inputs: {
     cursor: params.cursor ?? '',
   })
 
-  const dids = (res.candidates ?? []).map(c => c.did).filter(Boolean)
+  const dids = (res.candidates ?? []).map((c) => c.did).filter(Boolean)
   if (dids.length === 0) {
-    return {actors: [], recId: undefined, cursor: res.cursor}
+    return { actors: [], recId: undefined, cursor: res.cursor }
   }
 
   // Hydrate full profiles (and the follow/blocks state for the viewer)
@@ -82,7 +82,7 @@ const getParaSuggestedUsers = async (inputs: {
     : undefined
 
   const presented = dids
-    .map(did => {
+    .map((did) => {
       const viewerState = profileViewerState?.profileViewers?.get(did)
       if (
         viewerDid &&
@@ -97,10 +97,7 @@ const getParaSuggestedUsers = async (inputs: {
         follows: followState,
         bidirectionalBlocks: blocksState
           ? new Map([
-              [
-                viewerDid ?? '',
-                blocksState.get(viewerDid ?? '') ?? new Map(),
-              ],
+              [viewerDid ?? '', blocksState.get(viewerDid ?? '') ?? new Map()],
             ])
           : undefined,
       })
@@ -120,6 +117,6 @@ type Context = {
   views: Views
 }
 
-type Params = QueryParams & {
-  hydrateCtx: import('../../../../hydration/hydrator.js').HydrateCtx
+type Params = com.para.actor.getSuggestedUsers.$Params & {
+  hydrateCtx: HydrateCtx
 }

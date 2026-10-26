@@ -1,16 +1,16 @@
-// @ts-nocheck
 import { dedupeStrs } from '@atproto/common'
-import { AppContext } from '../../../../context.js'
-import { DataPlaneClient } from '../../../../data-plane/index.js'
-import { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
+import type { DidString } from '@atproto/lex'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import type { DataPlaneClient } from '../../../../data-plane/index.js'
+import type { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/feed/getPosts.js'
-import { Views } from '../../../../views/index.js'
+import { com } from '../../../../lexicons/index.js'
+import type { Views } from '../../../../views/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.feed.getPosts({
+  server.add(com.para.feed.getPosts, {
     auth: ctx.authVerifier.standardOptional,
     handler: async ({ params, auth, req }) => {
       const viewer = auth.credentials.iss
@@ -36,7 +36,9 @@ const getPosts = async (inputs: { ctx: Context; params: Params }) => {
   const { ctx, params } = inputs
   const uris = dedupeStrs(params.uris)
   const res = await ctx.dataplane.getParaPosts({ uris })
-  const authors = [...new Set(res.items.map((item) => item.author))]
+  const authors = [
+    ...new Set(res.items.map((item) => item.author as DidString)),
+  ]
   const hydration = await ctx.hydrator.hydrateProfileViewers(
     authors,
     params.hydrateCtx,
@@ -45,19 +47,22 @@ const getPosts = async (inputs: { ctx: Context; params: Params }) => {
   return {
     posts: res.items
       .filter((item) => !shouldHide(item.author, ctx.views, hydration))
-      .map((item) => ({
-        uri: item.uri,
-        cid: item.cid,
-        author: item.author,
-        text: item.text,
-        createdAt: item.createdAt,
-        replyRoot: parseString(item.replyRoot),
-        replyParent: parseString(item.replyParent),
-        langs: item.langs.length ? item.langs : undefined,
-        tags: item.tags.length ? item.tags : undefined,
-        flairs: item.flairs.length ? item.flairs : undefined,
-        postType: parseString(item.postType),
-      })),
+      .map(
+        (item) =>
+          ({
+            uri: item.uri,
+            cid: item.cid,
+            author: item.author,
+            text: item.text,
+            createdAt: item.createdAt,
+            replyRoot: parseString(item.replyRoot),
+            replyParent: parseString(item.replyParent),
+            langs: item.langs.length ? item.langs : undefined,
+            tags: item.tags.length ? item.tags : undefined,
+            flairs: item.flairs.length ? item.flairs : undefined,
+            postType: parseString(item.postType),
+          }) as com.para.feed.getAuthorFeed.PostView,
+      ),
   }
 }
 
@@ -67,8 +72,8 @@ const shouldHide = (
   hydration: Awaited<ReturnType<Hydrator['hydrateProfileViewers']>>,
 ) => {
   return (
-    views.viewerBlockExists(authorDid, hydration) ||
-    views.viewerMuteExists(authorDid, hydration)
+    views.viewerBlockExists(authorDid as DidString, hydration) ||
+    views.viewerMuteExists(authorDid as DidString, hydration)
   )
 }
 
@@ -78,4 +83,4 @@ type Context = {
   dataplane: DataPlaneClient
 }
 
-type Params = QueryParams & { hydrateCtx: HydrateCtx }
+type Params = com.para.feed.getPosts.$Params & { hydrateCtx: HydrateCtx }

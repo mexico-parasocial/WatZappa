@@ -11,7 +11,7 @@ Workspace layout (see [pnpm-workspace.yaml](./pnpm-workspace.yaml) and [tsconfig
 - [packages/oauth/\*](packages/oauth/) — OAuth client/provider implementations and JWK helpers.
 - [packages/internal/\*](packages/internal/) — `@atproto-labs/*` internal shared utilities (fetch, handle/identity/DID resolvers, simple-store, pipe, xrpc-utils).
 - [services/{pds,bsky,bsync,ozone}](services/) — thin runtime wrappers; the actual implementation code lives in `packages/{pds,bsky,bsync,ozone}`.
-- [lexicons/](lexicons/) — the canonical JSON Lexicon schemas for `com.atproto.*` and `tools.ozone.*` **only** (this repo is their source of truth). Other namespaces (`app.bsky.*`, `chat.bsky.*`, …) are vendored per-package from the `bsky` repo or the network — see [Codegen](#codegen). [lexicons-overrides/](lexicons-overrides/) holds local override documents shared across packages.
+- [lexicons/](lexicons/) — the canonical JSON Lexicon schemas for `com.atproto.*` and `tools.ozone.*` **only** (this repo is their source of truth), plus this fork's own `com.para.*`. Other namespaces (`app.bsky.*`, `chat.bsky.*`, …) are vendored per-package from the `bsky` repo or the network — see [Codegen](#codegen). [lexicons-overrides/](lexicons-overrides/) holds local override documents shared across packages.
 - [interop-test-files/](interop-test-files/) — language-neutral protocol conformance fixtures, copied from [bluesky-social/atproto-interop-tests](https://github.com/bluesky-social/atproto-interop-tests/) (their canonical source, shared across SDKs). Don't edit unless changing protocol-level behavior; any edit must also be contributed upstream.
 
 ## Common commands
@@ -61,7 +61,7 @@ Before writing or extending any test, invoke the `testing` skill ([.agents/skill
 
 ## Codegen
 
-The repo-root [lexicons/](lexicons/) holds the canonical `com.atproto.*` / `tools.ozone.*` schemas **only** — this repo is their source of truth. Every other namespace (`app.bsky.*`, `chat.bsky.*`, `site.standard.*`, …) is vendored **per package**: each package lists the NSIDs it needs and where to resolve them (the root `lexicons` directory, the `bsky` GitHub repo, the network, or the shared [lexicons-overrides/](lexicons-overrides/)) in its own committed `lexicons.json`. A package's `prebuild` runs `lex install --ci` (resolving JSON into its gitignored `./lexicons`) then `lex build` (generating the gitignored `./src/lexicons` TypeScript tree that code imports). **Full how-to: the ["Working with lexicons"](CONTRIBUTING.md#working-with-lexicons) section of CONTRIBUTING.md and the `lex-setup` skill.**
+The repo-root [lexicons/](lexicons/) holds the canonical `com.atproto.*` / `tools.ozone.*` schemas **only** — this repo is their source of truth. (This fork also keeps its `com.para.*` schemas there; `pds` and `bsky` resolve them with the same `directory` resolver.) Every other namespace (`app.bsky.*`, `chat.bsky.*`, `site.standard.*`, …) is vendored **per package**: each package lists the NSIDs it needs and where to resolve them (the root `lexicons` directory, the `bsky` GitHub repo, the network, or the shared [lexicons-overrides/](lexicons-overrides/)) in its own committed `lexicons.json`. A package's `prebuild` runs `lex install --ci` (resolving JSON into its gitignored `./lexicons`) then `lex build` (generating the gitignored `./src/lexicons` TypeScript tree that code imports). **Full how-to: the ["Working with lexicons"](CONTRIBUTING.md#working-with-lexicons) section of CONTRIBUTING.md and the `lex-setup` skill.**
 
 - **Add/refresh an external lexicon in a package:** `cd packages/<pkg> && pnpm lex:install <nsid>` (adds it plus transitive deps); `pnpm lex:update` refreshes installed ones.
 - **Edit a canonical lexicon:** change it under [lexicons/](lexicons/), then run `pnpm lex:update-local` from the repo root to propagate the new CID into every dependent package's `lexicons.json`. (After editing a `.proto` file instead, run `pnpm codegen` from the root.)
@@ -96,9 +96,9 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
   filed under each of the six official matter groups and casts public policy
   ballots from the demo accounts, leaning by party. The proofs come from the
   dev-env verifier (`devPolicyVoteProof`), signed with a key that exists only
-  there. `com.para.civic.getPolicyCommunityVotes` (hand-registered in
-  `api/com/para/civic/schemas.ts`) reads `para_policy_vote` joined to active
-  `para_community_membership`; it is gated to members of that community.
+  there. `com.para.civic.getPolicyCommunityVotes` reads `para_policy_vote`
+  joined to active `para_community_membership`; it is gated to members of that
+  community.
 
 - `packages/bsky/src/governance-lab` is a synthetic reference only. Its
   `g1-follow-signal-v1` policy is provisional; never import it into production
@@ -112,7 +112,7 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
   to the repository owner before indexing voting power.
 
 - **Lexicons are the contract.** Lexicon schemas drive both client types and server route validation. Service packages don't hand-write XRPC method signatures — they import the generated definitions from their `src/lexicons/` directory (gitignored; regenerated from the package's `lexicons.json` — see [Codegen](#codegen)).
-- **bsky legacy route registry is frozen.** The generated `Server` + typed handlers in `packages/bsky/src/lexicon/` (legacy lexgen output) can no longer be regenerated — `lex build` writes the runtime schema tree to `src/lexicons/` instead. To serve an XRPC method the registry predates: install its `LexiconDoc` via `server.addLexicons(...)` (see `packages/bsky/src/api/com/para/community/civicTree/schemas.ts`) and register the handler with `server.xrpc.method(nsid, cfg)` (see the post-subscription endpoints for the existing pattern). Bind write-endpoint DIDs to `auth.credentials.iss`, never the payload.
+- **AppView `com.para` routes register generated schemas.** `packages/bsky` installs `com.para.*` from the root `lexicons/` through its `lexicons.json`, and every route calls `server.add(com.para.…, cfg)`. To serve a new method, `pnpm lex:install <nsid>` in that package; never hand-write a `LexiconDoc` or use `server.method()`. `server.add` passes undeclared query params through to the handler, so read only declared ones. Bind write-endpoint DIDs to `auth.credentials.iss`, never the payload.
 - ([packages/pds](packages/pds)) — a single-tenant atproto server: account management, repo storage (kysely-over-sqlite), actor storage (kysely-over-postgres), email, OAuth provider, blob storage. Runtime entry point is [services/pds](services/pds); production code is in `packages/pds/src`.
 - Outbound requests to a URL resolved from a DID document are untrusted. Make them with `ctx.safeClient(url).xrpc(…)`, never a bare `xrpc(url, …)`, which uses the global fetch and bypasses the https-only/unicast-only checks. (`ctx.proxyAgent` is a separate thing — an undici `Dispatcher` used by pipethrough.)
 - ([packages/bsky](packages/bsky)) — read-side service for `app.bsky.*` queries (timelines, profiles, feed generators, hydration pipeline, GraphQL-like view composition). Talks to PDSes via XRPC and to `bsync` via Connect-RPC (protobuf in `packages/bsky/proto`). Runtime entry point in [services/bsky](services/bsky).

@@ -1,12 +1,15 @@
+import type { Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../../context.js'
-import type { Server } from '../../../../../lexicon/index.js'
+import { com } from '../../../../../lexicons/index.js'
 import {
   forwardDataplaneErrors,
   parseDataplaneJson,
 } from '../civicTree/util.js'
 
+type ActivityView = com.para.community.listActivities.ActivityView
+
 export default function (server: Server, ctx: AppContext) {
-  server.xrpc.method('com.para.community.listActivities', {
+  server.add(com.para.community.listActivities, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params }) => {
       const res = await forwardDataplaneErrors(() =>
@@ -19,9 +22,9 @@ export default function (server: Server, ctx: AppContext) {
         }),
       )
       return {
-        encoding: 'application/json' as const,
+        encoding: 'application/json',
         body: {
-          activities: parseDataplaneJson(res.itemsJson, []),
+          activities: parseDataplaneJson<ActivityView[]>(res.itemsJson, []),
           cursor: res.cursor || undefined,
         },
       }
