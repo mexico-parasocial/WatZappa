@@ -1,14 +1,13 @@
 // @ts-nocheck
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import { Code, isDataplaneError } from '../../../../data-plane/index.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/community/listMembers.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.community.listMembers({
+  server.add(com.para.community.listMembers, {
     auth: ctx.authVerifier.standardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -38,7 +37,7 @@ const listMembers = async ({
   viewerIsAdmin,
 }: {
   ctx: AppContext
-  params: QueryParams
+  params: com.para.community.listMembers.$Params
   viewer: string
   viewerIsAdmin: boolean
 }) => {

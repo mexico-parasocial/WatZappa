@@ -1,10 +1,5 @@
 import type { Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../context.js'
-import {
-  ComParaNS,
-  type Server as ParaLexiconServer,
-} from '../lexicon/index.js'
-import { schemas as paraSchemas } from '../lexicon/lexicons.js'
 import getProfile from './app/bsky/actor/getProfile.js'
 import getProfiles from './app/bsky/actor/getProfiles.js'
 import getSuggestions from './app/bsky/actor/getSuggestions.js'
@@ -112,7 +107,6 @@ import getParaAgentConversation from './com/para/agent/getConversation.js'
 import sendParaAgentMessage from './com/para/agent/sendMessage.js'
 import getParaAlphaAccess from './com/para/alpha/getAccess.js'
 import getParaAlphaRolloutStatus from './com/para/alpha/getRolloutStatus.js'
-import { bookSchemas } from './com/para/book/schemas.js'
 import searchParaBooks from './com/para/book/searchBooks.js'
 import getParaCabildeo from './com/para/civic/getCabildeo.js'
 import getParaOpenQuestionThread from './com/para/civic/getOpenQuestionThread.js'
@@ -122,10 +116,7 @@ import listParaCabildeoPositions from './com/para/civic/listCabildeoPositions.js
 import listParaCabildeos from './com/para/civic/listCabildeos.js'
 import listParaDelegationCandidates from './com/para/civic/listDelegationCandidates.js'
 import putParaLivePresence from './com/para/civic/putLivePresence.js'
-import { civicSchemas } from './com/para/civic/schemas.js'
-import applyParaCollectionOps, {
-  applyOpsSchema,
-} from './com/para/collection/applyOps.js'
+import applyParaCollectionOps from './com/para/collection/applyOps.js'
 import createParaCollection from './com/para/collection/createCollection.js'
 import deleteParaCollection from './com/para/collection/deleteCollection.js'
 import getParaCollection from './com/para/collection/getCollection.js'
@@ -134,10 +125,8 @@ import updateParaCollection from './com/para/collection/updateCollection.js'
 import getParaCommunityActivity from './com/para/community/activities/getActivity.js'
 import listParaCommunityActivities from './com/para/community/activities/listActivities.js'
 import listParaCommunityWikiPages from './com/para/community/activities/listWikiPages.js'
-import { communityActivitySchemas } from './com/para/community/activities/schemas.js'
 import createParaCivicTreeRelationship from './com/para/community/civicTree/createRelationship.js'
 import listParaCivicTreeContributions from './com/para/community/civicTree/listContributions.js'
-import { civicTreeProcedureSchemas } from './com/para/community/civicTree/schemas.js'
 import submitParaCivicTreeContribution from './com/para/community/civicTree/submitContribution.js'
 import voteParaCivicTreeContribution from './com/para/community/civicTree/voteContribution.js'
 import exportParaObsidianVault from './com/para/community/exportObsidianVault.js'
@@ -191,24 +180,6 @@ export * as external from './external.js'
 export * as sitemap from './sitemap.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.addLexicons(paraSchemas)
-  // The civicTree procedure lexicons postdate the frozen generated registry.
-  server.addLexicons(civicTreeProcedureSchemas)
-  server.addLexicons(bookSchemas)
-  server.addLexicons(civicSchemas)
-  server.addLexicons(communityActivitySchemas)
-  server.addLexicons([applyOpsSchema])
-
-  const paraServer = { xrpc: server } as unknown as ParaLexiconServer
-  const para = new ComParaNS(paraServer)
-  ;(paraServer as any).com = { para }
-  ;(para as any).notification = {
-    getPostSubscription: (cfg) =>
-      paraServer.xrpc.method('com.para.notification.getPostSubscription', cfg),
-    putPostSubscription: (cfg) =>
-      paraServer.xrpc.method('com.para.notification.putPostSubscription', cfg),
-  }
-
   // app.bsky
   getTimeline(server, ctx)
   createBookmark(server, ctx)
@@ -312,72 +283,72 @@ export default function (server: Server, ctx: AppContext) {
   getRecord(server, ctx)
   queryLabels(server, ctx)
   // com.para
-  getParaProfileStats(paraServer, ctx)
-  getParaSuggestedUsers(paraServer, ctx)
-  exportParaCivicTree(paraServer, ctx)
-  getParaAgentConversation(paraServer, ctx)
-  sendParaAgentMessage(paraServer, ctx)
-  listParaCabildeos(paraServer, ctx)
-  getParaCabildeo(paraServer, ctx)
-  getParaOpenQuestionThread(paraServer, ctx)
-  getParaPolicyTally(paraServer, ctx)
-  listParaCabildeoPositions(paraServer, ctx)
-  listParaDelegationCandidates(paraServer, ctx)
-  putParaLivePresence(paraServer, ctx)
+  getParaProfileStats(server, ctx)
+  getParaSuggestedUsers(server, ctx)
+  exportParaCivicTree(server, ctx)
+  getParaAgentConversation(server, ctx)
+  sendParaAgentMessage(server, ctx)
+  listParaCabildeos(server, ctx)
+  getParaCabildeo(server, ctx)
+  getParaOpenQuestionThread(server, ctx)
+  getParaPolicyTally(server, ctx)
+  listParaCabildeoPositions(server, ctx)
+  listParaDelegationCandidates(server, ctx)
+  putParaLivePresence(server, ctx)
   getParaCommunityAuthorization(server, ctx)
-  getParaCommunityBoard(paraServer, ctx)
-  getParaCommunityGovernance(paraServer, ctx)
-  getParaAuditTrail(paraServer, ctx)
-  getParaCivicTree(paraServer, ctx)
-  searchParaBooks(paraServer, ctx)
-  getParaPolicyCommunityVotes(paraServer, ctx)
-  listParaCommunityActivities(paraServer, ctx)
-  getParaCommunityActivity(paraServer, ctx)
-  listParaCommunityWikiPages(paraServer, ctx)
-  listParaCivicTreeContributions(paraServer, ctx)
-  submitParaCivicTreeContribution(paraServer, ctx)
-  voteParaCivicTreeContribution(paraServer, ctx)
-  createParaCivicTreeRelationship(paraServer, ctx)
-  getParaTallySimulation(paraServer, ctx)
-  listParaCommunityBoards(paraServer, ctx)
-  listParaDelegations(paraServer, ctx)
-  listParaIntensities(paraServer, ctx)
-  listParaVotes(paraServer, ctx)
-  listParaCivicTrees(paraServer, ctx)
-  listParaCivicTreeVotes(paraServer, ctx)
-  listParaCommunityMembers(paraServer, ctx)
-  listParaCommunityPosts(paraServer, ctx)
-  listParaCommunitySharedContent(paraServer, ctx)
-  listParaCommunityRelations(paraServer, ctx)
-  listParaChildCommunities(paraServer, ctx)
-  listParaParentCommunities(paraServer, ctx)
-  listParaBriefingPacks(paraServer, ctx)
-  getParaBriefingPack(paraServer, ctx)
-  listParaDeliberations(paraServer, ctx)
-  getParaAlphaAccess(paraServer, ctx)
-  getParaAlphaRolloutStatus(paraServer, ctx)
-  getParaDiscourseTopology(paraServer, ctx)
-  exportParaObsidianVault(paraServer, ctx)
-  listParaHighlights(paraServer, ctx)
-  getParaHighlight(paraServer, ctx)
-  getParaPostSubscription(paraServer, ctx)
-  putParaPostSubscription(paraServer, ctx)
-  getParaAuthorFeed(paraServer, ctx)
+  getParaCommunityBoard(server, ctx)
+  getParaCommunityGovernance(server, ctx)
+  getParaAuditTrail(server, ctx)
+  getParaCivicTree(server, ctx)
+  searchParaBooks(server, ctx)
+  getParaPolicyCommunityVotes(server, ctx)
+  listParaCommunityActivities(server, ctx)
+  getParaCommunityActivity(server, ctx)
+  listParaCommunityWikiPages(server, ctx)
+  listParaCivicTreeContributions(server, ctx)
+  submitParaCivicTreeContribution(server, ctx)
+  voteParaCivicTreeContribution(server, ctx)
+  createParaCivicTreeRelationship(server, ctx)
+  getParaTallySimulation(server, ctx)
+  listParaCommunityBoards(server, ctx)
+  listParaDelegations(server, ctx)
+  listParaIntensities(server, ctx)
+  listParaVotes(server, ctx)
+  listParaCivicTrees(server, ctx)
+  listParaCivicTreeVotes(server, ctx)
+  listParaCommunityMembers(server, ctx)
+  listParaCommunityPosts(server, ctx)
+  listParaCommunitySharedContent(server, ctx)
+  listParaCommunityRelations(server, ctx)
+  listParaChildCommunities(server, ctx)
+  listParaParentCommunities(server, ctx)
+  listParaBriefingPacks(server, ctx)
+  getParaBriefingPack(server, ctx)
+  listParaDeliberations(server, ctx)
+  getParaAlphaAccess(server, ctx)
+  getParaAlphaRolloutStatus(server, ctx)
+  getParaDiscourseTopology(server, ctx)
+  exportParaObsidianVault(server, ctx)
+  listParaHighlights(server, ctx)
+  getParaHighlight(server, ctx)
+  getParaPostSubscription(server, ctx)
+  putParaPostSubscription(server, ctx)
+  getParaAuthorFeed(server, ctx)
   getParaMemes(server, ctx)
-  getParaPostThread(paraServer, ctx)
-  getParaPosts(paraServer, ctx)
-  searchParaPosts(paraServer, ctx)
-  getParaTimeline(paraServer, ctx)
-  getParaPostMeta(paraServer, ctx)
-  getParaDiscourseSnapshot(paraServer, ctx)
-  listParaCollections(paraServer, ctx)
-  getParaCollection(paraServer, ctx)
-  createParaCollection(paraServer, ctx)
-  updateParaCollection(paraServer, ctx)
-  applyParaCollectionOps(paraServer, ctx)
-  deleteParaCollection(paraServer, ctx)
-  getParaDiscourseTopics(paraServer, ctx)
-  getParaUserAlignment(paraServer, ctx)
-  getParaCommunityAlignment(paraServer, ctx)
-  getParaProposals(paraServer, ctx)
+  getParaPostThread(server, ctx)
+  getParaPosts(server, ctx)
+  searchParaPosts(server, ctx)
+  getParaTimeline(server, ctx)
+  getParaPostMeta(server, ctx)
+  getParaDiscourseSnapshot(server, ctx)
+  listParaCollections(server, ctx)
+  getParaCollection(server, ctx)
+  createParaCollection(server, ctx)
+  updateParaCollection(server, ctx)
+  applyParaCollectionOps(server, ctx)
+  deleteParaCollection(server, ctx)
+  getParaDiscourseTopics(server, ctx)
+  getParaUserAlignment(server, ctx)
+  getParaCommunityAlignment(server, ctx)
+  getParaProposals(server, ctx)
 }

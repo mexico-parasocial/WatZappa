@@ -1,12 +1,12 @@
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import type { AtUriString, DatetimeString, DidString } from '@atproto/lex'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
-import type { BriefingPackView } from '../../../../lexicon/types/com/para/community/defs.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.community.getBriefingPack({
+  server.add(com.para.community.getBriefingPack, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -26,19 +26,19 @@ export default function (server: Server, ctx: AppContext) {
       }
 
       const p = res.briefingPack
-      const pack: BriefingPackView = {
+      const pack: com.para.community.defs.BriefingPackView = {
         $type: 'com.para.community.defs#briefingPackView' as const,
-        uri: p.uri,
+        uri: p.uri as AtUriString,
         cid: p.cid,
         packType: 'party_lobbying' as const,
-        communityUri: p.communityUri,
+        communityUri: p.communityUri as AtUriString,
         party: '',
         title: p.title,
         summary: parseString(p.description),
         status: (p.status as 'draft' | 'published' | 'archived') ?? 'draft',
-        createdBy: p.createdBy,
-        createdAt: p.createdAt,
-        updatedAt: p.updatedAt,
+        createdBy: p.createdBy as DidString,
+        createdAt: p.createdAt as DatetimeString,
+        updatedAt: p.updatedAt as DatetimeString,
       }
 
       const repoRev = await ctx.hydrator.actor.getRepoRevSafe(viewer)

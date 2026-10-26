@@ -1,15 +1,15 @@
-// @ts-nocheck
 import { HOUR, MINUTE } from '@atproto/common'
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
+import type { DatetimeString, DidString } from '@atproto/lex'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
 import { isExternalEmbedType } from '../../../../views/types.js'
 import { parseDataplaneJson } from './util.js'
 
 const LIVE_ELIGIBLE_PHASES = new Set(['open', 'deliberating', 'voting'])
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.civic.putLivePresence({
+  server.add(com.para.civic.putLivePresence, {
     auth: ctx.authVerifier.standard,
     handler: async ({ input, auth }) => {
       const actorDid = auth.credentials.iss
@@ -61,14 +61,14 @@ export default function (server: Server, ctx: AppContext) {
         body: {
           cabildeo,
           present: res.present,
-          expiresAt: res.expiresAt || undefined,
+          expiresAt: (res.expiresAt || undefined) as DatetimeString | undefined,
         },
       }
     },
   })
 }
 
-const getActiveHostLiveUri = async (ctx: AppContext, actorDid: string) => {
+const getActiveHostLiveUri = async (ctx: AppContext, actorDid: DidString) => {
   const actors = await ctx.hydrator.actor.getActors([actorDid], {
     includeTakedowns: true,
   })
@@ -92,7 +92,7 @@ const getActiveHostLiveUri = async (ctx: AppContext, actorDid: string) => {
   if (expiresAtMs && expiresAtMs <= Date.now()) {
     return undefined
   }
-  if (!isExternalEmbedType(record.embed)) {
+  if (!record.embed || !isExternalEmbedType(record.embed)) {
     return undefined
   }
   return record.embed.external.uri

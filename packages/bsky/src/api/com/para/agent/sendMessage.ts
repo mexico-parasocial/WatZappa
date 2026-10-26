@@ -1,6 +1,12 @@
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
-import { OpenAIMessage } from '../../../../openai.js'
+import type { DatetimeString } from '@atproto/lex'
+import {
+  NotEnoughResourcesError,
+  type Server,
+  UpstreamFailureError,
+} from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
+import type { OpenAIMessage } from '../../../../openai.js'
 
 const AGENT_PROMPTS: Record<string, string> = {
   'Xavier Exul':
@@ -22,28 +28,24 @@ interface ChatMessage {
   id: string
   text: string
   sender: 'user' | 'agent'
-  createdAt: string
+  createdAt: DatetimeString
 }
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.agent.sendMessage({
+  server.add(com.para.agent.sendMessage, {
     auth: ctx.authVerifier.standard,
     handler: async ({ input, auth }) => {
       const actorDid = auth.credentials.iss
       const { agentId, text } = input.body
 
       if (!ctx.openaiClient) {
-        return {
-          status: 503,
-          message: 'Agent chat service is not configured',
-        }
+        throw new NotEnoughResourcesError(
+          'Agent chat service is not configured',
+        )
       }
 
       if (!ctx.redis) {
-        return {
-          status: 503,
-          message: 'Redis is not available',
-        }
+        throw new NotEnoughResourcesError('Redis is not available')
       }
 
       const key = getConversationKey(actorDid, agentId)
@@ -53,7 +55,7 @@ export default function (server: Server, ctx: AppContext) {
         id: `msg_${Date.now()}_user`,
         text,
         sender: 'user',
-        createdAt: new Date().toISOString(),
+        createdAt: new Date().toISOString() as DatetimeString,
       }
       await ctx.redis.driver.rpush(key, JSON.stringify(userMessage))
       await ctx.redis.driver.expire(key, 30 * 24 * 60 * 60) // 30 days
@@ -67,12 +69,10 @@ export default function (server: Server, ctx: AppContext) {
           role: 'system',
           content: AGENT_PROMPTS[agentId] || DEFAULT_PROMPT,
         },
-        ...history.map(
-          (msg): OpenAIMessage => ({
-            role: msg.sender === 'user' ? 'user' : 'assistant',
-            content: msg.text,
-          }),
-        ),
+        ...history.map((msg): OpenAIMessage => ({
+          role: msg.sender === 'user' ? 'user' : 'assistant',
+          content: msg.text,
+        })),
       ]
 
       // Call OpenAI
@@ -80,10 +80,7 @@ export default function (server: Server, ctx: AppContext) {
       try {
         responseText = await ctx.openaiClient.chatCompletion(messages)
       } catch (err: any) {
-        return {
-          status: 502,
-          message: `Agent response failed: ${err.message}`,
-        }
+        throw new UpstreamFailureError(`Agent response failed: ${err.message}`)
       }
 
       // Store agent response
@@ -91,7 +88,7 @@ export default function (server: Server, ctx: AppContext) {
         id: `msg_${Date.now()}_agent`,
         text: responseText,
         sender: 'agent',
-        createdAt: new Date().toISOString(),
+        createdAt: new Date().toISOString() as DatetimeString,
       }
       await ctx.redis.driver.rpush(key, JSON.stringify(agentMessage))
       await ctx.redis.driver.expire(key, 30 * 24 * 60 * 60)

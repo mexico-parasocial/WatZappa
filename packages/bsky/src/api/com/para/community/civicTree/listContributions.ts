@@ -1,10 +1,12 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../../context.js'
+import { com } from '../../../../../lexicons/index.js'
 import { forwardDataplaneErrors, parseDataplaneJson } from './util.js'
 
+type ContributionView = com.para.community.civicTree.defs.ContributionView
+
 export default function (server: Server, ctx: AppContext) {
-  server.xrpc.method('com.para.community.civicTree.listContributions', {
+  server.add(com.para.community.civicTree.listContributions, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -22,9 +24,12 @@ export default function (server: Server, ctx: AppContext) {
       )
 
       return {
-        encoding: 'application/json' as const,
+        encoding: 'application/json',
         body: {
-          contributions: parseDataplaneJson(res.itemsJson, []),
+          contributions: parseDataplaneJson<ContributionView[]>(
+            res.itemsJson,
+            [],
+          ),
           cursor: res.cursor || undefined,
         },
       }

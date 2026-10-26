@@ -1,20 +1,16 @@
-// @ts-nocheck
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
+import type { AtUriString, DatetimeString, DidString } from '@atproto/lex'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import type { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import {
-  QueryParams,
-  ReplyView,
-} from '../../../../lexicon/types/com/para/civic/getOpenQuestionThread.js'
-import { Views } from '../../../../views/index.js'
+import { com } from '../../../../lexicons/index.js'
+import type { Views } from '../../../../views/index.js'
 import { resHeaders } from '../../../util.js'
 
 const DEFAULT_DEPTH = 6
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.civic.getOpenQuestionThread({
+  server.add(com.para.civic.getOpenQuestionThread, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer, includeTakedowns } = ctx.authVerifier.parseCreds(auth)
@@ -61,7 +57,10 @@ const getOpenQuestionThread = async (inputs: {
     throw new InvalidRequestError(`Question not found: ${anchor}`, 'NotFound')
   }
 
-  const authors = [res.post.author, ...collectReplyAuthors(res.replies)]
+  const authors = [
+    res.post.author,
+    ...collectReplyAuthors(res.replies),
+  ] as DidString[]
   const hydration = await ctx.hydrator.hydrateProfileViewers(
     [...new Set(authors)],
     params.hydrateCtx,
@@ -69,8 +68,8 @@ const getOpenQuestionThread = async (inputs: {
 
   const shouldHide = (authorDid: string) => {
     return (
-      ctx.views.viewerBlockExists(authorDid, hydration) ||
-      ctx.views.viewerMuteExists(authorDid, hydration)
+      ctx.views.viewerBlockExists(authorDid as DidString, hydration) ||
+      ctx.views.viewerMuteExists(authorDid as DidString, hydration)
     )
   }
 
@@ -80,13 +79,13 @@ const getOpenQuestionThread = async (inputs: {
 
   return {
     post: {
-      uri: res.post.uri,
+      uri: res.post.uri as AtUriString,
       cid: res.post.cid,
-      author: res.post.author,
+      author: res.post.author as DidString,
       text: res.post.text,
-      createdAt: res.post.createdAt,
-      replyRoot: parseString(res.post.replyRoot),
-      replyParent: parseString(res.post.replyParent),
+      createdAt: res.post.createdAt as DatetimeString,
+      replyRoot: parseString<AtUriString>(res.post.replyRoot),
+      replyParent: parseString<AtUriString>(res.post.replyParent),
       langs: res.post.langs.length ? res.post.langs : undefined,
       tags: res.post.tags.length ? res.post.tags : undefined,
       flairs: res.post.flairs.length ? res.post.flairs : undefined,
@@ -119,15 +118,15 @@ const mapReplies = (
     replies: unknown[]
   }>,
   shouldHide: (authorDid: string) => boolean,
-): ReplyView[] => {
+): com.para.civic.getOpenQuestionThread.ReplyView[] => {
   return replies
     .filter((reply) => !shouldHide(reply.author))
     .map((reply) => ({
-      uri: reply.uri,
+      uri: reply.uri as AtUriString,
       cid: reply.cid,
-      author: reply.author,
+      author: reply.author as DidString,
       text: reply.text,
-      createdAt: reply.createdAt,
+      createdAt: reply.createdAt as DatetimeString,
       voteScore: reply.voteScore,
       viewerVote: reply.viewerVote,
       replies: mapReplies(
@@ -164,6 +163,6 @@ type Context = {
   views: Views
 }
 
-type Params = QueryParams & {
+type Params = com.para.civic.getOpenQuestionThread.$Params & {
   hydrateCtx: HydrateCtx
 }
