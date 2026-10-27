@@ -6,14 +6,12 @@ import type { DidString, NsidString, RecordKeyString } from '@atproto/syntax'
 import {
   LtHash,
   RepoCommit,
-  encodeCommitCtx,
   formatSetHashElement,
-  verifyCommit,
   verifyCredentialSig,
   verifySpaceToken,
 } from '../src/index.js'
 
-type CommitCtx = Parameters<typeof encodeCommitCtx>[0]
+type CommitCtx = { space: string; author: string; rev: string }
 
 type Vectors = {
   now: number
@@ -61,7 +59,6 @@ const vectors: Vectors = JSON.parse(
 )
 
 const hex = (bytes: Uint8Array) => Buffer.from(bytes).toString('hex')
-const unhex = (str: string) => new Uint8Array(Buffer.from(str, 'hex'))
 
 describe('spaces-alpha vectors', () => {
   beforeAll(() => {
@@ -83,7 +80,7 @@ describe('spaces-alpha vectors', () => {
     expect(h.isEmpty()).toBe(empty)
   })
 
-  it.each(vectors.commits)('commit %#', async (v) => {
+  it.each(vectors.commits)('historical commit set hash %#', async (v) => {
     const repo = new RepoCommit()
     for (const r of v.records) {
       const cid = parseCid(r.cid)
@@ -92,20 +89,6 @@ describe('spaces-alpha vectors', () => {
     }
     const hash = repo.setHash.digest()
     expect(hex(hash)).toBe(v.hash)
-    const ikm = unhex(v.ikm)
-    expect(hex(encodeCommitCtx(v.ctx, ikm))).toBe(v.ctxBytes)
-
-    const commit = {
-      ver: 1 as const,
-      hash,
-      ikm,
-      mac: unhex(v.mac),
-      sig: unhex(v.sig),
-      rev: v.ctx.rev,
-    }
-    expect(await verifyCommit(commit, v.ctx, v.didKey)).toBe(true)
-    const otherAuthor = { ...v.ctx, author: 'did:example:mallory' }
-    expect(await verifyCommit(commit, otherAuthor, v.didKey)).toBe(false)
   })
 
   it.each(vectors.httpsig)('rejects pre-tag HTTP signature %#', async (v) => {

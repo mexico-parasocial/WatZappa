@@ -2,13 +2,14 @@ AT Protocol Spaces (the permissioned-data alpha), pinned to the reference:
 
   repo:   https://github.com/bluesky-social/atproto
   branch: permissioned-data (PR #5187)
-  commit: f6477d8e2e2389707fea2d7a86b7630c4237960a
+  commit: 7fb6fb030f4f2bef06eeb376b7dc28e1cdc36ff8
   paths:  packages/space/{src,tests,package.json,tsconfig*.json,vitest.config.ts}
           lexicons/com/atproto/space/*.json        (20 methods + defs)
           lexicons/com/atproto/simplespace/*.json  (8 methods + defs)
 
 Includes upstream #5691 (DID keys), #5690 (credential signatures/public-access
-contract), and #5705 (STAR export). #5697's deletion contract is in the lexicons;
+contract), #5705 (STAR export), and #5706 (KEM/shared-secret response MACs).
+#5697's deletion contract is in the lexicons;
 the PDS queue is adapted separately. Runtime source matches this pin exactly.
 
 Local tests: tests/vectors.test.ts and tests/vectors/ preserve the historical
@@ -20,7 +21,9 @@ To update: compare the reference package and both canonical lexicon directories
 against the new commit; apply their complete changes, adapt PDS call sites,
 refresh canonical manifest CIDs and regenerate. Keep fixture provenance explicit.
 The current pin is NOT wire-compatible with vlpds 1.1.0's CAR export or old
-HTTP signature labels; peer updates and fresh shared vectors are required
+HTTP signature labels or signed commits. Commits now carry a data hash, with
+authentication in per-request MAC headers using the account's #atproto_kem key;
+peer updates and fresh shared vectors are required
 before claiming end-to-end interoperability. Never silently fall back to CAR.
 
 License: MIT (bluesky-social/atproto).

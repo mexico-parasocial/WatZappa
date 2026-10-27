@@ -6,9 +6,10 @@ vlpds generated it by running the reference implementation (this package's
 src, bluesky-social/atproto PR #5187 at
 5b95b2f2723a2882824fbb0b819fd6aad884ef20) with fixed keys, and its Rust
 implementation asserts the same vectors. These fixtures remain historical:
-the current reference pin uses STAR and tagged credential signatures.
-vectors.test.ts still verifies unchanged LtHash/commit/token vectors and
+the current reference pin uses STAR, tagged credential signatures and KEM MACs.
+vectors.test.ts still verifies unchanged LtHash/set-hash/token vectors and
 asserts rejection of legacy HTTP signatures and the #atproto_space token key.
+The historical commit signatures no longer match the current commit schema.
 Passing this suite does not establish current vlpds interoperability.
 
 License: MIT (bluesky-social/atproto). To update: when packages/space moves to

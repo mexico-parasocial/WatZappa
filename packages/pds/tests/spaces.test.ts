@@ -1,6 +1,16 @@
 import { randomUUID } from 'node:crypto'
 import { type SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
-import { verifyRepoStarFull } from '@atproto/space'
+import {
+  COMMIT_MAC_TYPE,
+  MAC_HEADER,
+  RECORD_MAC_TYPE,
+  WANT_MAC_HEADER,
+  encapsulate,
+  formatWantMacHeader,
+  parseMacHeader,
+  verifyRecord,
+  verifyRepoStarFull,
+} from '@atproto/space'
 import { type DidString, SpaceRef } from '@atproto/syntax'
 import { getMigrator } from '../src/actor-store/db/index.js'
 import basicSeed from './seeds/basic.js'
@@ -19,7 +29,7 @@ const SPACE_TYPE = 'com.example.group'
 const COLLECTION = 'com.example.note'
 const OTHER_COLLECTION = 'com.example.other'
 
-type Res = { status: number; body: any; bytes: Uint8Array }
+type Res = { status: number; body: any; bytes: Uint8Array; headers: Headers }
 
 describe('spaces', () => {
   let network: TestNetworkNoAppView
@@ -94,7 +104,7 @@ describe('spaces', () => {
     } catch {
       body = undefined
     }
-    return { status: res.status, body, bytes }
+    return { status: res.status, body, bytes, headers: res.headers }
   }
 
   const asOAuth = async <T>(
@@ -259,7 +269,7 @@ describe('spaces', () => {
       })
     })
 
-    it('serves a repo that verifies against the account key', async () => {
+    it('serves a STAR repo authenticated by a KEM response MAC', async () => {
       const space = spaceOf(alice, 'export')
       await seedSpace(alice, space)
       await asOAuth(alice, fullGrant(alice), async (headers) => {
@@ -272,20 +282,67 @@ describe('spaces', () => {
         })
         expect(latest.status).toBe(200)
 
+        const kemKey = await network.pds.ctx.actorStore.kemKeypair(alice)
+        expect(kemKey).toBeDefined()
+        const { keyShare, sharedSecret } = await encapsulate(kemKey!.did())
         const star = await call('com.atproto.space.getRepo', {
-          headers,
+          headers: {
+            ...headers,
+            [WANT_MAC_HEADER]: formatWantMacHeader(COMMIT_MAC_TYPE, keyShare),
+          },
           params: { space, repo: alice },
         })
         expect(star.status).toBe(200)
         expect([...star.bytes.subarray(0, 4)]).toEqual([0x2a, 0x6c, 0x01, 0])
-        const keypair = await network.pds.ctx.actorStore.keypair(alice)
         const verified = await verifyRepoStarFull([star.bytes], {
           space,
-          author: alice,
-          didKey: keypair.did(),
+          repo: alice,
+          sharedSecret,
+          mac: parseMacHeader(
+            star.headers.get(MAC_HEADER) ?? undefined,
+            COMMIT_MAC_TYPE,
+          ),
         })
         expect(verified.records.map((r) => r.rkey).sort()).toEqual(['x', 'y'])
         expect(verified.commit.rev).toBe(latest.body.commit.rev)
+        expect(star.headers.get('vary')).toContain(WANT_MAC_HEADER)
+        expect(star.headers.get('access-control-expose-headers')).toContain(
+          MAC_HEADER,
+        )
+      })
+    })
+
+    it('authenticates a single record and refuses a malformed MAC request', async () => {
+      const space = spaceOf(alice, 'record-mac')
+      await seedSpace(alice, space)
+      await asOAuth(alice, fullGrant(alice), async (headers) => {
+        const created = await create(headers, alice, space, 'proof')
+        const kemKey = await network.pds.ctx.actorStore.kemKeypair(alice)
+        const { keyShare, sharedSecret } = await encapsulate(kemKey!.did())
+        const record = await call('com.atproto.space.getRecord', {
+          headers: {
+            ...headers,
+            [WANT_MAC_HEADER]: formatWantMacHeader(RECORD_MAC_TYPE, keyShare),
+          },
+          params: { space, repo: alice, collection: COLLECTION, rkey: 'proof' },
+        })
+        expect(record.status).toBe(200)
+        expect(
+          await verifyRecord(record.body, {
+            uri: created.body.uri,
+            sharedSecret,
+            mac: parseMacHeader(
+              record.headers.get(MAC_HEADER) ?? undefined,
+              RECORD_MAC_TYPE,
+            ),
+          }),
+        ).toBe(true)
+        const malformed = await call('com.atproto.space.getLatestCommit', {
+          headers: { ...headers, [WANT_MAC_HEADER]: 'bad' },
+          params: { space, repo: alice },
+        })
+        expect(malformed.status).toBe(400)
+        expect(malformed.body.error).toBe('BadSpaceMac')
       })
     })
 

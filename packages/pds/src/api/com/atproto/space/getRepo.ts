@@ -1,11 +1,20 @@
 import { byteIterableToStream } from '@atproto/common'
-import { type SerializedRecord, serializeRepo } from '@atproto/space'
+import {
+  COMMIT_MAC_TYPE,
+  type SerializedRecord,
+  serializeRepo,
+} from '@atproto/space'
 import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import { SpaceReader } from '../../../../actor-store/space/reader.js'
 import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 import { assertRepoAvailability } from '../sync/util.js'
-import { assertSpaceSelfRead, buildSignedCommit } from './util.js'
+import {
+  assertSpaceSelfRead,
+  buildCommit,
+  commitMacHeaders,
+  getSpaceMacSecret,
+} from './util.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.add(com.atproto.space.getRepo, {
@@ -14,12 +23,18 @@ export default function (server: Server, ctx: AppContext) {
         // Performed in the handler as it requires the `space` param
       },
     }),
-    handler: async ({ params, auth }) => {
+    handler: async ({ params, auth, req, res }) => {
       const { space, repo } = params
 
       assertSpaceSelfRead(auth, space, repo)
       const account = await assertRepoAvailability(ctx, repo, true)
       const did = account.did
+      const secret = await getSpaceMacSecret(ctx, {
+        req,
+        res,
+        repo: did,
+        type: COMMIT_MAC_TYPE,
+      })
 
       await ctx.actorStore.ensureLatestSchema(did)
       // Held open for the life of the stream so records page out lazily.
@@ -27,11 +42,10 @@ export default function (server: Server, ctx: AppContext) {
       try {
         const reader = new SpaceReader(actorDb)
         const state = await reader.getRepoState(space)
-        const commit = await buildSignedCommit({
+        const commit = buildCommit({
           spaceUri: space,
-          author: did,
+          repo: did,
           state,
-          keypair: await ctx.actorStore.keypair(did),
         })
         if (!commit) {
           throw new InvalidRequestError(
@@ -41,10 +55,7 @@ export default function (server: Server, ctx: AppContext) {
         }
 
         const starStream = byteIterableToStream(
-          serializeRepo(
-            { space, author: did, commit },
-            readRecords(reader, space),
-          ),
+          serializeRepo(commit, readRecords(reader, space)),
         )
         const closeDb = () => actorDb.close()
         starStream.on('error', closeDb)
@@ -53,6 +64,7 @@ export default function (server: Server, ctx: AppContext) {
         return {
           encoding: 'application/octet-stream' as const,
           body: starStream,
+          headers: commitMacHeaders(secret, commit),
         }
       } catch (err) {
         actorDb.close()

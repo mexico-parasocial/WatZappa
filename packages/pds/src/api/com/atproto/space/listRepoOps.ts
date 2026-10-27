@@ -1,9 +1,15 @@
 import type { l } from '@atproto/lex'
+import { COMMIT_MAC_TYPE } from '@atproto/space'
 import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 import { assertRepoAvailability } from '../sync/util.js'
-import { assertSpaceSelfRead, buildSignedCommit } from './util.js'
+import {
+  assertSpaceSelfRead,
+  buildCommit,
+  commitMacHeaders,
+  getSpaceMacSecret,
+} from './util.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.add(com.atproto.space.listRepoOps, {
@@ -12,11 +18,17 @@ export default function (server: Server, ctx: AppContext) {
         // Performed in the handler as it requires the `space` param
       },
     }),
-    handler: async ({ params, auth }) => {
+    handler: async ({ params, auth, req, res }) => {
       const { space, repo, since, limit, excludeValues } = params
 
       assertSpaceSelfRead(auth, space, repo)
       const account = await assertRepoAvailability(ctx, repo, true)
+      const secret = await getSpaceMacSecret(ctx, {
+        req,
+        res,
+        repo: account.did,
+        type: COMMIT_MAC_TYPE,
+      })
 
       const cursor = params.cursor ? parseCursor(params.cursor) : undefined
 
@@ -36,11 +48,10 @@ export default function (server: Server, ctx: AppContext) {
           // just asks once more.
           if (ops.length === limit) return { ops, commit: undefined }
 
-          const commit = await buildSignedCommit({
+          const commit = buildCommit({
             spaceUri: space,
-            author: account.did,
+            repo: account.did,
             state: await store.space.getRepoState(space),
-            keypair: await store.keypair(),
           })
           return { ops, commit }
         },
@@ -63,6 +74,7 @@ export default function (server: Server, ctx: AppContext) {
             commit || !last ? undefined : formatCursor(last.rev, last.idx),
           commit: commit,
         },
+        headers: commit ? commitMacHeaders(secret, commit) : undefined,
       }
     },
   })

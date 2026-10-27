@@ -1,6 +1,21 @@
-import type { Keypair } from '@atproto/crypto'
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import type { Cid } from '@atproto/lex-data'
 import type { SpacePermissionMatchOperation } from '@atproto/oauth-scopes'
-import { type CommitCtx, RepoCommit, type SignedCommit } from '@atproto/space'
+import {
+  COMMIT_MAC_TYPE,
+  type Commit,
+  MAC_HEADER,
+  type MacType,
+  RECORD_MAC_TYPE,
+  RepoCommit,
+  SpaceMacError,
+  WANT_MAC_HEADER,
+  computeCommitMac,
+  computeRecordMac,
+  decapsulate,
+  formatMacHeader,
+  parseWantMacHeader,
+} from '@atproto/space'
 import {
   type DidString,
   InvalidRecordKeyError,
@@ -10,7 +25,9 @@ import {
 import { InvalidRequestError } from '@atproto/xrpc-server'
 import type { SpaceRepo } from '../../../../actor-store/db/index.js'
 import type { OAuthOutput } from '../../../../auth-output.js'
+import type { AppContext } from '../../../../context.js'
 import { InvalidRecordError } from '../../../../repo/index.js'
+import { appendVary } from '../../../../util/http.js'
 
 /*
  * atproto Spaces, ported from the reference PDS (see packages/space/SOURCE for
@@ -105,19 +122,79 @@ export async function asRequestError<T>(prepare: () => Promise<T>): Promise<T> {
 }
 
 // Undefined when the repo has never been written to.
-export async function buildSignedCommit(opts: {
+export function buildCommit(opts: {
   spaceUri: SpaceRefString
-  author: string
+  repo: DidString
   state: SpaceRepo | null
-  keypair: Keypair
-}): Promise<SignedCommit | undefined> {
-  const { spaceUri, author, state, keypair } = opts
+}): Commit | undefined {
+  const { spaceUri, repo, state } = opts
   if (!state?.setHash || !state.rev) return undefined
-
-  const ctx: CommitCtx = {
-    space: toSpaceRef(spaceUri).toString(),
-    author,
+  return RepoCommit.fromState(state.setHash).toCommit({
+    space: spaceUri,
+    repo,
     rev: state.rev,
+  })
+}
+
+/** Owner OAuth reads can request a per-request MAC without publishing a signature. */
+export async function getSpaceMacSecret(
+  ctx: AppContext,
+  opts: {
+    req: IncomingMessage
+    res: ServerResponse
+    repo: DidString
+    type: MacType
+  },
+): Promise<Uint8Array | undefined> {
+  const { req, res, repo, type } = opts
+  appendVary(res, WANT_MAC_HEADER)
+  const header = req.headers[WANT_MAC_HEADER]
+  if (header === undefined) return undefined
+  res.appendHeader('Access-Control-Expose-Headers', MAC_HEADER)
+  try {
+    if (req.headersDistinct[WANT_MAC_HEADER]?.length !== 1) {
+      throw new SpaceMacError('request requires exactly one MAC header')
+    }
+    const keyShare = parseWantMacHeader(header, type)
+    const key = await ctx.actorStore.kemKeypair(repo)
+    if (!key)
+      throw new InvalidRequestError(
+        'Account KEM key is not provisioned',
+        'KemKeyUnavailable',
+      )
+    return decapsulate(key, keyShare)
+  } catch (err) {
+    if (err instanceof SpaceMacError)
+      throw new InvalidRequestError(err.message, 'BadSpaceMac')
+    throw err
   }
-  return RepoCommit.fromState(state.setHash).sign(ctx, keypair)
+}
+
+export function commitMacHeaders(
+  secret: Uint8Array | undefined,
+  commit: Commit,
+): Record<string, string> | undefined {
+  return secret
+    ? {
+        [MAC_HEADER]: formatMacHeader(
+          COMMIT_MAC_TYPE,
+          computeCommitMac(secret, commit),
+        ),
+      }
+    : undefined
+}
+
+export function recordMacHeaders(
+  secret: Uint8Array | undefined,
+  uri: string,
+  cid: Cid,
+): Record<string, string> | undefined {
+  return secret
+    ? {
+        [MAC_HEADER]: formatMacHeader(
+          RECORD_MAC_TYPE,
+          computeRecordMac(secret, uri, cid),
+        ),
+      }
+    : undefined
 }

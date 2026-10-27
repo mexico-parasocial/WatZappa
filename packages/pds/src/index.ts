@@ -30,6 +30,7 @@ import {
 } from './config/index.js'
 import { AppContext, type AppContextOptions } from './context.js'
 import * as error from './error.js'
+import { KemKeyBackfill } from './kem-key-backfill.js'
 import type { app } from './lexicons.js'
 import { loggerMiddleware, pdsLogger } from './logger.js'
 import { proxyHandler } from './pipethrough.js'
@@ -69,6 +70,7 @@ export class PDS implements AsyncDisposable {
   public app: express.Application
   public server?: http.Server
   private terminator?: HttpTerminator
+  private kemKeyBackfill?: KemKeyBackfill
 
   constructor(opts: { ctx: AppContext; app: express.Application }) {
     this.ctx = opts.ctx
@@ -225,12 +227,20 @@ export class PDS implements AsyncDisposable {
     this.server.keepAliveTimeout = 90_000
     this.terminator = createHttpTerminator({ server })
     await events.once(server, 'listening')
+    if (this.ctx.cfg.spaces.enabled) {
+      this.kemKeyBackfill = new KemKeyBackfill(this.ctx)
+      this.kemKeyBackfill.start()
+    }
     return server
   }
 
   async destroy(): Promise<void> {
     try {
-      await this.terminator?.terminate()
+      try {
+        await this.kemKeyBackfill?.destroy()
+      } finally {
+        await this.terminator?.terminate()
+      }
     } finally {
       await this.ctx.destroy()
     }

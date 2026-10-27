@@ -873,7 +873,7 @@
     },
     "com.atproto.space.defs": {
       "uri": "file://../../lexicons/com/atproto/space/defs.json",
-      "cid": "bafyreifqy7htiqceezyk7t3q5vc5tqjnbtw2qqlvxtoygqscreubebrz24"
+      "cid": "bafyreigbttdv4nqip522c5fxyaug5p5oephiui4le2lk3krmnrdgjeiwya"
     },
     "com.atproto.space.deleteRecord": {
       "uri": "file://../../lexicons/com/atproto/space/deleteRecord.json",
@@ -889,15 +889,15 @@
     },
     "com.atproto.space.getLatestCommit": {
       "uri": "file://../../lexicons/com/atproto/space/getLatestCommit.json",
-      "cid": "bafyreifs5cup4hglij34t5bipuakxrpolbh2xjtgtln64oooivvsqmrrny"
+      "cid": "bafyreig4e4lcjpjys6xhiz7supf5dw6uay7lvnhalnh5rlz7us6cuzojsy"
     },
     "com.atproto.space.getRecord": {
       "uri": "file://../../lexicons/com/atproto/space/getRecord.json",
-      "cid": "bafyreibcxlzaqcujlt5vbtaqhf7atdtp4yj7ojms53xqa5rfgqod2arlua"
+      "cid": "bafyreibgkvhsdryaqfifw5zh3cgcqoymu6zhrorfod6v4fxnuz6ielb2vi"
     },
     "com.atproto.space.getRepo": {
       "uri": "file://../../lexicons/com/atproto/space/getRepo.json",
-      "cid": "bafyreif2d7plxpbkyullofxvfnci5rw75kmxqdvkabr6fzyllyixcutnpm"
+      "cid": "bafyreigp3fqcubmszjxjk4b56sj6frg2f6qr5bupbmqousjcqcmnrlqaeu"
     },
     "com.atproto.space.getSpaceCredential": {
       "uri": "file://../../lexicons/com/atproto/space/getSpaceCredential.json",
@@ -913,11 +913,11 @@
     },
     "com.atproto.space.listRepoOps": {
       "uri": "file://../../lexicons/com/atproto/space/listRepoOps.json",
-      "cid": "bafyreievg5fd2wrvaegu4tbroglrmgxz2yacmtntaw5767meuve5h7he2m"
+      "cid": "bafyreif6s4wluhzvxmfkcf3lruyb3lcr6vlw363cu4sy3dy7dzifjxx7tm"
     },
     "com.atproto.space.listRepos": {
       "uri": "file://../../lexicons/com/atproto/space/listRepos.json",
-      "cid": "bafyreifz4kzi3t2gp2kw5ibzkmg5d4m6n6ccdlfjddal7girdvvsld6chi"
+      "cid": "bafyreidzjr5jwpwarapyts3l6hzxxxxhm5zjx4l3fzzfnesbio4qhzjzfu"
     },
     "com.atproto.space.listSpaces": {
       "uri": "file://../../lexicons/com/atproto/space/listSpaces.json",
@@ -933,7 +933,7 @@
     },
     "com.atproto.space.notifyWrite": {
       "uri": "file://../../lexicons/com/atproto/space/notifyWrite.json",
-      "cid": "bafyreifrxsl6re7hghn6n2dgiz3p644c76caxkucel5epqe3kcpcjtephq"
+      "cid": "bafyreie4tzruxzmwnktft4jfse2qx4ayvhd2qhyv27rk4vt4fsvnsptclu"
     },
     "com.atproto.space.putRecord": {
       "uri": "file://../../lexicons/com/atproto/space/putRecord.json",
