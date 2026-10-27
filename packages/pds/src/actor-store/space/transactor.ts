@@ -27,7 +27,10 @@ import { SpaceReader } from './reader.js'
  * out of the public surface.
  */
 export class SpaceTransactor extends SpaceReader {
-  constructor(public db: ActorDb) {
+  constructor(
+    public did: string,
+    public db: ActorDb,
+  ) {
     super(db)
   }
 
@@ -172,6 +175,12 @@ export class SpaceTransactor extends SpaceReader {
     if (writes.length === 0) return null
     assertNoBlobs(writes)
 
+    if (SpaceRef.parse(space).spaceDid === this.did) {
+      const existing = await this.getSpace(space)
+      if (!existing || existing.deletedAt) {
+        throw new InvalidRequestError('Space not found', 'SpaceNotFound')
+      }
+    }
     await this.ensureSpace(space)
 
     const state = await this.getRepoState(space)

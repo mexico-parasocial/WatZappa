@@ -9,7 +9,7 @@ import {
   encodeCommitCtx,
   formatSetHashElement,
   verifyCommit,
-  verifySpaceSignature,
+  verifyCredentialSig,
   verifySpaceToken,
 } from '../src/index.js'
 
@@ -108,17 +108,24 @@ describe('spaces-alpha vectors', () => {
     expect(await verifyCommit(commit, otherAuthor, v.didKey)).toBe(false)
   })
 
-  it.each(vectors.httpsig)('HTTP message signature %#', async (v) => {
-    const keyId = v.credentialKey ?? undefined
-    expect(await verifySpaceSignature(v.headers, keyId)).toBe(v.keyDid)
-    const tampered = {
-      ...v.headers,
-      authorization: `${v.headers.authorization}x`,
-    }
-    await expect(verifySpaceSignature(tampered, keyId)).rejects.toThrow()
+  it.each(vectors.httpsig)('rejects pre-tag HTTP signature %#', async (v) => {
+    await expect(
+      verifyCredentialSig(v.headers, v.credentialKey ?? v.keyDid),
+    ).rejects.toThrow()
   })
 
   it.each(vectors.tokens)('$type token %#', async (v) => {
+    const header = JSON.parse(
+      Buffer.from(v.jwt.split('.')[0], 'base64url').toString(),
+    )
+    if (header.kid === '#atproto_space') {
+      await expect(
+        verifySpaceToken(v.type, v.jwt, {
+          getSigningKey: () => v.signingKey,
+        }),
+      ).rejects.toMatchObject({ code: 'BadJwt' })
+      return
+    }
     const token = await verifySpaceToken(v.type, v.jwt, {
       getSigningKey: () => v.signingKey,
       aud: v.opts.aud,

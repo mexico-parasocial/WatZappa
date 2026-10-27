@@ -201,6 +201,7 @@
     "com.para.civic.getCabildeo",
     "com.para.civic.openQuestionVote",
     "com.para.civic.vote",
+    "com.para.collection.record",
     "com.para.community.acceptDraftInvite",
     "com.para.community.civicTreeVote",
     "com.para.community.createBoard",
@@ -840,7 +841,7 @@
     },
     "com.atproto.simplespace.deleteSpace": {
       "uri": "file://../../lexicons/com/atproto/simplespace/deleteSpace.json",
-      "cid": "bafyreihj7vofzya4q5uwvf63ddsmzes3hztrckh23rq65c5rqpx4s4m2xi"
+      "cid": "bafyreibsi6pktui4c445peord7b2cooxj7hy43mzakvgka37j23mix3ium"
     },
     "com.atproto.simplespace.getSpace": {
       "uri": "file://../../lexicons/com/atproto/simplespace/getSpace.json",
@@ -896,11 +897,11 @@
     },
     "com.atproto.space.getRepo": {
       "uri": "file://../../lexicons/com/atproto/space/getRepo.json",
-      "cid": "bafyreid2ifsmpdwlht3lj2ht4ajlpjsgauhvvldercvy3oha72h7fsb6te"
+      "cid": "bafyreif2d7plxpbkyullofxvfnci5rw75kmxqdvkabr6fzyllyixcutnpm"
     },
     "com.atproto.space.getSpaceCredential": {
       "uri": "file://../../lexicons/com/atproto/space/getSpaceCredential.json",
-      "cid": "bafyreie2btsk3b6u2zn2pfnuff77uobgnpsqnhobey7uetporjkrerh63i"
+      "cid": "bafyreic6jzciz47bax37hvxtp4kipd4t5gjfknl3ew3jz4wi2t7th45ipa"
     },
     "com.atproto.space.listBlobs": {
       "uri": "file://../../lexicons/com/atproto/space/listBlobs.json",
@@ -928,7 +929,7 @@
     },
     "com.atproto.space.notifySpaceDeleted": {
       "uri": "file://../../lexicons/com/atproto/space/notifySpaceDeleted.json",
-      "cid": "bafyreifcorjvul7u7odub2ban2jwqhbozeeioygkclx6wcp546b3phzrhi"
+      "cid": "bafyreiezq4zjbwxbvhekcidy4xhwjbvmju5txic756vhm2dedbz3q3tzea"
     },
     "com.atproto.space.notifyWrite": {
       "uri": "file://../../lexicons/com/atproto/space/notifyWrite.json",
@@ -1093,6 +1094,14 @@
     "com.para.civic.vote": {
       "uri": "file://../../lexicons/com/para/civic/vote.json",
       "cid": "bafyreicbqy2dn7jutxxl4km7vii2dhcnip7ygbyphj57zhdfrnbjph3zh4"
+    },
+    "com.para.collection.defs": {
+      "uri": "file://../../lexicons/com/para/collection/defs.json",
+      "cid": "bafyreidxj7pl3cd4rpkjl6mv6zylirnpgsrxjnqotfov5qxmzxafl25fuy"
+    },
+    "com.para.collection.record": {
+      "uri": "file://../../lexicons/com/para/collection/record.json",
+      "cid": "bafyreier75dffucmvrnqb2ach3mgg73mjdb7oz7iyxdv4r4k7pk6ofdymu"
     },
     "com.para.community.acceptDraftInvite": {
       "uri": "file://../../lexicons/com/para/community/acceptDraftInvite.json",

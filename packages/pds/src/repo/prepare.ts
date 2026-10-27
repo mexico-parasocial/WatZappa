@@ -24,6 +24,7 @@ import {
   type RecordWriteOp,
   WriteOpAction,
 } from '@atproto/repo'
+import { MAX_RECORD_SIZE } from '@atproto/space'
 import {
   AtUri,
   type DidString,
@@ -240,6 +241,13 @@ async function prepareWrite(opts: {
   const nextRkey = TID.next()
   const rkey = opts.rkey || nextRkey.toString()
 
+  const bytes = encode(record)
+  if (opts.space && bytes.length > MAX_RECORD_SIZE) {
+    throw new InvalidRecordError(
+      `Record too large: ${bytes.length} bytes, max ${MAX_RECORD_SIZE}`,
+    )
+  }
+
   return {
     record,
     // @NOTE we validate before enumerating blobs, so that we can provide more
@@ -266,7 +274,7 @@ async function prepareWrite(opts: {
     uri: opts.space
       ? spaceRecordUri(opts.space, opts.did, opts.collection, rkey)
       : AtUri.make(opts.did, opts.collection, rkey),
-    cid: await cidForCbor(encode(record)),
+    cid: await cidForCbor(bytes),
   }
 }
 

@@ -24,7 +24,7 @@ export class ActorStoreTransactor implements AsyncDisposable {
     this.blobstore = resources.blobstore(did)
     this.record = new RecordTransactor(db, did, this.blobstore)
     this.pref = new PreferenceTransactor(db)
-    this.space = new SpaceTransactor(db)
+    this.space = new SpaceTransactor(did, db)
     this.repo = new RepoTransactor(
       db,
       this.blobstore,

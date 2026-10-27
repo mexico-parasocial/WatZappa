@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { type SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
-import { verifyRepoCarFull } from '@atproto/space'
-import type { DidString } from '@atproto/syntax'
+import { verifyRepoStarFull } from '@atproto/space'
+import { type DidString, SpaceRef } from '@atproto/syntax'
 import { getMigrator } from '../src/actor-store/db/index.js'
 import basicSeed from './seeds/basic.js'
 
@@ -33,7 +33,6 @@ describe('spaces', () => {
 
   beforeAll(async () => {
     network = await TestNetworkNoAppView.create({
-      dbPostgresSchema: 'spaces',
       pds: { spacesEnabled: true },
     })
     sc = network.getSeedClient()
@@ -113,6 +112,18 @@ describe('spaces', () => {
 
   const note = (text: string) => ({ $type: COLLECTION, text })
 
+  const seedSpace = (did: DidString, space: string) =>
+    network.pds.ctx.actorStore.transact(did, (tx) =>
+      tx.space.createSpace(SpaceRef.parse(space).toString(), {
+        readPolicy: 'member-list',
+        readManagingApp: null,
+        writePolicy: 'member-list',
+        writeManagingApp: null,
+        appAccessType: 'open',
+        appAllowed: '[]',
+      }),
+    )
+
   const create = (
     headers: Record<string, string>,
     did: string,
@@ -127,8 +138,29 @@ describe('spaces', () => {
     })
 
   describe('own space repo, over OAuth', () => {
+    it('announces Spaces only when its routes are enabled', async () => {
+      const res = await call('com.atproto.server.describeServer')
+      expect(res.status).toBe(200)
+      expect(res.body.spacesAlpha).toBe(true)
+    })
+
+    it('requires explicit creation before an owner writes', async () => {
+      const space = spaceOf(alice, 'never-created')
+      await asOAuth(alice, fullGrant(alice), async (headers) => {
+        const res = await create(headers, alice, space, 'no-implicit-space')
+        expect(res.status).toBe(400)
+        expect(res.body.error).toBe('SpaceNotFound')
+      })
+      expect(
+        await network.pds.ctx.actorStore.read(alice, (store) =>
+          store.space.getSpace(space),
+        ),
+      ).toBeNull()
+    })
+
     it('writes, reads, lists, updates and deletes a record', async () => {
       const space = spaceOf(alice, 'crud')
+      await seedSpace(alice, space)
       await asOAuth(alice, fullGrant(alice), async (headers) => {
         const created = await create(headers, alice, space, 'one')
         expect(created.status).toBe(200)
@@ -190,6 +222,7 @@ describe('spaces', () => {
 
     it('applies a batch as one revision', async () => {
       const space = spaceOf(alice, 'batch')
+      await seedSpace(alice, space)
       await asOAuth(alice, fullGrant(alice), async (headers) => {
         const res = await call('com.atproto.space.applyWrites', {
           headers,
@@ -228,6 +261,7 @@ describe('spaces', () => {
 
     it('serves a repo that verifies against the account key', async () => {
       const space = spaceOf(alice, 'export')
+      await seedSpace(alice, space)
       await asOAuth(alice, fullGrant(alice), async (headers) => {
         await create(headers, alice, space, 'x')
         await create(headers, alice, space, 'y')
@@ -238,13 +272,14 @@ describe('spaces', () => {
         })
         expect(latest.status).toBe(200)
 
-        const car = await call('com.atproto.space.getRepo', {
+        const star = await call('com.atproto.space.getRepo', {
           headers,
           params: { space, repo: alice },
         })
-        expect(car.status).toBe(200)
+        expect(star.status).toBe(200)
+        expect([...star.bytes.subarray(0, 4)]).toEqual([0x2a, 0x6c, 0x01, 0])
         const keypair = await network.pds.ctx.actorStore.keypair(alice)
-        const verified = await verifyRepoCarFull([car.bytes], {
+        const verified = await verifyRepoStarFull([star.bytes], {
           space,
           author: alice,
           didKey: keypair.did(),
@@ -264,10 +299,29 @@ describe('spaces', () => {
       }
       ;(store as unknown as { upToDate: Set<string> }).upToDate.delete(carol)
 
-      await asOAuth(carol, fullGrant(carol), async (headers) => {
-        const res = await create(headers, carol, spaceOf(carol), 'first')
-        expect(res.status).toBe(200)
-      })
+      await asOAuth(
+        carol,
+        `${fullGrant(carol)}&manage=create`,
+        async (headers) => {
+          const created = await call('com.atproto.simplespace.createSpace', {
+            headers,
+            body: {
+              spaceType: SPACE_TYPE,
+              skey: 'self',
+              readPolicy: {
+                $type: 'com.atproto.simplespace.defs#memberListPolicy',
+              },
+              writePolicy: {
+                $type: 'com.atproto.simplespace.defs#memberListPolicy',
+              },
+              appAccess: { $type: 'com.atproto.simplespace.defs#open' },
+            },
+          })
+          expect(created.status).toBe(200)
+          const res = await create(headers, carol, spaceOf(carol), 'first')
+          expect(res.status).toBe(200)
+        },
+      )
     })
   })
 
@@ -296,6 +350,7 @@ describe('spaces', () => {
 
     it('enforces the collection and action a grant names', async () => {
       const space = spaceOf(alice, 'scoped')
+      await seedSpace(alice, space)
       const createOnly = grant(alice, `collection=${COLLECTION}&action=create`)
       await asOAuth(alice, createOnly, async (headers) => {
         expect((await create(headers, alice, space, 'ok')).status).toBe(200)
@@ -345,6 +400,7 @@ describe('spaces', () => {
 
     it('does not reveal another account repo', async () => {
       const space = spaceOf(alice, 'private')
+      await seedSpace(alice, space)
       await asOAuth(alice, fullGrant(alice), (headers) =>
         create(headers, alice, space, 'mine'),
       )
@@ -493,6 +549,24 @@ describe('spaces', () => {
         })
         expect(deleted.status).toBe(200)
 
+        const revived = await call('com.atproto.space.createRecord', {
+          headers,
+          body: {
+            space,
+            repo: alice,
+            collection: RECORD,
+            rkey: 'revived',
+            record: collection('Must stay deleted'),
+          },
+        })
+        expect(revived.status).toBe(400)
+        expect(revived.body.error).toBe('SpaceNotFound')
+        const tombstone = await network.pds.ctx.actorStore.read(
+          alice,
+          (store) => store.space.getSpace(space),
+        )
+        expect(tombstone?.deletedAt).toBeTruthy()
+
         const gone = await call('com.atproto.simplespace.getSpace', {
           headers,
           params: { space },
@@ -636,6 +710,7 @@ describe('spaces', () => {
       const sentinel = `SENTINEL-${randomUUID()}`
       const sentinelRkey = `rk${randomUUID().replaceAll('-', '').slice(0, 12)}`
       const space = spaceOf(alice, `leak${sentinelRkey}`)
+      await seedSpace(alice, space)
 
       const seqBefore = await network.pds.ctx.sequencer.curr()
       const commitBefore = await call('com.atproto.sync.getLatestCommit', {
@@ -679,15 +754,21 @@ describe('spaces disabled', () => {
   let sc: SeedClient
 
   beforeAll(async () => {
-    network = await TestNetworkNoAppView.create({
-      dbPostgresSchema: 'spaces_disabled',
-    })
+    network = await TestNetworkNoAppView.create({})
     sc = network.getSeedClient()
     await basicSeed(sc)
   })
 
   afterAll(async () => {
     await network.close()
+  })
+
+  it('does not advertise Spaces when its routes are disabled', async () => {
+    const res = await fetch(
+      new URL('/xrpc/com.atproto.server.describeServer', network.pds.url),
+    )
+    expect(res.status).toBe(200)
+    expect(await res.json()).not.toHaveProperty('spacesAlpha')
   })
 
   it('answers 501 locally instead of proxying', async () => {

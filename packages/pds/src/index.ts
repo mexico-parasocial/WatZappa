@@ -219,6 +219,7 @@ export class PDS implements AsyncDisposable {
 
   async start(): Promise<http.Server> {
     await this.ctx.sequencer.start()
+    if (this.ctx.cfg.spaces.enabled) this.ctx.spaceDeletionNotifications.start()
     const server = this.app.listen(this.ctx.cfg.service.port)
     this.server = server
     this.server.keepAliveTimeout = 90_000

@@ -4,6 +4,7 @@ import type { ActorStore } from '../actor-store/actor-store.js'
 import type { SpaceConfig } from '../actor-store/space/transactor.js'
 import { toSpaceRef } from '../api/com/atproto/space/util.js'
 import type { com } from '../lexicons/index.js'
+import type { SpaceDeletionRecipient } from '../space-deletion-notifications.js'
 import { lexAppAccessToDb, lexPolicyToDb, toLexConfig } from './config.js'
 
 type LexPolicy = com.atproto.simplespace.createSpace.$InputBody['readPolicy']
@@ -93,17 +94,20 @@ export class SimpleSpaceManager {
 
   /**
    * Deletes the owner's own repo in the space along with it. The space row stays
-   * as a tombstone, as on the reference. No syncer can have registered here, so
-   * there is nobody to notify.
+   * as a tombstone. Capture registrations before the transaction removes them.
    */
-  async deleteSpace(space: SpaceRefString): Promise<'deleted' | 'absent'> {
+  async deleteSpace(space: SpaceRefString): Promise<{
+    status: 'deleted' | 'absent'
+    recipients: SpaceDeletionRecipient[]
+  }> {
     const { spaceDid } = toSpaceRef(space)
     await this.actorStore.ensureLatestSchema(spaceDid)
     return this.actorStore.transact(spaceDid, async (actorTxn) => {
       const row = await actorTxn.space.getSpace(space)
-      if (!row) return 'absent'
+      if (!row) return { status: 'absent', recipients: [] }
+      const recipients = await actorTxn.space.getCredentialRecipients(space)
       if (!row.deletedAt) await actorTxn.space.deleteSpace(space)
-      return 'deleted'
+      return { status: 'deleted', recipients }
     })
   }
 }

@@ -20,9 +20,14 @@ export default function (
     handler: async ({ input: { body }, auth }) => {
       const { space } = body
       assertSpaceOwner(auth, space, { manage: 'delete' })
-      if ((await manager.deleteSpace(space)) === 'absent') {
+      const result = await manager.deleteSpace(space)
+      if (result.status === 'absent') {
         throw new InvalidRequestError('Space not found', 'SpaceNotFound')
       }
+      await ctx.spaceDeletionNotifications.enqueue(space, result.recipients)
+      ctx.backgroundQueue.add(() =>
+        ctx.spaceDeletionNotifications.retryPending(),
+      )
     },
   })
 }
