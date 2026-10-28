@@ -1,6 +1,7 @@
 import type { Kysely, Selectable } from 'kysely'
 import { AtUri, isAtUriString, isValidDid } from '@atproto/syntax'
 import type { ParaCommunityBoard } from '../data-plane/server/db/tables/para-community-board.js'
+import type { ParaCommunityAdmission } from '../data-plane/server/db/tables/para-community-admission.js'
 import type { ParaCommunityMembership } from '../data-plane/server/db/tables/para-community-membership.js'
 import type { ParaPolicyChange } from './outbox.js'
 
@@ -10,6 +11,7 @@ import type { ParaPolicyChange } from './outbox.js'
  */
 export type ParaGovernanceDB = {
   para_community_board: ParaCommunityBoard
+  para_community_admission: ParaCommunityAdmission
   para_community_membership: ParaCommunityMembership
 }
 
@@ -86,6 +88,21 @@ export async function materializeGovernanceMembers(
     .orderBy('indexedAt', 'asc')
     .orderBy('uri', 'asc')
     .execute()
+  const approvals = await db
+    .selectFrom('para_community_admission')
+    .selectAll()
+    .where('communityUri', '=', uri)
+    .execute()
+  const byApproval = new Map(
+    approvals
+      .filter(
+        (approval) =>
+          approval.creator === board.creator &&
+          isAtUriString(approval.uri) &&
+          new AtUri(approval.uri).host === board.creator,
+      )
+      .map((approval) => [approval.memberDid, approval]),
+  )
 
   const byMember = new Map<string, Selectable<ParaCommunityMembership>>()
   for (const row of rows) {
@@ -102,6 +119,20 @@ export async function materializeGovernanceMembers(
   for (const did of [...byMember.keys()].sort()) {
     const { membershipState } = byMember.get(did)!
     if (membershipState === 'pending') continue
+    const approval = byApproval.get(did)
+    if (!approval) continue
+    if (approval.state === 'blocked' || approval.state === 'removed') {
+      members.push({
+        did,
+        membershipState: approval.state,
+        roles: [],
+        roleAssignments: [],
+      })
+      continue
+    }
+    if (approval.state !== 'active') {
+      throw new ParaGovernanceError(`Unknown admission state for ${did}`)
+    }
     if (
       membershipState === 'active' ||
       membershipState === 'left' ||

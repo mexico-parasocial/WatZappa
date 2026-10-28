@@ -373,6 +373,7 @@ import * as ComParaCollectionGetCollection from './types/com/para/collection/get
 import * as ComParaCollectionListCollections from './types/com/para/collection/listCollections.js'
 import * as ComParaCollectionUpdateCollection from './types/com/para/collection/updateCollection.js'
 import * as ComParaCommunityAcceptDraftInvite from './types/com/para/community/acceptDraftInvite.js'
+import * as ComParaCommunityAdmission from './types/com/para/community/admission.js'
 import * as ComParaCommunityBoard from './types/com/para/community/board.js'
 import * as ComParaCommunityBriefingPack from './types/com/para/community/briefingPack.js'
 import * as ComParaCommunityCivicTree from './types/com/para/community/civicTree.js'
@@ -900,6 +901,7 @@ export * as ComParaCollectionGetCollection from './types/com/para/collection/get
 export * as ComParaCollectionListCollections from './types/com/para/collection/listCollections.js'
 export * as ComParaCollectionUpdateCollection from './types/com/para/collection/updateCollection.js'
 export * as ComParaCommunityAcceptDraftInvite from './types/com/para/community/acceptDraftInvite.js'
+export * as ComParaCommunityAdmission from './types/com/para/community/admission.js'
 export * as ComParaCommunityBoard from './types/com/para/community/board.js'
 export * as ComParaCommunityBriefingPack from './types/com/para/community/briefingPack.js'
 export * as ComParaCommunityCivicTree from './types/com/para/community/civicTree.js'
@@ -5939,12 +5941,11 @@ export class ComAtprotoSpaceNS {
     data?: ComAtprotoSpaceNotifyWrite.InputSchema,
     opts?: ComAtprotoSpaceNotifyWrite.CallOptions,
   ): Promise<ComAtprotoSpaceNotifyWrite.Response> {
-    return this._client.call(
-      'com.atproto.space.notifyWrite',
-      opts?.qp,
-      data,
-      opts,
-    )
+    return this._client
+      .call('com.atproto.space.notifyWrite', opts?.qp, data, opts)
+      .catch((e) => {
+        throw ComAtprotoSpaceNotifyWrite.toKnownErr(e)
+      })
   }
 
   putRecord(
@@ -7251,6 +7252,7 @@ export class ComParaCollectionNS {
 
 export class ComParaCommunityNS {
   _client: XrpcClient
+  admission: ComParaCommunityAdmissionRecord
   board: ComParaCommunityBoardRecord
   briefingPack: ComParaCommunityBriefingPackRecord
   civicTree: ComParaCommunityCivicTreeRecord
@@ -7271,6 +7273,7 @@ export class ComParaCommunityNS {
 
   constructor(client: XrpcClient) {
     this._client = client
+    this.admission = new ComParaCommunityAdmissionRecord(client)
     this.board = new ComParaCommunityBoardRecord(client)
     this.briefingPack = new ComParaCommunityBriefingPackRecord(client)
     this.civicTree = new ComParaCommunityCivicTreeRecord(client)
@@ -7639,6 +7642,89 @@ export class ComParaCommunityNS {
       opts?.qp,
       data,
       opts,
+    )
+  }
+}
+
+export class ComParaCommunityAdmissionRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: ComParaCommunityAdmission.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'com.para.community.admission',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: ComParaCommunityAdmission.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'com.para.community.admission',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityAdmission.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.admission'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityAdmission.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.admission'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'com.para.community.admission', ...params },
+      { headers },
     )
   }
 }

@@ -19916,7 +19916,7 @@ export const schemaDict = {
       main: {
         type: 'query',
         description:
-          "List the known repos that hold data in a space (the writer set), with each repo's current rev and commit hash. Served by the space host. This is the sync boundary, not an access-control list: it enumerates only writers, never readers. The set is what the authority claims from write notifications and is not itself authoritative; a repo's host is the source of truth.",
+          "List the known repos that hold data in a space (the writer set), with each repo's current repoRev and commit hash. Served by the space host. This is the sync boundary, not an access-control list: it enumerates only writers, never readers. The set is what the authority claims from write notifications and is not itself authoritative; a repo's host is the source of truth.",
         parameters: {
           type: 'params',
           required: ['space'],
@@ -19935,6 +19935,8 @@ export const schemaDict = {
             },
             cursor: {
               type: 'string',
+              description:
+                "Return repos updated after this space revision (exclusive). Use a previous response's cursor or a previously processed spaceRev.",
             },
           },
         },
@@ -19946,6 +19948,8 @@ export const schemaDict = {
             properties: {
               cursor: {
                 type: 'string',
+                description:
+                  'Pass this cursor on the next request. Omitted when no repos are returned.',
               },
               repos: {
                 type: 'array',
@@ -19953,6 +19957,8 @@ export const schemaDict = {
                   type: 'ref',
                   ref: 'lex:com.atproto.space.listRepos#repo',
                 },
+                description:
+                  'Returned in ascending spaceRev order. A repo may reappear if updated while paginating.',
               },
             },
           },
@@ -19965,14 +19971,14 @@ export const schemaDict = {
       },
       repo: {
         type: 'object',
-        required: ['did', 'rev', 'hash'],
+        required: ['did', 'repoRev', 'hash', 'spaceRev'],
         properties: {
           did: {
             type: 'string',
             format: 'did',
             description: 'The DID of a repo that holds data in the space.',
           },
-          rev: {
+          repoRev: {
             type: 'string',
             description:
               "The repo's current revision (TID), as last reported to the authority. May lag the repo host, which is the source of truth.",
@@ -19982,6 +19988,12 @@ export const schemaDict = {
             type: 'bytes',
             description:
               "The repo's current commit hash (sha256 of the LtHash state), as last reported to the authority.",
+          },
+          spaceRev: {
+            type: 'string',
+            format: 'tid',
+            description:
+              'The space revision at which this repo was last updated.',
           },
         },
       },
@@ -20085,12 +20097,12 @@ export const schemaDict = {
       main: {
         type: 'procedure',
         description:
-          'Notify that a repo in a space has advanced to a new revision. Sent by a repo host to the space host, and forwarded to registered syncers. Best-effort. Authenticated with service auth.',
+          'Notify that a repo in a space has advanced. Repo hosts reliably deliver their latest state to the space host, which sequences updates and forwards them to registered syncers with reasonable-effort delivery. Authenticated with service auth.',
         input: {
           encoding: 'application/json',
           schema: {
             type: 'object',
-            required: ['space', 'repo', 'rev', 'hash'],
+            required: ['space', 'repo', 'repoRev', 'hash'],
             properties: {
               space: {
                 type: 'string',
@@ -20102,9 +20114,9 @@ export const schemaDict = {
                 format: 'did',
                 description: 'The DID of the account whose repo advanced.',
               },
-              rev: {
+              repoRev: {
                 type: 'string',
-                description: 'The revision of the write.',
+                description: 'The repo revision after the write.',
                 format: 'tid',
               },
               hash: {
@@ -20112,9 +20124,30 @@ export const schemaDict = {
                 description:
                   "The repo's current commit hash (sha256 of the LtHash state) after the write. Lets the space host maintain each repo's hash for listRepos.",
               },
+              spaceRev: {
+                type: 'string',
+                format: 'tid',
+                description:
+                  'The space revision assigned by the space host. Present only on notifications forwarded to syncers.',
+              },
+              prevSpaceRev: {
+                type: 'string',
+                format: 'tid',
+                description:
+                  'The previous space revision. Omitted on the first update in a space. A gap indicates missed notifications; recover using listRepos with cursor.',
+              },
             },
           },
         },
+        errors: [
+          {
+            name: 'SpaceNotFound',
+          },
+          {
+            name: 'FutureRev',
+            description: 'The repo revision exceeds the permitted clock skew.',
+          },
+        ],
       },
     },
   },
@@ -24223,6 +24256,40 @@ export const schemaDict = {
               memberCount: {
                 type: 'integer',
               },
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCommunityAdmission: {
+    lexicon: 1,
+    id: 'com.para.community.admission',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "A board-owned admission or revocation decision for a community member. The repository DID must match the community board's DID.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['community', 'member', 'state', 'decidedAt'],
+          properties: {
+            community: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            member: {
+              type: 'string',
+              format: 'did',
+            },
+            state: {
+              type: 'string',
+              enum: ['active', 'removed', 'blocked'],
+            },
+            decidedAt: {
+              type: 'string',
+              format: 'datetime',
             },
           },
         },
@@ -39563,6 +39630,7 @@ export const ids = {
   ComParaCollectionListCollections: 'com.para.collection.listCollections',
   ComParaCollectionUpdateCollection: 'com.para.collection.updateCollection',
   ComParaCommunityAcceptDraftInvite: 'com.para.community.acceptDraftInvite',
+  ComParaCommunityAdmission: 'com.para.community.admission',
   ComParaCommunityBoard: 'com.para.community.board',
   ComParaCommunityBriefingPack: 'com.para.community.briefingPack',
   ComParaCommunityCivicTree: 'com.para.community.civicTree',

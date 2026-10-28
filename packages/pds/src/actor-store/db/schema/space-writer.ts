@@ -6,7 +6,8 @@
 export interface SpaceWriter {
   space: string
   did: string
-  rev: string
+  repoRev: string
+  spaceRev: string
   hash: Uint8Array
 }
 

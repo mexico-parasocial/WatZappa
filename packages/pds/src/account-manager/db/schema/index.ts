@@ -12,6 +12,8 @@ import type * as lexicon from './lexicon.js'
 import type * as m8Assurance from './m8-assurance.js'
 import type * as refreshToken from './refresh-token.js'
 import type * as repoRoot from './repo-root.js'
+import type * as revokedSpaceCredential from './revoked-space-credential.js'
+import type * as spaceNotification from './space-notification.js'
 import type * as token from './token.js'
 import type * as usedRefreshToken from './used-refresh-token.js'
 
@@ -26,9 +28,11 @@ export type DatabaseSchema = actor.PartialDB &
   refreshToken.PartialDB &
   appPassword.PartialDB &
   repoRoot.PartialDB &
+  revokedSpaceCredential.PartialDB &
   inviteCode.PartialDB &
   lexicon.PartialDB &
   m8Assurance.PartialDB &
+  spaceNotification.PartialDB &
   emailToken.PartialDB &
   alphaRollout.PartialDB
 
@@ -45,6 +49,8 @@ export type {
 } from './m8-assurance.js'
 export type { UsedRefreshToken } from './used-refresh-token.js'
 export type { RepoRoot } from './repo-root.js'
+export type { RevokedSpaceCredential } from './revoked-space-credential.js'
+export type { SpaceNotificationRetry } from './space-notification.js'
 export type { RefreshToken } from './refresh-token.js'
 export type { AppPassword } from './app-password.js'
 export type { InviteCode, InviteCodeUse } from './invite-code.js'

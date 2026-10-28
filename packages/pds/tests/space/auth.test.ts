@@ -1,0 +1,1179 @@
+import { request } from 'node:http'
+import { jest } from '@jest/globals'
+import { decodeJwt } from 'jose'
+import { HOUR } from '@atproto/common'
+import { P256Keypair } from '@atproto/crypto'
+import { SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
+import {
+  createSpaceSigHeaders,
+  createSpaceToken,
+  spaceHostAud,
+} from '@atproto/space'
+import type { NsidString, SpaceRefString } from '@atproto/syntax'
+import { createServiceAuthHeaders } from '@atproto/xrpc-server'
+import { getDb } from '../../src/account-manager/db/index.js'
+import { isSpaceCredentialRevoked } from '../../src/account-manager/helpers/revoked-space-credential.js'
+import { com } from '../../src/lexicons/index.js'
+import {
+  type Actor,
+  SPACE_TYPE_COLLECTIONS,
+  SpaceClient,
+  SpaceCredential,
+  TEST_COLLECTION,
+  TEST_SPACE_TYPE,
+  record,
+} from '../_space.js'
+
+/**
+ * Who may read what, and on whose authority.
+ *
+ * Two credential kinds reach a space. An account's own token (OAuth or legacy)
+ * reads only that account's own repo — a repo host has no member list to consult.
+ * A *space credential*, which only the authority mints and only after deciding the
+ * holder may read the space, reads any repo in it. The exchange between them is
+ * the delegation token.
+ */
+describe('space auth', () => {
+  let network: TestNetworkNoAppView
+  let sc: SpaceClient
+  let alice: Actor // authority
+  let dan: Actor // co-located with the authority, on pds1
+  let bob: Actor // on pds2
+  let carol: Actor // on pds3
+
+  beforeAll(async () => {
+    network = await TestNetworkNoAppView.create({
+      dbPostgresSchema: 'space_auth',
+      extraPdses: 2,
+      // A `space` lexicon has to resolve for the OAuth suite below, which asserts
+      // the space type's declared collections get materialized into a grant.
+      lexiconAuthority: true,
+    })
+    sc = new SpaceClient(network)
+    alice = await sc.createActor('alice', network.pds)
+    dan = await sc.createActor('dan', network.pds)
+    bob = await sc.createActor('bob', network.extraPdses[0], 'test2')
+    carol = await sc.createActor('carol', network.extraPdses[1], 'test3')
+  })
+
+  afterAll(async () => {
+    await network?.close()
+  })
+
+  describe('the repo boundary', () => {
+    it('refuses a co-located non-member reading a member repo', async () => {
+      // Alice and dan share pds1. Dan is not a member; the membership gate lives
+      // in getSpaceCredential, so the read methods have to refuse him on their
+      // own rather than assuming an unauthorized caller never got this far.
+      const space = await sc.createSpace(alice)
+      await sc.write(alice, space, { rkey: 'private', text: 'members only' })
+
+      const reads = [
+        () =>
+          dan.client.call(
+            com.atproto.space.getRecord,
+            {
+              space,
+              repo: alice.did,
+              collection: TEST_COLLECTION,
+              rkey: 'private',
+            },
+            { headers: dan.headers },
+          ),
+        () =>
+          dan.client.call(
+            com.atproto.space.listRecords,
+            { space, repo: alice.did },
+            { headers: dan.headers },
+          ),
+        () =>
+          dan.client.call(
+            com.atproto.space.listRepoOps,
+            { space, repo: alice.did },
+            { headers: dan.headers },
+          ),
+        () =>
+          dan.client.call(
+            com.atproto.space.getLatestCommit,
+            { space, repo: alice.did },
+            { headers: dan.headers },
+          ),
+      ]
+      for (const read of reads) {
+        // Deliberately the same error an absent repo gets: whether a given
+        // account holds a repo in a space the caller can't read is not the
+        // caller's business.
+        await expect(read()).rejects.toMatchObject({ error: 'RepoNotFound' })
+      }
+
+      const carRes = await fetch(
+        `${network.pds.url}/xrpc/com.atproto.space.getRepo?space=${encodeURIComponent(space)}&repo=${alice.did}`,
+        { headers: dan.headers },
+      )
+      expect(carRes.status).toBe(400)
+
+      // Alice reads her own repo in the same space, so the refusal is about the
+      // repo boundary rather than the space being unreadable.
+      const own = await alice.client.call(
+        com.atproto.space.listRecords,
+        { space, repo: alice.did },
+        { headers: alice.headers },
+      )
+      expect(own.records).toHaveLength(1)
+    })
+
+    it.each([false, true])(
+      'refuses to mint a delegation token on an app password (privileged: %s)',
+      async (privileged) => {
+        // An app password carries no space grants to bound it by, and a
+        // delegation token buys whole-space read — including every other
+        // member's repo. Only a full session reaches it. Records it may still
+        // write.
+        const space = await sc.createSpace(alice, {
+          skey: `app-pass-${privileged}`,
+        })
+        const agent = network.pds.getAgent()
+        const { data: created } =
+          await agent.com.atproto.server.createAppPassword(
+            { name: `space-pass-${privileged}`, privileged },
+            { headers: alice.headers, encoding: 'application/json' },
+          )
+        const { data: session } = await agent.com.atproto.server.createSession({
+          identifier: alice.did,
+          password: created.password,
+        })
+        const appPass = SeedClient.getHeaders(session.accessJwt)
+
+        await expect(
+          alice.client.call(
+            com.atproto.space.getDelegationToken,
+            { space },
+            { headers: appPass },
+          ),
+        ).rejects.toThrow()
+
+        await expect(
+          alice.client.call(
+            com.atproto.space.createRecord,
+            {
+              space,
+              repo: alice.did,
+              collection: TEST_COLLECTION,
+              record: record(TEST_COLLECTION, 'from an app password'),
+            },
+            { headers: appPass },
+          ),
+        ).resolves.toBeDefined()
+      },
+    )
+  })
+
+  describe('space credentials', () => {
+    it('reads another member repo across PDSes', async () => {
+      const space = await sc.createSpace(alice, { members: [bob, carol] })
+      await sc.write(bob, space, { text: 'for the record' })
+
+      // Read on pds2 with a credential minted on pds1: neither is the authority.
+      const cred = await sc.credentialFor(carol, space)
+      const claims = decodeJwt(cred.credential)
+      expect(claims.exp! - claims.iat!).toBe(600)
+      const asSyncer = cred.clientFor(bob.pds)
+      const list = await asSyncer.call(com.atproto.space.listRecords, {
+        space,
+        repo: bob.did,
+        collection: TEST_COLLECTION,
+      })
+      expect(list.records).toHaveLength(1)
+
+      const rec = await asSyncer.call(com.atproto.space.getRecord, {
+        space,
+        repo: bob.did,
+        collection: TEST_COLLECTION,
+        rkey: list.records[0].rkey,
+      })
+      expect(rec.value).toMatchObject({ text: 'for the record' })
+    })
+
+    describe('HTTP message signature binding', () => {
+      it('refuses a credential presented as a bearer token', async () => {
+        const space = await sc.createSpace(alice, { members: [carol] })
+        await sc.write(alice, space, { text: 'bound' })
+
+        const cred = await sc.credentialFor(carol, space)
+        await expect(
+          alice.client.call(
+            com.atproto.space.getLatestCommit,
+            { space, repo: alice.did },
+            { headers: { authorization: `Bearer ${cred.credential}` } },
+          ),
+        ).rejects.toThrow()
+
+        await expect(
+          cred.clientFor(alice.pds).call(com.atproto.space.getLatestCommit, {
+            space,
+            repo: alice.did,
+          }),
+        ).resolves.toBeDefined()
+      })
+
+      it('refuses a credential without a signature', async () => {
+        const space = await sc.createSpace(alice, { members: [carol] })
+        const cred = await sc.credentialFor(carol, space)
+
+        await expect(
+          alice.client.call(
+            com.atproto.space.getLatestCommit,
+            { space, repo: alice.did },
+            { headers: { authorization: `Atproto-Space ${cred.credential}` } },
+          ),
+        ).rejects.toMatchObject({ error: 'BadSpaceSignature' })
+      })
+
+      it.each([
+        { name: 'authorization', extra: undefined, expectedStatus: 401 },
+        {
+          name: 'atproto-space-audience',
+          extra: undefined,
+          expectedStatus: 401,
+        },
+        {
+          name: 'signature-input',
+          extra: 'other=("authorization");keyid="other"',
+          expectedStatus: 200,
+        },
+        { name: 'signature', extra: 'other=:YWJj:', expectedStatus: 200 },
+      ])(
+        'responds $expectedStatus to repeated $name fields',
+        async ({ name, extra, expectedStatus }) => {
+          const space = await sc.createSpace(alice)
+          await sc.write(alice, space)
+          const cred = await sc.credentialFor(alice, space)
+          const headers = await createSpaceSigHeaders(cred.key, {
+            authorization: `Atproto-Space ${cred.credential}`,
+            audience: alice.did,
+          })
+          const url = new URL(
+            `/xrpc/${com.atproto.space.getLatestCommit.$lxm}`,
+            alice.pds.url,
+          )
+          url.search = new URLSearchParams({
+            space,
+            repo: alice.did,
+          }).toString()
+          const status = await new Promise<number | undefined>(
+            (resolve, reject) => {
+              const req = request(
+                url,
+                {
+                  headers: [
+                    'host',
+                    url.host,
+                    ...Object.entries(headers).flat(),
+                    name,
+                    extra ?? headers[name],
+                  ],
+                },
+                (res) => {
+                  res.resume()
+                  res.on('end', () => resolve(res.statusCode))
+                  res.on('error', reject)
+                },
+              )
+              req.on('error', reject)
+              req.end()
+            },
+          )
+          expect(status).toBe(expectedStatus)
+        },
+      )
+
+      it('refuses a credential presented with a key of the holder own', async () => {
+        const space = await sc.createSpace(alice, { members: [carol] })
+        await sc.write(alice, space, { text: 'not yours to read' })
+
+        const cred = await sc.credentialFor(carol, space)
+        const attacker = await P256Keypair.create()
+        const rebound = new SpaceCredential(cred.credential, attacker)
+
+        await expect(
+          rebound.clientFor(alice.pds).call(com.atproto.space.getLatestCommit, {
+            space,
+            repo: alice.did,
+          }),
+        ).rejects.toThrow(/invalid HTTP message signature/)
+      })
+
+      it.each(['remote', 'co-located'])(
+        'refuses a signature addressed to another repo owner (%s)',
+        async (location) => {
+          const other = location === 'remote' ? bob : dan
+          const space = await sc.createSpace(alice, { members: [other, carol] })
+          await sc.write(alice, space)
+          const cred = await sc.credentialFor(carol, space)
+          const headers = await createSpaceSigHeaders(cred.key, {
+            authorization: `Atproto-Space ${cred.credential}`,
+            audience: other.did,
+          })
+
+          await expect(
+            alice.client.call(
+              com.atproto.space.getLatestCommit,
+              { space, repo: alice.did },
+              { headers },
+            ),
+          ).rejects.toMatchObject({ error: 'BadSpaceAudience' })
+        },
+      )
+
+      it('requires the space authority as audience for space-host requests', async () => {
+        const space = await sc.createSpace(alice, { members: [bob] })
+        const cred = await sc.credentialFor(bob, space)
+        const headers = await createSpaceSigHeaders(cred.key, {
+          authorization: `Atproto-Space ${cred.credential}`,
+          audience: bob.did,
+        })
+        await expect(
+          alice.client.call(
+            com.atproto.space.listRepos,
+            { space },
+            { headers },
+          ),
+        ).rejects.toMatchObject({ error: 'BadSpaceAudience' })
+        await expect(
+          alice.client.call(
+            com.atproto.simplespace.getSpace,
+            { space },
+            { headers },
+          ),
+        ).rejects.toMatchObject({ error: 'BadSpaceAudience' })
+      })
+
+      it('reuses a signature for the same audience across requests', async () => {
+        const space = await sc.createSpace(alice, { members: [carol] })
+        await sc.write(alice, space)
+        const cred = await sc.credentialFor(carol, space)
+        const headers = await createSpaceSigHeaders(cred.key, {
+          authorization: `Atproto-Space ${cred.credential}`,
+          audience: alice.did,
+        })
+        for (let i = 0; i < 2; i++) {
+          await expect(
+            alice.client.call(
+              com.atproto.space.getLatestCommit,
+              { space, repo: alice.did },
+              { headers },
+            ),
+          ).resolves.toBeDefined()
+        }
+        await expect(
+          alice.client.call(
+            com.atproto.space.listRecords,
+            { space, repo: alice.did },
+            { headers },
+          ),
+        ).resolves.toBeDefined()
+        await expect(
+          alice.client.call(
+            com.atproto.space.registerNotify,
+            { space, service: alice.did },
+            { headers },
+          ),
+        ).resolves.toBeDefined()
+      })
+
+      it('reuses one credential across many hosts, each with its own audience signature', async () => {
+        const space = await sc.createSpace(alice, { members: [bob, carol] })
+        await sc.write(alice, space, { text: 'on the authority' })
+        await sc.write(bob, space, { text: 'on pds2' })
+
+        const cred = await sc.credentialFor(carol, space)
+        for (const host of [alice, bob]) {
+          const res = await cred
+            .clientFor(host.pds)
+            .call(com.atproto.space.listRecords, { space, repo: host.did })
+          expect(res.records).toHaveLength(1)
+        }
+      })
+    })
+
+    it('is scoped to one space', async () => {
+      const target = await sc.createSpace(alice, {
+        skey: 'cred-target',
+        members: [carol],
+      })
+      const other = await sc.createSpace(alice, { skey: 'cred-other' })
+      await sc.write(alice, target, { text: 'scoped' })
+
+      const cred = await sc.credentialFor(carol, target)
+      const asSyncer = cred.clientFor(alice.pds)
+      const ok = await asSyncer.call(com.atproto.space.getLatestCommit, {
+        space: target,
+        repo: alice.did,
+      })
+      expect(ok.commit).toBeDefined()
+
+      await expect(
+        asSyncer.call(com.atproto.space.listRepoOps, {
+          space: other,
+          repo: alice.did,
+        }),
+      ).rejects.toMatchObject({ error: 'InvalidCredential' })
+    })
+
+    it('refuses one the space authority did not issue', async () => {
+      // Carol self-signs a credential for one of alice's spaces. It verifies
+      // against her own signing key, so nothing but the iss/authority check
+      // stands between her and the space. Alice writes first, so the read would
+      // otherwise succeed — the rejection has to come from auth.
+      const space = await sc.createSpace(alice, { members: [carol] })
+      await sc.write(alice, space, { text: 'forgery target' })
+
+      // A credential alice did issue reads it fine.
+      const valid = await sc.credentialFor(carol, space)
+      expect(
+        await valid
+          .clientFor(alice.pds)
+          .call(com.atproto.space.getLatestCommit, {
+            space,
+            repo: alice.did,
+          }),
+      ).toBeDefined()
+
+      const carolKeypair = await carol.pds.ctx.actorStore.keypair(carol.did)
+      const forged = await sc.forgedCredential((keyId) =>
+        createSpaceToken(
+          'credential',
+          { iss: carol.did, sub: space, keyId },
+          carolKeypair,
+        ),
+      )
+      const asForged = forged.clientFor(alice.pds)
+
+      await expect(
+        asForged.call(com.atproto.space.getLatestCommit, {
+          space,
+          repo: alice.did,
+        }),
+      ).rejects.toThrow(/issuer is not the space authority/)
+
+      // listRepos authorizes off the credential too, on a separate path.
+      await expect(
+        asForged.call(com.atproto.space.listRepos, { space }),
+      ).rejects.toThrow(/issuer is not the space authority/)
+    })
+
+    it('refuses one whose kid names a key the authority does not publish', async () => {
+      // The authority signs with its #atproto key and says so. A credential
+      // claiming #atproto_space must be verified against that key, which alice
+      // does not publish — so it cannot pass by falling back to #atproto.
+      const space = await sc.createSpace(alice)
+      const aliceKeypair = await network.pds.ctx.actorStore.keypair(alice.did)
+      const mismatched = await sc.forgedCredential((keyId) =>
+        createSpaceToken(
+          'credential',
+          { iss: alice.did, sub: space, kid: '#atproto_space', keyId },
+          aliceKeypair,
+        ),
+      )
+
+      await expect(
+        mismatched
+          .clientFor(alice.pds)
+          .call(com.atproto.space.getLatestCommit, {
+            space,
+            repo: alice.did,
+          }),
+      ).rejects.toThrow(/missing or bad key/)
+    })
+
+    it('refuses one for a revoked member', async () => {
+      const space = await sc.createSpace(alice, { members: [carol] })
+      // Carol mints a delegation token while she is still a member.
+      const token = await sc.delegationTokenFor(carol, space)
+      // Alice removes her before she can redeem it.
+      await sc.removeMember(alice, space, carol)
+
+      await expect(sc.mintCredential(space, token)).rejects.toMatchObject({
+        error: 'UserNotAuthorized',
+      })
+    })
+  })
+
+  describe('credential revocation', () => {
+    async function revoke(
+      signer: Actor,
+      space: SpaceRefString,
+      credentials: string[],
+      opts: { aud?: string; lxm?: string } = {},
+    ) {
+      const keypair = await signer.pds.ctx.actorStore.keypair(signer.did)
+      const { headers } = await createServiceAuthHeaders({
+        iss: signer.did,
+        aud: opts.aud ?? bob.did,
+        lxm: opts.lxm ?? com.atproto.space.notifyCredentialRevoked.$lxm,
+        keypair,
+      })
+      return bob.client.call(
+        com.atproto.space.notifyCredentialRevoked,
+        { space, credentials },
+        { headers },
+      )
+    }
+
+    it('revokes a batch idempotently on a remote repo host', async () => {
+      const space = await sc.createSpace(alice, { members: [bob, carol] })
+      await sc.write(alice, space)
+      await sc.write(bob, space)
+      const first = await sc.credentialFor(carol, space)
+      const second = await sc.credentialFor(carol, space)
+      const untouched = await sc.credentialFor(carol, space)
+      const credentials = [first, second].map(
+        (cred) => decodeJwt(cred.credential).jti!,
+      )
+
+      await expect(
+        first.clientFor(bob.pds).call(com.atproto.space.listRecords, {
+          space,
+          repo: bob.did,
+        }),
+      ).resolves.toMatchObject({ records: [expect.anything()] })
+
+      await revoke(alice, space, credentials)
+      await revoke(alice, space, [credentials[0], ...credentials])
+
+      for (const cred of [first, second]) {
+        await expect(
+          cred.clientFor(bob.pds).call(com.atproto.space.listRecords, {
+            space,
+            repo: bob.did,
+          }),
+        ).rejects.toMatchObject({ error: 'CredentialRevoked' })
+      }
+      await expect(
+        untouched.clientFor(bob.pds).call(com.atproto.space.listRecords, {
+          space,
+          repo: bob.did,
+        }),
+      ).resolves.toBeDefined()
+      await expect(
+        first.clientFor(alice.pds).call(com.atproto.space.listRecords, {
+          space,
+          repo: alice.did,
+        }),
+      ).resolves.toBeDefined()
+      await expect(
+        bob.client.call(
+          com.atproto.space.listRecords,
+          {
+            space,
+            repo: bob.did,
+          },
+          { headers: bob.headers },
+        ),
+      ).resolves.toBeDefined()
+
+      const rows = await bob.pds.ctx.accountManager.db.db
+        .selectFrom('revoked_space_credential')
+        .selectAll()
+        .where('space', '=', space)
+        .execute()
+      expect(rows).toHaveLength(2)
+    })
+
+    it('requires service auth from the authority addressed to a local repo and method', async () => {
+      const space = await sc.createSpace(alice, { members: [bob] })
+      const cred = await sc.credentialFor(bob, space)
+      const credentials = [decodeJwt(cred.credential).jti!]
+
+      await expect(revoke(bob, space, credentials)).rejects.toThrow(
+        /not the space authority/,
+      )
+      await expect(
+        revoke(alice, space, credentials, {
+          aud: alice.did,
+        }),
+      ).rejects.toThrow(/audience does not match/)
+      await expect(
+        revoke(alice, space, credentials, {
+          aud: bob.pds.ctx.cfg.service.did,
+        }),
+      ).rejects.toThrow(/audience does not match/)
+      await expect(
+        revoke(alice, space, credentials, {
+          lxm: com.atproto.space.notifyWrite.$lxm,
+        }),
+      ).rejects.toThrow()
+      await expect(
+        bob.client.call(
+          com.atproto.space.notifyCredentialRevoked,
+          {
+            space,
+            credentials,
+          },
+          { headers: alice.headers },
+        ),
+      ).rejects.toThrow()
+      expect(
+        await bob.pds.ctx.accountManager.isSpaceCredentialRevoked(
+          space,
+          credentials[0],
+        ),
+      ).toBe(false)
+    })
+
+    it('scopes revocations to the space', async () => {
+      const space = await sc.createSpace(alice, { members: [bob] })
+      const other = await sc.createSpace(alice, {
+        skey: 'other-revocation-space',
+      })
+      await sc.write(bob, space)
+      const cred = await sc.credentialFor(bob, space)
+      await revoke(alice, other, [decodeJwt(cred.credential).jti!])
+      await expect(
+        cred.clientFor(bob.pds).call(com.atproto.space.listRecords, {
+          space,
+          repo: bob.did,
+        }),
+      ).resolves.toBeDefined()
+    })
+
+    it('persists revocations for an hour including clock skew, and prunes expired entries', async () => {
+      const space = await sc.createSpace(alice)
+      await revoke(alice, space, ['retained'])
+      await bob.pds.ctx.backgroundQueue.processAll()
+      const db = getDb(bob.pds.ctx.cfg.db.accountDbLoc)
+      try {
+        expect(await isSpaceCredentialRevoked(db, space, 'retained')).toBe(true)
+        const now = Date.now()
+        using clock = jest.spyOn(Date, 'now')
+        clock.mockReturnValue(now + HOUR + 5_000)
+        expect(await isSpaceCredentialRevoked(db, space, 'retained')).toBe(true)
+        clock.mockReturnValue(now + HOUR + 11_000)
+        expect(await isSpaceCredentialRevoked(db, space, 'retained')).toBe(
+          false,
+        )
+        await bob.pds.ctx.accountManager.addRevokedSpaceCredentials(space, [
+          'new',
+        ])
+        const beforeCleanup = await db.db
+          .selectFrom('revoked_space_credential')
+          .select('jti')
+          .where('space', '=', space)
+          .execute()
+        expect(beforeCleanup).toHaveLength(2)
+        await bob.pds.ctx.accountManager.deleteExpiredRevokedSpaceCredentials()
+        const rows = await db.db
+          .selectFrom('revoked_space_credential')
+          .select('jti')
+          .where('space', '=', space)
+          .execute()
+        expect(rows).toEqual([{ jti: 'new' }])
+      } finally {
+        await db.db.destroy()
+      }
+    })
+
+    it('keeps the revocation when background cleanup fails', async () => {
+      const space = await sc.createSpace(alice)
+      const { accountManager, backgroundQueue } = bob.pds.ctx
+      await backgroundQueue.processAll()
+      using cleanup = jest
+        .spyOn(accountManager, 'deleteExpiredRevokedSpaceCredentials')
+        .mockRejectedValueOnce(new Error('cleanup failed'))
+
+      await revoke(alice, space, ['retained'])
+      await backgroundQueue.processAll()
+
+      expect(cleanup).toHaveBeenCalledTimes(1)
+      expect(
+        await accountManager.isSpaceCredentialRevoked(space, 'retained'),
+      ).toBe(true)
+    })
+  })
+
+  describe('delegation tokens', () => {
+    it('are useless at a host that does not govern the space', async () => {
+      const space = await sc.createSpace(alice, { members: [carol] })
+      const token = await sc.delegationTokenFor(carol, space)
+      const key = await P256Keypair.create()
+
+      // The same token, presented to bob's PDS instead of alice's. The audience
+      // is derived from the token's own `sub`, so it still matches — what stops
+      // this is that pds2 hosts no account for alice and so holds no space to
+      // mint against. The error names the space rather than leaking that as a
+      // missing repo.
+      await expect(
+        bob.client.call(
+          com.atproto.space.getSpaceCredential,
+          { space },
+          {
+            headers: await createSpaceSigHeaders(key, {
+              authorization: `Bearer ${token}`,
+            }),
+          },
+        ),
+      ).rejects.toMatchObject({ error: 'SpaceNotFound' })
+    })
+
+    it('requires proof of possession when exchanging a delegation token', async () => {
+      const space = await sc.createSpace(alice, { members: [carol] })
+      const token = await sc.delegationTokenFor(carol, space)
+
+      await expect(
+        alice.client.call(
+          com.atproto.space.getSpaceCredential,
+          { space },
+          { headers: { authorization: `Bearer ${token}` } },
+        ),
+      ).rejects.toMatchObject({ error: 'BadSpaceSignature' })
+    })
+
+    it('binds the credential to the key that signed the exchange', async () => {
+      const space = await sc.createSpace(alice, { members: [carol] })
+      const token = await sc.delegationTokenFor(carol, space)
+      const key = await P256Keypair.create()
+      const headers = await createSpaceSigHeaders(key, {
+        authorization: `Bearer ${token}`,
+      })
+
+      const { credential } = await alice.client.call(
+        com.atproto.space.getSpaceCredential,
+        { space },
+        { headers },
+      )
+
+      expect(decodeJwt(credential).cnf).toEqual({
+        kid: key.did(),
+      })
+    })
+
+    it('binds the exchange signature to the delegation token', async () => {
+      const space = await sc.createSpace(alice, { members: [carol] })
+      const token = await sc.delegationTokenFor(carol, space)
+      const otherToken = await sc.delegationTokenFor(carol, space)
+      const key = await P256Keypair.create()
+      const headers = await createSpaceSigHeaders(key, {
+        authorization: `Bearer ${token}`,
+      })
+      await expect(
+        alice.client.call(
+          com.atproto.space.getSpaceCredential,
+          { space },
+          { headers: { ...headers, authorization: `Bearer ${otherToken}` } },
+        ),
+      ).rejects.toMatchObject({ error: 'BadSpaceSignature' })
+    })
+
+    it('refuses a replayed credential exchange', async () => {
+      const space = await sc.createSpace(alice, { members: [carol] })
+      const token = await sc.delegationTokenFor(carol, space)
+      const key = await P256Keypair.create()
+      const headers = await createSpaceSigHeaders(key, {
+        authorization: `Bearer ${token}`,
+      })
+      const exchange = () =>
+        alice.client.call(
+          com.atproto.space.getSpaceCredential,
+          { space },
+          { headers },
+        )
+      await expect(exchange()).resolves.toBeDefined()
+      await expect(exchange()).rejects.toMatchObject({ error: 'JwtReplayed' })
+    })
+
+    it('are refused when the audience names another authority', async () => {
+      // Minted by hand, because getDelegationToken always addresses the space's
+      // own authority. Only the aud differs from a token that would be honoured.
+      const space = await sc.createSpace(alice, { members: [carol] })
+      const carolKeypair = await carol.pds.ctx.actorStore.keypair(carol.did)
+      const misaddressed = await createSpaceToken(
+        'delegation',
+        {
+          iss: carol.did,
+          sub: space,
+          aud: spaceHostAud(bob.did),
+        },
+        carolKeypair,
+      )
+
+      await expect(sc.mintCredential(space, misaddressed)).rejects.toThrow(
+        /audience does not match the space authority/,
+      )
+    })
+
+    it('are single-use — a replayed jti is refused', async () => {
+      const space = await sc.createSpace(alice, { members: [carol] })
+      const token = await sc.delegationTokenFor(carol, space)
+      const exchange = async () => {
+        const key = await P256Keypair.create()
+        return alice.client.call(
+          com.atproto.space.getSpaceCredential,
+          { space },
+          {
+            headers: await createSpaceSigHeaders(key, {
+              authorization: `Bearer ${token}`,
+            }),
+          },
+        )
+      }
+
+      await expect(exchange()).resolves.toBeDefined()
+      await expect(exchange()).rejects.toThrow(/already been used/)
+    })
+
+    it('are refused for a space other than their subject', async () => {
+      const space = await sc.createSpace(alice, {
+        skey: 'deleg-sub',
+        members: [carol],
+      })
+      const other = await sc.createSpace(alice, {
+        skey: 'deleg-sub-other',
+        members: [carol],
+      })
+      const token = await sc.delegationTokenFor(carol, space)
+
+      await expect(sc.mintCredential(other, token)).rejects.toMatchObject({
+        error: 'InvalidDelegationToken',
+      })
+    })
+  })
+
+  describe('takedowns', () => {
+    it('stops serving permissioned records for a taken-down account', async () => {
+      // A takedown covers everything the account holds, permissioned data included.
+      const space = await sc.createSpace(alice, { members: [dan, carol] })
+      await sc.write(dan, space, { text: 'before takedown' })
+
+      const cred = await sc.credentialFor(carol, space)
+      const asSyncer = cred.clientFor(alice.pds)
+      const readOps = () =>
+        asSyncer.call(com.atproto.space.listRepoOps, { space, repo: dan.did })
+
+      expect((await readOps()).ops).toHaveLength(1)
+
+      await network.pds.ctx.accountManager.takedownAccount(dan.did, {
+        applied: true,
+        ref: 'test-space-takedown',
+      })
+      try {
+        await expect(readOps()).rejects.toMatchObject({
+          error: 'RepoTakendown',
+        })
+      } finally {
+        await network.pds.ctx.accountManager.takedownAccount(dan.did, {
+          applied: false,
+        })
+      }
+
+      // Gated, not deleted.
+      expect((await readOps()).ops).toHaveLength(1)
+    })
+
+    it('stops accepting permissioned writes from a taken-down account', async () => {
+      const space = await sc.createSpace(alice, { members: [dan] })
+      const write = () => sc.write(dan, space, { text: 'during takedown' })
+
+      await network.pds.ctx.accountManager.takedownAccount(dan.did, {
+        applied: true,
+        ref: 'test-space-write-takedown',
+      })
+      try {
+        await expect(write()).rejects.toThrow(/taken down/i)
+        // Minting a read credential is gated on the same status.
+        await expect(
+          dan.client.call(
+            com.atproto.space.getDelegationToken,
+            { space },
+            { headers: dan.headers },
+          ),
+        ).rejects.toThrow(/taken down/i)
+      } finally {
+        await network.pds.ctx.accountManager.takedownAccount(dan.did, {
+          applied: false,
+        })
+      }
+
+      await expect(write()).resolves.toBeDefined()
+    })
+  })
+
+  /**
+   * OAuth scope enforcement, end to end.
+   *
+   * `space-scope.test.ts` unit-tests the matcher and `oauth-scopes` tests the
+   * grammar; what neither covers is the seam — that a grant issued by the OAuth
+   * provider is the grant the PDS then enforces. These drive real handlers with
+   * real `ScopePermissions`.
+   *
+   * The token is stubbed rather than minted through a browser flow (the same
+   * approach as `proxied/proxy-oauth-aud.test.ts`): only the credential shape is
+   * replaced, so the scope check, the handlers, and storage are all real. The
+   * stub's type is pinned to `AuthVerifier['authorization']`, so an OAuth shape
+   * change breaks it at compile time.
+   */
+  describe('OAuth scopes', () => {
+    // Set per-call by `asOAuth`, read by the stub installed below.
+    let currentScope: string | undefined
+    let currentActor: Actor
+
+    beforeAll(() => {
+      // `authenticateRequest` is the one piece of the OAuth path called per
+      // request — `authorization()` itself runs once, at route registration, so
+      // patching it after boot would never be seen. Everything downstream of
+      // here is real: the ScopePermissions construction, the scope check in each
+      // handler, and storage.
+      const verifier = network.pds.ctx.authVerifier.oauthVerifier
+      const real = verifier.authenticateRequest.bind(verifier)
+      verifier.authenticateRequest = (async (
+        method: string,
+        url: URL,
+        headers: Record<string, unknown>,
+        options: unknown,
+      ) => {
+        if (currentScope === undefined) {
+          return real(method, url, headers as never, options as never)
+        }
+        return { sub: currentActor.did, scope: currentScope }
+      }) as typeof verifier.authenticateRequest
+    })
+
+    /**
+     * Run `fn` as `actor` over a token carrying `scope`.
+     *
+     * The request has to present a DPoP-scheme authorization header. The verifier
+     * dispatches on the scheme, and a `Bearer` header takes the legacy access
+     * path, which skips granular scopes entirely — so a test meaning to exercise
+     * an OAuth scope has to use DPoP or it silently checks nothing.
+     */
+    const asOAuth = async <T>(
+      actor: Actor,
+      scope: string,
+      fn: (headers: { authorization: string }) => Promise<T>,
+    ): Promise<T> => {
+      currentActor = actor
+      currentScope = scope
+      try {
+        return await fn({ authorization: 'DPoP test-oauth-token' })
+      } finally {
+        currentScope = undefined
+      }
+    }
+
+    // A grant naming alice's authority explicitly, as one issued for her spaces
+    // would after `self` resolution. `atproto` is the base scope every token
+    // carries; without it the request is refused before any space check.
+    const grant = (params: string) =>
+      `atproto space:${TEST_SPACE_TYPE}?authority=${alice.did}&${params}`
+
+    it('enforces the collection a grant names on a write', async () => {
+      const space = await sc.createSpace(alice)
+      const allowed = SPACE_TYPE_COLLECTIONS[0]
+      const forbidden = SPACE_TYPE_COLLECTIONS[1]
+
+      await asOAuth(
+        alice,
+        grant(`collection=${allowed}&action=create`),
+        async (headers) => {
+          await expect(
+            sc.write(alice, space, {
+              collection: allowed,
+              rkey: 'ok',
+              headers,
+            }),
+          ).resolves.toBeDefined()
+
+          // Same space, same action, a collection the grant doesn't name.
+          await expect(
+            sc.write(alice, space, {
+              collection: forbidden,
+              rkey: 'no',
+              headers,
+            }),
+          ).rejects.toThrow(/space:/)
+        },
+      )
+    })
+
+    it('enforces the action a grant names', async () => {
+      const space = await sc.createSpace(alice)
+      const collection = SPACE_TYPE_COLLECTIONS[0]
+      // Seed a record to delete, outside the restricted grant.
+      await sc.write(alice, space, { collection, rkey: 'seeded' })
+
+      await asOAuth(
+        alice,
+        grant(`collection=${collection}&action=create`),
+        async (headers) => {
+          await expect(
+            sc.del(alice, space, { collection, rkey: 'seeded', headers }),
+          ).rejects.toThrow(/space:/)
+        },
+      )
+    })
+
+    it('resolves putRecord to update rather than demanding create too', async () => {
+      // putRecord is create-or-update, so it asks for whichever this write is:
+      // an app granted only `update` must be able to overwrite, without also
+      // needing `create`.
+      const space = await sc.createSpace(alice)
+      const collection = SPACE_TYPE_COLLECTIONS[0]
+      await sc.write(alice, space, { collection, rkey: 'self', text: 'first' })
+
+      await asOAuth(
+        alice,
+        grant(`collection=${collection}&action=update`),
+        async (headers) => {
+          await expect(
+            sc.put(alice, space, {
+              collection,
+              rkey: 'self',
+              text: 'second',
+              headers,
+            }),
+          ).resolves.toBeDefined()
+
+          // ...but not create one that doesn't exist yet.
+          await expect(
+            sc.put(alice, space, { collection, rkey: 'fresh', headers }),
+          ).rejects.toThrow(/space:/)
+        },
+      )
+    })
+
+    it('refuses a space of a type the grant does not name', async () => {
+      const space = await sc.createSpace(alice, {
+        spaceType: 'com.example.otherGroup' as NsidString,
+      })
+
+      await asOAuth(
+        alice,
+        grant('collection=*&action=create'),
+        async (headers) => {
+          await expect(
+            sc.write(alice, space, { rkey: 'wrong-type', headers }),
+          ).rejects.toThrow(/space:/)
+        },
+      )
+    })
+
+    it('refuses a space under an authority the grant does not name', async () => {
+      // A grant naming alice as authority must not reach a space governed by
+      // someone else. Dan is co-located with alice on the authority PDS (which is
+      // where the stub lives), so this isolates the authority check from any
+      // cross-PDS concern.
+      const danSpace = await sc.createSpace(dan, { skey: 'dan-governed' })
+      await asOAuth(
+        dan,
+        grant('collection=*&action=create'),
+        async (headers) => {
+          await expect(
+            sc.write(dan, danSpace, { rkey: 'other-authority', headers }),
+          ).rejects.toThrow(/space:/)
+        },
+      )
+    })
+
+    it('reads own repo on read_self, and refuses whole-space read', async () => {
+      const space = await sc.createSpace(alice)
+      await sc.write(alice, space, { rkey: 'mine' })
+
+      await asOAuth(alice, grant('action=read_self'), async (headers) => {
+        const own = await alice.client.call(
+          com.atproto.space.listRecords,
+          { space, repo: alice.did },
+          { headers },
+        )
+        expect(own.records).toHaveLength(1)
+
+        // read_self buys no delegation token: that is the whole-space read grant.
+        await expect(
+          alice.client.call(
+            com.atproto.space.getDelegationToken,
+            { space },
+            { headers },
+          ),
+        ).rejects.toThrow(/space:/)
+      })
+    })
+
+    it('exchanges a whole-space read grant for a delegation token', async () => {
+      const space = await sc.createSpace(alice)
+      await asOAuth(alice, grant('action=read'), async (headers) => {
+        const res = await alice.client.call(
+          com.atproto.space.getDelegationToken,
+          { space },
+          { headers },
+        )
+        expect(res.token).toBeDefined()
+      })
+    })
+
+    it('requires a wildcard grant to list spaces unfiltered', async () => {
+      const space = await sc.createSpace(alice)
+      // listSpaces has no one space to check against, so the filters are the
+      // target: an unfiltered listing is a request to see everything.
+      await asOAuth(alice, grant('action=read_self'), async (headers) => {
+        await expect(
+          alice.client.call(com.atproto.space.listSpaces, {}, { headers }),
+        ).rejects.toThrow(/space:/)
+
+        // Narrowed to what the grant covers, it is allowed.
+        const listed = await alice.client.call(
+          com.atproto.space.listSpaces,
+          { spaceType: TEST_SPACE_TYPE, did: alice.did },
+          { headers },
+        )
+        expect(listed.spaces.map((s) => s.uri)).toContain(space)
+
+        await expect(
+          alice.client.call(
+            com.atproto.space.listSpaces,
+            {
+              spaceType: 'com.example.otherGroup' as NsidString,
+              did: alice.did,
+            },
+            { headers },
+          ),
+        ).rejects.toThrow(/space:/)
+      })
+    })
+
+    it('materializes the space type declared collections into a bare grant', async () => {
+      // The seam this suite exists for. A bare `space:<type>` names no
+      // collections, so on its own it confers no write targets at all; the
+      // provider expands it from the space type's lexicon at issuance. This
+      // asserts the expansion the provider performs is one the PDS then accepts.
+      const scope =
+        await network.pds.ctx.oauthProvider!.lexiconManager.buildTokenScope(
+          `space:${TEST_SPACE_TYPE}`,
+          alice.did,
+        )
+      // Both declared collections, and `self` resolved to alice.
+      for (const collection of SPACE_TYPE_COLLECTIONS) {
+        expect(scope).toContain(`collection=${collection}`)
+      }
+      expect(scope).toContain(`authority=${alice.did}`)
+
+      const space = await sc.createSpace(alice)
+      await asOAuth(alice, `atproto ${scope}`, async (headers) => {
+        for (const collection of SPACE_TYPE_COLLECTIONS) {
+          await expect(
+            sc.write(alice, space, {
+              collection,
+              rkey: `decl-${collection.split('.').pop()}`,
+              headers,
+            }),
+          ).resolves.toBeDefined()
+        }
+        // A collection the space type never declared stays out of reach.
+        await expect(
+          sc.write(alice, space, {
+            collection: TEST_COLLECTION,
+            rkey: 'undeclared',
+            headers,
+          }),
+        ).rejects.toThrow(/space:/)
+      })
+    })
+  })
+})

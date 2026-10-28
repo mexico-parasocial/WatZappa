@@ -272,12 +272,12 @@ export class SpaceReader {
       .selectFrom('space_writer')
       .selectAll()
       .where('space', '=', space)
-      .orderBy('did', 'asc')
+      .orderBy('spaceRev', 'asc')
     if (opts.limit) {
       builder = builder.limit(opts.limit)
     }
     if (opts.cursor) {
-      builder = builder.where('did', '>', opts.cursor)
+      builder = builder.where('spaceRev', '>', opts.cursor)
     }
     return builder.execute()
   }

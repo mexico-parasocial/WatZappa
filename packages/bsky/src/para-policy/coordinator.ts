@@ -1,8 +1,4 @@
-import type {
-  ParaPolicyChange,
-  ParaPolicyCheckpointReceipt,
-  ParaPolicyOutbox,
-} from './outbox.js'
+import type { ParaPolicyCheckpointReceipt, ParaPolicyOutbox } from './outbox.js'
 import type {
   ParaPolicyRecoveryChallenge,
   PreparedParaPolicyUpdate,
@@ -50,7 +46,6 @@ export class ParaPolicyDeliveryCoordinator {
       prepareCheckpoint: (
         eventId: string,
         challenge: ParaPolicyRecoveryChallenge,
-        change: ParaPolicyChange,
       ) => Promise<PreparedParaPolicyUpdate>
     },
   ) {}
@@ -80,7 +75,6 @@ export class ParaPolicyDeliveryCoordinator {
 
   async recoverWithCheckpoint(
     eventId: string,
-    change: ParaPolicyChange,
   ): Promise<ParaPolicyRecoveryStatus> {
     const challenge = await this.deps.client.issueChallenge()
     if (!challenge) return 'nothing-to-recover'
@@ -93,11 +87,7 @@ export class ParaPolicyDeliveryCoordinator {
     ) {
       return 'nothing-to-recover'
     }
-    const prepared = await this.deps.prepareCheckpoint(
-      eventId,
-      challenge,
-      change,
-    )
+    const prepared = await this.deps.prepareCheckpoint(eventId, challenge)
     const claim = await this.deps.outbox.claimCheckpoint()
     if (claim.status !== 'claimed') {
       if (claim.status === 'busy') return 'checkpoint-busy'

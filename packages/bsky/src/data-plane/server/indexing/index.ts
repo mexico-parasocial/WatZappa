@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { Selectable, sql } from 'kysely'
 import { DAY, HOUR } from '@atproto/common'
 import { IdResolver, getPds } from '@atproto/identity'
@@ -14,6 +15,7 @@ import { ParaCacheService } from '../../../cache/para-cache.js'
 import { com } from '../../../lexicons.js'
 import { subLogger } from '../../../logger.js'
 import { retryXrpc } from '../../../util/retry.js'
+import type { ParaPolicyPublicationService } from '../../../para-policy/publication-service.js'
 import { BackgroundQueue } from '../background.js'
 import { Database } from '../db/index.js'
 import { Actor } from '../db/tables/actor.js'
@@ -36,6 +38,7 @@ import * as NotifDeclaration from './plugins/notif-declaration.js'
 import * as OpenQuestionVote from './plugins/open-question-vote.js'
 import * as OpenQuestion from './plugins/open-question.js'
 import * as ParaCommunityBoard from './plugins/para-community-board.js'
+import * as ParaCommunityAdmission from './plugins/para-community-admission.js'
 import * as ParaCommunityBriefingPack from './plugins/para-community-briefing-pack.js'
 import * as ParaCommunityGovernance from './plugins/para-community-governance.js'
 import * as ParaCommunityMembership from './plugins/para-community-membership.js'
@@ -89,6 +92,7 @@ export class IndexingService {
     openQuestionVote: OpenQuestionVote.PluginType
     paraPost: ParaPost.PluginType
     paraCommunityBoard: ParaCommunityBoard.PluginType
+    paraCommunityAdmission: ParaCommunityAdmission.PluginType
     paraCommunityBriefingPack: ParaCommunityBriefingPack.PluginType
     paraCommunityGovernance: ParaCommunityGovernance.PluginType
     paraCommunityMembership: ParaCommunityMembership.PluginType
@@ -119,6 +123,7 @@ export class IndexingService {
     public idResolver: IdResolver,
     public background: BackgroundQueue,
     public paraCache?: ParaCacheService,
+    public policyPublication?: ParaPolicyPublicationService,
   ) {
     this.records = {
       post: Post.makePlugin(this.db, this.background),
@@ -144,6 +149,10 @@ export class IndexingService {
       openQuestionVote: OpenQuestionVote.makePlugin(this.db, this.background),
       paraPost: ParaPost.makePlugin(this.db, this.background),
       paraCommunityBoard: ParaCommunityBoard.makePlugin(
+        this.db,
+        this.background,
+      ),
+      paraCommunityAdmission: ParaCommunityAdmission.makePlugin(
         this.db,
         this.background,
       ),
@@ -211,6 +220,7 @@ export class IndexingService {
       this.idResolver,
       this.background,
       this.paraCache,
+      this.policyPublication,
     )
   }
 
@@ -232,6 +242,15 @@ export class IndexingService {
       } else {
         await indexer.updateRecord(uri, cid, obj, timestamp)
       }
+      if (this.policyPublication && isPolicySource(uri.collection)) {
+        const community = (obj as { community?: unknown })?.community
+        if (community === this.policyPublication.boardUri) {
+          await this.policyPublication.publish(
+            txn.db,
+            policyEventId(uri.toString(), cid.toString(), 'put'),
+          )
+        }
+      }
     })
   }
 
@@ -241,7 +260,32 @@ export class IndexingService {
       const indexingTx = this.transact(txn)
       const indexer = indexingTx.findIndexerForCollection(uri.collection)
       if (!indexer) return
+      let community: string | undefined
+      let previousCid: string | undefined
+      if (this.policyPublication && isPolicySource(uri.collection)) {
+        const table =
+          uri.collection === 'com.para.community.admission'
+            ? 'para_community_admission'
+            : 'para_community_membership'
+        const previous = await txn.db
+          .selectFrom(table)
+          .select(['communityUri', 'cid'])
+          .where('uri', '=', uri.toString())
+          .executeTakeFirst()
+        community = previous?.communityUri
+        previousCid = previous?.cid
+      }
       await indexer.deleteRecord(uri, cascading)
+      if (
+        this.policyPublication &&
+        community === this.policyPublication.boardUri &&
+        previousCid
+      ) {
+        await this.policyPublication.publish(
+          txn.db,
+          policyEventId(uri.toString(), previousCid, 'delete'),
+        )
+      }
     })
   }
 
@@ -506,6 +550,10 @@ export class IndexingService {
       .where('creator', '=', did)
       .execute()
     await this.db.db
+      .deleteFrom('para_community_admission')
+      .where('creator', '=', did)
+      .execute()
+    await this.db.db
       .deleteFrom('para_community_relation')
       .where('creator', '=', did)
       .execute()
@@ -596,6 +644,17 @@ export class IndexingService {
       .execute()
     await this.db.db.deleteFrom('record').where('did', '=', did).execute()
   }
+}
+
+function isPolicySource(collection: string): boolean {
+  return (
+    collection === 'com.para.community.admission' ||
+    collection === 'com.para.community.membership'
+  )
+}
+
+function policyEventId(uri: string, cid: string, action: string): string {
+  return createHash('sha256').update(`${action}:${uri}:${cid}`).digest('hex')
 }
 
 type UriAndCid = {

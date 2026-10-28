@@ -1,6 +1,7 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { MINUTE, TID } from '@atproto/common'
 import { encode } from '@atproto/lex-cbor'
 import { cidForCbor } from '@atproto/lex-data'
 import { WriteOpAction } from '@atproto/repo'
@@ -151,6 +152,46 @@ describe('permissioned space storage', () => {
     })
   })
 
+  it('sequences writer updates and ignores older or repeated repo revisions', async () => {
+    const firstRev = TID.nextStr()
+    const nextRev = TID.nextStr(firstRev)
+    const other = 'did:web:writer.example'
+    const hash = new Uint8Array(32).fill(7)
+    await db.transaction(async (tx) => {
+      const store = transactor(tx)
+      await store.ensureSpace(space)
+      const first = await store.recordWriter(space, member, firstRev, hash)
+      expect(first?.prevSpaceRev).toBeUndefined()
+      expect(first?.spaceRev).toBeDefined()
+      expect(
+        await store.recordWriter(space, member, firstRev, hash),
+      ).toBeUndefined()
+      await expect(
+        store.recordWriter(
+          space,
+          member,
+          TID.fromTime((Date.now() + 6 * MINUTE) * 1_000, 0).toString(),
+          hash,
+        ),
+      ).rejects.toMatchObject({ error: 'FutureRev' })
+      const second = await store.recordWriter(space, other, firstRev, hash)
+      expect(second?.prevSpaceRev).toBe(first?.spaceRev)
+      const third = await store.recordWriter(space, member, nextRev, hash)
+      expect(third?.prevSpaceRev).toBe(second?.spaceRev)
+      expect(
+        await store.recordWriter(space, member, firstRev, hash),
+      ).toBeUndefined()
+    })
+    const writers = await reader.listWriters(space, { limit: 10 })
+    expect(writers.map((row) => row.did)).toEqual([other, member])
+    expect(writers.map((row) => row.repoRev)).toEqual([firstRev, nextRev])
+    expect(
+      (await reader.listWriters(space, { cursor: writers[0]!.spaceRev })).map(
+        (row) => row.did,
+      ),
+    ).toEqual([member])
+  })
+
   // Guards the storage contract the (not-yet-wired) access resolver will read.
   // `getMember` returns the per-member read/write bits verbatim, `putMember`
   // replaces them, and a non-member reads back as undefined — so a resolver can
@@ -182,7 +223,10 @@ describe('permissioned space storage', () => {
     // putMember replaces both bits rather than merging — granting write must be
     // explicit and must not silently preserve a stale read grant either.
     await db.transaction(async (tx) => {
-      await transactor(tx).putMember(space, member, { read: false, write: true })
+      await transactor(tx).putMember(space, member, {
+        read: false,
+        write: true,
+      })
     })
     expect(await reader.getMember(space, member)).toEqual({
       did: member,

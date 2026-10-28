@@ -20,15 +20,17 @@ export class RepoSubscription {
       db: Database
       idResolver: IdResolver
       paraCache?: ParaCacheService
+      policyPublication?: import('../../para-policy/publication-service.js').ParaPolicyPublicationService
     },
   ) {
-    const { service, db, idResolver, paraCache } = opts
+    const { service, db, idResolver, paraCache, policyPublication } = opts
     this.background = new BackgroundQueue(db)
     this.indexingSvc = new IndexingService(
       db,
       idResolver,
       this.background,
       paraCache,
+      policyPublication,
     )
 
     const { runner, firehose } = createFirehose({

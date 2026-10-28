@@ -8,7 +8,7 @@ import events from 'node:events'
 import http from 'node:http'
 import { PlcClientError } from '@did-plc/lib'
 import cors from 'cors'
-import express from 'express'
+import express, { type Router } from 'express'
 import { HttpTerminator, createHttpTerminator } from 'http-terminator'
 import { DAY, HOUR, MINUTE, SECOND } from '@atproto/common'
 import {
@@ -28,6 +28,7 @@ import * as error from './error.js'
 import { app } from './lexicons.js'
 import { loggerMiddleware } from './logger.js'
 import { proxyHandler } from './pipethrough.js'
+import { mountParaPolicyTransport } from './para-policy-transport.js'
 import compression from './util/compression.js'
 import * as wellKnown from './well-known.js'
 
@@ -71,6 +72,7 @@ export class PDS {
     cfg: ServerConfig,
     secrets: ServerSecrets,
     overrides?: Partial<AppContextOptions>,
+    paraPolicyTransport?: { enabled: boolean; router?: Router },
   ): Promise<PDS> {
     const ctx = await AppContext.fromConfig(cfg, secrets, overrides)
 
@@ -164,6 +166,14 @@ export class PDS {
     app.use(cors({ maxAge: DAY / SECOND }))
     app.use(basicRoutes.createRouter(ctx))
     app.use(wellKnown.createRouter(ctx))
+    if (paraPolicyTransport?.enabled) {
+      if (!paraPolicyTransport.router) {
+        throw new Error(
+          'Enabled PARA policy transport requires a configured router',
+        )
+      }
+      mountParaPolicyTransport(app, paraPolicyTransport.router)
+    }
     app.use(server.router)
     app.use(error.handler)
 

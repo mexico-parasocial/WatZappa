@@ -6,6 +6,7 @@ import { createLogger, obfuscateHeaders } from '@atproto/common'
 export const pdsLogger = createLogger('pds')
 export const blobStoreLogger = createLogger('pds:blob-store')
 export const dbLogger = createLogger('pds:db')
+export const spaceLogger = createLogger('pds:space')
 export const didCacheLogger = createLogger('pds:did-cache')
 export const eventsLogger = createLogger('pds:events')
 export const readStickyLogger = createLogger('pds:read-sticky')

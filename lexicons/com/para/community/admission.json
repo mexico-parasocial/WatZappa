@@ -1,0 +1,24 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.admission",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A board-owned admission or revocation decision for a community member. The repository DID must match the community board's DID.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["community", "member", "state", "decidedAt"],
+        "properties": {
+          "community": { "type": "string", "format": "at-uri" },
+          "member": { "type": "string", "format": "did" },
+          "state": {
+            "type": "string",
+            "enum": ["active", "removed", "blocked"]
+          },
+          "decidedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

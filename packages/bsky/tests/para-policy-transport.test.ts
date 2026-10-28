@@ -216,15 +216,19 @@ describe('authenticated policy transport (HTTP loopback, Postgres outbox, SQLite
       .where('space', '=', space)
       .executeTakeFirstOrThrow()
   }
-  function makeCoordinator() {
+  function makeCoordinator(checkpointChange = change()) {
     return new ParaPolicyDeliveryCoordinator({
       outbox,
       client,
-      prepareCheckpoint: (eventId, challenge, input) =>
+      prepareCheckpoint: (eventId, challenge) =>
         db
           .transaction()
           .execute((tx) =>
-            makeOutbox(tx).prepareCheckpoint(eventId, challenge, input),
+            makeOutbox(tx).prepareCheckpoint(
+              eventId,
+              challenge,
+              checkpointChange,
+            ),
           ),
     })
   }
@@ -337,13 +341,13 @@ describe('authenticated policy transport (HTTP loopback, Postgres outbox, SQLite
       projectionStatus: 'stale',
     })
 
-    const status = await makeCoordinator().recoverWithCheckpoint('recovery-1', {
+    const status = await makeCoordinator({
       kind: 'snapshot',
       sourceCid,
       members: [
         { did: second, membershipState: 'active', roles: ['moderator'] },
       ],
-    })
+    }).recoverWithCheckpoint('recovery-1')
     expect(status).toBe('recovered')
     expect(await reader.getPolicyState(space)).toMatchObject({
       projectionStatus: 'ready',
@@ -598,9 +602,9 @@ describe('authenticated policy transport (HTTP loopback, Postgres outbox, SQLite
   it('reports nothing to recover for a healthy receiver', async () => {
     await enqueue('bootstrap')
     assert((await makeCoordinator().deliverNextUpdate()) === 'delivered')
-    expect(
-      await makeCoordinator().recoverWithCheckpoint('recovery-1', change()),
-    ).toBe('nothing-to-recover')
+    expect(await makeCoordinator().recoverWithCheckpoint('recovery-1')).toBe(
+      'nothing-to-recover',
+    )
     expect(await stream()).toMatchObject({ deliveryStatus: 'ready' })
   })
 

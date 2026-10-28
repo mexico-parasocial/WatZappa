@@ -3,6 +3,42 @@
 **Status:** implementation in progress. This document is the integration
 boundary for OD-P1; it does not make community spaces a Q4 pilot dependency.
 
+## 2026-10-03 manual adaptation of upstream PR #5574
+
+The branch adapts the PR's `repoRev`/`spaceRev` split, ascending writer
+pagination, actor/account migrations, and durable coalescing notification retry
+storage. Migration numbers are local (`004-space-sync` and `012-spaces`) so
+PARA's existing migrations are preserved. The account migration also keeps
+upstream's revoked-space-credential table, even though no credential route
+uses it yet. The
+branch does **not** have upstream's `com.atproto.space` XRPC handlers or syncer
+registration/transport, so the new notification queue is not started and the
+revised `listRepos`/`notifyWrite` lexicons are not yet served. This is not a
+claim of PR-level runtime interoperability. Do not expose either route merely
+because its storage and schema exist.
+
+PARA now has a separate board-authored `com.para.community.admission` record.
+The indexer accepts it only from the repository that owns the indexed board;
+self-authored active membership alone never enters the signed policy. A board
+`blocked` or `removed` decision wins over a self-authored active membership.
+The transaction-bound `ParaPolicyPublicationService` can materialize that
+admission-only roster and enqueue an exact signed snapshot from an indexed
+membership/admission mutation. It is an optional injection point, **not
+enabled in the production subscription configuration**. The PDS can likewise
+mount the authenticated transport only with an explicitly supplied router and
+`enabled: true`; there is no deployed router, signing key, delivery scheduler,
+or production trust configuration. No community-space access is enabled by
+these changes. Board-issued roles remain out of scope until their own
+authority trace is designed and indexed.
+
+Before activation: implement the missing upstream space host routes and
+notification delivery/authentication, test sequence gaps and catch-up across
+hosts, wire a durable delivery worker and checkpoint resume, audit indexer
+replay/account deletion effects on revocation, provision/pin keys, then run a
+full PDS/AppView/auth regression and an isolated deployment rehearsal. A green
+focused test suite is not approval to merge to `origin/main` or turn on the
+feature.
+
 ## Checkpoint — 2026-09-16
 
 Worktree: `WatZappa-permissioned-data`, branch `codex/permissioned-data-port`,
@@ -28,15 +64,15 @@ Matrix work. Integrate against current main by reviewing each overlapping file;
 this worktree is not yet rebased or merged into main. Do not replace main's
 uncommitted changes or copy upstream files wholesale.
 
-| Area                                              | Current implementation                                                                                                                                                    | Remaining before route use                                                                              |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Space persistence, blobs, CAR, client attestation | Implemented and tested locally                                                                                                                                            | Manual integration with current main and full regression run                                            |
-| PARA projection                                   | Authority-store state, members, receipts, snapshot/patch semantics, ordering, digest chain, retained deletion watermark; pinned-key signed intake and latched stale state; single-use challenge checkpoint recovery (local component) | Production trust configuration, authenticated transport and governance wiring for recovery              |
-| AppView policy publisher                          | Ed25519 signer; independent normalization/digest encoding; public JWKS; transactional Postgres outbox with ordered leases and acknowledgements; tested against PDS; checkpoint reservation, fencing and exact receipt confirmation; admission-only governance materializer; authenticated HTTP transport client and delivery coordinator | Persisted board-issued authority trace for roles; production mounting of the transport behind its flag |
-| PARA resolver                                     | Pure rule-based resolver; transactional input reader; active state, role expiry, client/collection/action scope, freshness and epoch checks                               | Reviewed production rule configuration and wiring in the same transaction as writes                     |
-| M8 assurance                                      | Standalone draft verifier, fixed public Ed25519 JWS vectors, bounded JWKS fetching and rotation; durable PDS challenges with atomic nonce/JTI consumption                 | Broker signer/JWKS agreement and implementation; authenticated issuance, rate limits and cleanup wiring |
-| Credential exchange                               | No registered route or context wiring                                                                                                                                     | Complete integration and existing-auth regression tests, then a disabled feature gate                   |
-| Institutional chat                                | Separate authorization policy on main; not imported by this branch                                                                                                        | Bridge membership persistence and route enforcement, maintained by that workstream                      |
+| Area                                              | Current implementation                                                                                                                                                                                                                                                                                                                   | Remaining before route use                                                                              |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Space persistence, blobs, CAR, client attestation | Implemented and tested locally                                                                                                                                                                                                                                                                                                           | Manual integration with current main and full regression run                                            |
+| PARA projection                                   | Authority-store state, members, receipts, snapshot/patch semantics, ordering, digest chain, retained deletion watermark; pinned-key signed intake and latched stale state; single-use challenge checkpoint recovery (local component)                                                                                                    | Production trust configuration, authenticated transport and governance wiring for recovery              |
+| AppView policy publisher                          | Ed25519 signer; independent normalization/digest encoding; public JWKS; transactional Postgres outbox with ordered leases and acknowledgements; tested against PDS; checkpoint reservation, fencing and exact receipt confirmation; admission-only governance materializer; authenticated HTTP transport client and delivery coordinator | Persisted board-issued authority trace for roles; production mounting of the transport behind its flag  |
+| PARA resolver                                     | Pure rule-based resolver; transactional input reader; active state, role expiry, client/collection/action scope, freshness and epoch checks                                                                                                                                                                                              | Reviewed production rule configuration and wiring in the same transaction as writes                     |
+| M8 assurance                                      | Standalone draft verifier, fixed public Ed25519 JWS vectors, bounded JWKS fetching and rotation; durable PDS challenges with atomic nonce/JTI consumption                                                                                                                                                                                | Broker signer/JWKS agreement and implementation; authenticated issuance, rate limits and cleanup wiring |
+| Credential exchange                               | No registered route or context wiring                                                                                                                                                                                                                                                                                                    | Complete integration and existing-auth regression tests, then a disabled feature gate                   |
+| Institutional chat                                | Separate authorization policy on main; not imported by this branch                                                                                                                                                                                                                                                                       | Bridge membership persistence and route enforcement, maintained by that workstream                      |
 
 Private file bytes remain an AT Protocol responsibility. Institutional Matrix
 permissions may authorize seeing a file reference; they cannot authorize the
@@ -58,13 +94,13 @@ honored via `pnpm-workspace.yaml` as `.npmrc` intended; Node 22; lockfile passes
 `pnpm install --frozen-lockfile`; `pnpm run build` clean), all suites run and
 pass against this tree alone:
 
-| suites | runner | tests |
-| --- | --- | --- |
-| 9 PDS suites (space storage, para-policy storage/intake/checkpoint/resolver, client attestation, m8 verifier/store, space-blob privacy) | jest | **140/140** |
-| 5 AppView suites (publisher interop, Postgres outbox, checkpoint recovery, governance materializer, HTTP transport) | vitest + temp Postgres | **60/60** |
-| `@atproto/space` | vitest | **100/100** |
-| `@atproto/car` | vitest | **37/37** |
-| **total** | | **337 across 14 suites** |
+| suites                                                                                                                                  | runner                 | tests                    |
+| --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------------------------ |
+| 9 PDS suites (space storage, para-policy storage/intake/checkpoint/resolver, client attestation, m8 verifier/store, space-blob privacy) | jest                   | **140/140**              |
+| 5 AppView suites (publisher interop, Postgres outbox, checkpoint recovery, governance materializer, HTTP transport)                     | vitest + temp Postgres | **60/60**                |
+| `@atproto/space`                                                                                                                        | vitest                 | **100/100**              |
+| `@atproto/car`                                                                                                                          | vitest                 | **37/37**                |
+| **total**                                                                                                                               |                        | **337 across 14 suites** |
 
 Reproduce with Node 22 (.nvmrc): `packages/pds` →
 `../../node_modules/.bin/jest tests/{space-storage,client-attestation,m8-assurance-store,m8-assurance-verifier,para-policy-storage,para-policy-resolver,para-policy-intake,para-policy-checkpoint,space-blob-privacy}.test.ts`;
@@ -584,9 +620,10 @@ recovery runs challenge → prepare → deliver → confirm over the same
 transport, with automatic reconciliation through the persisted checkpoint
 receipt when the confirmation response was lost. A challenge from a healthy,
 fully caught-up receiver authorizes nothing and recovery reports
-`nothing-to-recover`. **Nothing mounts the router outside tests**: no public
-route, no scheduler, no worker; production wiring will mount it behind an
-off-by-default flag when a delivery worker exists, and the PDS
+`nothing-to-recover`. `PDS.create` accepts an optional off-by-default router
+injection, but no production caller supplies it: there is still no live route,
+scheduler or worker. Production wiring will supply the router only with
+reviewed trust configuration and a durable delivery worker; the PDS
 response-signing key enters the key-custody inventory.
 
 ### Key custody (operational guidance, pending DevOps decisions)
@@ -630,16 +667,16 @@ as a semantic diff. It must not replace a current file with its upstream version
 
 ## Manual merge map
 
-| Upstream area                                                             | Disposition in PARA         | Reason                                                                                                                                             |
-| ------------------------------------------------------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Actor-store migration, schema, space reader/transactor, blob reachability | **Ported, inert**           | Local persistence only; no route or policy decision is exposed.                                                                                    |
-| CAR stream helper | **Replaced by `@atproto/car`** | The duplicated common/repo CAR code and varint shim are retired; repo re-exports the car package and the vendored space package consumes it directly. |
-| Replay namespace and client-attestation verifier                          | **Ported, inert**           | Provides verified client identity and single-use tokens, but cannot issue a credential.                                                            |
-| `AuthVerifier` space-token and DPoP paths                                 | **Adapt later**             | It touches existing PARA/OAuth authentication behavior; add only after the assurance exchange and its tests are defined.                           |
-| `SimpleSpaceManager` / `managing-app` callback                            | **Replace the policy seam** | Generic callback authorization is not an adequate community role/write gate. Route it through the local `PolicyResolver` and versioned projection. |
-| SimpleSpace configuration and owner APIs                                  | **Feature-flagged later**   | They must use immutable `skey` identifiers and PARA policy semantics before registration.                                                          |
-| Credential-exchange and record XRPC handlers                              | **Blocked**                 | The current M8 bearer lookup cannot bind a user, client, DPoP key, space, and replay challenge safely.                                             |
-| Notifications, remote sync, and oplog consumer                            | **Deferred**                | They introduce service identity, fan-out, reconciliation, and privacy scope beyond the personal-tree pilot.                                        |
+| Upstream area                                                             | Disposition in PARA            | Reason                                                                                                                                                |
+| ------------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Actor-store migration, schema, space reader/transactor, blob reachability | **Ported, inert**              | Local persistence only; no route or policy decision is exposed.                                                                                       |
+| CAR stream helper                                                         | **Replaced by `@atproto/car`** | The duplicated common/repo CAR code and varint shim are retired; repo re-exports the car package and the vendored space package consumes it directly. |
+| Replay namespace and client-attestation verifier                          | **Ported, inert**              | Provides verified client identity and single-use tokens, but cannot issue a credential.                                                               |
+| `AuthVerifier` space-token and DPoP paths                                 | **Adapt later**                | It touches existing PARA/OAuth authentication behavior; add only after the assurance exchange and its tests are defined.                              |
+| `SimpleSpaceManager` / `managing-app` callback                            | **Replace the policy seam**    | Generic callback authorization is not an adequate community role/write gate. Route it through the local `PolicyResolver` and versioned projection.    |
+| SimpleSpace configuration and owner APIs                                  | **Feature-flagged later**      | They must use immutable `skey` identifiers and PARA policy semantics before registration.                                                             |
+| Credential-exchange and record XRPC handlers                              | **Blocked**                    | The current M8 bearer lookup cannot bind a user, client, DPoP key, space, and replay challenge safely.                                                |
+| Notifications, remote sync, and oplog consumer                            | **Deferred**                   | They introduce service identity, fan-out, reconciliation, and privacy scope beyond the personal-tree pilot.                                           |
 
 ## Next stage: assurance and policy boundary
 
@@ -757,9 +794,9 @@ Next, in order:
 2. Wire authenticated challenge issuance, endpoint rate limits and periodic
    cleanup only as part of the disabled credential-exchange integration below.
 3. Provide the governance-authorized snapshot input and an authenticated
-    checkpoint transport (including oversized snapshots), then a delivery
-    worker. The challenge/install/confirm protocol itself is implemented and
-    tested locally; nothing is wired to a route or scheduler yet.
+   checkpoint transport (including oversized snapshots), then a delivery
+   worker. The challenge/install/confirm protocol itself is implemented and
+   tested locally; nothing is wired to a route or scheduler yet.
 4. Review production collection/action/role rules and freshness policy; route
    credential issuance and every protected write through the local resolver.
 5. Manually reconcile current main's PDS/OAuth changes, then expose already

@@ -2,10 +2,13 @@ import { randomBytes } from 'node:crypto'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { generateKeyPair } from 'jose'
+import { decodeJwt, generateKeyPair } from 'jose'
 import { Kysely, PostgresDialect, sql } from 'kysely'
 import pg from 'pg'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { TID } from '@atproto/common'
+import { parseCid } from '@atproto/lex'
+import { AtUri } from '@atproto/syntax'
 import { getDb, getMigrator } from '../../pds/src/actor-store/db/index.js'
 import { ParaPolicyIntake } from '../../pds/src/actor-store/para-policy/intake.js'
 import { ParaPolicyReader } from '../../pds/src/actor-store/para-policy/reader.js'
@@ -24,16 +27,23 @@ import {
 } from '../src/data-plane/server/db/migrations/20260518T195000000Z-add-governance-mode-to-board.js'
 import { up as upOutbox } from '../src/data-plane/server/db/migrations/20260914T180000000Z-add-para-policy-outbox.js'
 import { up as upCheckpointColumns } from '../src/data-plane/server/db/migrations/20260915T000000000Z-add-para-policy-checkpoint.js'
+import {
+  down as downAdmission,
+  up as upAdmission,
+} from '../src/data-plane/server/db/migrations/20261003T000000000Z-add-para-community-admission.js'
+import type { PartialDB as AdmissionDB } from '../src/data-plane/server/db/tables/para-community-admission.js'
 import type { PartialDB as OutboxDB } from '../src/data-plane/server/db/tables/para-policy-outbox.js'
+import { indexAdmission } from '../src/data-plane/server/indexing/plugins/para-community-admission.js'
 import {
   type ParaGovernanceDB,
   ParaGovernanceError,
   materializeGovernanceMembers,
 } from '../src/para-policy/governance.js'
 import { ParaPolicyOutbox } from '../src/para-policy/outbox.js'
+import { ParaPolicyPublicationService } from '../src/para-policy/publication-service.js'
 import { ParaPolicyPublisher } from '../src/para-policy/publisher.js'
 
-type TestDB = ParaGovernanceDB & OutboxDB
+type TestDB = ParaGovernanceDB & OutboxDB & AdmissionDB
 
 const boardDid = 'did:plc:ragtjsm2j2vknwkz3zp4oxrd'
 const boardUri = `at://${boardDid}/com.para.community.board/community-immutable-id`
@@ -82,6 +92,7 @@ describe('governance-authorized policy materialization (Postgres)', () => {
     await upGovernanceMode(db as never)
     await upOutbox(db as never)
     await upCheckpointColumns(db as never)
+    await upAdmission(db as never)
     await seedBoard('horizontal')
   })
 
@@ -137,6 +148,26 @@ describe('governance-authorized policy materialization (Postgres)', () => {
       .execute()
   }
 
+  async function seedApproval(
+    memberDid: string,
+    state: 'active' | 'removed' | 'blocked' = 'active',
+    creator = boardDid,
+  ) {
+    await db
+      .insertInto('para_community_admission')
+      .values({
+        uri: `at://${creator}/com.para.community.admission/${memberDid.split(':').pop()}`,
+        cid: sourceCid,
+        creator,
+        communityUri: boardUri,
+        memberDid,
+        state,
+        decidedAt: clock().toISOString(),
+        indexedAt: clock().toISOString(),
+      })
+      .execute()
+  }
+
   function materialize(board = boardUri) {
     return db
       .transaction()
@@ -171,6 +202,7 @@ describe('governance-authorized policy materialization (Postgres)', () => {
     await seedMembership(carol, 'left')
     await seedMembership(dave, 'removed')
     await seedMembership(eve, 'blocked')
+    for (const did of [alice, carol, dave, eve]) await seedApproval(did)
 
     const members = await materialize()
     expect(members).toEqual([
@@ -184,7 +216,135 @@ describe('governance-authorized policy materialization (Postgres)', () => {
     expect(await materialize()).toEqual(members)
   })
 
+  it('does not admit a self-declared member or a forged board approval', async () => {
+    await seedMembership(alice, 'active', { roles: ['moderator'] })
+    expect(await materialize()).toEqual([])
+    await seedApproval(alice, 'active', 'did:web:impostor.example')
+    expect(await materialize()).toEqual([])
+  })
+
+  it('honors a board revocation over a self-declared active record', async () => {
+    await seedMembership(alice, 'active')
+    await seedApproval(alice, 'blocked')
+    expect(await materialize()).toEqual([
+      {
+        did: alice,
+        membershipState: 'blocked',
+        roles: [],
+        roleAssignments: [],
+      },
+    ])
+  })
+
+  it('rejects forged admission and does not replay an older board decision', async () => {
+    const recent = new Date(now * 1_000).toISOString()
+    const old = new Date((now - 60) * 1_000).toISOString()
+    const first = TID.nextStr()
+    const second = TID.nextStr(first)
+    const admission = (state: 'active' | 'blocked', decidedAt: string) => ({
+      $type: 'com.para.community.admission' as const,
+      community: boardUri,
+      member: alice,
+      state,
+      decidedAt,
+    })
+    await expect(
+      indexAdmission(
+        db as never,
+        new AtUri(
+          `at://did:web:impostor.example/com.para.community.admission/${first}`,
+        ),
+        parseCid(sourceCid),
+        admission('active', recent),
+        recent,
+      ),
+    ).rejects.toThrow('board repository')
+    await indexAdmission(
+      db as never,
+      new AtUri(`at://${boardDid}/com.para.community.admission/${second}`),
+      parseCid(sourceCid),
+      admission('blocked', recent),
+      recent,
+    )
+    await indexAdmission(
+      db as never,
+      new AtUri(`at://${boardDid}/com.para.community.admission/${first}`),
+      parseCid(sourceCid),
+      admission('active', old),
+      old,
+    )
+    const row = await db
+      .selectFrom('para_community_admission')
+      .select(['uri', 'state'])
+      .where('memberDid', '=', alice)
+      .executeTakeFirstOrThrow()
+    expect(row).toEqual({
+      uri: `at://${boardDid}/com.para.community.admission/${second}`,
+      state: 'blocked',
+    })
+  })
+
+  it('publishes only board-approved members and updates revocations transactionally', async () => {
+    const key = await generateKeyPair('EdDSA')
+    const publisher = await ParaPolicyPublisher.create(
+      {
+        issuer: 'did:web:appview.para.example',
+        audience: `${boardDid}#para_policy_intake`,
+        space,
+        sourceUri: boardUri,
+        kid: 'publisher-1',
+        lifetimeSec: 300,
+      },
+      key.privateKey,
+      clock,
+    )
+    const service = new ParaPolicyPublicationService(publisher)
+    await seedMembership(alice, 'active')
+    await expect(service.publish(db as never, 'outside-tx')).rejects.toThrow(
+      'requires index transaction',
+    )
+    const first = await db
+      .transaction()
+      .execute((tx) => service.publish(tx as never, 'self-join'))
+    expect(first.sourceVersion).toBe(1)
+    expect(
+      (decodeJwt(first.assertion).delta as { members: unknown[] }).members,
+    ).toEqual([])
+    await seedApproval(alice)
+    const approved = await db
+      .transaction()
+      .execute((tx) => service.publish(tx as never, 'board-approval'))
+    expect(approved.sourceVersion).toBe(2)
+    expect(
+      (decodeJwt(approved.assertion).delta as { members: unknown[] }).members,
+    ).toMatchObject([{ did: alice, membershipState: 'active', roles: [] }])
+    await db
+      .updateTable('para_community_admission')
+      .set({ state: 'blocked' })
+      .where('communityUri', '=', boardUri)
+      .where('memberDid', '=', alice)
+      .execute()
+    const revoked = await db
+      .transaction()
+      .execute((tx) => service.publish(tx as never, 'board-revocation'))
+    expect(revoked.sourceVersion).toBe(3)
+    expect(
+      (decodeJwt(revoked.assertion).delta as { members: unknown[] }).members,
+    ).toMatchObject([{ did: alice, membershipState: 'blocked', roles: [] }])
+    const stored = await db
+      .selectFrom('para_policy_outbox')
+      .select(['eventId', 'sourceVersion'])
+      .orderBy('sourceVersion')
+      .execute()
+    expect(stored).toEqual([
+      { eventId: 'self-join', sourceVersion: 1 },
+      { eventId: 'board-approval', sourceVersion: 2 },
+      { eventId: 'board-revocation', sourceVersion: 3 },
+    ])
+  })
+
   it('resolves duplicate membership rows by latest indexedAt deterministically', async () => {
+    await seedApproval(alice)
     await seedMembership(alice, 'active', {
       rkey: 'first',
       indexedAt: new Date((now - 100) * 1_000).toISOString(),
@@ -203,6 +363,7 @@ describe('governance-authorized policy materialization (Postgres)', () => {
   })
 
   it('fails closed on an unknown membership state', async () => {
+    await seedApproval(alice)
     await seedMembership(alice, 'active')
     await db
       .updateTable('para_community_membership')
@@ -256,6 +417,9 @@ describe('governance-authorized policy materialization (Postgres)', () => {
       await seedMembership(alice, 'active', { roles: ['moderator'] })
       await seedMembership(bob, 'active')
       await seedMembership(eve, 'blocked')
+      await seedApproval(alice)
+      await seedApproval(bob)
+      await seedApproval(eve, 'blocked')
 
       // @NOTE materialization and enqueue share one governance transaction;
       // nothing reads the membership tables outside it.
@@ -324,14 +488,17 @@ describe('governance-authorized policy materialization (Postgres)', () => {
   it('round-trips its migrations without losing the board roster', async () => {
     await seedMembership(alice, 'active')
     await sql`select 1`.execute(db)
+    await downAdmission(db as never)
     await downGovernanceMode(db as never)
     await downRoleAssignments(db as never)
     await downFoundations(db as never)
     await upFoundations(db as never)
     await upRoleAssignments(db as never)
     await upGovernanceMode(db as never)
+    await upAdmission(db as never)
     await seedBoard('horizontal')
     await seedMembership(alice, 'active')
+    await seedApproval(alice)
     expect(await materialize()).toEqual([
       { did: alice, membershipState: 'active', roles: [], roleAssignments: [] },
     ])
