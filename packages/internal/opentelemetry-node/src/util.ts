@@ -88,7 +88,7 @@ export function extractUrlXrpcMethodName(url: unknown): string | undefined {
     lastMethodCharPos--
   }
 
-  if (+1 < SHORTEST_CONCEIVABLE_XRPC_PATH_LENGTH) {
+  if (lastMethodCharPos + 1 < SHORTEST_CONCEIVABLE_XRPC_PATH_LENGTH) {
     return undefined
   }
 
