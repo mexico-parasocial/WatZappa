@@ -1,10 +1,13 @@
 # Spaces en WatZappa
 
-WatZappa conserva una sola línea de producto. `watzappa-permissioned-spaces`
-integra Spaces desde `feat/spaces-alpha` sobre `origin/main`; su worktree se
-mantiene separado de los directorios de desarrollo anteriores. Los cambios de
-protocolo se adaptan en commits revisables y regresan a `main` mediante PR.
-No se fusiona la rama upstream `permissioned-data` en el producto.
+PARA mantiene dos alternativas de PDS: el PDS TypeScript de WatZappa y el PDS
+Rust del repositorio `mexico-parasocial/vlpds`. Ambos pueden compartir AppView
+y los demás servicios de WatZappa; son implementaciones y releases separados.
+`watzappa-permissioned-spaces` integra Spaces en el PDS TypeScript desde
+`feat/spaces-alpha` sobre `origin/main`. Sus cambios de protocolo se adaptan en
+commits revisables y regresan a `main` mediante PR. No se fusiona la rama
+upstream `permissioned-data` en el producto ni se considera que el PR TypeScript
+actualice automáticamente el PDS Rust.
 
 ## Contrato e identidad
 
