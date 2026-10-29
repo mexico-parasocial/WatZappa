@@ -429,7 +429,8 @@ describe('para feed views', () => {
     )
     expect(explicit.postType).toEqual('matter')
     expect(explicit.interactionMode).toEqual('reddit_votes')
-    expect(explicit.voteScore).toEqual(42)
+    // The score counts public reactions; the author's voteScore awards none.
+    expect(explicit.voteScore).toEqual(fallback.voteScore)
     expect(explicit.official).toEqual(true)
     expect(explicit.party).toEqual('Independent')
     expect(explicit.community).toEqual('mx-politics')

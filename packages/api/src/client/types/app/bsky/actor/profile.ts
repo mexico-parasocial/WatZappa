@@ -24,6 +24,7 @@ export interface Main {
   description?: string
   /** Free-form pronouns text. */
   pronouns?: string
+  /** Deprecated: use links instead. */
   website?: string
   /** Small image to be displayed next to posts from account. AKA, 'profile picture' */
   avatar?: BlobRef

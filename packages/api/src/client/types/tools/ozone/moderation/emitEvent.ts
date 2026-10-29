@@ -108,6 +108,8 @@ export interface ReportAction {
   types?: string[]
   all?: boolean
   note?: string
+  /** Set true when the report activities are created by an automated process. */
+  isAutomated?: boolean
 }
 
 const hashReportAction = 'reportAction'

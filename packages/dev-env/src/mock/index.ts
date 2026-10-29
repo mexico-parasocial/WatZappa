@@ -1,11 +1,11 @@
 import {
-  AtpAgent,
+  type AtpAgent,
   COM_ATPROTO_MODERATION,
   ToolsOzoneQueueCreateQueue,
 } from '@atproto/api'
-import { Database } from '@atproto/bsky'
-import { AtUri, AtUriString } from '@atproto/syntax'
-import { EXAMPLE_LABELER, RecordRef, TestNetwork } from '../index.js'
+import type { Database } from '@atproto/bsky'
+import { AtUri, type AtUriString } from '@atproto/syntax'
+import { EXAMPLE_LABELER, RecordRef, type TestNetwork } from '../index.js'
 import { postTexts, replyTexts } from './data.js'
 import blurHashB64 from './img/blur-hash-avatar-b64.js'
 import labeledImgB64 from './img/labeled-img-b64.js'
@@ -332,6 +332,7 @@ export async function generateMockSetup(env: TestNetwork) {
       repo: urip.host,
       rkey: urip.rkey,
     })
+    const targetRef = { uri: target.uri, cid: target.cid }
     const author = picka(userAgents)
     try {
       const post = await author.app.bsky.feed.post.create(
@@ -339,8 +340,8 @@ export async function generateMockSetup(env: TestNetwork) {
         {
           text: picka(replyTexts),
           reply: {
-            root: target.value.reply?.root ?? target,
-            parent: target,
+            root: target.value.reply?.root ?? targetRef,
+            parent: targetRef,
           },
           createdAt: date.next().value,
         },
@@ -348,7 +349,6 @@ export async function generateMockSetup(env: TestNetwork) {
 
       posts.push(post)
     } catch (err) {
-      // @TODO Investigate why this sometimes fails.
       console.error('Failed to create reply', err)
     }
   }

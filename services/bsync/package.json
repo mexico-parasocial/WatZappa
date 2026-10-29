@@ -3,8 +3,7 @@
   "private": true,
   "packageManager": "pnpm@11.11.0",
   "dependencies": {
-    "@atproto/bsync": "workspace:^",
-    "dd-trace": "^5.103.0"
+    "@atproto/bsync": "workspace:^"
   },
   "type": "module",
   "exports": {

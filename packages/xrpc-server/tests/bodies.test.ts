@@ -1,13 +1,13 @@
 // @ts-nocheck
-import { jest } from '@jest/globals'
 import assert from 'node:assert'
-import * as http from 'node:http'
+import type * as http from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { Readable } from 'node:stream'
 import { brotliCompressSync, deflateSync, gzipSync } from 'node:zlib'
+import { jest } from '@jest/globals'
 import { cidForCbor } from '@atproto/common'
 import { randomBytes } from '@atproto/crypto'
-import { LexiconDoc } from '@atproto/lexicon'
+import type { LexiconDoc } from '@atproto/lexicon'
 import { ResponseType, XrpcClient } from '@atproto/xrpc'
 import * as xrpcServer from '../src/index.js'
 import { logger } from '../src/logger.js'
@@ -516,6 +516,33 @@ for (const buildServer of [buildMethodLexicons, buildAddLexicons]) {
         },
       )
       expect(data.cid).toEqual(expectedCid.toString())
+    })
+
+    it('rejects excessive content codings', async () => {
+      const promise = client.call('io.example.blobTest', {}, Buffer.from('x'), {
+        encoding: 'application/octet-stream',
+        headers: { 'content-encoding': Array(9).fill('gzip').join(', ') },
+      })
+      await expect(promise).rejects.toMatchObject({ status: 415 })
+    })
+
+    it('rejects oversized intermediate decoding stages', async () => {
+      const emptyMember = gzipSync(Buffer.alloc(0))
+      const intermediate = Buffer.concat(
+        Array(Math.ceil((2 * BLOB_LIMIT) / emptyMember.length)).fill(
+          emptyMember,
+        ),
+      )
+      const promise = client.call(
+        'io.example.blobTest',
+        {},
+        gzipSync(intermediate),
+        {
+          encoding: 'application/octet-stream',
+          headers: { 'content-encoding': 'gzip, gzip' },
+        },
+      )
+      await expect(promise).rejects.toMatchObject({ status: 413 })
     })
 
     it('fails gracefully on invalid encodings', async () => {

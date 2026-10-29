@@ -36,6 +36,9 @@ export function createMiddleware(
 
   const cache = new BlobDiskCache(ctx.cfg.blobCacheLocation)
 
+  // @TODO make the decoded image limit configurable.
+  const imageMaxSize = 100 * 1024 * 1024
+
   return async (req, res, next) => {
     if (res.destroyed) return
     if (req.method !== 'GET' && req.method !== 'HEAD') return next()
@@ -90,10 +93,20 @@ export function createMiddleware(
           throw createError(400, 'Not an image')
         }
 
+        const contentLength = upstream.headers['content-length']
+          ? Number(upstream.headers['content-length'])
+          : undefined
+        if (contentLength && contentLength > imageMaxSize) {
+          throw createError(400, 'Image too large')
+        }
+
         // Let's transform (decompress, verify CID, upscale), process and respond
 
         const transforms: Duplex[] = [
-          ...createDecoders(upstream.headers['content-encoding']),
+          ...createDecoders(upstream.headers['content-encoding'], {
+            maxSize: imageMaxSize,
+            maxSizeError: () => createError(400, 'Image too large'),
+          }),
           new VerifyCidTransform(cid),
           createImageUpscaler(options),
         ]

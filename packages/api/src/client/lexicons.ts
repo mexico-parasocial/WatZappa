@@ -189,6 +189,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
           website: {
             type: 'string',
             format: 'uri',
+            description: 'Deprecated: use links instead.',
           },
           avatar: {
             type: 'string',
@@ -1232,6 +1233,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
             website: {
               type: 'string',
               format: 'uri',
+              description: 'Deprecated: use links instead.',
             },
             avatar: {
               type: 'blob',
@@ -38903,6 +38905,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
           note: {
             type: 'string',
           },
+          isAutomated: {
+            type: 'boolean',
+            description:
+              'Set true when the report activities are created by an automated process.',
+          },
         },
       },
     },
@@ -40879,6 +40886,12 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 description:
                   'Subject DID (account-level reports) or AT-URI (record-level reports) whose reports should be closed.',
               },
+              includeAllOwned: {
+                type: 'boolean',
+                default: false,
+                description:
+                  'If true, also close reports on all subjects owned by the account, including records, messages, and conversations. Only valid when subject is an account DID.',
+              },
               reportTypes: {
                 type: 'array',
                 items: {
@@ -40897,6 +40910,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 description:
                   'Set true when this action is triggered by an automated process. Defaults to false.',
                 default: false,
+              },
+              meta: {
+                type: 'unknown',
+                description:
+                  'Optional metadata for the report activities. Lifecycle and resolution fields are controlled by the service.',
               },
             },
           },
@@ -40976,6 +40994,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 description:
                   'Set true when this activity is triggered by an automated process. Defaults to false.',
                 default: false,
+              },
+              meta: {
+                type: 'unknown',
+                description:
+                  'Optional metadata for the report activities. Lifecycle and resolution fields are controlled by the service.',
               },
             },
           },
@@ -44011,6 +44034,59 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
+  ToolsOzoneTeamListOnlineMembers: {
+    lexicon: 1,
+    id: 'tools.ozone.team.listOnlineMembers',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'List recent active team members, ordered by latest activity.',
+        parameters: {
+          type: 'params',
+          properties: {
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['members'],
+            properties: {
+              members: {
+                type: 'array',
+                maxLength: 100,
+                items: {
+                  type: 'ref',
+                  ref: 'lex:tools.ozone.team.listOnlineMembers#onlineMember',
+                },
+              },
+            },
+          },
+        },
+      },
+      onlineMember: {
+        type: 'object',
+        required: ['did', 'lastActive'],
+        properties: {
+          did: {
+            type: 'string',
+            format: 'did',
+          },
+          lastActive: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+    },
+  },
   ToolsOzoneTeamUpdateMember: {
     lexicon: 1,
     id: 'tools.ozone.team.updateMember',
@@ -45073,6 +45149,7 @@ export const ids = {
   ToolsOzoneTeamDefs: 'tools.ozone.team.defs',
   ToolsOzoneTeamDeleteMember: 'tools.ozone.team.deleteMember',
   ToolsOzoneTeamListMembers: 'tools.ozone.team.listMembers',
+  ToolsOzoneTeamListOnlineMembers: 'tools.ozone.team.listOnlineMembers',
   ToolsOzoneTeamUpdateMember: 'tools.ozone.team.updateMember',
   ToolsOzoneVerificationDefs: 'tools.ozone.verification.defs',
   ToolsOzoneVerificationGrantVerifications:

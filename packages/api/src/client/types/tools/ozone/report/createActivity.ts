@@ -38,6 +38,8 @@ export interface InputSchema {
   publicNote?: string
   /** Set true when this activity is triggered by an automated process. Defaults to false. */
   isAutomated?: boolean
+  /** Optional metadata for the report activities. Lifecycle and resolution fields are controlled by the service. */
+  meta?: { [_ in string]: unknown }
 }
 
 export interface OutputSchema {

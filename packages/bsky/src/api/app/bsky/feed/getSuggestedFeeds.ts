@@ -1,7 +1,7 @@
 import { mapDefined } from '@atproto/common'
-import { AtUriString } from '@atproto/syntax'
-import { Server } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import type { AtUriString } from '@atproto/syntax'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import { parseString } from '../../../../hydration/util.js'
 import { app } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
@@ -20,7 +20,11 @@ export default function (server: Server, ctx: AppContext) {
         cursor: params.cursor,
       })
       const uris = suggestedRes.uris as AtUriString[]
-      const hydrateCtx = await ctx.hydrator.createContext({ labelers, viewer })
+      const hydrateCtx = await ctx.hydrator.createContext({
+        labelers,
+        viewer,
+        xrpcEndpoint: app.bsky.feed.getSuggestedFeeds.$lxm,
+      })
       const hydration = await ctx.hydrator.hydrateFeedGens(uris, hydrateCtx)
       const feedViews = mapDefined(uris, (uri) =>
         ctx.views.feedGenerator(uri, hydration),
