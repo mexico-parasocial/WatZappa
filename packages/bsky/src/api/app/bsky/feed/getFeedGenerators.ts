@@ -1,15 +1,15 @@
 import { mapDefined } from '@atproto/common'
-import { AtUriString } from '@atproto/syntax'
-import { Server } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import {
+import type { AtUriString } from '@atproto/syntax'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import type {
   HydrateCtx,
   HydrationState,
   Hydrator,
 } from '../../../../hydration/hydrator.js'
 import { app } from '../../../../lexicons/index.js'
 import { createPipeline, noRules } from '../../../../pipeline.js'
-import { Views } from '../../../../views/index.js'
+import type { Views } from '../../../../views/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
@@ -29,7 +29,11 @@ export default function (server: Server, ctx: AppContext) {
     handler: async ({ params, auth, req }) => {
       const viewer = auth.credentials.iss
       const labelers = ctx.reqLabelers(req)
-      const hydrateCtx = await ctx.hydrator.createContext({ labelers, viewer })
+      const hydrateCtx = await ctx.hydrator.createContext({
+        labelers,
+        viewer,
+        xrpcEndpoint: app.bsky.feed.getFeedGenerators.$lxm,
+      })
       const view = await getFeedGenerators({ ...params, hydrateCtx }, ctx)
       return {
         encoding: 'application/json',

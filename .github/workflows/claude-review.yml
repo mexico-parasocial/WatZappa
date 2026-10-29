@@ -39,10 +39,25 @@ jobs:
       cancel-in-progress: true
 
     steps:
+      # Temporary until fixed runner images roll out:
+      # https://github.com/actions/runner-images/issues/15018
+      - name: Update Ubuntu CA certificates
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install --only-upgrade --no-install-recommends -y ca-certificates
+
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+
+      # Override the action's bundled Bun for the CA distrust and Brotli fixes.
+      - name: Set up patched Bun
+        id: setup-bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+          no-cache: true
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v6
@@ -54,6 +69,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           use_bedrock: 'true'
+          path_to_bun_executable: ${{ steps.setup-bun.outputs.bun-path }}
           additional_permissions: |
             actions: read
           track_progress: true

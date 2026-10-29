@@ -119,6 +119,10 @@
         },
         "note": {
           "type": "string"
+        },
+        "isAutomated": {
+          "type": "boolean",
+          "description": "Set true when the report activities are created by an automated process."
         }
       }
     }

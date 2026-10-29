@@ -21,12 +21,16 @@ export type QueryParams = {}
 export interface InputSchema {
   /** Subject DID (account-level reports) or AT-URI (record-level reports) whose reports should be closed. */
   subject: string
+  /** If true, also close reports on all subjects owned by the account, including records, messages, and conversations. Only valid when subject is an account DID. */
+  includeAllOwned?: boolean
   /** If specified, only reports of the given report types (fully qualified reason NSIDs) are closed. When omitted, all non-closed reports on the subject are targeted. */
   reportTypes?: string[]
   /** Optional moderator-only note recorded on each close activity. Not visible to reporters. */
   internalNote?: string
   /** Set true when this action is triggered by an automated process. Defaults to false. */
   isAutomated?: boolean
+  /** Optional metadata for the report activities. Lifecycle and resolution fields are controlled by the service. */
+  meta?: { [_ in string]: unknown }
 }
 
 export interface OutputSchema {

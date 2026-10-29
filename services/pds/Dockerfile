@@ -1,5 +1,5 @@
 # NOTE there is an additional build stage below that should match
-FROM node:24.18-alpine3.23 AS build
+FROM node:24.22-alpine3.23 AS build
 
 RUN npm install -g pnpm@11.11.0
 
@@ -62,6 +62,7 @@ COPY ./packages/oauth/oauth-client ./packages/oauth/oauth-client
 COPY ./packages/oauth/oauth-provider-api ./packages/oauth/oauth-provider-api
 COPY ./packages/oauth/oauth-provider-ui ./packages/oauth/oauth-provider-ui
 COPY ./packages/oauth/oauth-provider ./packages/oauth/oauth-provider
+-COPY ./packages/oauth/oauth-resolver ./packages/oauth/oauth-resolver
 COPY ./packages/oauth/oauth-scopes ./packages/oauth/oauth-scopes
 COPY ./packages/oauth/oauth-types ./packages/oauth/oauth-types
 COPY ./packages/pds ./packages/pds
@@ -80,7 +81,7 @@ RUN pnpm run --recursive --stream --workspace-concurrency 1 --filter 'pds-servic
 RUN pnpm install --prod --shamefully-hoist --frozen-lockfile --prefer-offline --config.confirmModulesPurge=false
 
 # Uses assets from build stage to reduce build size
-FROM node:24.18-alpine3.23
+FROM node:24.22-alpine3.23
 
 RUN apk add --update dumb-init
 

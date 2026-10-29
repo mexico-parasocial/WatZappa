@@ -1,7 +1,7 @@
 import { mapDefined } from '@atproto/common'
-import { AtUriString } from '@atproto/syntax'
-import { Server } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import type { AtUriString } from '@atproto/syntax'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import { parseString } from '../../../../hydration/util.js'
 import { app } from '../../../../lexicons/index.js'
 import {
@@ -26,6 +26,7 @@ export default function (server: Server, ctx: AppContext) {
         }),
       )
       const hydrateCtx = await ctx.hydrator.createContext({
+        xrpcEndpoint: app.bsky.unspecced.getPopularFeedGenerators.$lxm,
         viewer,
         labelers,
         features,

@@ -503,7 +503,9 @@ describe('Atmosphere Explore', () => {
     ).toBe(true)
     const gallery = body.photos.items[0].view
     expect(app.bsky.embed.external.viewGallery.$matches(gallery)).toBe(true)
-    expect(gallery.uri).toBe(galleryUri)
+    expect(gallery.uri).toBe(
+      `https://grain.social/profile/${author}/gallery/gallery`,
+    )
     expect(gallery.associatedRefs?.map(({ uri }) => uri)).toEqual([
       galleryUri,
       itemUri,
@@ -643,7 +645,11 @@ describe('Atmosphere Explore', () => {
     expect(body.articles.items[0].view.publisher).toMatchObject({
       title: 'Publication',
     })
-    expect(body.photos.items.map(({ view }) => view.uri)).toEqual(galleries)
+    expect(body.photos.items.map(({ view }) => view.uri)).toEqual(
+      galleries.map(
+        (_, i) => `https://grain.social/profile/${author}/gallery/large${i}`,
+      ),
+    )
     expect(
       body.photos.items.map(({ view }) =>
         view.items.map(

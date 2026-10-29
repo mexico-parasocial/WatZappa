@@ -1,17 +1,13 @@
 import assert from 'node:assert'
-import { IncomingMessage, OutgoingMessage } from 'node:http'
-import { Duplex, Readable, pipeline } from 'node:stream'
-import {
+import type { IncomingMessage, OutgoingMessage } from 'node:http'
+import { type Duplex, type Readable, pipeline } from 'node:stream'
+import bodyParser from 'body-parser'
+import type {
   Request as ExpressRequest,
   Response as ExpressResponse,
-  json,
-  text,
 } from 'express'
-// eslint-disable-next-line import/default, import/no-named-as-default-member
-import mimeTypes from 'mime-types'
-// eslint-disable-next-line import/no-named-as-default-member
-const { contentType } = mimeTypes
-import { MaxSizeChecker, createDecoders } from '@atproto/common'
+import { contentType } from 'mime-types'
+import { createDecoders } from '@atproto/common'
 import { jsonToLex } from '@atproto/lex-json'
 import { l } from '@atproto/lex-schema'
 import {
@@ -19,26 +15,26 @@ import {
   type LexXrpcProcedure,
   type LexXrpcQuery,
   type LexXrpcSubscription,
-  Lexicons,
+  type Lexicons,
   jsonToLex as jsonToLexWithBlobRef,
 } from '@atproto/lexicon'
 import { ResponseType } from '@atproto/xrpc'
 import {
-  ErrorResult,
+  type ErrorResult,
   InternalServerError,
   InvalidRequestError,
   XRPCError,
 } from './errors.js'
 import {
-  Auth,
-  Input,
-  LexMethodInput,
-  LexMethodOutput,
-  LexMethodParams,
-  Output,
-  Params,
-  RouteOptions,
-  UndecodedParams,
+  type Auth,
+  type Input,
+  type LexMethodInput,
+  type LexMethodOutput,
+  type LexMethodParams,
+  type Output,
+  type Params,
+  type RouteOptions,
+  type UndecodedParams,
   handlerSuccess,
 } from './types.js'
 
@@ -163,12 +159,13 @@ export function getQueryParams(
   req: IncomingMessage | ExpressRequest,
   opts?: { parseLoose?: boolean },
 ): UndecodedParams {
-  if ('query' in req) return req.query
-
   const result: UndecodedParams = Object.create(null)
+  const expressQuery = 'query' in req ? req.query : undefined
 
   const searchParams = getSearchParams(req.url, opts)
-  if (!searchParams) return result
+  if (!searchParams) {
+    return expressQuery ?? result
+  }
 
   if (searchParams.has('__proto__')) {
     // Prevent prototype pollution
@@ -181,6 +178,17 @@ export function getQueryParams(
   for (const key of searchParams.keys()) {
     const values = searchParams.getAll(key)
     result[key] = values.length === 1 ? values[0] : values
+  }
+
+  // Preserve Express's support for bracket-style query parameters in the
+  // legacy Lexicons path, but let repeated standard params from the URL win so
+  // Express/qs array limits cannot collapse them into numeric-keyed objects.
+  if (expressQuery) {
+    for (const [key, value] of Object.entries(expressQuery)) {
+      if (!(key in result)) {
+        result[key] = value
+      }
+    }
   }
 
   return result
@@ -238,11 +246,7 @@ export function createLexiconInputVerifier<I extends Input = Input>(
   if (def.type === 'query' || !def.input) {
     return async (req) => {
       // @NOTE We allow (and ignore) "empty" bodies
-      if (getBodyPresence(req) === 'present') {
-        throw new InvalidRequestError(
-          `A request body was provided when none was expected`,
-        )
-      }
+      await assertEmptyBody(req)
 
       return undefined as I
     }
@@ -312,12 +316,7 @@ export function createSchemaInputVerifier<M extends l.Procedure | l.Query>(
   if (!input?.encoding) {
     //
     return async (req) => {
-      if (getBodyPresence(req) === 'present') {
-        // @NOTE we *could* also discard the body here instead of throwing an error
-        throw new InvalidRequestError(
-          `A request body was provided when none was expected`,
-        )
-      }
+      await assertEmptyBody(req)
 
       return undefined as LexMethodInput<M>
     }
@@ -524,14 +523,44 @@ function getBodyPresence(req: IncomingMessage): BodyPresence {
   return 'missing'
 }
 
+async function assertEmptyBody(req: IncomingMessage): Promise<void> {
+  const presence = getBodyPresence(req)
+  if (presence !== 'present') return
+  if (req.headers['transfer-encoding'] == null) {
+    throw new InvalidRequestError(
+      `A request body was provided when none was expected`,
+    )
+  }
+
+  // @NOTE Transfer-Encoding only signals framing; a chunked body may be empty.
+  let hasData = false
+  try {
+    for await (const chunk of req) {
+      if (chunk.length > 0) hasData = true
+    }
+  } catch (cause) {
+    throw new InvalidRequestError(
+      'Failed to process unexpected request body',
+      undefined,
+      { cause },
+    )
+  }
+
+  if (hasData) {
+    throw new InvalidRequestError(
+      `A request body was provided when none was expected`,
+    )
+  }
+}
+
 function createBodyParser(inputEncoding: string, options: RouteOptions) {
   if (inputEncoding === ENCODING_ANY) {
     // When the lexicon's input encoding is */*, the handler will determine how to process it
     return
   }
   const { jsonLimit, textLimit } = options
-  const jsonParser = json({ limit: jsonLimit })
-  const textParser = text({ limit: textLimit })
+  const jsonParser = bodyParser.json({ limit: jsonLimit })
+  const textParser = bodyParser.text({ limit: textLimit })
   // Transform json and text parser middlewares into a single function
   return (req: ExpressRequest, res: ExpressResponse) => {
     return new Promise<void>((resolve, reject) => {
@@ -574,7 +603,11 @@ function decodeBodyStream(
 
   let transforms: Duplex[]
   try {
-    transforms = createDecoders(contentEncoding)
+    transforms = createDecoders(contentEncoding, {
+      maxSize,
+      maxSizeError: () =>
+        new XRPCError(ResponseType.PayloadTooLarge, 'request entity too large'),
+    })
   } catch (cause) {
     throw new XRPCError(
       ResponseType.UnsupportedMediaType,
@@ -582,15 +615,6 @@ function decodeBodyStream(
       undefined,
       { cause },
     )
-  }
-
-  if (maxSize !== undefined) {
-    const maxSizeChecker = new MaxSizeChecker(
-      maxSize,
-      () =>
-        new XRPCError(ResponseType.PayloadTooLarge, 'request entity too large'),
-    )
-    transforms.push(maxSizeChecker)
   }
 
   return transforms.length > 0

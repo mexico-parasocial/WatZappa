@@ -2,13 +2,14 @@
 
 - Reject wildcard `queryLabels` requests before accessing the DB unless `OZONE_LABEL_QUERY_WILDCARDS_ENABLED` is enabled; exact queries remain available.
 - Execute cancellable listing SQL with the HTTP signal and Kysely's `inflightQueryAbortStrategy: 'cancel query'`; a signal alone leaves PostgreSQL work running.
+- Online-member activity lookups use per-member indexed seeks; keep the literal non-automated predicate for the partial report-activity index. Pre-create the index concurrently on large production tables before migrating.
 - Reporter statistics seek recent non-appeal reports by reporter/time and look up distinct linked action IDs by primary key; never join reports to subject event history.
 
 - Read previews share `inboxViewerDid`; writes always use the authenticated DID.
 - Notification preference writes atomically patch only provided categories. Unset category columns inherit the retained push column to preserve existing opt-outs without a backfill; preferences do not suppress in-app inbox activity.
 - Produce moderation notifications from the common `ModerationService.logEvent` path so daemon actions are covered. Keep source snapshots in the source transaction, and isolate optional queries/inserts with `runNotificationWork` savepoints; a caught SQL error alone leaves PostgreSQL's transaction aborted.
 - Batch report notifications and skip non-transition activities before querying. Viewer responses never expose moderator note text.
-- Inbox appeal state and filters use the latest appeal report's status, as the submission guard does; subject reviewState and appealed flags are not synchronized by report activities. Unread includes appeal report updates, independently of the requested sort field. Apply filters before pagination.
+- Inbox appeal state and filters prioritize active reports; eligibility considers inbox appeal reports, including reopened and pre-cutoff history. Serialize inbox appeal submissions by subject; subject reviewState and appealed flags are not synchronized by report activities. Unread includes appeal report updates, independently of the requested sort field. Apply filters before pagination.
 - Appeal outcomes come from the current close activity and its linked corrective event, never merely nonempty actionEventIds (which also contain the appealed action). No-action appeal closures record denied in activity metadata; unknown historical closures omit the outcome. Resolution notifications snapshot the outcome.
 - Seek the latest appeal per requested subject with an indexed lateral LIMIT before joining its closure and resolution event; outcome work must be bounded by the page size, not appeal history.
 - Read `NEXT_PUBLIC_STRIKE_SUSPENSION_CONFIG` through configuration. The second and third sorted strike thresholds determine warning and atRisk; retain the full hours map, including Infinity.

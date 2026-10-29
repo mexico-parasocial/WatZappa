@@ -561,6 +561,7 @@ import * as ToolsOzoneTeamAddMember from './types/tools/ozone/team/addMember.js'
 import * as ToolsOzoneTeamDefs from './types/tools/ozone/team/defs.js'
 import * as ToolsOzoneTeamDeleteMember from './types/tools/ozone/team/deleteMember.js'
 import * as ToolsOzoneTeamListMembers from './types/tools/ozone/team/listMembers.js'
+import * as ToolsOzoneTeamListOnlineMembers from './types/tools/ozone/team/listOnlineMembers.js'
 import * as ToolsOzoneTeamUpdateMember from './types/tools/ozone/team/updateMember.js'
 import * as ToolsOzoneVerificationDefs from './types/tools/ozone/verification/defs.js'
 import * as ToolsOzoneVerificationGrantVerifications from './types/tools/ozone/verification/grantVerifications.js'
@@ -1118,6 +1119,7 @@ export * as ToolsOzoneTeamAddMember from './types/tools/ozone/team/addMember.js'
 export * as ToolsOzoneTeamDefs from './types/tools/ozone/team/defs.js'
 export * as ToolsOzoneTeamDeleteMember from './types/tools/ozone/team/deleteMember.js'
 export * as ToolsOzoneTeamListMembers from './types/tools/ozone/team/listMembers.js'
+export * as ToolsOzoneTeamListOnlineMembers from './types/tools/ozone/team/listOnlineMembers.js'
 export * as ToolsOzoneTeamUpdateMember from './types/tools/ozone/team/updateMember.js'
 export * as ToolsOzoneVerificationDefs from './types/tools/ozone/verification/defs.js'
 export * as ToolsOzoneVerificationGrantVerifications from './types/tools/ozone/verification/grantVerifications.js'
@@ -13117,6 +13119,18 @@ export class ToolsOzoneTeamNS {
   ): Promise<ToolsOzoneTeamListMembers.Response> {
     return this._client.call(
       'tools.ozone.team.listMembers',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  listOnlineMembers(
+    params?: ToolsOzoneTeamListOnlineMembers.QueryParams,
+    opts?: ToolsOzoneTeamListOnlineMembers.CallOptions,
+  ): Promise<ToolsOzoneTeamListOnlineMembers.Response> {
+    return this._client.call(
+      'tools.ozone.team.listOnlineMembers',
       params,
       undefined,
       opts,
