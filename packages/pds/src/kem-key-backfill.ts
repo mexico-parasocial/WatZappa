@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import fs from 'node:fs/promises'
 import { setTimeout as sleep } from 'node:timers/promises'
 import * as plc from '@did-plc/lib'
-import { MINUTE, SECOND, fileExists, rmIfExists } from '@atproto/common'
+import { MINUTE, SECOND, rmIfExists } from '@atproto/common'
 import { P256Keypair } from '@atproto/crypto'
 import type { DidString } from '@atproto/lex'
 import type { AppContext } from './context.js'
@@ -16,10 +16,9 @@ import { spaceLogger } from './logger.js'
  * background; until it reaches an account, requested response MACs are unavailable.
  *
  * A lease selects one process to do the work, and the lease row records when it
- * completes so no process runs it again. An account's key file is written only
- * after its key is published, so the file marks the account as done and a run
- * cut short picks up where it left off. Failed accounts are retried until every
- * account succeeds.
+ * completes so no process runs it again. A pending private key is persisted
+ * before publication, so retries and overlapping workers always publish the
+ * same key even when a PLC update succeeds but its response is lost.
  */
 export class KemKeyBackfill implements AsyncDisposable {
   private readonly owner = randomUUID()
@@ -106,17 +105,42 @@ export class KemKeyBackfill implements AsyncDisposable {
    * Give an account a KEM key if it lacks one. Accounts whose PLC doc this PDS
    * cannot update still get a key, and their owner must publish it themselves.
    *
-   * The lease is checked before each step with an effect, so a process that
-   * stalled long enough to lose it cannot publish or write a key over another's.
+   * The pending key is installed without overwriting another process's key.
+   * External PLC operations cannot be fenced by the local lease; using the
+   * same persistent key prevents an old worker from publishing a different one.
    */
   private async backfillAccount(did: DidString): Promise<void> {
     const { kemKeyLocation } = await this.ctx.actorStore.getLocation(did)
-    if (await fileExists(kemKeyLocation)) return
     if (!(await this.ctx.actorStore.exists(did))) return
-
-    const kemKey = await P256Keypair.create({ exportable: true })
+    const pendingLocation = `${kemKeyLocation}.backfill-pending`
+    let pending = await readPendingKey(pendingLocation)
+    if (!pending) {
+      if (await this.ctx.actorStore.kemKeypair(did)) return
+      await this.assertLease()
+      const candidate = await P256Keypair.create({ exportable: true })
+      const temporary = `${pendingLocation}.${randomUUID()}.tmp`
+      try {
+        await fs.writeFile(temporary, await candidate.export(), { mode: 0o600 })
+        try {
+          await fs.link(temporary, pendingLocation)
+        } catch (err) {
+          if (!isAlreadyExists(err)) throw err
+        }
+      } finally {
+        await rmIfExists(temporary)
+      }
+      pending = await readPendingKey(pendingLocation)
+      if (!pending) throw new Error('KEM backfill key disappeared')
+    }
+    const current = await this.ctx.actorStore.kemKeypair(did)
+    if (current) {
+      if (current.did() !== pending.did()) {
+        throw new Error('KEM backfill key conflicts with existing account key')
+      }
+      return
+    }
     await this.assertLease()
-    if (await publishKemKey(this.ctx, did, kemKey.did())) {
+    if (await publishKemKey(this.ctx, did, pending.did())) {
       await this.ctx.sequencer.sequenceIdentity(did)
     } else {
       spaceLogger.warn(
@@ -125,15 +149,16 @@ export class KemKeyBackfill implements AsyncDisposable {
       )
     }
 
-    // The file marks the account done, so it must appear whole or not at all
-    const tmpLocation = `${kemKeyLocation}.${randomUUID()}.tmp`
+    await this.assertLease()
     try {
-      await fs.writeFile(tmpLocation, await kemKey.export(), { mode: 0o600 })
-      await this.assertLease()
-      await fs.rename(tmpLocation, kemKeyLocation)
-    } finally {
-      await rmIfExists(tmpLocation)
+      await fs.link(pendingLocation, kemKeyLocation)
+    } catch (err) {
+      if (!isAlreadyExists(err)) throw err
+      const existing = await this.ctx.actorStore.kemKeypair(did)
+      if (!existing || existing.did() !== pending.did()) throw err
     }
+    // Keep the hard link so a stalled worker cannot create a different pending
+    // key after this backfill has completed.
   }
 
   private async assertLease(): Promise<void> {
@@ -193,6 +218,21 @@ export class KemKeyBackfill implements AsyncDisposable {
   async [Symbol.asyncDispose](): Promise<void> {
     await this.destroy()
   }
+}
+
+async function readPendingKey(
+  location: string,
+): Promise<P256Keypair | undefined> {
+  try {
+    return await P256Keypair.import(await fs.readFile(location))
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return undefined
+    throw err
+  }
+}
+
+function isAlreadyExists(err: unknown): boolean {
+  return (err as NodeJS.ErrnoException).code === 'EEXIST'
 }
 
 class LeaseLostError extends Error {
