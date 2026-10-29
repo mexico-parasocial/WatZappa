@@ -1,5 +1,91 @@
 # @atproto-labs/handle-resolver-node
 
+## 0.2.15
+
+### Patch Changes
+
+- [#5687](https://github.com/bluesky-social/atproto/pull/5687) [`943170b`](https://github.com/bluesky-social/atproto/commit/943170bd390705fbb16920688f8f09ec7078a59b) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Allow speficying a custom `safeFetch` option. The `fetch` option will only be used if no `safeFetch` is provided.
+
+## 0.2.14
+
+### Patch Changes
+
+- Updated dependencies [[`0e60f3f`](https://github.com/bluesky-social/atproto/commit/0e60f3f007cbd9812975489f0da19bf7613da831)]:
+  - @atproto-labs/fetch-node@0.4.3
+
+## 0.2.13
+
+### Patch Changes
+
+- Updated dependencies [[`fc60876`](https://github.com/bluesky-social/atproto/commit/fc60876949cca1ca28e98273ecfc97a151d3ebfc)]:
+  - @atproto-labs/fetch-node@0.4.2
+
+## 0.2.12
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto-labs/fetch-node@0.4.1
+
+## 0.2.11
+
+### Patch Changes
+
+- Updated dependencies [[`5019f55`](https://github.com/bluesky-social/atproto/commit/5019f5537317ee75ad4527db212bc27c3085fe67)]:
+  - @atproto/did@0.5.6
+  - @atproto-labs/handle-resolver@0.4.10
+
+## 0.2.10
+
+### Patch Changes
+
+- Updated dependencies [[`f88aa58`](https://github.com/bluesky-social/atproto/commit/f88aa5842df9aba9f208a6073272b43ef9bd089d)]:
+  - @atproto-labs/fetch-node@0.4.0
+
+## 0.2.9
+
+### Patch Changes
+
+- Updated dependencies [[`fe4087e`](https://github.com/bluesky-social/atproto/commit/fe4087ecb7a7cc53c7081c9f97d49121e5251c36)]:
+  - @atproto/did@0.5.5
+  - @atproto-labs/handle-resolver@0.4.9
+
+## 0.2.8
+
+### Patch Changes
+
+- Updated dependencies [[`6a3d607`](https://github.com/bluesky-social/atproto/commit/6a3d6073cb66c527b5b109242049c85c36b9658c)]:
+  - @atproto-labs/handle-resolver@0.4.8
+  - @atproto-labs/fetch-node@0.3.7
+
+## 0.2.7
+
+### Patch Changes
+
+- Updated dependencies [[`f136380`](https://github.com/bluesky-social/atproto/commit/f136380964a8ea52ef031a9732d3d1f1f1ab0c4a)]:
+  - @atproto-labs/handle-resolver@0.4.7
+  - @atproto-labs/fetch-node@0.3.6
+
+## 0.2.6
+
+### Patch Changes
+
+- [#5193](https://github.com/bluesky-social/atproto/pull/5193) [`ce386ee`](https://github.com/bluesky-social/atproto/commit/ce386eed324f813601db57f873fbb3b987492001) Thanks [@Rex0Lux](https://github.com/Rex0Lux)! - Add an `onError` observability option to the handle resolvers. `WellKnownHandleResolver` previously swallowed every non-abort failure and returned `null`, indistinguishable from "no `.well-known/atproto-did` endpoint exists". Passing `onError` when constructing a resolver (including `AtprotoHandleResolver` and `AtprotoHandleResolverNode`) exposes the underlying cause (SSRF blocks, 5xx upstream errors, redirects, network errors, etc.) without changing the `null` return contract. Because it is set on the instance, it also covers resolution performed internally, for example by an OAuth client the resolver is passed to.
+
+- Updated dependencies [[`ce386ee`](https://github.com/bluesky-social/atproto/commit/ce386eed324f813601db57f873fbb3b987492001)]:
+  - @atproto-labs/handle-resolver@0.4.6
+
+## 0.2.5
+
+### Patch Changes
+
+- [#5197](https://github.com/bluesky-social/atproto/pull/5197) [`a0c49d9`](https://github.com/bluesky-social/atproto/commit/a0c49d9e8bc685c5a747a8d3b2775c73c63fdb6f) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Rewrite import statements to be compatible with TypeScript's `verbatimModuleSyntax` config.
+
+- Updated dependencies [[`a0c49d9`](https://github.com/bluesky-social/atproto/commit/a0c49d9e8bc685c5a747a8d3b2775c73c63fdb6f)]:
+  - @atproto-labs/handle-resolver@0.4.5
+  - @atproto-labs/fetch-node@0.3.5
+  - @atproto/did@0.5.4
+
 ## 0.2.4
 
 ### Patch Changes

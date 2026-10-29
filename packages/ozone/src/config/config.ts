@@ -5,6 +5,7 @@ import {
   type DidString,
   type UriString,
   isDatetimeString,
+  isDidString,
   toDatetimeString,
 } from '@atproto/lex'
 import type { OzoneEnvironment } from './env.js'
@@ -87,6 +88,9 @@ export const envToCfg = (env: OzoneEnvironment): OzoneConfig => {
     plcUrl: env.didPlcUrl,
     cacheMaxTTL: env.didCacheMaxTTL ?? DAY,
     cacheStaleTTL: env.didCacheStaleTTL ?? HOUR,
+    cacheMaxEntries: env.didCacheMaxEntries,
+    cacheMaxBytes: env.didCacheMaxBytes,
+    cacheMaxDocBytes: env.didCacheMaxDocBytes,
   }
 
   const blobDivertServiceCfg =
@@ -116,6 +120,23 @@ export const envToCfg = (env: OzoneEnvironment): OzoneConfig => {
     reportDurationMs: env.assignmentReportDurationMs ?? 5 * MINUTE,
   }
 
+  const excludedDids = (env.onlineMembersExcludedDids ?? []).map((did) =>
+    did.trim(),
+  )
+  assert(
+    excludedDids.every(isDidString),
+    'OZONE_ONLINE_MEMBERS_EXCLUDED_DIDS must be a comma-separated list of DIDs',
+  )
+  const onlineMembersCfg: OzoneConfig['onlineMembers'] = {
+    excludedDids: [...new Set(excludedDids)],
+    activeWindowMs: env.onlineMembersActiveWindowMs ?? 5 * MINUTE,
+  }
+  assert(
+    Number.isSafeInteger(onlineMembersCfg.activeWindowMs) &&
+      onlineMembersCfg.activeWindowMs > 0,
+    'OZONE_ONLINE_MEMBERS_ACTIVE_WINDOW_MS must be a positive integer',
+  )
+
   const inboxCfg: OzoneConfig['inbox'] = {
     appealWindowMonths: env.inboxAppealWindowMonths ?? 6,
     policyDefaultUrl: env.inboxPolicyDefaultUrl ?? DEFAULT_INBOX_POLICY_URL,
@@ -144,6 +165,7 @@ export const envToCfg = (env: OzoneEnvironment): OzoneConfig => {
     access: accessCfg,
     verifier: verifierCfg,
     assignments: assignmentsCfg,
+    onlineMembers: onlineMembersCfg,
     inbox: inboxCfg,
     strikeSuspension: parseStrikeSuspensionConfig(env.strikeSuspensionConfig),
     stats: statsCfg,
@@ -162,11 +184,17 @@ export type OzoneConfig = {
   blobDivert: BlobDivertConfig | null
   access: AccessConfig
   assignments: AssignmentsConfig
+  onlineMembers: OnlineMembersConfig
   strikeSuspension: StrikeSuspensionConfig
   inbox: InboxConfig
   stats: StatsConfig
   jetstreamUrl?: string
   verifier: VerifierConfig | null
+}
+
+export type OnlineMembersConfig = {
+  excludedDids: DidString[]
+  activeWindowMs: number
 }
 
 export type StatsConfig = {
@@ -242,6 +270,9 @@ export type IdentityConfig = {
   plcUrl: string
   cacheStaleTTL: number
   cacheMaxTTL: number
+  cacheMaxEntries?: number
+  cacheMaxBytes?: number
+  cacheMaxDocBytes?: number
 }
 
 export type AccessConfig = {

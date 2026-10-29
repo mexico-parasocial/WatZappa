@@ -85,6 +85,7 @@ export interface ProfileViewDetailed {
   displayName?: string
   description?: string
   pronouns?: string
+  /** Deprecated: use links instead. */
   website?: string
   avatar?: string
   banner?: string

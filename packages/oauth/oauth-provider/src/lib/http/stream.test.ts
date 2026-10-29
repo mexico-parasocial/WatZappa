@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { parseHttpRequest } from './stream.js'
 
 // Bodies are bounded at two layers: `content-length` bounds the wire size, and
-// a MaxSizeChecker bounds the decoded size. The cases below cross those bounds
+// createDecoders bounds the decoded size. The cases below cross those bounds
 // independently — a small gzip body that decodes past the limit, an oversized
 // identity body, an oversized `content-length` — since neither bound implies
 // the other.
@@ -91,6 +91,28 @@ describe('parseHttpRequest', () => {
     })
     await expect(parseHttpRequest(req, ['json'])).rejects.toMatchObject({
       status: 400,
+    })
+  })
+
+  it('rejects excessive content codings with HTTP 415.', async () => {
+    const req = asRequest(Buffer.from('{}'), {
+      'content-type': 'application/json',
+      'content-encoding': Array(9).fill('gzip').join(', '),
+    })
+    await expect(parseHttpRequest(req, ['json'])).rejects.toMatchObject({
+      status: 415,
+    })
+  })
+
+  it('rejects oversized intermediate decoding stages with HTTP 413.', async () => {
+    const emptyMember = gzipSync(Buffer.alloc(0))
+    const intermediate = Buffer.concat(Array(110).fill(emptyMember))
+    const req = asRequest(gzipSync(intermediate), {
+      'content-type': 'application/json',
+      'content-encoding': 'gzip, gzip',
+    })
+    await expect(parseHttpRequest(req, ['json'], 1024)).rejects.toMatchObject({
+      status: 413,
     })
   })
 

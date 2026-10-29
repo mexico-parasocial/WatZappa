@@ -2,6 +2,9 @@ import { envBool, envInt, envList, envStr } from '@atproto/common'
 import type { DidString, UriString } from '@atproto/lex'
 
 export const readEnv = (): OzoneEnvironment => {
+  const onlineMembersActiveWindowMs = envStr(
+    'OZONE_ONLINE_MEMBERS_ACTIVE_WINDOW_MS',
+  )
   return {
     nodeEnv: envStr('NODE_ENV'),
     devMode: envBool('OZONE_DEV_MODE'),
@@ -39,10 +42,18 @@ export const readEnv = (): OzoneEnvironment => {
     didPlcUrl: envStr('OZONE_DID_PLC_URL'),
     didCacheStaleTTL: envInt('OZONE_DID_CACHE_STALE_TTL'),
     didCacheMaxTTL: envInt('OZONE_DID_CACHE_MAX_TTL'),
+    didCacheMaxEntries: envInt('OZONE_DID_CACHE_MAX_ENTRIES'),
+    didCacheMaxBytes: envInt('OZONE_DID_CACHE_MAX_BYTES'),
+    didCacheMaxDocBytes: envInt('OZONE_DID_CACHE_MAX_DOC_BYTES'),
     cdnPaths: envList('OZONE_CDN_PATHS'),
     adminDids: envList('OZONE_ADMIN_DIDS') as DidString[],
     moderatorDids: envList('OZONE_MODERATOR_DIDS') as DidString[],
     triageDids: envList('OZONE_TRIAGE_DIDS') as DidString[],
+    onlineMembersExcludedDids: envList('OZONE_ONLINE_MEMBERS_EXCLUDED_DIDS'),
+    onlineMembersActiveWindowMs:
+      onlineMembersActiveWindowMs === undefined
+        ? undefined
+        : Number(onlineMembersActiveWindowMs),
     adminPassword: envStr('OZONE_ADMIN_PASSWORD'),
     signingKeyHex: envStr('OZONE_SIGNING_KEY_HEX'),
     pdsHeaders: envList('OZONE_PDS_HEADERS'),
@@ -101,10 +112,15 @@ export type OzoneEnvironment = {
   didPlcUrl?: string
   didCacheStaleTTL?: number
   didCacheMaxTTL?: number
+  didCacheMaxEntries?: number
+  didCacheMaxBytes?: number
+  didCacheMaxDocBytes?: number
   cdnPaths?: string[]
   adminDids: DidString[]
   moderatorDids: DidString[]
   triageDids: DidString[]
+  onlineMembersExcludedDids?: string[]
+  onlineMembersActiveWindowMs?: number
   adminPassword?: string
   signingKeyHex?: string
   pdsHeaders?: string[]

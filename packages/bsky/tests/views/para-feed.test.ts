@@ -430,7 +430,8 @@ describe('para feed views', () => {
     )
     expect(explicit.postType).toEqual('matter')
     expect(explicit.interactionMode).toEqual('reddit_votes')
-    expect(explicit.voteScore).toEqual(42)
+    // The score counts public reactions; the author's voteScore awards none.
+    expect(explicit.voteScore).toEqual(fallback.voteScore)
     expect(explicit.official).toEqual(true)
     expect(explicit.party).toEqual('Independent')
     expect(explicit.community).toEqual('mx-politics')
@@ -501,10 +502,15 @@ describe('para feed views', () => {
   })
 
   it('returns para profile stats and status view for an actor', async () => {
-    await sc.agent.com.atproto.repo.putRecord({
-      repo: alice, collection: 'app.bsky.actor.profile', rkey: 'self',
-      record: {displayName: 'Alice', revealInfluence: true},
-    }, {headers: sc.getHeaders(alice)})
+    await sc.agent.com.atproto.repo.putRecord(
+      {
+        repo: alice,
+        collection: 'app.bsky.actor.profile',
+        rkey: 'self',
+        record: { displayName: 'Alice', revealInfluence: true },
+      },
+      { headers: sc.getHeaders(alice) },
+    )
     await createParaStatus(sc, alice, {
       status: 'Building cross-party policy drafts',
       party: 'Independent',
