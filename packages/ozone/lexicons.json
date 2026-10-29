@@ -1895,11 +1895,11 @@
     },
     "com.para.account.getAuthFactor": {
       "uri": "file://../../lexicons/com/para/account/getAuthFactor.json",
-      "cid": "bafyreig2tso6ndw5nchx7yhnh4wc4eyer4ktrh35jjzwbunmxc3n24y2we"
+      "cid": "bafyreibil44gszulrkeu3ir5nzlavjefnfgssxsz6d6ibks2bnbcjzybby"
     },
     "com.para.account.setAuthFactor": {
       "uri": "file://../../lexicons/com/para/account/setAuthFactor.json",
-      "cid": "bafyreidofcvmwuwiegexp2xwrb5p4oroxrzbhuc2uuc3e3yf3wwh3mqtqa"
+      "cid": "bafyreihyzfuhllhsbnlgzgsu54jhxoj3yjnw6bkqenghnbqnejebramidu"
     },
     "com.para.actor.defs": {
       "uri": "file://../../lexicons/com/para/actor/defs.json",
@@ -2047,7 +2047,7 @@
     },
     "com.para.community.acceptDraftInvite": {
       "uri": "file://../../lexicons/com/para/community/acceptDraftInvite.json",
-      "cid": "bafyreigvwbl6bs7snrh5pyjek7sojvxbiese43lk4uixpiqrk6vgozigsq"
+      "cid": "bafyreiad3swxsqdw74eihrauoynas276scymkz3mcbkw6bq5noc4f4wbtu"
     },
     "com.para.community.activityLedgerEntry": {
       "uri": "file://../../lexicons/com/para/community/activityLedgerEntry.json",
