@@ -25,6 +25,8 @@ export interface InputSchema {
 export interface OutputSchema {
   status: string
   memberCount: number
+  /** The accepted quorum is complete and the creator must sign activation. */
+  requiresCreatorFinalization?: boolean
 }
 
 export interface CallOptions {

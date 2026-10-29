@@ -15,6 +15,9 @@ packages/bsync/src/proto
 # codegen
 packages/api/src/client
 
+# copied byte for byte from vlpds (packages/space/tests/vectors/SOURCE)
+packages/space/tests/vectors
+
 # @atproto/lex install
 packages/*/*/lexicons.json
 packages/*/lexicons.json

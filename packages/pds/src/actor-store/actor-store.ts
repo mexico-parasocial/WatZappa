@@ -18,6 +18,8 @@ import { type ActorDb, getDb, getMigrator } from './db/index.js'
 
 export class ActorStore {
   reservedKeyDir: string
+  // DIDs whose store this process has brought to the latest schema.
+  private readonly upToDate = new Set<string>()
 
   constructor(
     public cfg: ActorStoreConfig,
@@ -31,7 +33,8 @@ export class ActorStore {
     const directory = path.join(this.cfg.directory, didHash.slice(0, 2), did)
     const dbLocation = path.join(directory, `store.sqlite`)
     const keyLocation = path.join(directory, `key`)
-    return { directory, dbLocation, keyLocation }
+    const kemKeyLocation = path.join(directory, `kem_key`)
+    return { directory, dbLocation, keyLocation, kemKeyLocation }
   }
 
   async exists(did: string): Promise<boolean> {
@@ -43,6 +46,29 @@ export class ActorStore {
     const { keyLocation } = await this.getLocation(did)
     const privKey = await fs.readFile(keyLocation)
     return crypto.Secp256k1Keypair.import(privKey)
+  }
+
+  /** Account KEM key; absent on alpha accounts until the backfill publishes it. */
+  async kemKeypair(did: string): Promise<crypto.P256Keypair | undefined> {
+    const { kemKeyLocation } = await this.getLocation(did)
+    const bytes = await readIfExists(kemKeyLocation)
+    return bytes ? crypto.P256Keypair.import(bytes) : undefined
+  }
+
+  /**
+   * A store is migrated when its account is created, so one created before a
+   * later migration lacks its tables. Callers of those tables (the space
+   * handlers) bring the store up to date first; once per account per process.
+   */
+  async ensureLatestSchema(did: string): Promise<void> {
+    if (this.upToDate.has(did)) return
+    const db = await this.openDb(did)
+    try {
+      await getMigrator(db).migrateToLatestOrThrow()
+    } finally {
+      db.close()
+    }
+    this.upToDate.add(did)
   }
 
   async openDb(did: string): Promise<ActorDb> {
@@ -109,8 +135,13 @@ export class ActorStore {
     return await fn(writer)
   }
 
-  async create(did: string, keypair: ExportableKeypair) {
-    const { directory, dbLocation, keyLocation } = await this.getLocation(did)
+  async create(
+    did: string,
+    keypair: ExportableKeypair,
+    kemKeypair: ExportableKeypair,
+  ) {
+    const { directory, dbLocation, keyLocation, kemKeyLocation } =
+      await this.getLocation(did)
     // ensure subdir exists
     await mkdir(directory, { recursive: true })
     const exists = await fileExists(dbLocation)
@@ -119,6 +150,9 @@ export class ActorStore {
     }
     const privKey = await keypair.export()
     await fs.writeFile(keyLocation, privKey)
+    await fs.writeFile(kemKeyLocation, await kemKeypair.export(), {
+      mode: 0o600,
+    })
 
     const db: ActorDb = getDb(dbLocation, this.cfg.disableWalAutoCheckpoint)
     try {

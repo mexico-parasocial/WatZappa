@@ -1,82 +1,56 @@
-import { type CarBlock, writeCarStream } from '@atproto/common'
-import { cidForLex, encode } from '@atproto/lex-cbor'
+import { encode } from '@atproto/lex-cbor'
 import { type Cid, cidForCbor } from '@atproto/lex-data'
-import type { RepoIndex, SignedCommit, SpaceRecord } from '../types.js'
+import type { NsidString, RecordKeyString } from '@atproto/syntax'
+import { compareBytes } from '../bytes.js'
+import { type StarPair, writeStar } from '../star.js'
+import {
+  type Commit,
+  REPO_STAR_TYPE,
+  type RecordPathParts,
+  type RepoStarMeta,
+  type SpaceRecord,
+} from '../types.js'
 import { formatRecordPath } from '../util.js'
 
-export type SerializedRecord = {
-  collection: string
-  rkey: string
-  cid: Cid
+export type SerializedRecord = RecordPathParts & {
   bytes: Uint8Array
 }
 
 /**
- * Serialize a repo as a car: two roots in order — the signed commit, then the
- * index — followed by one block per index entry, in the index's order. Blobs are
- * excluded.
+ * Serialize a repo as a STAR archive: the commit as the metadata, then one
+ * path/record pair per record. Blobs are excluded.
  *
- * Records are collected up front because the index has to precede the blocks it
- * describes.
- *
- * With `excludeValues` only the two roots are written. The index still
- * authenticates against the commit, since the set hash is folded from the index's
- * entries rather than from the blocks.
+ * Records must be given in strict path order, as the archive requires.
  */
 export async function* serializeRepo(
-  commit: SignedCommit,
+  commit: Commit,
   records: AsyncIterable<SerializedRecord> | Iterable<SerializedRecord>,
-  opts: { excludeValues?: boolean } = {},
-): AsyncIterable<Uint8Array> {
-  const byPath = new Map<string, SerializedRecord>()
-  for await (const record of records) {
-    byPath.set(formatRecordPath(record.collection, record.rkey), record)
-  }
-  // A consumer walks the index as the cbor encoder ordered its keys, so blocks
-  // have to follow that order too.
-  const paths = [...byPath.keys()].sort(byCanonicalKey)
-
-  const index: RepoIndex = {}
-  for (const path of paths) {
-    index[path] = byPath.get(path)!.cid
-  }
-
-  const commitBytes = encode(commit)
-  const indexBytes = encode(index)
-  const [commitRoot, indexRoot] = await Promise.all([
-    cidForCbor(commitBytes),
-    cidForCbor(indexBytes),
-  ])
-
-  yield* writeCarStream(
-    [commitRoot, indexRoot],
-    (function* (): Generator<CarBlock> {
-      yield { cid: commitRoot, bytes: commitBytes }
-      yield { cid: indexRoot, bytes: indexBytes }
-      if (opts.excludeValues) return
-      for (const path of paths) {
-        const record = byPath.get(path)!
-        yield { cid: record.cid, bytes: record.bytes }
-      }
-    })(),
-  )
+): AsyncGenerator<Uint8Array> {
+  const meta: RepoStarMeta = { $type: REPO_STAR_TYPE, ...commit }
+  yield* writeStar(meta, toStarPairs(records))
 }
 
-// Canonical dag-cbor map key order: shortest first, then bytewise.
-const byCanonicalKey = (a: string, b: string): number => {
-  if (a.length !== b.length) return a.length - b.length
-  return a < b ? -1 : a > b ? 1 : 0
+async function* toStarPairs(
+  records: AsyncIterable<SerializedRecord> | Iterable<SerializedRecord>,
+): AsyncGenerator<StarPair> {
+  const encoder = new TextEncoder()
+  let prevKey: Uint8Array | undefined
+  for await (const { collection, rkey, bytes } of records) {
+    const path = formatRecordPath(collection, rkey)
+    const key = encoder.encode(path)
+    if (prevKey !== undefined && compareBytes(key, prevKey) <= 0) {
+      throw new Error(`records out of order at ${path}`)
+    }
+    prevKey = key
+    yield { key, value: bytes }
+  }
 }
 
 export const serializeRecord = async (
-  collection: string,
-  rkey: string,
+  collection: NsidString,
+  rkey: RecordKeyString,
   record: SpaceRecord,
-): Promise<SerializedRecord> => {
-  return {
-    collection,
-    rkey,
-    cid: await cidForLex(record),
-    bytes: encode(record),
-  }
+): Promise<SerializedRecord & { cid: Cid }> => {
+  const bytes = encode(record)
+  return { collection, rkey, bytes, cid: await cidForCbor(bytes) }
 }

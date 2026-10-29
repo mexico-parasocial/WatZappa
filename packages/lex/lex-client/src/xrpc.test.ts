@@ -1445,7 +1445,7 @@ describe(xrpcSafe, () => {
       expect(result).toBeInstanceOf(XrpcInvalidResponseError)
       expect(result.message).toMatch('Unable to parse response payload')
       assert(result.cause instanceof TypeError)
-      expect(result.cause.message).toBe('Invalid non-integer number: 1.5')
+      expect(result.cause.message).toBe('Invalid number (got 1.5)')
     })
 
     it('accepts response with invalid lex data when strict processing is disabled', async () => {
@@ -1472,7 +1472,7 @@ describe(xrpcSafe, () => {
       expect(result).toBeInstanceOf(XrpcInvalidResponseError)
       expect(result.message).toMatch('Unable to parse response payload')
       assert(result.cause instanceof TypeError)
-      expect(result.cause.message).toBe('Invalid non-integer number: 1.5')
+      expect(result.cause.message).toBe('Invalid number (got 1.5)')
     })
 
     it('returns error for error response with invalid lex data by default', async () => {
@@ -1545,7 +1545,7 @@ describe(xrpcSafe, () => {
       expect(result).toBeInstanceOf(XrpcInvalidResponseError)
       expect(result.message).toMatch('Unable to parse response payload')
       assert(result.cause instanceof TypeError)
-      expect(result.cause.message).toBe('Invalid non-integer number: 1.5')
+      expect(result.cause.message).toBe('Invalid number (got 1.5)')
     })
   })
 })

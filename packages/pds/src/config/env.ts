@@ -155,6 +155,9 @@ export function readEnv() {
 
     // lexicon resolution
     lexiconDidAuthority: envStr('PDS_LEXICON_AUTHORITY_DID'),
+
+    // permissioned data (atproto Spaces alpha)
+    spacesEnabled: envBool('PDS_SPACES_ENABLED'),
   }
 }
 

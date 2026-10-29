@@ -14,6 +14,11 @@
         "schema": {
           "type": "object",
           "properties": {
+            "authFactorMode": {
+              "type": "string",
+              "knownValues": ["wallet-v1"],
+              "description": "Independent wallet challenge protocol, when supported, including before enrollment."
+            },
             "authFactorType": {
               "type": "string",
               "knownValues": ["im8"],

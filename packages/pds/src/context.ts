@@ -59,6 +59,10 @@ import {
 } from './read-after-write/viewer.js'
 import { getRedisClient } from './redis.js'
 import { Sequencer } from './sequencer/index.js'
+import {
+  type SpaceDeletionNotifications,
+  createSpaceDeletionNotifications,
+} from './space-deletion-notifications.js'
 
 export type AppContextOptions = {
   actorStore: ActorStore
@@ -88,6 +92,7 @@ export type AppContextOptions = {
 }
 
 export class AppContext implements AsyncDisposable {
+  public readonly spaceDeletionNotifications: SpaceDeletionNotifications
   public actorStore: ActorStore
   public blobstore: BlobStoreCreator
   public localViewer: LocalViewerCreator
@@ -138,6 +143,7 @@ export class AppContext implements AsyncDisposable {
     this.oauthProvider = opts.oauthProvider
     this.plcRotationKey = opts.plcRotationKey
     this.cfg = opts.cfg
+    this.spaceDeletionNotifications = createSpaceDeletionNotifications(this)
   }
 
   static async fromEnv(
@@ -685,7 +691,11 @@ export class AppContext implements AsyncDisposable {
     // @TODO Implement this using an AsyncDisposableStack when it becomes
     // widely available.
     try {
-      await this.backgroundQueue.destroy()
+      try {
+        await this.spaceDeletionNotifications.destroy()
+      } finally {
+        await this.backgroundQueue.destroy()
+      }
     } finally {
       try {
         await this.sequencer.destroy()

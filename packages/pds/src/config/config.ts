@@ -363,6 +363,7 @@ export const envToCfg = (env: ServerEnvironment): ServerConfig => {
     crawlers: crawlersCfg,
     fetch: fetchCfg,
     lexicon: lexiconCfg,
+    spaces: { enabled: env.spacesEnabled === true },
     proxy: proxyCfg,
     branding: brandingCfg,
     oauth: oauthCfg,
@@ -393,6 +394,16 @@ export type ServerConfig = {
   oauth: OAuthConfig
   lexicon: LexiconResolverConfig
   m8BaseUrl: string | null
+  spaces: SpacesConfig
+}
+
+/**
+ * atproto Spaces (permissioned data), alpha. When enabled, this PDS hosts its
+ * accounts' own space repos (see api/com/atproto/space). Every other Spaces
+ * method answers 501 here and is never proxied, enabled or not.
+ */
+export type SpacesConfig = {
+  enabled: boolean
 }
 
 export type ServiceConfig = {

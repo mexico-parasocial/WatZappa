@@ -605,13 +605,11 @@ export class LexRouter {
   add<M extends LexMethod, Credentials = unknown>(
     ns: Main<M>,
     config: M extends Subscription
-      ?
-          | LexRouterSubscriptionHandler<M, Credentials>
-          | LexRouterSubscriptionConfig<M, Credentials>
+      ? | LexRouterSubscriptionHandler<M, Credentials>
+        | LexRouterSubscriptionConfig<M, Credentials>
       : M extends Query | Procedure
-        ?
-            | LexRouterMethodHandler<M, Credentials>
-            | LexRouterMethodConfig<M, Credentials>
+        ? | LexRouterMethodHandler<M, Credentials>
+          | LexRouterMethodConfig<M, Credentials>
         : never,
   ): this
   add<M extends LexMethod>(
@@ -733,8 +731,7 @@ export class LexRouter {
     const {
       onHandlerError,
       upgradeWebSocket = (globalThis as any).Deno?.upgradeWebSocket as
-        | UpgradeWebSocket
-        | undefined,
+        UpgradeWebSocket | undefined,
     } = this.options
     if (!upgradeWebSocket) {
       throw new TypeError(
@@ -989,7 +986,10 @@ async function getProcedureInput<M extends Procedure>(
       : undefined)
 
   if (!this.input.matchesEncoding(encoding)) {
-    throw new LexError('InvalidRequest', `Invalid content-type: ${encoding}`)
+    throw new LexServerError(400, {
+      error: 'InvalidRequest',
+      message: `Invalid content-type: ${encoding}`,
+    })
   }
 
   if (this.input.encoding === 'application/json') {
@@ -1014,7 +1014,10 @@ async function getQueryInput<M extends Query>(
     request.headers.has('content-type') ||
     request.headers.has('content-length')
   ) {
-    throw new LexError('InvalidRequest', 'GET requests must not have a body')
+    throw new LexServerError(400, {
+      error: 'InvalidRequest',
+      message: 'GET requests must not have a body',
+    })
   }
 
   return undefined as InferMethodInput<M, Body>

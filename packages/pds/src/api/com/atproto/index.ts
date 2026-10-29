@@ -5,6 +5,8 @@ import identity from './identity/index.js'
 import moderation from './moderation/index.js'
 import repo from './repo/index.js'
 import serverMethods from './server/index.js'
+import simplespace from './simplespace/index.js'
+import space from './space/index.js'
 import sync from './sync/index.js'
 import temp from './temp/index.js'
 
@@ -16,4 +18,8 @@ export default function (server: Server, ctx: AppContext) {
   serverMethods(server, ctx)
   sync(server, ctx)
   temp(server, ctx)
+  if (ctx.cfg.spaces.enabled) {
+    space(server, ctx)
+    simplespace(server, ctx)
+  }
 }

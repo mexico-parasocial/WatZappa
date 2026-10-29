@@ -2,7 +2,7 @@ import { p256 } from '@noble/curves/p256'
 import { sha256 } from '@noble/hashes/sha256'
 import { equals as ui8equals } from 'uint8arrays'
 import { P256_DID_PREFIX } from '../const.js'
-import { VerifyOptions } from '../types.js'
+import type { VerifyOptions } from '../types.js'
 import { extractMultikey, extractPrefixedBytes, hasPrefix } from '../utils.js'
 
 export const verifyDidSig = async (
@@ -28,7 +28,8 @@ export const verifySig = async (
   const allowMalleable = opts?.allowMalleableSig ?? false
   const msgHash = await sha256(data)
   return p256.verify(sig, msgHash, publicKey, {
-    format: allowMalleable ? undefined : 'compact', // prevent DER-encoded signatures
+    // prevent DER-encoded signatures unless the caller asks for an encoding
+    format: opts?.format ?? (allowMalleable ? undefined : 'compact'),
     lowS: !allowMalleable,
   })
 }

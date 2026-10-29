@@ -16,6 +16,7 @@ import { com } from '../../../../lexicons/index.js'
 import {
   isPrivilegedMethod,
   isProtectedMethod,
+  isSpacesMethod,
 } from '../../../../pipethrough.js'
 
 export default function (server: Server, ctx: AppContext) {
@@ -88,6 +89,11 @@ export default function (server: Server, ctx: AppContext) {
       if (lxm && isProtectedMethod(lxm)) {
         throw new InvalidRequestError(
           `cannot request a service auth token for the following protected method: ${lxm}`,
+        )
+      }
+      if (lxm && isSpacesMethod(lxm)) {
+        throw new InvalidRequestError(
+          `cannot request a service auth token for a Spaces method: ${lxm}`,
         )
       }
 
