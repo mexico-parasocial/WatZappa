@@ -145,6 +145,7 @@
     "com.atproto.simplespace.removeMember",
     "com.atproto.simplespace.updateSpace",
     "com.atproto.space.applyWrites",
+    "com.atproto.space.clearRecords",
     "com.atproto.space.createRecord",
     "com.atproto.space.defs",
     "com.atproto.space.deleteRecord",
@@ -867,6 +868,10 @@
       "uri": "file://../../lexicons/com/atproto/space/applyWrites.json",
       "cid": "bafyreib5udc25gqhdemorqomx6p3a4oeuiiw2rozkmz3nmv4g37e2m4efy"
     },
+    "com.atproto.space.clearRecords": {
+      "uri": "file://../../lexicons/com/atproto/space/clearRecords.json",
+      "cid": "bafyreidim7fscnigyptdaf2u4ujmgksglftmdmkr3aen7xs73ml34vvex4"
+    },
     "com.atproto.space.createRecord": {
       "uri": "file://../../lexicons/com/atproto/space/createRecord.json",
       "cid": "bafyreidwtfhg57tdwqpj7geo3onbb5c445wquh3wudqa52ilcopzijxuii"
@@ -921,7 +926,7 @@
     },
     "com.atproto.space.listSpaces": {
       "uri": "file://../../lexicons/com/atproto/space/listSpaces.json",
-      "cid": "bafyreibugfjtde4s7zwaerfv7nbtlzfbegvlcl3xskpb3fyzl2l7m4eqte"
+      "cid": "bafyreialqk5hshpguganye4jezweujf3qd6fx6wsqvdm453okorjzxh35a"
     },
     "com.atproto.space.notifyCredentialRevoked": {
       "uri": "file://../../lexicons/com/atproto/space/notifyCredentialRevoked.json",

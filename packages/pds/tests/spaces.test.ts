@@ -319,6 +319,60 @@ describe('spaces', () => {
       ).toBeNull()
     })
 
+    it('requires delete grants for every collection before clearing', async () => {
+      const space = spaceOf(alice, 'clear-route')
+      await seedSpace(alice, space)
+      const both = grant(
+        alice,
+        `collection=${COLLECTION}&collection=${OTHER_COLLECTION}&action=read&action=create&action=delete`,
+      )
+      await asOAuth(alice, both, async (headers) => {
+        expect((await create(headers, alice, space, 'one')).status).toBe(200)
+        expect(
+          (
+            await create(
+              headers,
+              alice,
+              space,
+              'two',
+              { $type: OTHER_COLLECTION, text: 'two' },
+              OTHER_COLLECTION,
+            )
+          ).status,
+        ).toBe(200)
+      })
+      await asOAuth(alice, fullGrant(alice), async (headers) => {
+        const denied = await call('com.atproto.space.clearRecords', {
+          headers,
+          body: { space, repo: alice },
+        })
+        expect(denied.status).toBeGreaterThanOrEqual(400)
+        expect(denied.body.message).toMatch(/space:/)
+      })
+      expect(
+        await network.pds.ctx.actorStore.read(alice, (store) =>
+          store.space.listCollections(space),
+        ),
+      ).toHaveLength(2)
+      await asOAuth(alice, both, async (headers) => {
+        const cleared = await call('com.atproto.space.clearRecords', {
+          headers,
+          body: { space, repo: alice },
+        })
+        expect(cleared.status).toBe(200)
+        const repeated = await call('com.atproto.space.clearRecords', {
+          headers,
+          body: { space, repo: alice },
+        })
+        expect(repeated.status).toBe(200)
+      })
+      expect(
+        await network.pds.ctx.actorStore.read(alice, (store) =>
+          store.space.listCollections(space),
+        ),
+      ).toEqual([])
+    })
+
     it('serves a STAR repo authenticated by a KEM response MAC', async () => {
       const space = spaceOf(alice, 'export')
       await seedSpace(alice, space)
@@ -550,16 +604,29 @@ describe('spaces', () => {
       expect(res.body.error).toBe('MethodNotImplemented')
     })
 
+    it.each([
+      'com.atproto.memberspace.listMembers',
+      'com.atproto.managedspace.checkUserAccess',
+    ])('does not proxy unsupported policy method %s', async (lxm) => {
+      const res = await call(lxm, { headers: sc.getHeaders(alice) })
+      expect(res.status).toBe(501)
+      expect(res.body.error).toBe('MethodNotImplemented')
+    })
+
     it('never mints service auth for a Spaces method', async () => {
-      const res = await call('com.atproto.server.getServiceAuth', {
-        headers: sc.getHeaders(alice),
-        params: {
-          aud: 'did:web:authority.example',
-          lxm: 'com.atproto.space.notifyWrite',
-        },
-      })
-      expect(res.status).toBe(400)
-      expect(res.body.message).toMatch(/Spaces method/)
+      for (const lxm of [
+        'com.atproto.space.notifyWrite',
+        'com.atproto.memberspace.listMembers',
+        'com.atproto.managedspace.checkUserAccess',
+        'com.atproto.personalspace.policy',
+      ]) {
+        const res = await call('com.atproto.server.getServiceAuth', {
+          headers: sc.getHeaders(alice),
+          params: { aud: 'did:web:authority.example', lxm },
+        })
+        expect(res.status).toBe(400)
+        expect(res.body.message).toMatch(/Spaces method/)
+      }
     })
   })
 

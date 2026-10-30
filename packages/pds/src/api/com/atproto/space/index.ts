@@ -1,6 +1,7 @@
 import type { Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import applyWrites from './applyWrites.js'
+import clearRecords from './clearRecords.js'
 import createRecord from './createRecord.js'
 import deleteRecord from './deleteRecord.js'
 import getLatestCommit from './getLatestCommit.js'
@@ -14,6 +15,7 @@ import putRecord from './putRecord.js'
 // registered with PDS_SPACES_ENABLED.
 export default function (server: Server, ctx: AppContext) {
   applyWrites(server, ctx)
+  clearRecords(server, ctx)
   createRecord(server, ctx)
   deleteRecord(server, ctx)
   getLatestCommit(server, ctx)
