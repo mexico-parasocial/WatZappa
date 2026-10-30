@@ -92,6 +92,16 @@ export class SpaceReader {
     return !!row
   }
 
+  async listCollections(space: string): Promise<NsidString[]> {
+    const rows = await this.db.db
+      .selectFrom('space_record')
+      .select('collection')
+      .where('space', '=', space)
+      .groupBy('collection')
+      .execute()
+    return rows.map((row) => row.collection)
+  }
+
   async listRecords(
     space: string,
     opts: {

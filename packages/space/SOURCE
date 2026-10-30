@@ -1,4 +1,10 @@
-AT Protocol Spaces (the permissioned-data alpha), pinned to the reference:
+WORK IN PROGRESS: the library source and new schemas are being advanced toward
+462dd2a04ba2940e160a700aee21364314d03a76 (#5754, #5764, #5766).
+Legacy simplespace schemas and PARA owner-only routes remain during the manual
+transition. This tree is not yet a complete protocol pin and must not be released
+or merged until policy, migration, and cross-implementation checks are complete.
+
+AT Protocol Spaces (the permissioned-data alpha), previous reference pin:
 
   repo:   https://github.com/bluesky-social/atproto
   branch: permissioned-data (PR #5187)
@@ -10,7 +16,8 @@ AT Protocol Spaces (the permissioned-data alpha), pinned to the reference:
 Includes upstream #5691 (DID keys), #5690 (credential signatures/public-access
 contract), #5705 (STAR export), and #5706 (KEM/shared-secret response MACs).
 #5697's deletion contract is in the lexicons;
-the PDS queue is adapted separately. Runtime source matches this pin exactly.
+the PDS queue is adapted separately. The runtime is now being updated beyond
+this previous pin; it no longer matches it exactly during this transition.
 
 Local tests: tests/vectors.test.ts and tests/vectors/ preserve the historical
 vlpds 1.1.0 fixtures (see tests/vectors/SOURCE). Legacy signatures/keys are now
