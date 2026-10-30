@@ -70,10 +70,10 @@ export class SortitionArea extends ConstitutionProposalsArea {
   }
 
   async getSortitionProofCount(): Promise<number> {
-    const row = await this.queryOne<{ count: number }>(
+    const row = await this.queryOne<{ count: string }>(
       'SELECT COUNT(*) as count FROM sortition_proofs',
     )
-    return row?.count ?? 0
+    return this.safeInteger(row?.count ?? 0)
   }
 
   // Sortition run lifecycle

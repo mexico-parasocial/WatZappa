@@ -9,11 +9,12 @@
  */
 
 import type { Logger } from 'pino'
+import { isProvisionedSpace } from './chat-mode.js'
 import type { ChatModerationEngine } from './chat-moderation.js'
 import { getEffectiveRules, isApproved } from './constitution.js'
 import type { IBridgeDatabase } from './db/index.js'
-import type { MatrixAdminClient } from './matrix.js'
 import type { EventBus } from './events/bus.js'
+import type { MatrixAdminClient } from './matrix.js'
 
 export type ProposalState =
   | 'deliberating'
@@ -25,7 +26,8 @@ export type ProposalState =
 
 export class ProposalEngine {
   private db: IBridgeDatabase
-  private matrix: MatrixAdminClient
+  /** Null when chat is off; results are then not announced in a room. */
+  private matrix: MatrixAdminClient | null
   private chatMod: ChatModerationEngine
   private log: Logger
 
@@ -33,7 +35,7 @@ export class ProposalEngine {
 
   constructor(
     db: IBridgeDatabase,
-    matrix: MatrixAdminClient,
+    matrix: MatrixAdminClient | null,
     log: Logger,
     chatMod: ChatModerationEngine,
   ) {
@@ -343,8 +345,9 @@ export class ProposalEngine {
     communityUri: string,
     message: string,
   ): Promise<void> {
+    if (!this.matrix) return
     const space = await this.db.getSpaceForCommunity(communityUri)
-    if (!space?.spaceId) {
+    if (!space?.spaceId || !isProvisionedSpace(space)) {
       this.log.warn(
         { communityUri },
         'No Matrix space for community, skipping announcement',

@@ -2,6 +2,7 @@ import type { Logger } from 'pino'
 import { IdResolver } from '@atproto/identity'
 import { Firehose } from '@atproto/sync'
 import type { CommitEvt, Event } from '@atproto/sync'
+import { CHAT_DISABLED, isProvisionedSpace } from './chat-mode.js'
 import type { ChatModerationEngine } from './chat-moderation.js'
 import type { AuthorityResolver } from './community-authority.js'
 import type { Config } from './config.js'
@@ -33,6 +34,8 @@ export class FirehoseConsumer {
   private chatMod: ChatModerationEngine
   private log: Logger
   private lastSeq: number | undefined
+  private lastEventTime: string | undefined
+  private lastReceivedAt: string | undefined
   private initialCursor: number | undefined
   private pdsSourceId: string | undefined
   private cursorSaveTimer: NodeJS.Timeout | null = null
@@ -80,8 +83,11 @@ export class FirehoseConsumer {
       unauthenticatedCommits: true,
       handleEvent: (evt) => this.handleEvent(evt),
       onError: (err) => {
+        const unsafeSeq = unsafeFirehoseSeq(err)
+        if (unsafeSeq !== undefined) throw new UnsafeFirehoseSeqError(unsafeSeq)
         this.log.error({ err }, 'Firehose error')
         const cause = (err as Error & { cause?: unknown }).cause
+        if (cause instanceof UnsafeFirehoseSeqError) throw cause
         if (
           cause instanceof Error &&
           cause.message.includes('Cursor in the future')
@@ -148,10 +154,29 @@ export class FirehoseConsumer {
     })
   }
 
+  /** For the private operations listener: how fresh ingestion is. */
+  ingestionStatus() {
+    return {
+      lastEventTime: this.lastEventTime ?? null,
+      lastReceivedAt: this.lastReceivedAt ?? null,
+      lastEventLagSeconds:
+        this.lastEventTime && this.lastReceivedAt
+          ? Math.max(
+              0,
+              (Date.parse(this.lastReceivedAt) -
+                Date.parse(this.lastEventTime)) /
+                1000,
+            )
+          : null,
+    }
+  }
+
   private async handleEvent(evt: Event): Promise<void> {
     if (evt.seq !== undefined) {
       this.lastSeq = evt.seq
     }
+    this.lastEventTime = evt.time
+    this.lastReceivedAt = new Date().toISOString()
 
     const lag = Date.now() - new Date(evt.time).getTime()
     this.metrics.firehoseLag.set(lag / 1000)
@@ -262,7 +287,11 @@ export class FirehoseConsumer {
     const chamberMode = (record.chamberMode ?? 'unicameral') as string
 
     const existing = await this.db.getSpaceForCommunity(communityUri)
-    if (existing) {
+    // A row recorded while chat was off is provisioned once chat is on.
+    if (
+      existing &&
+      (isProvisionedSpace(existing) || !this.config.matrixChatEnabled)
+    ) {
       this.log.debug({ communityUri }, 'Community space already exists')
       if (retry) await this.refreshMembership(communityUri, creatorDid, true)
       return
@@ -294,6 +323,25 @@ export class FirehoseConsumer {
           )
         }
       })
+      if (!isProvisionedSpace(provisioned)) {
+        // Chat is off: governance has its row, the rooms come later. The
+        // failed create_space entry is the provisioning queue the retry
+        // worker drains once chat is on.
+        this.log.info(
+          { communityUri, chamberMode },
+          'Recorded community without chat rooms (chat disabled)',
+        )
+        await this.refreshMembership(communityUri, creatorDid)
+        await this.db.logSync(
+          'create_space',
+          communityUri,
+          creatorDid,
+          null,
+          false,
+          CHAT_DISABLED,
+        )
+        return
+      }
       this.metrics.spacesCreatedTotal.inc({ status: 'success' })
       this.log.info(
         { communityUri, spaceId: provisioned.spaceId, name, chamberMode },
@@ -699,6 +747,25 @@ export class FirehoseConsumer {
       did,
       choice,
       createdAt,
+    )
+  }
+}
+
+/**
+ * A frame whose seq decoded above 2^53 (CBOR yields a bigint, which the
+ * subscribeRepos schema rejects): a raw vlpds stream, whose seq is
+ * unix_micros × 256 + writer. @atproto/sync would drop every such frame, and
+ * the cursor is a JS number, so consume the relay's renumbered stream instead.
+ */
+export function unsafeFirehoseSeq(err: unknown): bigint | undefined {
+  const seq = (err as { value?: { seq?: unknown } } | null)?.value?.seq
+  return typeof seq === 'bigint' ? seq : undefined
+}
+
+export class UnsafeFirehoseSeqError extends Error {
+  constructor(seq: bigint) {
+    super(
+      `Firehose seq ${seq} exceeds the safe integer range. Point PDS_FIREHOSE_URL at a relay that renumbers the stream; refusing to drop events.`,
     )
   }
 }

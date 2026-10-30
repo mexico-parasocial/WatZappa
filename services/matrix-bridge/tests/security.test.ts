@@ -29,6 +29,7 @@ import {
   apiMatrixIdentityGoneHandler,
   apiMatrixIdentityHandler,
   apiMatrixTokenHandler,
+  apiPushTokenHandler,
 } from '../src/routes/matrix-identity.js'
 
 vi.mock('../src/m8-auth.js', async (importOriginal) => ({
@@ -98,7 +99,7 @@ describe.each([
       },
       events: new EventBus(db, log),
       challenges: new ChallengeStore(),
-      matrix: { userExists: async () => true },
+      matrix: { userExists: async () => true, deviceExists: async () => true },
       log,
     } as unknown as RouteContext
     await db.setSpaceForCommunity(community, '!main:para', 'one', 'bicameral')
@@ -321,8 +322,104 @@ describe.each([
     expect(await db.listDeviceSessions(did)).toHaveLength(0)
     expect(body.accessToken).toBeUndefined()
   })
+  it('keeps native MAS pusher credentials client-owned', async () => {
+    let minted = false
+    ctx.matrix = {
+      generateUserToken: async () => {
+        minted = true
+        throw Error('must not mint')
+      },
+    } as never
+    const challenge = ctx.challenges.issue(did).challenge
+    const assertion = signAssertion(identity, {
+      purpose: 'matrix-login',
+      audience: BRIDGE_AUDIENCES.identity,
+      challenge,
+    })
+    const res = await invoke(apiPushTokenHandler, {
+      expoPushToken: 'synthetic-push-token',
+      platform: 'ios',
+      assertion,
+    })
+    expect(res.statusCode).toBe(200)
+    expect(minted).toBe(false)
+  })
+  it('does not reserve a new MAS account during an identity probe', async () => {
+    const createUser = vi.fn()
+    ctx.matrix = { userExists: async () => false, createUser } as never
+    const challenge = ctx.challenges.issue(did).challenge
+    const res = await invoke(
+      apiMatrixIdentityHandler,
+      signAssertion(identity, {
+        purpose: 'matrix-login',
+        audience: BRIDGE_AUDIENCES.identity,
+        challenge,
+      }),
+    )
+    expect(res.statusCode).toBe(200)
+    expect(createUser).not.toHaveBeenCalled()
+    expect(await db.listDeviceSessions(did)).toHaveLength(0)
+  })
+  it('refuses bridge-minted sessions before provisioning an OIDC user', async () => {
+    const createUser = vi.fn()
+    const appServiceLogin = vi.fn()
+    ctx.matrix = {
+      userExists: async () => false,
+      createUser,
+      appServiceLogin,
+    } as never
+    const challenge = ctx.challenges.issue(did).challenge
+    const res = await invoke(
+      apiMatrixTokenHandler,
+      signAssertion(identity, {
+        purpose: 'matrix-login',
+        audience: BRIDGE_AUDIENCES.session,
+        challenge,
+      }),
+    )
+    expect(res.statusCode).toBe(503)
+    expect(createUser).not.toHaveBeenCalled()
+    expect(appServiceLogin).not.toHaveBeenCalled()
+  })
+  it('refuses to attest a device before its MAS account exists', async () => {
+    const createUser = vi.fn()
+    ctx.matrix = { userExists: async () => false, createUser } as never
+    const challenge = ctx.challenges.issue(did).challenge
+    const res = await invoke(apiMatrixAttestHandler, {
+      ...signAssertion(identity, {
+        purpose: 'matrix-login',
+        audience: BRIDGE_AUDIENCES.attest,
+        challenge,
+      }),
+      deviceId: 'NOT_CREATED_BY_MAS',
+    })
+    expect(res.statusCode).toBe(409)
+    expect(createUser).not.toHaveBeenCalled()
+    expect(await db.listDeviceSessions(did)).toHaveLength(0)
+  })
+  it('refuses a fabricated device ID for an existing MAS account', async () => {
+    ctx.matrix = {
+      userExists: async () => true,
+      deviceExists: async () => false,
+    } as never
+    const challenge = ctx.challenges.issue(did).challenge
+    const res = await invoke(apiMatrixAttestHandler, {
+      ...signAssertion(identity, {
+        purpose: 'matrix-login',
+        audience: BRIDGE_AUDIENCES.attest,
+        challenge,
+      }),
+      deviceId: 'FABRICATED_DEVICE',
+    })
+    expect(res.statusCode).toBe(409)
+    expect(JSON.parse(res.text).error).toBe('MATRIX_DEVICE_NOT_FOUND')
+    expect(await db.listDeviceSessions(did)).toHaveLength(0)
+  })
   it('attests a client-managed MAS session and is idempotent per device', async () => {
-    ctx.matrix = { userExists: async () => true } as never
+    ctx.matrix = {
+      userExists: async () => true,
+      deviceExists: async () => true,
+    } as never
     const challenge = ctx.challenges.issue(did).challenge
     const signed = signAssertion(identity, {
       purpose: 'matrix-login',

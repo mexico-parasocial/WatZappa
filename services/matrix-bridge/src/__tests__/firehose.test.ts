@@ -1,11 +1,14 @@
+import type { AddressInfo } from 'node:net'
 import pino from 'pino'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ChatModerationEngine } from '../chat-moderation.js'
 import type { TrustedMembership } from '../community-authority.js'
 import type { Config } from '../config.js'
 import { SqliteBridgeDatabase } from '../db/index.js'
+import { WebSocketServer } from 'ws'
 import {
   FirehoseConsumer,
+  UnsafeFirehoseSeqError,
   prepareFirehoseCursor,
   signalToChoice,
 } from '../firehose.js'
@@ -74,6 +77,53 @@ describe(prepareFirehoseCursor, () => {
     await expect(prepareFirehoseCursor(db, 'pds-two')).rejects.toThrow(
       'cursor without a PDS source',
     )
+  })
+})
+
+describe('firehose seq beyond 2^53', () => {
+  /** A #commit frame whose only body field is a uint64 seq (CBOR, canonical key order). */
+  const frame = (seq: bigint) => {
+    const text = (value: string) => [0x60 + value.length, ...Buffer.from(value)]
+    const uint64 = Buffer.alloc(8)
+    uint64.writeBigUInt64BE(seq)
+    return Buffer.from([
+      ...[0xa2, ...text('t'), ...text('#commit'), ...text('op'), 0x01],
+      ...[0xa1, ...text('seq'), 0x1b, ...uint64],
+    ])
+  }
+
+  it('refuses a raw vlpds stream instead of dropping its frames', async () => {
+    // unix_micros × 256 + writer, as vlpds numbers its firehose.
+    const seq = 1_793_000_000_000_000n * 256n + 7n
+    const server = new WebSocketServer({ host: '127.0.0.1', port: 0 })
+    server.on('connection', (socket) => socket.send(frame(seq)))
+    await new Promise((resolve) => server.once('listening', resolve))
+    const config = {
+      dbPath: ':memory:',
+      pdsFirehoseUrl: `ws://127.0.0.1:${(server.address() as AddressInfo).port}`,
+      backfillFromStart: false,
+    } as Config
+    const db = new SqliteBridgeDatabase(config)
+    const log = pino({ level: 'silent' })
+    const consumer = new FirehoseConsumer(
+      config,
+      db,
+      {} as MatrixProjectionPort,
+      {} as ProposalEngine,
+      new ChatModerationEngine(db, log),
+      new BridgeMetrics(),
+      log,
+    )
+    try {
+      const started = consumer.start()
+      await expect(started).rejects.toBeInstanceOf(UnsafeFirehoseSeqError)
+      await expect(started).rejects.toThrow(String(seq))
+      expect(await db.getSyncCursor()).toBeUndefined()
+    } finally {
+      await consumer.stop()
+      await new Promise((resolve) => server.close(resolve))
+      await db.close()
+    }
   })
 })
 

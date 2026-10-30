@@ -9,6 +9,19 @@ const { Pool } = pg
 
 /** Lifecycle, connection handle and shared query helpers. */
 export class PgBase {
+  /** pg deliberately returns int8 as text. Convert only bounded local values. */
+  protected safeInteger(value: string | number): number {
+    if (typeof value === 'string' && !/^(0|[1-9][0-9]*)$/.test(value)) {
+      throw new Error('Invalid PostgreSQL counter or cursor')
+    }
+    const number = Number(value)
+    if (!Number.isSafeInteger(number) || number < 0) {
+      throw new Error(
+        'PostgreSQL counter or cursor exceeds the safe integer range',
+      )
+    }
+    return number
+  }
   private transactionContext = new AsyncLocalStorage<{
     client: pg.PoolClient
     active: boolean
@@ -105,8 +118,9 @@ export class PgBase {
 
       CREATE TABLE IF NOT EXISTS sync_cursor (
         id INTEGER PRIMARY KEY CHECK (id = 1),
-        cursor INTEGER NOT NULL
+        cursor BIGINT NOT NULL
       );
+      ALTER TABLE sync_cursor ALTER COLUMN cursor TYPE BIGINT;
 
       CREATE TABLE IF NOT EXISTS sync_source (
         id INTEGER PRIMARY KEY CHECK (id = 1),

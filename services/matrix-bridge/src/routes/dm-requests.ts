@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { requireMatrix } from '../chat-mode.js'
 import {
   BRIDGE_AUDIENCES,
   mxidFromVerifiedAssertion,
@@ -105,8 +106,8 @@ export async function apiDmRequestCreateHandler(
   // The recipient's client invites this account on acceptance; it has to
   // exist on the homeserver by then. Best-effort, like matrix-identity.
   try {
-    if (!(await ctx.matrix.userExists(mxid))) {
-      await ctx.matrix.createUser(mxid)
+    if (!(await requireMatrix(ctx.matrix).userExists(mxid))) {
+      await requireMatrix(ctx.matrix).createUser(mxid)
     }
   } catch (err: any) {
     ctx.log.warn({ err }, 'Could not ensure Matrix account for DM requester')
