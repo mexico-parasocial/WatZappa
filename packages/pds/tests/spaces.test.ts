@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { type SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
 import {
   COMMIT_MAC_TYPE,
+  LtHash,
   MAC_HEADER,
   RECORD_MAC_TYPE,
   WANT_MAC_HEADER,
@@ -267,6 +268,55 @@ describe('spaces', () => {
         expect(new Set(ops.body.ops.map((op: any) => op.rev)).size).toBe(1)
         expect(ops.body.commit).toBeDefined()
       })
+    })
+
+    it('clears repo records and oplog atomically while leaving other spaces intact', async () => {
+      const space = spaceOf(alice, 'clear-internal')
+      const other = spaceOf(alice, 'clear-other')
+      await seedSpace(alice, space)
+      await seedSpace(alice, other)
+      await asOAuth(alice, fullGrant(alice), async (headers) => {
+        expect((await create(headers, alice, space, 'one')).status).toBe(200)
+        expect((await create(headers, alice, other, 'one')).status).toBe(200)
+      })
+      const ctx = network.pds.ctx
+      const old = await ctx.actorStore.read(alice, (store) =>
+        store.space.getRepoState(space),
+      )
+      const ref = SpaceRef.parse(space).toString()
+      const result = await ctx.actorStore.transact(alice, (tx) =>
+        tx.space.clearRecords(ref),
+      )
+      expect(result).not.toBeNull()
+      expect(result!.rev > old!.rev!).toBe(true)
+      expect([...result!.setHash]).toEqual([...new LtHash().state()])
+      expect(
+        await ctx.actorStore.read(alice, (store) =>
+          store.space.listCollections(space),
+        ),
+      ).toEqual([])
+      await asOAuth(alice, fullGrant(alice), async (headers) => {
+        const cleared = await call('com.atproto.space.listRepoOps', {
+          headers,
+          params: { space, repo: alice },
+        })
+        expect(cleared.body.ops).toEqual([])
+        const retained = await call('com.atproto.space.getRecord', {
+          headers,
+          params: {
+            space: other,
+            repo: alice,
+            collection: COLLECTION,
+            rkey: 'one',
+          },
+        })
+        expect(retained.status).toBe(200)
+      })
+      expect(
+        await ctx.actorStore.transact(alice, (tx) =>
+          tx.space.clearRecords(ref),
+        ),
+      ).toBeNull()
     })
 
     it('serves a STAR repo authenticated by a KEM response MAC', async () => {
