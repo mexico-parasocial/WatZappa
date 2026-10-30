@@ -9,6 +9,7 @@ import getRecord from './getRecord.js'
 import getRepo from './getRepo.js'
 import listRecords from './listRecords.js'
 import listRepoOps from './listRepoOps.js'
+import manageSpace from './manageSpace.js'
 import putRecord from './putRecord.js'
 
 // The repo-host methods for an account's own space repos (see util.ts). Only
@@ -23,5 +24,6 @@ export default function (server: Server, ctx: AppContext) {
   getRepo(server, ctx)
   listRecords(server, ctx)
   listRepoOps(server, ctx)
+  manageSpace(server, ctx)
   putRecord(server, ctx)
 }

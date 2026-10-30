@@ -6,6 +6,7 @@ import { toSpaceRef } from '../api/com/atproto/space/util.js'
 import type { com } from '../lexicons/index.js'
 import type { SpaceDeletionRecipient } from '../space-deletion-notifications.js'
 import { lexAppAccessToDb, lexPolicyToDb, toLexConfig } from './config.js'
+import { migrateLegacyPolicy } from './migrate-policy.js'
 
 type LexPolicy = com.atproto.simplespace.createSpace.$InputBody['readPolicy']
 type LexAppAccess = com.atproto.simplespace.createSpace.$InputBody['appAccess']
@@ -90,6 +91,15 @@ export class SimpleSpaceManager {
       store.space.getActiveSpaceConfig(space),
     )
     return toLexConfig(config)
+  }
+
+  async getPolicy(space: SpaceRefString) {
+    const { spaceDid } = toSpaceRef(space)
+    await this.actorStore.ensureLatestSchema(spaceDid)
+    const config = await this.actorStore.read(spaceDid, (store) =>
+      store.space.getActiveSpaceConfig(space),
+    )
+    return { uri: space, policy: migrateLegacyPolicy(config) }
   }
 
   /**

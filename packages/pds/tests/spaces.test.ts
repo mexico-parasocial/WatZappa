@@ -667,6 +667,104 @@ describe('spaces', () => {
       createdAt: new Date().toISOString(),
     })
 
+    it('bridges private memberspace management and legacy configuration', async () => {
+      await asOAuth(alice, ownerGrant(alice), async (headers) => {
+        const policy = {
+          $type: 'com.atproto.memberspace.policy',
+          allowedApps: [],
+        }
+        const created = await call('com.atproto.space.createSpace', {
+          headers,
+          body: { spaceType: PERSONAL, skey: 'new-management', policy },
+        })
+        expect(created.status).toBe(200)
+        const space = created.body.uri
+        const got = await call('com.atproto.space.getSpace', {
+          headers,
+          params: { space },
+        })
+        expect(got.status).toBe(200)
+        expect(got.body.policy.allowedApps).toEqual([])
+        const legacy = await call('com.atproto.simplespace.getSpace', {
+          headers,
+          params: { space },
+        })
+        expect(legacy.body.appAccess.allowed).toEqual([])
+        const updated = await call('com.atproto.space.updateSpace', {
+          headers,
+          body: { space, policy: { $type: 'com.atproto.memberspace.policy' } },
+        })
+        expect(updated.status).toBe(200)
+        const after = await call('com.atproto.space.getSpace', {
+          headers,
+          params: { space },
+        })
+        expect(after.body.policy.allowedApps).toBeUndefined()
+        const deleted = await call('com.atproto.space.deleteSpace', {
+          headers,
+          body: { space },
+        })
+        expect(deleted.status).toBe(200)
+        const gone = await call('com.atproto.space.getSpace', {
+          headers,
+          params: { space },
+        })
+        expect(gone.body.error).toBe('SpaceNotFound')
+      })
+    })
+
+    it('rejects unsupported policies and enforces owner and management grants', async () => {
+      await asOAuth(alice, ownerGrant(alice), async (headers) => {
+        for (const policy of [
+          { $type: 'com.atproto.memberspace.policy', publicRead: true },
+          { $type: 'com.atproto.memberspace.policy', publicWrite: true },
+          { $type: 'com.atproto.memberspace.policy', publishMembers: true },
+          { $type: 'com.atproto.memberspace.policy', publishPolicy: true },
+          { $type: 'com.atproto.personalspace.policy' },
+        ]) {
+          const res = await call('com.atproto.space.createSpace', {
+            headers,
+            body: { spaceType: PERSONAL, skey: 'unsupported', policy },
+          })
+          expect(res.status).toBe(400)
+          expect(res.body.error).toBe('UnsupportedPolicy')
+        }
+        const created = await call('com.atproto.space.createSpace', {
+          headers,
+          body: {
+            spaceType: PERSONAL,
+            skey: 'new-auth',
+            policy: { $type: 'com.atproto.memberspace.policy' },
+          },
+        })
+        expect(created.status).toBe(200)
+      })
+      const space = `at://${alice}/space/${PERSONAL}/new-auth`
+      await asOAuth(bob, ownerGrant(alice), async (headers) => {
+        const res = await call('com.atproto.space.getSpace', {
+          headers,
+          params: { space },
+        })
+        expect(res.body.error).toBe('NotSpaceOwner')
+      })
+      await asOAuth(
+        alice,
+        `atproto space:${PERSONAL}?authority=${alice}&action=read`,
+        async (headers) => {
+          const res = await call('com.atproto.space.deleteSpace', {
+            headers,
+            body: { space },
+          })
+          expect(res.status).toBeGreaterThanOrEqual(400)
+        },
+      )
+      const password = await call('com.atproto.space.getSpace', {
+        headers: sc.getHeaders(alice),
+        params: { space },
+      })
+      expect(password.body.error).toBe('OAuthRequired')
+    })
+
     it('creates, reads, reconfigures and deletes an owned space', async () => {
       await asOAuth(alice, ownerGrant(alice), async (headers) => {
         const created = await createSpace(headers, 'lifecycle')
