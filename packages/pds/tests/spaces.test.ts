@@ -738,6 +738,22 @@ describe('spaces', () => {
           },
         })
         expect(created.status).toBe(200)
+        const rejectedUpdate = await call('com.atproto.space.updateSpace', {
+          headers,
+          body: {
+            space: created.body.uri,
+            policy: {
+              $type: 'com.atproto.memberspace.policy',
+              publicRead: true,
+            },
+          },
+        })
+        expect(rejectedUpdate.body.error).toBe('UnsupportedPolicy')
+        const unchanged = await call('com.atproto.space.getSpace', {
+          headers,
+          params: { space: created.body.uri },
+        })
+        expect(unchanged.body.policy.publicRead).toBe(false)
       })
       const space = `at://${alice}/space/${PERSONAL}/new-auth`
       await asOAuth(bob, ownerGrant(alice), async (headers) => {
@@ -746,6 +762,11 @@ describe('spaces', () => {
           params: { space },
         })
         expect(res.body.error).toBe('NotSpaceOwner')
+        const deleteAttempt = await call('com.atproto.space.deleteSpace', {
+          headers,
+          body: { space },
+        })
+        expect(deleteAttempt.body.error).toBe('NotSpaceOwner')
       })
       await asOAuth(
         alice,
