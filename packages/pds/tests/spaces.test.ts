@@ -697,6 +697,16 @@ describe('spaces', () => {
           },
         })
         expect(updated.status).toBe(200)
+        const policy = await network.pds.ctx.actorStore.read(alice, (store) =>
+          store.space.db.db
+            .selectFrom('space_policy')
+            .selectAll()
+            .where('uri', '=', space)
+            .executeTakeFirstOrThrow(),
+        )
+        expect(JSON.parse(policy.policyJson).allowedApps).toEqual([
+          'https://para.example/client-metadata.json',
+        ])
 
         const members = await call('com.atproto.simplespace.listMembers', {
           headers,
@@ -722,6 +732,16 @@ describe('spaces', () => {
           body: { space },
         })
         expect(deleted.status).toBe(200)
+        const removedPolicy = await network.pds.ctx.actorStore.read(
+          alice,
+          (store) =>
+            store.space.db.db
+              .selectFrom('space_policy')
+              .selectAll()
+              .where('uri', '=', space)
+              .executeTakeFirst(),
+        )
+        expect(removedPolicy).toBeUndefined()
 
         const revived = await call('com.atproto.space.createRecord', {
           headers,
