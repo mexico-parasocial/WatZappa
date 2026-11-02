@@ -91,6 +91,9 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
   is operator configuration; absent/unavailable verification must never fall
   back to account-only deduplication. This MAC authorization is not anonymous
   voting. `civic.delegation` carrying `signal` is also refused by the shared policy.
+  Every path that writes a ballot-shaped record must go through
+  `ballotWritePolicyRefusal` (`@atproto/common`); do not re-compose its checks
+  inline.
 
 - The dev-env seed (`packages/dev-env/src/seed/para-policies.ts`) adds policies
   filed under each of the six official matter groups and casts public policy

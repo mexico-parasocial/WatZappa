@@ -1,10 +1,7 @@
 import {
   TID,
-  ballotWriteRefusal,
-  reactionWriteRefusal,
+  ballotWritePolicyRefusal,
   repostWriteRefusal,
-  verifyCabildeoDelegation,
-  verifyPublicBallotProof,
 } from '@atproto/common'
 import { RecordSchema, walk } from '@atproto/lex'
 import { encode } from '@atproto/lex-cbor'
@@ -165,38 +162,14 @@ async function prepareWrite(opts: {
   // is the sole escape and belongs to sequencer recovery re-emitting history that
   // was already committed — never set it from an XRPC handler.
   if (!opts.replay) {
-    const refusal =
-      ballotWriteRefusal(opts.collection, opts.record) ??
-      reactionWriteRefusal(opts.collection, opts.record)
+    const refusal = await ballotWritePolicyRefusal(
+      opts.did,
+      opts.collection,
+      opts.record,
+    )
     if (refusal) throw new BallotRefusedError(refusal)
     const repostRefusal = repostWriteRefusal(opts.collection)
     if (repostRefusal) throw new UnsupportedRecordError(repostRefusal)
-    if (opts.collection === 'com.para.civic.vote') {
-      try {
-        if (!(await verifyPublicBallotProof(opts.did, opts.record))) {
-          throw new BallotRefusedError('A valid civic vote proof is required')
-        }
-      } catch (error) {
-        if (error instanceof BallotRefusedError) throw error
-        throw new BallotRefusedError(
-          'Civic vote verification is unavailable; no vote was written',
-        )
-      }
-    }
-    if (opts.collection === 'com.para.civic.delegation') {
-      try {
-        if (!(await verifyCabildeoDelegation(opts.did, opts.record))) {
-          throw new BallotRefusedError(
-            'A valid civic delegation proof is required',
-          )
-        }
-      } catch (error) {
-        if (error instanceof BallotRefusedError) throw error
-        throw new BallotRefusedError(
-          'Civic delegation verification is unavailable; no delegation was written',
-        )
-      }
-    }
   }
 
   const record: null | TypedLexMap =
