@@ -1,9 +1,14 @@
-// @ts-nocheck
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import type {
+  AtUriString,
+  DatetimeString,
+  DidString,
+  UriString,
+} from '@atproto/lex'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import { Code, isDataplaneError } from '../../../../data-plane/index.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 /*
@@ -13,7 +18,7 @@ import { resHeaders } from '../../../util.js'
  * list of a community's voters is not one anonymous request away.
  */
 export default function (server: Server, ctx: AppContext) {
-  server.xrpc.method('com.para.civic.getPolicyCommunityVotes', {
+  server.add(com.para.civic.getPolicyCommunityVotes, {
     auth: ctx.authVerifier.standardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -43,9 +48,12 @@ export default function (server: Server, ctx: AppContext) {
 
       const repoRev = await ctx.hydrator.actor.getRepoRevSafe(viewer)
       return {
-        encoding: 'application/json' as const,
+        encoding: 'application/json',
         body: {
-          community: { uri: res.communityUri, name: res.communityName },
+          community: {
+            uri: res.communityUri as AtUriString,
+            name: res.communityName,
+          },
           memberCount: res.memberCount,
           voterCount: res.voterCount,
           signalAverage: formatSignalAverage(res.signalAverage),
@@ -54,12 +62,12 @@ export default function (server: Server, ctx: AppContext) {
             count: bucket.count,
           })),
           votes: res.votes.map((vote) => ({
-            did: vote.did,
+            did: vote.did as DidString,
             handle: parseString(vote.handle),
             displayName: parseString(vote.displayName),
-            avatar: parseString(vote.avatar),
+            avatar: parseString(vote.avatar) as UriString | undefined,
             signal: vote.signal,
-            createdAt: vote.createdAt,
+            createdAt: vote.createdAt as DatetimeString,
           })),
         },
         headers: resHeaders({ repoRev, labelers }),

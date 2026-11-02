@@ -1,12 +1,12 @@
-// @ts-nocheck
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import type { AtUriString, DatetimeString } from '@atproto/lex'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.civic.getPolicyTally({
+  server.add(com.para.civic.getPolicyTally, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -24,7 +24,7 @@ export default function (server: Server, ctx: AppContext) {
         encoding: 'application/json' as const,
         body: {
           tally: {
-            subject: res.tally.subject,
+            subject: res.tally.subject as AtUriString,
             subjectType: parseString(res.tally.subjectType) || 'policy',
             community: parseString(res.tally.community) || '',
             voteCount: res.tally.voteCount,
@@ -43,7 +43,7 @@ export default function (server: Server, ctx: AppContext) {
               signal: bucket.signal,
               count: bucket.count,
             })),
-            computedAt: parseString(res.tally.computedAt),
+            computedAt: parseString(res.tally.computedAt) as DatetimeString,
           },
         },
         headers: resHeaders({ repoRev, labelers }),

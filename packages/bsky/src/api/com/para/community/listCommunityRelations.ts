@@ -1,12 +1,11 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/community/listCommunityRelations.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.community.listCommunityRelations({
+  server.add(com.para.community.listCommunityRelations, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -28,7 +27,7 @@ export const listCommunityRelations = async ({
   params,
 }: {
   ctx: AppContext
-  params: QueryParams
+  params: com.para.community.listCommunityRelations.$Params
 }) => {
   const res = await ctx.dataplane.getParaCommunityRelations({
     communityUri: params.communityUri ?? '',
@@ -40,15 +39,18 @@ export const listCommunityRelations = async ({
   })
 
   return {
-    relations: res.relations.map((relation) => ({
-      uri: relation.uri,
-      cid: relation.cid,
-      parentCommunityUri: relation.parentCommunityUri,
-      childCommunityUri: relation.childCommunityUri,
-      relation: relation.relation,
-      createdAt: relation.createdAt,
-      createdBy: relation.createdBy,
-    })),
+    relations: res.relations.map(
+      (relation) =>
+        ({
+          uri: relation.uri,
+          cid: relation.cid,
+          parentCommunityUri: relation.parentCommunityUri,
+          childCommunityUri: relation.childCommunityUri,
+          relation: relation.relation,
+          createdAt: relation.createdAt,
+          createdBy: relation.createdBy,
+        }) as com.para.community.defs.CommunityRelationView,
+    ),
     cursor: parseString(res.cursor),
   }
 }

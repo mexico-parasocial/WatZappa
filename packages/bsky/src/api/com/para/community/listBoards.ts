@@ -1,11 +1,11 @@
-import { AppContext } from '../../../../context.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/community/listBoards.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.community.listBoards({
+  server.add(com.para.community.listBoards, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -26,45 +26,7 @@ export default function (server: Server, ctx: AppContext) {
   })
 }
 
-type ListBoardsResult = {
-  boards: {
-    uri: string
-    cid: string
-    creatorDid: string
-    creatorHandle: string | undefined
-    creatorDisplayName: string | undefined
-    communityId: string
-    slug: string
-    name: string
-    description: string | undefined
-    quadrant: string
-    region: string | undefined
-    delegatesChatId: string
-    subdelegatesChatId: string
-    memberCount: number
-    viewerMembershipState:
-      | 'none'
-      | 'pending'
-      | 'active'
-      | 'left'
-      | 'removed'
-      | 'blocked'
-    viewerRoles: string[] | undefined
-    status: 'draft' | 'active' | undefined
-    founderStarterPackUri: string | undefined
-    createdAt: string
-    governanceSummary:
-      | {
-          moderatorCount: number
-          officialCount: number
-          deputyRoleCount: number
-          lastPublishedAt: string | undefined
-        }
-      | undefined
-  }[]
-  canCreateCommunity: boolean
-  cursor: string | undefined
-}
+type ListBoardsResult = com.para.community.listBoards.$OutputBody
 
 const listBoards = async ({
   ctx,
@@ -72,7 +34,7 @@ const listBoards = async ({
   viewer,
 }: {
   ctx: AppContext
-  params: QueryParams
+  params: com.para.community.listBoards.$Params
   viewer?: string
 }): Promise<ListBoardsResult> => {
   const cache = ctx.paraCache
@@ -107,49 +69,45 @@ const listBoards = async ({
   })
 
   const result = {
-    boards: res.boards.map((board) => ({
-      uri: board.uri,
-      cid: board.cid,
-      creatorDid: board.creatorDid,
-      creatorHandle: parseString(board.creatorHandle),
-      creatorDisplayName: parseString(board.creatorDisplayName),
-      communityId: board.communityId,
-      slug: board.slug,
-      name: board.name,
-      description: parseString(board.description),
-      quadrant: board.quadrant,
-      region: parseString(board.region),
-      delegatesChatId: board.delegatesChatId,
-      subdelegatesChatId: board.subdelegatesChatId,
-      memberCount: board.memberCount,
-      viewerMembershipState: (parseString(board.viewerMembershipState) ??
-        'none') as
-        | 'none'
-        | 'pending'
-        | 'active'
-        | 'left'
-        | 'removed'
-        | 'blocked',
-      viewerRoles: board.viewerRoles.length ? board.viewerRoles : undefined,
-      status: parseString((board as { status?: string }).status) as
-        | 'draft'
-        | 'active'
-        | undefined,
-      founderStarterPackUri: parseString(
-        (board as { founderStarterPackUri?: string }).founderStarterPackUri,
-      ),
-      createdAt: board.createdAt,
-      governanceSummary: board.governanceSummary
-        ? {
-            moderatorCount: board.governanceSummary.moderatorCount,
-            officialCount: board.governanceSummary.officialCount,
-            deputyRoleCount: board.governanceSummary.deputyRoleCount,
-            lastPublishedAt: parseString(
-              board.governanceSummary.lastPublishedAt,
-            ),
-          }
-        : undefined,
-    })),
+    boards: res.boards.map(
+      (board) =>
+        ({
+          uri: board.uri,
+          cid: board.cid,
+          creatorDid: board.creatorDid,
+          creatorHandle: parseString(board.creatorHandle),
+          creatorDisplayName: parseString(board.creatorDisplayName),
+          communityId: board.communityId,
+          slug: board.slug,
+          name: board.name,
+          description: parseString(board.description),
+          quadrant: board.quadrant,
+          region: parseString(board.region),
+          delegatesChatId: board.delegatesChatId,
+          subdelegatesChatId: board.subdelegatesChatId,
+          memberCount: board.memberCount,
+          viewerMembershipState: (parseString(board.viewerMembershipState) ??
+            'none') as
+            'none' | 'pending' | 'active' | 'left' | 'removed' | 'blocked',
+          viewerRoles: board.viewerRoles.length ? board.viewerRoles : undefined,
+          status: parseString((board as { status?: string }).status) as
+            'draft' | 'active' | undefined,
+          founderStarterPackUri: parseString(
+            (board as { founderStarterPackUri?: string }).founderStarterPackUri,
+          ),
+          createdAt: board.createdAt,
+          governanceSummary: board.governanceSummary
+            ? {
+                moderatorCount: board.governanceSummary.moderatorCount,
+                officialCount: board.governanceSummary.officialCount,
+                deputyRoleCount: board.governanceSummary.deputyRoleCount,
+                lastPublishedAt: parseString(
+                  board.governanceSummary.lastPublishedAt,
+                ),
+              }
+            : undefined,
+        }) as com.para.community.listBoards.BoardView,
+    ),
     canCreateCommunity: true,
     cursor: parseString(res.cursor),
   }

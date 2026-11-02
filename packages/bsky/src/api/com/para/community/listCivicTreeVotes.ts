@@ -1,10 +1,10 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.community.listCivicTreeVotes({
+  server.add(com.para.community.listCivicTreeVotes, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -23,14 +23,17 @@ export default function (server: Server, ctx: AppContext) {
       return {
         encoding: 'application/json' as const,
         body: {
-          votes: votes.map((v) => ({
-            uri: v.uri,
-            cid: v.cid,
-            statement: v.statement,
-            voter: v.voter,
-            direction: v.vote,
-            createdAt: v.createdAt,
-          })),
+          votes: votes.map(
+            (v) =>
+              ({
+                uri: v.uri,
+                cid: v.cid,
+                statement: v.statement,
+                voter: v.voter,
+                direction: v.vote,
+                createdAt: v.createdAt,
+              }) as com.para.community.listCivicTreeVotes.VoteView,
+          ),
           cursor: res.cursor || undefined,
         },
         headers: resHeaders({ repoRev, labelers }),

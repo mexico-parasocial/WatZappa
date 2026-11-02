@@ -1,9 +1,7 @@
-// @ts-nocheck
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/community/getBoard.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 const CREATE_COMMUNITY_CAPABILITY = 'create_community'
@@ -12,7 +10,7 @@ const LEAVE_COMMUNITY_CAPABILITY = 'leave_community'
 const MANAGE_GOVERNANCE_CAPABILITY = 'manage_governance'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.community.getBoard({
+  server.add(com.para.community.getBoard, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -39,7 +37,7 @@ const getBoard = async ({
   viewer,
 }: {
   ctx: AppContext
-  params: QueryParams
+  params: com.para.community.getBoard.$Params
   viewer?: string
 }) => {
   console.log('[getBoard API] Incoming params:', params, 'viewer:', viewer)
@@ -79,13 +77,16 @@ const getBoard = async ({
             viewerMembershipState: res.board.viewerMembershipState || 'none',
             canCreateCommunity: true,
           }),
-      availableActions: res.availableActions.map((action) => ({
-        action: action.action,
-        status: action.status,
-        policy: action.policy,
-        reason: parseString(action.reason),
-        evidence: parseString(action.evidence),
-      })),
+      availableActions: res.availableActions.map(
+        (action) =>
+          ({
+            action: action.action,
+            status: action.status,
+            policy: action.policy,
+            reason: parseString(action.reason),
+            evidence: parseString(action.evidence),
+          }) as com.para.community.defs.AvailableAction,
+      ),
     }
   } catch (err) {
     console.error('[getBoard API] FATAL ERROR during getBoard execution:', err)
@@ -102,47 +103,44 @@ const mapBoardView = (
   governanceSummary?: Awaited<
     ReturnType<AppContext['dataplane']['getParaCommunityBoard']>
   >['governanceSummary'],
-) => ({
-  uri: board.uri,
-  cid: board.cid,
-  creatorDid: board.creatorDid,
-  creatorHandle: parseString(board.creatorHandle),
-  creatorDisplayName: parseString(board.creatorDisplayName),
-  communityId: board.communityId,
-  slug: board.slug,
-  name: board.name,
-  description: parseString(board.description),
-  quadrant: board.quadrant,
-  region: parseString(board.region),
-  delegatesChatId: board.delegatesChatId,
-  subdelegatesChatId: board.subdelegatesChatId,
-  memberCount: board.memberCount,
-  viewerMembershipState: (parseString(board.viewerMembershipState) ??
-    'none') as 'none' | 'pending' | 'active' | 'left' | 'removed' | 'blocked',
-  viewerRoles: board.viewerRoles.length ? board.viewerRoles : undefined,
-  status: parseString((board as { status?: string }).status) as
-    | 'draft'
-    | 'active'
-    | undefined,
-  founderStarterPackUri: parseString(
-    (board as { founderStarterPackUri?: string }).founderStarterPackUri,
-  ),
-  governanceMode: (parseString(board.governanceMode) || 'hierarchical') as
-    | 'hierarchical'
-    | 'horizontal',
-  admissionMode: (parseString(board.admissionMode) || 'open') as
-    | 'open'
-    | 'assembly_approval',
-  createdAt: board.createdAt,
-  governanceSummary: governanceSummary
-    ? {
-        moderatorCount: governanceSummary.moderatorCount,
-        officialCount: governanceSummary.officialCount,
-        deputyRoleCount: governanceSummary.deputyRoleCount,
-        lastPublishedAt: parseString(governanceSummary.lastPublishedAt),
-      }
-    : undefined,
-})
+) =>
+  ({
+    uri: board.uri,
+    cid: board.cid,
+    creatorDid: board.creatorDid,
+    creatorHandle: parseString(board.creatorHandle),
+    creatorDisplayName: parseString(board.creatorDisplayName),
+    communityId: board.communityId,
+    slug: board.slug,
+    name: board.name,
+    description: parseString(board.description),
+    quadrant: board.quadrant,
+    region: parseString(board.region),
+    delegatesChatId: board.delegatesChatId,
+    subdelegatesChatId: board.subdelegatesChatId,
+    memberCount: board.memberCount,
+    viewerMembershipState: (parseString(board.viewerMembershipState) ??
+      'none') as 'none' | 'pending' | 'active' | 'left' | 'removed' | 'blocked',
+    viewerRoles: board.viewerRoles.length ? board.viewerRoles : undefined,
+    status: parseString((board as { status?: string }).status) as
+      'draft' | 'active' | undefined,
+    founderStarterPackUri: parseString(
+      (board as { founderStarterPackUri?: string }).founderStarterPackUri,
+    ),
+    governanceMode: (parseString(board.governanceMode) || 'hierarchical') as
+      'hierarchical' | 'horizontal',
+    admissionMode: (parseString(board.admissionMode) || 'open') as
+      'open' | 'assembly_approval',
+    createdAt: board.createdAt,
+    governanceSummary: governanceSummary
+      ? {
+          moderatorCount: governanceSummary.moderatorCount,
+          officialCount: governanceSummary.officialCount,
+          deputyRoleCount: governanceSummary.deputyRoleCount,
+          lastPublishedAt: parseString(governanceSummary.lastPublishedAt),
+        }
+      : undefined,
+  }) as com.para.community.getBoard.BoardView
 
 const getViewerCapabilities = ({
   viewer,

@@ -1,8 +1,8 @@
 import type { Request } from 'express'
 import { describe, expect, it, vi } from 'vitest'
+import type { Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import { FeatureGatesClient } from '../../../../feature-gates/index.js'
-import type { Server } from '../../../../lexicon/index.js'
 import registerAudit from './getAuditTrail.js'
 import registerTally from './getTallySimulation.js'
 import registerIntensities from './listIntensities.js'
@@ -66,14 +66,12 @@ describe('assertQuadraticVotingEnabled', () => {
         throw new Error('Handler was not registered')
       }
       const server = {
-        com: {
-          para: {
-            community: {
-              [name]: (config: { handler: typeof handler }) => {
-                handler = config.handler
-              },
-            },
-          },
+        add: (
+          schema: { $lxm: string },
+          config: { handler: typeof handler },
+        ) => {
+          expect(schema.$lxm).toBe(`com.para.community.${name}`)
+          handler = config.handler
         },
       } as unknown as Server
       const ctx = {

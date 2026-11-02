@@ -1,7 +1,11 @@
-import type { AtIdentifierString, DidString } from '@atproto/syntax'
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
+import type {
+  AtIdentifierString,
+  DatetimeString,
+  DidString,
+} from '@atproto/syntax'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 /**
@@ -9,7 +13,7 @@ import { resHeaders } from '../../../util.js'
  * Communities, Authored Cabildeos, Votes, Delegations, and Highlights.
  */
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.actor.exportCivicTree({
+  server.add(com.para.actor.exportCivicTree, {
     auth: ctx.authVerifier.standard,
     handler: async ({ params, auth, req }) => {
       const viewer = auth.credentials.iss
@@ -40,7 +44,7 @@ export default function (server: Server, ctx: AppContext) {
       }
 
       const files: Array<{ path: string; content: string }> = []
-      const generatedAt = new Date().toISOString()
+      const generatedAt = new Date().toISOString() as DatetimeString
 
       // Fetch personal civic tree data from data-plane
       const res = await ctx.dataplane.getParaPersonalCivicTree({

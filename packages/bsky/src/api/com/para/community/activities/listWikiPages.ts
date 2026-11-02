@@ -1,12 +1,15 @@
+import type { Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../../context.js'
-import type { Server } from '../../../../../lexicon/index.js'
+import { com } from '../../../../../lexicons/index.js'
 import {
   forwardDataplaneErrors,
   parseDataplaneJson,
 } from '../civicTree/util.js'
 
+type WikiPageView = com.para.community.listWikiPages.WikiPageView
+
 export default function (server: Server, ctx: AppContext) {
-  server.xrpc.method('com.para.community.listWikiPages', {
+  server.add(com.para.community.listWikiPages, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params }) => {
       const res = await forwardDataplaneErrors(() =>
@@ -16,8 +19,10 @@ export default function (server: Server, ctx: AppContext) {
         }),
       )
       return {
-        encoding: 'application/json' as const,
-        body: { pages: parseDataplaneJson(res.itemsJson, []) },
+        encoding: 'application/json',
+        body: {
+          pages: parseDataplaneJson<WikiPageView[]>(res.itemsJson, []),
+        },
       }
     },
   })

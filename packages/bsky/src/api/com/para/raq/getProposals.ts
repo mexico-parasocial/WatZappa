@@ -1,10 +1,10 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.raq.getProposals({
+  server.add(com.para.raq.getProposals, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -23,23 +23,26 @@ export default function (server: Server, ctx: AppContext) {
         encoding: 'application/json' as const,
         body: {
           cursor: res.cursor || undefined,
-          proposals: res.proposals.map((p) => ({
-            uri: p.uri,
-            cid: p.cid,
-            creator: p.creator,
-            text: p.text,
-            targetAxis: p.targetAxis || undefined,
-            targetCommunity: p.targetCommunity || undefined,
-            upvotes: p.upvotes,
-            downvotes: p.downvotes,
-            answerCount: p.answerCount,
-            answerAverage: p.answerAverage,
-            viewerUpvote: p.viewerUpvote,
-            viewerDownvote: p.viewerDownvote,
-            viewerAnswer: p.viewerAnswer,
-            createdAt: p.createdAt,
-            indexedAt: p.indexedAt,
-          })),
+          proposals: res.proposals.map(
+            (p) =>
+              ({
+                uri: p.uri,
+                cid: p.cid,
+                creator: p.creator,
+                text: p.text,
+                targetAxis: p.targetAxis || undefined,
+                targetCommunity: p.targetCommunity || undefined,
+                upvotes: p.upvotes,
+                downvotes: p.downvotes,
+                answerCount: p.answerCount,
+                answerAverage: p.answerAverage,
+                viewerUpvote: p.viewerUpvote,
+                viewerDownvote: p.viewerDownvote,
+                viewerAnswer: p.viewerAnswer,
+                createdAt: p.createdAt,
+                indexedAt: p.indexedAt,
+              }) as com.para.raq.getProposals.ProposalView,
+          ),
         },
         headers: resHeaders({ repoRev, labelers }),
       }

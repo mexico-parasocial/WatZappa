@@ -231,13 +231,14 @@ Recommendations are proposals for sign-off, not decisions.
 ## 9. Spike results, 2026-10-31
 
 > **Stale base.** The spike ran against the pre-`origin/main` `@atproto/space`
-> (signature, `ikm` and DPoP) and will not run on main's rewritten package.
+> (signature, `ikm` and DPoP) and will not run on main's rewritten package; its
+> test was removed when `origin/main` was merged (recover it from `f9dd0edb5`).
 > Findings 4–6 concern our own syncer logic and still apply. Findings 1–3 and 7,
 > the "library covers the cryptography" claim, and the conclusion's estimate of
 > PDS work are unverified against main, which already ships PDS space storage
 > and routes (§2).
 
-`packages/space/tests/ballot-spike.test.ts` (9 tests, throwaway) models the
+The removed `packages/space/tests/ballot-spike.test.ts` (9 tests, throwaway) models the
 three roles in memory with the real `@atproto/space` primitives, the real
 `ballotWritePolicyRefusal`, and an HTTP stand-in for the m8 verifier. It
 exercises: gated write, delegation token → DPoP-bound credential, CAR fetch and

@@ -1,10 +1,10 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.community.listDelegations({
+  server.add(com.para.community.listDelegations, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -24,23 +24,26 @@ export default function (server: Server, ctx: AppContext) {
       return {
         encoding: 'application/json' as const,
         body: {
-          delegations: delegations.map((d) => ({
-            uri: d.uri,
-            cid: d.cid,
-            delegate: d.delegate,
-            delegator: d.delegator,
-            delegateRole: d.delegateRole ?? undefined,
-            party: d.party ?? undefined,
-            scope: {
-              mode: d.scopeMode,
-              community: d.scopeCommunity ?? undefined,
-              topic: d.scopeTopic ?? undefined,
-              proposal: d.scopeProposal ?? undefined,
-            },
-            expiresAt: d.expiresAt ?? undefined,
-            revokedAt: d.revokedAt ?? undefined,
-            createdAt: d.createdAt,
-          })),
+          delegations: delegations.map(
+            (d) =>
+              ({
+                uri: d.uri,
+                cid: d.cid,
+                delegate: d.delegate,
+                delegator: d.delegator,
+                delegateRole: d.delegateRole ?? undefined,
+                party: d.party ?? undefined,
+                scope: {
+                  mode: d.scopeMode,
+                  community: d.scopeCommunity ?? undefined,
+                  topic: d.scopeTopic ?? undefined,
+                  proposal: d.scopeProposal ?? undefined,
+                },
+                expiresAt: d.expiresAt ?? undefined,
+                revokedAt: d.revokedAt ?? undefined,
+                createdAt: d.createdAt,
+              }) as com.para.community.listDelegations.DelegationView,
+          ),
           cursor: res.cursor || undefined,
         },
         headers: resHeaders({ repoRev, labelers }),

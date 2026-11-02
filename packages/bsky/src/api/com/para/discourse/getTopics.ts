@@ -1,11 +1,11 @@
 // @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/discourse/getTopics.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.discourse.getTopics({
+  server.add(com.para.discourse.getTopics, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -28,12 +28,13 @@ export default function (server: Server, ctx: AppContext) {
 
 const getDiscourseTopics = async (inputs: {
   ctx: AppContext
-  params: QueryParams
+  params: com.para.discourse.getTopics.$Params
 }) => {
   const { ctx, params } = inputs
   const res = await ctx.dataplane.getParaDiscourseTopics({
     community: params.community ?? '',
-    timeframe: params.timeframe,
+    // @NOTE `timeframe` is not a declared param, so it was always unset here.
+    timeframe: undefined,
   })
 
   return {

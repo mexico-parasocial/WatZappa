@@ -1,5 +1,5 @@
 {
-  "extends": ["../../tsconfig/node.tsconfig.json"],
+  "extends": ["../../tsconfig/isomorphic.tsconfig.json"],
   "include": ["./src"],
   "exclude": ["**/*.test.ts"],
   "references": [
@@ -8,7 +8,6 @@
     { "path": "../crypto/tsconfig.build.json" },
     { "path": "../lex/lex-cbor/tsconfig.build.json" },
     { "path": "../lex/lex-data/tsconfig.build.json" },
-    { "path": "../oauth/jwk/tsconfig.build.json" },
   ],
   "compilerOptions": {
     "rootDir": "./src",

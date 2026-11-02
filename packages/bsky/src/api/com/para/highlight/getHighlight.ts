@@ -1,13 +1,12 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { DataPlaneClient } from '../../../../data-plane/index.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import type { DataPlaneClient } from '../../../../data-plane/index.js'
 import { parseCid, parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/highlight/getHighlight.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.highlight.getHighlight({
+  server.add(com.para.highlight.getHighlight, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -24,7 +23,10 @@ export default function (server: Server, ctx: AppContext) {
   })
 }
 
-const getHighlight = async (inputs: { ctx: Context; params: QueryParams }) => {
+const getHighlight = async (inputs: {
+  ctx: Context
+  params: com.para.highlight.getHighlight.$Params
+}) => {
   const { ctx, params } = inputs
   const res = await ctx.dataplane.getParaHighlight({
     highlightUri: params.highlight,
@@ -52,24 +54,25 @@ const mapHighlightView = (view: {
   party: string
   visibility: string
   createdAt: string
-}) => ({
-  uri: view.uri,
-  cid: parseCidOrThrow(view.cid),
-  creator: view.creator,
-  indexedAt: view.indexedAt,
-  subjectUri: view.subjectUri,
-  subjectCid: parseString(view.subjectCid),
-  text: view.text,
-  start: view.start,
-  end: view.end,
-  color: view.color,
-  tag: parseString(view.tag),
-  community: parseString(view.community),
-  state: parseString(view.state),
-  party: parseString(view.party),
-  visibility: view.visibility,
-  createdAt: view.createdAt,
-})
+}) =>
+  ({
+    uri: view.uri,
+    cid: parseCidOrThrow(view.cid),
+    creator: view.creator,
+    indexedAt: view.indexedAt,
+    subjectUri: view.subjectUri,
+    subjectCid: parseString(view.subjectCid),
+    text: view.text,
+    start: view.start,
+    end: view.end,
+    color: view.color,
+    tag: parseString(view.tag),
+    community: parseString(view.community),
+    state: parseString(view.state),
+    party: parseString(view.party),
+    visibility: view.visibility,
+    createdAt: view.createdAt,
+  }) as com.para.highlight.defs.HighlightView
 
 const parseCidOrThrow = (cidStr: string) => {
   const cid = parseCid(cidStr)

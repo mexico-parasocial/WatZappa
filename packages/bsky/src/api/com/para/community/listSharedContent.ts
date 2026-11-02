@@ -1,12 +1,11 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/community/listSharedContent.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.community.listSharedContent({
+  server.add(com.para.community.listSharedContent, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -29,7 +28,7 @@ const listSharedContent = async ({
   viewer,
 }: {
   ctx: AppContext
-  params: QueryParams
+  params: com.para.community.listSharedContent.$Params
   viewer: string
 }) => {
   const res = await ctx.dataplane.getParaCommunitySharedContent({
@@ -43,45 +42,48 @@ const listSharedContent = async ({
   })
 
   return {
-    items: res.items.map((item) => ({
-      uri: item.uri,
-      cid: item.cid,
-      subject: item.subject
-        ? { uri: item.subject.uri, cid: item.subject.cid }
-        : { uri: '', cid: '' },
-      communityUri: item.communityUri,
-      sourceCommunityUri: parseString(item.sourceCommunityUri),
-      contentType: item.contentType,
-      sharedBy: item.sharedBy,
-      sharedByHandle: parseString(item.sharedByHandle),
-      note: parseString(item.note),
-      visibility: parseString(item.visibility),
-      sourceApp: parseString(item.sourceApp),
-      pinned: item.pinned,
-      sortRank: item.sortRank || undefined,
-      createdAt: item.createdAt,
-      removed: item.removed,
-      removedAt: parseString(item.removedAt),
-      removedBy: parseString(item.removedBy),
-      latestAction: item.latestAction
-        ? {
-            uri: item.latestAction.uri,
-            cid: item.latestAction.cid,
-            sharedContent: item.latestAction.sharedContent
-              ? {
-                  uri: item.latestAction.sharedContent.uri,
-                  cid: item.latestAction.sharedContent.cid,
-                }
-              : { uri: '', cid: '' },
-            communityUri: item.latestAction.communityUri,
-            action: item.latestAction.action,
-            note: parseString(item.latestAction.note),
-            createdAt: item.latestAction.createdAt,
-            createdBy: item.latestAction.createdBy,
-          }
-        : undefined,
-      hydrationState: parseString(item.hydrationState) ?? 'unresolved',
-    })),
+    items: res.items.map(
+      (item) =>
+        ({
+          uri: item.uri,
+          cid: item.cid,
+          subject: item.subject
+            ? { uri: item.subject.uri, cid: item.subject.cid }
+            : { uri: '', cid: '' },
+          communityUri: item.communityUri,
+          sourceCommunityUri: parseString(item.sourceCommunityUri),
+          contentType: item.contentType,
+          sharedBy: item.sharedBy,
+          sharedByHandle: parseString(item.sharedByHandle),
+          note: parseString(item.note),
+          visibility: parseString(item.visibility),
+          sourceApp: parseString(item.sourceApp),
+          pinned: item.pinned,
+          sortRank: item.sortRank || undefined,
+          createdAt: item.createdAt,
+          removed: item.removed,
+          removedAt: parseString(item.removedAt),
+          removedBy: parseString(item.removedBy),
+          latestAction: item.latestAction
+            ? {
+                uri: item.latestAction.uri,
+                cid: item.latestAction.cid,
+                sharedContent: item.latestAction.sharedContent
+                  ? {
+                      uri: item.latestAction.sharedContent.uri,
+                      cid: item.latestAction.sharedContent.cid,
+                    }
+                  : { uri: '', cid: '' },
+                communityUri: item.latestAction.communityUri,
+                action: item.latestAction.action,
+                note: parseString(item.latestAction.note),
+                createdAt: item.latestAction.createdAt,
+                createdBy: item.latestAction.createdBy,
+              }
+            : undefined,
+          hydrationState: parseString(item.hydrationState) ?? 'unresolved',
+        }) as com.para.community.defs.SharedContentView,
+    ),
     cursor: parseString(res.cursor),
   }
 }

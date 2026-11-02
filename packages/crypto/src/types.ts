@@ -28,5 +28,7 @@ export type DidKeyPlugin = {
 }
 
 export type VerifyOptions = {
+  /** Require a specific signature encoding. */
+  format?: 'compact' | 'der'
   allowMalleableSig?: boolean
 }

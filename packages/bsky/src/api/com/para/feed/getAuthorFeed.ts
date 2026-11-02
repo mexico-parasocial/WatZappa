@@ -1,16 +1,15 @@
-// @ts-nocheck
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { DataPlaneClient } from '../../../../data-plane/index.js'
-import { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { ParaCacheService } from '../../../../cache/para-cache.js'
+import type { AppContext } from '../../../../context.js'
+import type { DataPlaneClient } from '../../../../data-plane/index.js'
+import type { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/feed/getAuthorFeed.js'
-import { Views } from '../../../../views/index.js'
+import { com } from '../../../../lexicons/index.js'
+import type { Views } from '../../../../views/index.js'
 import { clearlyBadCursor, resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.feed.getAuthorFeed({
+  server.add(com.para.feed.getAuthorFeed, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer, includeTakedowns } = ctx.authVerifier.parseCreds(auth)
@@ -39,7 +38,10 @@ export default function (server: Server, ctx: AppContext) {
   })
 }
 
-const getAuthorFeed = async (inputs: { ctx: Context; params: Params }) => {
+const getAuthorFeed = async (inputs: {
+  ctx: Context
+  params: Params
+}): Promise<com.para.feed.getAuthorFeed.$OutputBody> => {
   const { ctx, params } = inputs
   const [did] = await ctx.hydrator.actor.getDids([params.actor])
   if (!did) {
@@ -96,7 +98,10 @@ const getAuthorFeed = async (inputs: { ctx: Context; params: Params }) => {
     postType: params.postType ?? '',
   })
   if (cache && cacheKey) {
-    const cached = await cache.get(cacheKey, 'authorFeed')
+    const cached = await cache.get<com.para.feed.getAuthorFeed.$OutputBody>(
+      cacheKey,
+      'authorFeed',
+    )
     if (cached) return cached
   }
 
@@ -111,19 +116,22 @@ const getAuthorFeed = async (inputs: { ctx: Context; params: Params }) => {
   })
 
   const result = {
-    feed: res.items.map((item) => ({
-      uri: item.uri,
-      cid: item.cid,
-      author: item.author,
-      text: item.text,
-      createdAt: item.createdAt,
-      replyRoot: parseString(item.replyRoot),
-      replyParent: parseString(item.replyParent),
-      langs: item.langs.length ? item.langs : undefined,
-      tags: item.tags.length ? item.tags : undefined,
-      flairs: item.flairs.length ? item.flairs : undefined,
-      postType: parseString(item.postType),
-    })),
+    feed: res.items.map(
+      (item) =>
+        ({
+          uri: item.uri,
+          cid: item.cid,
+          author: item.author,
+          text: item.text,
+          createdAt: item.createdAt,
+          replyRoot: parseString(item.replyRoot),
+          replyParent: parseString(item.replyParent),
+          langs: item.langs.length ? item.langs : undefined,
+          tags: item.tags.length ? item.tags : undefined,
+          flairs: item.flairs.length ? item.flairs : undefined,
+          postType: parseString(item.postType),
+        }) as com.para.feed.getAuthorFeed.PostView,
+    ),
     cursor: parseString(res.cursor),
   }
 
@@ -137,9 +145,9 @@ type Context = {
   hydrator: Hydrator
   dataplane: DataPlaneClient
   views: Views
-  paraCache?: import('../../../../cache/para-cache.js').ParaCacheService
+  paraCache?: ParaCacheService
 }
 
-type Params = QueryParams & {
+type Params = com.para.feed.getAuthorFeed.$Params & {
   hydrateCtx: HydrateCtx
 }

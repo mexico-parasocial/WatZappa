@@ -280,6 +280,28 @@ export class AuthVerifier {
     }
   }
 
+  /**
+   * Spaces methods take OAuth sessions only (CD-P3, PERSONAL_CIVIC_TREE.md): a
+   * password session or app password never reaches a space, unlike on the
+   * reference PDS. The handler checks the `space:` grant itself, since the space
+   * comes from the params or the body.
+   */
+  public spaceAuthorization<P extends Params>(
+    opts: VerifiedOptions & AuthorizedOptions<P>,
+  ): MethodAuthVerifier<OAuthOutput, P> {
+    const oauth = this.oauth(opts)
+    return async (ctx) => {
+      if (extractAuthType(ctx.req) !== AuthType.DPOP) {
+        setAuthHeaders(ctx.res)
+        throw new AuthRequiredError(
+          'Spaces require an OAuth session',
+          'OAuthRequired',
+        )
+      }
+      return oauth(ctx)
+    }
+  }
+
   public authorizationOrModService<P extends Params>(
     opts: VerifiedOptions & ExtraScopedOptions & AuthorizedOptions<P>,
   ): MethodAuthVerifier<AccessOutput | OAuthOutput | ModServiceOutput, P> {

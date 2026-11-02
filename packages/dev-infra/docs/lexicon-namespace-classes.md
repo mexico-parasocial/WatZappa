@@ -75,27 +75,21 @@ export class ComParaFeedNS {
 }
 ```
 
-### `@atproto/pds` (Server)
+### Services (no NS classes)
 
-Each method registers an XRPC handler via `this._server.xrpc.method(nsid, cfg)`.
+The PDS and AppView no longer have server-side NS classes. Each route registers
+its generated `@atproto/lex` schema directly:
 
 ```ts
-// packages/pds/src/lexicon/index.ts
-export class ComParaFeedNS {
-  _server: Server
+// packages/bsky/src/api/com/para/feed/getAuthorFeed.ts
+import { com } from '../../../../lexicons/index.js'
 
-  getAuthorFeed<A extends Auth = void>(
-    cfg: MethodConfigOrHandler<
-      A,
-      ComParaFeedGetAuthorFeed.QueryParams,
-      ComParaFeedGetAuthorFeed.HandlerInput,
-      ComParaFeedGetAuthorFeed.HandlerOutput
-    >,
-  ) {
-    const nsid = 'com.para.feed.getAuthorFeed'
-    return this._server.xrpc.method(nsid, cfg)
-  }
-}
+server.add(com.para.feed.getAuthorFeed, {
+  auth: ctx.authVerifier.optionalStandardOrRole,
+  handler: async ({ params }) => {
+    /* … */
+  },
+})
 ```
 
 ## Record Classes
@@ -114,10 +108,10 @@ export class ComParaPostRecord {
 
 ## Where They Live
 
-| Package         | File                                 | Role                   |
-| --------------- | ------------------------------------ | ---------------------- |
-| `@atproto/api`  | `packages/api/src/client/index.ts`   | Client-side NS classes |
-| `@atproto/pds`  | `packages/pds/src/lexicon/index.ts`  | Server-side NS classes |
-| `@atproto/bsky` | `packages/bsky/src/lexicon/index.ts` | Server-side NS classes |
+| Package        | File                               | Role                   |
+| -------------- | ---------------------------------- | ---------------------- |
+| `@atproto/api` | `packages/api/src/client/index.ts` | Client-side NS classes |
 
-> **Note:** These classes are generated code. The source of truth is the lexicon schema definitions in `lexicons.ts`. If you add a new `com.para.*` lexicon, you must regenerate or manually add the corresponding NS class in all 3 packages.
+> **Note:** These classes are generated code (`gen-api`, fed from the package's
+> installed `./lexicons`). A new `com.para.*` lexicon reaches a service by
+> listing it in that service's `lexicons.json`; see the `lex-setup` skill.

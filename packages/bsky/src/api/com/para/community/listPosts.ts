@@ -1,12 +1,11 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/community/listPosts.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.community.listPosts({
+  server.add(com.para.community.listPosts, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -29,8 +28,8 @@ const listPosts = async ({
   params,
 }: {
   ctx: AppContext
-  params: QueryParams
-}) => {
+  params: com.para.community.listPosts.$Params
+}): Promise<com.para.community.listPosts.$OutputBody> => {
   const cache = ctx.paraCache
   const cacheKey = cache?.communityFeedKey({
     community: params.community,
@@ -39,7 +38,10 @@ const listPosts = async ({
     postType: params.postType ?? '',
   })
   if (cache && cacheKey && process.env.NODE_ENV !== 'development') {
-    const cached = await cache.get(cacheKey, 'authorFeed')
+    const cached = await cache.get<com.para.community.listPosts.$OutputBody>(
+      cacheKey,
+      'authorFeed',
+    )
     if (cached) return cached
   }
 
@@ -51,19 +53,22 @@ const listPosts = async ({
   })
 
   const result = {
-    feed: res.items.map((item) => ({
-      uri: item.uri,
-      cid: item.cid,
-      author: item.author,
-      text: item.text,
-      createdAt: item.createdAt,
-      replyRoot: parseString(item.replyRoot),
-      replyParent: parseString(item.replyParent),
-      langs: item.langs.length ? item.langs : undefined,
-      tags: item.tags.length ? item.tags : undefined,
-      flairs: item.flairs.length ? item.flairs : undefined,
-      postType: parseString(item.postType),
-    })),
+    feed: res.items.map(
+      (item) =>
+        ({
+          uri: item.uri,
+          cid: item.cid,
+          author: item.author,
+          text: item.text,
+          createdAt: item.createdAt,
+          replyRoot: parseString(item.replyRoot),
+          replyParent: parseString(item.replyParent),
+          langs: item.langs.length ? item.langs : undefined,
+          tags: item.tags.length ? item.tags : undefined,
+          flairs: item.flairs.length ? item.flairs : undefined,
+          postType: parseString(item.postType),
+        }) as com.para.feed.getAuthorFeed.PostView,
+    ),
     cursor: parseString(res.cursor),
   }
 

@@ -1,7 +1,8 @@
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import type { DatetimeString } from '@atproto/lex'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 /**
@@ -14,7 +15,7 @@ import { resHeaders } from '../../../util.js'
  *             and Obsidian [[wikilinks]] for cross-references
  */
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.community.exportObsidianVault({
+  server.add(com.para.community.exportObsidianVault, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -27,7 +28,7 @@ export default function (server: Server, ctx: AppContext) {
       }
 
       const files: Array<{ path: string; content: string }> = []
-      const generatedAt = new Date().toISOString()
+      const generatedAt = new Date().toISOString() as DatetimeString
 
       // ── Community scoped export ───────────────────────────────────────────
       if (params.community) {
@@ -83,7 +84,11 @@ export default function (server: Server, ctx: AppContext) {
         // Map/index note
         files.push({
           path: 'README.md',
-          content: buildVaultReadme(board?.name ?? communityUri, packsRes.briefingPacks.length, postsRes.items.length),
+          content: buildVaultReadme(
+            board?.name ?? communityUri,
+            packsRes.briefingPacks.length,
+            postsRes.items.length,
+          ),
         })
       }
 
@@ -178,7 +183,10 @@ type PackProto = {
   createdByHandle: string
 }
 
-function buildBriefingPackNote(pack: PackProto, communityName?: string): string {
+function buildBriefingPackNote(
+  pack: PackProto,
+  communityName?: string,
+): string {
   const compassTag = '' // would come from community quadrant
   const communityLink = communityName
     ? `[[Communities/${slugify(communityName)}]]`
@@ -251,7 +259,11 @@ ${post.text ?? ''}
 `
 }
 
-function buildVaultReadme(communityName: string, packCount: number, postCount: number): string {
+function buildVaultReadme(
+  communityName: string,
+  packCount: number,
+  postCount: number,
+): string {
   return `---
 type: vault-index
 exportedAt: "${new Date().toISOString()}"

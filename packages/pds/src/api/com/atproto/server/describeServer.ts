@@ -21,6 +21,7 @@ export default function (server: Server, ctx: AppContext) {
         availableUserDomains,
         inviteCodeRequired,
         blobUploadLimit,
+        ...(ctx.cfg.spaces.enabled ? { spacesAlpha: true } : {}),
         links: { privacyPolicy, termsOfService },
         contact: {
           email: contactEmailAddress,

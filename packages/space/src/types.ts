@@ -1,62 +1,71 @@
 import { z } from 'zod'
-import type { check } from '@atproto/common'
-import { type Cid, type LexMap, ifCid } from '@atproto/lex-data'
+import type { Cid, LexMap } from '@atproto/lex-data'
+import {
+  type DidString,
+  type NsidString,
+  type RecordKeyString,
+  type SpaceRefString,
+  isSpaceRefString,
+  isValidDid,
+} from '@atproto/syntax'
 
 export type SpaceRecord = LexMap
 
-export type RecordPath = {
-  collection: string
-  rkey: string
+export type RecordPathParts = {
+  collection: NsidString
+  rkey: RecordKeyString
 }
 
 // A create has no `prev`, a delete no `cid`, an update both.
-export type RepoOp = RecordPath & {
+export type RepoOp = RecordPathParts & {
   cid: Cid | null
   prev: Cid | null
 }
 
 export const COMMIT_VERSION = 1
 
+// The maximum size of a record's DRISL encoding.
+export const MAX_RECORD_SIZE = 1024 * 1024 // 1 MiB
+
+// Which repo, in which space, at which revision a commit describes.
 export type CommitCtx = {
-  space: string
-  author: string
+  space: SpaceRefString
+  repo: DidString
   rev: string
 }
 
-const cidSchema = z.unknown().transform((input, ctx): Cid => {
-  const cid = ifCid(input)
-  if (cid) return cid
+export type RecordPath<
+  TCollection extends NsidString = NsidString,
+  TRkey extends RecordKeyString = RecordKeyString,
+> = `${TCollection}/${TRkey}`
 
-  ctx.addIssue({
-    code: z.ZodIssueCode.custom,
-    message: 'Not a valid CID',
-  })
-  return z.NEVER
-})
+const bytesSchema = z.instanceof(Uint8Array<ArrayBufferLike>)
 
-const bytes = z.instanceof(Uint8Array<ArrayBufferLike>)
-
-const signedCommit = z.object({
-  ver: z.literal(COMMIT_VERSION),
-  hash: bytes,
-  ikm: bytes,
-  sig: bytes,
-  mac: bytes,
+const commitSchema = z.object({
+  ver: z.number(),
+  repo: z.custom<DidString>(isValidDid),
+  space: z.custom<SpaceRefString>(isSpaceRefString),
   rev: z.string(),
+  data: bytesSchema,
 })
-export type SignedCommit = z.infer<typeof signedCommit>
+export type Commit = z.infer<typeof commitSchema>
 
-// `{collection}/{rkey}` to the record's cid.
-const repoIndex = z.record(z.string(), cidSchema)
-export type RepoIndex = z.infer<typeof repoIndex>
+export const REPO_STAR_TYPE = 'atproto-space-repo'
 
-export const def = {
-  signedCommit: {
-    name: 'signed commit',
-    schema: signedCommit,
-  } as check.Def<SignedCommit>,
-  repoIndex: {
-    name: 'repo index',
-    schema: repoIndex,
-  } as check.Def<RepoIndex>,
+// The metadata of a repo's STAR archive: the repo's commit, typed by its profile.
+const repoStarMetaSchema = commitSchema.extend({
+  $type: z.literal(REPO_STAR_TYPE),
+})
+export type RepoStarMeta = z.infer<typeof repoStarMetaSchema>
+
+export type Def<T> = {
+  name: string
+  schema: { parse: (data: unknown) => T }
 }
+
+export const defs = {
+  repoStarMeta: {
+    name: 'repo metadata',
+    schema: repoStarMetaSchema,
+  },
+} satisfies Record<string, Def<unknown>>

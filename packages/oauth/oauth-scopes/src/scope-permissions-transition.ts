@@ -4,6 +4,7 @@ import {
   type RepoPermissionMatch,
   type RpcPermissionMatch,
   ScopePermissions,
+  type SpacePermissionMatch,
 } from './scope-permissions.js'
 
 /**
@@ -21,6 +22,15 @@ export class ScopePermissionsTransition extends ScopePermissions {
 
   get hasTransitionChatBsky(): boolean {
     return this.scopes.has('transition:chat.bsky')
+  }
+
+  /**
+   * Grants nothing extra: `transition:generic` predates permissioned data, so a
+   * legacy token must never reach a space. Overridden rather than omitted to
+   * keep that a decision rather than an oversight.
+   */
+  override allowsSpace(options: SpacePermissionMatch): boolean {
+    return super.allowsSpace(options)
   }
 
   override allowsAccount(options: AccountPermissionMatch): boolean {

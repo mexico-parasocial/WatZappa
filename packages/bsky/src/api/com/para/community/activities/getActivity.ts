@@ -1,21 +1,27 @@
 import { Code, ConnectError } from '@connectrpc/connect'
-import { InvalidRequestError } from '@atproto/xrpc-server'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../../context.js'
-import type { Server } from '../../../../../lexicon/index.js'
+import { com } from '../../../../../lexicons/index.js'
 import { parseDataplaneJson } from '../civicTree/util.js'
 
+type ActivityView = com.para.community.listActivities.ActivityView
+type LedgerEntryView = com.para.community.getActivity.LedgerEntryView
+
 export default function (server: Server, ctx: AppContext) {
-  server.xrpc.method('com.para.community.getActivity', {
+  server.add(com.para.community.getActivity, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params }) => {
       const uri = String(params.uri ?? '')
       try {
         const res = await ctx.dataplane.getParaCommunityActivity({ uri })
         return {
-          encoding: 'application/json' as const,
+          encoding: 'application/json',
           body: {
-            activity: parseDataplaneJson(res.activityJson, null),
-            ledger: parseDataplaneJson(res.ledgerJson, []),
+            activity: parseDataplaneJson<ActivityView | null>(
+              res.activityJson,
+              null,
+            ) as ActivityView,
+            ledger: parseDataplaneJson<LedgerEntryView[]>(res.ledgerJson, []),
           },
         }
       } catch (err) {

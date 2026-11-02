@@ -1,11 +1,11 @@
-// @ts-nocheck
+import type { DatetimeString } from '@atproto/lex'
 import { AtUri } from '@atproto/syntax'
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { app, com } from '../../../../lexicons/index.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.xrpc.method('com.para.notification.putPostSubscription', {
+  server.add(com.para.notification.putPostSubscription, {
     auth: ctx.authVerifier.standard,
     handler: async ({ input, auth }) => {
       const actorDid = auth.credentials.iss
@@ -21,12 +21,13 @@ export default function (server: Server, ctx: AppContext) {
       const subscription = res.subscription
 
       return {
-        encoding: 'application/json' as const,
+        encoding: 'application/json',
         body: {
           post,
           reply: subscription?.reply ?? false,
           quote: subscription?.quote ?? false,
-          indexedAt: subscription?.indexedAt?.toDate().toISOString(),
+          indexedAt: subscription?.indexedAt?.toDate().toISOString() as
+            DatetimeString | undefined,
         },
       }
     },
@@ -41,8 +42,8 @@ const assertPostUri = (uri: string) => {
     throw new InvalidRequestError('Invalid post URI')
   }
   if (
-    parsed.collection !== 'app.bsky.feed.post' &&
-    parsed.collection !== 'com.para.post'
+    parsed.collection !== app.bsky.feed.post.$type &&
+    parsed.collection !== com.para.post.$type
   ) {
     throw new InvalidRequestError(
       'Post subscription subject must be a post URI',

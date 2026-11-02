@@ -1,10 +1,10 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.community.getCivicTree({
+  server.add(com.para.community.getCivicTree, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -31,7 +31,7 @@ export default function (server: Server, ctx: AppContext) {
             relationship_type: edge.relationship_type,
             author_did: edge.author_did,
             created_at: edge.created_at,
-          })),
+          })) as GraphEdgeView[],
         },
         headers: resHeaders({ repoRev, labelers }),
       }
@@ -39,7 +39,10 @@ export default function (server: Server, ctx: AppContext) {
   })
 }
 
-interface CardRow {
+type GraphEdgeView =
+  com.para.community.getCivicTree.$OutputBody['edges'][number]
+
+type CardRow = {
   id: string
   title: string
   card_type: string

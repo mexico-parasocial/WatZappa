@@ -1,16 +1,15 @@
 import { toDatetimeString } from '@atproto/syntax'
-import { InvalidRequestError } from '@atproto/xrpc-server'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import type { DataPlaneClient } from '../../../../data-plane/index.js'
 import type { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
 import { parseJsonBytes, parseString } from '../../../../hydration/util.js'
-import type { Server } from '../../../../lexicon/index.js'
 import { app, com } from '../../../../lexicons/index.js'
 import type { Views } from '../../../../views/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.xrpc.add(com.para.actor.getProfileStats, {
+  server.add(com.para.actor.getProfileStats, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer, includeTakedowns } = ctx.authVerifier.parseCreds(auth)

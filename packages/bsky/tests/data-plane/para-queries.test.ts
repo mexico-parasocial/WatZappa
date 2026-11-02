@@ -1,6 +1,7 @@
 // @ts-nocheck
+import { ids } from '@atproto/api'
 import {
-  SeedClient,
+  type SeedClient,
   TestNetwork,
   createParaCommunityBoard,
   createParaPost,
@@ -9,7 +10,6 @@ import {
   usersSeed,
   writeParaFixture,
 } from '@atproto/dev-env'
-import { ids } from '../../src/lexicon/lexicons.js'
 
 describe('para dataplane queries', () => {
   let network: TestNetwork

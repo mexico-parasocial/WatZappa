@@ -102,6 +102,15 @@ export const proxyHandler = (ctx: AppContext): CatchallHandler => {
       if (isProtectedMethod(lxm)) {
         throw new InvalidRequestError('Bad token method', 'InvalidToken')
       }
+      if (isSpacesMethod(lxm)) {
+        // Never proxied, Spaces enabled or not: forwarding one would mint
+        // service auth as the user towards another host.
+        throw new XRPCServerError(
+          ResponseType.MethodNotImplemented,
+          `${lxm} is not implemented on this server`,
+          'MethodNotImplemented',
+        )
+      }
 
       const {
         url: origin,
@@ -664,6 +673,15 @@ const LOCAL_PRIVILEGED_METHODS = new LxmSet([
 export function isProtectedMethod(lxm: string): boolean {
   return PROTECTED_METHODS.has(lxm)
 }
+
+/**
+ * atproto Spaces methods. This server answers the ones it implements and 501s
+ * the rest; none is ever proxied or granted service auth, since a token for one
+ * would let an app act as the user towards a space authority or member host.
+ */
+export const isSpacesMethod = (lxm: string): boolean =>
+  lxm.startsWith('com.atproto.space.') ||
+  lxm.startsWith('com.atproto.simplespace.')
 
 // These endpoints are related to account management and must be used directly,
 // not proxied or service-authed. Service auth may be utilized between PDS and

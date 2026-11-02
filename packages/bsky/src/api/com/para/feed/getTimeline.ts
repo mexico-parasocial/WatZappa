@@ -1,19 +1,19 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { DataPlaneClient } from '../../../../data-plane/index.js'
-import {
+import type { DidString } from '@atproto/lex'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import type { DataPlaneClient } from '../../../../data-plane/index.js'
+import type {
   HydrateCtx,
   HydrationState,
   Hydrator,
 } from '../../../../hydration/hydrator.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/feed/getTimeline.js'
-import { Views } from '../../../../views/index.js'
+import { com } from '../../../../lexicons/index.js'
+import type { Views } from '../../../../views/index.js'
 import { clearlyBadCursor, resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.feed.getTimeline({
+  server.add(com.para.feed.getTimeline, {
     auth: ctx.authVerifier.standard,
     handler: async ({ params, auth, req }) => {
       const viewer = auth.credentials.iss
@@ -52,7 +52,9 @@ const getTimeline = async (inputs: { ctx: Context; params: Params }) => {
     postType: params.postType,
   })
 
-  const authors = [...new Set(res.items.map((item) => item.author))]
+  const authors = [
+    ...new Set(res.items.map((item) => item.author as DidString)),
+  ]
   const hydration = await ctx.hydrator.hydrateProfileViewers(
     authors,
     params.hydrateCtx,
@@ -61,19 +63,22 @@ const getTimeline = async (inputs: { ctx: Context; params: Params }) => {
   return {
     feed: res.items
       .filter((item) => !shouldHide(item.author, ctx.views, hydration))
-      .map((item) => ({
-        uri: item.uri,
-        cid: item.cid,
-        author: item.author,
-        text: item.text,
-        createdAt: item.createdAt,
-        replyRoot: parseString(item.replyRoot),
-        replyParent: parseString(item.replyParent),
-        langs: item.langs.length ? item.langs : undefined,
-        tags: item.tags.length ? item.tags : undefined,
-        flairs: item.flairs.length ? item.flairs : undefined,
-        postType: parseString(item.postType),
-      })),
+      .map(
+        (item) =>
+          ({
+            uri: item.uri,
+            cid: item.cid,
+            author: item.author,
+            text: item.text,
+            createdAt: item.createdAt,
+            replyRoot: parseString(item.replyRoot),
+            replyParent: parseString(item.replyParent),
+            langs: item.langs.length ? item.langs : undefined,
+            tags: item.tags.length ? item.tags : undefined,
+            flairs: item.flairs.length ? item.flairs : undefined,
+            postType: parseString(item.postType),
+          }) as com.para.feed.getAuthorFeed.PostView,
+      ),
     cursor: parseString(res.cursor),
   }
 }
@@ -84,8 +89,8 @@ const shouldHide = (
   hydration: HydrationState,
 ) => {
   return (
-    views.viewerBlockExists(authorDid, hydration) ||
-    views.viewerMuteExists(authorDid, hydration)
+    views.viewerBlockExists(authorDid as DidString, hydration) ||
+    views.viewerMuteExists(authorDid as DidString, hydration)
   )
 }
 
@@ -95,6 +100,6 @@ type Context = {
   dataplane: DataPlaneClient
 }
 
-type Params = QueryParams & {
+type Params = com.para.feed.getTimeline.$Params & {
   hydrateCtx: HydrateCtx & { viewer: string }
 }

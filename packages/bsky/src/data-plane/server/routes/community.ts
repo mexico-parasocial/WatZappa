@@ -6,7 +6,7 @@ import {
   getRoleDefinitions,
   resolveAvailableAction,
 } from '@atproto/common'
-import * as ComParaCommunityGovernance from '../../../lexicon/types/com/para/community/governance.js'
+import { com } from '../../../lexicons/index.js'
 import { Service } from '../../../proto/bsky_connect.js'
 import {
   GetParaCommunityBoardResponse,
@@ -91,7 +91,7 @@ type MembershipRow = {
   joinedAt?: string
 }
 
-type GovernanceRecord = ComParaCommunityGovernance.Record
+type GovernanceRecord = com.para.community.governance.Main
 
 const AUTHORIZATION_ACTIONS = [
   'content.create',
@@ -1593,7 +1593,7 @@ const getPublishedGovernanceRecord = async (
 const parseGovernanceRecord = (json: string): GovernanceRecord | null => {
   try {
     const parsed = JSON.parse(json)
-    const validated = ComParaCommunityGovernance.validateRecord(parsed)
+    const validated = com.para.community.governance.$safeValidate(parsed)
     if (validated.success) return validated.value as GovernanceRecord
     if (
       typeof parsed?.community === 'string' &&

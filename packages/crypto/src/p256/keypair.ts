@@ -4,10 +4,10 @@ import {
   fromString as ui8FromString,
   toString as ui8ToString,
 } from 'uint8arrays'
-import { SupportedEncodings } from 'uint8arrays/to-string'
+import type { SupportedEncodings } from 'uint8arrays/to-string'
 import { P256_JWT_ALG } from '../const.js'
 import * as did from '../did.js'
-import { Keypair } from '../types.js'
+import type { Keypair } from '../types.js'
 
 export type P256KeypairOptions = {
   exportable: boolean
@@ -59,6 +59,15 @@ export class P256Keypair implements Keypair {
     // return raw 64 byte sig not DER-encoded
     const sig = await p256.sign(msgHash, this.privateKey, { lowS: true })
     return sig.toCompactRawBytes()
+  }
+
+  /**
+   * Elliptic-curve Diffie-Hellman with another P-256 public key (compressed or
+   * uncompressed). Returns the 32-byte x-coordinate of the shared point.
+   */
+  ecdh(publicKey: Uint8Array): Uint8Array {
+    const sharedPoint = p256.getSharedSecret(this.privateKey, publicKey, true)
+    return sharedPoint.slice(1)
   }
 
   async export(): Promise<Uint8Array> {

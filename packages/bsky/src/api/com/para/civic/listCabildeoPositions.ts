@@ -1,14 +1,14 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { DataPlaneClient } from '../../../../data-plane/index.js'
+import type { AtUriString, DatetimeString, DidString } from '@atproto/lex'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import type { DataPlaneClient } from '../../../../data-plane/index.js'
 import { parseCid, parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/civic/listCabildeoPositions.js'
+import { com } from '../../../../lexicons/index.js'
 import { clearlyBadCursor, resHeaders } from '../../../util.js'
 import { parseDataplaneJson } from './util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.civic.listCabildeoPositions({
+  server.add(com.para.civic.listCabildeoPositions, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -30,8 +30,8 @@ export default function (server: Server, ctx: AppContext) {
 
 const listCabildeoPositions = async (inputs: {
   ctx: Context
-  params: QueryParams
-}) => {
+  params: com.para.civic.listCabildeoPositions.$Params
+}): Promise<com.para.civic.listCabildeoPositions.$OutputBody> => {
   const { ctx, params } = inputs
   if (clearlyBadCursor(params.cursor)) {
     return { positions: [] }
@@ -47,16 +47,16 @@ const listCabildeoPositions = async (inputs: {
   return {
     positions: parseDataplaneJson<
       Array<{
-        uri: string
+        uri: AtUriString
         cid: string
-        creator: string
-        indexedAt: string
-        cabildeo: string
+        creator: DidString
+        indexedAt: DatetimeString
+        cabildeo: AtUriString
         stance: string
         optionIndex?: number
         text: string
         compassQuadrant?: string
-        createdAt: string
+        createdAt: DatetimeString
       }>
     >(res.positionsJson, []).map((position) => ({
       uri: position.uri,

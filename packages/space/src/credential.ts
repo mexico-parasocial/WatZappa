@@ -1,20 +1,17 @@
 import { type Keypair, randomStr, verifySignature } from '@atproto/crypto'
 import { fromBase64, toBase64 } from '@atproto/lex-data'
+import { type DidString, isValidDid } from '@atproto/syntax'
 import { SpaceTokenError } from './error.js'
 
 /**
  * How a space authority is addressed when acting as the space host: the service
- * entry a delegation token and a client attestation name as their audience. Note
- * this is the *audience*, not necessarily where requests are sent — an authority
- * that publishes no such entry is still reached at its `#atproto_pds` endpoint.
+ * entry a delegation token and a client attestation name as their audience. The
+ * space host is the authority's PDS, like any other atproto account.
  */
 export const spaceHostAud = (spaceDid: string): string =>
-  `${spaceDid}#atproto_space_host`
+  `${spaceDid}#atproto_pds`
 
-// The three token classes share a wire shape and differ only in who signs them,
-// who they're addressed to, and how long they live — hence data, not three impls.
-// A credential is multi-use across repo hosts, so it carries no aud; it is bound
-// to the holder's DPoP key instead (see dpop.ts).
+// @NOTE credentials carry no audience; HTTP message signatures bind each use to an audience DID.
 export const SPACE_TOKEN_TYPES = {
   delegation: {
     typ: 'atproto-space-delegation+jwt',
@@ -24,13 +21,10 @@ export const SPACE_TOKEN_TYPES = {
     requireCnf: false,
     singleUse: true,
   },
-  // An authority that publishes a dedicated `#atproto_space` key signs with it
-  // and passes that `kid`. Absent one, the space signing key is the account's
-  // `#atproto` key, which is the case for any authority hosted on a PDS.
   credential: {
     typ: 'atproto-space-credential+jwt',
     kid: '#atproto',
-    expiresInSec: 7200,
+    expiresInSec: 600,
     requireAud: false,
     requireCnf: true,
     singleUse: false,
@@ -55,7 +49,7 @@ export type SpaceTokenPayload = {
   iat: number
   exp: number
   jti: string
-  cnf?: { jkt: string }
+  cnf?: { kid: DidString }
 }
 
 export type SpaceTokenHeader = {
@@ -70,13 +64,15 @@ export type SpaceToken = {
 }
 
 export const CLOCK_SKEW_SEC = 5
+export const SPACE_CREDENTIAL_MAX_AGE_SEC = 3600
 
 export type CreateSpaceTokenOpts = {
   iss: string
   sub: string
   aud?: string
-  dpopJkt?: string
+  keyId?: DidString
   expiresInSec?: number
+  /** Only for a client attestation. Other token types always use `#atproto`. */
   kid?: string
 }
 
@@ -89,8 +85,20 @@ export const createSpaceToken = async (
   if (spec.requireAud && !opts.aud) {
     throw new SpaceTokenError(`a ${type} token requires an "aud"`)
   }
-  if (spec.requireCnf && !opts.dpopJkt) {
-    throw new SpaceTokenError(`a ${type} token requires a "dpopJkt"`)
+  if (spec.requireCnf && !opts.keyId) {
+    throw new SpaceTokenError(`a ${type} token requires a "keyId"`)
+  }
+  if (spec.kid && opts.kid) {
+    throw new SpaceTokenError(`a ${type} token's "kid" is always "${spec.kid}"`)
+  }
+  const expiresInSec = opts.expiresInSec ?? spec.expiresInSec
+  if (
+    type === 'credential' &&
+    (!Number.isFinite(expiresInSec) ||
+      expiresInSec <= 0 ||
+      expiresInSec > SPACE_CREDENTIAL_MAX_AGE_SEC)
+  ) {
+    throw new SpaceTokenError('invalid space credential lifetime')
   }
 
   const iat = Math.floor(Date.now() / 1000)
@@ -102,9 +110,9 @@ export const createSpaceToken = async (
     iss: opts.iss,
     sub: opts.sub,
     ...(opts.aud ? { aud: opts.aud } : undefined),
-    ...(opts.dpopJkt ? { cnf: { jkt: opts.dpopJkt } } : undefined),
+    ...(opts.keyId ? { cnf: { kid: opts.keyId } } : undefined),
     iat,
-    exp: iat + (opts.expiresInSec ?? spec.expiresInSec),
+    exp: iat + expiresInSec,
     jti: randomStr(16, 'hex'),
   }
 
@@ -139,26 +147,37 @@ export const parseSpaceToken = (
   if (typeof header.alg !== 'string' || !header.alg) {
     throw new SpaceTokenError('missing token "alg"', 'BadJwt')
   }
+  if (spec.kid && header.kid !== spec.kid) {
+    throw new SpaceTokenError(
+      `wrong token "kid": expected "${spec.kid}", got "${header.kid}"`,
+      'BadJwt',
+    )
+  }
   if (!payload.iss) {
     throw new SpaceTokenError('missing token "iss"', 'BadJwtIss')
   }
   if (!payload.sub) {
     throw new SpaceTokenError('missing token "sub"', 'BadJwtSub')
   }
-  if (typeof payload.exp !== 'number') {
+  if (!Number.isFinite(payload.exp)) {
     throw new SpaceTokenError('missing token "exp"', 'BadJwt')
   }
   if (spec.requireAud && !payload.aud) {
     throw new SpaceTokenError('missing token "aud"', 'BadJwtAudience')
   }
-  if (spec.requireCnf && !payload.cnf?.jkt) {
-    throw new SpaceTokenError('missing token "cnf.jkt"', 'BadJwtCnf')
+  if (spec.requireCnf && !isValidDid(payload.cnf?.kid)) {
+    throw new SpaceTokenError('missing token "cnf.kid"', 'BadJwtCnf')
   }
-  if (spec.singleUse && (typeof payload.jti !== 'string' || !payload.jti)) {
-    throw new SpaceTokenError(
-      `a ${type} token requires a "jti" to be consumed by`,
-      'BadJwt',
-    )
+  if (typeof payload.jti !== 'string' || !payload.jti) {
+    throw new SpaceTokenError(`a ${type} token requires a "jti"`, 'BadJwt')
+  }
+  if (
+    type === 'credential' &&
+    (!Number.isFinite(payload.iat) ||
+      payload.exp <= payload.iat ||
+      payload.exp - payload.iat > SPACE_CREDENTIAL_MAX_AGE_SEC)
+  ) {
+    throw new SpaceTokenError('invalid space credential lifetime', 'BadJwt')
   }
   if (type === 'clientAttestation' && payload.iss !== payload.sub) {
     throw new SpaceTokenError(
@@ -176,10 +195,8 @@ export const parseSpaceToken = (
 }
 
 export type VerifySpaceTokenOpts = {
-  /** Passed `kid` so a verifier can honour the key id. */
   getSigningKey: (
     iss: string,
-    kid: string | undefined,
     forceRefresh: boolean,
   ) => string | Promise<string>
   aud?: string
@@ -194,6 +211,9 @@ export const verifySpaceToken = async (
   const { header, payload, signingInput, sig } = parseSpaceToken(type, jwt)
 
   const now = Math.floor(Date.now() / 1000)
+  if (type === 'credential' && payload.iat > now + CLOCK_SKEW_SEC) {
+    throw new SpaceTokenError('space credential issued in the future', 'BadJwt')
+  }
   if (now - CLOCK_SKEW_SEC >= payload.exp) {
     throw new SpaceTokenError('token expired', 'JwtExpired')
   }
@@ -209,13 +229,13 @@ export const verifySpaceToken = async (
       'BadJwtSub',
     )
   }
-  const didKey = await opts.getSigningKey(payload.iss, header.kid, false)
+  const didKey = await opts.getSigningKey(payload.iss, false)
   if (await matchesSignature(didKey, header, signingInput, sig)) {
     return { header, payload }
   }
 
   // The signing key may have rotated since the one we hold was cached.
-  const freshDidKey = await opts.getSigningKey(payload.iss, header.kid, true)
+  const freshDidKey = await opts.getSigningKey(payload.iss, true)
   if (
     freshDidKey !== didKey &&
     (await matchesSignature(freshDidKey, header, signingInput, sig))

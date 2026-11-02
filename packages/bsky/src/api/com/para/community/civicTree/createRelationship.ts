@@ -1,10 +1,12 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../../context.js'
+import { com } from '../../../../../lexicons/index.js'
 import { forwardDataplaneErrors, parseDataplaneJson } from './util.js'
 
+type RelationshipView = com.para.community.civicTree.defs.RelationshipView
+
 export default function (server: Server, ctx: AppContext) {
-  server.xrpc.method('com.para.community.civicTree.createRelationship', {
+  server.add(com.para.community.civicTree.createRelationship, {
     auth: ctx.authVerifier.standard,
     handler: async ({ input: { body: input }, auth }) => {
       // xrpc-server hands procedures `{ encoding, body }`; reading the fields
@@ -23,9 +25,12 @@ export default function (server: Server, ctx: AppContext) {
       )
 
       return {
-        encoding: 'application/json' as const,
+        encoding: 'application/json',
         body: {
-          relationship: parseDataplaneJson(res.relationshipJson, null),
+          relationship: parseDataplaneJson<RelationshipView | null>(
+            res.relationshipJson,
+            null,
+          ) as RelationshipView,
         },
       }
     },

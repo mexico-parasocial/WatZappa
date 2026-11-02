@@ -1,0 +1,51 @@
+{
+  "lexicon": 1,
+  "id": "com.para.collection.record",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "description": "A civic-tree collection as a record. It lives only in its owner's `com.para.space.personal` space (skey `civic-tree`); a PDS refuses it in a public repo. The record key is the collection id.",
+      "record": {
+        "type": "object",
+        "required": ["name", "items", "createdAt"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "color": {
+            "type": "string",
+            "maxLength": 7
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "ref",
+              "ref": "com.para.collection.defs#civicTreeItem"
+            }
+          },
+          "relations": {
+            "type": "array",
+            "items": {
+              "type": "ref",
+              "ref": "com.para.collection.defs#civicTreeRelation"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

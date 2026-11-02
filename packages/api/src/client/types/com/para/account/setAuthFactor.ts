@@ -19,11 +19,17 @@ const id = 'com.para.account.setAuthFactor'
 export type QueryParams = {}
 
 export interface InputSchema {
+  /** Fresh account-password confirmation, required by native wallet-factor implementations. Never an app password. */
+  password?: string
+  /** Purpose-bound wallet approval for enrollment or removal, required by native wallet-factor implementations. */
+  authFactorToken?: string
   /** The 2FA method to require at login. Omit to turn 2FA off. */
   authFactorType?: 'im8' | (string & {})
 }
 
 export interface OutputSchema {
+  /** Independent wallet challenge protocol, when supported. */
+  authFactorMode?: 'wallet-v1' | (string & {})
   /** The 2FA method now required at login. Absent when 2FA is off. */
   authFactorType?: 'im8' | (string & {})
 }

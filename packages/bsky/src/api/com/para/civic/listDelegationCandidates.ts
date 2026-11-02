@@ -1,15 +1,19 @@
-// @ts-nocheck
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
+import type {
+  DatetimeString,
+  DidString,
+  HandleString,
+  UriString,
+} from '@atproto/lex'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
 import { Code, isDataplaneError } from '../../../../data-plane/index.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/civic/listDelegationCandidates.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 import { parseDataplaneJson } from './util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.civic.listDelegationCandidates({
+  server.add(com.para.civic.listDelegationCandidates, {
     auth: ctx.authVerifier.standardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -39,10 +43,10 @@ const listDelegationCandidates = async ({
   viewerIsAdmin,
 }: {
   ctx: AppContext
-  params: QueryParams
+  params: com.para.civic.listDelegationCandidates.$Params
   viewer: string
   viewerIsAdmin: boolean
-}) => {
+}): Promise<com.para.civic.listDelegationCandidates.$OutputBody> => {
   const res = await ctx.dataplane
     .getParaDelegationCandidates({
       cabildeoUri: params.cabildeo,
@@ -65,23 +69,23 @@ const listDelegationCandidates = async ({
   return {
     candidates: parseDataplaneJson<
       Array<{
-        did: string
-        handle?: string
+        did: DidString
+        handle?: HandleString
         displayName?: string
-        avatar?: string
+        avatar?: UriString
         description?: string
         roles: string[]
         activeDelegationCount: number
         hasVoted: boolean
-        votedAt?: string
+        votedAt?: DatetimeString
         selectedOption?: number
       }>
     >(res.candidatesJson, []).map((candidate) => {
-      const handle = parseString(candidate.handle)
+      const handle = parseString<HandleString>(candidate.handle)
       const displayName = parseString(candidate.displayName)
-      const avatar = parseString(candidate.avatar)
+      const avatar = parseString<UriString>(candidate.avatar)
       const description = parseString(candidate.description)
-      const votedAt = parseString(candidate.votedAt)
+      const votedAt = parseString<DatetimeString>(candidate.votedAt)
 
       return {
         did: candidate.did,

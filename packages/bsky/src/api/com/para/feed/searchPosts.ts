@@ -1,16 +1,16 @@
 import { Timestamp } from '@bufbuild/protobuf'
-import { DidString } from '@atproto/syntax'
-import { AppContext } from '../../../../context.js'
-import { DataPlaneClient } from '../../../../data-plane/index.js'
-import { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
+import type { AtUriString, DidString } from '@atproto/syntax'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import type { DataPlaneClient } from '../../../../data-plane/index.js'
+import type { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
 import { parseString } from '../../../../hydration/util.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/feed/searchPosts.js'
-import { Views } from '../../../../views/index.js'
+import { com } from '../../../../lexicons/index.js'
+import type { Views } from '../../../../views/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.feed.searchPosts({
+  server.add(com.para.feed.searchPosts, {
     auth: ctx.authVerifier.standardOptional,
     handler: async ({ params, auth, req }) => {
       try {
@@ -91,26 +91,29 @@ const searchPosts = async (inputs: { ctx: Context; params: Params }) => {
     .filter(
       (item) => !shouldHide(item.author as DidString, ctx.views, hydration),
     )
-    .map((item) => ({
-      uri: item.uri,
-      cid: item.cid,
-      author: item.author,
-      text: item.text,
-      createdAt: item.createdAt,
-      replyRoot: parseString(item.replyRoot),
-      replyParent: parseString(item.replyParent),
-      langs: item.langs.length ? item.langs : undefined,
-      tags: item.tags.length ? item.tags : undefined,
-      flairs: item.flairs.length ? item.flairs : undefined,
-      postType: parseString(item.postType),
-    }))
+    .map(
+      (item) =>
+        ({
+          uri: item.uri,
+          cid: item.cid,
+          author: item.author,
+          text: item.text,
+          createdAt: item.createdAt,
+          replyRoot: parseString(item.replyRoot),
+          replyParent: parseString(item.replyParent),
+          langs: item.langs.length ? item.langs : undefined,
+          tags: item.tags.length ? item.tags : undefined,
+          flairs: item.flairs.length ? item.flairs : undefined,
+          postType: parseString(item.postType),
+        }) as com.para.feed.getAuthorFeed.PostView,
+    )
 
   // The order from getParaPosts might not match the search rank order
   // Sort them to match the original searchRes.uris order
   const orderedPosts: typeof posts = []
   const postByUri = new Map(posts.map((p) => [p.uri, p]))
   for (const uri of searchRes.uris) {
-    const post = postByUri.get(uri)
+    const post = postByUri.get(uri as AtUriString)
     if (post) {
       orderedPosts.push(post)
     }
@@ -128,8 +131,8 @@ const shouldHide = (
   hydration: Awaited<ReturnType<Hydrator['hydrateProfileViewers']>>,
 ) => {
   return (
-    views.viewerBlockExists(authorDid, hydration) ||
-    views.viewerMuteExists(authorDid, hydration)
+    views.viewerBlockExists(authorDid as DidString, hydration) ||
+    views.viewerMuteExists(authorDid as DidString, hydration)
   )
 }
 
@@ -146,4 +149,4 @@ type Context = {
   dataplane: DataPlaneClient
 }
 
-type Params = QueryParams & { hydrateCtx: HydrateCtx }
+type Params = com.para.feed.searchPosts.$Params & { hydrateCtx: HydrateCtx }

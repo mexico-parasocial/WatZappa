@@ -7,10 +7,11 @@ import { decodeAll } from '@atproto/lex-cbor'
 import { buildAgent, xrpc } from '@atproto/lex-client'
 import { LexError, parseCid } from '@atproto/lex-data'
 import { l } from '@atproto/lex-schema'
+import { LexServerAuthError } from './errors.js'
 import {
   LexRouter,
-  LexRouterAuth,
-  LexRouterMethodHandler,
+  type LexRouterAuth,
+  type LexRouterMethodHandler,
 } from './lex-server.js'
 import { serve, upgradeWebSocket } from './nodejs.js'
 
@@ -121,7 +122,6 @@ describe('LexRouter', () => {
     const reader = response.body!.getReader()
     const chunks: string[] = []
     try {
-      // eslint-disable-next-line no-constant-condition
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
@@ -292,14 +292,20 @@ describe('Authentication', () => {
     return async ({ request }) => {
       const header = request.headers.get('authorization') ?? ''
       if (!header.startsWith('Basic ')) {
-        throw new LexError('AuthenticationRequired', 'Authentication required')
+        throw new LexServerAuthError(
+          'AuthenticationRequired',
+          'Authentication required',
+        )
       }
       const original = header.slice(6)
       const [username, password] = Buffer.from(original, 'base64')
         .toString()
         .split(':')
       if (username !== allowed.username || password !== allowed.password) {
-        throw new LexError('AuthenticationRequired', 'Invalid credentials')
+        throw new LexServerAuthError(
+          'AuthenticationRequired',
+          'Invalid credentials',
+        )
       }
       return { username, original }
     }
@@ -338,7 +344,7 @@ describe('Authentication', () => {
     )
     const response = await router.fetch(request)
 
-    expect(response.status).toBe(400)
+    expect(response.status).toBe(401)
     const data = await response.json()
     expect(data.error).toBe('AuthenticationRequired')
   })
@@ -408,7 +414,7 @@ describe('Authentication', () => {
     )
     const response = await router.fetch(request)
 
-    expect(response.status).toBe(400)
+    expect(response.status).toBe(401)
     const data = await response.json()
     expect(data.error).toBe('AuthenticationRequired')
   })
@@ -447,7 +453,7 @@ describe('Error Handling', () => {
   }
 
   describe('Custom Errors', () => {
-    it('throws custom error using LexError', async () => {
+    it('preserves a plain LexError payload with the default server error status', async () => {
       const handler: LexRouterMethodHandler<typeof io.example.error> = async ({
         params,
       }) => {
@@ -464,7 +470,7 @@ describe('Error Handling', () => {
       )
       const response = await router.fetch(request)
 
-      expect(response.status).toBe(400)
+      expect(response.status).toBe(500)
       const data = await response.json()
       expect(data.error).toBe('Foo')
       expect(data.message).toBe('It was this one!')
@@ -1075,7 +1081,7 @@ describe('Responses', () => {
 
       const reader = response.body!.getReader()
       const chunks: number[] = []
-      // eslint-disable-next-line no-constant-condition
+
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
@@ -1118,7 +1124,6 @@ describe('Responses', () => {
 
       const reader = response.body!.getReader()
       await expect(async () => {
-        // eslint-disable-next-line no-constant-condition
         while (true) {
           const { done } = await reader.read()
           if (done) break
@@ -1518,7 +1523,7 @@ describe('Subscription', () => {
       io.example.subscribe,
       async function* ({ params: { message }, signal }) {
         try {
-          for (; sentCount < maxMessages; ) {
+          for (; sentCount < maxMessages;) {
             await scheduler.wait(5, { signal })
             yield { message, count: ++sentCount }
           }

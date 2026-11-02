@@ -5,7 +5,7 @@ built. Companion to the spaces adoption plan; the community civic tree is out of
 scope here and stays as it is.
 
 **Status:** CD-P1 implemented. CD-P2 is a standing prohibition, not a plan.
-OD-P1 and OD-P2 are open.
+CD-P3 decided, not built. OD-P1 and OD-P2 are open.
 
 ---
 
@@ -29,7 +29,7 @@ the user; assembled from records that already exist. This is the half that leake
 
 ## 2. Findings
 
-**F-P1 — the export was an unauthenticated cross-account read.** *(fixed, CD-P1)*
+**F-P1 — the export was an unauthenticated cross-account read.** _(fixed, CD-P1)_
 `exportCivicTree` ran under `optionalStandardOrRole` and resolved
 `params.actor ?? viewer` with no ownership check. `optionalStandardOrRole`
 returns null credentials rather than throwing when no credentials are present,
@@ -38,7 +38,7 @@ selected option), delegations (with delegate), highlights (with full text) and
 memberships, pre-formatted. The aggregation made it worse than the sum of its
 sources: no protocol knowledge required, one request, a ready-to-open vault.
 
-**F-P2 — fixing the aggregate does not fix the exposure.** *(open, OD-P2)*
+**F-P2 — fixing the aggregate does not fix the exposure.** _(open, OD-P2)_
 CD-P1 stops PARA serving anyone's dossier. It does not stop a third party
 assembling the same dossier, because every source it reads is a public repo
 record reachable by `com.atproto.repo.listRecords`. What was removed is the
@@ -79,14 +79,14 @@ viewer. Pinned by `tests/views/para-civic-tree-export.test.ts`.
 
 **Rejected alternatives.**
 
-- *Dropping the `actor` parameter entirely.* Cleaner, but it is a breaking
+- _Dropping the `actor` parameter entirely._ Cleaner, but it is a breaking
   lexicon change for a parameter with a legitimate self-referential use, and it
   invites a future re-add without the check. Keeping the parameter and rejecting
   the mismatch documents the rule at the point of temptation.
-- *Gating on a `visibility` field in the exported records.* This is CD-P2's
+- _Gating on a `visibility` field in the exported records._ This is CD-P2's
   mistake in a different costume — a per-record flag the caller cannot be forced
   to respect, and one the protocol never sees.
-- *Allowing role credentials through for moderation.* An Obsidian vault of one
+- _Allowing role credentials through for moderation._ An Obsidian vault of one
   person's political activity is not a moderation instrument. If moderation ever
   needs this data it should get a purpose-built, audited surface.
 
@@ -112,19 +112,39 @@ worse than writing nothing, because the product then makes a promise about it.
 
 **Rejected alternatives.**
 
-- *Enforcing the flag in the appview only, and documenting the limitation.* This
+- _Enforcing the flag in the appview only, and documenting the limitation._ This
   is the current state. The limitation is not documented anywhere the user can
   see, and the UI presents the flag as a privacy control.
-- *Encrypting private records in place, in the public repo.* Moves the problem to
+- _Encrypting private records in place, in the public repo._ Moves the problem to
   key distribution and leaves the ciphertext, its size, and its write timing
   public — enough for traffic analysis of who is politically active and when.
-- *Waiting for spaces before writing this down.* The prohibition is what has
+- _Waiting for spaces before writing this down._ The prohibition is what has
   value now: the next person to add sharing to collections will reach for
   `isPublic` unless this exists.
 
 **Consequences.** Sharing is blocked until a space host exists (OD-P1). That is
 the intended trade: no sharing is a better product than a sharing control that
 does not control anything.
+
+### CD-P3 — space data is reachable only through OAuth sessions
+
+**Decision.** (2026-10-11) Before any personal civic data moves into a space,
+the PARA app signs in with atproto OAuth, and the PDS serves Spaces methods only
+to OAuth sessions whose `space:` grant covers the action — never to password
+sessions (`createSession`) or app passwords, scoped or not.
+
+**Problem.** The app signs in with `createSession` today. The reference PDS lets
+legacy sessions read and write their own space records, so a stolen password or
+app password would reach everything the account keeps in spaces, with no consent
+screen naming the space and no per-app scope.
+
+**Rejected alternative.** _Following the reference and accepting password
+sessions._ Simpler for the app, but it makes the space no more protected than
+the account password. vlpds made the same call and documents it as a deliberate
+divergence from the reference.
+
+**Consequences.** OAuth in the app is a prerequisite for OD-P1, not a follow-up.
+The PDS work (repo host behind a flag) can proceed in parallel against tests.
 
 ---
 
@@ -137,6 +157,39 @@ needs a space host, and WatZappa cannot merge `upstream/permissioned-data` — i
 has no shared ancestry with atproto. The two candidates are a stock alpha PDS run
 as a sidecar, or continuing the hand-port (`packages/space` is already vendored
 and passing its own suite). Unresolved.
+
+_Update 2026-10-11._ The sidecar cannot hold these records: a space record lives
+in its author's space repo on the author's own PDS, so a separate host (a stock
+PDS, or vlpds 1.1.0 with `--spaces`) can only act as authority for spaces whose
+members never write. That leaves the hand-port, as a repo host and simplespace
+host in this PDS behind a flag. Its first step is done: `packages/space` and the
+space lexicons follow the explicit pin in `packages/space/SOURCE`. The current
+pin uses STAR and new signatures; historical vlpds vectors do not establish
+current interoperability. See `PERMISSIONED_SPACES.md`. Prerequisite: CD-P3.
+
+_Update 2026-10-11, second step._ The PDS now hosts an account's own space
+repos behind `PDS_SPACES_ENABLED` (alpha, off by default): OAuth only, writes
+only into spaces the writer governs, no blobs, nothing on the firehose or in
+the public repo (`packages/pds/tests/spaces.test.ts`). That is enough storage
+for collections as OD-P1 describes them; the simplespace host and the move of
+collections out of the appview are what is left.
+
+_Update 2026-10-11, third step._ The server side is in place: a simplespace
+host for owned spaces (member-list policy only, owner as sole member) and the
+record `com.para.collection.record` (one per collection, rkey = collection id,
+same fields as `defs#collection`), which the PDS refuses outside a space. The
+space type is the NSID `com.para.space.personal` with skey `civic-tree`; it has
+no lexicon file yet because the lexicon tooling here cannot declare a `space`
+type. Two corrections to the plan above:
+
+- _The appview does not index the space._ It cannot read it without space
+  credentials, and the owner is the only reader: the app reads the collections
+  from the owner's PDS. The appview tables go away with the move instead of
+  being demoted.
+- _The move is the app's to do._ Only the owner, over OAuth (CD-P3), can write
+  into the space, so the app copies each appview collection into the space once
+  and then stops calling `com.para.collection.*`. That waits on OAuth in the
+  app.
 
 **OD-P2 — when the sources move.** From F-P2: the personal civic tree only
 becomes private once highlights, delegations and votes leave public repos.

@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   type SeedClient,
@@ -10,7 +8,6 @@ import {
   usersSeed,
 } from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
-import { communityActivitySchemas } from '../src/api/com/para/community/activities/schemas.js'
 
 const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
 
@@ -247,15 +244,6 @@ maybeDescribe('community activities (AppView)', () => {
 
   afterAll(async () => {
     await network.close()
-  })
-
-  it('keeps the hand-registered schemas in sync with the lexicon files', () => {
-    const dir = join(__dirname, '../../../lexicons/com/para/community')
-    for (const schema of communityActivitySchemas) {
-      const name = String(schema.id).split('.').pop()
-      const file = JSON.parse(readFileSync(join(dir, `${name}.json`), 'utf8'))
-      expect(schema).toEqual(file)
-    }
   })
 
   it('lists only activities by the community organizers', async () => {

@@ -1,11 +1,10 @@
-// @ts-nocheck
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
+import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.raq.getUserAlignment({
+  server.add(com.para.raq.getUserAlignment, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -20,14 +19,7 @@ export default function (server: Server, ctx: AppContext) {
         throw new InvalidRequestError('Assessment not found', 'NotFound')
       }
 
-      let assessment: {
-        results: unknown
-        compass: unknown
-        ideology: unknown
-        secondaryIdeology?: unknown
-        partyMatches?: unknown
-        completedAt?: string
-      }
+      let assessment: Partial<com.para.raq.getUserAlignment.AssessmentView>
       try {
         assessment = JSON.parse(res.assessmentJson)
       } catch {

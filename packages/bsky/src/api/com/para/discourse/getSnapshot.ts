@@ -1,11 +1,11 @@
 // @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
-import { QueryParams } from '../../../../lexicon/types/com/para/discourse/getSnapshot.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.discourse.getSnapshot({
+  server.add(com.para.discourse.getSnapshot, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -28,12 +28,14 @@ export default function (server: Server, ctx: AppContext) {
 
 const getDiscourseSnapshot = async (inputs: {
   ctx: AppContext
-  params: QueryParams
+  params: com.para.discourse.getSnapshot.$Params
 }) => {
-  const { ctx, params } = inputs
+  const { ctx } = inputs
+  // @NOTE The lexicon declares only `subject`, so `community` and `timeframe`
+  // never reached this handler; keep sending the defaults they resolved to.
   const res = await ctx.dataplane.getParaDiscourseSnapshot({
-    community: params.community ?? '',
-    timeframe: params.timeframe,
+    community: '',
+    timeframe: undefined,
   })
 
   return {

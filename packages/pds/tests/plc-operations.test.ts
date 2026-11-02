@@ -113,6 +113,19 @@ describe('plc operations', () => {
     )
   })
 
+  it('prevents submitting an operation that replaces the account KEM key', async () => {
+    await expectFailedOp(
+      alice.did,
+      {
+        verificationMethods: {
+          atproto: (await ctx.actorStore.keypair(alice.did)).did(),
+          atproto_kem: sampleKey,
+        },
+      },
+      'Incorrect KEM key',
+    )
+  })
+
   it('prevents submitting an operation that incorrectly sets the pds endpoint', async () => {
     await expectFailedOp(
       alice.did,

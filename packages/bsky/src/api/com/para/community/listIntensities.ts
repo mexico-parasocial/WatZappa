@@ -1,11 +1,11 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 import { assertQuadraticVotingEnabled } from './quadratic-voting-gate.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.community.listIntensities({
+  server.add(com.para.community.listIntensities, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -24,19 +24,22 @@ export default function (server: Server, ctx: AppContext) {
       return {
         encoding: 'application/json' as const,
         body: {
-          intensities: intensities.map((i) => ({
-            uri: i.uri,
-            cid: i.cid,
-            proposal: i.proposal,
-            voter: i.voter,
-            signal: i.signal,
-            units: i.units,
-            creditsSpent: i.creditsSpent,
-            delegatedFrom: i.delegatedFrom ?? undefined,
-            delegationDepth: i.delegationDepth,
-            effectiveWeight: i.effectiveWeight ?? undefined,
-            createdAt: i.createdAt,
-          })),
+          intensities: intensities.map(
+            (i) =>
+              ({
+                uri: i.uri,
+                cid: i.cid,
+                proposal: i.proposal,
+                voter: i.voter,
+                signal: i.signal,
+                units: i.units,
+                creditsSpent: i.creditsSpent,
+                delegatedFrom: i.delegatedFrom ?? undefined,
+                delegationDepth: i.delegationDepth,
+                effectiveWeight: i.effectiveWeight ?? undefined,
+                createdAt: i.createdAt,
+              }) as com.para.community.listIntensities.IntensityView,
+          ),
           cursor: res.cursor || undefined,
         },
         headers: resHeaders({ repoRev, labelers }),

@@ -1,10 +1,10 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.community.listCivicTrees({
+  server.add(com.para.community.listCivicTrees, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -23,18 +23,21 @@ export default function (server: Server, ctx: AppContext) {
       return {
         encoding: 'application/json' as const,
         body: {
-          statements: statements.map((s) => ({
-            uri: s.uri,
-            cid: s.cid,
-            creator: s.creator,
-            proposal: s.proposal,
-            body: s.body,
-            stance: s.stance,
-            agreeCount: s.agreeCount,
-            disagreeCount: s.disagreeCount,
-            passCount: s.passCount,
-            createdAt: s.createdAt,
-          })),
+          statements: statements.map(
+            (s) =>
+              ({
+                uri: s.uri,
+                cid: s.cid,
+                creator: s.creator,
+                proposal: s.proposal,
+                body: s.body,
+                stance: s.stance,
+                agreeCount: s.agreeCount,
+                disagreeCount: s.disagreeCount,
+                passCount: s.passCount,
+                createdAt: s.createdAt,
+              }) as com.para.community.listCivicTrees.StatementView,
+          ),
           cursor: res.cursor || undefined,
         },
         headers: resHeaders({ repoRev, labelers }),

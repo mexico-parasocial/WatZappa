@@ -1,7 +1,6 @@
 // @ts-nocheck
-import { AtUri, type AtpAgent } from '@atproto/api'
+import { AtUri, type AtpAgent, ids } from '@atproto/api'
 import { type SeedClient, TestNetwork, likesSeed } from '@atproto/dev-env'
-import { ids } from '../../src/lexicon/lexicons.js'
 
 describe('suggested follows', () => {
   let network: TestNetwork

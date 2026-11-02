@@ -1,6 +1,6 @@
-// @ts-nocheck
-import { AppContext } from '../../../../context.js'
-import { Server } from '../../../../lexicon/index.js'
+import type { Server } from '@atproto/xrpc-server'
+import type { AppContext } from '../../../../context.js'
+import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
 
 type StatementRow = {
@@ -18,7 +18,7 @@ type StatementRow = {
 }
 
 export default function (server: Server, ctx: AppContext) {
-  server.com.para.community.listDeliberations({
+  server.add(com.para.community.listDeliberations, {
     auth: ctx.authVerifier.optionalStandardOrRole,
     handler: async ({ params, auth, req }) => {
       const { viewer } = ctx.authVerifier.parseCreds(auth)
@@ -38,21 +38,24 @@ export default function (server: Server, ctx: AppContext) {
         encoding: 'application/json' as const,
         body: {
           cursor: res.cursor || undefined,
-          statements: rows.map((row) => ({
-            uri: row.uri,
-            cid: row.cid,
-            creator: row.creator,
-            proposal: row.proposal,
-            body: row.body,
-            stance: row.stance ?? '',
-            agreeCount: row.agreeCount ?? 0,
-            disagreeCount: row.disagreeCount ?? 0,
-            passCount: row.passCount ?? 0,
-            // Only ever the requesting viewer's own position: who else took
-            // which side is not part of this view.
-            viewerDirection: row.viewerDirection,
-            createdAt: row.createdAt,
-          })),
+          statements: rows.map(
+            (row) =>
+              ({
+                uri: row.uri,
+                cid: row.cid,
+                creator: row.creator,
+                proposal: row.proposal,
+                body: row.body,
+                stance: row.stance ?? '',
+                agreeCount: row.agreeCount ?? 0,
+                disagreeCount: row.disagreeCount ?? 0,
+                passCount: row.passCount ?? 0,
+                // Only ever the requesting viewer's own position: who else took
+                // which side is not part of this view.
+                viewerDirection: row.viewerDirection,
+                createdAt: row.createdAt,
+              }) as com.para.community.listDeliberations.DeliberationStatement,
+          ),
         },
         headers: resHeaders({ repoRev, labelers }),
       }

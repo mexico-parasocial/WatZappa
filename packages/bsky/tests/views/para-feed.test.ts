@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { request } from 'undici'
-import type { AtpAgent } from '@atproto/api'
+import { type AtpAgent, ids } from '@atproto/api'
 import {
   type SeedClient,
   TestNetwork,
@@ -20,7 +20,6 @@ import {
   usersSeed,
   writeParaFixture,
 } from '@atproto/dev-env'
-import { ids } from '../../src/lexicon/lexicons.js'
 
 type ParaPostView = {
   uri: string
