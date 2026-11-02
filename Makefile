@@ -14,6 +14,10 @@ help: ## Print info about all commands
 build: codegen ## Compile all modules
 	pnpm build
 
+.PHONY: check-fork
+check-fork: ## Fail if fork-owned PARA code was dropped (run after every upstream sync)
+	packages/dev-infra/check-fork-surface.sh
+
 .PHONY: test
 test: ## Run all tests
 	pnpm test
