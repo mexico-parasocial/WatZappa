@@ -53,12 +53,12 @@ const skeleton = async (
 ): Promise<SkeletonState> => {
   const { params, ctx } = input
 
-  if (!ctx.topicsClient) {
+  if (!ctx.irisClient) {
     // Use 501 instead of 500 as these are not considered retry-able by clients
-    throw new MethodNotImplementedError('Topics agent not available')
+    throw new MethodNotImplementedError('Iris agent not available')
   }
 
-  return ctx.topicsClient.call(
+  return ctx.irisClient.call(
     app.bsky.unspecced.getSuggestedFeedsSkeleton,
     {
       limit: params.limit,
@@ -84,6 +84,7 @@ const presentation = (
   const { ctx, skeleton, hydration } = input
 
   return {
+    recIdStr: skeleton.recIdStr,
     feeds: mapDefined(skeleton.feeds, (uri) =>
       ctx.views.feedGenerator(uri, hydration),
     ),
@@ -93,7 +94,7 @@ const presentation = (
 type Context = {
   hydrator: Hydrator
   views: Views
-  topicsClient: Client | undefined
+  irisClient: Client | undefined
 }
 
 type Params = app.bsky.unspecced.getSuggestedFeeds.$Params & {
@@ -104,4 +105,5 @@ type Params = app.bsky.unspecced.getSuggestedFeeds.$Params & {
 
 type SkeletonState = {
   feeds: AtUriString[]
+  recIdStr?: string
 }

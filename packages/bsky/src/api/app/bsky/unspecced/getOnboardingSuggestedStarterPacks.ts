@@ -64,12 +64,12 @@ const skeleton: SkeletonFn<Context, Params, SkeletonState> = async (
 ): Promise<SkeletonState> => {
   const { params, ctx } = input
 
-  if (!ctx.topicsClient) {
+  if (!ctx.irisClient) {
     // Use 501 instead of 500 as these are not considered retry-able by clients
-    throw new MethodNotImplementedError('Topics agent not available')
+    throw new MethodNotImplementedError('Iris agent not available')
   }
 
-  const skeleton = await ctx.topicsClient.call(
+  const skeleton = await ctx.irisClient.call(
     app.bsky.unspecced.getOnboardingSuggestedStarterPacksSkeleton,
     { limit: params.limit, viewer: params.hydrateCtx.viewer ?? undefined },
     { headers: params.headers, signal: params.signal },
@@ -108,6 +108,7 @@ const noBlocks: RulesFn<Context, Params, SkeletonState> = (input) => {
 
   const blocks = hydration.bidirectionalBlocks?.get(viewer)
   const filteredSkeleton: SkeletonState = {
+    ...skeleton,
     starterPacks: skeleton.starterPacks.filter((uri) => {
       try {
         return !blocks?.get(new AtUri(uri).did)
@@ -129,6 +130,7 @@ const presentation: PresentationFn<
   const { ctx, skeleton, hydration } = input
 
   return {
+    recIdStr: skeleton.recIdStr,
     starterPacks: mapDefined(skeleton.starterPacks, (uri) =>
       ctx.views.starterPack(uri, hydration),
     ),
@@ -138,7 +140,7 @@ const presentation: PresentationFn<
 type Context = {
   hydrator: Hydrator
   views: Views
-  topicsClient: Client | undefined
+  irisClient: Client | undefined
 }
 
 type Params = app.bsky.unspecced.getOnboardingSuggestedStarterPacks.$Params & {
