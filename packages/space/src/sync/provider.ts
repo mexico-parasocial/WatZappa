@@ -1,4 +1,4 @@
-import { type CarBlock, writeCarStream } from '@atproto/common'
+import { type CarBlock, writeCarStream } from '@atproto/car'
 import { cidForLex, encode } from '@atproto/lex-cbor'
 import { type Cid, cidForCbor } from '@atproto/lex-data'
 import type { RepoIndex, SignedCommit, SpaceRecord } from '../types.js'

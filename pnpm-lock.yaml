@@ -2380,6 +2380,9 @@ importers:
 
   packages/space:
     dependencies:
+      '@atproto/car':
+        specifier: workspace:^
+        version: link:../car
       '@atproto/common':
         specifier: workspace:^
         version: link:../common

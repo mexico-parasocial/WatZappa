@@ -1,4 +1,5 @@
-import { type check, readCarStream } from '@atproto/common'
+import { readCarStream } from '@atproto/car'
+import type { check } from '@atproto/common'
 import { decode } from '@atproto/lex-cbor'
 import type { Cid, LexMap } from '@atproto/lex-data'
 import { RepoVerificationError } from '../error.js'
