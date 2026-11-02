@@ -2,10 +2,13 @@
   "name": "bsync-service",
   "private": true,
   "packageManager": "pnpm@11.11.0",
+  "type": "module",
+  "files": [
+    "index.ts"
+  ],
   "dependencies": {
     "@atproto/bsync": "workspace:^"
   },
-  "type": "module",
   "exports": {
     "./package.json": "./package.json"
   }

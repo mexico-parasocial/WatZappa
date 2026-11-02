@@ -1,12 +1,14 @@
-import { Insertable } from 'kysely'
+import type { Insertable } from 'kysely'
 import { chunkArray } from '@atproto/common'
-import { Cid, l, lexParse, lexStringify, parseCid } from '@atproto/lex'
+import { type Cid, parseCid } from '@atproto/lex-data'
+import { lexParse, lexStringify } from '@atproto/lex-json'
+import type { l } from '@atproto/lex-schema'
 import { AtUri } from '@atproto/syntax'
-import { ParaCacheService } from '../../../cache/para-cache.js'
-import { BackgroundQueue } from '../background.js'
-import { Database } from '../db/index.js'
-import { DatabaseSchema } from '../db/database-schema.js'
-import { Notification } from '../db/tables/notification.js'
+import type { ParaCacheService } from '../../../cache/para-cache.js'
+import type { BackgroundQueue } from '../background.js'
+import type { DatabaseSchema } from '../db/database-schema.js'
+import type { Database } from '../db/index.js'
+import type { Notification } from '../db/tables/notification.js'
 
 // @NOTE re: insertions and deletions. Due to how record updates are handled,
 // (insertFn) should have the same effect as (insertFn -> deleteFn -> insertFn).

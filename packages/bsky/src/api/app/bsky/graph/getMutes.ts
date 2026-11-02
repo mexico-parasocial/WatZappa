@@ -1,5 +1,5 @@
 import { mapDefined } from '@atproto/common'
-import type { DidString } from '@atproto/lex'
+import type { DidString } from '@atproto/lex-schema'
 import type { Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import type {
@@ -15,7 +15,7 @@ import {
   noRules,
 } from '../../../../pipeline.js'
 import type { Views } from '../../../../views/index.js'
-import { clearlyBadCursor, resHeaders } from '../../../util.js'
+import { clearlyBadCursor, fillPage, resHeaders } from '../../../util.js'
 
 export default function (server: Server, ctx: AppContext) {
   const getMutes = createPipeline(skeleton, hydration, noRules, presentation)
@@ -29,7 +29,13 @@ export default function (server: Server, ctx: AppContext) {
         viewer,
         xrpcEndpoint: app.bsky.graph.getMutes.$lxm,
       })
-      const result = await getMutes({ ...params, hydrateCtx }, ctx)
+      const result = await fillPage({
+        cursor: params.cursor,
+        limit: params.limit,
+        fetch: ({ cursor, limit }) =>
+          getMutes({ ...params, cursor, limit, hydrateCtx }, ctx),
+        items: (r) => r.mutes,
+      })
       return {
         encoding: 'application/json',
         body: result,

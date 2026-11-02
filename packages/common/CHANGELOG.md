@@ -1,5 +1,132 @@
 # @atproto/common
 
+## 0.8.7
+
+### Patch Changes
+
+- [#5753](https://github.com/bluesky-social/atproto/pull/5753) [`3bfd00f`](https://github.com/bluesky-social/atproto/commit/3bfd00f484dc144482c82a4ed248adc49e6be769) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Use dedicated `MaxSizeError` error by default from `MaxSizeChecker`
+
+- [#5753](https://github.com/bluesky-social/atproto/pull/5753) [`3bfd00f`](https://github.com/bluesky-social/atproto/commit/3bfd00f484dc144482c82a4ed248adc49e6be769) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Avoid leaking the `this` context when calling `createError` from `MaxSizeChecker`
+
+- [#5753](https://github.com/bluesky-social/atproto/pull/5753) [`3bfd00f`](https://github.com/bluesky-social/atproto/commit/3bfd00f484dc144482c82a4ed248adc49e6be769) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Mark `MaxSizeChecker` properties as `readonly`
+
+- [#5753](https://github.com/bluesky-social/atproto/pull/5753) [`3bfd00f`](https://github.com/bluesky-social/atproto/commit/3bfd00f484dc144482c82a4ed248adc49e6be769) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Add decompression and size limits when decoding streams
+
+## 0.8.6
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/common-web@0.5.15
+
+## 0.8.5
+
+### Patch Changes
+
+- Updated dependencies [[`e8b89ff`](https://github.com/bluesky-social/atproto/commit/e8b89ff4c211a10519b54bd83eb64950035942c3)]:
+  - @atproto/lex-data@0.1.8
+  - @atproto/common-web@0.5.14
+  - @atproto/lex-cbor@0.1.7
+
+## 0.8.4
+
+### Patch Changes
+
+- Updated dependencies [[`5019f55`](https://github.com/bluesky-social/atproto/commit/5019f5537317ee75ad4527db212bc27c3085fe67)]:
+  - @atproto/common-web@0.5.13
+
+## 0.8.3
+
+### Patch Changes
+
+- Updated dependencies [[`fe4087e`](https://github.com/bluesky-social/atproto/commit/fe4087ecb7a7cc53c7081c9f97d49121e5251c36)]:
+  - @atproto/common-web@0.5.12
+
+## 0.8.2
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/common-web@0.5.11
+
+## 0.8.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/common-web@0.5.10
+
+## 0.8.0
+
+### Minor Changes
+
+- [#5382](https://github.com/bluesky-social/atproto/pull/5382) [`898c469`](https://github.com/bluesky-social/atproto/commit/898c469cf568b941f38f9c3371997a513ac05cfa) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Add `fanOut`, a pipeline-destination counterpart to `Tee` that owns its output sinks: an output that errors or ends early is dropped while the others (and the input) keep flowing, and the input is only torn down once every sink has died. Also harden `Tee` so a branch that dies mid-write (e.g. one created with `autoDestroy: false`, which errors without emitting `close`) can no longer stall the main stream.
+
+### Patch Changes
+
+- [#5382](https://github.com/bluesky-social/atproto/pull/5382) [`898c469`](https://github.com/bluesky-social/atproto/commit/898c469cf568b941f38f9c3371997a513ac05cfa) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Deprecate `forwardStreamErrors`
+
+- [#5382](https://github.com/bluesky-social/atproto/pull/5382) [`898c469`](https://github.com/bluesky-social/atproto/commit/898c469cf568b941f38f9c3371997a513ac05cfa) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Deprecate `cloneStream`
+
+- [#5382](https://github.com/bluesky-social/atproto/pull/5382) [`898c469`](https://github.com/bluesky-social/atproto/commit/898c469cf568b941f38f9c3371997a513ac05cfa) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Make `createError` argument of `MaxSizeChecker` optional
+
+- [#5382](https://github.com/bluesky-social/atproto/pull/5382) [`898c469`](https://github.com/bluesky-social/atproto/commit/898c469cf568b941f38f9c3371997a513ac05cfa) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Migrate test runner to vitest
+
+- [#5382](https://github.com/bluesky-social/atproto/pull/5382) [`898c469`](https://github.com/bluesky-social/atproto/commit/898c469cf568b941f38f9c3371997a513ac05cfa) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Add `Tee` stream utility
+
+- [#5382](https://github.com/bluesky-social/atproto/pull/5382) [`898c469`](https://github.com/bluesky-social/atproto/commit/898c469cf568b941f38f9c3371997a513ac05cfa) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Add `HashPassThrough` utility
+
+## 0.7.6
+
+### Patch Changes
+
+- [#4805](https://github.com/bluesky-social/atproto/pull/4805) [`b66870d`](https://github.com/bluesky-social/atproto/commit/b66870d5a1efbcfa0cc07498c7cfcf3f0f243e86) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Export new `createLogger` helper
+
+- [#4805](https://github.com/bluesky-social/atproto/pull/4805) [`b66870d`](https://github.com/bluesky-social/atproto/commit/b66870d5a1efbcfa0cc07498c7cfcf3f0f243e86) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Deprecate `subsystemLogger` in favor of `createLogger`
+
+## 0.7.5
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/common-web@0.5.9
+
+## 0.7.4
+
+### Patch Changes
+
+- Updated dependencies [[`6a3d607`](https://github.com/bluesky-social/atproto/commit/6a3d6073cb66c527b5b109242049c85c36b9658c)]:
+  - @atproto/lex-cbor@0.1.6
+  - @atproto/lex-data@0.1.7
+  - @atproto/common-web@0.5.8
+
+## 0.7.3
+
+### Patch Changes
+
+- Updated dependencies [[`95aa1d6`](https://github.com/bluesky-social/atproto/commit/95aa1d6dfea71316d5f30dd8bd4ed48afac31c81)]:
+  - @atproto/lex-cbor@0.1.5
+  - @atproto/lex-data@0.1.6
+  - @atproto/common-web@0.5.7
+
+## 0.7.2
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/common-web@0.5.6
+
+## 0.7.1
+
+### Patch Changes
+
+- [#5197](https://github.com/bluesky-social/atproto/pull/5197) [`a0c49d9`](https://github.com/bluesky-social/atproto/commit/a0c49d9e8bc685c5a747a8d3b2775c73c63fdb6f) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Rewrite import statements to be compatible with TypeScript's `verbatimModuleSyntax` config.
+
+- Updated dependencies [[`a0c49d9`](https://github.com/bluesky-social/atproto/commit/a0c49d9e8bc685c5a747a8d3b2775c73c63fdb6f), [`cc6b901`](https://github.com/bluesky-social/atproto/commit/cc6b901496f607c0b477e48a23c94e6f727396c9), [`cc6b901`](https://github.com/bluesky-social/atproto/commit/cc6b901496f607c0b477e48a23c94e6f727396c9), [`cc6b901`](https://github.com/bluesky-social/atproto/commit/cc6b901496f607c0b477e48a23c94e6f727396c9)]:
+  - @atproto/lex-cbor@0.1.4
+  - @atproto/lex-data@0.1.5
+  - @atproto/common-web@0.5.5
+
 ## 0.7.0
 
 ### Minor Changes

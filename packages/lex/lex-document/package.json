@@ -19,7 +19,9 @@
     "./dist",
     "./CHANGELOG.md"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/polyfill.js"
+  ],
   "type": "module",
   "exports": {
     ".": {
@@ -31,13 +33,13 @@
     "node": ">=22"
   },
   "dependencies": {
+    "@atproto/lex-data": "workspace:^",
     "@atproto/lex-schema": "workspace:^",
-    "core-js": "^3.50.0",
     "tslib": "^2.8.1"
   },
   "devDependencies": {
     "@atproto/lex-data": "workspace:^",
-    "vitest": "^4.0.16"
+    "vitest": "^4.1.10"
   },
   "scripts": {
     "build": "tsc --build tsconfig.build.json",

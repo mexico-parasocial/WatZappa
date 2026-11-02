@@ -1,12 +1,7 @@
 import { sql } from 'kysely'
 import { ComAtprotoModerationDefs, ids } from '@atproto/api'
 import type AtpAgent from '@atproto/api'
-import {
-  type ModeratorClient,
-  type SeedClient,
-  TestNetwork,
-  basicSeed,
-} from '@atproto/dev-env'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 import { chat, com, tools } from '../src/lexicons/index.js'
 import {
   CHAT_CONVO_COLLECTION,
@@ -53,6 +48,7 @@ describe('report-close-reports', () => {
     subject: string
     includeAllOwned?: boolean
     reportTypes?: string[]
+    excludedReportTypes?: string[]
     internalNote?: string
     isAutomated?: boolean
     meta?: Record<string, unknown>
@@ -116,8 +112,11 @@ describe('report-close-reports', () => {
     }
   }
 
+  type Subject = Awaited<ReturnType<typeof fixture>>[
+    'account' | 'record' | 'message' | 'conversation']
+
   async function report(
-    subject: Parameters<ModeratorClient['emitEvent']>[0]['subject'],
+    subject: Subject,
     reasonType: string = com.atproto.moderation.defs.ReasonSpam,
   ) {
     const event = await sc.createReport({
@@ -126,12 +125,18 @@ describe('report-close-reports', () => {
       reportedBy: sc.dids.bob,
     })
     await network.processAll()
-    return reportForEvent(network.ozone.getModClient(), event.id)
+    const subjectKey =
+      'uri' in subject
+        ? subject.uri
+        : 'messageId' in subject
+          ? `at://${subject.did}/${CHAT_MESSAGE_COLLECTION}/${subject.messageId}`
+          : 'convoId' in subject
+            ? `at://${subject.did}/${CHAT_CONVO_COLLECTION}/${subject.convoId}`
+            : subject.did
+    return reportForEvent(network.ozone.getModClient(), event.id, subjectKey)
   }
 
-  async function reportsForSubjects(
-    subjects: Parameters<ModeratorClient['emitEvent']>[0]['subject'][],
-  ) {
+  async function reportsForSubjects(subjects: Subject[]) {
     const rows: Awaited<ReturnType<typeof report>>[] = []
     for (const subject of subjects) rows.push(await report(subject))
     return rows
@@ -164,6 +169,215 @@ describe('report-close-reports', () => {
       )
     ).data
   }
+
+  async function setStatus(
+    reportId: number,
+    status: 'queued' | 'assigned' | 'escalated',
+  ) {
+    if (status === 'assigned') {
+      await agent.tools.ozone.report.assignModerator(
+        {
+          reportId,
+          did: network.ozone.moderatorAccnt.did,
+          isPermanent: true,
+        },
+        { headers: await modHeaders(ids.ToolsOzoneReportAssignModerator) },
+      )
+    } else {
+      await agent.tools.ozone.report.createActivity(
+        {
+          reportId,
+          activity:
+            status === 'queued'
+              ? tools.ozone.report.defs.queueActivity.$build({})
+              : tools.ozone.report.defs.escalationActivity.$build({}),
+        },
+        { headers: await modHeaders(ids.ToolsOzoneReportCreateActivity) },
+      )
+    }
+    expect((await detail(reportId)).status).toBe(status)
+  }
+
+  async function snapshotReports(reports: { id: number }[]) {
+    const snapshots: {
+      report: Awaited<ReturnType<typeof detail>>
+      activities: Awaited<ReturnType<typeof listActivities>>
+    }[] = []
+    // @NOTE Avoid saturating the in-process AppView with concurrent fixture reads.
+    for (const { id } of reports) {
+      snapshots.push({
+        report: await detail(id),
+        activities: await listActivities(id),
+      })
+    }
+    return snapshots
+  }
+
+  async function expectUnchanged(
+    snapshots: Awaited<ReturnType<typeof snapshotReports>>,
+  ) {
+    for (const { report, activities } of snapshots) {
+      const current = await detail(report.id)
+      expect({
+        status: current.status,
+        updatedAt: current.updatedAt,
+        actionEventIds: current.actionEventIds,
+        actionNote: current.actionNote,
+      }).toEqual({
+        status: report.status,
+        updatedAt: report.updatedAt,
+        actionEventIds: report.actionEventIds,
+        actionNote: report.actionNote,
+      })
+      expect(await listActivities(report.id)).toEqual(activities)
+    }
+  }
+
+  describe.each(['account', 'record', 'message', 'conversation'] as const)(
+    '%s active review',
+    (kind) => {
+      it.each([false, true])(
+        'preserves active review during batch closure when isAutomated is %s',
+        async (isAutomated) => {
+          const f = await fixture()
+          const open = await report(f[kind])
+          const queued = await report(f[kind])
+          await setStatus(queued.id, 'queued')
+          const assigned = await report(f[kind])
+          await setStatus(assigned.id, 'assigned')
+          const permanent = await report(f[kind])
+          await setStatus(permanent.id, 'assigned')
+          await setStatus(permanent.id, 'queued')
+          const escalated = await report(f[kind])
+          await setStatus(escalated.id, 'escalated')
+          const temporary = await report(f[kind])
+          await agent.tools.ozone.report.assignModerator(
+            { reportId: temporary.id },
+            { headers: await modHeaders(ids.ToolsOzoneReportAssignModerator) },
+          )
+          const ended = await report(f[kind])
+          await setStatus(ended.id, 'assigned')
+          await agent.tools.ozone.report.unassignModerator(
+            { reportId: ended.id },
+            {
+              headers: await modHeaders(ids.ToolsOzoneReportUnassignModerator),
+            },
+          )
+          const excluded = await report(
+            f[kind],
+            com.atproto.moderation.defs.ReasonRude,
+          )
+          const before = await snapshotReports([
+            assigned,
+            permanent,
+            escalated,
+            excluded,
+          ])
+          const subject =
+            kind === 'account'
+              ? f.did
+              : kind === 'record'
+                ? f.record.uri
+                : `at://${f.did}/${kind === 'message' ? CHAT_MESSAGE_COLLECTION : CHAT_CONVO_COLLECTION}/${kind === 'message' ? f.message.messageId : f.conversation.convoId}`
+          const input = {
+            subject,
+            reportTypes: [
+              com.atproto.moderation.defs.ReasonSpam,
+              com.atproto.moderation.defs.ReasonRude,
+            ],
+            excludedReportTypes: [com.atproto.moderation.defs.ReasonRude],
+            isAutomated,
+          }
+          expect((await closeReports(input)).data).toEqual({
+            closedCount: 4,
+            reportIds: [open.id, queued.id, temporary.id, ended.id],
+          })
+          for (const r of [open, queued, temporary, ended]) {
+            expect((await detail(r.id)).status).toBe('closed')
+            expect(await listActivities(r.id)).toContainEqual(
+              expect.objectContaining({
+                isAutomated,
+                meta: { resolution: 'noAction' },
+              }),
+            )
+          }
+          expect((await closeReports(input)).data).toEqual({
+            closedCount: 0,
+            reportIds: [],
+          })
+          await expectUnchanged(before)
+
+          for (const r of [assigned, permanent, escalated]) {
+            await agent.tools.ozone.report.createActivity(
+              {
+                reportId: r.id,
+                activity: tools.ozone.report.defs.closeActivity.$build({}),
+              },
+              { headers: await modHeaders(ids.ToolsOzoneReportCreateActivity) },
+            )
+            expect((await detail(r.id)).status).toBe('closed')
+          }
+        },
+      )
+    },
+  )
+
+  it.each(['all', 'types', 'exclusions'] as const)(
+    'protects active review across owned subjects with %s targeting',
+    async (selector) => {
+      const f = await fixture()
+      const selected: Awaited<ReturnType<typeof report>>[] = []
+      const protectedReports: Awaited<ReturnType<typeof report>>[] = []
+      for (const subject of [f.account, f.record, f.message, f.conversation]) {
+        selected.push(await report(subject))
+        const queued = await report(subject)
+        await setStatus(queued.id, 'queued')
+        selected.push(queued)
+        for (const status of ['assigned', 'escalated'] as const) {
+          const r = await report(subject)
+          await setStatus(r.id, status)
+          protectedReports.push(r)
+        }
+        const permanent = await report(subject)
+        await setStatus(permanent.id, 'assigned')
+        await setStatus(permanent.id, 'queued')
+        protectedReports.push(permanent)
+        const other = await report(
+          subject,
+          com.atproto.moderation.defs.ReasonRude,
+        )
+        if (selector === 'all') {
+          selected.push(other)
+        } else {
+          protectedReports.push(other)
+        }
+      }
+      const before = await snapshotReports(protectedReports)
+      const input = {
+        subject: f.did,
+        includeAllOwned: true,
+        isAutomated: true,
+        ...(selector === 'types' && {
+          reportTypes: [com.atproto.moderation.defs.ReasonSpam],
+        }),
+        ...(selector === 'exclusions' && {
+          excludedReportTypes: [com.atproto.moderation.defs.ReasonRude],
+        }),
+      }
+      expect((await closeReports(input)).data).toEqual({
+        closedCount: selected.length,
+        reportIds: selected.map(({ id }) => id),
+      })
+      for (const r of selected) {
+        expect((await detail(r.id)).status).toBe('closed')
+      }
+      expect((await closeReports(input)).data).toEqual({
+        closedCount: 0,
+        reportIds: [],
+      })
+      await expectUnchanged(before)
+    },
+  )
 
   it.each([undefined, false])(
     'keeps account closure exact when includeAllOwned is %s',
@@ -307,12 +521,225 @@ describe('report-close-reports', () => {
     ).toEqual([other.id])
   })
 
-  it('associates selected reasons with enforcement and no-actions the remainder', async () => {
+  it.each(['account', 'record', 'message', 'conversation'] as const)(
+    'excludes reasons without widening the exact %s subject scope',
+    async (kind) => {
+      const f = await fixture()
+      const foreign = await fixture()
+      const selected = await report(f[kind])
+      const excluded = await report(
+        f[kind],
+        com.atproto.moderation.defs.ReasonRude,
+      )
+      const untouched = await reportsForSubjects([
+        ...(['account', 'record', 'message', 'conversation'] as const)
+          .filter((other) => other !== kind)
+          .map((other) => f[other]),
+        foreign[kind],
+      ])
+      const subject =
+        kind === 'account'
+          ? f.did
+          : kind === 'record'
+            ? f.record.uri
+            : `at://${f.did}/${kind === 'message' ? CHAT_MESSAGE_COLLECTION : CHAT_CONVO_COLLECTION}/${kind === 'message' ? f.message.messageId : f.conversation.convoId}`
+
+      expect(
+        (
+          await closeReports({
+            subject,
+            excludedReportTypes: [com.atproto.moderation.defs.ReasonRude],
+          })
+        ).data,
+      ).toEqual({ closedCount: 1, reportIds: [selected.id] })
+      for (const r of [excluded, ...untouched]) {
+        expect((await detail(r.id)).status).toBe('open')
+        expect(await listActivities(r.id)).toHaveLength(0)
+      }
+    },
+  )
+
+  it('excludes multiple reasons across owned subjects and preserves their history', async () => {
+    const f = await fixture()
+    const foreign = await fixture()
+    const subjects = [f.account, f.record, f.message, f.conversation]
+    const selected = await reportsForSubjects(subjects)
+    const excluded: Awaited<ReturnType<typeof report>>[] = []
+    for (const subject of subjects) {
+      excluded.push(
+        await report(subject, com.atproto.moderation.defs.ReasonRude),
+        await report(subject, com.atproto.moderation.defs.ReasonMisleading),
+      )
+    }
+    await agent.tools.ozone.report.createActivity(
+      {
+        reportId: excluded[0].id,
+        activity: tools.ozone.report.defs.escalationActivity.$build({}),
+        internalNote: 'Needs further review',
+      },
+      { headers: await modHeaders(ids.ToolsOzoneReportCreateActivity) },
+    )
+    const untouched = await reportsForSubjects([
+      foreign.account,
+      foreign.record,
+      foreign.message,
+      foreign.conversation,
+    ])
+    const snapshots = await snapshotReports([...excluded, ...untouched])
+    const input = {
+      subject: f.did,
+      includeAllOwned: true,
+      excludedReportTypes: [
+        com.atproto.moderation.defs.ReasonRude,
+        com.atproto.moderation.defs.ReasonMisleading,
+      ],
+      isAutomated: true,
+      meta: { source: 'example-tool' },
+    }
+    const { data } = await closeReports(input)
+    expect(data.closedCount).toBe(selected.length)
+    expect(data.reportIds.sort()).toEqual(selected.map((r) => r.id).sort())
+    for (const r of selected) {
+      expect((await detail(r.id)).status).toBe('closed')
+      expect((await inbox(r.id)).resolution?.outcome).toBe('noAction')
+      expect(await listActivities(r.id)).toEqual([
+        expect.objectContaining({ isAutomated: true }),
+      ])
+    }
+    for (const snapshot of snapshots) {
+      const current = await detail(snapshot.report.id)
+      expect(current.status).toBe(snapshot.report.status)
+      expect(current.updatedAt).toBe(snapshot.report.updatedAt)
+      expect(current.actionEventIds).toEqual(snapshot.report.actionEventIds)
+      expect(current.actionNote).toBe(snapshot.report.actionNote)
+      expect(await listActivities(snapshot.report.id)).toEqual(
+        snapshot.activities,
+      )
+    }
+    expect((await closeReports(input)).data).toEqual({
+      closedCount: 0,
+      reportIds: [],
+    })
+  })
+
+  it.each([
+    { reportTypes: undefined },
+    { reportTypes: [] },
+    { reportTypes: [com.atproto.moderation.defs.ReasonSpam] },
+  ])(
+    'preserves existing selection with empty exclusions and reportTypes $reportTypes',
+    async ({ reportTypes }) => {
+      const f = await fixture()
+      const selected = await report(f.account)
+      const other = await report(
+        f.account,
+        com.atproto.moderation.defs.ReasonRude,
+      )
+      const expected = reportTypes?.length ? [selected] : [selected, other]
+      const { data } = await closeReports({
+        subject: f.did,
+        reportTypes,
+        excludedReportTypes: [],
+      })
+      expect(data.closedCount).toBe(expected.length)
+      expect(data.reportIds.sort()).toEqual(expected.map((r) => r.id).sort())
+      if (reportTypes?.length)
+        expect((await detail(other.id)).status).toBe('open')
+    },
+  )
+
+  it.each([
+    { reportTypes: undefined },
+    { reportTypes: [] },
+    { reportTypes: [com.atproto.moderation.defs.ReasonSpam] },
+  ])(
+    'applies exclusions with reportTypes $reportTypes',
+    async ({ reportTypes }) => {
+      const f = await fixture()
+      const selected = await report(f.account)
+      const excluded = await report(
+        f.account,
+        com.atproto.moderation.defs.ReasonRude,
+      )
+      expect(
+        (
+          await closeReports({
+            subject: f.did,
+            reportTypes,
+            excludedReportTypes: [com.atproto.moderation.defs.ReasonRude],
+          })
+        ).data,
+      ).toEqual({ closedCount: 1, reportIds: [selected.id] })
+      expect((await detail(excluded.id)).status).toBe('open')
+      expect(await listActivities(excluded.id)).toHaveLength(0)
+    },
+  )
+
+  it.each([false, true])(
+    'gives exclusions precedence over inclusions with all reasons excluded: %s',
+    async (excludeAll) => {
+      const f = await fixture()
+      const selected = await report(f.account)
+      const excluded = await report(
+        f.account,
+        com.atproto.moderation.defs.ReasonRude,
+      )
+      const outside = await report(
+        f.account,
+        com.atproto.moderation.defs.ReasonMisleading,
+      )
+      const reportTypes = [
+        com.atproto.moderation.defs.ReasonSpam,
+        com.atproto.moderation.defs.ReasonRude,
+      ]
+      const { data } = await closeReports({
+        subject: f.did,
+        reportTypes,
+        excludedReportTypes: excludeAll
+          ? reportTypes
+          : [com.atproto.moderation.defs.ReasonRude],
+      })
+      expect(data).toEqual({
+        closedCount: excludeAll ? 0 : 1,
+        reportIds: excludeAll ? [] : [selected.id],
+      })
+      for (const r of [excluded, outside, ...(excludeAll ? [selected] : [])]) {
+        expect((await detail(r.id)).status).toBe('open')
+        expect(await listActivities(r.id)).toHaveLength(0)
+      }
+    },
+  )
+
+  it('matches custom report reasons exactly', async () => {
+    const f = await fixture()
+    const excludedType = 'example.moderation.reason#custom'
+    const excluded = await report(f.account, excludedType)
+    const selected = await report(f.account, `${excludedType}Other`)
+    expect(
+      (
+        await closeReports({
+          subject: f.did,
+          excludedReportTypes: [
+            excludedType,
+            'example.moderation.reason#unused',
+          ],
+        })
+      ).data,
+    ).toEqual({ closedCount: 1, reportIds: [selected.id] })
+    expect((await detail(excluded.id)).status).toBe('open')
+    expect(await listActivities(excluded.id)).toHaveLength(0)
+  })
+
+  it('associates selected reasons with enforcement and excludes reasons from cleanup', async () => {
     const f = await fixture()
     const actioned = await report(f.account)
+    const excluded = await report(
+      f.account,
+      com.atproto.moderation.defs.ReasonMisleading,
+    )
     const remaining = [
       await report(f.account, com.atproto.moderation.defs.ReasonRude),
-      await report(f.record),
+      await report(f.record, com.atproto.moderation.defs.ReasonRude),
     ]
     const action = await network.ozone.getModClient().emitEvent({
       subject: f.account,
@@ -323,11 +750,20 @@ describe('report-close-reports', () => {
     })
     expect(
       (
-        await closeReports({ subject: f.did, includeAllOwned: true })
+        await closeReports({
+          subject: f.did,
+          includeAllOwned: true,
+          excludedReportTypes: [
+            com.atproto.moderation.defs.ReasonSpam,
+            com.atproto.moderation.defs.ReasonMisleading,
+          ],
+        })
       ).data.reportIds.sort(),
     ).toEqual(remaining.map((r) => r.id).sort())
     expect((await detail(actioned.id)).actionEventIds).toEqual([action.id])
     expect((await inbox(actioned.id)).resolution?.outcome).toBe('actionTaken')
+    expect((await detail(excluded.id)).status).toBe('open')
+    expect(await listActivities(excluded.id)).toHaveLength(0)
     for (const r of remaining) {
       expect((await detail(r.id)).actionEventIds ?? []).toEqual([])
       expect((await inbox(r.id)).resolution?.outcome).toBe('noAction')

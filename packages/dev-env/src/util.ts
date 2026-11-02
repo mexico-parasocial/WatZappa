@@ -2,11 +2,11 @@ import * as plc from '@did-plc/lib'
 import * as ui8 from 'uint8arrays'
 import { request } from 'undici'
 import { Secp256k1Keypair } from '@atproto/crypto'
-import type { DidString } from '@atproto/lex'
-import { IdResolver } from '@atproto/identity'
-import { TestBsky } from './bsky.js'
-import { TestPds } from './pds.js'
-import { DidAndKey } from './types.js'
+import type { IdResolver } from '@atproto/identity'
+import type { DidString } from '@atproto/lex-schema'
+import type { TestBsky } from './bsky.js'
+import type { TestPds } from './pds.js'
+import type { DidAndKey } from './types.js'
 
 export const mockNetworkUtilities = (pds: TestPds, bsky?: TestBsky) => {
   mockResolvers(pds.ctx.idResolver, pds)
@@ -92,7 +92,7 @@ export const resolveHandleInPlc = async (
     if (res.statusCode !== 200) return undefined
     const data = (await res.body.json()) as { did: string }
     return data.did
-  } catch (e) {
+  } catch {
     return undefined
   }
 }
@@ -131,7 +131,7 @@ export const createDidAndKey = async (opts: {
 
   try {
     await plcClient.getDocument(did)
-  } catch (e) {
+  } catch {
     await plcClient.sendOperation(did, plcOp)
   }
 

@@ -66,7 +66,7 @@ The repo-root [lexicons/](lexicons/) holds the canonical `com.atproto.*` / `tool
 - **Add/refresh an external lexicon in a package:** `cd packages/<pkg> && pnpm lex:install <nsid>` (adds it plus transitive deps); `pnpm lex:update` refreshes installed ones.
 - **Edit a canonical lexicon:** change it under [lexicons/](lexicons/), then run `pnpm lex:update-local` from the repo root to propagate the new CID into every dependent package's `lexicons.json`. (After editing a `.proto` file instead, run `pnpm codegen` from the root.)
 
-For working with the generated SDK, invoke the focused skills under [.agents/skills/](.agents/skills/): `lex-setup` (lexicons.json / resolvers / codegen wiring), `lex-schema` and `lex-data` (schemas and values), `lex-client` (calls out), `xrpc-server` (defining server routes), and `lexification-client` / `lexification-server` (migrating off the legacy stack). To sync `chat.bsky.*` schemas from the chat repo, use `update-chat-lexicons`.
+For working with the generated SDK, invoke the focused skills under [.agents/skills/](.agents/skills/): `lex-setup` (lexicons.json / resolvers / codegen wiring), `lex-schema` and `lex-data` (schemas and values), `lex-client` (calls out), `xrpc-server` (defining server routes), and `lexification-client` / `lexification-server` (migrating off the legacy stack).
 
 ## Architecture notes
 

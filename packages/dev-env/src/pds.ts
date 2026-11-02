@@ -5,7 +5,8 @@ import getPort from 'get-port'
 import * as ui8 from 'uint8arrays'
 import { AtpAgent } from '@atproto/api'
 import { Secp256k1Keypair, randomStr } from '@atproto/crypto'
-import { Client, type UriString } from '@atproto/lex'
+import { Client } from '@atproto/lex-client'
+import type { UriString } from '@atproto/lex-schema'
 import {
   type AppContext,
   type AppContextOptions,

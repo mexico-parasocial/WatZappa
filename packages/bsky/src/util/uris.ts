@@ -1,9 +1,13 @@
-import { type AtUriString, type NsidString, isDidString } from '@atproto/lex'
+import {
+  type AtUriString,
+  type NsidString,
+  isDidString,
+} from '@atproto/lex-schema'
 import { AtUri, type DidString, parseAtUriString } from '@atproto/syntax'
 import { app } from '../lexicons/index.js'
 import { type StrongRef, validateStrongRef } from '../views/types.js'
 
-/** A complete DID-based record URI in the expected collection, without a query or fragment. */
+/** A complete DID-based record URI in the expected collection, with no query or fragment. */
 export function recordUriOf(
   value: string,
   collection: NsidString,

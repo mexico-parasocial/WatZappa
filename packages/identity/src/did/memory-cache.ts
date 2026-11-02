@@ -19,7 +19,10 @@ export type MemoryCacheOptions = {
 
 const encoder = new TextEncoder()
 
-/** A bounded LRU cache. Treat cached documents as immutable for size accounting. */
+/**
+ * A bounded LRU cache. Oversized documents can be resolved but are not retained.
+ * Treat cached documents as immutable so their measured sizes remain accurate.
+ */
 export class MemoryCache implements DidCache {
   public staleTTL: number
   public maxTTL: number
@@ -45,13 +48,14 @@ export class MemoryCache implements DidCache {
     }
   }
 
-  /** Use DidCache methods to keep size accounting accurate. */
+  /** Use the DidCache methods to mutate entries and maintain size accounting. */
   public cache: Map<string, CacheVal> = new Map()
 
   async cacheDid(did: string, doc: DidDocument): Promise<void> {
-    // @NOTE Remove the old document even if its replacement cannot be retained.
+    // @NOTE Remove the previous version even if the replacement cannot be cached.
     this.remove(did)
     if (this.maxEntries === 0) return
+
     let docBytes: number
     try {
       const json = JSON.stringify(doc)
@@ -62,6 +66,7 @@ export class MemoryCache implements DidCache {
     }
     const size = docBytes + encoder.encode(did).byteLength
     if (docBytes > this.maxDocBytes || size > this.maxBytes) return
+
     while (
       this.cache.size >= this.maxEntries ||
       this.bytes + size > this.maxBytes

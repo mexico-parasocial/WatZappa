@@ -1,5 +1,5 @@
 import { mapDefined, noUndefinedVals } from '@atproto/common'
-import type { Client } from '@atproto/lex'
+import type { Client } from '@atproto/lex-client'
 import { AtUri, type AtUriString, type DidString } from '@atproto/syntax'
 import { MethodNotImplementedError, type Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
@@ -31,10 +31,10 @@ export default function (server: Server, ctx: AppContext) {
       const viewer = auth.credentials.iss
       const labelers = ctx.reqLabelers(req)
       const hydrateCtx = await ctx.hydrator.createContext({
-        labelers,
-        viewer,
         xrpcEndpoint:
           app.bsky.unspecced.getOnboardingSuggestedStarterPacks.$lxm,
+        labelers,
+        viewer,
       })
       const headers = noUndefinedVals({
         'accept-language': req.headers['accept-language'],

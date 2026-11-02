@@ -105,8 +105,11 @@ export function toKnownErr(e: any) {
 export interface ReportAction {
   $type?: 'tools.ozone.moderation.emitEvent#reportAction'
   ids?: number[]
+  /** Target reports matching these report types on the subject (fully qualified NSIDs). Excludes assigned and escalated reports. */
   types?: string[]
+  /** Target ALL reports on the subject. Excludes assigned and escalated reports. */
   all?: boolean
+  /** Note to send to reporter(s) when actioning their report */
   note?: string
   /** Set true when the report activities are created by an automated process. */
   isAutomated?: boolean

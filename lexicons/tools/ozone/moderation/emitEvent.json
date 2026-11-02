@@ -9,11 +9,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "event",
-            "subject",
-            "createdBy"
-          ],
+          "required": ["event", "subject", "createdBy"],
           "properties": {
             "event": {
               "type": "union",
@@ -112,13 +108,16 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "Target reports matching these report types on the subject (fully qualified NSIDs). Excludes assigned and escalated reports."
         },
         "all": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Target ALL reports on the subject. Excludes assigned and escalated reports."
         },
         "note": {
-          "type": "string"
+          "type": "string",
+          "description": "Note to send to reporter(s) when actioning their report"
         },
         "isAutomated": {
           "type": "boolean",

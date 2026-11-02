@@ -9869,6 +9869,66 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
+  AppBskyUnspeccedGetAtmosphereExploreArticleRecommendations: {
+    lexicon: 1,
+    id: 'app.bsky.unspecced.getAtmosphereExploreArticleRecommendations',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Get a skeleton of recommended Atmosphere Explore articles. Intended to be called and hydrated by app.bsky.unspecced.getAtmosphereExploreTab',
+        parameters: {
+          type: 'params',
+          properties: {
+            viewer: {
+              type: 'string',
+              format: 'did',
+              description:
+                'DID of the account making the request (not included for public/unauthenticated queries).',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 25,
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['articles', 'recIdStr'],
+            properties: {
+              articles: {
+                type: 'array',
+                maxLength: 100,
+                items: {
+                  type: 'ref',
+                  ref: 'lex:app.bsky.unspecced.getAtmosphereExploreArticleRecommendations#article',
+                },
+              },
+              recIdStr: {
+                type: 'string',
+                description:
+                  'Snowflake for this recommendation, use when submitting recommendation events.',
+              },
+            },
+          },
+        },
+      },
+      article: {
+        type: 'object',
+        required: ['uri'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+    },
+  },
   AppBskyUnspeccedGetAtmosphereExploreTab: {
     lexicon: 1,
     id: 'app.bsky.unspecced.getAtmosphereExploreTab',
@@ -10023,6 +10083,8 @@ export const schemaDict: Record<string, LexiconDoc> = {
         properties: {
           featured: {
             type: 'boolean',
+            description:
+              'Deprecated. Retained for compatibility; always false.',
           },
           view: {
             type: 'ref',
@@ -10036,6 +10098,8 @@ export const schemaDict: Record<string, LexiconDoc> = {
         properties: {
           featured: {
             type: 'boolean',
+            description:
+              'Deprecated. Retained for compatibility; always false.',
           },
           view: {
             type: 'ref',
@@ -10049,6 +10113,8 @@ export const schemaDict: Record<string, LexiconDoc> = {
         properties: {
           featured: {
             type: 'boolean',
+            description:
+              'Deprecated. Retained for compatibility; always false.',
           },
           view: {
             type: 'ref',
@@ -10062,6 +10128,8 @@ export const schemaDict: Record<string, LexiconDoc> = {
         properties: {
           featured: {
             type: 'boolean',
+            description:
+              'Deprecated. Retained for compatibility; always false.',
           },
           view: {
             type: 'ref',
@@ -10123,19 +10191,25 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
             format: 'uri',
             maxLength: 4096,
+            description:
+              'Compatibility field. The profile avatar when available, otherwise the editorial logo.',
           },
           backgroundImage: {
             type: 'string',
             format: 'uri',
             maxLength: 4096,
+            description:
+              'Compatibility field. The profile banner when available, otherwise the editorial background image.',
           },
           overlayColor: {
             type: 'string',
             maxLength: 4096,
+            description: 'Deprecated. Retained for compatibility.',
           },
           textColor: {
             type: 'string',
             maxLength: 4096,
+            description: 'Deprecated. Retained for compatibility.',
           },
           url: {
             type: 'string',
@@ -10145,6 +10219,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
           category: {
             type: 'string',
             maxLength: 4096,
+          },
+          profile: {
+            type: 'ref',
+            ref: 'lex:app.bsky.actor.defs#profileViewDetailed',
+            description: "The app's account profile, when available.",
           },
         },
       },
@@ -38869,12 +38948,18 @@ export const schemaDict: Record<string, LexiconDoc> = {
             items: {
               type: 'string',
             },
+            description:
+              'Target reports matching these report types on the subject (fully qualified NSIDs). Excludes assigned and escalated reports.',
           },
           all: {
             type: 'boolean',
+            description:
+              'Target ALL reports on the subject. Excludes assigned and escalated reports.',
           },
           note: {
             type: 'string',
+            description:
+              'Note to send to reporter(s) when actioning their report',
           },
           isAutomated: {
             type: 'boolean',
@@ -40844,7 +40929,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'procedure',
         description:
-          'Close all reports on a subject matching the given criteria. Reports whose current status does not permit a transition to closed are skipped silently. Intended for automated flows that resolve reports without taking action on the subject.',
+          'Close eligible reports on a subject matching the given criteria. Assigned and escalated reports are excluded. Reports whose current status does not permit a transition to closed are skipped silently. Intended for automated flows that resolve reports without taking action on the subject.',
         input: {
           encoding: 'application/json',
           schema: {
@@ -40869,7 +40954,15 @@ export const schemaDict: Record<string, LexiconDoc> = {
                   type: 'string',
                 },
                 description:
-                  'If specified, only reports of the given report types (fully qualified reason NSIDs) are closed. When omitted, all non-closed reports on the subject are targeted.',
+                  'If nonempty, only reports of the given report types (fully qualified reason NSIDs) are closed. When omitted or empty, all eligible reports in the requested subject scope are targeted, except excludedReportTypes. Assigned and escalated reports are always excluded.',
+              },
+              excludedReportTypes: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+                description:
+                  'Reports of these types (fully qualified reason NSIDs) are excluded from closure and left unchanged. When omitted or empty, no report types are excluded.',
               },
               internalNote: {
                 type: 'string',
@@ -44620,6 +44713,8 @@ export const ids = {
   AppBskyUnspeccedDefs: 'app.bsky.unspecced.defs',
   AppBskyUnspeccedGetAgeAssuranceState:
     'app.bsky.unspecced.getAgeAssuranceState',
+  AppBskyUnspeccedGetAtmosphereExploreArticleRecommendations:
+    'app.bsky.unspecced.getAtmosphereExploreArticleRecommendations',
   AppBskyUnspeccedGetAtmosphereExploreTab:
     'app.bsky.unspecced.getAtmosphereExploreTab',
   AppBskyUnspeccedGetConfig: 'app.bsky.unspecced.getConfig',
