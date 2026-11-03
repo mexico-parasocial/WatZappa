@@ -2342,6 +2342,24 @@ message GetParaCommunityWikiPagesRequest {
   string kind = 2;
 }
 
+// Seguimiento: compromisos of resolved cabildeos. Only records by the
+// community's current stewards are returned. A set item_uri returns that one
+// item with its timeline; otherwise the list is paged by cabildeo.
+message GetParaFollowThroughRequest {
+  string cabildeo_uri = 1;
+  string community_uri = 2;
+  string item_uri = 3;
+  string status = 4;
+  bool overdue = 5;
+  int32 limit = 6;
+  string cursor = 7;
+}
+message GetParaFollowThroughResponse {
+  string items_json = 1;
+  string summaries_json = 2;
+  string cursor = 3;
+}
+
 message ParaDiscourseSnapshot {
   string community = 1;
   string bucket = 2;
@@ -2954,6 +2972,7 @@ service Service {
   rpc GetParaCommunityActivities(GetParaCommunityActivitiesRequest) returns (ParaJsonPageResponse);
   rpc GetParaCommunityActivity(GetParaCommunityActivityRequest) returns (GetParaCommunityActivityResponse);
   rpc GetParaCommunityWikiPages(GetParaCommunityWikiPagesRequest) returns (ParaJsonPageResponse);
+  rpc GetParaFollowThrough(GetParaFollowThroughRequest) returns (GetParaFollowThroughResponse);
   rpc GetParaDiscourseSnapshot(GetParaDiscourseSnapshotRequest) returns (GetParaDiscourseSnapshotResponse);
   rpc GetParaDiscourseTopics(GetParaDiscourseTopicsRequest) returns (GetParaDiscourseTopicsResponse);
   rpc GetParaDiscourseSentiment(GetParaDiscourseSentimentRequest) returns (GetParaDiscourseSentimentResponse);

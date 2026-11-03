@@ -36,6 +36,16 @@
             "items": { "type": "ref", "ref": "#cabildeoOption" },
             "maxLength": 10
           },
+          "kind": {
+            "type": "string",
+            "knownValues": ["activity", "persuasion", "forum"],
+            "description": "activity: the community decides to do something, and the winning option can be followed (com.para.civic.followThrough). persuasion: make the case to change positions on the policy named in `subject`. forum: a public conversation for the place given by region, geoScope and geo, with no decision to follow. Existing records default to activity."
+          },
+          "subject": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The policy post a persuasion cabildeo is about."
+          },
           "minQuorum": { "type": "integer", "minimum": 1 },
           "minimumViewTier": {
             "type": "string",

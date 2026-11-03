@@ -45,6 +45,7 @@ import * as NotifDeclaration from './plugins/notif-declaration.js'
 import * as OpenQuestionVote from './plugins/open-question-vote.js'
 import * as OpenQuestion from './plugins/open-question.js'
 import * as ParaCommunityActivity from './plugins/para-community-activity.js'
+import * as ParaFollowThrough from './plugins/para-follow-through.js'
 import * as ParaCommunityAuthorityEvent from './plugins/para-community-authority-event.js'
 import * as ParaCommunityBoard from './plugins/para-community-board.js'
 import * as ParaCommunityBriefingPack from './plugins/para-community-briefing-pack.js'
@@ -115,6 +116,8 @@ export class IndexingService {
     paraCommunityEconomicActivity: ParaCommunityActivity.ActivityPluginType
     paraCommunityLedgerEntry: ParaCommunityActivity.LedgerEntryPluginType
     paraCommunityWikiPage: ParaCommunityActivity.WikiPagePluginType
+    paraFollowThrough: ParaFollowThrough.FollowThroughPluginType
+    paraFollowThroughUpdate: ParaFollowThrough.FollowThroughUpdatePluginType
     paraCommunitySharedContent: ParaCommunitySharedContent.PluginType
     paraCommunitySharedContentAction: ParaCommunitySharedContentAction.PluginType
     paraPostMeta: ParaPostMeta.PluginType
@@ -212,6 +215,14 @@ export class IndexingService {
         this.background,
       ),
       paraCommunityWikiPage: ParaCommunityActivity.makeWikiPagePlugin(
+        this.db,
+        this.background,
+      ),
+      paraFollowThrough: ParaFollowThrough.makeItemPlugin(
+        this.db,
+        this.background,
+      ),
+      paraFollowThroughUpdate: ParaFollowThrough.makeUpdatePlugin(
         this.db,
         this.background,
       ),

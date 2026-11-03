@@ -1,0 +1,68 @@
+{
+  "lexicon": 1,
+  "id": "com.para.civic.followThroughUpdate",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A dated note on a com.para.civic.followThrough: status, progress and evidence. Append-only: the first indexed version is the one served, and a later edit only marks it as edited.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["subject", "status", "occurredAt", "createdAt"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The com.para.civic.followThrough this updates."
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 32,
+            "knownValues": [
+              "planned",
+              "in_progress",
+              "completed",
+              "blocked",
+              "abandoned"
+            ]
+          },
+          "progress": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Leaf compromisos only. Ignored on one that has children; completed always shows as 100."
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Required when dueAt changes or status is blocked or abandoned."
+          },
+          "evidenceUris": {
+            "type": "array",
+            "maxLength": 5,
+            "items": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 1000
+            },
+            "description": "An oficio, an acta, a public portal link."
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "A new due date. Shown as a reschedule."
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "When it happened, not when it was written."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

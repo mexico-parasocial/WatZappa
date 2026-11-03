@@ -23,6 +23,8 @@ export interface CabildeoCabildeo {
   options: unknown // JSON array of options
   minQuorum: number | null
   voteVisibility: string | null
+  /** `activity`, `persuasion` or `forum`; null means `activity`. */
+  kind: string | null
   phase: string
   phaseDeadline: string | null
   createdAt: string

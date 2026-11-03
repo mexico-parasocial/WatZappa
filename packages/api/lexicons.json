@@ -356,13 +356,17 @@
     "com.para.civic.castVote",
     "com.para.civic.defs",
     "com.para.civic.delegation",
+    "com.para.civic.followThrough",
+    "com.para.civic.followThroughUpdate",
     "com.para.civic.getCabildeo",
+    "com.para.civic.getFollowThrough",
     "com.para.civic.getOpenQuestionThread",
     "com.para.civic.getPolicyCommunityVotes",
     "com.para.civic.getPolicyTally",
     "com.para.civic.listCabildeoPositions",
     "com.para.civic.listCabildeos",
     "com.para.civic.listDelegationCandidates",
+    "com.para.civic.listFollowThrough",
     "com.para.civic.openQuestion",
     "com.para.civic.openQuestionVote",
     "com.para.civic.position",
@@ -1938,7 +1942,7 @@
     },
     "com.para.civic.cabildeo": {
       "uri": "file://../../lexicons/com/para/civic/cabildeo.json",
-      "cid": "bafyreigu56rzbzbbwc2zabmv3wxbsjtocputlykktcd4dticapzqfpq3k4"
+      "cid": "bafyreihux6e2z3yu7xftmebu2shd4qoo6l3b6rbluk6iz3dl6356lz62lq"
     },
     "com.para.civic.castVote": {
       "uri": "file://../../lexicons/com/para/civic/castVote.json",
@@ -1952,9 +1956,21 @@
       "uri": "file://../../lexicons/com/para/civic/delegation.json",
       "cid": "bafyreidnuldaubdy2e3vxvjrirazf6igkkzryk2p6nn2yvepaxobhzro4m"
     },
+    "com.para.civic.followThrough": {
+      "uri": "file://../../lexicons/com/para/civic/followThrough.json",
+      "cid": "bafyreiguozdq7dyhgfae34fz2lubgrggfsg6rgtdjhgjtshxednrnj62su"
+    },
+    "com.para.civic.followThroughUpdate": {
+      "uri": "file://../../lexicons/com/para/civic/followThroughUpdate.json",
+      "cid": "bafyreigd7kb5kcllaii65rhmr2lljjoq26sp422edt3pplmysktusdqit4"
+    },
     "com.para.civic.getCabildeo": {
       "uri": "file://../../lexicons/com/para/civic/getCabildeo.json",
       "cid": "bafyreiczuqxi43zjodscsjghwzh45dtqlvcoy2qvh7szxhthlm4qtu4k4m"
+    },
+    "com.para.civic.getFollowThrough": {
+      "uri": "file://../../lexicons/com/para/civic/getFollowThrough.json",
+      "cid": "bafyreie3bqdmxa66scqr2axknww2ocvr2gxbsafybcxcg7bvmvpd4dom6m"
     },
     "com.para.civic.getOpenQuestionThread": {
       "uri": "file://../../lexicons/com/para/civic/getOpenQuestionThread.json",
@@ -1979,6 +1995,10 @@
     "com.para.civic.listDelegationCandidates": {
       "uri": "file://../../lexicons/com/para/civic/listDelegationCandidates.json",
       "cid": "bafyreihnwokk73t3eedmhnciysirydlz4wrjoyallp6buc2t327rjjjsri"
+    },
+    "com.para.civic.listFollowThrough": {
+      "uri": "file://../../lexicons/com/para/civic/listFollowThrough.json",
+      "cid": "bafyreid6zkqppmuvqhlat6pkywgbng2pbmcuqjf4btcwm5mstecmlu3y7u"
     },
     "com.para.civic.openQuestion": {
       "uri": "file://../../lexicons/com/para/civic/openQuestion.json",

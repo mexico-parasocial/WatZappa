@@ -26,6 +26,7 @@ interface CabildeoRecord {
   options: unknown
   minQuorum?: number
   voteVisibility?: string
+  kind?: string
   phase: string
   phaseDeadline?: string
   createdAt: string
@@ -126,6 +127,7 @@ const insertFn = async (
     options: sql`${JSON.stringify(obj.options)}`,
     minQuorum: obj.minQuorum || null,
     voteVisibility: normalizeVoteVisibility(obj.voteVisibility),
+    kind: normalizeKind(obj.kind),
     phase: obj.phase,
     phaseDeadline: closePolicy?.deadline ?? suppliedDeadline,
     createdAt: normalizeDatetimeAlways(obj.createdAt),
@@ -165,6 +167,12 @@ const insertFn = async (
 
   return { record: inserted }
 }
+
+// Unknown kinds are stored as null, which readers treat as `activity`.
+const normalizeKind = (value: unknown) =>
+  value === 'activity' || value === 'persuasion' || value === 'forum'
+    ? value
+    : null
 
 const normalizeVoteVisibility = (value: unknown) =>
   value === 'party_only' || value === 'anonymous' ? value : 'public'
