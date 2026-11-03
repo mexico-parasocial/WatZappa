@@ -1,12 +1,12 @@
-import type { CidString } from '@atproto/lex'
 import type { LexMap } from '@atproto/lex-data'
+import type { CidString } from '@atproto/lex-schema'
+import { WriteOpAction } from '@atproto/repo'
 import {
   AtUri,
   type AtUriString,
   type DatetimeString,
   type DidString,
 } from '@atproto/syntax'
-import { WriteOpAction } from '@atproto/repo'
 import { InvalidRequestError } from '@atproto/xrpc-server'
 import type { ActorStoreReader } from '../../../../actor-store/actor-store-reader.js'
 import type { ActorStoreTransactor } from '../../../../actor-store/actor-store-transactor.js'
@@ -547,8 +547,7 @@ const buildBoardViewShape = ({
     viewerRoles,
     status: board.record.status,
     founderStarterPackUri: board.record.founderStarterPackUri as
-      | AtUriString
-      | undefined,
+      AtUriString | undefined,
     governanceMode: board.record.governanceMode,
     admissionMode: board.record.admissionMode,
     createdAt: board.record.createdAt as DatetimeString,
@@ -688,8 +687,7 @@ export const assertHorizontalGovernanceWrite = async ({
       )
     }
 
-    const role =
-      (entry.role as string) || (entry.office as string) || roleKey
+    const role = (entry.role as string) || (entry.office as string) || roleKey
     const maxDays =
       maxDaysMap[role.toLowerCase()] || maxDaysMap[roleKey.toLowerCase()] || 365
     const maxMs = maxDays * 86400000

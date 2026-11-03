@@ -1,6 +1,6 @@
 // @ts-nocheck
 import type { Selectable } from 'kysely'
-import type { Cid } from '@atproto/lex'
+import type { Cid } from '@atproto/lex-schema'
 import { type AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
 import type { BackgroundQueue } from '../../background.js'
 import type {

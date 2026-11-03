@@ -1,5 +1,5 @@
 import { TID } from '@atproto/common'
-import { lexParseJsonBytes } from '@atproto/lex'
+import { lexParseJsonBytes } from '@atproto/lex-json'
 import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'

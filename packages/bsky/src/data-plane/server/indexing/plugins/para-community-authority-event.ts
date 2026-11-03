@@ -4,7 +4,7 @@ import {
   type AuthorityAction,
   type AuthorityBasis,
 } from '@atproto/common'
-import type { Cid, l } from '@atproto/lex'
+import type { Cid, l } from '@atproto/lex-schema'
 import { type AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
 import { com } from '../../../../lexicons/index.js'
 import type { BackgroundQueue } from '../../background.js'

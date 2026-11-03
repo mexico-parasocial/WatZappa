@@ -1,5 +1,5 @@
 import { lexParse } from '@atproto/lex-json'
-import { isHandleString } from '@atproto/lex'
+import { isHandleString } from '@atproto/lex-schema'
 import { AtUri, type DidString } from '@atproto/syntax'
 import type { Server } from '@atproto/xrpc-server'
 import type { ActorStoreReader } from '../../../../actor-store/actor-store-reader.js'

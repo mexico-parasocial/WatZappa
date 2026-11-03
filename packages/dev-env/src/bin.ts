@@ -1,5 +1,5 @@
 import './env.js'
-import { asStringFormat } from '@atproto/lex'
+import { asStringFormat } from '@atproto/lex-schema'
 import { buildDevEnvRuntimeConfig } from './config.js'
 import { createDevEnvManifest } from './manifest.js'
 import { generateMinimalMockSetup } from './mock/minimal.js'
