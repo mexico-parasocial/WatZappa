@@ -14,6 +14,11 @@
     "declarationMap": true,
     "sourceMap": true
   },
+  "references": [
+    { "path": "../../packages/api/tsconfig.build.json" },
+    { "path": "../../packages/identity/tsconfig.build.json" },
+    { "path": "../../packages/sync/tsconfig.build.json" }
+  ],
   "include": ["src/**/*",
     "../../tsconfig/cjs-default-exports.d.ts"
   ],
