@@ -417,7 +417,7 @@ type CandidateGovernanceRecord = {
   }>
 }
 
-const selectCandidateCommunityBoard = async (
+export const selectCandidateCommunityBoard = async (
   db: Database,
   communityId: string,
 ) => {

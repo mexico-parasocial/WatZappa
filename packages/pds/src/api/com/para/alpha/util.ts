@@ -1,6 +1,6 @@
 import * as crypto from '@atproto/crypto'
+import type { DatetimeString, DidString } from '@atproto/lex-schema'
 import { InvalidRequestError } from '@atproto/xrpc-server'
-import type { DatetimeString, DidString } from '@atproto/lex'
 import type { AccountDb } from '../../../../account-manager/db/index.js'
 
 const ALPHA_STATES = [

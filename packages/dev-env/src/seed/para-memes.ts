@@ -2,7 +2,7 @@ import { readFile, readdir, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { AtpAgent } from '@atproto/api'
-import { currentDatetimeString } from '@atproto/lex'
+import { currentDatetimeString } from '@atproto/lex-schema'
 import { seedTid } from './seed-tid.js'
 
 const captions = [

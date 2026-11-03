@@ -1,0 +1,70 @@
+{
+  "lexicon": 1,
+  "id": "com.para.civic.followThrough",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "One compromiso: something that must happen because a cabildeo resolved, written by a steward of the cabildeo's community into their own repo. Title, responsible party and first due date are committed when first indexed; later edits are flagged, not served. Everything that changes afterwards is a com.para.civic.followThroughUpdate.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "cabildeo",
+          "communityUri",
+          "optionIndex",
+          "title",
+          "createdAt"
+        ],
+        "properties": {
+          "cabildeo": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The resolved com.para.civic.cabildeo this follows."
+          },
+          "communityUri": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Board URI. Must be the board the cabildeo's community resolves to."
+          },
+          "optionIndex": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The option this follows. Served only when it is the cabildeo's winning option."
+          },
+          "parent": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Another followThrough on the same cabildeo that has no parent itself. Only one level of nesting is served."
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "responsibleDid": {
+            "type": "string",
+            "format": "did",
+            "description": "The account responsible, when it has one."
+          },
+          "responsibleLabel": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "An office or body responsible, for example an ayuntamiento."
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "First due date. A later one is an update with a note."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import type { AtUriString, DatetimeString } from '@atproto/lex'
+import type { AtUriString, DatetimeString } from '@atproto/lex-schema'
 import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import { parseString } from '../../../../hydration/util.js'

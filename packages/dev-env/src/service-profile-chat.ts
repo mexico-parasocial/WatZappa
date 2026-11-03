@@ -1,6 +1,6 @@
 import * as plc from '@did-plc/lib'
 import { Secp256k1Keypair } from '@atproto/crypto'
-import { type DidString } from '@atproto/lex'
+import type { DidString } from '@atproto/lex-schema'
 import { defaultDevIdentityProvider } from './identity.js'
 
 export class ChatServiceProfile {

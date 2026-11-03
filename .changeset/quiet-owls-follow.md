@@ -1,0 +1,5 @@
+---
+'@atproto/bsky': patch
+---
+
+Add Seguimiento, the follow-through of a resolved cabildeo. Stewards of the cabildeo's community write `com.para.civic.followThrough` (compromisos) and `com.para.civic.followThroughUpdate` (dated, append-only updates) to their own repos. The AppView indexes them from anyone and serves them through `com.para.civic.listFollowThrough` and `getFollowThrough` only when the cabildeo is a resolved `activity` with one winning option and its quorum met, the record names the board the cabildeo resolves to and its winning option, and its author is a current steward. The first version of each record is kept; an edit is served as the committed version flagged `edited`, and a deleted update is counted as withdrawn. A record's `createdAt` is committed with its first version and never served later than the time that version was indexed, so an edit or a future date cannot move a cabildeo up a community's list. Cabildeos gain an optional `kind` (`activity`, `persuasion`, `forum`); a missing kind means `activity`. Adds the `GetParaFollowThrough` data-plane RPC and the `20261102T120000000Z-add-follow-through` migration.

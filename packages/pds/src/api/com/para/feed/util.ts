@@ -1,5 +1,5 @@
-import { isHandleString } from '@atproto/lex'
 import { parseCid } from '@atproto/lex-data'
+import { isHandleString } from '@atproto/lex-schema'
 import {
   AtUri,
   type AtUriString,

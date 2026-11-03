@@ -17203,6 +17203,132 @@ export class GetParaCommunityWikiPagesRequest extends Message<GetParaCommunityWi
 }
 
 /**
+ * Seguimiento: compromisos of resolved cabildeos. Only records by the
+ * community's current stewards are returned. A set item_uri returns that one
+ * item with its timeline; otherwise the list is paged by cabildeo.
+ *
+ * @generated from message bsky.GetParaFollowThroughRequest
+ */
+export class GetParaFollowThroughRequest extends Message<GetParaFollowThroughRequest> {
+  /**
+   * @generated from field: string cabildeo_uri = 1;
+   */
+  cabildeoUri = "";
+
+  /**
+   * @generated from field: string community_uri = 2;
+   */
+  communityUri = "";
+
+  /**
+   * @generated from field: string item_uri = 3;
+   */
+  itemUri = "";
+
+  /**
+   * @generated from field: string status = 4;
+   */
+  status = "";
+
+  /**
+   * @generated from field: bool overdue = 5;
+   */
+  overdue = false;
+
+  /**
+   * @generated from field: int32 limit = 6;
+   */
+  limit = 0;
+
+  /**
+   * @generated from field: string cursor = 7;
+   */
+  cursor = "";
+
+  constructor(data?: PartialMessage<GetParaFollowThroughRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaFollowThroughRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "cabildeo_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "community_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "item_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "status", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "overdue", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 6, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 7, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaFollowThroughRequest {
+    return new GetParaFollowThroughRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaFollowThroughRequest {
+    return new GetParaFollowThroughRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaFollowThroughRequest {
+    return new GetParaFollowThroughRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaFollowThroughRequest | PlainMessage<GetParaFollowThroughRequest> | undefined, b: GetParaFollowThroughRequest | PlainMessage<GetParaFollowThroughRequest> | undefined): boolean {
+    return proto3.util.equals(GetParaFollowThroughRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetParaFollowThroughResponse
+ */
+export class GetParaFollowThroughResponse extends Message<GetParaFollowThroughResponse> {
+  /**
+   * @generated from field: string items_json = 1;
+   */
+  itemsJson = "";
+
+  /**
+   * @generated from field: string summaries_json = 2;
+   */
+  summariesJson = "";
+
+  /**
+   * @generated from field: string cursor = 3;
+   */
+  cursor = "";
+
+  constructor(data?: PartialMessage<GetParaFollowThroughResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaFollowThroughResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "items_json", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "summaries_json", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaFollowThroughResponse {
+    return new GetParaFollowThroughResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaFollowThroughResponse {
+    return new GetParaFollowThroughResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaFollowThroughResponse {
+    return new GetParaFollowThroughResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaFollowThroughResponse | PlainMessage<GetParaFollowThroughResponse> | undefined, b: GetParaFollowThroughResponse | PlainMessage<GetParaFollowThroughResponse> | undefined): boolean {
+    return proto3.util.equals(GetParaFollowThroughResponse, a, b);
+  }
+}
+
+/**
  * @generated from message bsky.ParaDiscourseSnapshot
  */
 export class ParaDiscourseSnapshot extends Message<ParaDiscourseSnapshot> {

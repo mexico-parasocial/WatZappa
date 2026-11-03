@@ -26,7 +26,9 @@ jobs:
     # belt-and-braces with this explicit guard). Branch PRs can only be
     # created by people with write access, i.e. org members.
     # Bot-authored PRs (dependabot, changesets) are also skipped.
+    # The fork has no Bedrock OIDC role, so the job can only fail here.
     if: >
+      github.repository == 'bluesky-social/atproto' &&
       github.event.pull_request.draft == false &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.type != 'Bot'

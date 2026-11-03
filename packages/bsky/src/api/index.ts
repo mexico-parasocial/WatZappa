@@ -110,12 +110,14 @@ import getParaAlphaAccess from './com/para/alpha/getAccess.js'
 import getParaAlphaRolloutStatus from './com/para/alpha/getRolloutStatus.js'
 import searchParaBooks from './com/para/book/searchBooks.js'
 import getParaCabildeo from './com/para/civic/getCabildeo.js'
+import getParaFollowThrough from './com/para/civic/getFollowThrough.js'
 import getParaOpenQuestionThread from './com/para/civic/getOpenQuestionThread.js'
 import getParaPolicyCommunityVotes from './com/para/civic/getPolicyCommunityVotes.js'
 import getParaPolicyTally from './com/para/civic/getPolicyTally.js'
 import listParaCabildeoPositions from './com/para/civic/listCabildeoPositions.js'
 import listParaCabildeos from './com/para/civic/listCabildeos.js'
 import listParaDelegationCandidates from './com/para/civic/listDelegationCandidates.js'
+import listParaFollowThrough from './com/para/civic/listFollowThrough.js'
 import putParaLivePresence from './com/para/civic/putLivePresence.js'
 import applyParaCollectionOps from './com/para/collection/applyOps.js'
 import createParaCollection from './com/para/collection/createCollection.js'
@@ -294,6 +296,8 @@ export default function (server: Server, ctx: AppContext) {
   getParaCabildeo(server, ctx)
   getParaOpenQuestionThread(server, ctx)
   getParaPolicyTally(server, ctx)
+  getParaFollowThrough(server, ctx)
+  listParaFollowThrough(server, ctx)
   listParaCabildeoPositions(server, ctx)
   listParaDelegationCandidates(server, ctx)
   putParaLivePresence(server, ctx)

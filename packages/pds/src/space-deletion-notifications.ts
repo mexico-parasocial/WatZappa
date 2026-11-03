@@ -6,7 +6,7 @@ import {
   getPdsEndpoint,
   getServiceEndpoint,
 } from '@atproto/common'
-import { XrpcError } from '@atproto/lex'
+import { XrpcError } from '@atproto/lex-client'
 import { SpaceRef, type SpaceRefString, isValidDid } from '@atproto/syntax'
 import type {
   AccountDb,

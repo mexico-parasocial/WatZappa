@@ -1,4 +1,8 @@
-import type { AtUriString, DatetimeString, DidString } from '@atproto/lex'
+import type {
+  AtUriString,
+  DatetimeString,
+  DidString,
+} from '@atproto/lex-schema'
 import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import type { DataPlaneClient } from '../../../../data-plane/index.js'
