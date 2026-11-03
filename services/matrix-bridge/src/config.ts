@@ -9,6 +9,15 @@ export interface Config {
    * drops every event.
    */
   plcUrl?: string
+  /**
+   * Whether this bridge runs Matrix chat. Off (`MATRIX_CHAT_ENABLED=false`),
+   * it serves governance alone — constitution, proposals, sortition,
+   * moderation, badges — from the firehose and its database, with no
+   * homeserver behind it: no admin client, no sync poller, no room
+   * provisioning, and chat routes answer 503 CHAT_DISABLED. The Matrix
+   * settings below are then optional.
+   */
+  matrixChatEnabled: boolean
   matrixHomeserverUrl: string
   /**
    * The homeserver's own `server_name`, not the host of
@@ -25,8 +34,20 @@ export interface Config {
    * (`http://synapse:8008` -> `https://synapse`), which resolves nowhere.
    */
   matrixPublicHomeserverUrl: string
-  matrixAdminToken: string
+  /** Required when chat is enabled; unset when it is off. */
+  matrixAdminToken?: string
   matrixAppServiceToken?: string
+  /** Legacy standalone homeservers only. MAS accounts belong to client OIDC. */
+  matrixAllowAppServiceLogin?: boolean
+  /**
+   * Confidential MAS admin client (private listener). Device revocation
+   * finishes the device's MAS sessions through it before deleting the
+   * Synapse device; without it, refresh tokens outlive the deletion.
+   */
+  matrixMasAdminUrl?: string
+  matrixMasTokenUrl?: string
+  matrixMasClientId?: string
+  matrixMasClientSecret?: string
   matrixHsToken?: string
   syncFallbackMs: number
   /**
@@ -65,8 +86,16 @@ function firehoseServiceBase(url: string): string {
   return url.replace(/\/xrpc\/com\.atproto\.sync\.subscribeRepos\/?$/, '')
 }
 
+/** Chat is on unless explicitly turned off. */
+function chatEnabled(): boolean {
+  const raw = process.env.MATRIX_CHAT_ENABLED?.trim().toLowerCase()
+  return !(raw === 'false' || raw === '0' || raw === 'off' || raw === 'no')
+}
+
 export function loadConfig(): Config {
+  const matrixChatEnabled = chatEnabled()
   return {
+    matrixChatEnabled,
     pdsSourceId: process.env.BRIDGE_PDS_SOURCE_ID || undefined,
     backfillFromStart: process.env.BRIDGE_BACKFILL_FROM_START === '1',
     plcUrl: process.env.PLC_URL || undefined,
@@ -79,10 +108,18 @@ export function loadConfig(): Config {
       'MATRIX_PUBLIC_HOMESERVER_URL',
       `https://${process.env.MATRIX_SERVER_NAME || 'matrix.para.social'}`,
     ),
-    matrixAdminToken: env('MATRIX_ADMIN_TOKEN'),
+    matrixAdminToken: matrixChatEnabled
+      ? env('MATRIX_ADMIN_TOKEN')
+      : process.env.MATRIX_ADMIN_TOKEN || undefined,
     // Appservice token for m.login.application_service device-bound logins.
     // Never substitute an administrator credential for an appservice credential.
     matrixAppServiceToken: process.env.MATRIX_APPSERVICE_TOKEN || undefined,
+    matrixAllowAppServiceLogin:
+      process.env.MATRIX_ALLOW_APPSERVICE_LOGIN === 'true',
+    matrixMasAdminUrl: process.env.MATRIX_MAS_ADMIN_URL || undefined,
+    matrixMasTokenUrl: process.env.MATRIX_MAS_TOKEN_URL || undefined,
+    matrixMasClientId: process.env.MATRIX_MAS_CLIENT_ID || undefined,
+    matrixMasClientSecret: process.env.MATRIX_MAS_CLIENT_SECRET || undefined,
     // hs_token from the appservice registration; required to accept
     // transaction pushes from Synapse.
     matrixHsToken: process.env.MATRIX_HS_TOKEN || undefined,

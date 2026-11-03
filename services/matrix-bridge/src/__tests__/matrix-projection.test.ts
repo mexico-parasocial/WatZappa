@@ -10,7 +10,11 @@ import type { MatrixAdminClient } from '../matrix.js'
 import { deriveIdentity } from './helpers/identity.js'
 
 const log = { info() {}, warn() {}, debug() {} } as unknown as Logger
-const config = { matrixServerName: 'matrix.example' } as never
+// Legacy appservice deployment: the projection may create the account.
+const config = {
+  matrixServerName: 'matrix.example',
+  matrixAllowAppServiceLogin: true,
+} as never
 
 const space = {
   communityUri: 'at://did:plc:creator/com.para.community.board/one',
@@ -120,6 +124,23 @@ const identity = deriveIdentity(new Uint8Array(32), 'public')
 const expectedMxid = '@k4o2lmcmitomgymtdb7y3htsthoofobo:matrix.example'
 
 describe('verifiedJoin (CD-M6)', () => {
+  it('requires MAS to create a native account before room projection', async () => {
+    const { calls, matrix, db } = makeStubDeps()
+    const projection = createMatrixProjection(
+      { matrixServerName: 'matrix.example' } as never,
+      db,
+      matrix,
+      log,
+    )
+    await expect(
+      projection.verifiedJoin(space, 'did:plc:member', identity.pub, {
+        roles: [],
+        chamber: 'A',
+        isObserver: false,
+      }),
+    ).rejects.toThrow('MATRIX_CLIENT_LOGIN_REQUIRED')
+    expect(calls).toEqual([])
+  })
   it('derives the MXID from the presented key, provisions and joins', async () => {
     const { calls, matrix, db } = makeStubDeps()
     const projection = createMatrixProjection(config, db, matrix, log)

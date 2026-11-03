@@ -8,7 +8,7 @@ import {
   createDecoders,
 } from '@atproto/common'
 import { type AtprotoDid, isAtprotoDid } from '@atproto/did'
-import type { Cid } from '@atproto/lex'
+import type { Cid } from '@atproto/lex-data'
 import {
   ACCEPT_ENCODING_COMPRESSED,
   ACCEPT_ENCODING_UNCOMPRESSED,
@@ -34,8 +34,8 @@ import {
 import { BSKY_USER_AGENT } from './util.js'
 
 export function createMiddleware(ctx: AppContext): Middleware {
-  // @TODO make the decoded blob limit configurable.
-  const maxSize = 100 * 1024 * 1024
+  // @TODO this should be from configuration
+  const maxSize = 100 * 1024 * 1024 // 100 MB
 
   return async (req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next()
@@ -329,8 +329,8 @@ function getBlobHeaders(
  */
 function createCidVerifier(
   cid: Cid,
-  encoding: string | string[] | undefined,
-  maxSize: number,
+  encoding?: string | string[],
+  maxSize?: number,
 ): Duplex {
   // If the upstream content is compressed, we do not want to return a
   // de-compressed stream here. Indeed, the "compression" middleware will
@@ -375,7 +375,7 @@ function createCidVerifier(
     },
   )
 
-  // We don't care about the un-compressed data, we only use the verifier to
+  // We don't care about the (un-compressed) data, we only use the verifier to
   // detect any error through the pipelinePromise. We still need to pass the
   // verifier into flowing mode to ensure that the pipelinePromise resolves.
   verifier.resume()

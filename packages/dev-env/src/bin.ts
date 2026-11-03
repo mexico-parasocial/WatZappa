@@ -27,7 +27,7 @@ const run = async () => {
   // networks allow them for the upstream suites; see util.ts.)
   process.env.PARA_REPOSTS_ENABLED ??= '0'
   const runtimeConfig = buildDevEnvRuntimeConfig()
-  // Local stand-in for the private IRIS/suggestions/topics agents so the
+  // Local stand-in for the private IRIS/suggestions agents so the
   // unspecced suggestion & trending endpoints return seeded data instead of 501
   const suggestionsStub = await SuggestionsAgentStub.start()
   const network = await TestNetwork.create({
@@ -35,7 +35,6 @@ const run = async () => {
     bsky: {
       ...runtimeConfig.networkParams.bsky,
       suggestionsUrl: suggestionsStub.url,
-      topicsUrl: suggestionsStub.url,
       irisUrl: suggestionsStub.url,
       topicsEnabled: true,
     },

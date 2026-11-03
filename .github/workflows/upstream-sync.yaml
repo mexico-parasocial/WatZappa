@@ -1,0 +1,92 @@
+name: Upstream sync
+
+# Weekly 3-way merge of bluesky-social/atproto into the fork. A clean merge that
+# builds becomes a PR; conflicts open (or update) one tracking issue instead.
+# Requires the fork's history to share a merge base with upstream (the
+# `chore: record upstream base` commit); see packages/dev-infra/sync-upstream.sh.
+
+on:
+  schedule:
+    - cron: '0 14 * * 1'
+  workflow_dispatch:
+    inputs:
+      base:
+        description: Branch to merge upstream into
+        default: main
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Merge upstream
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.base || 'main' }}
+          fetch-depth: 0
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Merge upstream/main
+        id: merge
+        run: packages/dev-infra/sync-upstream.sh
+        continue-on-error: true
+
+      - name: Open or update the conflict issue
+        if: steps.merge.outputs.status == 'conflict'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONFLICTS: ${{ steps.merge.outputs.conflicts }}
+        run: |
+          title="Upstream sync: merge conflicts"
+          {
+            echo "Merging \`upstream/main\` into \`${{ inputs.base || 'main' }}\` conflicts in these files:"
+            echo
+            sed 's#^#- `#; s#$#`#' "$CONFLICTS"
+            echo
+            echo "Resolve locally with \`packages/dev-infra/sync-upstream.sh --keep\`,"
+            echo "then run \`make build\` and \`make check-fork\`."
+          } > body.md
+          number="$(gh issue list --state open --search "$title in:title" --json number -q '.[0].number')"
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file body.md
+          else
+            gh issue create --title "$title" --body-file body.md
+          fi
+
+      - uses: pnpm/action-setup@v6
+        if: steps.merge.outputs.status == 'clean'
+      - uses: actions/setup-node@v7
+        if: steps.merge.outputs.status == 'clean'
+        with:
+          cache: pnpm
+          node-version-file: package.json
+      - name: Build the merged tree
+        if: steps.merge.outputs.status == 'clean'
+        run: |
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm run build
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: true
+
+      - name: Open the sync PR
+        if: steps.merge.outputs.status == 'clean'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.merge.outputs.branch }}
+        run: |
+          git push origin "$BRANCH"
+          gh pr create \
+            --base "${{ inputs.base || 'main' }}" \
+            --head "$BRANCH" \
+            --title "chore: sync upstream atproto ($(date +%Y-%m-%d))" \
+            --body "Automated 3-way merge of \`upstream/main\`. The build and \`make check-fork\` passed; run the PDS/AppView tests before merging."

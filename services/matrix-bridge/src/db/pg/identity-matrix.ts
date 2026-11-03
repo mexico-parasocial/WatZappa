@@ -90,19 +90,19 @@ export class IdentityMatrixArea extends PgBase {
     communityUri: string,
     chamber: string,
   ): Promise<number> {
-    const row = await this.queryOne<{ count: number }>(
+    const row = await this.queryOne<{ count: string }>(
       'SELECT COUNT(*) as count FROM chamber_assignment WHERE community_uri = $1 AND chamber = $2',
       [communityUri, chamber],
     )
-    return row?.count ?? 0
+    return this.safeInteger(row?.count ?? 0)
   }
 
   async getActiveMemberCount(communityUri: string): Promise<number> {
-    const row = await this.queryOne<{ count: number }>(
+    const row = await this.queryOne<{ count: string }>(
       "SELECT COUNT(*) as count FROM community_membership_state WHERE community_uri = $1 AND membership_state = 'active'",
       [communityUri],
     )
-    return row?.count ?? 0
+    return this.safeInteger(row?.count ?? 0)
   }
 
   // Lookup community by any of its room IDs
@@ -392,11 +392,11 @@ export class IdentityMatrixArea extends PgBase {
   }
 
   async getDeviceSession(id: string): Promise<DeviceSession | undefined> {
-    const row = await this.queryOne<DeviceSession>(
+    const row = await this.queryOne(
       'SELECT * FROM device_sessions WHERE id = $1',
       [id],
     )
-    return row ?? undefined
+    return row ? this.mapDeviceSession(row) : undefined
   }
 
   async touchDeviceSession(id: string): Promise<void> {

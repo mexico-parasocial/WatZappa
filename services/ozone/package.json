@@ -2,6 +2,12 @@
   "name": "ozone-service",
   "private": true,
   "packageManager": "pnpm@11.11.0",
+  "type": "module",
+  "files": [
+    "api.ts",
+    "daemon.ts",
+    "tracer.ts"
+  ],
   "dependencies": {
     "@atproto/aws": "workspace:^",
     "@atproto/ozone": "workspace:^",

@@ -1,4 +1,5 @@
 import type { Logger } from 'pino'
+import { isProvisionedSpace } from './chat-mode.js'
 import type { SanctionKind } from './chat-moderation.js'
 import type { IBridgeDatabase } from './db/index.js'
 import type { CommunitySpaceMap } from './db/interface.js'
@@ -71,23 +72,28 @@ function result(
  */
 export function createSanctionEnforcer(deps: {
   db: IBridgeDatabase
-  matrix: MatrixAdminClient
+  /** Null when chat is off: no accounts to act on, every result is pending. */
+  matrix: MatrixAdminClient | null
   projection: MatrixProjectionPort
   log: Logger
 }): SanctionEnforcer {
   const { db, matrix, projection, log } = deps
 
   const accountsAndSpace = async (did: string, communityUri: string) => {
+    if (!matrix) return { mxids: [], space: undefined }
     const sessions = await db.listDeviceSessions(did)
     const mxids = [...new Set(sessions.map((s) => s.mxid))]
     const space = await db.getSpaceForCommunity(communityUri)
-    return { mxids, space }
+    return {
+      mxids,
+      space: space && isProvisionedSpace(space) ? space : undefined,
+    }
   }
 
   return {
     async apply(did, communityUri, kind) {
       const { mxids, space } = await accountsAndSpace(did, communityUri)
-      if (mxids.length === 0 || !space) return result(0, 0, 0)
+      if (!matrix || mxids.length === 0 || !space) return result(0, 0, 0)
       let applied = 0
       let failed = 0
       for (const mxid of mxids) {
@@ -110,7 +116,7 @@ export function createSanctionEnforcer(deps: {
 
     async lift(did, communityUri, kind) {
       const { mxids, space } = await accountsAndSpace(did, communityUri)
-      if (mxids.length === 0 || !space) return result(0, 0, 0)
+      if (!matrix || mxids.length === 0 || !space) return result(0, 0, 0)
       let applied = 0
       let failed = 0
       if (kind === 'ban') {

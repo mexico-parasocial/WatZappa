@@ -6,13 +6,13 @@ import { isDisposableEmail } from 'disposable-email-domains-js'
 import { HOUR, obfuscateEmail, wait } from '@atproto/common'
 import type { Keypair } from '@atproto/crypto'
 import type { IdResolver } from '@atproto/identity'
+import type { Cid } from '@atproto/lex-data'
 import {
   type AtIdentifierString,
   type DidString,
   type HandleString,
   isAtIdentifierString,
-} from '@atproto/lex'
-import type { Cid } from '@atproto/lex-data'
+} from '@atproto/lex-schema'
 import {
   INVALID_HANDLE,
   currentDatetimeString,
@@ -1114,22 +1114,6 @@ export class AccountManager {
 
     account.emailAuthFactorAt = null
 
-    return account
-  }
-
-  async updateAuthFactorType(
-    did: DidString,
-    authFactorType: 'im8' | null,
-  ): Promise<ActorAccount> {
-    const account = await this.getAccount(did, {
-      includeDeactivated: true,
-      includeTakenDown: true,
-    })
-    if (!account) {
-      throw new InvalidRequestError('account not found')
-    }
-    await accountHelpers.updateAuthFactorType(this.db, did, authFactorType)
-    account.authFactorType = authFactorType
     return account
   }
 

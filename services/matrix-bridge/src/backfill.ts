@@ -20,6 +20,7 @@
 
 import pino from 'pino'
 import { AtpAgent } from '@atproto/api'
+import { isProvisionedSpace } from './chat-mode.js'
 import { loadConfig } from './config.js'
 import { type IBridgeDatabase, createDatabase } from './db/index.js'
 import { MatrixAdminClient, extractServerName } from './matrix.js'
@@ -112,7 +113,8 @@ async function main() {
     log.info({ uri: comm.uri, name: comm.name }, 'Processing community')
 
     const existing = await db.getSpaceForCommunity(comm.uri)
-    if (existing) {
+    // A row recorded while chat was off has no rooms yet: provision it.
+    if (existing && isProvisionedSpace(existing)) {
       log.info(
         { uri: comm.uri },
         'Community already has Matrix space, skipping creation',

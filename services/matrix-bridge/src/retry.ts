@@ -24,6 +24,11 @@ export class RetryWorker {
       community: string,
       did: string,
     ) => Promise<void>,
+    /**
+     * With chat off only role refreshes run. Room provisioning and
+     * revocations stay queued until chat is on.
+     */
+    private chatEnabled = true,
   ) {}
 
   start(): void {
@@ -62,7 +67,7 @@ export class RetryWorker {
             (job) => [job.id, job],
           ),
         ).values(),
-      ]
+      ].filter((job) => this.chatEnabled || job.eventType === 'apply_roles')
       if (failed.length === 0) return
 
       this.log.info({ count: failed.length }, 'Retrying failed syncs')

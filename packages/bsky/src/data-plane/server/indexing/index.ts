@@ -8,7 +8,9 @@ import {
   verifyPublicBallotProof,
 } from '@atproto/common'
 import { type IdResolver, getPds } from '@atproto/identity'
-import { type Cid, l, parseCid, xrpc, xrpcSafe } from '@atproto/lex'
+import { xrpc, xrpcSafe } from '@atproto/lex-client'
+import { type Cid, parseCid } from '@atproto/lex-data'
+import { l } from '@atproto/lex-schema'
 import {
   type VerifiedRepo,
   WriteOpAction,

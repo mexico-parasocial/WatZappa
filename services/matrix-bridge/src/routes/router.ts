@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { writeChatDisabled } from '../chat-mode.js'
 import { appServiceTransactionHandler } from './appservice-txn.js'
 import { apiAiConsentGETHandler, apiAiConsentPOSTHandler } from './consent.js'
 import type { RouteContext } from './context.js'
@@ -86,6 +87,8 @@ type Route = {
     res: ServerResponse,
     ctx: RouteContext,
   ) => Promise<void>
+  /** Matrix chat only: answers 503 CHAT_DISABLED when chat is off. */
+  chat?: true
 }
 
 /** Order matters: it reproduces the original if/else chain exactly. */
@@ -97,78 +100,91 @@ const ROUTES: Route[] = [
     prefix: true,
     method: null,
     handler: apiSpaceForCommunityHandler,
+    chat: true,
   },
   {
     urls: ['/api/matrix-challenge'],
     prefix: false,
     method: 'POST',
     handler: apiMatrixChallengeHandler,
+    chat: true,
   },
   {
     urls: ['/api/matrix-identity'],
     prefix: false,
     method: 'GET',
     handler: apiMatrixIdentityGoneHandler,
+    chat: true,
   },
   {
     urls: ['/api/matrix-identity'],
     prefix: false,
     method: 'POST',
     handler: apiMatrixIdentityHandler,
+    chat: true,
   },
   {
     urls: ['/api/matrix-attest'],
     prefix: false,
     method: 'POST',
     handler: apiMatrixAttestHandler,
+    chat: true,
   },
   {
     urls: ['/api/matrix-token'],
     prefix: false,
     method: 'POST',
     handler: apiMatrixTokenHandler,
+    chat: true,
   },
   {
     urls: ['/api/community-join'],
     prefix: false,
     method: 'POST',
     handler: apiCommunityJoinHandler,
+    chat: true,
   },
   {
     urls: ['/api/dm-requests'],
     prefix: false,
     method: 'POST',
     handler: apiDmRequestCreateHandler,
+    chat: true,
   },
   {
     urls: ['/api/dm-requests'],
     prefix: false,
     method: 'GET',
     handler: apiDmRequestListHandler,
+    chat: true,
   },
   {
     urls: ['/api/dm-requests/accept'],
     prefix: false,
     method: 'POST',
     handler: apiDmRequestAcceptHandler,
+    chat: true,
   },
   {
     urls: ['/api/dm-requests/decline'],
     prefix: false,
     method: 'POST',
     handler: apiDmRequestDeclineHandler,
+    chat: true,
   },
   {
     urls: ['/api/devices'],
     prefix: false,
     method: 'GET',
     handler: apiListDevicesHandler,
+    chat: true,
   },
   {
     urls: ['/api/devices/revoke'],
     prefix: false,
     method: 'POST',
     handler: apiRevokeDeviceHandler,
+    chat: true,
   },
   {
     urls: ['/api/push-token'],
@@ -181,24 +197,28 @@ const ROUTES: Route[] = [
     prefix: false,
     method: 'POST',
     handler: matrixPushV1NotifyHandler,
+    chat: true,
   },
   {
     urls: ['/api/mark-read'],
     prefix: false,
     method: 'POST',
     handler: apiMarkReadHandler,
+    chat: true,
   },
   {
     urls: ['/api/unread'],
     prefix: true,
     method: 'GET',
     handler: apiUnreadHandler,
+    chat: true,
   },
   {
     urls: ['/api/rooms'],
     prefix: false,
     method: 'GET',
     handler: apiRoomsHandler,
+    chat: true,
   },
   {
     urls: ['/api/events'],
@@ -212,12 +232,14 @@ const ROUTES: Route[] = [
     prefix: true,
     method: null,
     handler: appServiceTransactionHandler,
+    chat: true,
   },
   {
     urls: ['/_matrix/app/v1/transactions/'],
     prefix: true,
     method: null,
     handler: appServiceTransactionHandler,
+    chat: true,
   },
   {
     urls: ['/api/sortition/runs'],
@@ -493,6 +515,10 @@ export async function routeRequest(
       ? route.urls.some((u) => url.startsWith(u))
       : route.urls.includes(url)
     if (urlMatches && (route.method === null || req.method === route.method)) {
+      if (route.chat && !ctx.config.matrixChatEnabled) {
+        writeChatDisabled(res)
+        return true
+      }
       await route.handler(req, res, ctx)
       return true
     }

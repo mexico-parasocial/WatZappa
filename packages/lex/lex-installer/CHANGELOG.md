@@ -1,5 +1,238 @@
 # @atproto/lex-installer
 
+## 0.2.4
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/lex-resolver@0.4.1
+
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies [[`943170b`](https://github.com/bluesky-social/atproto/commit/943170bd390705fbb16920688f8f09ec7078a59b)]:
+  - @atproto-labs/handle-resolver-node@0.2.15
+
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [[`0e60f3f`](https://github.com/bluesky-social/atproto/commit/0e60f3f007cbd9812975489f0da19bf7613da831)]:
+  - @atproto-labs/fetch-node@0.4.3
+  - @atproto-labs/handle-resolver-node@0.2.14
+
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [[`fc60876`](https://github.com/bluesky-social/atproto/commit/fc60876949cca1ca28e98273ecfc97a151d3ebfc)]:
+  - @atproto-labs/fetch-node@0.4.2
+  - @atproto-labs/handle-resolver-node@0.2.13
+
+## 0.2.0
+
+### Minor Changes
+
+- [#5591](https://github.com/bluesky-social/atproto/pull/5591) [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Ignore `knownValues` when computing lexicon dependencies
+
+- [#5591](https://github.com/bluesky-social/atproto/pull/5591) [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2) Thanks [@matthieusieben](https://github.com/matthieusieben)! - `lex install` now resolves Lexicons from local files, not only the network. The `lexicons.json` manifest gains an ordered `resolvers` array of local override strategies (currently `{ type: "directory", path, include?, exclude? }`), consulted before the network fallback. Manifest lock URIs may now be `file://` (relative to the manifest) in addition to `at://`. Local-file resolutions are symlinked rather than copied (left in place when source and destination are the same path). `resolvers` can also provide a strategy that uses a specific AT Protocol repository.
+
+- [#5591](https://github.com/bluesky-social/atproto/pull/5591) [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2) Thanks [@matthieusieben](https://github.com/matthieusieben)! - The installation of lexicon schemas now uses a manifest version 2 file format that supports a `resolver` property that allows to override the source of specific lexicons NSIDs (either by looking for them locally, or from the network)
+
+- [#5591](https://github.com/bluesky-social/atproto/pull/5591) [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2) Thanks [@matthieusieben](https://github.com/matthieusieben)! - No longer include token references in string `knownValues` when listing lexicon dependencies
+
+- [#5591](https://github.com/bluesky-social/atproto/pull/5591) [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Refactor around a new, lower-level, `@atproto/lex-rpc` package for making XRPC requests. `@atproto/lex-client` re-exports everything from `@atproto/lex-rpc`, allowing it to stay backwards compatible, and contains logic related to making XRPC requests in the context of manipulating an AT Protocol repository with an authenticated session. This refactor also allows `@atproto/lex-client` to depend on `@atproto/lex-installer`, while also allowing `@atproto/lex-installer` to make XRPC requests (using the lower level `@atproto/lex-rpc`).
+
+### Patch Changes
+
+- [#5591](https://github.com/bluesky-social/atproto/pull/5591) [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Add `lex-installer` bin and expose the `yargs` command module from the `./cli` entrypoint
+
+- [#5591](https://github.com/bluesky-social/atproto/pull/5591) [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Add an `http` lexicon resolver that fetches schemas from a web base URL (`<base>/<...nsid.segments>.json`), e.g. a raw Git host. A 404 falls through to the next resolver; other non-ok statuses throw.
+- Updated dependencies [[`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2), [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2), [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2), [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2), [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2), [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2), [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2), [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2), [`f98b78a`](https://github.com/bluesky-social/atproto/commit/f98b78adbc8963e49823117b007422211f6d3ff2)]:
+  - @atproto/lex-resolver@0.4.0
+  - @atproto/lex-builder@0.1.18
+  - @atproto/lex-schema@0.2.9
+  - @atproto/lex-rpc@0.0.1
+  - @atproto/syntax@0.7.7
+  - @atproto-labs/did-resolver@0.3.11
+  - @atproto-labs/fetch-node@0.4.1
+  - @atproto/lex-document@0.1.14
+  - @atproto-labs/handle-resolver-node@0.2.12
+
+## 0.1.23
+
+### Patch Changes
+
+- Updated dependencies [[`e8b89ff`](https://github.com/bluesky-social/atproto/commit/e8b89ff4c211a10519b54bd83eb64950035942c3)]:
+  - @atproto/lex-data@0.1.8
+  - @atproto/lex-resolver@0.3.2
+  - @atproto/lex-cbor@0.1.7
+  - @atproto/lex-document@0.1.13
+  - @atproto/lex-schema@0.2.8
+  - @atproto/lex-builder@0.1.17
+
+## 0.1.22
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/lex-resolver@0.3.1
+
+## 0.1.21
+
+### Patch Changes
+
+- Updated dependencies [[`210907c`](https://github.com/bluesky-social/atproto/commit/210907c801d281c6b83c92bf94c888b2dc3d531f), [`210907c`](https://github.com/bluesky-social/atproto/commit/210907c801d281c6b83c92bf94c888b2dc3d531f), [`210907c`](https://github.com/bluesky-social/atproto/commit/210907c801d281c6b83c92bf94c888b2dc3d531f), [`210907c`](https://github.com/bluesky-social/atproto/commit/210907c801d281c6b83c92bf94c888b2dc3d531f), [`210907c`](https://github.com/bluesky-social/atproto/commit/210907c801d281c6b83c92bf94c888b2dc3d531f)]:
+  - @atproto/lex-resolver@0.3.0
+  - @atproto/lex-document@0.1.12
+  - @atproto/lex-builder@0.1.16
+
+## 0.1.20
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/lex-resolver@0.2.13
+
+## 0.1.19
+
+### Patch Changes
+
+- Updated dependencies [[`7a23156`](https://github.com/bluesky-social/atproto/commit/7a23156efa16433b83f90fd35e155c68b3a0253a), [`fe4087e`](https://github.com/bluesky-social/atproto/commit/fe4087ecb7a7cc53c7081c9f97d49121e5251c36)]:
+  - @atproto/lex-resolver@0.2.12
+  - @atproto/lex-builder@0.1.15
+
+## 0.1.18
+
+### Patch Changes
+
+- Updated dependencies [[`ed0b7d3`](https://github.com/bluesky-social/atproto/commit/ed0b7d38811bb24952a3f1da988b02e39934d222), [`ed0b7d3`](https://github.com/bluesky-social/atproto/commit/ed0b7d38811bb24952a3f1da988b02e39934d222), [`ed0b7d3`](https://github.com/bluesky-social/atproto/commit/ed0b7d38811bb24952a3f1da988b02e39934d222)]:
+  - @atproto/lex-schema@0.2.7
+  - @atproto/syntax@0.7.6
+  - @atproto/lex-builder@0.1.14
+  - @atproto/lex-document@0.1.11
+  - @atproto/lex-resolver@0.2.11
+
+## 0.1.17
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/lex-resolver@0.2.10
+
+## 0.1.16
+
+### Patch Changes
+
+- Updated dependencies [[`79d911f`](https://github.com/bluesky-social/atproto/commit/79d911fc2bd7c6d9b1a6810e00e81d964b72a4ab), [`79d911f`](https://github.com/bluesky-social/atproto/commit/79d911fc2bd7c6d9b1a6810e00e81d964b72a4ab), [`6af9f14`](https://github.com/bluesky-social/atproto/commit/6af9f141d18c1f41a04828af8256567d5f17a35e)]:
+  - @atproto/lex-builder@0.1.13
+  - @atproto/syntax@0.7.5
+  - @atproto/lex-resolver@0.2.9
+  - @atproto/lex-schema@0.2.6
+  - @atproto/lex-document@0.1.10
+
+## 0.1.15
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/lex-resolver@0.2.8
+
+## 0.1.14
+
+### Patch Changes
+
+- Updated dependencies [[`b66870d`](https://github.com/bluesky-social/atproto/commit/b66870d5a1efbcfa0cc07498c7cfcf3f0f243e86)]:
+  - @atproto/lex-builder@0.1.12
+  - @atproto/lex-resolver@0.2.7
+
+## 0.1.13
+
+### Patch Changes
+
+- Updated dependencies [[`8b55a4a`](https://github.com/bluesky-social/atproto/commit/8b55a4ab69c24e5038f67c479b3b9953666ea0c2), [`8b55a4a`](https://github.com/bluesky-social/atproto/commit/8b55a4ab69c24e5038f67c479b3b9953666ea0c2)]:
+  - @atproto/syntax@0.7.4
+  - @atproto/lex-schema@0.2.5
+  - @atproto/lex-resolver@0.2.6
+  - @atproto/lex-builder@0.1.11
+  - @atproto/lex-document@0.1.9
+
+## 0.1.12
+
+### Patch Changes
+
+- [#5295](https://github.com/bluesky-social/atproto/pull/5295) [`6a3d607`](https://github.com/bluesky-social/atproto/commit/6a3d6073cb66c527b5b109242049c85c36b9658c) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Update vitest dependencies
+
+- Updated dependencies [[`6a3d607`](https://github.com/bluesky-social/atproto/commit/6a3d6073cb66c527b5b109242049c85c36b9658c)]:
+  - @atproto/lex-document@0.1.8
+  - @atproto/lex-resolver@0.2.5
+  - @atproto/lex-builder@0.1.10
+  - @atproto/lex-schema@0.2.4
+  - @atproto/lex-cbor@0.1.6
+  - @atproto/lex-data@0.1.7
+  - @atproto/syntax@0.7.3
+
+## 0.1.11
+
+### Patch Changes
+
+- [#5287](https://github.com/bluesky-social/atproto/pull/5287) [`95aa1d6`](https://github.com/bluesky-social/atproto/commit/95aa1d6dfea71316d5f30dd8bd4ed48afac31c81) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Add README.md file
+
+- Updated dependencies [[`95aa1d6`](https://github.com/bluesky-social/atproto/commit/95aa1d6dfea71316d5f30dd8bd4ed48afac31c81)]:
+  - @atproto/lex-document@0.1.7
+  - @atproto/lex-resolver@0.2.4
+  - @atproto/lex-builder@0.1.9
+  - @atproto/lex-schema@0.2.3
+  - @atproto/lex-cbor@0.1.5
+  - @atproto/lex-data@0.1.6
+
+## 0.1.10
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/lex-resolver@0.2.3
+
+## 0.1.9
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @atproto/lex-resolver@0.2.2
+
+## 0.1.8
+
+### Patch Changes
+
+- [#5235](https://github.com/bluesky-social/atproto/pull/5235) [`ee20f01`](https://github.com/bluesky-social/atproto/commit/ee20f01d4582cd6afff1b42dde50aec95212a38b) Thanks [@ryanda9910](https://github.com/ryanda9910)! - `writeJsonFile` (used by `lex install` to save `lexicons.json` and the installed lexicon documents) now ends the file with a trailing newline, so it no longer thrashes against formatters and linters that enforce a final newline.
+
+## 0.1.7
+
+### Patch Changes
+
+- Updated dependencies [[`9e1da84`](https://github.com/bluesky-social/atproto/commit/9e1da84cc00a1cc5b453705539a2766403f3ee55), [`1570e44`](https://github.com/bluesky-social/atproto/commit/1570e4471bffb1f3e5e6907f031d025db9ef3198)]:
+  - @atproto/syntax@0.7.2
+  - @atproto/lex-schema@0.2.2
+  - @atproto/lex-resolver@0.2.1
+  - @atproto/lex-builder@0.1.8
+  - @atproto/lex-document@0.1.6
+
+## 0.1.6
+
+### Patch Changes
+
+- [#5197](https://github.com/bluesky-social/atproto/pull/5197) [`a0c49d9`](https://github.com/bluesky-social/atproto/commit/a0c49d9e8bc685c5a747a8d3b2775c73c63fdb6f) Thanks [@matthieusieben](https://github.com/matthieusieben)! - Rewrite import statements to be compatible with TypeScript's `verbatimModuleSyntax` config.
+
+- Updated dependencies [[`a0c49d9`](https://github.com/bluesky-social/atproto/commit/a0c49d9e8bc685c5a747a8d3b2775c73c63fdb6f), [`cc6b901`](https://github.com/bluesky-social/atproto/commit/cc6b901496f607c0b477e48a23c94e6f727396c9), [`cc6b901`](https://github.com/bluesky-social/atproto/commit/cc6b901496f607c0b477e48a23c94e6f727396c9), [`cc6b901`](https://github.com/bluesky-social/atproto/commit/cc6b901496f607c0b477e48a23c94e6f727396c9), [`cc6b901`](https://github.com/bluesky-social/atproto/commit/cc6b901496f607c0b477e48a23c94e6f727396c9)]:
+  - @atproto/lex-document@0.1.5
+  - @atproto/lex-resolver@0.2.0
+  - @atproto/lex-builder@0.1.7
+  - @atproto/lex-schema@0.2.1
+  - @atproto/lex-cbor@0.1.4
+  - @atproto/lex-data@0.1.5
+  - @atproto/syntax@0.7.1
+
 ## 0.1.5
 
 ### Patch Changes

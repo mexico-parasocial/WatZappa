@@ -1,6 +1,6 @@
 import type { Insertable, Selectable } from 'kysely'
 import { repostsEnabled } from '@atproto/common'
-import type { Cid } from '@atproto/lex'
+import type { Cid } from '@atproto/lex-data'
 import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
 import { NOTIFICATION_REASON } from '../../../../api/app/bsky/notification/constants.js'
 import { app } from '../../../../lexicons/index.js'

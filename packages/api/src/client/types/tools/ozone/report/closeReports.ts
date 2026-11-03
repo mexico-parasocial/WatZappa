@@ -23,8 +23,10 @@ export interface InputSchema {
   subject: string
   /** If true, also close reports on all subjects owned by the account, including records, messages, and conversations. Only valid when subject is an account DID. */
   includeAllOwned?: boolean
-  /** If specified, only reports of the given report types (fully qualified reason NSIDs) are closed. When omitted, all non-closed reports on the subject are targeted. */
+  /** If nonempty, only reports of the given report types (fully qualified reason NSIDs) are closed. When omitted or empty, all eligible reports in the requested subject scope are targeted, except excludedReportTypes. Assigned and escalated reports are always excluded. */
   reportTypes?: string[]
+  /** Reports of these types (fully qualified reason NSIDs) are excluded from closure and left unchanged. When omitted or empty, no report types are excluded. */
+  excludedReportTypes?: string[]
   /** Optional moderator-only note recorded on each close activity. Not visible to reporters. */
   internalNote?: string
   /** Set true when this action is triggered by an automated process. Defaults to false. */

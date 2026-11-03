@@ -1,4 +1,9 @@
 import type { Logger } from 'pino'
+import {
+  ChatDisabledError,
+  isProvisionedSpace,
+  unprovisionedSpaceId,
+} from './chat-mode.js'
 import { type EffectiveSanction, effectiveSanction } from './chat-moderation.js'
 import type { Config } from './config.js'
 import type { IBridgeDatabase } from './db/index.js'
@@ -137,6 +142,11 @@ export function createMatrixProjection(
   const ensureUserExists = async (mxid: string): Promise<void> => {
     const exists = await matrix.userExists(mxid)
     if (!exists) {
+      // MAS creates native accounts at first login; creating one here would
+      // take the localpart MAS needs and strand the user.
+      if (!config.matrixAllowAppServiceLogin) {
+        throw new Error('MATRIX_CLIENT_LOGIN_REQUIRED')
+      }
       await matrix.createUser(mxid)
       log.info({ mxid }, 'Created Matrix user from verified identity key')
     }
@@ -156,13 +166,16 @@ export function createMatrixProjection(
     return [...new Set(active.map((s) => s.mxid))]
   }
 
+  // A space recorded while chat was off has no rooms until provisioned.
   const communityRoomIds = (space: CommunitySpaceMap): string[] =>
-    [
-      space.spaceId,
-      space.chamberA_RoomId,
-      space.chamberB_RoomId,
-      space.observerRoomId,
-    ].filter((roomId): roomId is string => Boolean(roomId))
+    !isProvisionedSpace(space)
+      ? []
+      : [
+          space.spaceId,
+          space.chamberA_RoomId,
+          space.chamberB_RoomId,
+          space.observerRoomId,
+        ].filter((roomId): roomId is string => Boolean(roomId))
 
   const powerLevelForRoles = (roles: string[]): number => {
     if (roles.includes('owner')) return 100
@@ -396,6 +409,7 @@ export function createMatrixProjection(
     },
 
     async applyMemberRoles(space, did, opts) {
+      if (!isProvisionedSpace(space)) return
       const mxids = await sessionMxidsForDid(did)
       if (mxids.length === 0) {
         // Never joined (or all sessions revoked): nothing to project onto.
@@ -463,7 +477,7 @@ export function createMatrixProjection(
         if (!membership) continue
         const communityUri = cached.communityUri
         const space = await db.getSpaceForCommunity(communityUri)
-        if (!space) continue
+        if (!space || !isProvisionedSpace(space)) continue
         if (membership.state === 'active') {
           // Catch-up for role changes that arrived while offline. The
           // presented account is included: it is entitled by membership,
@@ -507,5 +521,33 @@ export function createMatrixProjection(
         }
       }
     },
+  }
+}
+
+/**
+ * The projection when chat is off (`MATRIX_CHAT_ENABLED=false`). Governance
+ * still decides membership, chambers and roles; there is just nothing to
+ * project them onto. A new community gets a space-map row marked
+ * unprovisioned (see chat-mode.ts) so governance keeps its chamber mode, and
+ * the firehose queues it for provisioning once chat is on.
+ */
+export function createChatDisabledProjection(): MatrixProjectionPort {
+  return {
+    async createCommunitySpace({ communityUri }) {
+      return {
+        spaceId: unprovisionedSpaceId(communityUri),
+        chamberA_RoomId: null,
+        chamberB_RoomId: null,
+        observerRoomId: null,
+      }
+    },
+    async verifiedJoin() {
+      throw new ChatDisabledError()
+    },
+    async applyMemberRoles() {},
+    async revokeMemberAccess() {
+      return 0
+    },
+    async reconcileMemberAccess() {},
   }
 }

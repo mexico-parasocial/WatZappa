@@ -4,8 +4,8 @@ import type {
   DatetimeString,
   DidString,
   UriString,
-} from '@atproto/lex'
-import { currentDatetimeString, isDidString } from '@atproto/lex'
+} from '@atproto/lex-schema'
+import { currentDatetimeString, isDidString } from '@atproto/lex-schema'
 import { AtUri } from '@atproto/syntax'
 import type { Database } from '../db/index.js'
 import type { Report } from '../db/schema/report.js'
@@ -245,13 +245,42 @@ export async function getLatestReport(
 }
 
 export type FindReportsForSubjectParams = {
+  /**
+   * The DID of the subject for which to find reports.
+   */
   subjectDid: DidString
+  /**
+   * The URI of the subject for which to find reports. If not provided, will match repo-level subjects.
+   */
   subjectUri?: AtUriString | null
+  /**
+   * The IDs of the reports to include. If not provided, all reports are considered.
+   */
   reportIds?: number[]
+  /**
+   * The types of reports to include. If not provided, all types are considered.
+   */
   reportTypes?: string[]
+  /**
+   * The types of reports to exclude. If not provided, no types are excluded.
+   */
+  excludedReportTypes?: string[]
+  /**
+   * Whether to target all reports for the subject.
+   */
   targetAll?: boolean
+  /**
+   * Whether to target all reports owned by the subject DID.
+   */
   includeAllOwned?: boolean
+  /**
+   * Whether to lock the selected reports for update.
+   */
   lockForUpdate?: boolean
+  /**
+   * Whether to protect active reviews from being included.
+   */
+  protectActiveReview?: boolean
 }
 
 export type ReportResult = {
@@ -302,7 +331,39 @@ export async function findReportsForSubject(
     }
   }
 
-  if (params.targetAll) {
+  if (params.protectActiveReview) {
+    const explicitIds = params.reportIds ?? []
+    const reportTypes = params.reportTypes ?? []
+    if (!explicitIds.length && !params.targetAll && !reportTypes.length) {
+      return []
+    }
+    builder = builder.where('r.status', '!=', 'closed').where((eb) =>
+      eb.or([
+        ...(explicitIds.length ? [eb('r.id', 'in', explicitIds)] : []),
+        ...(params.targetAll || reportTypes.length
+          ? [
+              eb.and([
+                eb('r.status', 'not in', ['assigned', 'escalated']),
+                eb.not(
+                  eb.exists(
+                    eb
+                      .selectFrom('moderator_assignment as ma')
+                      .select('ma.reportId')
+                      .whereRef('ma.reportId', '=', 'r.id')
+                      .where('ma.endAt', 'is', null)
+                      // @NOTE Keep the lookup correlated instead of hashing all assignments.
+                      .offset(0),
+                  ),
+                ),
+                ...(params.targetAll
+                  ? []
+                  : [eb('r.reportType', 'in', reportTypes)]),
+              ]),
+            ]
+          : []),
+      ]),
+    )
+  } else if (params.targetAll) {
     // Target all open/escalated reports on the subject
     builder = builder.where('r.status', 'not in', ['closed'])
   } else if (params.reportIds?.length) {
@@ -318,6 +379,14 @@ export async function findReportsForSubject(
   } else {
     // No targeting criteria provided
     return []
+  }
+
+  if (params.excludedReportTypes?.length) {
+    builder = builder.where(
+      'r.reportType',
+      'not in',
+      params.excludedReportTypes,
+    )
   }
 
   let query = builder.selectAll('r')
@@ -337,6 +406,7 @@ export type CloseReportsForSubjectParams = {
   subjectUri: string | null
   includeAllOwned?: boolean
   reportTypes?: string[]
+  excludedReportTypes?: string[]
   internalNote?: string
   isAutomated: boolean
   meta?: Record<string, unknown>
@@ -349,10 +419,12 @@ export type CloseReportsResult = {
 }
 
 /**
- * Closes all non-closed reports on a subject, optionally filtered by report
- * type. Reports whose current status doesn't permit a transition to closed
- * are skipped silently. Unlike `processReportAction` there is no moderation
- * event involved — reports are closed directly via close activities.
+ * Closes eligible reports matching the subject and report type filters.
+ * Assigned and escalated reports are preserved for explicit review actions.
+ * Reports whose current status doesn't permit a transition to closed are
+ * skipped silently. Unlike
+ * `processReportAction` there is no moderation event involved — reports are
+ * closed directly via close activities.
  */
 export async function closeReportsForSubject(
   params: CloseReportsForSubjectParams,
@@ -375,8 +447,10 @@ export async function closeReportsForSubject(
       subjectUri: subjectUri as AtUriString,
       includeAllOwned: params.includeAllOwned,
       reportTypes: reportTypes?.length ? reportTypes : undefined,
+      excludedReportTypes: params.excludedReportTypes,
       targetAll: !reportTypes?.length,
       lockForUpdate: true,
+      protectActiveReview: true,
     })
 
     const validUpdates: {
@@ -537,6 +611,9 @@ async function processEmailReportAction(
 }
 
 /**
+ * Apply the report action to the matching reports.
+ * Returns the number of reports successfully updated.
+ *
  * Validates and processes a report action by:
  * 1. Finding matching reports based on targeting criteria
  * 2. Validating that specified report IDs exist and belong to the subject
@@ -565,13 +642,19 @@ export async function processReportAction(
     return processEmailReportAction(db, reportAction, subjectDid, eventId)
   }
 
-  // Find reports matching the criteria
+  const closesReports =
+    handleReportUpdate('open', { type: 'event', eventType }).nextStatus ===
+    'closed'
+  // @NOTE Explicit IDs preserve deliberate review actions; broad closure must
+  // not interrupt assigned or escalated reports. Lock targets until commit.
   const matchingReports = await findReportsForSubject(db, {
     subjectDid,
     subjectUri: subjectUri as AtUriString,
     reportIds: reportAction.ids,
     reportTypes: reportAction.types,
     targetAll: reportAction.all,
+    protectActiveReview: closesReports,
+    lockForUpdate: closesReports,
   })
 
   if (matchingReports.length === 0) {

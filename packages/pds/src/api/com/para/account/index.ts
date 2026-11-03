@@ -1,6 +1,7 @@
 import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
+import { updateAuthFactorType } from '../../../../para/auth-factor.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.add(com.para.account.getAuthFactor, {
@@ -8,9 +9,7 @@ export default function (server: Server, ctx: AppContext) {
       authorize: () => {},
     }),
     handler: async ({ auth }) => {
-      const account = await ctx.accountManager.getAccount(
-        auth.credentials.did,
-      )
+      const account = await ctx.accountManager.getAccount(auth.credentials.did)
       return {
         encoding: 'application/json',
         body: {
@@ -32,7 +31,8 @@ export default function (server: Server, ctx: AppContext) {
         )
       }
 
-      const account = await ctx.accountManager.updateAuthFactorType(
+      const account = await updateAuthFactorType(
+        ctx.accountManager,
         auth.credentials.did,
         authFactorType as 'im8' | null,
       )

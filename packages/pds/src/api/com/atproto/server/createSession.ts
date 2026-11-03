@@ -10,11 +10,11 @@ import {
   type Server,
 } from '@atproto/xrpc-server'
 import { formatAccountStatus } from '../../../../account-manager/account-manager.js'
-import { validateIm8Token } from '../../../../account-manager/helpers/im8-token.js'
 import { OLD_PASSWORD_MAX_LENGTH } from '../../../../account-manager/helpers/scrypt.js'
 import type { AppContext } from '../../../../context.js'
 import { events } from '../../../../events.js'
 import { com } from '../../../../lexicons/index.js'
+import { assertParaAuthFactor } from '../../../../para/auth-factor.js'
 import { didDocForSession } from './util.js'
 
 export default function (server: Server, ctx: AppContext) {
@@ -74,33 +74,7 @@ export default function (server: Server, ctx: AppContext) {
             im8FactorVerifiedByCaller: true,
           })
 
-        // PARA: accounts with an iM8 second factor sign in with an m8 session
-        // token for the same DID, app passwords included.
-        if (user.authFactorType === 'im8') {
-          if (!body.authFactorToken) {
-            throw new AuthRequiredError(
-              'Auth factor token required',
-              'AuthFactorTokenRequired',
-            )
-          }
-          const m8BaseUrl = ctx.cfg.m8BaseUrl
-          if (!m8BaseUrl) {
-            throw new AuthRequiredError(
-              'M8 identity broker is not configured',
-              'AuthFactorTokenRequired',
-            )
-          }
-          const session = await validateIm8Token(
-            m8BaseUrl,
-            body.authFactorToken,
-          ).catch(() => null)
-          if (session?.did !== user.did) {
-            throw new AuthRequiredError(
-              'Invalid auth factor token',
-              'AuthFactorTokenRequired',
-            )
-          }
-        }
+        await assertParaAuthFactor(ctx, user, body.authFactorToken)
 
         if (!body.allowTakendown && isSoftDeleted) {
           throw new AuthRequiredError(

@@ -130,6 +130,7 @@ import * as AppBskyNotificationUpdateSeen from './types/app/bsky/notification/up
 import * as AppBskyRichtextFacet from './types/app/bsky/richtext/facet.js'
 import * as AppBskyUnspeccedDefs from './types/app/bsky/unspecced/defs.js'
 import * as AppBskyUnspeccedGetAgeAssuranceState from './types/app/bsky/unspecced/getAgeAssuranceState.js'
+import * as AppBskyUnspeccedGetAtmosphereExploreArticleRecommendations from './types/app/bsky/unspecced/getAtmosphereExploreArticleRecommendations.js'
 import * as AppBskyUnspeccedGetAtmosphereExploreTab from './types/app/bsky/unspecced/getAtmosphereExploreTab.js'
 import * as AppBskyUnspeccedGetConfig from './types/app/bsky/unspecced/getConfig.js'
 import * as AppBskyUnspeccedGetOnboardingSuggestedStarterPacks from './types/app/bsky/unspecced/getOnboardingSuggestedStarterPacks.js'
@@ -688,6 +689,7 @@ export * as AppBskyNotificationUpdateSeen from './types/app/bsky/notification/up
 export * as AppBskyRichtextFacet from './types/app/bsky/richtext/facet.js'
 export * as AppBskyUnspeccedDefs from './types/app/bsky/unspecced/defs.js'
 export * as AppBskyUnspeccedGetAgeAssuranceState from './types/app/bsky/unspecced/getAgeAssuranceState.js'
+export * as AppBskyUnspeccedGetAtmosphereExploreArticleRecommendations from './types/app/bsky/unspecced/getAtmosphereExploreArticleRecommendations.js'
 export * as AppBskyUnspeccedGetAtmosphereExploreTab from './types/app/bsky/unspecced/getAtmosphereExploreTab.js'
 export * as AppBskyUnspeccedGetConfig from './types/app/bsky/unspecced/getConfig.js'
 export * as AppBskyUnspeccedGetOnboardingSuggestedStarterPacks from './types/app/bsky/unspecced/getOnboardingSuggestedStarterPacks.js'
@@ -3977,6 +3979,18 @@ export class AppBskyUnspeccedNS {
   ): Promise<AppBskyUnspeccedGetAgeAssuranceState.Response> {
     return this._client.call(
       'app.bsky.unspecced.getAgeAssuranceState',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  getAtmosphereExploreArticleRecommendations(
+    params?: AppBskyUnspeccedGetAtmosphereExploreArticleRecommendations.QueryParams,
+    opts?: AppBskyUnspeccedGetAtmosphereExploreArticleRecommendations.CallOptions,
+  ): Promise<AppBskyUnspeccedGetAtmosphereExploreArticleRecommendations.Response> {
+    return this._client.call(
+      'app.bsky.unspecced.getAtmosphereExploreArticleRecommendations',
       params,
       undefined,
       opts,

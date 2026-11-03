@@ -17,7 +17,6 @@ The bridge uses [`matrix-bot-sdk`](https://github.com/turt2live/matrix-bot-sdk) 
 7. **Room membership is a lease** (`community_membership_lease`, no DID column): renewed by any verified interaction, swept hourly — accounts past the TTL (`BRIDGE_MEMBERSHIP_LEASE_TTL_MS`, default 30 days) are kicked from the community's rooms, which is what reaches removed members who never interact again
 8. **Chat client** — the PARA app hosts a self-contained WebView shell that loads a pinned, project-bundled copy of `matrix-js-sdk` from `PARA/assets/chat/`
 
-
 ## Security Model (PARA-Only)
 
 > Several claims in this section were inaccurate before the Matrix v2 Phase 1
@@ -45,7 +44,7 @@ The bridge uses [`matrix-bot-sdk`](https://github.com/turt2live/matrix-bot-sdk) 
   [matrix-js-sdk#4150](https://github.com/matrix-org/matrix-js-sdk/issues/4150)).
   Do not enable `MATRIX_ENABLE_ENCRYPTION` until the app uses a native Matrix
   client or a WebView engine with working WASM crypto and key backup.
-- **Synapse is the only chat *history* store** — the timeline sync persists
+- **Synapse is the only chat _history_ store** — the timeline sync persists
   event metadata only (`content: ''`). Two other paths do store user text in
   the bridge database: moderation report previews (200 chars) and
   user-submitted deliberation cards (MATRIX_V2 F4).
@@ -71,17 +70,21 @@ The bridge uses [`matrix-bot-sdk`](https://github.com/turt2live/matrix-bot-sdk) 
 
 ## Environment Variables
 
-| Variable                   | Default                                                      | Description                                                                  |
-| -------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| `PDS_FIREHOSE_URL`         | `wss://pds.para.social/xrpc/com.atproto.sync.subscribeRepos` | AT Protocol firehose                                                         |
-| `MATRIX_HOMESERVER_URL`    | `http://synapse:8008`                                        | Synapse Admin API base URL                                                   |
-| `MATRIX_ADMIN_TOKEN`       | _(required)_                                                 | Synapse admin access token                                                   |
-| `MATRIX_APPSERVICE_TOKEN`  | optional (falls back to admin token)                         | Appservice token enabling device-bound logins (`m.login.application_service`); requires the matching appservice registration on Synapse |
-| `MATRIX_ENABLE_ENCRYPTION` | `false`                                                      | Enable Matrix E2EE (`m.megolm.v1.aes-sha2`) — requires working client crypto |
-| `M8_BASE_URL`              | `http://localhost:8787/v1`                                   | M8 Identity Manager API                                                      |
-| `BRIDGE_DB_PATH`           | `/data/bridge.db`                                            | SQLite database path                                                         |
-| `BRIDGE_LOG_LEVEL`         | `info`                                                       | Log level                                                                    |
-| `PORT`                     | `3001`                                                       | Health check HTTP port                                                       |
+| Variable                                                                                           | Default                                                      | Description                                                                                                                             |
+| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `PDS_FIREHOSE_URL`                                                                                 | `wss://pds.para.social/xrpc/com.atproto.sync.subscribeRepos` | AT Protocol firehose                                                                                                                    |
+| `MATRIX_HOMESERVER_URL`                                                                            | `http://synapse:8008`                                        | Synapse Admin API base URL                                                                                                              |
+| `MATRIX_CHAT_ENABLED`                                                                              | `true`                                                       | `false` runs governance only, with no homeserver: Matrix settings become optional and chat routes answer 503 `CHAT_DISABLED`            |
+| `MATRIX_ADMIN_TOKEN`                                                                               | _(required with chat on)_                                    | Synapse admin access token                                                                                                              |
+| `MATRIX_APPSERVICE_TOKEN`                                                                          | optional (falls back to admin token)                         | Appservice token enabling device-bound logins (`m.login.application_service`); requires the matching appservice registration on Synapse |
+| `MATRIX_MAS_ADMIN_URL`, `MATRIX_MAS_TOKEN_URL`, `MATRIX_MAS_CLIENT_ID`, `MATRIX_MAS_CLIENT_SECRET` | _(required to revoke devices with MAS)_                      | Confidential MAS admin client; revocation finishes the device's MAS sessions before deleting it in Synapse                              |
+| `MATRIX_ALLOW_APPSERVICE_LOGIN`                                                                    | `false`                                                      | Legacy standalone Synapse without MAS: the bridge may create accounts and mint sessions/pushers                                         |
+| `CHAT_OPS_PORT` (+ `CHAT_OPS_*`)                                                                   | unset                                                        | Opt-in private chat operations listener (chat on only); see `.env.example`                                                              |
+| `MATRIX_ENABLE_ENCRYPTION`                                                                         | `false`                                                      | Enable Matrix E2EE (`m.megolm.v1.aes-sha2`) — requires working client crypto                                                            |
+| `M8_BASE_URL`                                                                                      | `http://localhost:8787/v1`                                   | M8 Identity Manager API                                                                                                                 |
+| `BRIDGE_DB_PATH`                                                                                   | `/data/bridge.db`                                            | SQLite database path                                                                                                                    |
+| `BRIDGE_LOG_LEVEL`                                                                                 | `info`                                                       | Log level                                                                                                                               |
+| `PORT`                                                                                             | `3001`                                                       | Health check HTTP port                                                                                                                  |
 
 ## Endpoints
 

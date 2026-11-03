@@ -143,13 +143,14 @@ export class InfraArea extends IdentityMatrixArea {
 
   // Firehose cursor persistence
   async getSyncCursor(): Promise<number | undefined> {
-    const row = await this.queryOne<{ cursor: number }>(
+    const row = await this.queryOne<{ cursor: string | number }>(
       'SELECT cursor FROM sync_cursor WHERE id = 1',
     )
-    return row?.cursor
+    return row ? this.safeInteger(row.cursor) : undefined
   }
 
   async setSyncCursor(cursor: number): Promise<void> {
+    this.safeInteger(cursor)
     await this.run(
       `INSERT INTO sync_cursor (id, cursor) VALUES (1, $1)
        ON CONFLICT (id) DO UPDATE SET cursor = EXCLUDED.cursor`,
@@ -175,17 +176,17 @@ export class InfraArea extends IdentityMatrixArea {
   async getUserCount(): Promise<number> {
     // Post-CD-M1 there is no user mapping to count; the meaningful gauge is
     // distinct active members across communities (governance state).
-    const row = await this.queryOne<{ count: number }>(
+    const row = await this.queryOne<{ count: string }>(
       "SELECT COUNT(DISTINCT did) as count FROM community_membership_state WHERE membership_state = 'active'",
     )
-    return row?.count ?? 0
+    return this.safeInteger(row?.count ?? 0)
   }
 
   async getSpaceCount(): Promise<number> {
-    const row = await this.queryOne<{ count: number }>(
+    const row = await this.queryOne<{ count: string }>(
       'SELECT COUNT(*) as count FROM community_space_map',
     )
-    return row?.count ?? 0
+    return this.safeInteger(row?.count ?? 0)
   }
 
   // Push tokens

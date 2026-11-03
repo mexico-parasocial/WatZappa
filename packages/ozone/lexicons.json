@@ -631,7 +631,7 @@
       "cid": "bafyreiaql2xx47oojyole7dqdipcwes7nrjdc2cuxrcpaboulw45f5pgea"
     },
     "app.bsky.actor.profile": {
-      "uri": "file://../../lexicons-overrides/app/bsky/actor/profile.json",
+      "uri": "https://raw.githubusercontent.com/bluesky-social/bsky/refs/heads/main/lexicons/app/bsky/actor/profile.json",
       "cid": "bafyreia3mn3g7d5gcw37dejfdfymoizvtjwcomrym6pgz4llgwpdg54etu"
     },
     "app.bsky.actor.putPreferences": {
@@ -807,7 +807,7 @@
       "cid": "bafyreienkrtmhhf45ah742jkltbt53kbk7om53yl42rvjho4vkbka5zg3m"
     },
     "app.bsky.feed.defs": {
-      "uri": "file://../../lexicons-overrides/app/bsky/feed/defs.json",
+      "uri": "https://raw.githubusercontent.com/bluesky-social/bsky/refs/heads/main/lexicons/app/bsky/feed/defs.json",
       "cid": "bafyreifl2fpirula2ttkbkjafpxf5h72zaa7kximl3eeg7oeksq35ux76i"
     },
     "app.bsky.feed.describeFeedGenerator": {
@@ -899,7 +899,7 @@
       "cid": "bafyreieyeblnzqdi25lrx7kzkzlzkxx2ehtpir267o67hchuczvw4itkoq"
     },
     "app.bsky.feed.searchPostsV2": {
-      "uri": "file://../../lexicons-overrides/app/bsky/feed/searchPostsV2.json",
+      "uri": "https://raw.githubusercontent.com/bluesky-social/bsky/refs/heads/main/lexicons/app/bsky/feed/searchPostsV2.json",
       "cid": "bafyreia4jom7zqv2emhzzghma5fyrmawnwbub4w2i4pju5iegwee4ulgm4"
     },
     "app.bsky.feed.sendInteractions": {
@@ -1123,8 +1123,8 @@
       "cid": "bafyreial4vi2raxz7nfbwovdx6m4pdlb5hnpf37teistounxjxe6svbdsi"
     },
     "app.bsky.unspecced.getAtmosphereExploreTab": {
-      "uri": "https://raw.githubusercontent.com/bluesky-social/bsky/refs/heads/main/lexicons/app/bsky/unspecced/getAtmosphereExploreTab.json",
-      "cid": "bafyreiez66qb7byto44nzivpn27ykzdgilgpuqogeusypl3mln7wicjnry"
+      "uri": "file://../../lexicons-overrides/app/bsky/unspecced/getAtmosphereExploreTab.json",
+      "cid": "bafyreihmakoqnaakyhoyxay2hdlshccakqocrvdpwafuxku52bd6ptvj7q"
     },
     "app.bsky.unspecced.getConfig": {
       "uri": "https://raw.githubusercontent.com/bluesky-social/bsky/refs/heads/main/lexicons/app/bsky/unspecced/getConfig.json",
@@ -2656,7 +2656,7 @@
     },
     "tools.ozone.moderation.emitEvent": {
       "uri": "file://../../lexicons/tools/ozone/moderation/emitEvent.json",
-      "cid": "bafyreieo2ig2lbxot75lzcxszt63a6je6ja7fii2oqolscjz3wpijqyyom"
+      "cid": "bafyreieuqjnjgg4guv5fs4tthydyodh4mn5othkdli3hjpv2ov3l3ygh6u"
     },
     "tools.ozone.moderation.getAccountPreferences": {
       "uri": "file://../../lexicons/tools/ozone/moderation/getAccountPreferences.json",
@@ -2756,7 +2756,7 @@
     },
     "tools.ozone.report.closeReports": {
       "uri": "file://../../lexicons/tools/ozone/report/closeReports.json",
-      "cid": "bafyreigcpybvcjrlkolzw6jrl4hadujqt6pehvf3zfxgdav2aim6rx7rkq"
+      "cid": "bafyreic3wvccydovbekdg6p4vxkrsz6wf3z3k5ntnanxdtnzljghuqd5py"
     },
     "tools.ozone.report.createActivity": {
       "uri": "file://../../lexicons/tools/ozone/report/createActivity.json",

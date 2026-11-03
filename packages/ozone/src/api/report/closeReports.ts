@@ -1,4 +1,8 @@
-import { type AtUriString, type DidString, isDidString } from '@atproto/lex'
+import {
+  type AtUriString,
+  type DidString,
+  isDidString,
+} from '@atproto/lex-schema'
 import { AtUri } from '@atproto/syntax'
 import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../context.js'
@@ -15,6 +19,7 @@ export default function (server: Server, ctx: AppContext) {
         subject,
         includeAllOwned,
         reportTypes,
+        excludedReportTypes,
         internalNote,
         isAutomated,
         meta,
@@ -49,6 +54,7 @@ export default function (server: Server, ctx: AppContext) {
         subjectUri,
         includeAllOwned,
         reportTypes,
+        excludedReportTypes,
         internalNote: internalNote ?? undefined,
         isAutomated: isAutomated ?? false,
         meta,

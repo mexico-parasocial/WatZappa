@@ -19,7 +19,8 @@ import type { SortitionEngine } from '../sortition-runs.js'
 export interface RouteContext {
   config: Config
   db: IBridgeDatabase
-  matrix: MatrixAdminClient
+  /** Null when chat is off (`MATRIX_CHAT_ENABLED=false`). */
+  matrix: MatrixAdminClient | null
   projection: MatrixProjectionPort
   challenges: ChallengeStore
   firehose: FirehoseConsumer

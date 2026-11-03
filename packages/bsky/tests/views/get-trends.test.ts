@@ -26,8 +26,8 @@ describe('getTrends', () => {
     network = await TestNetwork.create({
       dbPostgresSchema: 'bsky_tests_get_trends_test_b',
       bsky: {
-        topicsUrl: mockTrendServer.url,
-        topicsApiKey: 'test',
+        irisUrl: mockTrendServer.url,
+        irisApiKey: 'test',
       },
     })
     agent = network.bsky.getAgent()
