@@ -1,9 +1,10 @@
 # Pilot launch — remaining work, October–November 2026
 
-**Updated: 2026-10-06. This is the canonical cross-repository execution queue.**
-It replaces the September sprint calendar and the conflicting calendar in
-[MATRIX_V2_QUARTER_PLAN.md](./MATRIX_V2_QUARTER_PLAN.md). Solo capacity: one
-engineering lane. November is a target horizon, not a verified release date.
+**Updated: 2026-11-04. This is the canonical cross-repository execution queue.**
+It replaces the September sprint calendars (G1 sprint plan, Matrix v2 quarter
+plan), which were removed from the tree on 2026-11-04 and remain in git history.
+Solo capacity: one engineering lane. November is a target horizon, not a
+verified release date.
 
 ## Outcome and current assessment
 
@@ -157,9 +158,9 @@ retries; authority events and a periodic sweep catch revocation/expiry.
 
 Remaining actions:
 
-1. Select and publish a clean release revision from the active branch at
-   `d11fa24f1`. Its local P0 integration is complete; remote main/production
-   remain unchanged. Keep unrelated working-tree edits outside this release.
+1. Select and publish a clean release revision. `d11fa24f1` is on remote
+   `main` (an ancestor of `f3c838ae`, 2026-11-02); production remains
+   unchanged. Keep unrelated working-tree edits outside this release.
 2. Identify staging. Pause the old bridge during the paired AppView migration /
    bridge upgrade; configure the same dedicated `PARA_AUTHORITY_SERVICE_TOKEN`
    on both services and `BRIDGE_AUTHORITY_APPVIEW_URL` on the bridge.
@@ -171,6 +172,26 @@ Remaining actions:
    exists. Delegate self-nomination is a candidate label, not moderation/sortition
    authority. Assembly-decision grants remain closed pending a trusted tally
    verifier. Do not treat these restrictions as complete governance support.
+5. Close the remaining authority gaps found by the 2026-11-04 review (code
+   reading only; no runtime reproduction yet). They sit outside the
+   authority-event fix above:
+   - **Forgeable content moderation.** The AppView indexes any account's
+     `com.para.community.sharedContentAction` and shows the newest one by the
+     writer-chosen `createdAt`, with no authority check. Any account can hide
+     shared content in any community. The PDS route gates on
+     `isCommunitySteward`, which reads self-written membership `roles`.
+   - **Appointment drops membership.** `community.join` writes only a
+     membership record, so members have no authority chain. A first
+     `ownerAppointment` event becomes their only event. The
+     legacy-membership fallback then stops applying, and the appointee
+     resolves to membership `none`.
+   - **No issuance path** for suspend, remove, block, reinstate, leave or
+     moderator renewal. Horizontal communities lose their only moderator
+     when the founding 90-day term ends. `assembly_approval` admission
+     cannot admit anyone.
+   - **Board record controls governance.** The founder can update
+     `governanceMode`/`admissionMode` and remains a governance author after
+     an owner transfer.
 
 Exit: integrated release revision plus recorded staging acceptance and explicit
 supported-role scope. Do not repeat the role-source audit or recreate the fix.
@@ -300,7 +321,8 @@ governance gates before a binding platform ballot is claimed.
 G1's reference engine and synthetic web lab already exist. Its remaining rules,
 native/ALF integration, historical audit and release verification are listed in
 [GOVERNANCE-G1-EXECUTION.md](./GOVERNANCE-G1-EXECUTION.md); read that record rather
-than restarting diagnosis. Delegation/spending, quorum, approval and tie-break
+than restarting diagnosis. The criteria for reopening voting remain in the
+[production review](./GOVERNANCE-PRODUCTION-REVIEW-2026-09-20.md). Delegation/spending, quorum, approval and tie-break
 rules need product resolution. G2's recorded **8–12 engineering-day** estimate
 is provisional and follows fixed rules; G3 requires specialist protocol review
 with no confirmed budget/date. These compete with P0–P5. Real binding private

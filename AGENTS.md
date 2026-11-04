@@ -81,9 +81,8 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
   remaining-work queue, re-baselined 2026-10-05; the old sprint calendars are
   superseded. Inspect only relevant changes, distinguish implemented/tested/
   merged/deployed, and remove closed actions from active roadmaps while retaining
-  linked evidence. Trusted-role fixes are integrated locally in the active branch
-  at `d11fa24f1` (2026-10-06); release selection and homeserver acceptance remain
-  open. Do not re-integrate the old worktrees or repeat the completed source audit.
+  linked evidence. Status belongs in that plan, not here. Do not re-integrate the
+  old worktrees or repeat the completed source audit.
 
 - Public cabildeo and policy votes require `verifyPublicBallotProof` before PDS
   preparation and AppView indexing, including foreign repositories. A policy
