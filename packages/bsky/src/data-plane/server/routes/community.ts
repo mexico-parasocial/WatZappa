@@ -40,7 +40,7 @@ import {
 } from '../../../proto/bsky_pb.js'
 import {
   type AuthoritySnapshot,
-  getAuthorityResolver,
+  filterByOfficeWhenIndexed,
   getAuthoritySnapshot,
   getAuthoritySnapshots,
 } from '../community-authority.js'
@@ -624,6 +624,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     let builder = db.db
       .selectFrom('para_community_relation as relation')
       .selectAll('relation')
+      .where(relationAuthorCandidateSql('relation'))
 
     if (req.communityUri) {
       builder = builder.where(
@@ -659,12 +660,18 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     })
 
     const rows = await builder.execute()
-    const page = rows.slice(0, normalizeLimit(req.limit))
+    const raw = rows.slice(0, normalizeLimit(req.limit))
+    // The SQL filter is only a cheap necessary condition; the page can come
+    // back short, but the cursor still follows the rows that were read.
+    const trusted = new Set(
+      (await filterTrustedRelations(db, raw)).map((row) => row.uri),
+    )
+    const page = raw.filter((row) => trusted.has(row.uri))
 
     return new GetParaCommunityRelationsResponse({
       relations: page.map((row) => toRelationView(row)),
       cursor:
-        rows.length > page.length ? keyset.packFromResult(page) ?? '' : '',
+        rows.length > raw.length ? (keyset.packFromResult(raw) ?? '') : '',
     })
   },
 })
@@ -924,16 +931,20 @@ const getChildCommunityCounts = async (
     return new Map<string, number>()
   }
 
-  const rows = await db.db
-    .selectFrom('para_community_relation')
-    .where('parentCommunityUri', 'in', communityUris)
-    .where('relation', '=', 'parentChild')
-    .select(['parentCommunityUri', sql<number>`count(*)`.as('childCount')])
-    .groupBy('parentCommunityUri')
-    .execute()
-
+  const rows = await selectParentChildRelations(
+    db,
+    'parentCommunityUri',
+    communityUris,
+  )
+  // Two trusted authors (say, co-owners) may each link the same pair.
+  const children = new Map<string, Set<string>>()
+  for (const row of rows) {
+    const set = children.get(row.parentCommunityUri) ?? new Set()
+    set.add(row.childCommunityUri)
+    children.set(row.parentCommunityUri, set)
+  }
   return new Map(
-    rows.map((row) => [row.parentCommunityUri, Number(row.childCount) || 0]),
+    [...children].map(([parent, set]) => [parent, set.size] as const),
   )
 }
 
@@ -945,17 +956,18 @@ const getParentCommunityUris = async (
     return new Map<string, string[]>()
   }
 
-  const rows = await db.db
-    .selectFrom('para_community_relation')
-    .where('childCommunityUri', 'in', communityUris)
-    .where('relation', '=', 'parentChild')
-    .select(['childCommunityUri', 'parentCommunityUri'])
-    .execute()
+  const rows = await selectParentChildRelations(
+    db,
+    'childCommunityUri',
+    communityUris,
+  )
 
   const result = new Map<string, string[]>()
   for (const row of rows) {
     const existing = result.get(row.childCommunityUri) ?? []
-    existing.push(row.parentCommunityUri)
+    if (!existing.includes(row.parentCommunityUri)) {
+      existing.push(row.parentCommunityUri)
+    }
     result.set(row.childCommunityUri, existing)
   }
   return result
@@ -966,14 +978,98 @@ const getCommunityAndChildren = async (
   communityUri: string,
 ): Promise<string[]> => {
   if (!communityUri) return []
-  const rows = await db.db
-    .selectFrom('para_community_relation')
-    .where('parentCommunityUri', '=', communityUri)
-    .where('relation', '=', 'parentChild')
-    .select('childCommunityUri')
-    .execute()
+  const rows = await selectParentChildRelations(db, 'parentCommunityUri', [
+    communityUri,
+  ])
 
-  return [communityUri, ...rows.map((row) => row.childCommunityUri)]
+  return [communityUri, ...new Set(rows.map((row) => row.childCommunityUri))]
+}
+
+type RelationRow = Selectable<DatabaseSchemaType['para_community_relation']>
+
+/**
+ * A relation record lives in its author's repo, and anyone can write one
+ * naming any two communities. It counts only if its author owned the parent
+ * community when the AppView indexed it, or, for a horizontal parent (which
+ * has no owner), founded it. The child's side is not consulted: in the normal
+ * case the child's owner is the one linking it.
+ */
+const filterTrustedRelations = async <
+  T extends Pick<RelationRow, 'parentCommunityUri' | 'creator' | 'indexedAt'>,
+>(
+  db: Database,
+  rows: readonly T[],
+): Promise<T[]> => {
+  if (rows.length === 0) return []
+  const parents = [...new Set(rows.map((row) => row.parentCommunityUri))]
+  const horizontalFounders = new Set(
+    (
+      await db.db
+        .selectFrom('para_community_board')
+        .where('uri', 'in', parents)
+        .where('governanceMode', '=', 'horizontal')
+        .select(['uri', 'creator'])
+        .execute()
+    ).map((board) => `${board.uri} ${board.creator}`),
+  )
+  const byFounder = rows.filter((row) =>
+    horizontalFounders.has(`${row.parentCommunityUri} ${row.creator}`),
+  )
+  const byOwner = await filterByOfficeWhenIndexed(
+    db,
+    rows.filter((row) => !byFounder.includes(row)),
+    (row) => ({
+      community: row.parentCommunityUri,
+      author: row.creator,
+      indexedAt: row.indexedAt,
+    }),
+    ['owner'],
+  )
+  const trusted = new Set([...byFounder, ...byOwner])
+  return rows.filter((row) => trusted.has(row))
+}
+
+/**
+ * Necessary condition for `filterTrustedRelations`, cheap enough for SQL: the
+ * author has some owner grant in the parent, or created the parent board.
+ */
+const relationAuthorCandidateSql = (alias: string) => {
+  const ref = (column: string) => sql.ref(`${alias}.${column}`)
+  return sql<boolean>`(
+    exists (
+      select 1 from para_community_authority_event grant_event
+      where grant_event."communityUri" = ${ref('parentCommunityUri')}
+        and grant_event.subject = ${ref('creator')}
+        and grant_event.action = 'owner.grant'
+    )
+    or exists (
+      select 1 from para_community_board parent_board
+      where parent_board.uri = ${ref('parentCommunityUri')}
+        and parent_board.creator = ${ref('creator')}
+    )
+  )`
+}
+
+/** Trusted `parentChild` relations whose `side` is one of `uris`. */
+const selectParentChildRelations = async (
+  db: Database,
+  side: 'parentCommunityUri' | 'childCommunityUri',
+  uris: string[],
+) => {
+  if (uris.length === 0) return []
+  const rows = await db.db
+    .selectFrom('para_community_relation as relation')
+    .where('relation.relation', '=', 'parentChild')
+    .where(`relation.${side}`, 'in', uris)
+    .where(relationAuthorCandidateSql('relation'))
+    .select([
+      'relation.parentCommunityUri',
+      'relation.childCommunityUri',
+      'relation.creator',
+      'relation.indexedAt',
+    ])
+    .execute()
+  return filterTrustedRelations(db, rows)
 }
 
 /**
@@ -1005,40 +1101,24 @@ const getLatestSharedContentActions = async (
   const candidates = rows.filter(
     (row) => communityOf.get(row.sharedContentUri) === row.communityUri,
   )
-
-  const creatorsByCommunity = new Map<string, Set<string>>()
-  for (const row of candidates) {
-    const creators = creatorsByCommunity.get(row.communityUri) ?? new Set()
-    creators.add(row.creator)
-    creatorsByCommunity.set(row.communityUri, creators)
-  }
-  const resolvers = new Map(
-    await Promise.all(
-      [...creatorsByCommunity].map(
-        async ([communityUri, creators]) =>
-          [
-            communityUri,
-            await getAuthorityResolver(db, communityUri, [...creators]),
-          ] as const,
-      ),
-    ),
+  const authorized = await filterByOfficeWhenIndexed(
+    db,
+    candidates,
+    (row) => ({
+      community: row.communityUri,
+      author: row.creator,
+      indexedAt: row.indexedAt,
+    }),
+    ['owner', 'moderator'],
   )
 
   const effectiveTime = (row: SharedContentActionRow) =>
     Math.min(Date.parse(row.createdAt), Date.parse(row.indexedAt))
-  const authorized = candidates
-    .filter((row) => {
-      const resolve = resolvers.get(row.communityUri)
-      const at = Date.parse(row.indexedAt)
-      if (!resolve || !Number.isFinite(at)) return false
-      const { roles } = resolve(row.creator, at)
-      return roles.includes('owner') || roles.includes('moderator')
-    })
-    .sort(
-      (a, b) =>
-        effectiveTime(b) - effectiveTime(a) ||
-        (a.cid < b.cid ? 1 : a.cid > b.cid ? -1 : 0),
-    )
+  authorized.sort(
+    (a, b) =>
+      effectiveTime(b) - effectiveTime(a) ||
+      (a.cid < b.cid ? 1 : a.cid > b.cid ? -1 : 0),
+  )
   for (const row of authorized) {
     if (!result.has(row.sharedContentUri)) {
       result.set(row.sharedContentUri, row)

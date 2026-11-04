@@ -5,16 +5,19 @@ import { com } from '../../../../lexicons/index.js'
 import { dbLogger } from '../../../../logger.js'
 
 /**
- * Refuses unless the AppView verifies that `did` may moderate content in the
- * community. Moderator and owner roles come from authority events spread
- * across many repos, which only the AppView indexes and verifies. The
- * viewer's own membership record is self-written and proves nothing above
- * membership, so it is never consulted. Call outside a repo transaction.
+ * Refuses with `refusal` unless the AppView verifies that `did` holds
+ * `capability` in the community. Moderator and owner roles come from
+ * authority events spread across many repos, which only the AppView indexes
+ * and verifies. The viewer's own membership record is self-written and proves
+ * nothing above membership, so it is never consulted. Call outside a repo
+ * transaction.
  */
-export const assertCommunityModerator = async (
+export const assertCommunityCapability = async (
   ctx: AppContext,
   did: DidString,
   communityUri: AtUriString,
+  capability: string,
+  refusal: () => Error,
 ) => {
   if (!ctx.bskyAppView) {
     throw new UpstreamFailureError(
@@ -29,7 +32,7 @@ export const assertCommunityModerator = async (
     )
     const res = await ctx.bskyAppView.client.call(
       com.para.community.getAuthorization,
-      { community: communityUri, action: 'content.moderate' },
+      { community: communityUri, action: capability },
       headers,
     )
     allowed = res.authorization.status === 'allowed'
@@ -39,10 +42,9 @@ export const assertCommunityModerator = async (
       'Could not verify community authority. Try again.',
     )
   }
-  if (!allowed) {
-    throw new InvalidRequestError(
-      'Only community stewards can moderate shared content.',
-      'CommunityStewardRequired',
-    )
-  }
+  if (!allowed) throw refusal()
 }
+
+/** Refusal for a capability that only owners and moderators hold. */
+export const stewardRequired = (message: string) => () =>
+  new InvalidRequestError(message, 'CommunityStewardRequired')

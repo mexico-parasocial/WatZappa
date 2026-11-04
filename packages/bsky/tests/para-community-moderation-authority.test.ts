@@ -13,6 +13,10 @@ import {
   getGovernanceAuthors,
   isCommunityOwnerSql,
 } from '../src/data-plane/server/community-governance.js'
+import {
+  down as relationsPerAuthorDown,
+  up as relationsPerAuthor,
+} from '../src/data-plane/server/db/migrations/20261104T120000000Z-community-relations-per-author.js'
 
 const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
 
@@ -43,6 +47,8 @@ maybeDescribe('community moderation authority', () => {
   let otherBoard: string
   let bobModerator: string
   let eveMembership: string
+  let gina: DidString // joins otherBoard by authority event, then leaves
+  let hank: DidString // joins otherBoard by authority event, owns it, leaves
 
   const xrpc = async <T>(
     nsid: string,
@@ -224,14 +230,14 @@ maybeDescribe('community moderation authority', () => {
     sc = network.getSeedClient()
     await usersSeed(sc)
     ;({ alice, bob, carol, dan } = sc.dids)
-    for (const name of ['eve', 'frank']) {
+    for (const name of ['eve', 'frank', 'gina', 'hank']) {
       await sc.createAccount(name, {
         handle: `${name}.test`,
         email: `${name}@test.com`,
         password: `${name}-pass`,
       })
     }
-    ;({ eve, frank } = sc.dids)
+    ;({ eve, frank, gina, hank } = sc.dids)
 
     board = (
       await createCommunityBoardRecord(sc, alice, {
@@ -442,6 +448,292 @@ maybeDescribe('community moderation authority', () => {
       )
       await network.processAll()
       expect(await rolesOf(eve)).toEqual([])
+    })
+  })
+
+  describe('community relations', () => {
+    let danBoard: string
+    let horizontalBoard: string
+
+    const relate = (by: DidString, parent: string, child: string) =>
+      write(by, 'com.para.community.relation', {
+        parentCommunityUri: parent,
+        childCommunityUri: child,
+        relation: 'parentChild',
+        createdAt: new Date().toISOString(),
+      })
+
+    const childrenOf = async (community: string) => {
+      const { status, body } = await xrpc<{
+        relations: Array<{ childCommunityUri: string; createdBy: string }>
+      }>('com.para.community.listChildCommunities', {
+        communityUri: community,
+      })
+      expect({ status, body }).toMatchObject({ status: 200 })
+      return body.relations.map((relation) => relation.childCommunityUri)
+    }
+
+    beforeAll(async () => {
+      danBoard = (
+        await createCommunityBoardRecord(sc, dan, {
+          name: 'Dan Board',
+          quadrant: 'norte',
+        })
+      ).uri
+      horizontalBoard = (
+        await write(frank, 'com.para.community.board', {
+          name: 'Horizontal Board',
+          quadrant: 'oriente',
+          delegatesChatId: 'oriente-delegates',
+          subdelegatesChatId: 'oriente-subdelegates',
+          status: 'active',
+          governanceMode: 'horizontal',
+          createdAt: new Date().toISOString(),
+        })
+      ).uri
+      await network.processAll()
+      await found(dan, danBoard)
+      await network.processAll()
+    })
+
+    it("ignore a link into a community its author doesn't own", async () => {
+      // dan owns danBoard, but not board.
+      await relate(dan, board, danBoard)
+      await network.processAll()
+      expect(await childrenOf(board)).toEqual([])
+
+      // dan's content in danBoard does not reach board's listing either.
+      const item = await share(danBoard)
+      const { body } = await xrpc<{ items: SharedItem[] }>(
+        'com.para.community.listSharedContent',
+        { communityUri: board, includeChildren: 'true' },
+      )
+      expect(body.items.map((candidate) => candidate.uri)).not.toContain(
+        item.uri,
+      )
+    })
+
+    it("count a link by the parent's owner", async () => {
+      await relate(alice, board, danBoard)
+      await network.processAll()
+      expect(await childrenOf(board)).toEqual([danBoard])
+    })
+
+    it("count a link by a horizontal parent's founder", async () => {
+      await relate(carol, horizontalBoard, otherBoard)
+      await network.processAll()
+      expect(await childrenOf(horizontalBoard)).toEqual([])
+
+      await relate(frank, horizontalBoard, danBoard)
+      await network.processAll()
+      expect(await childrenOf(horizontalBoard)).toEqual([danBoard])
+    })
+
+    it("are not blocked by someone else's reverse link", async () => {
+      // carol writes the reverse first; the owner's link must still index.
+      await relate(carol, danBoard, otherBoard)
+      await network.processAll()
+      await relate(alice, otherBoard, danBoard)
+      await network.processAll()
+      expect(await childrenOf(otherBoard)).toEqual([danBoard])
+    })
+
+    it('are re-indexed by the migration when an earlier index turned them away', async () => {
+      // As the old per-pair index left it: only carol's row for the pair.
+      const db = network.bsky.db.db
+      const link = await relate(alice, horizontalBoard, otherBoard)
+      await network.processAll()
+      await db
+        .deleteFrom('para_community_relation')
+        .where('uri', '=', link.uri)
+        .execute()
+      expect(await childrenOf(horizontalBoard)).toEqual([danBoard])
+
+      await relationsPerAuthorDown(db)
+      await relationsPerAuthor(db)
+      // alice is no owner of the horizontal board, so the restored row is
+      // indexed but still not trusted; frank's link stays.
+      const restored = await db
+        .selectFrom('para_community_relation')
+        .where('uri', '=', link.uri)
+        .select('creator')
+        .executeTakeFirst()
+      expect(restored?.creator).toBe(alice)
+      expect(await childrenOf(horizontalBoard)).toEqual([danBoard])
+    })
+  })
+
+  describe('briefing packs', () => {
+    const pack = (by: DidString, title: string) =>
+      write(by, 'com.para.community.briefingPack', {
+        packType: 'party_lobbying',
+        communityUri: board,
+        party: 'Independent',
+        title,
+        summary: 'summary',
+        cabildeoUris: [],
+        civicTreeCardIds: [],
+        evidenceUris: [],
+        status: 'published',
+        createdBy: by,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+
+    const listedTitles = async () => {
+      const { status, body } = await xrpc<{ packs: Array<{ title: string }> }>(
+        'com.para.community.listBriefingPacks',
+        { community: board },
+      )
+      expect({ status, body }).toMatchObject({ status: 200 })
+      return body.packs.map((listed) => listed.title).sort()
+    }
+
+    it('list only packs by an owner or moderator', async () => {
+      const forged = await pack(dan, 'by dan')
+      await pack(carol, 'by carol')
+      await pack(alice, 'by alice')
+      await pack(bob, 'by bob')
+      await network.processAll()
+
+      expect(await listedTitles()).toEqual(['by alice', 'by bob'])
+      const single = await xrpc<{ error?: string }>(
+        'com.para.community.getBriefingPack',
+        { uri: forged.uri },
+      )
+      expect(single.status).toBe(400)
+      expect(single.body.error).toBe('NotFound')
+    })
+
+    it('are refused by the PDS route without verified authority', async () => {
+      const input = {
+        packType: 'party_lobbying',
+        communityUri: board,
+        party: 'Independent',
+        title: 'via pds',
+        summary: 'summary',
+      }
+      expect(
+        await pdsProcedure(
+          carol,
+          'com.para.community.createBriefingPack',
+          input,
+        ),
+      ).toMatchObject({
+        status: 400,
+        body: { error: 'CommunityStewardRequired' },
+      })
+      const created = await pdsProcedure(
+        alice,
+        'com.para.community.createBriefingPack',
+        input,
+      )
+      expect(created.status).toBe(200)
+    })
+  })
+
+  describe('leaving', () => {
+    beforeAll(async () => {
+      // gina joins otherBoard by authority event and alice appoints her.
+      const ginaMember = await authorityEvent(
+        gina,
+        {
+          subject: gina,
+          action: 'member.activate',
+          basis: 'openAdmission',
+          version: 1,
+        },
+        otherBoard,
+      )
+      await network.processAll()
+      await authorityEvent(
+        alice,
+        {
+          subject: gina,
+          action: 'moderator.grant',
+          basis: 'ownerAppointment',
+          version: 2,
+          predecessor: ginaMember,
+          evidence: `at://${alice}/com.para.community.decision/appoint-gina`,
+        },
+        otherBoard,
+      )
+      await pdsProcedure(gina, 'com.para.community.join', {
+        communityUri: otherBoard,
+      })
+      // hank joins by authority event too, then alice transfers ownership.
+      const hankMember = await authorityEvent(
+        hank,
+        {
+          subject: hank,
+          action: 'member.activate',
+          basis: 'openAdmission',
+          version: 1,
+        },
+        otherBoard,
+      )
+      await pdsProcedure(hank, 'com.para.community.join', {
+        communityUri: otherBoard,
+      })
+      await network.processAll()
+      await authorityEvent(
+        alice,
+        {
+          subject: hank,
+          action: 'owner.grant',
+          basis: 'ownerTransfer',
+          version: 2,
+          predecessor: hankMember,
+          evidence: `at://${alice}/com.para.community.decision/transfer-hank`,
+        },
+        otherBoard,
+      )
+      await network.processAll()
+    })
+
+    const ownsOtherBoard = async (did: string) => {
+      const { rows } = await sql<{
+        owner: boolean
+      }>`select ${isCommunityOwnerSql(sql`${otherBoard}`, sql`${did}`)} as owner`.execute(
+        network.bsky.db.db,
+      )
+      return rows[0]?.owner
+    }
+
+    it('ends membership and offices for a member with an activation event', async () => {
+      expect(await rolesOf(gina, otherBoard)).toEqual(['member', 'moderator'])
+      const left = await pdsProcedure(gina, 'com.para.community.leave', {
+        communityUri: otherBoard,
+      })
+      expect(left.status).toBe(200)
+      await network.processAll()
+      expect(await rolesOf(gina, otherBoard)).toEqual([])
+    })
+
+    it('ends ownership in both the snapshot and its SQL twin', async () => {
+      expect(await rolesOf(hank, otherBoard)).toEqual(['member', 'owner'])
+      expect(await ownsOtherBoard(hank)).toBe(true)
+      await pdsProcedure(hank, 'com.para.community.leave', {
+        communityUri: otherBoard,
+      })
+      await network.processAll()
+      expect(await rolesOf(hank, otherBoard)).toEqual([])
+      expect(await ownsOtherBoard(hank)).toBe(false)
+      expect(
+        await getGovernanceAuthors(network.bsky.db, {
+          uri: otherBoard,
+          creator: alice,
+        }),
+      ).toEqual([alice])
+    })
+
+    it('restores unrevoked offices when the member rejoins', async () => {
+      // A rewritten record forgets the leave; see `leftBeforeRejoining`.
+      await pdsProcedure(gina, 'com.para.community.join', {
+        communityUri: otherBoard,
+      })
+      await network.processAll()
+      expect(await rolesOf(gina, otherBoard)).toEqual(['member', 'moderator'])
     })
   })
 

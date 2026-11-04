@@ -181,6 +181,12 @@ Remaining actions:
      moderator at the action's `indexedAt`. The PDS routes ask the AppView.
    - **Appointment drops membership.** An active membership record now opens
      the chain at version 0, so an appointment no longer empties it.
+   - **Forgeable community relations and briefing packs.** They now count
+     only by the parent's owner (relations) or an owner/moderator (packs) at
+     `indexedAt`. Relation uniqueness is per author; a migration re-indexes
+     links turned away.
+   - **Leaving kept chain membership.** A `left` record now ends it. Rejoining
+     restores offices never revoked, until a leave event exists in the chain.
 
    Still open:
    - **No issuance path** for suspend, remove, block, reinstate, leave or

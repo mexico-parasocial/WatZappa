@@ -72,7 +72,14 @@ export async function getAuthorityResolver(
             .selectFrom('para_community_membership')
             .where('communityUri', '=', communityUri)
             .where('creator', 'in', unique)
-            .select(['uri', 'creator', 'membershipState', 'joinedAt'])
+            .select([
+              'uri',
+              'creator',
+              'membershipState',
+              'joinedAt',
+              'leftAt',
+              'indexedAt',
+            ])
             .execute(),
         ])
   const eventsBySubject = new Map<string, CommunityAuthorityEvent[]>()
@@ -128,6 +135,20 @@ export async function getAuthorityResolver(
         ? [legacyActivation(communityUri, subject, legacy, at)]
         : []
     const authority = deriveEffectiveAuthority([...opening, ...events], at)
+    if (
+      authority.membershipState === 'active' &&
+      legacy?.membershipState === 'left' &&
+      leftBeforeRejoining(legacy, events, at)
+    ) {
+      return {
+        membershipState: 'none',
+        roles: [],
+        evidence: {},
+        capabilities: resolveCapabilities([]),
+        events,
+        usedLegacyFallback: true,
+      }
+    }
     return {
       ...authority,
       capabilities: resolveCapabilities(authority.roles),
@@ -135,6 +156,84 @@ export async function getAuthorityResolver(
       usedLegacyFallback: opening.length > 0,
     }
   }
+}
+
+/**
+ * `community.leave` only rewrites the legacy record, so a member whose chain
+ * holds an activation would otherwise stay active, offices included. A `left`
+ * record ends an active membership once it applies, unless an activation or
+ * reinstatement became effective after it. It never ends a suspension,
+ * removal or block: those stay as the chain says.
+ *
+ * The leave applies from `leftAt`, but never before the record was indexed,
+ * so a member cannot backdate it to void their own past moderation. Rejoining
+ * rewrites the record and so forgets the leave: offices that were never
+ * revoked return with the membership. Ending them for good needs a leave
+ * event in the chain.
+ */
+function leftBeforeRejoining(
+  legacy: { leftAt: string | null; indexedAt: string },
+  events: readonly CommunityAuthorityEvent[],
+  at: number,
+) {
+  const leftAt = legacyLeftAt(legacy)
+  if (!Number.isFinite(leftAt) || leftAt > at) return false
+  return !events.some((event) => {
+    if (
+      event.action !== 'member.activate' &&
+      event.action !== 'member.reinstate'
+    )
+      return false
+    const effectiveAt = Date.parse(event.effectiveAt)
+    return effectiveAt > leftAt && effectiveAt <= at
+  })
+}
+
+/** When a `left` legacy record takes effect; see `leftBeforeRejoining`. */
+function legacyLeftAt(legacy: { leftAt: string | null; indexedAt: string }) {
+  const indexedAt = Date.parse(legacy.indexedAt)
+  const leftAt = legacy.leftAt ? Date.parse(legacy.leftAt) : NaN
+  return Number.isFinite(leftAt) ? Math.max(leftAt, indexedAt) : indexedAt
+}
+
+/**
+ * Keeps the rows whose author held one of `offices` in the row's community
+ * when the AppView indexed the row. Use it for any record that changes what
+ * other accounts see in a community: anyone can write such a record into
+ * their own repo, and `indexedAt` is the one time its author cannot choose.
+ */
+export async function filterByOfficeWhenIndexed<T>(
+  db: Database,
+  rows: readonly T[],
+  of: (row: T) => { community: string; author: string; indexedAt: string },
+  offices: readonly CommunityRole[],
+): Promise<T[]> {
+  const authorsByCommunity = new Map<string, Set<string>>()
+  for (const row of rows) {
+    const { community, author } = of(row)
+    const authors = authorsByCommunity.get(community) ?? new Set()
+    authors.add(author)
+    authorsByCommunity.set(community, authors)
+  }
+  const resolvers = new Map(
+    await Promise.all(
+      [...authorsByCommunity].map(
+        async ([community, authors]) =>
+          [
+            community,
+            await getAuthorityResolver(db, community, [...authors]),
+          ] as const,
+      ),
+    ),
+  )
+  return rows.filter((row) => {
+    const { community, author, indexedAt } = of(row)
+    const resolve = resolvers.get(community)
+    const at = Date.parse(indexedAt)
+    if (!resolve || !Number.isFinite(at)) return false
+    const { roles } = resolve(author, at)
+    return offices.some((office) => roles.includes(office))
+  })
 }
 
 /**

@@ -5,7 +5,7 @@ import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 import { prepareCreate } from '../../../../repo/index.js'
 import { commitWrites, stripUndefined, updateRepoRoot } from '../util.js'
-import { assertCommunityModerator } from './authority.js'
+import { assertCommunityCapability, stewardRequired } from './authority.js'
 import {
   SHARED_CONTENT_ACTION_COLLECTION,
   SHARED_CONTENT_COLLECTION,
@@ -48,10 +48,12 @@ const writeAction = async (
 ) => {
   const communityUri = assertCommunityBoardUri(body.communityUri)
   const sharedContent = assertSharedContentRef(body.sharedContent)
-  await assertCommunityModerator(
+  await assertCommunityCapability(
     ctx,
     did,
     communityUri.toString() as AtUriString,
+    'content.moderate',
+    stewardRequired('Only community stewards can moderate shared content.'),
   )
 
   const result = await ctx.actorStore.transact(did, async (actorTxn) => {

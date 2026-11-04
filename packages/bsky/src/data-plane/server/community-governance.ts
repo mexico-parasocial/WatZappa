@@ -48,7 +48,9 @@ const appliesNow = (alias: string) =>
  * holds an owner grant that applies now, was made while an active member, and
  * has not since been ended by a revocation, suspension, removal or block.
  * Membership comes from an activation earlier in the chain, or from an active
- * legacy membership record, which opens the chain at version 0.
+ * legacy membership record, which opens the chain at version 0. A `left`
+ * legacy record ends it once it applies, unless an activation or
+ * reinstatement became effective later (`leftBeforeRejoining`).
  */
 export const isCommunityOwnerSql = (
   community: Expression<unknown>,
@@ -102,7 +104,28 @@ export const isCommunityOwnerSql = (
         )
       )
     )
+    and not exists (
+      select 1 from para_community_membership departed
+      where departed."communityUri" = granted."communityUri"
+        and departed.creator = granted.subject
+        and departed."membershipState" = 'left'
+        and ${leftAtSql('departed')} <= now()
+        and not exists (
+          select 1 from para_community_authority_event rejoined
+          where rejoined."communityUri" = granted."communityUri"
+            and rejoined.subject = granted.subject
+            and rejoined.action in ('member.activate', 'member.reinstate')
+            and rejoined."effectiveAt"::timestamptz > ${leftAtSql('departed')}
+            and ${appliesNow('rejoined')}
+        )
+    )
 )`
+
+/** When a `left` legacy record takes effect: `leftAt`, never before indexing. */
+const leftAtSql = (alias: string) =>
+  sql.raw(
+    `greatest(coalesce(${alias}."leftAt", ${alias}."indexedAt")::timestamptz, ${alias}."indexedAt"::timestamptz)`,
+  )
 
 /**
  * For a `para_community_governance` row (`row`) and a `para_community_board`
