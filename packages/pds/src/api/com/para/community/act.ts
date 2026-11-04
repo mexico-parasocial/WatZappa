@@ -1,6 +1,10 @@
 import { isCommunityAction } from '@atproto/common'
-import { AuthRequiredError, InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import type { DidString } from '@atproto/syntax'
+import {
+  AuthRequiredError,
+  InvalidRequestError,
+  type Server,
+} from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 import { communityActAuth } from '../../../../para/community/auth.js'
@@ -77,7 +81,5 @@ export default function (server: Server, ctx: AppContext) {
 
 async function isHostedCommunity(ctx: AppContext, did: DidString) {
   if (!(await ctx.accountManager.getAccount(did))) return false
-  return ctx.actorStore.read(did, (store) =>
-    store.community.isCommunity(),
-  )
+  return ctx.actorStore.read(did, (store) => store.community.isCommunity())
 }

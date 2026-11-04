@@ -149,7 +149,8 @@ async function localProof(ctx: AppContext, actor: DidString, rkey: string) {
   const storage = new SqlRepoReader(db)
   const commit = await storage.getRoot()
   if (!commit) throw invalid('The caller has no repo.')
-  return collect(
+  // Awaited here: the iterator reads from `db`, which closes on return.
+  return await collect(
     repo.getRecords(storage, commit, [
       { collection: com.para.community.request.$type, rkey },
     ]),

@@ -70,7 +70,10 @@ async function verifyCommunityServiceJwt(
     },
   )
   if (!payload.lxm) {
-    throw new AuthRequiredError('missing jwt lexicon method', 'BadJwtLexiconMethod')
+    throw new AuthRequiredError(
+      'missing jwt lexicon method',
+      'BadJwtLexiconMethod',
+    )
   }
   return {
     type: 'community_service_auth',

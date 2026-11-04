@@ -84,6 +84,15 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
   query; redact its header, disable caching, and never reuse admin/M8 credentials.
   Assembly-decision grants stay closed until a trusted tally verifier exists.
 
+- **OD-9 community accounts** ([docs/OD-9-COMMUNITY-ACCOUNTS.md](docs/OD-9-COMMUNITY-ACCOUNTS.md))
+  replace board records and authority events, which stay until its phase 5.
+  A community repo is written only by its host's `com.para.community.act`;
+  generic writes to it are refused. `act` and the AppView fold both decide
+  with `applyCommunityEvent` (`@atproto/common`): never re-implement its rules.
+  Each event carries its request proof and verifies alone, so the fold stays a
+  pure function of the community repo: no `indexedAt`, no other repo's
+  arrival. A fork, broken `prev` or rewritten event re-folds and freezes it.
+
 - Pilot planning: read [docs/QUARTER_PLAN_2026Q4.md](docs/QUARTER_PLAN_2026Q4.md)
   and its evidence before auditing or scheduling work. It is the canonical
   remaining-work queue, re-baselined 2026-10-05; the old sprint calendars are

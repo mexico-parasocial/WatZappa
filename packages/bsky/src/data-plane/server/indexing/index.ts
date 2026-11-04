@@ -24,6 +24,7 @@ import { com } from '../../../lexicons.js'
 import { subLogger } from '../../../logger.js'
 import { retryXrpc } from '../../../util/retry.js'
 import type { BackgroundQueue } from '../background.js'
+import { communityHostCheck, signingKeyResolver } from '../community-chain.js'
 import type { Database } from '../db/index.js'
 import type { Actor } from '../db/tables/actor.js'
 import * as Block from './plugins/block.js'
@@ -44,11 +45,12 @@ import * as List from './plugins/list.js'
 import * as NotifDeclaration from './plugins/notif-declaration.js'
 import * as OpenQuestionVote from './plugins/open-question-vote.js'
 import * as OpenQuestion from './plugins/open-question.js'
+import * as ParaCommunityAccountProfile from './plugins/para-community-account-profile.js'
 import * as ParaCommunityActivity from './plugins/para-community-activity.js'
-import * as ParaFollowThrough from './plugins/para-follow-through.js'
 import * as ParaCommunityAuthorityEvent from './plugins/para-community-authority-event.js'
 import * as ParaCommunityBoard from './plugins/para-community-board.js'
 import * as ParaCommunityBriefingPack from './plugins/para-community-briefing-pack.js'
+import * as ParaCommunityChainEvent from './plugins/para-community-chain-event.js'
 import * as ParaCommunityGovernance from './plugins/para-community-governance.js'
 import * as ParaCommunityMembership from './plugins/para-community-membership.js'
 import * as ParaCommunityRelation from './plugins/para-community-relation.js'
@@ -56,6 +58,7 @@ import * as ParaCommunitySharedContentAction from './plugins/para-community-shar
 import * as ParaCommunitySharedContent from './plugins/para-community-shared-content.js'
 import * as ParaDeliberationStatement from './plugins/para-deliberation-statement.js'
 import * as ParaDeliberationVote from './plugins/para-deliberation-vote.js'
+import * as ParaFollowThrough from './plugins/para-follow-through.js'
 import * as ParaPostMeta from './plugins/para-post-meta.js'
 import * as ParaPost from './plugins/para-post.js'
 import * as ParaQvlCivicTreeVote from './plugins/para-qvl-civic-tree-vote.js'
@@ -108,6 +111,8 @@ export class IndexingService {
     paraPost: ParaPost.PluginType
     paraCommunityBoard: ParaCommunityBoard.PluginType
     paraCommunityAuthorityEvent: ParaCommunityAuthorityEvent.PluginType
+    paraCommunityAccountProfile: ParaCommunityAccountProfile.PluginType
+    paraCommunityChainEvent: ParaCommunityChainEvent.PluginType
     paraCommunityBriefingPack: ParaCommunityBriefingPack.PluginType
     paraCommunityGovernance: ParaCommunityGovernance.PluginType
     paraCommunityMembership: ParaCommunityMembership.PluginType
@@ -182,6 +187,18 @@ export class IndexingService {
       paraCommunityAuthorityEvent: ParaCommunityAuthorityEvent.makePlugin(
         this.db,
         this.background,
+      ),
+      paraCommunityAccountProfile: ParaCommunityAccountProfile.makePlugin(
+        this.db,
+        this.background,
+      ),
+      paraCommunityChainEvent: ParaCommunityChainEvent.makePlugin(
+        this.db,
+        this.background,
+        {
+          signingKey: signingKeyResolver(this.idResolver),
+          isCommunityHost: communityHostCheck(this.idResolver),
+        },
       ),
       paraCommunityBriefingPack: ParaCommunityBriefingPack.makePlugin(
         this.db,

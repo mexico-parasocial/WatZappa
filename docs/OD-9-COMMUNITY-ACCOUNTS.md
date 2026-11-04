@@ -302,12 +302,19 @@ records no production deployment).
   person carries a `request`: a small record the actor writes in their own
   repo, through their own PDS, naming the community, the action, the subject
   and an expiry. Their PDS signs it as part of their repo.
-  - The event references it by strong ref.
-  - The AppView treats the event as valid only once that exact request is
-    indexed. A missing request means pending, not rejected, so arrival order
-    still does not matter.
+  - The event references it by strong ref and carries `requestProof`: the
+    actor's signed repo commit plus the path to the request, as
+    `com.atproto.sync.getRecord` returns it. Anyone can verify the event on
+    its own, against the actor's signing key, without fetching or waiting for
+    the actor's repo. (Phase 2 chose this over waiting for the request to be
+    indexed: one remote PDS answering falsely would otherwise stall the whole
+    community.)
   - A PDS that forges an event without the actor's request cannot make it
-    count.
+    count. A request names its community, so it cannot be replayed into
+    another one, and it backs at most one event.
+  - Limit: a rebuild verifies proofs with each actor's _current_ key. After a
+    key rotation, an actor's past events would no longer verify. Checking
+    against the key valid at commit time (PLC's history) is pending.
   - For a member on the hosting PDS this is still two writes, but on their own
     repo and the community's, not a bypass.
 - **Integrity against the host:** `prev` makes any rewrite of history
@@ -365,13 +372,18 @@ document unless noted.
 ## 9. Phases and exit criteria
 
 1. **Design (this document).** Done: §8 records the decisions.
-2. **Community accounts and `act`.**
+2. **Community accounts and `act`.** Implemented on
+   `claude/od-9-community-accounts` (unmerged, undeployed).
    - `community.create`, the refusal of generic writes, inbound service auth,
-     the event schema with `seq`/`prev`, and the policy module with join,
-     leave, offers, acceptance, revocation, resignation and suspension.
-   - Exit: integration tests prove that out-of-order delivery across repos,
-     concurrent `act` calls and a full AppView rebuild all yield the same
-     state.
+     the event schema with `seq`/`prev`/`requestProof`, and the policy module
+     with join, leave, offers, acceptance, revocation, resignation and
+     suspension.
+   - Exit met in `packages/bsky/tests/para-community-accounts.test.ts`:
+     events replayed newest first, concurrent `act` calls and a rebuild from
+     stored events all reach the same state; forged proofs, forks, broken
+     links and deletions are refused or freeze the community.
+   - Not exercised: fetching a request proof from a _different_ PDS (the
+     service-auth test uses a member hosted on the same PDS).
 3. **Effective state as the only membership source.**
    - `para_community_member_state`; every membership and office query moved
      onto it; `getAuthorization`, `getBoard`, `getGovernance` and

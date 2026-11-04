@@ -42,7 +42,10 @@ export default function (server: Server, ctx: AppContext) {
       try {
         ensureValidHandle(handle)
       } catch {
-        throw new InvalidRequestError('Invalid community handle.', 'InvalidSlug')
+        throw new InvalidRequestError(
+          'Invalid community handle.',
+          'InvalidSlug',
+        )
       }
       const taken = await ctx.accountManager.getAccount(handle, {
         includeTakenDown: true,

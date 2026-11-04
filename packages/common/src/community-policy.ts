@@ -274,7 +274,8 @@ export function applyCommunityEvent(
       })
     }
     case 'moderator.accept': {
-      if (!self) return refuse('NotPermitted', 'Only the offered member accepts.')
+      if (!self)
+        return refuse('NotPermitted', 'Only the offered member accepts.')
       const offer =
         event.offer === undefined ? undefined : view.openOffer(event.offer)
       if (
@@ -309,7 +310,9 @@ export function applyCommunityEvent(
       if (revoke ? !isOwner : !self) {
         return refuse(
           'NotPermitted',
-          revoke ? 'Only an owner can revoke.' : 'Moderators resign for themselves.',
+          revoke
+            ? 'Only an owner can revoke.'
+            : 'Moderators resign for themselves.',
         )
       }
       const current = view.member(event.subject)
@@ -349,7 +352,10 @@ export function applyCommunityEvent(
     }
     case 'member.reinstate': {
       if (!isSteward) {
-        return refuse('NotPermitted', 'Only a moderator or owner can reinstate.')
+        return refuse(
+          'NotPermitted',
+          'Only a moderator or owner can reinstate.',
+        )
       }
       if (subject?.status !== 'suspended') {
         return refuse('InvalidSubject', 'The subject is not suspended.')
@@ -463,6 +469,9 @@ function accept(
   }
 }
 
-function refuse(code: CommunityRefusalCode, message: string): CommunityDecision {
+function refuse(
+  code: CommunityRefusalCode,
+  message: string,
+): CommunityDecision {
   return { ok: false, code, message }
 }

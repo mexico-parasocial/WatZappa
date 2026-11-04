@@ -47,7 +47,10 @@ class State implements CommunityStateView {
 
   /** Prepares, decides and, if accepted, applies the next event. */
   act(
-    input: Omit<Parameters<typeof prepareCommunityEvent>[0], 'seq' | 'createdAt'> & {
+    input: Omit<
+      Parameters<typeof prepareCommunityEvent>[0],
+      'seq' | 'createdAt'
+    > & {
       at?: number
     },
   ) {
@@ -136,10 +139,14 @@ describe('community policy', () => {
   it('lets only the member join or leave, and keeps the last owner', () => {
     const state = founded()
     expect(
-      codeOf(state.act({ action: 'member.join', actor: owner, subject: outsider })),
+      codeOf(
+        state.act({ action: 'member.join', actor: owner, subject: outsider }),
+      ),
     ).toBe('NotPermitted')
     expect(
-      codeOf(state.act({ action: 'member.leave', actor: owner, subject: owner })),
+      codeOf(
+        state.act({ action: 'member.leave', actor: owner, subject: owner }),
+      ),
     ).toBe('LastOwner')
   })
 
@@ -228,7 +235,9 @@ describe('community policy', () => {
   it('revokes and resigns only a moderator, by the right actor', () => {
     const state = founded()
     expect(
-      codeOf(state.act({ action: 'moderator.revoke', actor: mod, subject: mod })),
+      codeOf(
+        state.act({ action: 'moderator.revoke', actor: mod, subject: mod }),
+      ),
     ).toBe('NotPermitted')
     expect(
       codeOf(
@@ -286,7 +295,9 @@ describe('community policy', () => {
       ),
     ).toBe('ok')
     expect(
-      codeOf(state.act({ action: 'member.leave', actor: member, subject: member })),
+      codeOf(
+        state.act({ action: 'member.leave', actor: member, subject: member }),
+      ),
     ).toBe('InvalidSubject')
     expect(
       codeOf(

@@ -49,7 +49,8 @@ export class CommunityStore {
       uri: row.lastUri,
       cid: row.lastCid,
       settings: {
-        governanceMode: row.governanceMode as CommunitySettings['governanceMode'],
+        governanceMode:
+          row.governanceMode as CommunitySettings['governanceMode'],
         admissionMode: row.admissionMode as CommunitySettings['admissionMode'],
       },
     }
@@ -82,9 +83,11 @@ export class CommunityStore {
       .selectFrom('community_member')
       .select(sql<number>`count(*)`.as('count'))
       .where('status', '=', 'active')
-      .where(sql<boolean>`exists (
+      .where(
+        sql<boolean>`exists (
         select 1 from json_each(community_member.offices) where value = 'owner'
-      )`)
+      )`,
+      )
       .executeTakeFirstOrThrow()
     return {
       settings: head?.settings ?? null,
@@ -169,9 +172,7 @@ export class CommunityStore {
       .selectAll()
       .where('seq', '=', seq)
       .executeTakeFirst()
-    return row
-      ? { ...row, office: row.office as CommunityOffice }
-      : undefined
+    return row ? { ...row, office: row.office as CommunityOffice } : undefined
   }
 }
 
