@@ -1,0 +1,70 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.act",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Takes one action in a community hosted by this PDS (OD-9). The host checks the action against the community's policy and appends the event in the same transaction, or refuses with the policy's reason. Callers on other PDSes reach it through atproto-proxy with the service id para_community, and must reference their own com.para.community.request; for local callers the host writes it.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["community", "action"],
+          "properties": {
+            "community": { "type": "string", "format": "did" },
+            "action": {
+              "type": "string",
+              "knownValues": [
+                "member.join",
+                "member.leave",
+                "moderator.offer",
+                "moderator.accept",
+                "moderator.revoke",
+                "moderator.resign",
+                "member.suspend",
+                "member.reinstate"
+              ]
+            },
+            "subject": {
+              "type": "string",
+              "format": "did",
+              "description": "Defaults to the caller."
+            },
+            "offer": { "type": "integer", "minimum": 1 },
+            "suspensionDays": { "type": "integer", "minimum": 1, "maximum": 7 },
+            "request": {
+              "type": "ref",
+              "ref": "com.atproto.repo.strongRef",
+              "description": "Required for callers on other PDSes."
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["uri", "cid", "seq"],
+          "properties": {
+            "uri": { "type": "string", "format": "at-uri" },
+            "cid": { "type": "string", "format": "cid" },
+            "seq": { "type": "integer" }
+          }
+        }
+      },
+      "errors": [
+        { "name": "CommunityNotFound" },
+        { "name": "OutOfSequence" },
+        { "name": "NotFounded" },
+        { "name": "AlreadyFounded" },
+        { "name": "ModeUnavailable" },
+        { "name": "NotPermitted" },
+        { "name": "InvalidSubject" },
+        { "name": "InvalidOffer" },
+        { "name": "InvalidExpiry" },
+        { "name": "LastOwner" },
+        { "name": "InvalidRequest" }
+      ]
+    }
+  }
+}
