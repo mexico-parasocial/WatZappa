@@ -417,6 +417,7 @@
     "com.para.community.deliberationVote",
     "com.para.community.economicActivity",
     "com.para.community.eigenstate",
+    "com.para.community.event",
     "com.para.community.exportObsidianVault",
     "com.para.community.getActivity",
     "com.para.community.getAuditTrail",
@@ -448,9 +449,11 @@
     "com.para.community.listVotes",
     "com.para.community.listWikiPages",
     "com.para.community.membership",
+    "com.para.community.profile",
     "com.para.community.proposal",
     "com.para.community.relation",
     "com.para.community.removeSharedContent",
+    "com.para.community.request",
     "com.para.community.restoreSharedContent",
     "com.para.community.roleAcceptance",
     "com.para.community.shareContent",
@@ -2217,6 +2220,10 @@
       "uri": "file://../../lexicons/com/para/community/eigenstate.json",
       "cid": "bafyreigqbmaa62o5ledmolouwsgtha56vaj2f2c5jashqic5mzfp4s2ndy"
     },
+    "com.para.community.event": {
+      "uri": "file://../../lexicons/com/para/community/event.json",
+      "cid": "bafyreigegyiqppzftfndxo5jll4ebqsrkynuhfkr7x6sek3qaenwmm3jkq"
+    },
     "com.para.community.exportObsidianVault": {
       "uri": "file://../../lexicons/com/para/community/exportObsidianVault.json",
       "cid": "bafyreiftyehxjzxnbgguyqliu2lnnupb7std4lxzyy5qbomxunvux3y6si"
@@ -2341,6 +2348,10 @@
       "uri": "file://../../lexicons/com/para/community/membership.json",
       "cid": "bafyreiegciu5f5yuinam3k7tuzsblvzwehbe5nbslet72ouhvtwvkfbgre"
     },
+    "com.para.community.profile": {
+      "uri": "file://../../lexicons/com/para/community/profile.json",
+      "cid": "bafyreib3ovd4awszktgsezqzl5kf76xs5awwy7x5gj6hfqpechffymiaj4"
+    },
     "com.para.community.proposal": {
       "uri": "file://../../lexicons/com/para/community/proposal.json",
       "cid": "bafyreienr7adlx2ef5svjtaprhj4l7hp5v5k62ggfvr4wrwvs55afimcci"
@@ -2352,6 +2363,10 @@
     "com.para.community.removeSharedContent": {
       "uri": "file://../../lexicons/com/para/community/removeSharedContent.json",
       "cid": "bafyreiec4zangltjobauugg447nxuyhljukqtfarbipogzi4upqvwz7ksu"
+    },
+    "com.para.community.request": {
+      "uri": "file://../../lexicons/com/para/community/request.json",
+      "cid": "bafyreihsopj24ehfvgzgnc4tsynyrcltwpkepo5xgga7b4kl5uugecb2za"
     },
     "com.para.community.restoreSharedContent": {
       "uri": "file://../../lexicons/com/para/community/restoreSharedContent.json",

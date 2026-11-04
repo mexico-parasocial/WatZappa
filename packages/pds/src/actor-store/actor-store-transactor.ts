@@ -1,6 +1,7 @@
 import type { Keypair } from '@atproto/crypto'
 import type { DidString } from '@atproto/lex-schema'
 import type { BlobStore } from '@atproto/repo'
+import { CommunityStore } from '../para/community/store.js'
 import type { ActorStoreResources } from './actor-store-resources.js'
 import type { ActorDb } from './db/index.js'
 import { PreferenceTransactor } from './preference/transactor.js'
@@ -14,6 +15,7 @@ export class ActorStoreTransactor implements AsyncDisposable {
   public readonly repo: RepoTransactor
   public readonly pref: PreferenceTransactor
   public readonly space: SpaceTransactor
+  public readonly community: CommunityStore
 
   constructor(
     public readonly did: DidString,
@@ -25,6 +27,7 @@ export class ActorStoreTransactor implements AsyncDisposable {
     this.record = new RecordTransactor(db, did, this.blobstore)
     this.pref = new PreferenceTransactor(db)
     this.space = new SpaceTransactor(did, db)
+    this.community = new CommunityStore(db)
     this.repo = new RepoTransactor(
       db,
       this.blobstore,

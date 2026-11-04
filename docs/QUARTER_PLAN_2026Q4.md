@@ -344,6 +344,10 @@ app-store polish and institutional approval remain outside pilot acceptance.
 Upstream sync is bounded to at most one day per sprint unless required to close
 an identified release blocker.
 
+The community-accounts refactor ([OD-9](./OD-9-COMMUNITY-ACCOUNTS.md), proposed
+2026-11-04) is outside this queue until its open questions are answered. It
+replaces the authority model P0 accepts, so P0 acceptance is re-run on it.
+
 OD-P1/P2 personal spaces for civic-tree collections are also outside pilot
 acceptance. Only the in-PDS hand-port remains (sidecar ruled out);
 `packages/space` is at vlpds's pin. It waits on CD-P3 (OAuth in the app) and a
