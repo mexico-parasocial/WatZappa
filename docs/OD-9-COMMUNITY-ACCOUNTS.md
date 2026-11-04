@@ -9,12 +9,12 @@ community an account with its own `did:plc` and repo, which is the only place
 its authority is written, through one PDS endpoint that checks permission at
 write time.
 
-**Status:** proposed, 2026-11-04. Nothing here is implemented. Decided with the
+**Status:** accepted, 2026-11-04; phase 2 in progress. Decided with the
 product owner: communities get their own `did:plc`; there is no migration of
 existing boards (fresh start); horizontal mode and assembly-approval admission
 stay hidden until a trusted tally verifier exists; permissioned spaces may be
-used for community-private data even though they are alpha (§3.11). The open
-questions are in §8.
+used for community-private data even though they are alpha (§3.11). The
+remaining decisions are in §8.
 
 ---
 
@@ -78,7 +78,7 @@ These remain:
 - It is an actor with no account row: no email, no password, no OAuth
   client. The account manager already supports this (`registerActor` without
   `registerAccount`), so nobody can log in as a community.
-- Handle: `<slug>.<community domain>`, from a new PDS setting (§8).
+- Handle: `<slug><community domain>`, from a dedicated PDS setting (§8).
 - DID document services: `#atproto_pds` and `#para_community`, both pointing
   at the hosting PDS. The second is what remote members proxy to (§3.3).
 - Generic writes are refused: `createRecord`, `putRecord`, `applyWrites` and
@@ -189,7 +189,7 @@ assembly-approval admission remain in the schemas but are refused by
 | Action                           | Actor                  | Notes                                                                               |
 | -------------------------------- | ---------------------- | ----------------------------------------------------------------------------------- |
 | `member.join` / `member.leave`   | the member             | `leave` is refused for the last owner.                                              |
-| `moderator.offer`                | owner                  | Offers expire after a fixed period (§8).                                            |
+| `moderator.offer`                | owner                  | Offers expire after 14 days (§8).                                                   |
 | `moderator.accept`               | the offered member     | An event by the subject: acceptance is enforced, not an `evidence` string.          |
 | `moderator.revoke`               | owner                  |                                                                                     |
 | `moderator.resign`               | the moderator          |                                                                                     |
@@ -225,7 +225,7 @@ Anything whose basis is an assembly decision stays closed, as today.
 - **Briefing packs:** any member drafts in their own repo, and a moderator or
   owner acts `briefing.publish` (or `briefing.archive`) referencing the
   draft's CID. This is the "members draft, moderators publish" option, and it
-  resolves the product question raised on PR #27. Recommended; confirm in §8.
+  resolves the product question raised on PR #27 (§8).
 
 ### 3.10 Indexers without side effects
 
@@ -316,7 +316,7 @@ records no production deployment).
   is censorship, and it is visible to the refused member), a host that goes
   offline, or loss of the PDS rotation key. Adding owners' rotation keys to
   the community's PLC document would let owners move the community, but would
-  also let them take it. Left open (§8).
+  also let them take it. Not added for now (§8).
 
 ## 7. Risks and costs
 
@@ -337,26 +337,34 @@ records no production deployment).
   follow-through, RAQ, suggestions) must move in the same release as phase 3,
   or it reads empty tables.
 
-## 8. Open questions
+## 8. Decisions
 
-1. **Handle domain** for community accounts, and whether handles are required
-   at all or communities are addressed only by DID.
-2. **Which actions need a member `request`** (§6). Proposed: every action
-   whose actor is a person, joins included, for one uniform rule. Joins could
-   be exempted to save a write.
-3. **Offer expiry:** proposed 14 days.
-4. **Removal and blocking:** owner alone, or only on a moderator's
-   `sanction.propose`, as `resolveAvailableAction` describes
-   (`owner_after_moderator_proposal`)?
-5. **Relations:** confirm that both owners must act (§3.9).
-6. **Briefing packs:** confirm "members draft, moderators publish" (§3.9).
-7. **Owner rotation keys** in the community's PLC document (§6).
-8. **Content moderation by co-owners and moderators of a parent community:**
-   none, proposed. Each community moderates its own shares.
+Decided 2026-11-04 with the product owner; each was the proposal of this
+document unless noted.
+
+1. **Handle domain.** Every community has a handle, `<slug><domain>`. The
+   domain is a dedicated PDS setting (`PDS_PARA_COMMUNITY_HANDLE_DOMAIN`),
+   kept apart from the user handle domains so users cannot claim community
+   names. Its default is `.community` followed by the PDS's first service
+   handle domain. The operator must point that domain's DNS at the PDS.
+   (No proposal existed; this is the default taken.)
+2. **Member requests:** every action whose actor is a person needs one, joins
+   included. A member on the hosting PDS does not write it by hand: `act`
+   writes it into their repo for them.
+3. **Offer expiry:** 14 days.
+4. **Removal and blocking:** the owner decides, directly or on a moderator's
+   `sanction.propose`. (No proposal existed; this keeps both paths.)
+5. **Relations:** both owners must act.
+6. **Briefing packs:** members draft, moderators and owners publish.
+7. **Owner rotation keys:** not added for now. The hosting PDS alone holds
+   the community's rotation key; revisit when communities need to move
+   between hosts. (No proposal existed; this is the default taken.)
+8. **Moderation from a parent community:** none. Each community moderates
+   its own shares.
 
 ## 9. Phases and exit criteria
 
-1. **Design (this document).** Exit: §8 answered and recorded here.
+1. **Design (this document).** Done: §8 records the decisions.
 2. **Community accounts and `act`.**
    - `community.create`, the refusal of generic writes, inbound service auth,
      the event schema with `seq`/`prev`, and the policy module with join,
