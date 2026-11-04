@@ -5,12 +5,11 @@ import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 import { prepareCreate } from '../../../../repo/index.js'
 import { commitWrites, stripUndefined, updateRepoRoot } from '../util.js'
+import { assertCommunityModerator } from './authority.js'
 import {
   SHARED_CONTENT_ACTION_COLLECTION,
   SHARED_CONTENT_COLLECTION,
   assertCommunityBoardUri,
-  getLocalMembership,
-  isCommunitySteward,
 } from './util.js'
 
 export function removeSharedContent(server: Server, ctx: AppContext) {
@@ -49,20 +48,13 @@ const writeAction = async (
 ) => {
   const communityUri = assertCommunityBoardUri(body.communityUri)
   const sharedContent = assertSharedContentRef(body.sharedContent)
+  await assertCommunityModerator(
+    ctx,
+    did,
+    communityUri.toString() as AtUriString,
+  )
 
   const result = await ctx.actorStore.transact(did, async (actorTxn) => {
-    const membership = await getLocalMembership({
-      store: actorTxn,
-      viewerDid: did,
-      boardUri: communityUri.toString(),
-    })
-    if (!isCommunitySteward(membership)) {
-      throw new InvalidRequestError(
-        'Only community stewards can moderate shared content.',
-        'CommunityStewardRequired',
-      )
-    }
-
     const record = stripUndefined({
       $type: SHARED_CONTENT_ACTION_COLLECTION,
       sharedContent,

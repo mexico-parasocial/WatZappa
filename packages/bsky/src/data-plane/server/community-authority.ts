@@ -1,6 +1,7 @@
 import {
   type CommunityAuthorityEvent,
   type CommunityRole,
+  type EffectiveAuthority,
   deriveEffectiveAuthority,
   resolveCapabilities,
 } from '@atproto/common'
@@ -10,6 +11,8 @@ import type { Database } from './db/index.js'
 export interface AuthoritySnapshot {
   membershipState: 'none' | 'active' | 'suspended' | 'removed' | 'blocked'
   roles: CommunityRole[]
+  /** The event that established each held role. */
+  evidence: EffectiveAuthority['evidence']
   capabilities: string[]
   events: CommunityAuthorityEvent[]
   usedLegacyFallback: boolean
@@ -37,16 +40,41 @@ export async function getAuthoritySnapshots(
   subjects: readonly string[],
   now = Date.now(),
 ): Promise<Map<string, AuthoritySnapshot>> {
-  const snapshots = new Map<string, AuthoritySnapshot>()
-  const unique = [...new Set(subjects)]
-  if (unique.length === 0) return snapshots
+  const resolve = await getAuthorityResolver(db, communityUri, subjects)
+  return new Map(
+    [...new Set(subjects)].map((subject) => [subject, resolve(subject, now)]),
+  )
+}
 
-  const rows = await db.db
-    .selectFrom('para_community_authority_event')
-    .where('communityUri', '=', communityUri)
-    .where('subject', 'in', unique)
-    .selectAll()
-    .execute()
+/**
+ * Loads the authority inputs of several subjects of one community once, and
+ * returns a function that derives a subject's snapshot at any moment. Use it
+ * when snapshots are needed at different times, such as each moderation
+ * action's own `indexedAt`.
+ */
+export async function getAuthorityResolver(
+  db: Database,
+  communityUri: string,
+  subjects: readonly string[],
+): Promise<(subject: string, at: number) => AuthoritySnapshot> {
+  const unique = [...new Set(subjects)]
+  const [rows, legacyRows] =
+    unique.length === 0
+      ? [[], []]
+      : await Promise.all([
+          db.db
+            .selectFrom('para_community_authority_event')
+            .where('communityUri', '=', communityUri)
+            .where('subject', 'in', unique)
+            .selectAll()
+            .execute(),
+          db.db
+            .selectFrom('para_community_membership')
+            .where('communityUri', '=', communityUri)
+            .where('creator', 'in', unique)
+            .select(['uri', 'creator', 'membershipState', 'joinedAt'])
+            .execute(),
+        ])
   const eventsBySubject = new Map<string, CommunityAuthorityEvent[]>()
   for (const row of rows) {
     const events = eventsBySubject.get(row.subject) ?? []
@@ -66,52 +94,75 @@ export async function getAuthoritySnapshots(
     })
     eventsBySubject.set(row.subject, events)
   }
-  for (const [subject, events] of eventsBySubject) {
-    const authority = deriveEffectiveAuthority(events, now)
-    snapshots.set(subject, {
+  const legacyBySubject = new Map(legacyRows.map((row) => [row.creator, row]))
+
+  return (subject, at) => {
+    const events = eventsBySubject.get(subject) ?? []
+    const legacy = legacyBySubject.get(subject)
+    if (events.length === 0) {
+      // The member writes the legacy record themselves, so it can establish
+      // membership but never a role above `member`: roles or role
+      // assignments in it are ignored.
+      const state = legacy?.membershipState
+      const roles: CommunityRole[] = state === 'active' ? ['member'] : []
+      return {
+        membershipState:
+          state === 'active' || state === 'blocked' || state === 'removed'
+            ? state
+            : 'none',
+        roles,
+        evidence: {},
+        capabilities: resolveCapabilities(roles),
+        events: [],
+        usedLegacyFallback: legacy !== undefined,
+      }
+    }
+    // `community.join` writes only the legacy record, so a member who joined
+    // that way has no activation event. An active legacy record therefore
+    // opens the chain, ahead of every event: otherwise an owner's appointment
+    // would become the member's only event and leave them with no membership,
+    // and the grant along with it. Later suspensions, removals and blocks in
+    // the chain still override it.
+    const opening: CommunityAuthorityEvent[] =
+      legacy?.membershipState === 'active'
+        ? [legacyActivation(communityUri, subject, legacy, at)]
+        : []
+    const authority = deriveEffectiveAuthority([...opening, ...events], at)
+    return {
       ...authority,
       capabilities: resolveCapabilities(authority.roles),
       events,
-      usedLegacyFallback: false,
-    })
+      usedLegacyFallback: opening.length > 0,
+    }
   }
+}
 
-  // Subjects without authority events fall back to their legacy membership
-  // record. The member writes that record themselves, so it can establish
-  // membership but never a role above `member`: roles or role assignments in
-  // it are ignored.
-  const legacySubjects = unique.filter((subject) => !snapshots.has(subject))
-  const legacyRows =
-    legacySubjects.length > 0
-      ? await db.db
-          .selectFrom('para_community_membership')
-          .where('communityUri', '=', communityUri)
-          .where('creator', 'in', legacySubjects)
-          .select(['creator', 'membershipState'])
-          .execute()
-      : []
-  const legacyBySubject = new Map(
-    legacyRows.map((row) => [row.creator, row.membershipState]),
-  )
-  for (const subject of legacySubjects) {
-    const legacy = legacyBySubject.get(subject)
-    const roles: CommunityRole[] = legacy === 'active' ? ['member'] : []
-    snapshots.set(subject, {
-      membershipState:
-        legacy === 'active'
-          ? 'active'
-          : legacy === 'blocked'
-            ? 'blocked'
-            : legacy === 'removed'
-              ? 'removed'
-              : 'none',
-      roles,
-      capabilities: resolveCapabilities(roles),
-      events: [],
-      usedLegacyFallback: legacyBySubject.has(subject),
-    })
+/**
+ * The legacy membership record as an implicit `member.activate` at version 0.
+ * Effective from `joinedAt`, capped at `at`: the record's own clock may run
+ * ahead of the AppView's, and the legacy-only path above never consulted it.
+ */
+function legacyActivation(
+  community: string,
+  subject: string,
+  legacy: { uri: string; joinedAt: string },
+  at: number,
+): CommunityAuthorityEvent {
+  const joinedAt = Date.parse(legacy.joinedAt)
+  return {
+    uri: legacy.uri,
+    creator: subject,
+    community,
+    subject,
+    action: 'member.activate',
+    issuer: subject,
+    effectiveAt:
+      Number.isFinite(joinedAt) && joinedAt <= at
+        ? legacy.joinedAt
+        : new Date(at).toISOString(),
+    version: 0,
+    basis: 'migration',
   }
-  return snapshots
 }
 
 export async function verifyAuthorityEvent(

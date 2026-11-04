@@ -172,19 +172,17 @@ Remaining actions:
    exists. Delegate self-nomination is a candidate label, not moderation/sortition
    authority. Assembly-decision grants remain closed pending a trusted tally
    verifier. Do not treat these restrictions as complete governance support.
-5. Close the remaining authority gaps found by the 2026-11-04 review (code
-   reading only; no runtime reproduction yet). They sit outside the
-   authority-event fix above:
-   - **Forgeable content moderation.** The AppView indexes any account's
-     `com.para.community.sharedContentAction` and shows the newest one by the
-     writer-chosen `createdAt`, with no authority check. Any account can hide
-     shared content in any community. The PDS route gates on
-     `isCommunitySteward`, which reads self-written membership `roles`.
-   - **Appointment drops membership.** `community.join` writes only a
-     membership record, so members have no authority chain. A first
-     `ownerAppointment` event becomes their only event. The
-     legacy-membership fallback then stops applying, and the appointee
-     resolves to membership `none`.
+5. Close the remaining authority gaps found by the 2026-11-04 review. They sit
+   outside the authority-event fix above. Fixed on branch
+   `claude/charming-euler-ih5wtq` (unmerged, undeployed), with failing-first
+   regressions in `packages/bsky/tests/para-community-moderation-authority.test.ts`:
+   - **Forgeable content moderation.** Any account's `sharedContentAction`
+     counted. Now an action counts only if its author was an owner or
+     moderator at the action's `indexedAt`. The PDS routes ask the AppView.
+   - **Appointment drops membership.** An active membership record now opens
+     the chain at version 0, so an appointment no longer empties it.
+
+   Still open:
    - **No issuance path** for suspend, remove, block, reinstate, leave or
      moderator renewal. Horizontal communities lose their only moderator
      when the founding 90-day term ends. `assembly_approval` admission

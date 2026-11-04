@@ -71,7 +71,11 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
 ## Architecture notes
 
 - Community authority comes from verified authority-event chains; self-authored
-  membership roles never grant offices. `PARA_AUTHORITY_SERVICE_TOKEN` is a
+  membership roles never grant offices. An active membership record opens a
+  subject's chain at version 0 (`community.join` writes no activation event);
+  `isCommunityOwnerSql` mirrors that. A record that moderates other accounts'
+  content counts only if its author held office at its `indexedAt`. PDS routes
+  ask the AppView's `getAuthorization` for offices, never the local record. `PARA_AUTHORITY_SERVICE_TOKEN` is a
   dedicated read credential for the bridge's specified-subject authorization
   query; redact its header, disable caching, and never reuse admin/M8 credentials.
   Assembly-decision grants stay closed until a trusted tally verifier exists.

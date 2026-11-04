@@ -1,8 +1,7 @@
 import { Code, ConnectError, ServiceImpl } from '@connectrpc/connect'
-import { sql } from 'kysely'
+import { type Selectable, sql } from 'kysely'
 import {
   AUTHORITY_EVENT_VERSION,
-  deriveEffectiveAuthority,
   getRoleDefinitions,
   resolveAvailableAction,
 } from '@atproto/common'
@@ -39,13 +38,19 @@ import {
   ParaSharedContentActionView,
   ParaStrongRef,
 } from '../../../proto/bsky_pb.js'
-import { getAuthoritySnapshot } from '../community-authority.js'
+import {
+  type AuthoritySnapshot,
+  getAuthorityResolver,
+  getAuthoritySnapshot,
+  getAuthoritySnapshots,
+} from '../community-authority.js'
 import {
   type GovernanceBoard,
   getTrustedGovernanceRecordJson,
   governanceSlugMatchSql,
   isTrustedBoardGovernanceSql,
 } from '../community-governance.js'
+import type { DatabaseSchemaType } from '../db/database-schema.js'
 import { Database } from '../db/index.js'
 import {
   CreatedAtCidKeyset,
@@ -373,42 +378,26 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     }
 
     const standard = (board?.governanceMode || 'hierarchical') as
-      | 'hierarchical'
-      | 'horizontal'
+      'hierarchical' | 'horizontal'
     const admissionMode = (board?.admissionMode || 'open') as
-      | 'open'
-      | 'assembly_approval'
-    const authorityRows = board
+      'open' | 'assembly_approval'
+    const authoritySubjects = board
       ? await db.db
           .selectFrom('para_community_authority_event')
           .where('communityUri', '=', board.uri)
-          .selectAll()
+          .select('subject')
+          .distinct()
           .execute()
       : []
-    const eventsBySubject = new Map<string, typeof authorityRows>()
-    for (const row of authorityRows) {
-      const rows = eventsBySubject.get(row.subject) ?? []
-      rows.push(row)
-      eventsBySubject.set(row.subject, rows)
-    }
+    const authorities = board
+      ? await getAuthoritySnapshots(
+          db,
+          board.uri,
+          authoritySubjects.map((row) => row.subject),
+        )
+      : new Map<string, AuthoritySnapshot>()
     const roleHolders: ParaRoleHolder[] = []
-    for (const [did, rows] of eventsBySubject) {
-      const authority = deriveEffectiveAuthority(
-        rows.map((row) => ({
-          uri: row.uri,
-          creator: row.creator,
-          community: row.communityUri,
-          subject: row.subject,
-          action: row.action as any,
-          issuer: row.issuer,
-          effectiveAt: row.effectiveAt,
-          expiresAt: row.expiresAt,
-          predecessor: row.predecessor,
-          version: row.version,
-          basis: row.basis as any,
-          evidence: row.evidence,
-        })),
-      )
+    for (const [did, authority] of authorities) {
       for (const role of authority.roles) {
         const evidence = authority.evidence[role]
         if (!evidence) continue
@@ -608,10 +597,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     })
 
     const rows = await builder.execute()
-    const actionMap = await getLatestSharedContentActions(
-      db,
-      rows.map((row) => row.uri),
-    )
+    const actionMap = await getLatestSharedContentActions(db, rows)
 
     const visible = rows.filter((row) => {
       if (req.includeRemoved) return true
@@ -990,30 +976,80 @@ const getCommunityAndChildren = async (
   return [communityUri, ...rows.map((row) => row.childCommunityUri)]
 }
 
+/**
+ * The latest moderation action on each shared item, counting only actions by
+ * an owner or moderator of the item's own community. Anyone can write a
+ * `sharedContentAction` record into their repo, so an action from any other
+ * author, or one naming a different community, is ignored.
+ *
+ * Authority is judged at the action's `indexedAt`, which its author cannot
+ * choose: a moderator's past removals survive the end of their term, and a
+ * revoked moderator cannot backdate new ones. For ordering, `createdAt` is
+ * capped at `indexedAt`, so a future date cannot pin an action on top.
+ */
 const getLatestSharedContentActions = async (
   db: Database,
-  sharedContentUris: string[],
+  shares: ReadonlyArray<{ uri: string; communityUri: string }>,
 ) => {
-  if (sharedContentUris.length === 0) {
-    return new Map<string, any>()
-  }
+  const result = new Map<string, SharedContentActionRow>()
+  if (shares.length === 0) return result
 
+  const communityOf = new Map(
+    shares.map((share) => [share.uri, share.communityUri]),
+  )
   const rows = await db.db
     .selectFrom('para_community_shared_content_action')
-    .where('sharedContentUri', 'in', sharedContentUris)
+    .where('sharedContentUri', 'in', [...communityOf.keys()])
     .selectAll()
-    .orderBy('createdAt', 'desc')
-    .orderBy('cid', 'desc')
     .execute()
+  const candidates = rows.filter(
+    (row) => communityOf.get(row.sharedContentUri) === row.communityUri,
+  )
 
-  const result = new Map<string, any>()
-  for (const row of rows) {
+  const creatorsByCommunity = new Map<string, Set<string>>()
+  for (const row of candidates) {
+    const creators = creatorsByCommunity.get(row.communityUri) ?? new Set()
+    creators.add(row.creator)
+    creatorsByCommunity.set(row.communityUri, creators)
+  }
+  const resolvers = new Map(
+    await Promise.all(
+      [...creatorsByCommunity].map(
+        async ([communityUri, creators]) =>
+          [
+            communityUri,
+            await getAuthorityResolver(db, communityUri, [...creators]),
+          ] as const,
+      ),
+    ),
+  )
+
+  const effectiveTime = (row: SharedContentActionRow) =>
+    Math.min(Date.parse(row.createdAt), Date.parse(row.indexedAt))
+  const authorized = candidates
+    .filter((row) => {
+      const resolve = resolvers.get(row.communityUri)
+      const at = Date.parse(row.indexedAt)
+      if (!resolve || !Number.isFinite(at)) return false
+      const { roles } = resolve(row.creator, at)
+      return roles.includes('owner') || roles.includes('moderator')
+    })
+    .sort(
+      (a, b) =>
+        effectiveTime(b) - effectiveTime(a) ||
+        (a.cid < b.cid ? 1 : a.cid > b.cid ? -1 : 0),
+    )
+  for (const row of authorized) {
     if (!result.has(row.sharedContentUri)) {
       result.set(row.sharedContentUri, row)
     }
   }
   return result
 }
+
+type SharedContentActionRow = Selectable<
+  DatabaseSchemaType['para_community_shared_content_action']
+>
 
 const isRemovedAction = (action?: string) => action === 'remove'
 
