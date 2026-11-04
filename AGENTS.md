@@ -71,7 +71,15 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
 ## Architecture notes
 
 - Community authority comes from verified authority-event chains; self-authored
-  membership roles never grant offices. `PARA_AUTHORITY_SERVICE_TOKEN` is a
+  membership roles never grant offices. An active membership record opens a
+  subject's chain at version 0 (`community.join` writes no activation event);
+  `isCommunityOwnerSql` mirrors that, and a `left` record ends membership
+  unless an activation follows it. A record that changes what a community
+  shows (moderation actions, relations, briefing packs) counts only if its
+  author held office at its `indexedAt` (`filterByOfficeWhenIndexed`); its
+  duplicate and conflict checks are per author, or the first writer squats.
+  PDS routes ask the AppView's `getAuthorization` for offices, never the
+  local record. `PARA_AUTHORITY_SERVICE_TOKEN` is a
   dedicated read credential for the bridge's specified-subject authorization
   query; redact its header, disable caching, and never reuse admin/M8 credentials.
   Assembly-decision grants stay closed until a trusted tally verifier exists.
@@ -81,9 +89,8 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
   remaining-work queue, re-baselined 2026-10-05; the old sprint calendars are
   superseded. Inspect only relevant changes, distinguish implemented/tested/
   merged/deployed, and remove closed actions from active roadmaps while retaining
-  linked evidence. Trusted-role fixes are integrated locally in the active branch
-  at `d11fa24f1` (2026-10-06); release selection and homeserver acceptance remain
-  open. Do not re-integrate the old worktrees or repeat the completed source audit.
+  linked evidence. Status belongs in that plan, not here. Do not re-integrate the
+  old worktrees or repeat the completed source audit.
 
 - Public cabildeo and policy votes require `verifyPublicBallotProof` before PDS
   preparation and AppView indexing, including foreign repositories. A policy

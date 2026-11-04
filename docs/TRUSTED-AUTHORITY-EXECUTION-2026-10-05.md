@@ -11,8 +11,9 @@ Current development integration: `d11fa24f1` on
 `/Users/mlv/Desktop/Home/macserver/WatZappa`. The four existing P0 changes were
 cherry-picked as `6601c590a`, `8fdbed7da`, `2c7079c52` and `5d0f052b4`;
 `d11fa24f1` completes deployment credential wiring and import lint.
-The active checkout now contains the trusted-role implementation. No remote
-main merge, push, running-service upgrade or staging acceptance was performed.
+The active checkout now contains the trusted-role implementation. It has
+since reached remote `main` (ancestor of `f3c838ae`, 2026-11-02); no
+running-service upgrade or staging acceptance has been recorded.
 
 Original tested candidate, retained as source history:
 

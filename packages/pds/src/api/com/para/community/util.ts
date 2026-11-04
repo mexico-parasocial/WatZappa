@@ -421,16 +421,6 @@ export const getValidRoles = (
   return membership.roles ?? []
 }
 
-export const isCommunitySteward = (
-  membership: MembershipRecord | null | undefined,
-) => {
-  if (!isActiveMembership(membership)) return false
-  const roles = getValidRoles(membership)
-  return roles.some((role) =>
-    ['owner', 'moderator', 'steward', 'official'].includes(role),
-  )
-}
-
 export const getViewerCapabilities = (
   membership?: Pick<
     MembershipRecord,
