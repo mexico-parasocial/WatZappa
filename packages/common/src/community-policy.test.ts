@@ -7,6 +7,7 @@ import {
   type CommunityStateView,
   activeCommunityOffices,
   applyCommunityEvent,
+  communityRequestMismatch,
   describeCommunityActions,
   prepareCommunityEvent,
 } from './community-policy.js'
@@ -347,5 +348,35 @@ describe('community policy', () => {
       ].sort(),
     )
     expect(actions.every((a) => a.available)).toBe(true)
+  })
+
+  it('matches a request only to the action it names, while valid', () => {
+    const community = 'did:plc:community'
+    const event = prepareCommunityEvent({
+      seq: 9,
+      action: 'member.suspend',
+      actor: mod,
+      subject: member,
+      createdAt: new Date(t0).toISOString(),
+      suspensionDays: 3,
+    })
+    const request = {
+      community,
+      action: 'member.suspend',
+      subject: member,
+      suspensionDays: 3,
+      createdAt: new Date(t0 - 1000).toISOString(),
+      expiresAt: new Date(t0 + 1000).toISOString(),
+    }
+    expect(communityRequestMismatch(community, request, event)).toBeNull()
+    for (const changed of [
+      { ...request, community: 'did:plc:other' },
+      { ...request, subject: outsider },
+      { ...request, suspensionDays: 7 },
+      { ...request, expiresAt: new Date(t0).toISOString() },
+      { ...request, expiresAt: new Date(t0 + 2 * DAY).toISOString() },
+    ]) {
+      expect(communityRequestMismatch(community, changed, event)).not.toBeNull()
+    }
   })
 })

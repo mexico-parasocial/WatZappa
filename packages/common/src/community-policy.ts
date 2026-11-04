@@ -360,6 +360,64 @@ export function applyCommunityEvent(
   }
 }
 
+/** OD-9 §6: an event must follow its member request within this window. */
+export const COMMUNITY_REQUEST_MAX_TTL_MS = DAY_MS
+
+/** A person's `com.para.community.request`, as read from their repo. */
+export interface CommunityRequest {
+  community: string
+  action: string
+  subject: string
+  offer?: number
+  suspensionDays?: number
+  createdAt: string
+  expiresAt: string
+}
+
+/**
+ * Why `request` does not authorize `event` in `community`, or `null` if it
+ * does. Pure, so the host (before appending) and the AppView (verifying)
+ * reach the same answer. Checks that the request names exactly this action,
+ * and that the event was created inside the request's validity window.
+ */
+export function communityRequestMismatch(
+  community: string,
+  request: CommunityRequest,
+  event: CommunityEvent,
+): string | null {
+  if (
+    request.community !== community ||
+    request.action !== event.action ||
+    request.subject !== event.subject
+  ) {
+    return 'The request names a different action.'
+  }
+  if ((request.offer ?? undefined) !== (event.offer ?? undefined)) {
+    return 'The request names a different offer.'
+  }
+  if (event.action === 'member.suspend') {
+    const days = request.suspensionDays ?? COMMUNITY_MAX_SUSPENSION_DAYS
+    const length =
+      Date.parse(event.expiresAt ?? '') - Date.parse(event.createdAt)
+    if (length !== days * DAY_MS) {
+      return 'The suspension differs from the request.'
+    }
+  } else if (request.suspensionDays !== undefined) {
+    return 'The request names a different action.'
+  }
+  const created = Date.parse(request.createdAt)
+  const expires = Date.parse(request.expiresAt)
+  const at = Date.parse(event.createdAt)
+  if (
+    !(created <= at) ||
+    !(at < expires) ||
+    expires - created > COMMUNITY_REQUEST_MAX_TTL_MS
+  ) {
+    return 'The event falls outside the request’s validity.'
+  }
+  return null
+}
+
 export interface CommunityActionDescription {
   action: CommunityAction
   /** Who may take the action. */

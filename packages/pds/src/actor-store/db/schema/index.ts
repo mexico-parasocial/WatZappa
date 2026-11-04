@@ -1,6 +1,7 @@
 import type * as accountPref from './account-pref.js'
 import type * as backlink from './backlink.js'
 import type * as blob from './blob.js'
+import type * as community from './community.js'
 import type * as recordBlob from './record-blob.js'
 import type * as record from './record.js'
 import type * as repoBlock from './repo-block.js'
@@ -30,7 +31,8 @@ export type DatabaseSchema = accountPref.PartialDB &
   spaceRepo.PartialDB &
   spaceRecordOplog.PartialDB &
   spaceWriter.PartialDB &
-  spaceCredentialRecipient.PartialDB
+  spaceCredentialRecipient.PartialDB &
+  community.PartialDB
 
 export type { AccountPref } from './account-pref.js'
 export type { RepoRoot } from './repo-root.js'

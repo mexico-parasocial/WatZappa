@@ -368,7 +368,32 @@ export const envToCfg = (env: ServerEnvironment): ServerConfig => {
     branding: brandingCfg,
     oauth: oauthCfg,
     m8BaseUrl: env.m8BaseUrl ?? null,
+    paraCommunityHandleDomain: paraCommunityHandleDomain(
+      env.paraCommunityHandleDomain,
+      serviceHandleDomains,
+    ),
   }
+}
+
+/**
+ * OD-9: community handles live under their own domain, so no user can
+ * register a community's name. Defaults to `.community` plus the first user
+ * domain; the operator points that domain's DNS at the PDS.
+ */
+const paraCommunityHandleDomain = (
+  configured: string | undefined,
+  serviceHandleDomains: string[],
+): string => {
+  const domain = configured ?? `.community${serviceHandleDomains[0]}`
+  if (!domain.startsWith('.')) {
+    throw new Error('PDS_PARA_COMMUNITY_HANDLE_DOMAIN must start with "."')
+  }
+  if (serviceHandleDomains.includes(domain)) {
+    throw new Error(
+      'PDS_PARA_COMMUNITY_HANDLE_DOMAIN must not be a user handle domain',
+    )
+  }
+  return domain
 }
 
 export type ServerConfig = {
@@ -394,6 +419,7 @@ export type ServerConfig = {
   oauth: OAuthConfig
   lexicon: LexiconResolverConfig
   m8BaseUrl: string | null
+  paraCommunityHandleDomain: string
   spaces: SpacesConfig
 }
 

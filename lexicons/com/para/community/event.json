@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "record",
-      "description": "One link of a community's authority chain, in the community account's repo (OD-9). Written only by the hosting PDS through com.para.community.act. Events apply in seq order; prev is the CID of the event with seq - 1.",
+      "description": "One link of a community's authority chain, in the community account's repo (OD-9). Written only by the hosting PDS through com.para.community.act. Events apply in seq order; prev is the CID of the event with seq - 1. Each carries proof of the actor's request, so it verifies on its own.",
       "key": "tid",
       "record": {
         "type": "object",
@@ -14,10 +14,14 @@
           "actor",
           "subject",
           "request",
+          "requestProof",
           "createdAt"
         ],
         "properties": {
-          "seq": { "type": "integer", "minimum": 1 },
+          "seq": {
+            "type": "integer",
+            "minimum": 1
+          },
           "prev": {
             "type": "string",
             "format": "cid",
@@ -42,11 +46,19 @@
             "format": "did",
             "description": "The account that took the action."
           },
-          "subject": { "type": "string", "format": "did" },
+          "subject": {
+            "type": "string",
+            "format": "did"
+          },
           "request": {
             "type": "ref",
             "ref": "com.atproto.repo.strongRef",
-            "description": "The actor's com.para.community.request for this action, in the actor's own repo. The event counts only once that exact record is indexed."
+            "description": "The actor's com.para.community.request for this action, in the actor's own repo."
+          },
+          "requestProof": {
+            "type": "bytes",
+            "maxLength": 32768,
+            "description": "A CAR with the actor's signed repo commit and the path to the request record, as com.atproto.sync.getRecord returns it. Lets anyone verify the request without fetching the actor's repo."
           },
           "offer": {
             "type": "integer",
