@@ -1,6 +1,11 @@
 import { ServiceImpl } from '@connectrpc/connect'
 import { sql } from 'kysely'
 import { Service } from '../../../proto/bsky_connect.js'
+import {
+  activeMemberDids,
+  communityAccountDid,
+  resolveCommunityAccountUris,
+} from '../community-membership.js'
 import { Database } from '../db/index.js'
 
 // Normalize a community name/identifier the way board slugs are formed:
@@ -24,7 +29,7 @@ async function findCommunityBoard(
   { uri: string; slug: string | null; name: string | null } | undefined
 > {
   const normalized = normalizeCommunityId(communityId)
-  return db.db
+  const board = await db.db
     .selectFrom('para_community_board as board')
     .where(
       sql<boolean>`(
@@ -36,6 +41,21 @@ async function findCommunityBoard(
     )
     .select(['board.uri', 'board.slug', 'board.name'])
     .executeTakeFirst()
+  if (board) return board
+  // An OD-9 community account, by URI, DID, handle or slug.
+  const [uri] = await resolveCommunityAccountUris(db, communityId)
+  const did = uri ? communityAccountDid(uri) : null
+  if (!uri || !did) return undefined
+  const account = await db.db
+    .selectFrom('para_community_account as account')
+    .leftJoin('actor', 'actor.did', 'account.did')
+    .where('account.did', '=', did)
+    .select([
+      'account.name',
+      sql<string>`split_part(actor.handle, '.', 1)`.as('slug'),
+    ])
+    .executeTakeFirst()
+  return { uri, slug: account?.slug ?? null, name: account?.name ?? null }
 }
 
 // The SQL mirror of normalizeCommunityId, for matching free-text values
@@ -99,14 +119,9 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       }
     }
 
-    const members = await db.db
-      .selectFrom('para_community_membership')
-      .where('communityUri', '=', board.uri)
-      .where('membershipState', '=', 'active')
-      .select('creator')
-      .execute()
+    const members = await activeMemberDids(db, board.uri).execute()
 
-    const dids = members.map((m) => m.creator)
+    const dids = members.map((m) => m.did)
     if (dids.length === 0) {
       return {
         axesJson: '[]',

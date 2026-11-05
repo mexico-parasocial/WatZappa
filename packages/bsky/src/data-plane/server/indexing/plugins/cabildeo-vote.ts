@@ -8,6 +8,10 @@ import type {
   DatabaseSchema,
   DatabaseSchemaType,
 } from '../../db/database-schema.js'
+import {
+  isActiveMember,
+  resolveCommunityAccountUris,
+} from '../../community-membership.js'
 import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
 import { finalizeDueCabildeos } from './finalize-cabildeos.js'
@@ -258,19 +262,17 @@ const getCabildeoVoteEligibility = async (
     .select(['uri'])
     .executeTakeFirst()
 
-  if (!board) {
+  const database = { db } as Database
+  const communityUri =
+    board?.uri ??
+    (await resolveCommunityAccountUris(database, cabildeo.community))[0]
+  if (!communityUri) {
     return null
   }
 
-  const membership = await db
-    .selectFrom('para_community_membership')
-    .where('creator', '=', opts.actorDid)
-    .where('communityUri', '=', board.uri)
-    .where('membershipState', '=', 'active')
-    .select(['uri'])
-    .executeTakeFirst()
-
-  return membership ? { cabildeo } : null
+  return (await isActiveMember(database, communityUri, opts.actorDid))
+    ? { cabildeo }
+    : null
 }
 
 const normalizeCommunitySlug = (value: string) =>
