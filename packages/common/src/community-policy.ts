@@ -18,7 +18,17 @@ const DAY_MS = 24 * 60 * 60 * 1000
 export type CommunityGovernanceMode = 'hierarchical' | 'horizontal'
 export type CommunityAdmissionMode = 'open' | 'assembly_approval'
 export type CommunityOffice = 'owner' | 'moderator'
-export type CommunityMemberStatus = 'active' | 'suspended' | 'left'
+export type CommunityMemberStatus =
+  | 'active'
+  | 'suspended'
+  | 'left'
+  /** Removed by an owner. May join again while admission is open. */
+  | 'removed'
+  /** Blocked by an owner. Cannot join until unblocked. */
+  | 'blocked'
+export type CommunitySanction = 'remove' | 'block'
+/** What an open offer or proposal grants: an office, or a sanction to decide. */
+export type CommunityOfferKind = CommunityOffice | CommunitySanction
 
 export const COMMUNITY_ACTIONS = [
   'community.found',
@@ -30,6 +40,22 @@ export const COMMUNITY_ACTIONS = [
   'moderator.resign',
   'member.suspend',
   'member.reinstate',
+  'member.remove',
+  'member.block',
+  'member.unblock',
+  'sanction.propose',
+  'owner.offer',
+  'owner.accept',
+  'owner.resign',
+  'content.hide',
+  'content.restore',
+  'content.pin',
+  'content.unpin',
+  'relation.link',
+  'relation.accept',
+  'relation.unlink',
+  'briefing.publish',
+  'briefing.archive',
 ] as const
 
 export type CommunityAction = (typeof COMMUNITY_ACTIONS)[number]
@@ -54,7 +80,8 @@ export interface CommunityMember {
 
 export interface CommunityOffer {
   seq: number
-  office: CommunityOffice
+  /** An office for an offer; the sanction proposed for a `sanction.propose`. */
+  office: CommunityOfferKind
   subject: string
   issuer: string
   expiresAt: string
@@ -62,6 +89,8 @@ export interface CommunityOffer {
 
 /** What {@link applyCommunityEvent} reads; each caller backs it with its own store. */
 export interface CommunityStateView {
+  /** The community's own DID. */
+  community: string
   /** `null` until `community.found` has been applied. */
   settings: CommunitySettings | null
   lastSeq: number
@@ -78,18 +107,65 @@ export interface CommunityEvent {
   actor: string
   subject: string
   createdAt: string
-  /** `moderator.accept`: the `seq` of the offer. */
+  /**
+   * The `seq` of the offer or proposal this event answers: required on
+   * `moderator.accept` and `owner.accept`, optional on `member.remove` and
+   * `member.block` (an owner acting on a moderator's `sanction.propose`).
+   */
   offer?: number
-  /** `moderator.offer`: offer expiry. `member.suspend`: end of the suspension. */
+  /**
+   * `*.offer` and `sanction.propose`: when it lapses. `member.suspend`: end
+   * of the suspension.
+   */
   expiresAt?: string
+  /** `sanction.propose`: what the moderator asks the owner to do. */
+  sanction?: CommunitySanction
+  /**
+   * `content.*`: the share acted on. `briefing.*`: the draft. For both the
+   * subject is the DID that holds the record, and `at-uri`'s host.
+   */
+  target?: string
+  /** `briefing.*`: the CID of the draft version published or archived. */
+  targetCid?: string
   /** `community.found` only. */
   settings?: CommunitySettings
 }
+
+/**
+ * What an event does outside the host's membership state. The host keeps no
+ * state for these (it has nothing to check them against), so it ignores
+ * them; the AppView stores them and serves its views from them.
+ */
+export type CommunityEffect =
+  | {
+      kind: 'content'
+      target: string
+      /** Unchanged when absent. */
+      hidden?: boolean
+      pinned?: boolean
+    }
+  | {
+      kind: 'briefing'
+      target: string
+      cid: string
+      state: 'published' | 'archived'
+    }
+  | {
+      /**
+       * This community's half of a relation with `other`: the parent's
+       * `link`, the child's `accept`, or `null` once withdrawn. A relation
+       * counts only when both communities hold their halves.
+       */
+      kind: 'relation'
+      other: string
+      half: 'link' | 'accept' | null
+    }
 
 export interface CommunityPatch {
   members: Array<[string, CommunityMember]>
   openedOffers: CommunityOffer[]
   closedOffers: number[]
+  effects: CommunityEffect[]
   settings?: CommunitySettings
 }
 
@@ -102,6 +178,7 @@ export type CommunityRefusalCode =
   | 'InvalidSubject'
   | 'InvalidOffer'
   | 'InvalidExpiry'
+  | 'InvalidTarget'
   | 'LastOwner'
 
 export type CommunityDecision =
@@ -149,6 +226,9 @@ export function prepareCommunityEvent(input: {
   createdAt: string
   offer?: number
   suspensionDays?: number
+  sanction?: CommunitySanction
+  target?: string
+  targetCid?: string
   settings?: CommunitySettings
 }): CommunityEvent {
   const at = Date.parse(input.createdAt)
@@ -159,16 +239,39 @@ export function prepareCommunityEvent(input: {
     subject: input.subject,
     createdAt: input.createdAt,
   }
-  if (input.action === 'moderator.offer') {
+  if (OFFERING_ACTIONS.includes(input.action)) {
     event.expiresAt = new Date(at + COMMUNITY_OFFER_DAYS * DAY_MS).toISOString()
   }
   if (input.action === 'member.suspend') {
     const days = input.suspensionDays ?? COMMUNITY_MAX_SUSPENSION_DAYS
     event.expiresAt = new Date(at + days * DAY_MS).toISOString()
   }
-  if (input.action === 'moderator.accept') event.offer = input.offer
+  if (input.offer !== undefined) event.offer = input.offer
+  if (input.sanction !== undefined) event.sanction = input.sanction
+  if (input.target !== undefined) event.target = input.target
+  if (input.targetCid !== undefined) event.targetCid = input.targetCid
   if (input.action === 'community.found') event.settings = input.settings
   return event
+}
+
+/** Actions that open something to be answered within the offer period. */
+const OFFERING_ACTIONS: readonly CommunityAction[] = [
+  'moderator.offer',
+  'owner.offer',
+  'sanction.propose',
+]
+
+/** Collections of the records that `content.*` and `briefing.*` name. */
+export const COMMUNITY_SHARE_COLLECTION = 'com.para.community.sharedContent'
+export const COMMUNITY_BRIEFING_COLLECTION = 'com.para.community.briefingPack'
+
+/** The repo that holds `uri`, if it is an AT URI to a record in `collection`. */
+function recordHost(
+  uri: string | undefined,
+  collection: string,
+): string | null {
+  const match = uri?.match(/^at:\/\/([^/]+)\/([^/]+)\/([^/]+)$/)
+  return match && match[2] === collection ? match[1] : null
 }
 
 /**
@@ -226,16 +329,32 @@ export function applyCommunityEvent(
   const update = (member: CommunityMember): CommunityDecision =>
     accept({ members: [[event.subject, { ...member, since: event.seq }]] })
 
+  const holds = (member: CommunityMember | undefined, office: string) =>
+    member?.offices.includes(office as CommunityOffice) ?? false
+  const offerExpiry = (): CommunityDecision | null => {
+    const expected = at + COMMUNITY_OFFER_DAYS * DAY_MS
+    return !event.expiresAt || Date.parse(event.expiresAt) !== expected
+      ? refuse('InvalidExpiry', 'Offers expire after the fixed period.')
+      : null
+  }
+
   switch (event.action) {
     case 'member.join': {
       if (!self) return refuse('NotPermitted', 'Members join for themselves.')
       if (view.settings.admissionMode !== 'open') {
         return refuse('ModeUnavailable', 'Admission is not open.')
       }
-      if (subject && subject.status !== 'left') {
+      if (subject?.status === 'blocked') {
+        return refuse('NotPermitted', 'An owner has blocked this account.')
+      }
+      if (
+        subject &&
+        subject.status !== 'left' &&
+        subject.status !== 'removed'
+      ) {
         return refuse('InvalidSubject', 'Already a member, or suspended.')
       }
-      // Rejoining never restores offices: leaving ended them.
+      // Rejoining never restores offices: leaving or removal ended them.
       return update({ status: 'active', offices: [], since: event.seq })
     }
     case 'member.leave': {
@@ -243,44 +362,53 @@ export function applyCommunityEvent(
       if (subject?.status !== 'active') {
         return refuse('InvalidSubject', 'Only an active member can leave.')
       }
-      if (subject.offices.includes('owner') && view.ownerCount() <= 1) {
+      if (holds(subject, 'owner') && view.ownerCount() <= 1) {
         return refuse('LastOwner', 'The last owner cannot leave.')
       }
       return update({ status: 'left', offices: [], since: event.seq })
     }
-    case 'moderator.offer': {
+    case 'moderator.offer':
+    case 'owner.offer': {
+      const office = event.action === 'owner.offer' ? 'owner' : 'moderator'
       if (!isOwner) return refuse('NotPermitted', 'Only an owner can offer.')
-      if (subject?.status !== 'active' || subject.offices.length > 0) {
+      if (
+        subject?.status !== 'active' ||
+        (office === 'owner'
+          ? holds(subject, 'owner')
+          : subject.offices.length > 0)
+      ) {
         return refuse(
           'InvalidSubject',
-          'Offers go to active members who hold no office.',
+          office === 'owner'
+            ? 'Ownership is offered to active members who are not owners.'
+            : 'Offers go to active members who hold no office.',
         )
       }
-      const expected = at + COMMUNITY_OFFER_DAYS * DAY_MS
-      if (!event.expiresAt || Date.parse(event.expiresAt) !== expected) {
-        return refuse('InvalidExpiry', 'Offers expire after the fixed period.')
-      }
+      const wrong = offerExpiry()
+      if (wrong) return wrong
       return accept({
         members: [],
         openedOffers: [
           {
             seq: event.seq,
-            office: 'moderator',
+            office,
             subject: event.subject,
             issuer: event.actor,
-            expiresAt: event.expiresAt,
+            expiresAt: event.expiresAt!,
           },
         ],
       })
     }
-    case 'moderator.accept': {
+    case 'moderator.accept':
+    case 'owner.accept': {
+      const office = event.action === 'owner.accept' ? 'owner' : 'moderator'
       if (!self)
         return refuse('NotPermitted', 'Only the offered member accepts.')
       const offer =
         event.offer === undefined ? undefined : view.openOffer(event.offer)
       if (
         !offer ||
-        offer.office !== 'moderator' ||
+        offer.office !== office ||
         offer.subject !== event.subject ||
         Date.parse(offer.expiresAt) <= at
       ) {
@@ -291,14 +419,20 @@ export function applyCommunityEvent(
       if (!activeCommunityOffices(issuer, at).includes('owner')) {
         return refuse('InvalidOffer', 'The offer was made by a former owner.')
       }
-      if (subject?.status !== 'active' || subject.offices.length > 0) {
+      if (
+        subject?.status !== 'active' ||
+        (office === 'owner'
+          ? holds(subject, 'owner')
+          : subject.offices.length > 0)
+      ) {
         return refuse('InvalidSubject', 'Only an active member can accept.')
       }
       return accept({
         members: [
           [
             event.subject,
-            { ...subject, offices: ['moderator'], since: event.seq },
+            // Ownership replaces a moderator's office; it does not stack.
+            { ...subject, offices: [office], since: event.seq },
           ],
         ],
         closedOffers: [offer.seq],
@@ -322,6 +456,20 @@ export function applyCommunityEvent(
       return update({
         ...current,
         offices: current.offices.filter((office) => office !== 'moderator'),
+      })
+    }
+    case 'owner.resign': {
+      if (!self) return refuse('NotPermitted', 'Owners resign for themselves.')
+      if (subject?.status !== 'active' || !holds(subject, 'owner')) {
+        return refuse('InvalidSubject', 'The subject is not an owner.')
+      }
+      if (view.ownerCount() <= 1) {
+        return refuse('LastOwner', 'The last owner cannot resign.')
+      }
+      // They stay a member; ownership is theirs to hold, not to keep.
+      return update({
+        ...subject,
+        offices: subject.offices.filter((office) => office !== 'owner'),
       })
     }
     case 'member.suspend': {
@@ -363,6 +511,182 @@ export function applyCommunityEvent(
       const { suspendedUntil: _ended, ...rest } = subject
       return update({ ...rest, status: 'active' })
     }
+    case 'sanction.propose': {
+      // Owners decide directly; a proposal is how a moderator asks them to.
+      if (!actorOffices.includes('moderator')) {
+        return refuse('NotPermitted', 'Only a moderator proposes sanctions.')
+      }
+      if (event.sanction !== 'remove' && event.sanction !== 'block') {
+        return refuse('InvalidTarget', 'Propose removing or blocking.')
+      }
+      if (
+        self ||
+        (subject?.status !== 'active' && subject?.status !== 'suspended') ||
+        holds(subject, 'owner')
+      ) {
+        return refuse(
+          'InvalidSubject',
+          'Only another member who is not an owner.',
+        )
+      }
+      const wrong = offerExpiry()
+      if (wrong) return wrong
+      return accept({
+        members: [],
+        openedOffers: [
+          {
+            seq: event.seq,
+            office: event.sanction,
+            subject: event.subject,
+            issuer: event.actor,
+            expiresAt: event.expiresAt!,
+          },
+        ],
+      })
+    }
+    case 'member.remove':
+    case 'member.block': {
+      const sanction = event.action === 'member.block' ? 'block' : 'remove'
+      if (!isOwner) {
+        return refuse('NotPermitted', 'Only an owner can remove or block.')
+      }
+      const current = view.member(event.subject)
+      if (self || holds(current, 'owner')) {
+        return refuse(
+          'InvalidSubject',
+          'An owner cannot be sanctioned; they resign first.',
+        )
+      }
+      if (
+        sanction === 'remove'
+          ? subject?.status !== 'active' && subject?.status !== 'suspended'
+          : subject?.status === 'blocked'
+      ) {
+        return refuse(
+          'InvalidSubject',
+          sanction === 'remove'
+            ? 'Only a current member can be removed.'
+            : 'The subject is already blocked.',
+        )
+      }
+      const closedOffers: number[] = []
+      if (event.offer !== undefined) {
+        const proposal = view.openOffer(event.offer)
+        if (
+          !proposal ||
+          proposal.office !== sanction ||
+          proposal.subject !== event.subject ||
+          Date.parse(proposal.expiresAt) <= at
+        ) {
+          return refuse('InvalidOffer', 'There is no open proposal to act on.')
+        }
+        closedOffers.push(proposal.seq)
+      }
+      return accept({
+        members: [
+          [
+            event.subject,
+            {
+              status: sanction === 'block' ? 'blocked' : 'removed',
+              offices: [],
+              since: event.seq,
+            },
+          ],
+        ],
+        closedOffers,
+      })
+    }
+    case 'member.unblock': {
+      if (!isOwner) return refuse('NotPermitted', 'Only an owner can unblock.')
+      if (subject?.status !== 'blocked') {
+        return refuse('InvalidSubject', 'The subject is not blocked.')
+      }
+      // Unblocking restores the right to join, not membership.
+      return update({ status: 'left', offices: [], since: event.seq })
+    }
+    case 'content.hide':
+    case 'content.restore':
+    case 'content.pin':
+    case 'content.unpin': {
+      if (!isSteward) {
+        return refuse('NotPermitted', 'Only a moderator or owner can do this.')
+      }
+      if (
+        recordHost(event.target, COMMUNITY_SHARE_COLLECTION) !== event.subject
+      ) {
+        return refuse(
+          'InvalidTarget',
+          'The target must be a shared item held by the subject.',
+        )
+      }
+      const flag = {
+        'content.hide': { hidden: true },
+        'content.restore': { hidden: false },
+        'content.pin': { pinned: true },
+        'content.unpin': { pinned: false },
+      }[event.action]
+      return accept({
+        members: [],
+        effects: [{ kind: 'content', target: event.target!, ...flag }],
+      })
+    }
+    case 'relation.link':
+    case 'relation.accept':
+    case 'relation.unlink': {
+      if (!isOwner) {
+        return refuse('NotPermitted', 'Only an owner can change relations.')
+      }
+      if (event.subject === view.community) {
+        return refuse('InvalidSubject', 'A community cannot relate to itself.')
+      }
+      return accept({
+        members: [],
+        effects: [
+          {
+            kind: 'relation',
+            other: event.subject,
+            half:
+              event.action === 'relation.link'
+                ? 'link'
+                : event.action === 'relation.accept'
+                  ? 'accept'
+                  : null,
+          },
+        ],
+      })
+    }
+    case 'briefing.publish':
+    case 'briefing.archive': {
+      if (!isSteward) {
+        return refuse('NotPermitted', 'Only a moderator or owner can do this.')
+      }
+      if (
+        recordHost(event.target, COMMUNITY_BRIEFING_COLLECTION) !==
+          event.subject ||
+        !event.targetCid
+      ) {
+        return refuse(
+          'InvalidTarget',
+          'The target must be a draft held by the subject, with its CID.',
+        )
+      }
+      const publish = event.action === 'briefing.publish'
+      // Members draft; only a current member's draft can be published.
+      if (publish && subject?.status !== 'active') {
+        return refuse('InvalidSubject', 'Only an active member’s draft.')
+      }
+      return accept({
+        members: [],
+        effects: [
+          {
+            kind: 'briefing',
+            target: event.target!,
+            cid: event.targetCid,
+            state: publish ? 'published' : 'archived',
+          },
+        ],
+      })
+    }
   }
 }
 
@@ -376,6 +700,9 @@ export interface CommunityRequest {
   subject: string
   offer?: number
   suspensionDays?: number
+  sanction?: string
+  target?: string
+  targetCid?: string
   createdAt: string
   expiresAt: string
 }
@@ -400,6 +727,11 @@ export function communityRequestMismatch(
   }
   if ((request.offer ?? undefined) !== (event.offer ?? undefined)) {
     return 'The request names a different offer.'
+  }
+  for (const key of ['sanction', 'target', 'targetCid'] as const) {
+    if ((request[key] ?? undefined) !== (event[key] ?? undefined)) {
+      return 'The request names different parameters.'
+    }
   }
   if (event.action === 'member.suspend') {
     const days = request.suspensionDays ?? COMMUNITY_MAX_SUSPENSION_DAYS
@@ -427,7 +759,7 @@ export function communityRequestMismatch(
 export interface CommunityActionDescription {
   action: CommunityAction
   /** Who may take the action. */
-  actor: 'self' | 'owner' | 'steward' | 'offered member'
+  actor: 'self' | 'owner' | 'moderator' | 'steward' | 'offered member'
   available: boolean
 }
 
@@ -452,6 +784,22 @@ export function describeCommunityActions(
     'moderator.resign': 'self',
     'member.suspend': 'steward',
     'member.reinstate': 'steward',
+    'member.remove': 'owner',
+    'member.block': 'owner',
+    'member.unblock': 'owner',
+    'sanction.propose': 'moderator',
+    'owner.offer': 'owner',
+    'owner.accept': 'offered member',
+    'owner.resign': 'self',
+    'content.hide': 'steward',
+    'content.restore': 'steward',
+    'content.pin': 'steward',
+    'content.unpin': 'steward',
+    'relation.link': 'owner',
+    'relation.accept': 'owner',
+    'relation.unlink': 'owner',
+    'briefing.publish': 'steward',
+    'briefing.archive': 'steward',
   }
   return Object.entries(actors).map(([action, actor]) => ({
     action: action as CommunityAction,
@@ -465,7 +813,7 @@ function accept(
 ): CommunityDecision {
   return {
     ok: true,
-    patch: { openedOffers: [], closedOffers: [], ...patch },
+    patch: { openedOffers: [], closedOffers: [], effects: [], ...patch },
   }
 }
 

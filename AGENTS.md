@@ -96,6 +96,10 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
   `getAuthoritySnapshots`, which dispatch on the community URI (an account's
   is its `com.para.community.profile/self`); never query the member tables
   directly. Resolve accounts by URI, DID, handle or slug, never display name.
+  An action that touches state outside membership (content, relations,
+  briefing packs) returns it as a `CommunityEffect` in the policy's patch: the
+  host ignores it and the AppView stores it. Serve those views for an account
+  from `community-content.ts`, never from member-authored records.
 
 - Pilot planning: read [docs/QUARTER_PLAN_2026Q4.md](docs/QUARTER_PLAN_2026Q4.md)
   and its evidence before auditing or scheduling work. It is the canonical

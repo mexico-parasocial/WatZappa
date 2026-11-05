@@ -1,4 +1,4 @@
-import { isCommunityAction } from '@atproto/common'
+import { type CommunitySanction, isCommunityAction } from '@atproto/common'
 import type { DidString } from '@atproto/syntax'
 import {
   AuthRequiredError,
@@ -43,6 +43,10 @@ export default function (server: Server, ctx: AppContext) {
         )
       }
 
+      const sanction = body.sanction
+      if (sanction !== undefined && !isSanction(sanction)) {
+        throw new InvalidRequestError(`Unknown sanction: ${sanction}`)
+      }
       const subject = body.subject ?? actor
       const fields = {
         community,
@@ -50,6 +54,9 @@ export default function (server: Server, ctx: AppContext) {
         subject,
         offer: body.offer,
         suspensionDays: body.suspensionDays,
+        sanction,
+        target: body.target,
+        targetCid: body.targetCid,
       }
       let request: ProvenRequest
       if (body.request) {
@@ -73,11 +80,17 @@ export default function (server: Server, ctx: AppContext) {
         request,
         offer: body.offer,
         suspensionDays: body.suspensionDays,
+        sanction,
+        target: body.target,
+        targetCid: body.targetCid,
       })
       return { encoding: 'application/json' as const, body: result }
     },
   })
 }
+
+const isSanction = (value: unknown): value is CommunitySanction =>
+  value === 'remove' || value === 'block'
 
 async function isHostedCommunity(ctx: AppContext, did: DidString) {
   if (!(await ctx.accountManager.getAccount(did))) return false

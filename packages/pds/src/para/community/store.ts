@@ -2,6 +2,7 @@ import { sql } from 'kysely'
 import type {
   CommunityMember,
   CommunityOffer,
+  CommunityOfferKind,
   CommunityOffice,
   CommunityPatch,
   CommunitySettings,
@@ -62,6 +63,7 @@ export class CommunityStore {
    * count.
    */
   async view(
+    community: string,
     head: CommunityHead | null,
     event: { actor: string; subject: string; offer?: number },
   ): Promise<CommunityStateView> {
@@ -90,6 +92,7 @@ export class CommunityStore {
       )
       .executeTakeFirstOrThrow()
     return {
+      community,
       settings: head?.settings ?? null,
       lastSeq: head?.seq ?? 0,
       member: (did) => members.get(did),
@@ -172,7 +175,9 @@ export class CommunityStore {
       .selectAll()
       .where('seq', '=', seq)
       .executeTakeFirst()
-    return row ? { ...row, office: row.office as CommunityOffice } : undefined
+    return row
+      ? { ...row, office: row.office as CommunityOfferKind }
+      : undefined
   }
 }
 

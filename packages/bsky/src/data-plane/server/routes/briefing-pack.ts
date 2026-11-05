@@ -7,6 +7,8 @@ import {
   ParaCommunityBriefingPackView,
 } from '../../../proto/bsky_pb.js'
 import { filterByOfficeWhenIndexed } from '../community-authority.js'
+import { accountBriefingStates } from '../community-content.js'
+import { communityAccountDid } from '../community-membership.js'
 import { Database } from '../db/index.js'
 import { CreatedAtCidKeyset, paginate } from '../db/pagination.js'
 
@@ -26,14 +28,25 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       .leftJoin('actor', 'actor.did', 'bp.creator')
       .selectAll('bp')
       .select('actor.handle as creatorHandle')
-      .where(briefingAuthorCandidateSql)
+      .where(
+        sql<boolean>`(
+          (not ${isAccountPackSql} and ${briefingAuthorCandidateSql})
+          or (${isAccountPackSql} and ${publishedBySteward()})
+        )`,
+      )
 
     if (communityUri) {
       builder = builder.where('bp.communityUri', '=', communityUri)
     }
 
     if (status) {
-      builder = builder.where('bp.status', '=', status)
+      // A pack in a community account has the status the chain gave it.
+      builder = builder.where(
+        sql<boolean>`(
+          (not ${isAccountPackSql} and "bp".status = ${status})
+          or (${isAccountPackSql} and ${publishedBySteward(status)})
+        )`,
+      )
     }
 
     if (query) {
@@ -59,7 +72,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     const hasMore = rows.length > pageLimit
     // The SQL filter is only a necessary condition; the page can come back
     // short, but the cursor still follows the rows that were read.
-    const page = await filterTrustedBriefingPacks(db, raw)
+    const page = await trustedBriefingPacks(db, raw)
 
     return new GetParaCommunityBriefingPacksResponse({
       briefingPacks: page.map((row) => toProtoView(row)),
@@ -81,12 +94,11 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       .where('bp.uri', '=', uri)
       .executeTakeFirst()
 
-    if (!row || (await filterTrustedBriefingPacks(db, [row])).length === 0) {
-      return new GetParaCommunityBriefingPackResponse()
-    }
+    const [trusted] = row ? await trustedBriefingPacks(db, [row]) : []
+    if (!trusted) return new GetParaCommunityBriefingPackResponse()
 
     return new GetParaCommunityBriefingPackResponse({
-      briefingPack: toProtoView(row),
+      briefingPack: toProtoView(trusted),
     })
   },
 })
@@ -114,6 +126,51 @@ const filterTrustedBriefingPacks = <
     }),
     ['owner', 'moderator'],
   )
+
+/**
+ * Packs in a community account are drafted by members and published by a
+ * steward's chain event, which names the version (OD-9 §3.9). An edit changes
+ * the CID and withdraws the pack until it is published again.
+ */
+const trustedBriefingPacks = async <
+  T extends {
+    uri: string
+    cid: string
+    communityUri: string
+    creator: string
+    indexedAt: string
+    status: string
+  },
+>(
+  db: Database,
+  rows: readonly T[],
+): Promise<T[]> => {
+  const states = await accountBriefingStates(db, rows)
+  const boards = new Set(
+    (
+      await filterTrustedBriefingPacks(
+        db,
+        rows.filter((row) => !communityAccountDid(row.communityUri)),
+      )
+    ).map((row) => row.uri),
+  )
+  return rows.flatMap((row) => {
+    const state = states.get(row.uri)
+    if (communityAccountDid(row.communityUri)) {
+      return state ? [{ ...row, status: state }] : []
+    }
+    return boards.has(row.uri) ? [row] : []
+  })
+}
+
+const isAccountPackSql = sql<boolean>`"bp"."communityUri" like 'at://%/com.para.community.profile/self'`
+
+const publishedBySteward = (state?: string) => sql<boolean>`exists (
+  select 1 from para_community_briefing_state chain
+  where chain.target = "bp".uri and chain.cid = "bp".cid
+    and "bp"."communityUri" = 'at://' || chain.community || '/com.para.community.profile/self'
+    ${state ? sql`and chain.state = ${state}` : sql``}
+)`
 
 /** Necessary condition for `filterTrustedBriefingPacks`, cheap enough for SQL. */
 const briefingAuthorCandidateSql = sql<boolean>`exists (

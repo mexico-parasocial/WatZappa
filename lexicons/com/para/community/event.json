@@ -38,7 +38,23 @@
               "moderator.revoke",
               "moderator.resign",
               "member.suspend",
-              "member.reinstate"
+              "member.reinstate",
+              "member.remove",
+              "member.block",
+              "member.unblock",
+              "sanction.propose",
+              "owner.offer",
+              "owner.accept",
+              "owner.resign",
+              "content.hide",
+              "content.restore",
+              "content.pin",
+              "content.unpin",
+              "relation.link",
+              "relation.accept",
+              "relation.unlink",
+              "briefing.publish",
+              "briefing.archive"
             ]
           },
           "actor": {
@@ -63,12 +79,12 @@
           "offer": {
             "type": "integer",
             "minimum": 1,
-            "description": "moderator.accept: the seq of the offer accepted."
+            "description": "The seq of the offer or proposal this event answers: moderator.accept and owner.accept (required), member.remove and member.block (optional, when acting on a moderator's sanction.propose)."
           },
           "expiresAt": {
             "type": "string",
             "format": "datetime",
-            "description": "moderator.offer: when the offer lapses. member.suspend: when the suspension ends. Computed by the host from createdAt."
+            "description": "moderator.offer, owner.offer and sanction.propose: when it lapses. member.suspend: when the suspension ends. Computed by the host from createdAt."
           },
           "governanceMode": {
             "type": "string",
@@ -84,6 +100,21 @@
             "type": "string",
             "format": "datetime",
             "description": "Set by the host's clock. The event's effects are judged at this time."
+          },
+          "sanction": {
+            "type": "string",
+            "knownValues": ["remove", "block"],
+            "description": "sanction.propose: what the moderator asks the owner to do."
+          },
+          "target": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "content.*: the shared item acted on. briefing.*: the draft. The subject is the DID that holds the record."
+          },
+          "targetCid": {
+            "type": "string",
+            "format": "cid",
+            "description": "briefing.*: the CID of the draft version published or archived."
           }
         }
       }

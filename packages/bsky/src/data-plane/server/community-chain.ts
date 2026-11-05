@@ -1,10 +1,13 @@
 import { type Selectable, sql } from 'kysely'
 import {
+  type CommunityEffect,
   type CommunityEvent,
   type CommunityMember,
+  type CommunityOfferKind,
   type CommunityOffice,
   type CommunityPatch,
   type CommunityRequest,
+  type CommunitySanction,
   type CommunitySettings,
   type CommunityStateView,
   applyCommunityEvent,
@@ -184,6 +187,11 @@ async function verifyChainEvent(
     createdAt: row.createdAt,
     ...(row.offer !== null ? { offer: row.offer } : {}),
     ...(row.expiresAt !== null ? { expiresAt: row.expiresAt } : {}),
+    ...(row.sanction !== null
+      ? { sanction: row.sanction as CommunitySanction }
+      : {}),
+    ...(row.target !== null ? { target: row.target } : {}),
+    ...(row.targetCid !== null ? { targetCid: row.targetCid } : {}),
     ...(row.governanceMode && row.admissionMode
       ? {
           settings: {
@@ -305,6 +313,7 @@ async function stateView(
     .where(sql<boolean>`offices ? 'owner'`)
     .executeTakeFirstOrThrow()
   return {
+    community: account.did,
     settings:
       account.governanceMode && account.admissionMode
         ? ({
@@ -316,7 +325,7 @@ async function stateView(
     member: (did) => members.get(did),
     openOffer: (seq) =>
       offer && offer.seq === seq
-        ? { ...offer, office: offer.office as CommunityOffice }
+        ? { ...offer, office: offer.office as CommunityOfferKind }
         : undefined,
     ownerCount: () => Number(owners.count),
   }
@@ -365,10 +374,85 @@ async function applyPatch(
       .where('seq', 'in', patch.closedOffers)
       .execute()
   }
+  for (const effect of patch.effects) {
+    await applyEffect(db, community, effect, event)
+  }
   await db.db
     .insertInto('para_community_used_request')
     .values({ requestUri: event.requestUri, community, seq: event.seq })
     .execute()
+}
+
+/** Events fold in `seq` order, so the newest write to a row is the right one. */
+async function applyEffect(
+  db: Database,
+  community: string,
+  effect: CommunityEffect,
+  event: ParaCommunityChainEvent,
+): Promise<void> {
+  switch (effect.kind) {
+    case 'content': {
+      const flags = {
+        ...(effect.hidden === undefined
+          ? {}
+          : {
+              hidden: effect.hidden,
+              hiddenAt: effect.hidden ? event.createdAt : null,
+              hiddenBy: effect.hidden ? event.actor : null,
+            }),
+        ...(effect.pinned === undefined ? {} : { pinned: effect.pinned }),
+      }
+      const row = { seq: event.seq, updatedAt: event.createdAt }
+      await db.db
+        .insertInto('para_community_content_state')
+        .values({ community, target: effect.target, ...flags, ...row })
+        .onConflict((oc) =>
+          oc.columns(['community', 'target']).doUpdateSet({ ...flags, ...row }),
+        )
+        .execute()
+      return
+    }
+    case 'briefing': {
+      const row = {
+        cid: effect.cid,
+        state: effect.state,
+        seq: event.seq,
+        actor: event.actor,
+        updatedAt: event.createdAt,
+      }
+      await db.db
+        .insertInto('para_community_briefing_state')
+        .values({ community, target: effect.target, ...row })
+        .onConflict((oc) =>
+          oc.columns(['community', 'target']).doUpdateSet(row),
+        )
+        .execute()
+      return
+    }
+    case 'relation': {
+      if (effect.half === null) {
+        await db.db
+          .deleteFrom('para_community_relation_half')
+          .where('community', '=', community)
+          .where('other', '=', effect.other)
+          .execute()
+        return
+      }
+      const row = {
+        half: effect.half,
+        seq: event.seq,
+        eventUri: event.uri,
+        eventCid: event.cid,
+        actor: event.actor,
+        createdAt: event.createdAt,
+      }
+      await db.db
+        .insertInto('para_community_relation_half')
+        .values({ community, other: effect.other, ...row })
+        .onConflict((oc) => oc.columns(['community', 'other']).doUpdateSet(row))
+        .execute()
+    }
+  }
 }
 
 function toMember(row: {
@@ -400,6 +484,9 @@ export async function refoldCommunityChain(
     'para_community_member_state',
     'para_community_open_offer',
     'para_community_used_request',
+    'para_community_content_state',
+    'para_community_briefing_state',
+    'para_community_relation_half',
   ] as const) {
     await db.db.deleteFrom(table).where('community', '=', community).execute()
   }

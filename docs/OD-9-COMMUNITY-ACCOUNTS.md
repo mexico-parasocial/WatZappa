@@ -9,7 +9,7 @@ community an account with its own `did:plc` and repo, which is the only place
 its authority is written, through one PDS endpoint that checks permission at
 write time.
 
-**Status:** accepted, 2026-11-04; phase 2 in progress. Decided with the
+**Status:** accepted, 2026-11-04; phase 4 in progress. Decided with the
 product owner: communities get their own `did:plc`; there is no migration of
 existing boards (fresh start); horizontal mode and assembly-approval admission
 stay hidden until a trusted tally verifier exists; permissioned spaces may be
@@ -403,11 +403,39 @@ document unless noted.
      tables. Boards keep the legacy path, which phase 5 deletes. Not yet:
      `listBoards` does not list accounts, and self-nominated delegate
      candidates have no account equivalent; both are phase 4–5 work.
-4. **Remaining governance and community decisions.**
-   - Removal and blocking, owner transfer, moderation, relations, briefing
-     publication and member requests.
-   - Exit: every action `describe` advertises has a passing test that takes
-     it.
+4. **Remaining governance and community decisions.** Implemented on
+   `claude/od-9-phase-4` (stacked on phase 3; unmerged, undeployed).
+   - Removal and blocking: `member.remove` (the member may join again),
+     `member.block` and `member.unblock` (unblocking restores the right to
+     join, not membership), and a moderator's `sanction.propose`, an open
+     proposal an owner may cite with `offer`. Owners are never sanctioned;
+     they resign first. `member.unblock` is an addition: without it a block
+     could not be undone.
+   - Owner transfer: `owner.offer`, `owner.accept` (replaces a moderator's
+     office) and `owner.resign`, refused for the last owner.
+   - Moderation: `content.hide`/`restore`/`pin`/`unpin`, newest by `seq`,
+     as independent flags. A share counts only while its author is an active
+     member, and a community account's pins are never the sharer's own.
+   - Relations: `relation.link` (parent owner), `relation.accept` (child
+     owner) and `relation.unlink`. A relation counts when both halves stand.
+     A community holds one half per counterpart, so a later `accept` replaces
+     an earlier `link` for the same pair, and two communities can never be
+     each other's parent. Longer cycles are not checked.
+   - Briefing packs: `briefing.publish` names the draft's CID and needs an
+     active member's draft; `briefing.archive` ends it. Editing the draft
+     changes its CID and withdraws it until it is published again.
+   - Member requests: every new action's parameters (`sanction`, `target`,
+     `targetCid`, `offer`) are bound by the member's request, so a request
+     for one share cannot hide another.
+   - Exit met in `packages/bsky/tests/para-community-governance-actions.test.ts`:
+     the chain applies every action `describeCommunityActions` advertises,
+     and a rebuild reproduces the same state, including content, briefing
+     and relation tables. The policy unit tests cover each refusal.
+   - Not done: `profile.update` (§3.7) is not in the policy, so the profile
+     is still fixed at creation; no endpoint lists open offers or proposals,
+     so an owner or offered member learns the `seq` from the chain;
+     `listBoards` still omits accounts; fetching a request proof from a
+     _different_ PDS is still untested.
 5. **Cut over and delete.**
    - Retire the old NSIDs, drop their tables, delete the code in §4, rewrite
      the dev-env seeds, release with PARA and the bridge.

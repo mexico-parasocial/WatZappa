@@ -1,6 +1,7 @@
 import * as plc from '@did-plc/lib'
 import {
   type CommunityAction,
+  type CommunitySanction,
   type CommunitySettings,
   TID,
   applyCommunityEvent,
@@ -31,6 +32,9 @@ export interface AppendInput {
   request: ProvenRequest
   offer?: number
   suspensionDays?: number
+  sanction?: CommunitySanction
+  target?: string
+  targetCid?: string
   settings?: CommunitySettings
 }
 
@@ -97,6 +101,9 @@ export function appendCommunityEvent(
           createdAt: new Date().toISOString(),
           offer: input.offer,
           suspensionDays: input.suspensionDays,
+          sanction: input.sanction,
+          target: input.target,
+          targetCid: input.targetCid,
           settings: input.settings,
         })
         const mismatch = communityRequestMismatch(
@@ -106,7 +113,7 @@ export function appendCommunityEvent(
         )
         if (mismatch) throw new InvalidRequestError(mismatch, 'InvalidRequest')
         const decision = applyCommunityEvent(
-          await txn.community.view(head, event),
+          await txn.community.view(community, head, event),
           event,
         )
         if (!decision.ok) {
@@ -127,6 +134,9 @@ export function appendCommunityEvent(
             requestProof: input.request.proof,
             offer: event.offer,
             expiresAt: event.expiresAt,
+            sanction: event.sanction,
+            target: event.target,
+            targetCid: event.targetCid,
             governanceMode: event.settings?.governanceMode,
             admissionMode: event.settings?.admissionMode,
             createdAt: event.createdAt,
