@@ -1,5 +1,6 @@
 import { type Expression, sql } from 'kysely'
 import { getAuthoritySnapshots } from './community-authority.js'
+import { communityAccountDid } from './community-membership.js'
 import type { Database } from './db/index.js'
 
 /*
@@ -186,6 +187,8 @@ export const getTrustedGovernanceRecordJson = async (
   db: Database,
   board: GovernanceBoard,
 ): Promise<string | null> => {
+  // @NOTE an OD-9 account lists its officers from its chain (OD-9 §3.8).
+  if (communityAccountDid(board.uri)) return null
   const authors = await getGovernanceAuthors(db, board)
 
   const slugMatch = await db.db

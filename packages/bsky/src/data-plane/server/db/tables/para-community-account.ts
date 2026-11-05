@@ -50,6 +50,8 @@ export interface ParaCommunityMemberState {
   offices: ColumnType<string[], string, string>
   suspendedUntil: string | null
   since: number
+  /** `createdAt` of the event that last made them a member. */
+  joinedAt: ColumnType<string | null, string | null | undefined, string | null>
 }
 
 export interface ParaCommunityOpenOffer {
