@@ -1,5 +1,6 @@
 import {
   type CommunityAction,
+  type CommunityProfile,
   type CommunityRequest,
   TID,
   getPdsEndpoint,
@@ -26,6 +27,7 @@ export interface RequestFields {
   sanction?: string
   target?: string
   targetCid?: string
+  profile?: CommunityProfile
 }
 
 // A type alias, not an interface, so it fits a record's `LexMap` fields.
@@ -64,6 +66,7 @@ export async function writeLocalRequest(
     'sanction',
     'target',
     'targetCid',
+    'profile',
   ] as const) {
     if (record[key] === undefined) delete record[key]
   }

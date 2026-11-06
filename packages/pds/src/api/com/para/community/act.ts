@@ -1,5 +1,10 @@
-import { type CommunitySanction, isCommunityAction } from '@atproto/common'
-import type { DidString } from '@atproto/syntax'
+import {
+  type CommunityProfile,
+  type CommunitySanction,
+  isCommunityAction,
+} from '@atproto/common'
+import { parseCid } from '@atproto/lex-data'
+import { AtUri, type DidString } from '@atproto/syntax'
 import {
   AuthRequiredError,
   InvalidRequestError,
@@ -14,6 +19,8 @@ import {
   proveRequest,
   writeLocalRequest,
 } from '../../../../para/community/requests.js'
+import { prepareUpdate } from '../../../../repo/index.js'
+import { stripUndefined } from '../util.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.add(com.para.community.act, {
@@ -57,6 +64,7 @@ export default function (server: Server, ctx: AppContext) {
         sanction,
         target: body.target,
         targetCid: body.targetCid,
+        profile: body.profile ? cleanProfile(body.profile) : undefined,
       }
       let request: ProvenRequest
       if (body.request) {
@@ -73,21 +81,66 @@ export default function (server: Server, ctx: AppContext) {
         )
       }
 
-      const result = await appendCommunityEvent(ctx, community, {
-        action,
-        actor,
-        subject,
-        request,
-        offer: body.offer,
-        suspensionDays: body.suspensionDays,
-        sanction,
-        target: body.target,
-        targetCid: body.targetCid,
-      })
+      const profile = fields.profile
+      const result = await appendCommunityEvent(
+        ctx,
+        community,
+        {
+          action,
+          actor,
+          subject,
+          request,
+          offer: body.offer,
+          suspensionDays: body.suspensionDays,
+          sanction,
+          target: body.target,
+          targetCid: body.targetCid,
+          profile,
+        },
+        // The profile record changes in the commit that appends the event, so
+        // the two cannot disagree about who changed it.
+        async (_seq, txn) => {
+          if (action !== 'profile.update' || !profile) return []
+          const uri = AtUri.make(
+            community,
+            com.para.community.profile.$type,
+            'self',
+          )
+          const current = await txn.record.getRecord(uri, null)
+          if (!current) {
+            throw new InvalidRequestError(
+              'The community has no profile.',
+              'CommunityNotFound',
+            )
+          }
+          return [
+            await prepareUpdate({
+              did: community,
+              collection: com.para.community.profile.$type,
+              rkey: 'self',
+              swapCid: parseCid(current.cid),
+              record: stripUndefined({
+                $type: com.para.community.profile.$type,
+                ...profile,
+                createdAt: current.value.createdAt,
+              }),
+            }),
+          ]
+        },
+      )
       return { encoding: 'application/json' as const, body: result }
     },
   })
 }
+
+/** Drops absent fields, so the request, the event and the record agree. */
+const cleanProfile = (profile: CommunityProfile): CommunityProfile =>
+  stripUndefined({
+    name: profile.name,
+    description: profile.description,
+    quadrant: profile.quadrant,
+    region: profile.region,
+  }) as unknown as CommunityProfile
 
 const isSanction = (value: unknown): value is CommunitySanction =>
   value === 'remove' || value === 'block'

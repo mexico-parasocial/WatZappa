@@ -56,6 +56,7 @@ export const COMMUNITY_ACTIONS = [
   'relation.unlink',
   'briefing.publish',
   'briefing.archive',
+  'profile.update',
 ] as const
 
 export type CommunityAction = (typeof COMMUNITY_ACTIONS)[number]
@@ -101,6 +102,17 @@ export interface CommunityStateView {
   ownerCount(): number
 }
 
+/**
+ * The presentation fields of a community's profile record. A type alias, not
+ * an interface, so it fits a record's `LexMap` fields.
+ */
+export type CommunityProfile = {
+  name: string
+  description?: string
+  quadrant: string
+  region?: string
+}
+
 export interface CommunityEvent {
   seq: number
   action: CommunityAction
@@ -127,6 +139,8 @@ export interface CommunityEvent {
   target?: string
   /** `briefing.*`: the CID of the draft version published or archived. */
   targetCid?: string
+  /** `profile.update`: the presentation the profile record is set to. */
+  profile?: CommunityProfile
   /** `community.found` only. */
   settings?: CommunitySettings
 }
@@ -179,6 +193,7 @@ export type CommunityRefusalCode =
   | 'InvalidOffer'
   | 'InvalidExpiry'
   | 'InvalidTarget'
+  | 'InvalidProfile'
   | 'LastOwner'
 
 export type CommunityDecision =
@@ -229,6 +244,7 @@ export function prepareCommunityEvent(input: {
   sanction?: CommunitySanction
   target?: string
   targetCid?: string
+  profile?: CommunityProfile
   settings?: CommunitySettings
 }): CommunityEvent {
   const at = Date.parse(input.createdAt)
@@ -250,6 +266,7 @@ export function prepareCommunityEvent(input: {
   if (input.sanction !== undefined) event.sanction = input.sanction
   if (input.target !== undefined) event.target = input.target
   if (input.targetCid !== undefined) event.targetCid = input.targetCid
+  if (input.profile !== undefined) event.profile = input.profile
   if (input.action === 'community.found') event.settings = input.settings
   return event
 }
@@ -655,6 +672,23 @@ export function applyCommunityEvent(
         ],
       })
     }
+    case 'profile.update': {
+      if (!isOwner) {
+        return refuse('NotPermitted', 'Only an owner can change the profile.')
+      }
+      if (event.subject !== event.actor) {
+        return refuse('InvalidSubject', 'The profile has no other subject.')
+      }
+      const profile = event.profile
+      if (!profile || !profile.name.trim() || !profile.quadrant.trim()) {
+        return refuse(
+          'InvalidProfile',
+          'A profile needs a name and a quadrant.',
+        )
+      }
+      // The host writes the record; nothing outside it changes.
+      return accept({ members: [] })
+    }
     case 'briefing.publish':
     case 'briefing.archive': {
       if (!isSteward) {
@@ -703,6 +737,7 @@ export interface CommunityRequest {
   sanction?: string
   target?: string
   targetCid?: string
+  profile?: CommunityProfile
   createdAt: string
   expiresAt: string
 }
@@ -733,6 +768,9 @@ export function communityRequestMismatch(
       return 'The request names different parameters.'
     }
   }
+  if (!sameProfile(request.profile, event.profile)) {
+    return 'The request names a different profile.'
+  }
   if (event.action === 'member.suspend') {
     const days = request.suspensionDays ?? COMMUNITY_MAX_SUSPENSION_DAYS
     const length =
@@ -754,6 +792,17 @@ export function communityRequestMismatch(
     return 'The event falls outside the request’s validity.'
   }
   return null
+}
+
+/** Whether two profile updates set every field alike; absent equals absent. */
+function sameProfile(a?: CommunityProfile, b?: CommunityProfile): boolean {
+  if (!a || !b) return !a && !b
+  return (
+    a.name === b.name &&
+    (a.description ?? undefined) === (b.description ?? undefined) &&
+    a.quadrant === b.quadrant &&
+    (a.region ?? undefined) === (b.region ?? undefined)
+  )
 }
 
 export interface CommunityActionDescription {
@@ -800,6 +849,7 @@ export function describeCommunityActions(
     'relation.unlink': 'owner',
     'briefing.publish': 'steward',
     'briefing.archive': 'steward',
+    'profile.update': 'owner',
   }
   return Object.entries(actors).map(([action, actor]) => ({
     action: action as CommunityAction,

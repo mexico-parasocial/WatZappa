@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { COMMUNITY_ACTIONS, describeCommunityActions } from '@atproto/common'
-import { type SeedClient, TestNetwork, usersSeed } from '@atproto/dev-env'
+import {
+  type SeedClient,
+  TestNetwork,
+  TestPds,
+  usersSeed,
+} from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
 import {
   communityHostCheck,
@@ -37,6 +42,8 @@ maybeDescribe('community governance actions (OD-9)', () => {
   let gina: DidString // never joins
   let north: DidString
   let south: DidString
+  let elsewhere: TestPds // a second PDS, hosting no community
+  let east: DidString // owned by eve; created by the cycle test
   let northUri: string
   let southUri: string
 
@@ -292,6 +299,7 @@ maybeDescribe('community governance actions (OD-9)', () => {
   })
 
   afterAll(async () => {
+    await elsewhere?.close()
     await network.close()
   })
 
@@ -492,6 +500,41 @@ maybeDescribe('community governance actions (OD-9)', () => {
     expect(await children(northUri)).toEqual([southUri])
   })
 
+  it('sets aside every relation on a cycle, however long, until one is withdrawn', async () => {
+    east = (
+      await pds(eve, 'com.para.community.create', {
+        name: 'este',
+        slug: 'este',
+        quadrant: 'centro',
+      })
+    ).body.did as DidString
+    await network.processAll()
+    const eastUri = uriOf(east)
+    // north -> south already stands from the previous test.
+    expect(await children(northUri)).toEqual([southUri])
+    await take(dan, { action: 'relation.link', subject: east }, south)
+    await take(eve, { action: 'relation.accept', subject: south }, east)
+    expect(await children(southUri)).toEqual([eastUri])
+
+    // east -> north closes a cycle of three: no chain holds both ends of it.
+    await take(eve, { action: 'relation.link', subject: north }, east)
+    await take(alice, { action: 'relation.accept', subject: east })
+    expect(await children(northUri)).toEqual([])
+    expect(await children(southUri)).toEqual([])
+    expect(await children(eastUri)).toEqual([])
+
+    // Withdrawing any one relation restores the other two.
+    await take(dan, { action: 'relation.unlink', subject: east }, south)
+    expect(await children(northUri)).toEqual([southUri])
+    expect(await children(eastUri)).toEqual([northUri])
+    expect(await children(southUri)).toEqual([])
+
+    await take(alice, { action: 'relation.unlink', subject: east })
+    await take(alice, { action: 'relation.unlink', subject: south })
+    await take(alice, { action: 'relation.link', subject: south })
+    expect(await children(northUri)).toEqual([southUri])
+  })
+
   it('publishes the exact version of a member’s draft, and editing withdraws it', async () => {
     const first = await draft(carol, 'first')
     const rkey = first.uri.split('/').pop()!
@@ -611,6 +654,298 @@ maybeDescribe('community governance actions (OD-9)', () => {
     await take(bob, { action: 'moderator.accept', offer })
     await take(bob, { action: 'moderator.resign' })
     expect(await member(bob)).toMatchObject({ status: 'active', offices: [] })
+  })
+
+  it('lists community accounts among boards, under every filter and sort', async () => {
+    type Listed = {
+      uri: string
+      name: string
+      memberCount: number
+      viewerMembershipState: string
+    }
+    const list = async (
+      params: Record<string, string> = {},
+      viewer?: DidString,
+    ) =>
+      (
+        await view<{ boards: Listed[]; cursor?: string }>(
+          'com.para.community.listBoards',
+          params,
+          viewer,
+        )
+      ).body
+    const uris = async (params: Record<string, string> = {}) =>
+      (await list(params)).boards.map((board) => board.uri).sort()
+
+    expect(await uris()).toEqual([northUri, southUri, uriOf(east)].sort())
+    expect(await uris({ query: 'sur' })).toEqual([southUri])
+    expect(await uris({ quadrant: 'centro' })).toHaveLength(3)
+    expect(await uris({ quadrant: 'izquierda' })).toEqual([])
+
+    const north = (await list({}, carol)).boards.find(
+      (board) => board.uri === northUri,
+    )!
+    expect(north.memberCount).toBeGreaterThan(1)
+    expect(north.viewerMembershipState).toBe('active')
+    const south = (await list({}, carol)).boards.find(
+      (board) => board.uri === southUri,
+    )!
+    expect(south.viewerMembershipState).toBe('none')
+
+    // The most populous comes first, and pages do not repeat or skip.
+    const bySize = await list({ sort: 'size', limit: '1' })
+    expect(bySize.boards.map((board) => board.uri)).toEqual([northUri])
+    const next = await list({
+      sort: 'size',
+      limit: '1',
+      cursor: bySize.cursor!,
+    })
+    expect(next.boards).toHaveLength(1)
+    expect(next.boards[0].uri).not.toBe(northUri)
+
+    const seen: string[] = []
+    let cursor: string | undefined
+    do {
+      const page = await list({ limit: '1', ...(cursor ? { cursor } : {}) })
+      seen.push(...page.boards.map((board) => board.uri))
+      cursor = page.cursor
+    } while (cursor)
+    expect(seen.sort()).toEqual([northUri, southUri, uriOf(east)].sort())
+  })
+
+  it('lists open offers to the stewards and to whoever they are addressed to', async () => {
+    const offers = async (viewer?: DidString, params = {}) =>
+      view<{
+        offers: Array<{ seq: number; office: string; subject: string }>
+        cursor?: string
+      }>(
+        'com.para.community.listOpenOffers',
+        { community: north, ...params },
+        viewer,
+      )
+    const seqs = async (viewer?: DidString) =>
+      (await offers(viewer)).body.offers.map((offer) => offer.seq)
+
+    // Earlier tests leave members in various states; start from known ones.
+    for (const did of [bob, carol, eve, frank]) {
+      const state = await member(did)
+      if (state?.status === 'blocked') {
+        await take(alice, { action: 'member.unblock', subject: did })
+      }
+      if (state?.status !== 'active') await take(did, { action: 'member.join' })
+    }
+    if (!(await member(bob))?.offices.includes('moderator')) {
+      const offer = await take(alice, {
+        action: 'moderator.offer',
+        subject: bob,
+      })
+      await take(bob, { action: 'moderator.accept', offer })
+    }
+    expect((await member(carol))?.offices).toEqual([])
+    expect((await member(eve))?.offices).toEqual([])
+    expect((await member(frank))?.offices).toEqual([])
+
+    const toCarol = await take(alice, {
+      action: 'moderator.offer',
+      subject: carol,
+    })
+    const toEve = await take(alice, { action: 'owner.offer', subject: eve })
+    const proposal = await take(bob, {
+      action: 'sanction.propose',
+      subject: frank,
+      sanction: 'block',
+    })
+
+    // Stewards see everything, newest first.
+    expect(await seqs(alice)).toEqual([proposal, toEve, toCarol])
+    expect(await seqs(bob)).toEqual([proposal, toEve, toCarol])
+    // Others see only what is addressed to them: a proposal to sanction a
+    // member is read by the stewards and, if it names them, by the member.
+    expect(await seqs(carol)).toEqual([toCarol])
+    expect(await seqs(frank)).toEqual([proposal])
+    expect(await seqs(gina)).toEqual([])
+    expect((await offers(alice)).body.offers[0]).toMatchObject({
+      office: 'block',
+      subject: frank,
+    })
+    expect((await offers()).status).toBe(401)
+
+    // Paged by seq.
+    const first = await offers(alice, { limit: '2' })
+    expect(first.body.offers.map((offer) => offer.seq)).toEqual([
+      proposal,
+      toEve,
+    ])
+    expect(
+      (
+        await offers(alice, { limit: '2', cursor: first.body.cursor! })
+      ).body.offers.map((offer) => offer.seq),
+    ).toEqual([toCarol])
+
+    // Answering or withdrawing closes them.
+    await take(carol, { action: 'moderator.accept', offer: toCarol })
+    await take(eve, { action: 'owner.accept', offer: toEve })
+    expect(await seqs(alice)).toEqual([proposal])
+    await take(alice, {
+      action: 'member.block',
+      subject: frank,
+      offer: proposal,
+    })
+    expect(await seqs(alice)).toEqual([])
+    // Leave the community as it was.
+    await take(alice, { action: 'member.unblock', subject: frank })
+    await take(frank, { action: 'member.join' })
+    await take(carol, { action: 'moderator.resign' })
+    await take(eve, { action: 'owner.resign' })
+  })
+
+  it('lets only an owner replace the profile, in the commit that records the event', async () => {
+    const account = () =>
+      db()
+        .selectFrom('para_community_account')
+        .select(['name', 'description', 'region', 'quadrant', 'createdAt'])
+        .where('did', '=', north)
+        .executeTakeFirstOrThrow()
+    const before = await account()
+    const profile = {
+      name: 'Norte unido',
+      description: 'Un barrio, una voz',
+      quadrant: 'centro',
+    }
+    await refuses(bob, { action: 'profile.update', profile }, 'NotPermitted')
+    await refuses(
+      alice,
+      { action: 'profile.update', profile: { ...profile, name: ' ' } },
+      'InvalidProfile',
+    )
+    await take(alice, { action: 'profile.update', profile })
+    expect(await account()).toEqual({
+      ...before,
+      name: 'Norte unido',
+      description: 'Un barrio, una voz',
+      region: null,
+    })
+
+    // The record carries the new values; its creation date is kept.
+    const record = await sc.agent.com.atproto.repo.getRecord({
+      repo: north,
+      collection: 'com.para.community.profile',
+      rkey: 'self',
+    })
+    expect(record.data.value).toMatchObject({
+      ...profile,
+      createdAt: before.createdAt,
+    })
+    // Setting it again, without a region, clears the old one.
+    await take(alice, {
+      action: 'profile.update',
+      profile: { ...profile, name: 'Norte', region: 'CDMX' },
+    })
+    expect((await account()).region).toBe('CDMX')
+    await take(alice, {
+      action: 'profile.update',
+      profile: { name: 'Norte', quadrant: 'centro' },
+    })
+    expect(await account()).toMatchObject({
+      name: 'Norte',
+      description: null,
+      region: null,
+    })
+  })
+
+  it('proves a request held by a member’s own PDS, and refuses one that does not match', async () => {
+    elsewhere = await TestPds.create({
+      didPlcUrl: network.plc.url,
+      inviteRequired: false,
+    })
+    const agent = elsewhere.getAgent()
+    const { data: account } = await agent.createAccount({
+      handle: 'remote.test',
+      email: 'remote@test.com',
+      password: 'remote-pass',
+    })
+    const remote = account.did as DidString
+    const request = async (action: string, subject = remote) => {
+      const now = Date.now()
+      const { data } = await agent.com.atproto.repo.createRecord({
+        repo: remote,
+        collection: REQUEST,
+        record: {
+          $type: REQUEST,
+          community: north,
+          action,
+          subject,
+          createdAt: new Date(now - 1000).toISOString(),
+          expiresAt: new Date(now + 10 * 60 * 1000).toISOString(),
+        },
+      })
+      return { uri: data.uri, cid: data.cid }
+    }
+    const call = async (body: Record<string, unknown>) =>
+      pds(
+        remote,
+        ACT,
+        { community: north, ...body },
+        {
+          authorization: `Bearer ${await elsewhere.ctx.serviceAuthJwt(remote, north, ACT)}`,
+        },
+      )
+
+    // The host reads the proof from the member's PDS, not from its own store.
+    expect(await call({ action: 'member.join' })).toMatchObject({
+      status: 400,
+      body: { error: 'InvalidRequest' },
+    })
+    const leave = await request('member.leave')
+    expect(await call({ action: 'member.join', request: leave })).toMatchObject(
+      { status: 400, body: { error: 'InvalidRequest' } },
+    ) // the request names a different action
+    const missing = {
+      uri: `at://${remote}/${REQUEST}/3kmissingmissing`,
+      cid: leave.cid,
+    }
+    expect(
+      await call({ action: 'member.join', request: missing }),
+    ).toMatchObject({ status: 400, body: { error: 'InvalidRequest' } })
+    // Someone else's request is not the caller's.
+    const aliceRequest = await write(alice, REQUEST, {
+      community: north,
+      action: 'member.join',
+      subject: remote,
+      createdAt: new Date(Date.now() - 1000).toISOString(),
+      expiresAt: new Date(Date.now() + 600000).toISOString(),
+    })
+    expect(
+      await call({ action: 'member.join', request: aliceRequest }),
+    ).toMatchObject({ status: 400, body: { error: 'InvalidRequest' } })
+
+    const join = await request('member.join')
+    const joined = await call({ action: 'member.join', request: join })
+    expect(joined).toMatchObject({
+      status: 200,
+      body: { seq: expect.any(Number) },
+    })
+    await network.processAll()
+    expect(await member(remote)).toMatchObject({ status: 'active' })
+    // The AppView checked the same proof when it folded the event.
+    const event = await db()
+      .selectFrom('para_community_chain_event')
+      .select(['status', 'actor'])
+      .where('community', '=', north)
+      .where('seq', '=', joined.body.seq!)
+      .executeTakeFirstOrThrow()
+    expect(event).toEqual({ status: 'applied', actor: remote })
+
+    // A request backs one event, even from another PDS.
+    expect(await call({ action: 'member.join', request: join })).toMatchObject({
+      status: 400,
+      body: { error: 'InvalidRequest' },
+    })
+    // A remote owner-only action is refused by the policy as for anyone.
+    const hide = await request('member.remove', carol)
+    expect(
+      await call({ action: 'member.remove', subject: carol, request: hide }),
+    ).toMatchObject({ status: 400, body: { error: 'NotPermitted' } })
   })
 
   it('rebuilds to the same state, and every action the policy describes was taken', async () => {

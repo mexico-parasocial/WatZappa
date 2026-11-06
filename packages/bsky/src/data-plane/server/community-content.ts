@@ -1,5 +1,6 @@
 import { sql } from 'kysely'
 import {
+  accountSnapshots,
   communityAccountDid,
   effectivelyActiveSql,
 } from './community-membership.js'
@@ -117,38 +118,63 @@ export async function countAccountShares(
  * Relations between community accounts: a parent's `link` and the child's
  * `accept`, both standing. A community holds one half per counterpart, so a
  * later `accept` replaces an earlier `link` for the same pair and two
- * communities can never be each other's parent. Shaped like a relation row;
- * `uri` and `cid` are the parent's `link` event, and the relation dates from
- * the later of the two events.
+ * communities can never be each other's parent. Chains of any length are
+ * covered too: no chain holds both ends of a cycle, so a relation counts only
+ * if its child cannot reach its parent through other standing relations. Every
+ * relation on a cycle is therefore set aside until one of them is withdrawn,
+ * whichever was written last. Shaped like a relation row; `uri` and `cid` are
+ * the parent's `link` event, and the relation dates from the later of the two
+ * events.
  */
 export function accountRelationRows(db: Database) {
-  return db.db
-    .selectFrom('para_community_relation_half as link')
-    .innerJoin('para_community_relation_half as accepted', (join) =>
-      join
-        .onRef('accepted.community', '=', 'link.other')
-        .onRef('accepted.other', '=', 'link.community')
-        .on('accepted.half', '=', 'accept'),
-    )
-    .where('link.half', '=', 'link')
-    .select([
-      sql<string>`'at://' || link.community || '/com.para.community.profile/self'`.as(
-        'parentCommunityUri',
-      ),
-      sql<string>`'at://' || link.other || '/com.para.community.profile/self'`.as(
-        'childCommunityUri',
-      ),
-      'link.eventUri as uri',
-      'link.eventCid as cid',
-      'link.actor as creator',
-      sql<string>`'parentChild'`.as('relation'),
-      sql<string>`greatest(link."createdAt", accepted."createdAt")`.as(
-        'createdAt',
-      ),
-      sql<string>`greatest(link."createdAt", accepted."createdAt")`.as(
-        'indexedAt',
-      ),
-    ])
+  // Relations whose two halves both stand, as (parent, child) pairs.
+  const pairs = sql`(
+    select l.community as parent, l.other as child
+    from para_community_relation_half l
+    join para_community_relation_half a
+      on a.community = l.other and a.other = l.community and a.half = 'accept'
+    where l.half = 'link'
+  )`
+  return (
+    db.db
+      .selectFrom('para_community_relation_half as link')
+      .innerJoin('para_community_relation_half as accepted', (join) =>
+        join
+          .onRef('accepted.community', '=', 'link.other')
+          .onRef('accepted.other', '=', 'link.community')
+          .on('accepted.half', '=', 'accept'),
+      )
+      .where('link.half', '=', 'link')
+      // `union` drops repeated nodes, so the walk ends on a cycle.
+      .where(
+        sql<boolean>`not exists (
+        with recursive below(node) as (
+          select p.child from ${pairs} p where p.parent = link.other
+          union
+          select p.child from below join ${pairs} p on p.parent = below.node
+        )
+        select 1 from below where node = link.community
+      )`,
+      )
+      .select([
+        sql<string>`'at://' || link.community || '/com.para.community.profile/self'`.as(
+          'parentCommunityUri',
+        ),
+        sql<string>`'at://' || link.other || '/com.para.community.profile/self'`.as(
+          'childCommunityUri',
+        ),
+        'link.eventUri as uri',
+        'link.eventCid as cid',
+        'link.actor as creator',
+        sql<string>`'parentChild'`.as('relation'),
+        sql<string>`greatest(link."createdAt", accepted."createdAt")`.as(
+          'createdAt',
+        ),
+        sql<string>`greatest(link."createdAt", accepted."createdAt")`.as(
+          'indexedAt',
+        ),
+      ])
+  )
 }
 
 /**
@@ -180,4 +206,48 @@ export async function accountBriefingStates(
     if (row && row.cid === pack.cid) states.set(pack.uri, row.state)
   }
   return states
+}
+
+/**
+ * Offers and proposals still open in a community account, newest first, paged
+ * by `seq`. An owner or moderator sees every one; anyone else sees the ones
+ * addressed to them, since a proposal to sanction a member is not for the
+ * rest of the community to read. Lapsed offers are left out even before the
+ * chain closes them.
+ */
+export async function accountOpenOffers(
+  db: Database,
+  community: string,
+  viewer: string,
+  limit: number,
+  cursor: string,
+) {
+  const snapshot = viewer
+    ? (await accountSnapshots(db, community, [viewer], Date.now())).get(viewer)
+    : undefined
+  const steward =
+    snapshot?.roles.includes('owner') || snapshot?.roles.includes('moderator')
+  if (!steward && !viewer) return { offers: [], cursor: '' }
+  const after = /^[0-9]+$/.test(cursor) ? Number(cursor) : null
+  const rows = await db.db
+    .selectFrom('para_community_open_offer')
+    .selectAll()
+    .where('community', '=', community)
+    .where(sql<boolean>`"expiresAt"::timestamptz > now()`)
+    .$if(!steward, (qb) => qb.where('subject', '=', viewer))
+    .$if(after !== null, (qb) => qb.where('seq', '<', after as number))
+    .orderBy('seq', 'desc')
+    .limit(limit + 1)
+    .execute()
+  const page = rows.slice(0, limit)
+  return {
+    offers: page.map((row) => ({
+      seq: row.seq,
+      office: row.office,
+      subject: row.subject,
+      issuer: row.issuer,
+      expiresAt: row.expiresAt,
+    })),
+    cursor: rows.length > limit ? String(page[page.length - 1].seq) : '',
+  }
 }

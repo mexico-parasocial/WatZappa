@@ -401,8 +401,8 @@ document unless noted.
      an account until phase 4 makes them chain actions.
    - Exit as met: no query answers for a community account from the old
      tables. Boards keep the legacy path, which phase 5 deletes. Not yet:
-     `listBoards` does not list accounts, and self-nominated delegate
-     candidates have no account equivalent; both are phase 4–5 work.
+     self-nominated delegate candidates have no account equivalent (phase 5
+     work). `listBoards` lists accounts since phase 4.
 4. **Remaining governance and community decisions.** Implemented on
    `claude/od-9-phase-4` (stacked on phase 3; unmerged, undeployed).
    - Removal and blocking: `member.remove` (the member may join again),
@@ -420,7 +420,9 @@ document unless noted.
      owner) and `relation.unlink`. A relation counts when both halves stand.
      A community holds one half per counterpart, so a later `accept` replaces
      an earlier `link` for the same pair, and two communities can never be
-     each other's parent. Longer cycles are not checked.
+     each other's parent. Longer cycles span several chains, so no chain can
+     refuse them; the AppView sets aside every relation on a cycle, whichever
+     was written last, until one of them is withdrawn.
    - Briefing packs: `briefing.publish` names the draft's CID and needs an
      active member's draft; `briefing.archive` ends it. Editing the draft
      changes its CID and withdraws it until it is published again.
@@ -431,11 +433,24 @@ document unless noted.
      the chain applies every action `describeCommunityActions` advertises,
      and a rebuild reproduces the same state, including content, briefing
      and relation tables. The policy unit tests cover each refusal.
-   - Not done: `profile.update` (§3.7) is not in the policy, so the profile
-     is still fixed at creation; no endpoint lists open offers or proposals,
-     so an owner or offered member learns the `seq` from the chain;
-     `listBoards` still omits accounts; fetching a request proof from a
-     _different_ PDS is still untested.
+   - `profile.update` (owner): the event carries the whole presentation
+     (`name`, `description`, `quadrant`, `region`), the member's request binds
+     it, and the host replaces the `profile/self` record in the same commit,
+     keeping `createdAt`. `governanceMode` and `admissionMode` are not in it.
+     The AppView indexes the record as before; the event is the authority
+     trail.
+   - `com.para.community.listOpenOffers`: open, unexpired offers and
+     proposals. Owners and moderators see all; anyone else sees only those
+     naming them, so a proposal to sanction a member is not public. The
+     `seq` it returns is the `offer` of the answering `act`.
+   - `listBoards` unions community accounts into the board list, with every
+     filter and sort (`size` counts account members too). A frozen account is
+     listed with the state `frozen`.
+   - A request held by a member's own PDS is proved over
+     `com.atproto.sync.getRecord`; the test runs a second PDS and refuses a
+     missing, mismatched or foreign request.
+   - Not done: request proofs signed by a rotated key (see the key rotation
+     note above).
 5. **Cut over and delete.**
    - Retire the old NSIDs, drop their tables, delete the code in §4, rewrite
      the dev-env seeds, release with PARA and the bridge.

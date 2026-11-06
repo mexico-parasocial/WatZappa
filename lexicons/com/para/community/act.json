@@ -41,7 +41,8 @@
                 "relation.accept",
                 "relation.unlink",
                 "briefing.publish",
-                "briefing.archive"
+                "briefing.archive",
+                "profile.update"
               ]
             },
             "subject": {
@@ -78,6 +79,11 @@
               "type": "string",
               "format": "cid",
               "description": "briefing.* only."
+            },
+            "profile": {
+              "type": "ref",
+              "ref": "com.para.community.profile#update",
+              "description": "profile.update only."
             }
           }
         }
@@ -132,6 +138,9 @@
         },
         {
           "name": "InvalidTarget"
+        },
+        {
+          "name": "InvalidProfile"
         },
         {
           "name": "LastOwner"

@@ -57,6 +57,10 @@
           "targetCid": {
             "type": "string",
             "format": "cid"
+          },
+          "profile": {
+            "type": "ref",
+            "ref": "com.para.community.profile#update"
           }
         }
       }

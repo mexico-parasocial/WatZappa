@@ -443,6 +443,7 @@
     "com.para.community.listDeliberations",
     "com.para.community.listIntensities",
     "com.para.community.listMembers",
+    "com.para.community.listOpenOffers",
     "com.para.community.listParentCommunities",
     "com.para.community.listPosts",
     "com.para.community.listSharedContent",
@@ -2222,7 +2223,7 @@
     },
     "com.para.community.event": {
       "uri": "file://../../lexicons/com/para/community/event.json",
-      "cid": "bafyreieh2voirfsohu3ommuaay3girx6hco2qtlyhdteuzf6n44fwq4nrq"
+      "cid": "bafyreigmktpfxiwzwlpynvcjxtjepvuu56qlxa6u3ik2iagpqivixo3qwy"
     },
     "com.para.community.exportObsidianVault": {
       "uri": "file://../../lexicons/com/para/community/exportObsidianVault.json",
@@ -2324,6 +2325,10 @@
       "uri": "file://../../lexicons/com/para/community/listMembers.json",
       "cid": "bafyreihmdhlctssbujj6typnivcglbxyba3c44iohob3yzsvw32qqxnxmu"
     },
+    "com.para.community.listOpenOffers": {
+      "uri": "file://../../lexicons/com/para/community/listOpenOffers.json",
+      "cid": "bafyreig4c2n3hjbhh3if4rqimhwx5awmbl4m43ejxh6ndcc2cipysw67fu"
+    },
     "com.para.community.listParentCommunities": {
       "uri": "file://../../lexicons/com/para/community/listParentCommunities.json",
       "cid": "bafyreibj4jrmnzdj5ifuzna6pfwqsletcl5zvzmsbcktjnop2odrahsile"
@@ -2350,7 +2355,7 @@
     },
     "com.para.community.profile": {
       "uri": "file://../../lexicons/com/para/community/profile.json",
-      "cid": "bafyreib3ovd4awszktgsezqzl5kf76xs5awwy7x5gj6hfqpechffymiaj4"
+      "cid": "bafyreigbjyvh2hizdasylfdfodz6sbtlgqt5jzjvnidnraorgooojxe4zu"
     },
     "com.para.community.proposal": {
       "uri": "file://../../lexicons/com/para/community/proposal.json",
@@ -2366,7 +2371,7 @@
     },
     "com.para.community.request": {
       "uri": "file://../../lexicons/com/para/community/request.json",
-      "cid": "bafyreie7nbc4trlf6gln7jygvehrxgakn24cmyifvjsfa6dsthlqjzyd3i"
+      "cid": "bafyreifrmkryuy55ykphalornegflrzmvuw7yw7wfswtxvkfh6lgmo7pxu"
     },
     "com.para.community.restoreSharedContent": {
       "uri": "file://../../lexicons/com/para/community/restoreSharedContent.json",

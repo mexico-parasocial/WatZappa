@@ -804,6 +804,59 @@ describe('community policy', () => {
       ])
     })
 
+    it('lets only an owner replace the profile, and binds the request to its content', () => {
+      const state = founded()
+      const profile = { name: 'Norte', quadrant: 'centro', region: 'CDMX' }
+      const update = {
+        action: 'profile.update',
+        actor: owner,
+        subject: owner,
+        profile,
+      } as const
+      expect(codeOf(state.act({ ...update, actor: mod, subject: mod }))).toBe(
+        'NotPermitted',
+      )
+      expect(codeOf(state.act({ ...update, subject: member }))).toBe(
+        'InvalidSubject',
+      )
+      expect(codeOf(state.act({ ...update, profile: undefined }))).toBe(
+        'InvalidProfile',
+      )
+      expect(
+        codeOf(state.act({ ...update, profile: { ...profile, name: ' ' } })),
+      ).toBe('InvalidProfile')
+      expect(codeOf(state.act(update))).toBe('ok')
+      // It changes nothing the host or AppView folds.
+      expect(state.effects).toEqual([])
+
+      const { event } = state.act(update)
+      const request = {
+        community: 'did:plc:community',
+        action: 'profile.update',
+        subject: owner,
+        profile,
+        createdAt: new Date(t0 - 1000).toISOString(),
+        expiresAt: new Date(t0 + 1000).toISOString(),
+      }
+      expect(
+        communityRequestMismatch('did:plc:community', request, event),
+      ).toBeNull()
+      for (const changed of [
+        { profile: { ...profile, name: 'Otro' } },
+        { profile: { ...profile, region: undefined } },
+        { profile: { ...profile, description: 'x' } },
+        { profile: undefined },
+      ]) {
+        expect(
+          communityRequestMismatch(
+            'did:plc:community',
+            { ...request, ...changed },
+            event,
+          ),
+        ).toMatch(/different/)
+      }
+    })
+
     it('binds a request to every parameter of the action', () => {
       const event = prepareCommunityEvent({
         seq: 9,

@@ -32,6 +32,8 @@ export interface ParaCommunityChainEvent {
   sanction: string | null
   target: string | null
   targetCid: string | null
+  /** `profile.update`: the presentation set, as JSON. */
+  profile: string | null
   governanceMode: string | null
   admissionMode: string | null
   requestUri: string

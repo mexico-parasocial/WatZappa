@@ -192,6 +192,7 @@ async function verifyChainEvent(
       : {}),
     ...(row.target !== null ? { target: row.target } : {}),
     ...(row.targetCid !== null ? { targetCid: row.targetCid } : {}),
+    ...(row.profile !== null ? { profile: JSON.parse(row.profile) } : {}),
     ...(row.governanceMode && row.admissionMode
       ? {
           settings: {

@@ -2337,6 +2337,14 @@ message GetParaCommunityActivityResponse {
   string activity_json = 1;
   string ledger_json = 2;
 }
+// Offers and proposals still open in a community account. An owner or
+// moderator sees all of them; anyone else sees only those addressed to them.
+message GetParaCommunityOpenOffersRequest {
+  string community = 1;
+  string viewer_did = 2;
+  int32 limit = 3;
+  string cursor = 4;
+}
 message GetParaCommunityWikiPagesRequest {
   string community_uri = 1;
   string kind = 2;
@@ -2972,6 +2980,7 @@ service Service {
   rpc GetParaCommunityActivities(GetParaCommunityActivitiesRequest) returns (ParaJsonPageResponse);
   rpc GetParaCommunityActivity(GetParaCommunityActivityRequest) returns (GetParaCommunityActivityResponse);
   rpc GetParaCommunityWikiPages(GetParaCommunityWikiPagesRequest) returns (ParaJsonPageResponse);
+  rpc GetParaCommunityOpenOffers(GetParaCommunityOpenOffersRequest) returns (ParaJsonPageResponse);
   rpc GetParaFollowThrough(GetParaFollowThroughRequest) returns (GetParaFollowThroughResponse);
   rpc GetParaDiscourseSnapshot(GetParaDiscourseSnapshotRequest) returns (GetParaDiscourseSnapshotResponse);
   rpc GetParaDiscourseTopics(GetParaDiscourseTopicsRequest) returns (GetParaDiscourseTopicsResponse);

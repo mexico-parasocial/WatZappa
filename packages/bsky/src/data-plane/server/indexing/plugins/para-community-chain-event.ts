@@ -65,6 +65,7 @@ function makeFns(deps: ChainDeps) {
         sanction: event.sanction ?? null,
         target: event.target ?? null,
         targetCid: event.targetCid ?? null,
+        profile: event.profile ? JSON.stringify(event.profile) : null,
         governanceMode: event.governanceMode ?? null,
         admissionMode: event.admissionMode ?? null,
         requestUri: event.request.uri,

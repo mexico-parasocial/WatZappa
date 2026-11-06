@@ -54,7 +54,8 @@
               "relation.accept",
               "relation.unlink",
               "briefing.publish",
-              "briefing.archive"
+              "briefing.archive",
+              "profile.update"
             ]
           },
           "actor": {
@@ -115,6 +116,11 @@
             "type": "string",
             "format": "cid",
             "description": "briefing.*: the CID of the draft version published or archived."
+          },
+          "profile": {
+            "type": "ref",
+            "ref": "com.para.community.profile#update",
+            "description": "profile.update: the presentation the profile record was set to in the same commit."
           }
         }
       }
