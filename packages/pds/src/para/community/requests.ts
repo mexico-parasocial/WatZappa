@@ -1,5 +1,6 @@
 import {
   type CommunityAction,
+  type CommunityProfile,
   type CommunityRequest,
   TID,
   getPdsEndpoint,
@@ -23,6 +24,10 @@ export interface RequestFields {
   subject: DidString
   offer?: number
   suspensionDays?: number
+  sanction?: string
+  target?: string
+  targetCid?: string
+  profile?: CommunityProfile
 }
 
 // A type alias, not an interface, so it fits a record's `LexMap` fields.
@@ -55,7 +60,14 @@ export async function writeLocalRequest(
     createdAt: new Date(now).toISOString(),
     expiresAt: new Date(now + LOCAL_REQUEST_TTL_MS).toISOString(),
   }
-  for (const key of ['offer', 'suspensionDays'] as const) {
+  for (const key of [
+    'offer',
+    'suspensionDays',
+    'sanction',
+    'target',
+    'targetCid',
+    'profile',
+  ] as const) {
     if (record[key] === undefined) delete record[key]
   }
   const { commit, write } = await ctx.actorStore.transact(

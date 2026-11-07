@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { sql } from 'kysely'
+import { type Kysely, sql } from 'kysely'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   type SeedClient,
@@ -549,8 +549,9 @@ maybeDescribe('community moderation authority', () => {
         .execute()
       expect(await childrenOf(horizontalBoard)).toEqual([danBoard])
 
-      await relationsPerAuthorDown(db)
-      await relationsPerAuthor(db)
+      // Migrations are written against an untyped database.
+      await relationsPerAuthorDown(db as unknown as Kysely<unknown>)
+      await relationsPerAuthor(db as unknown as Kysely<unknown>)
       // alice is no owner of the horizontal board, so the restored row is
       // indexed but still not trusted; frank's link stays.
       const restored = await db

@@ -9,7 +9,7 @@ community an account with its own `did:plc` and repo, which is the only place
 its authority is written, through one PDS endpoint that checks permission at
 write time.
 
-**Status:** accepted, 2026-11-04; phase 2 in progress. Decided with the
+**Status:** accepted, 2026-11-04; phase 4 in progress. Decided with the
 product owner: communities get their own `did:plc`; there is no migration of
 existing boards (fresh start); horizontal mode and assembly-approval admission
 stay hidden until a trusted tally verifier exists; permissioned spaces may be
@@ -401,13 +401,56 @@ document unless noted.
      an account until phase 4 makes them chain actions.
    - Exit as met: no query answers for a community account from the old
      tables. Boards keep the legacy path, which phase 5 deletes. Not yet:
-     `listBoards` does not list accounts, and self-nominated delegate
-     candidates have no account equivalent; both are phase 4–5 work.
-4. **Remaining governance and community decisions.**
-   - Removal and blocking, owner transfer, moderation, relations, briefing
-     publication and member requests.
-   - Exit: every action `describe` advertises has a passing test that takes
-     it.
+     self-nominated delegate candidates have no account equivalent (phase 5
+     work). `listBoards` lists accounts since phase 4.
+4. **Remaining governance and community decisions.** Implemented on
+   `claude/od-9-phase-4` (stacked on phase 3; unmerged, undeployed).
+   - Removal and blocking: `member.remove` (the member may join again),
+     `member.block` and `member.unblock` (unblocking restores the right to
+     join, not membership), and a moderator's `sanction.propose`, an open
+     proposal an owner may cite with `offer`. Owners are never sanctioned;
+     they resign first. `member.unblock` is an addition: without it a block
+     could not be undone.
+   - Owner transfer: `owner.offer`, `owner.accept` (replaces a moderator's
+     office) and `owner.resign`, refused for the last owner.
+   - Moderation: `content.hide`/`restore`/`pin`/`unpin`, newest by `seq`,
+     as independent flags. A share counts only while its author is an active
+     member, and a community account's pins are never the sharer's own.
+   - Relations: `relation.link` (parent owner), `relation.accept` (child
+     owner) and `relation.unlink`. A relation counts when both halves stand.
+     A community holds one half per counterpart, so a later `accept` replaces
+     an earlier `link` for the same pair, and two communities can never be
+     each other's parent. Longer cycles span several chains, so no chain can
+     refuse them; the AppView sets aside every relation on a cycle, whichever
+     was written last, until one of them is withdrawn.
+   - Briefing packs: `briefing.publish` names the draft's CID and needs an
+     active member's draft; `briefing.archive` ends it. Editing the draft
+     changes its CID and withdraws it until it is published again.
+   - Member requests: every new action's parameters (`sanction`, `target`,
+     `targetCid`, `offer`) are bound by the member's request, so a request
+     for one share cannot hide another.
+   - Exit met in `packages/bsky/tests/para-community-governance-actions.test.ts`:
+     the chain applies every action `describeCommunityActions` advertises,
+     and a rebuild reproduces the same state, including content, briefing
+     and relation tables. The policy unit tests cover each refusal.
+   - `profile.update` (owner): the event carries the whole presentation
+     (`name`, `description`, `quadrant`, `region`), the member's request binds
+     it, and the host replaces the `profile/self` record in the same commit,
+     keeping `createdAt`. `governanceMode` and `admissionMode` are not in it.
+     The AppView indexes the record as before; the event is the authority
+     trail.
+   - `com.para.community.listOpenOffers`: open, unexpired offers and
+     proposals. Owners and moderators see all; anyone else sees only those
+     naming them, so a proposal to sanction a member is not public. The
+     `seq` it returns is the `offer` of the answering `act`.
+   - `listBoards` unions community accounts into the board list, with every
+     filter and sort (`size` counts account members too). A frozen account is
+     listed with the state `frozen`.
+   - A request held by a member's own PDS is proved over
+     `com.atproto.sync.getRecord`; the test runs a second PDS and refuses a
+     missing, mismatched or foreign request.
+   - Not done: request proofs signed by a rotated key (see the key rotation
+     note above).
 5. **Cut over and delete.**
    - Retire the old NSIDs, drop their tables, delete the code in §4, rewrite
      the dev-env seeds, release with PARA and the bridge.

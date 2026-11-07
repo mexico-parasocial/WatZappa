@@ -29,6 +29,11 @@ export interface ParaCommunityChainEvent {
   subject: string
   offer: number | null
   expiresAt: string | null
+  sanction: string | null
+  target: string | null
+  targetCid: string | null
+  /** `profile.update`: the presentation set, as JSON. */
+  profile: string | null
   governanceMode: string | null
   admissionMode: string | null
   requestUri: string
@@ -69,10 +74,48 @@ export interface ParaCommunityUsedRequest {
   seq: number
 }
 
+/** Moderation state of a shared item, from `content.*` events (OD-9 §3.9). */
+export interface ParaCommunityContentState {
+  community: string
+  target: string
+  hidden: ColumnType<boolean, boolean | undefined, boolean>
+  pinned: ColumnType<boolean, boolean | undefined, boolean>
+  hiddenAt: string | null
+  hiddenBy: string | null
+  seq: number
+  updatedAt: string
+}
+
+/** The briefing-pack version a `briefing.*` event last named. */
+export interface ParaCommunityBriefingState {
+  community: string
+  target: string
+  cid: string
+  state: string
+  seq: number
+  actor: string
+  updatedAt: string
+}
+
+/** One community's half of a relation; it counts when both halves exist. */
+export interface ParaCommunityRelationHalf {
+  community: string
+  other: string
+  half: string
+  seq: number
+  eventUri: string
+  eventCid: string
+  actor: string
+  createdAt: string
+}
+
 export type PartialDB = {
   para_community_account: ParaCommunityAccount
   para_community_chain_event: ParaCommunityChainEvent
   para_community_member_state: ParaCommunityMemberState
   para_community_open_offer: ParaCommunityOpenOffer
   para_community_used_request: ParaCommunityUsedRequest
+  para_community_content_state: ParaCommunityContentState
+  para_community_briefing_state: ParaCommunityBriefingState
+  para_community_relation_half: ParaCommunityRelationHalf
 }

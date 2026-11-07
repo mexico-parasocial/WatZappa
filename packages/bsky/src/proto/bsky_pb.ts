@@ -17160,6 +17160,64 @@ export class GetParaCommunityActivityResponse extends Message<GetParaCommunityAc
 }
 
 /**
+ * Offers and proposals still open in a community account. An owner or
+ * moderator sees all of them; anyone else sees only those addressed to them.
+ *
+ * @generated from message bsky.GetParaCommunityOpenOffersRequest
+ */
+export class GetParaCommunityOpenOffersRequest extends Message<GetParaCommunityOpenOffersRequest> {
+  /**
+   * @generated from field: string community = 1;
+   */
+  community = "";
+
+  /**
+   * @generated from field: string viewer_did = 2;
+   */
+  viewerDid = "";
+
+  /**
+   * @generated from field: int32 limit = 3;
+   */
+  limit = 0;
+
+  /**
+   * @generated from field: string cursor = 4;
+   */
+  cursor = "";
+
+  constructor(data?: PartialMessage<GetParaCommunityOpenOffersRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaCommunityOpenOffersRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "community", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "viewer_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 4, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaCommunityOpenOffersRequest {
+    return new GetParaCommunityOpenOffersRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaCommunityOpenOffersRequest {
+    return new GetParaCommunityOpenOffersRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaCommunityOpenOffersRequest {
+    return new GetParaCommunityOpenOffersRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaCommunityOpenOffersRequest | PlainMessage<GetParaCommunityOpenOffersRequest> | undefined, b: GetParaCommunityOpenOffersRequest | PlainMessage<GetParaCommunityOpenOffersRequest> | undefined): boolean {
+    return proto3.util.equals(GetParaCommunityOpenOffersRequest, a, b);
+  }
+}
+
+/**
  * @generated from message bsky.GetParaCommunityWikiPagesRequest
  */
 export class GetParaCommunityWikiPagesRequest extends Message<GetParaCommunityWikiPagesRequest> {
