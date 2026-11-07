@@ -114,3 +114,4 @@ export * as _20261016T120000000Z from './20261016T120000000Z-add-community-activ
 export * as _20261102T120000000Z from './20261102T120000000Z-add-follow-through.js'
 export * as _20261104T120000000Z from './20261104T120000000Z-community-relations-per-author.js'
 export * as _20261105T120000000Z from './20261105T120000000Z-add-community-accounts.js'
+export * as _20261106T120000000Z from './20261106T120000000Z-add-community-member-joined-at.js'

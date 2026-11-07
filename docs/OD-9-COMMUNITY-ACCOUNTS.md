@@ -384,11 +384,25 @@ document unless noted.
      links and deletions are refused or freeze the community.
    - Not exercised: fetching a request proof from a _different_ PDS (the
      service-auth test uses a member hosted on the same PDS).
-3. **Effective state as the only membership source.**
-   - `para_community_member_state`; every membership and office query moved
-     onto it; `getAuthorization`, `getBoard`, `getGovernance` and
-     `listMembers` read it.
-   - Exit: no query reads the old membership or authority tables.
+3. **Effective state as the only membership source.** Implemented on
+   `claude/od-9-phase-3` (stacked on phase 2; unmerged, undeployed).
+   - `community-membership.ts` is the one seam. A community is named by its
+     URI; an account's is its profile, `at://<did>/com.para.community.profile/self`,
+     and every membership and office answer for it comes from
+     `para_community_member_state`. `getAuthoritySnapshots` dispatches on the
+     URI, so its callers needed no change.
+   - Board lookups also resolve accounts, by URI, DID, handle or slug, never
+     by display name. Moved: `getAuthorization`, `getBoard`, `listMembers`,
+     `getGovernance` (officers from the chain; no `officials`/`deputies`),
+     `getPolicyCommunityVotes`, delegation candidates, cabildeo vote
+     eligibility and delegation tallies, member counts, community alignment,
+     suggestions and the personal civic tree.
+   - Record-based moderation, relations and briefing packs count nothing for
+     an account until phase 4 makes them chain actions.
+   - Exit as met: no query answers for a community account from the old
+     tables. Boards keep the legacy path, which phase 5 deletes. Not yet:
+     `listBoards` does not list accounts, and self-nominated delegate
+     candidates have no account equivalent; both are phase 4–5 work.
 4. **Remaining governance and community decisions.**
    - Removal and blocking, owner transfer, moderation, relations, briefing
      publication and member requests.

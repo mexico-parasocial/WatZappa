@@ -6,6 +6,10 @@ import {
   resolveCapabilities,
 } from '@atproto/common'
 import type { AtUri } from '@atproto/syntax'
+import {
+  accountSnapshots,
+  communityAccountDid,
+} from './community-membership.js'
 import type { Database } from './db/index.js'
 
 export interface AuthoritySnapshot {
@@ -40,6 +44,9 @@ export async function getAuthoritySnapshots(
   subjects: readonly string[],
   now = Date.now(),
 ): Promise<Map<string, AuthoritySnapshot>> {
+  // OD-9: a community account answers from its folded chain alone.
+  const accountDid = communityAccountDid(communityUri)
+  if (accountDid) return accountSnapshots(db, accountDid, subjects, now)
   const resolve = await getAuthorityResolver(db, communityUri, subjects)
   return new Map(
     [...new Set(subjects)].map((subject) => [subject, resolve(subject, now)]),
@@ -208,6 +215,9 @@ export async function filterByOfficeWhenIndexed<T>(
   of: (row: T) => { community: string; author: string; indexedAt: string },
   offices: readonly CommunityRole[],
 ): Promise<T[]> {
+  // @NOTE an OD-9 community account takes such decisions only as events in
+  // its own chain (phase 4), so a member's record never counts for one.
+  rows = rows.filter((row) => !communityAccountDid(of(row).community))
   const authorsByCommunity = new Map<string, Set<string>>()
   for (const row of rows) {
     const { community, author } = of(row)

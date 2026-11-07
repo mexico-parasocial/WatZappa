@@ -337,8 +337,19 @@ async function applyPatch(
     }
     await db.db
       .insertInto('para_community_member_state')
-      .values({ community, did, ...row })
-      .onConflict((oc) => oc.columns(['community', 'did']).doUpdateSet(row))
+      .values({ community, did, ...row, joinedAt: event.createdAt })
+      .onConflict((oc) =>
+        oc.columns(['community', 'did']).doUpdateSet({
+          ...row,
+          // Rejoining after leaving restarts membership; other changes keep it.
+          joinedAt: sql`case
+            when para_community_member_state.status = 'left'
+              and excluded.status <> 'left'
+            then excluded."joinedAt"
+            else para_community_member_state."joinedAt"
+          end`,
+        }),
+      )
       .execute()
   }
   for (const offer of patch.openedOffers) {

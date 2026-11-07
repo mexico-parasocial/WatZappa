@@ -92,6 +92,10 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
   Each event carries its request proof and verifies alone, so the fold stays a
   pure function of the community repo: no `indexedAt`, no other repo's
   arrival. A fork, broken `prev` or rewritten event re-folds and freezes it.
+  Read membership and offices only through `community-membership.ts` or
+  `getAuthoritySnapshots`, which dispatch on the community URI (an account's
+  is its `com.para.community.profile/self`); never query the member tables
+  directly. Resolve accounts by URI, DID, handle or slug, never display name.
 
 - Pilot planning: read [docs/QUARTER_PLAN_2026Q4.md](docs/QUARTER_PLAN_2026Q4.md)
   and its evidence before auditing or scheduling work. It is the canonical

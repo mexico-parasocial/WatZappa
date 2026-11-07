@@ -1,6 +1,11 @@
 import { sql } from 'kysely'
 import { resolveCabildeoDelegationNullifier } from '@atproto/common'
+import {
+  activeMemberDids,
+  resolveCommunityAccountUris,
+} from '../../community-membership.js'
 import type { DatabaseSchema } from '../../db/database-schema.js'
+import type { Database } from '../../db/index.js'
 import { resolveCabildeoDelegations } from './resolve-cabildeo-delegations.js'
 
 export const recomputeCabildeoAggregates = async (
@@ -174,6 +179,10 @@ export const recomputeCabildeoAggregates = async (
       )
       .select('uri')
       .executeTakeFirst()
+    const database = { db } as Database
+    const communityUri =
+      board?.uri ??
+      (await resolveCommunityAccountUris(database, cabildeo.community))[0]
     const [grants, statuses] = await Promise.all([
       db
         .selectFrom('cabildeo_delegation')
@@ -196,15 +205,10 @@ export const recomputeCabildeoAggregates = async (
         .execute(),
       db.selectFrom('para_status').select(['did', 'party']).execute(),
     ])
-    const members = board
-      ? await db
-          .selectFrom('para_community_membership')
-          .where('communityUri', '=', board.uri)
-          .where('membershipState', '=', 'active')
-          .select('creator')
-          .execute()
+    const members = communityUri
+      ? await activeMemberDids(database, communityUri).execute()
       : []
-    const memberDids = new Set(members.map((member) => member.creator))
+    const memberDids = new Set(members.map((member) => member.did))
     const partyByDid = new Map(
       statuses.map((s) => [s.did, (s.party ?? '').trim().toLowerCase()]),
     )
