@@ -14,6 +14,10 @@ import {
   PostRecordMeta,
   Record,
 } from '../../../proto/bsky_pb.js'
+import {
+  countActiveMembers,
+  resolveCommunityAccountUris,
+} from '../community-membership.js'
 import type { Database } from '../db/index.js'
 import { getParaVoteScores } from './para-vote-score.js'
 
@@ -288,22 +292,16 @@ const getEligiblePolicyVoterCount = async (
     )
     .execute()
 
-  if (boardUris.length === 0) {
+  const communityUris = [
+    ...boardUris.map((row) => row.uri),
+    ...(await resolveCommunityAccountUris(db, normalizedCommunity)),
+  ]
+  if (communityUris.length === 0) {
     return 0
   }
 
-  const count = await db.db
-    .selectFrom('para_community_membership')
-    .where(
-      'communityUri',
-      'in',
-      boardUris.map((row) => row.uri),
-    )
-    .where('membershipState', '=', 'active')
-    .select(sql<number>`count(*)`.as('memberCount'))
-    .executeTakeFirst()
-
-  return Number(count?.memberCount) || 0
+  const counts = await countActiveMembers(db, communityUris)
+  return [...counts.values()].reduce((sum, count) => sum + count, 0)
 }
 
 const getPolicyQuorumTarget = (eligibleVoterCount: number) => {

@@ -726,6 +726,13 @@ export const assertCommunityRepoWrites = async (
   did: DidString,
   writes: PreparedWrite[],
 ) => {
+  // OD-9: a community account's repo is written only by its policy.
+  if (await actorTxn.community.isCommunity()) {
+    throw new InvalidRequestError(
+      'Community repos are written only through com.para.community.act.',
+      'CommunityRepo',
+    )
+  }
   for (const write of writes) {
     const { collection } = write.uri
     if (collection === AUTHORITY_EVENT_COLLECTION) {
