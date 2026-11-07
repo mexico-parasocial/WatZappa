@@ -120,6 +120,11 @@
             "roleHolders": {
               "type": "array",
               "items": { "type": "ref", "ref": "com.para.community.defs#roleHolder" }
+            },
+            "roleOffers": {
+              "type": "array",
+              "description": "Offers still waiting: not yet carried out by an appointment.",
+              "items": { "type": "ref", "ref": "com.para.community.defs#roleOfferView" }
             }
           }
         }

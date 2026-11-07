@@ -83,7 +83,11 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
   publishes. The electorate is active members by authority events alone, and
   voter eligibility everywhere else goes through `filterActiveMembers`, so a
   self-written membership record never counts as a vote. Every community stays
-  hierarchical (owner appoints moderators): there is no governance-mode field.
+  hierarchical: there is no governance-mode field. A moderator is appointed
+  only with consent: owner `roleOffer`, member `roleAcceptance`, then the
+  `ownerAppointment` grant citing the acceptance (`verifyRoleAcceptance`); an
+  acceptance grounds one appointment, and a revocation names the appointment it
+  ends.
 
 - **`com.para.civic.cabildeo` is the only proposal, deliberation and decision
   pipeline.** Reactions to arguments are `deliberationVote` on a

@@ -46,6 +46,8 @@ export interface OutputSchema {
   authorityEventVersion?: number
   roleDefinitions?: ComParaCommunityDefs.RoleDefinition[]
   roleHolders?: ComParaCommunityDefs.RoleHolder[]
+  /** Offers still waiting: not yet carried out by an appointment. */
+  roleOffers?: ComParaCommunityDefs.RoleOfferView[]
 }
 
 export interface CallOptions {

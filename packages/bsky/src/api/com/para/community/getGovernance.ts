@@ -133,6 +133,24 @@ const getGovernance = async (inputs: {
       effectiveAt: holder.effectiveAt,
       expiresAt: parseString(holder.expiresAt),
       evidence: holder.evidence,
+      ...(holder.eventUri
+        ? { eventUri: holder.eventUri, eventVersion: holder.eventVersion }
+        : {}),
+    })),
+    roleOffers: res.roleOffers.map((offer) => ({
+      uri: offer.uri,
+      role: offer.role,
+      subject: offer.subject,
+      offeredBy: offer.offeredBy,
+      createdAt: offer.createdAt,
+      ...(offer.acceptanceUri
+        ? {
+            acceptanceUri: offer.acceptanceUri,
+            acceptedAt: parseString(offer.acceptedAt),
+          }
+        : {}),
+      subjectEventUri: offer.subjectEventUri,
+      subjectEventVersion: offer.subjectEventVersion,
     })),
     computedAt,
   }

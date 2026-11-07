@@ -8,6 +8,7 @@ import {
   usersSeed,
 } from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
+import { appointModerator } from './_util.js'
 
 const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
 
@@ -215,14 +216,14 @@ maybeDescribe('community activities (AppView)', () => {
       version: 1,
     })
     await network.processAll()
-    bobModerator = await authorityEvent(alice, {
-      subject: bob,
-      action: 'moderator.grant',
-      basis: 'ownerAppointment',
-      version: 2,
+    ;({ appointment: bobModerator } = await appointModerator({
+      sc,
+      network,
+      community: board,
+      owner: alice,
+      nominee: bob,
       predecessor: bobMembership,
-      evidence: `at://${alice}/com.para.community.decision/appoint-bob`,
-    })
+    }))
     // carol claims a moderator role in her own membership record.
     await sc.agent.com.atproto.repo.createRecord(
       {
@@ -406,7 +407,7 @@ maybeDescribe('community activities (AppView)', () => {
       basis: 'ownerAppointment',
       version: 3,
       predecessor: bobModerator,
-      evidence: `at://${alice}/com.para.community.decision/revoke-bob`,
+      evidence: bobModerator,
     })
     await network.processAll()
     const { activities } = await listActivities({ community: board })

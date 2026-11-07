@@ -451,6 +451,7 @@
     "com.para.community.removeSharedContent",
     "com.para.community.restoreSharedContent",
     "com.para.community.roleAcceptance",
+    "com.para.community.roleOffer",
     "com.para.community.shareContent",
     "com.para.community.sharedContent",
     "com.para.community.sharedContentAction",
@@ -2197,7 +2198,7 @@
     },
     "com.para.community.defs": {
       "uri": "file://../../lexicons/com/para/community/defs.json",
-      "cid": "bafyreignn3wgcb2ljeowegbugltzvfklung2vdpmsv5tftduhctyi2z3le"
+      "cid": "bafyreifc2trv4pgyyvl7e6wbpm5lsgdruhwr5fc4grgewjlqcqbebcnq4y"
     },
     "com.para.community.delegation": {
       "uri": "file://../../lexicons/com/para/community/delegation.json",
@@ -2245,7 +2246,7 @@
     },
     "com.para.community.getGovernance": {
       "uri": "file://../../lexicons/com/para/community/getGovernance.json",
-      "cid": "bafyreidbi3zocrkymmi6ransuj5jr7ki45wn2pj64tfly2sej4hadipgsy"
+      "cid": "bafyreiemwvnyygc324lecm6lewtbcwxu7eabnetoijwbzilaidlgvksnoa"
     },
     "com.para.community.getTallySimulation": {
       "uri": "file://../../lexicons/com/para/community/getTallySimulation.json",
@@ -2349,7 +2350,11 @@
     },
     "com.para.community.roleAcceptance": {
       "uri": "file://../../lexicons/com/para/community/roleAcceptance.json",
-      "cid": "bafyreif5vfj4gkpcib5odylhfybdrgizk4rdv4whe7clqfvtaurz2leg7u"
+      "cid": "bafyreiacdocmwxkztngszv45gprymjwisex2gmwnmb2bzi4egtwadzeqfy"
+    },
+    "com.para.community.roleOffer": {
+      "uri": "file://../../lexicons/com/para/community/roleOffer.json",
+      "cid": "bafyreie6meozrszsxyroijg6knmwalzxnjapvamadu72bmf5yym7ig7vuu"
     },
     "com.para.community.shareContent": {
       "uri": "file://../../lexicons/com/para/community/shareContent.json",

@@ -53,6 +53,8 @@ import * as ParaCommunityBriefingPack from './plugins/para-community-briefing-pa
 import * as ParaCommunityGovernance from './plugins/para-community-governance.js'
 import * as ParaCommunityMembership from './plugins/para-community-membership.js'
 import * as ParaCommunityRelation from './plugins/para-community-relation.js'
+import * as ParaCommunityRoleAcceptance from './plugins/para-community-role-acceptance.js'
+import * as ParaCommunityRoleOffer from './plugins/para-community-role-offer.js'
 import * as ParaCommunitySharedContentAction from './plugins/para-community-shared-content-action.js'
 import * as ParaCommunitySharedContent from './plugins/para-community-shared-content.js'
 import * as ParaDeliberationVote from './plugins/para-deliberation-vote.js'
@@ -108,6 +110,8 @@ export class IndexingService {
     paraPost: ParaPost.PluginType
     paraCommunityBoard: ParaCommunityBoard.PluginType
     paraCommunityAuthorityEvent: ParaCommunityAuthorityEvent.PluginType
+    paraCommunityRoleOffer: ParaCommunityRoleOffer.PluginType
+    paraCommunityRoleAcceptance: ParaCommunityRoleAcceptance.PluginType
     paraCommunityBriefingPack: ParaCommunityBriefingPack.PluginType
     paraCommunityGovernance: ParaCommunityGovernance.PluginType
     paraCommunityMembership: ParaCommunityMembership.PluginType
@@ -180,6 +184,14 @@ export class IndexingService {
         this.background,
       ),
       paraCommunityAuthorityEvent: ParaCommunityAuthorityEvent.makePlugin(
+        this.db,
+        this.background,
+      ),
+      paraCommunityRoleOffer: ParaCommunityRoleOffer.makePlugin(
+        this.db,
+        this.background,
+      ),
+      paraCommunityRoleAcceptance: ParaCommunityRoleAcceptance.makePlugin(
         this.db,
         this.background,
       ),

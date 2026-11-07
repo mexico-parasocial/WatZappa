@@ -1,0 +1,21 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.roleOffer",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "An owner's offer of a community role to a member. The member accepts it with a com.para.community.roleAcceptance; the owner then publishes the authority event that carries the appointment out.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["community", "role", "subject", "createdAt"],
+        "properties": {
+          "community": { "type": "string", "format": "at-uri" },
+          "role": { "type": "string", "knownValues": ["moderator"] },
+          "subject": { "type": "string", "format": "did" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "record",
-      "description": "A member's explicit acceptance of an offered community role.",
+      "description": "A member's explicit acceptance of an offered community role. It is indexed only if the offer exists, names this member and role, and comes from a current owner; one acceptance grounds one appointment.",
       "key": "tid",
       "record": {
         "type": "object",
@@ -13,7 +13,7 @@
           "community": { "type": "string", "format": "at-uri" },
           "role": { "type": "string", "knownValues": ["moderator", "owner"] },
           "subject": { "type": "string", "format": "did" },
-          "offer": { "type": "string", "format": "at-uri" },
+          "offer": { "type": "string", "format": "at-uri", "description": "The com.para.community.roleOffer being accepted." },
           "createdAt": { "type": "string", "format": "datetime" }
         }
       }

@@ -484,6 +484,184 @@ export async function getAssemblyDecisionView(
   }
 }
 
+/** The latest authority event of each subject: what its next event chains to. */
+export async function getAuthorityHeads(
+  db: Database,
+  communityUri: string,
+  subjects: readonly string[],
+): Promise<Map<string, { uri: string; version: number }>> {
+  const heads = new Map<string, { uri: string; version: number }>()
+  const unique = [...new Set(subjects)]
+  if (unique.length === 0) return heads
+  const rows = await db.db
+    .selectFrom('para_community_authority_event')
+    .where('communityUri', '=', communityUri)
+    .where('subject', 'in', unique)
+    .select(['subject', 'uri', 'version', 'id'])
+    .orderBy('version', 'asc')
+    .orderBy('id', 'asc')
+    .execute()
+  for (const row of rows) {
+    heads.set(row.subject, { uri: row.uri, version: row.version })
+  }
+  return heads
+}
+
+export interface PendingRoleOffer {
+  uri: string
+  role: string
+  subject: string
+  offeredBy: string
+  createdAt: string
+  acceptanceUri?: string
+  acceptedAt?: string
+  subjectEventUri: string
+  subjectEventVersion: number
+}
+
+/** Newest offers considered per community, so the read stays bounded. */
+const PENDING_OFFER_LIMIT = 100
+
+/**
+ * Offers still waiting: made by a current owner, and not yet carried out by an
+ * appointment that cites their acceptance. Each carries the member's latest
+ * authority event, which the appointment names as its predecessor.
+ */
+export async function listPendingRoleOffers(
+  db: Database,
+  communityUri: string,
+  owners: ReadonlySet<string>,
+): Promise<PendingRoleOffer[]> {
+  if (owners.size === 0) return []
+  const offers = await db.db
+    .selectFrom('para_community_role_offer')
+    .where('communityUri', '=', communityUri)
+    .where('creator', 'in', [...owners])
+    .selectAll()
+    .orderBy('createdAt', 'desc')
+    .orderBy('uri', 'desc')
+    .limit(PENDING_OFFER_LIMIT)
+    .execute()
+  if (offers.length === 0) return []
+  const acceptances = await db.db
+    .selectFrom('para_community_role_acceptance')
+    .where(
+      'offerUri',
+      'in',
+      offers.map((offer) => offer.uri),
+    )
+    .selectAll()
+    .execute()
+  const acceptanceByOffer = new Map(
+    acceptances.map((acceptance) => [acceptance.offerUri, acceptance]),
+  )
+  const used = acceptances.length
+    ? await db.db
+        .selectFrom('para_community_authority_event')
+        .where(
+          'evidence',
+          'in',
+          acceptances.map((acceptance) => acceptance.uri),
+        )
+        .select('evidence')
+        .execute()
+    : []
+  const consumed = new Set(used.map((row) => row.evidence))
+  const heads = await getAuthorityHeads(
+    db,
+    communityUri,
+    offers.map((offer) => offer.subject),
+  )
+  return offers.flatMap((offer) => {
+    const acceptance = acceptanceByOffer.get(offer.uri)
+    if (acceptance && consumed.has(acceptance.uri)) return []
+    const head = heads.get(offer.subject)
+    if (!head) return []
+    return [
+      {
+        uri: offer.uri,
+        role: offer.role,
+        subject: offer.subject,
+        offeredBy: offer.creator,
+        createdAt: offer.createdAt,
+        ...(acceptance
+          ? { acceptanceUri: acceptance.uri, acceptedAt: acceptance.createdAt }
+          : {}),
+        subjectEventUri: head.uri,
+        subjectEventVersion: head.version,
+      },
+    ]
+  })
+}
+
+/**
+ * Whether `event` (a `moderator.grant` by `ownerAppointment`) rests on a real
+ * acceptance. The member published the acceptance themselves, for an offer
+ * from the same owner, in this community, for this role; and an acceptance
+ * grounds one appointment only, so it cannot be replayed after a revocation.
+ */
+async function verifyRoleAcceptance(
+  db: Database,
+  event: Omit<CommunityAuthorityEvent, 'uri' | 'creator'>,
+): Promise<boolean> {
+  if (!event.evidence) return false
+  const acceptance = await db.db
+    .selectFrom('para_community_role_acceptance')
+    .where('uri', '=', event.evidence)
+    .selectAll()
+    .executeTakeFirst()
+  if (
+    !acceptance ||
+    acceptance.role !== 'moderator' ||
+    acceptance.communityUri !== event.community ||
+    acceptance.subject !== event.subject ||
+    acceptance.creator !== event.subject
+  ) {
+    return false
+  }
+  const offer = await db.db
+    .selectFrom('para_community_role_offer')
+    .where('uri', '=', acceptance.offerUri)
+    .selectAll()
+    .executeTakeFirst()
+  if (
+    !offer ||
+    offer.role !== 'moderator' ||
+    offer.communityUri !== event.community ||
+    offer.subject !== event.subject ||
+    offer.creator !== event.issuer
+  ) {
+    return false
+  }
+  const used = await db.db
+    .selectFrom('para_community_authority_event')
+    .where('evidence', '=', event.evidence)
+    .select('id')
+    .executeTakeFirst()
+  return !used
+}
+
+/**
+ * A revocation names the appointment it ends: the `moderator.grant` itself, or
+ * the evidence that grant cited (what `getGovernance` lists for the holder).
+ */
+async function verifyRevokedAppointment(
+  db: Database,
+  event: Omit<CommunityAuthorityEvent, 'uri' | 'creator'>,
+): Promise<boolean> {
+  const named = event.evidence
+  if (!named) return false
+  const appointment = await db.db
+    .selectFrom('para_community_authority_event')
+    .where('communityUri', '=', event.community)
+    .where('subject', '=', event.subject)
+    .where('action', '=', 'moderator.grant')
+    .where((eb) => eb.or([eb('uri', '=', named), eb('evidence', '=', named)]))
+    .select('id')
+    .executeTakeFirst()
+  return Boolean(appointment)
+}
+
 export async function verifyAuthorityEvent(
   db: Database,
   uri: AtUri,
@@ -543,11 +721,19 @@ export async function verifyAuthorityEvent(
   }
   if (event.basis === 'ownerAppointment') {
     const issuer = await getAuthoritySnapshot(db, event.community, event.issuer)
+    if (!issuer.roles.includes('owner')) return false
+    if (event.action === 'moderator.revoke') {
+      return verifyRevokedAppointment(db, event)
+    }
+    if (event.action !== 'moderator.grant') return false
+    const subject = await getAuthoritySnapshot(
+      db,
+      event.community,
+      event.subject,
+    )
     return (
-      issuer.roles.includes('owner') &&
-      (event.action === 'moderator.grant' ||
-        event.action === 'moderator.revoke') &&
-      Boolean(event.evidence)
+      subject.membershipState === 'active' &&
+      (await verifyRoleAcceptance(db, event))
     )
   }
   if (event.basis === 'ownerTransfer') {

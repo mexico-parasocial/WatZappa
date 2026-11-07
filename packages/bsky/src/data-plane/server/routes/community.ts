@@ -36,12 +36,14 @@ import {
   ParaPolicySignalBucket,
   ParaRoleDefinition,
   ParaRoleHolder,
+  ParaRoleOffer,
   ParaSharedContentActionView,
   ParaStrongRef,
 } from '../../../proto/bsky_pb.js'
 import {
   getAuthoritySnapshot,
   listActiveMembers,
+  listPendingRoleOffers,
 } from '../community-authority.js'
 import {
   type GovernanceBoard,
@@ -396,6 +398,9 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
           evidence: row.evidence,
         })),
       )
+      const head = rows.reduce((latest, row) =>
+        row.version >= latest.version ? row : latest,
+      )
       for (const role of authority.roles) {
         const evidence = authority.evidence[role]
         if (!evidence) continue
@@ -406,13 +411,22 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
             effectiveAt: evidence.effectiveAt,
             expiresAt: evidence.expiresAt ?? '',
             evidence: evidence.evidence || evidence.uri,
+            eventUri: head.uri,
+            eventVersion: head.version,
           }),
         )
       }
     }
+    const owners = new Set(
+      roleHolders.filter((holder) => holder.role === 'owner').map((h) => h.did),
+    )
+    const roleOffers = (
+      board ? await listPendingRoleOffers(db, board.uri, owners) : []
+    ).map((offer) => new ParaRoleOffer(offer))
 
     return new GetParaCommunityGovernanceResponse({
       community,
+      roleOffers,
       summary: new ParaCommunitySummary(counters),
       moderators:
         record?.moderators.filter(isValidGovernanceEntry).map(

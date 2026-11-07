@@ -20,6 +20,7 @@ export interface Main {
   community: string
   role: 'moderator' | 'owner' | (string & {})
   subject: string
+  /** The com.para.community.roleOffer being accepted. */
   offer: string
   createdAt: string
   [k: string]: unknown

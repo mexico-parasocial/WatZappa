@@ -28716,6 +28716,72 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
             format: 'at-uri',
           },
+          eventUri: {
+            type: 'string',
+            format: 'at-uri',
+            description:
+              "This person's latest authority event; the next one names it as its predecessor.",
+          },
+          eventVersion: {
+            type: 'integer',
+            minimum: 1,
+            description:
+              'The version of that event; the next one is this plus one.',
+          },
+        },
+      },
+      roleOfferView: {
+        type: 'object',
+        required: [
+          'uri',
+          'role',
+          'subject',
+          'offeredBy',
+          'createdAt',
+          'subjectEventUri',
+          'subjectEventVersion',
+        ],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          role: {
+            type: 'string',
+            knownValues: ['moderator'],
+          },
+          subject: {
+            type: 'string',
+            format: 'did',
+          },
+          offeredBy: {
+            type: 'string',
+            format: 'did',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          acceptanceUri: {
+            type: 'string',
+            format: 'at-uri',
+            description:
+              'Present once the member accepted. It is the evidence of the appointment event.',
+          },
+          acceptedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          subjectEventUri: {
+            type: 'string',
+            format: 'at-uri',
+            description:
+              "The member's latest authority event, the predecessor of the appointment.",
+          },
+          subjectEventVersion: {
+            type: 'integer',
+            minimum: 1,
+          },
         },
       },
       availableAction: {
@@ -30415,6 +30481,15 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 items: {
                   type: 'ref',
                   ref: 'lex:com.para.community.defs#roleHolder',
+                },
+              },
+              roleOffers: {
+                type: 'array',
+                description:
+                  'Offers still waiting: not yet carried out by an appointment.',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.community.defs#roleOfferView',
                 },
               },
             },
@@ -32628,7 +32703,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
       main: {
         type: 'record',
         description:
-          "A member's explicit acceptance of an offered community role.",
+          "A member's explicit acceptance of an offered community role. It is indexed only if the offer exists, names this member and role, and comes from a current owner; one acceptance grounds one appointment.",
         key: 'tid',
         record: {
           type: 'object',
@@ -32649,6 +32724,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
             offer: {
               type: 'string',
               format: 'at-uri',
+              description: 'The com.para.community.roleOffer being accepted.',
             },
             createdAt: {
               type: 'string',

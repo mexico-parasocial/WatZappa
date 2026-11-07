@@ -8,6 +8,7 @@ import {
   usersSeed,
 } from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
+import { appointModerator } from './_util.js'
 
 const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
 
@@ -189,13 +190,13 @@ maybeDescribe('delegation candidate roles (AppView)', () => {
       version: 1,
     })
     await network.processAll()
-    await authorityEvent(alice, {
-      subject: bob,
-      action: 'moderator.grant',
-      basis: 'ownerAppointment',
-      version: 2,
+    await appointModerator({
+      sc,
+      network,
+      community: board,
+      owner: alice,
+      nominee: bob,
       predecessor: bobMember,
-      evidence: `at://${alice}/com.para.community.decision/appoint-bob`,
     })
     await membership(bob, [])
 

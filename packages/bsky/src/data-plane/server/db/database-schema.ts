@@ -30,6 +30,8 @@ import * as notification from './tables/notification.js'
 import * as paraCommunityBoard from './tables/para-community-board.js'
 import * as paraCommunityBriefingPack from './tables/para-community-briefing-pack.js'
 import * as paraCommunityAuthorityEvent from './tables/para-community-authority-event.js'
+import * as paraCommunityRoleAcceptance from './tables/para-community-role-acceptance.js'
+import * as paraCommunityRoleOffer from './tables/para-community-role-offer.js'
 import * as paraCommunityCivicTreeCard from './tables/para-community-civic-tree-card.js'
 import * as paraCommunityCivicTreeContributionVote from './tables/para-community-civic-tree-contribution-vote.js'
 import * as paraCommunityActivity from './tables/para-community-activity.js'
@@ -131,6 +133,8 @@ export type DatabaseSchemaType = duplicateRecord.PartialDB &
   draft.PartialDB &
   paraCommunityBoard.PartialDB &
   paraCommunityAuthorityEvent.PartialDB &
+  paraCommunityRoleAcceptance.PartialDB &
+  paraCommunityRoleOffer.PartialDB &
   paraCommunityBriefingPack.PartialDB &
   paraCommunityMembership.PartialDB &
   paraCommunityGovernance.PartialDB &

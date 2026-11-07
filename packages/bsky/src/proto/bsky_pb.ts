@@ -18156,6 +18156,16 @@ export class ParaRoleHolder extends Message<ParaRoleHolder> {
    */
   evidence = "";
 
+  /**
+   * @generated from field: string event_uri = 6;
+   */
+  eventUri = "";
+
+  /**
+   * @generated from field: int32 event_version = 7;
+   */
+  eventVersion = 0;
+
   constructor(data?: PartialMessage<ParaRoleHolder>) {
     super();
     proto3.util.initPartial(data, this);
@@ -18169,6 +18179,8 @@ export class ParaRoleHolder extends Message<ParaRoleHolder> {
     { no: 3, name: "effective_at", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 4, name: "expires_at", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 5, name: "evidence", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 6, name: "event_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 7, name: "event_version", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ParaRoleHolder {
@@ -18185,6 +18197,91 @@ export class ParaRoleHolder extends Message<ParaRoleHolder> {
 
   static equals(a: ParaRoleHolder | PlainMessage<ParaRoleHolder> | undefined, b: ParaRoleHolder | PlainMessage<ParaRoleHolder> | undefined): boolean {
     return proto3.util.equals(ParaRoleHolder, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.ParaRoleOffer
+ */
+export class ParaRoleOffer extends Message<ParaRoleOffer> {
+  /**
+   * @generated from field: string uri = 1;
+   */
+  uri = "";
+
+  /**
+   * @generated from field: string role = 2;
+   */
+  role = "";
+
+  /**
+   * @generated from field: string subject = 3;
+   */
+  subject = "";
+
+  /**
+   * @generated from field: string offered_by = 4;
+   */
+  offeredBy = "";
+
+  /**
+   * @generated from field: string created_at = 5;
+   */
+  createdAt = "";
+
+  /**
+   * @generated from field: string acceptance_uri = 6;
+   */
+  acceptanceUri = "";
+
+  /**
+   * @generated from field: string accepted_at = 7;
+   */
+  acceptedAt = "";
+
+  /**
+   * @generated from field: string subject_event_uri = 8;
+   */
+  subjectEventUri = "";
+
+  /**
+   * @generated from field: int32 subject_event_version = 9;
+   */
+  subjectEventVersion = 0;
+
+  constructor(data?: PartialMessage<ParaRoleOffer>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.ParaRoleOffer";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "role", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "subject", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "offered_by", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "created_at", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 6, name: "acceptance_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 7, name: "accepted_at", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 8, name: "subject_event_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 9, name: "subject_event_version", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ParaRoleOffer {
+    return new ParaRoleOffer().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ParaRoleOffer {
+    return new ParaRoleOffer().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ParaRoleOffer {
+    return new ParaRoleOffer().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ParaRoleOffer | PlainMessage<ParaRoleOffer> | undefined, b: ParaRoleOffer | PlainMessage<ParaRoleOffer> | undefined): boolean {
+    return proto3.util.equals(ParaRoleOffer, a, b);
   }
 }
 
@@ -19793,6 +19890,11 @@ export class GetParaCommunityGovernanceResponse extends Message<GetParaCommunity
    */
   roleHolders: ParaRoleHolder[] = [];
 
+  /**
+   * @generated from field: repeated bsky.ParaRoleOffer role_offers = 14;
+   */
+  roleOffers: ParaRoleOffer[] = [];
+
   constructor(data?: PartialMessage<GetParaCommunityGovernanceResponse>) {
     super();
     proto3.util.initPartial(data, this);
@@ -19813,6 +19915,7 @@ export class GetParaCommunityGovernanceResponse extends Message<GetParaCommunity
     { no: 11, name: "authority_event_version", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
     { no: 12, name: "role_definitions", kind: "message", T: ParaRoleDefinition, repeated: true },
     { no: 13, name: "role_holders", kind: "message", T: ParaRoleHolder, repeated: true },
+    { no: 14, name: "role_offers", kind: "message", T: ParaRoleOffer, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaCommunityGovernanceResponse {

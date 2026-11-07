@@ -2452,6 +2452,19 @@ message ParaRoleHolder {
   string effective_at = 3;
   string expires_at = 4;
   string evidence = 5;
+  string event_uri = 6;
+  int32 event_version = 7;
+}
+message ParaRoleOffer {
+  string uri = 1;
+  string role = 2;
+  string subject = 3;
+  string offered_by = 4;
+  string created_at = 5;
+  string acceptance_uri = 6;
+  string accepted_at = 7;
+  string subject_event_uri = 8;
+  int32 subject_event_version = 9;
 }
 message ParaCommunityBoardView {
   string uri = 1;
@@ -2652,6 +2665,7 @@ message GetParaCommunityGovernanceResponse {
   int32 authority_event_version = 11;
   repeated ParaRoleDefinition role_definitions = 12;
   repeated ParaRoleHolder role_holders = 13;
+  repeated ParaRoleOffer role_offers = 14;
 }
 message GetParaCommunityPostsRequest {
   string community = 1;

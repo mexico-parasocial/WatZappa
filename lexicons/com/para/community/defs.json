@@ -205,7 +205,24 @@
         "role": { "type": "string", "knownValues": ["member", "moderator", "owner"] },
         "effectiveAt": { "type": "string", "format": "datetime" },
         "expiresAt": { "type": "string", "format": "datetime" },
-        "evidence": { "type": "string", "format": "at-uri" }
+        "evidence": { "type": "string", "format": "at-uri" },
+        "eventUri": { "type": "string", "format": "at-uri", "description": "This person's latest authority event; the next one names it as its predecessor." },
+        "eventVersion": { "type": "integer", "minimum": 1, "description": "The version of that event; the next one is this plus one." }
+      }
+    },
+    "roleOfferView": {
+      "type": "object",
+      "required": ["uri", "role", "subject", "offeredBy", "createdAt", "subjectEventUri", "subjectEventVersion"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "role": { "type": "string", "knownValues": ["moderator"] },
+        "subject": { "type": "string", "format": "did" },
+        "offeredBy": { "type": "string", "format": "did" },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "acceptanceUri": { "type": "string", "format": "at-uri", "description": "Present once the member accepted. It is the evidence of the appointment event." },
+        "acceptedAt": { "type": "string", "format": "datetime" },
+        "subjectEventUri": { "type": "string", "format": "at-uri", "description": "The member's latest authority event, the predecessor of the appointment." },
+        "subjectEventVersion": { "type": "integer", "minimum": 1 }
       }
     },
     "availableAction": {

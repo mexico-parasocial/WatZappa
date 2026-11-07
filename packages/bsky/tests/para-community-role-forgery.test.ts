@@ -17,12 +17,27 @@ import { up as dropSelfDeclaredRoles } from '../src/data-plane/server/db/migrati
 import { up as reindexGovernance } from '../src/data-plane/server/db/migrations/20261005T120000000Z-reindex-para-community-governance.js'
 import { up as revalidateAuthority } from '../src/data-plane/server/db/migrations/20261005T130000000Z-revalidate-community-authority.js'
 import { up as dropGovernanceMode } from '../src/data-plane/server/db/migrations/20261105T120000000Z-drop-board-governance-mode.js'
+import { appointModerator } from './_util.js'
 
 const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
 
 type Governance = {
   moderators: Array<{ did: string; role: string }>
   officials: Array<{ did: string; office: string }>
+  roleHolders: Array<{
+    did: string
+    role: string
+    eventUri?: string
+    eventVersion?: number
+  }>
+  roleOffers: Array<{
+    uri: string
+    subject: string
+    offeredBy: string
+    acceptanceUri?: string
+    subjectEventUri: string
+    subjectEventVersion: number
+  }>
 }
 
 // Two sources of community roles that any account can write must grant
@@ -215,14 +230,14 @@ maybeDescribe('community role forgery (AppView)', () => {
       version: 1,
     })
     await network.processAll()
-    bobModerator = await authorityEvent(alice, {
-      subject: bob,
-      action: 'moderator.grant',
-      basis: 'ownerAppointment',
-      version: 2,
+    ;({ appointment: bobModerator } = await appointModerator({
+      sc,
+      network,
+      community: board,
+      owner: alice,
+      nominee: bob,
       predecessor: bobMember,
-      evidence: `at://${alice}/com.para.community.decision/appoint-bob`,
-    })
+    }))
     await createCommunityMembershipRecord(sc, bob, board, 'active')
     // carol declares herself owner and moderator in her own membership record.
     await selfDeclaredMembership(carol, board)
@@ -280,6 +295,184 @@ maybeDescribe('community role forgery (AppView)', () => {
         version: 2,
         predecessor: danMember,
         evidence: `at://${carol}/com.para.community.decision/appoint-dan`,
+      })
+      await network.processAll()
+      expect(await rolesOf(dan)).toEqual(['member'])
+    })
+  })
+
+  describe('moderator appointment', () => {
+    let danMember: string
+    let offer: string
+    let acceptance: string
+    let danModerator: string
+
+    const indexedBy = (
+      table: 'para_community_role_offer' | 'para_community_role_acceptance',
+      creator: string,
+    ) =>
+      network.bsky.db.db
+        .selectFrom(table)
+        .where('creator', '=', creator)
+        .select('uri')
+        .execute()
+
+    const offersFor = async () =>
+      (await getGovernance(await boardSlug(board))).roleOffers
+
+    beforeAll(async () => {
+      // dan may already be a member from an earlier test; chain to that.
+      const head = await network.bsky.db.db
+        .selectFrom('para_community_authority_event')
+        .where('communityUri', '=', board)
+        .where('subject', '=', dan)
+        .orderBy('version', 'desc')
+        .select('uri')
+        .executeTakeFirst()
+      danMember =
+        head?.uri ??
+        (await authorityEvent(dan, {
+          subject: dan,
+          action: 'member.activate',
+          basis: 'openAdmission',
+          version: 1,
+        }))
+      await network.processAll()
+    })
+
+    it('refuses an appointment that cites something other than an acceptance', async () => {
+      await authorityEvent(alice, {
+        subject: dan,
+        action: 'moderator.grant',
+        basis: 'ownerAppointment',
+        version: 2,
+        predecessor: danMember,
+        evidence: `at://${alice}/com.para.community.decision/appoint-dan`,
+      })
+      await network.processAll()
+      expect(await rolesOf(dan)).toEqual(['member'])
+    })
+
+    it('does not index an offer from someone who is not an owner', async () => {
+      await write(bob, 'com.para.community.roleOffer', {
+        community: board,
+        role: 'moderator',
+        subject: dan,
+        createdAt: new Date().toISOString(),
+      })
+      await network.processAll()
+      expect(await indexedBy('para_community_role_offer', bob)).toEqual([])
+    })
+
+    it('lists the owner’s offer with the member’s latest event to chain to', async () => {
+      offer = await write(alice, 'com.para.community.roleOffer', {
+        community: board,
+        role: 'moderator',
+        subject: dan,
+        createdAt: new Date().toISOString(),
+      })
+      await network.processAll()
+      expect(await offersFor()).toEqual([
+        expect.objectContaining({
+          uri: offer,
+          subject: dan,
+          offeredBy: alice,
+          subjectEventUri: danMember,
+          subjectEventVersion: 1,
+        }),
+      ])
+      expect((await offersFor())[0].acceptanceUri).toBeUndefined()
+    })
+
+    it('does not index an acceptance by someone the offer does not name', async () => {
+      await write(carol, 'com.para.community.roleAcceptance', {
+        community: board,
+        role: 'moderator',
+        subject: dan,
+        offer,
+        createdAt: new Date().toISOString(),
+      })
+      await network.processAll()
+      expect(await indexedBy('para_community_role_acceptance', carol)).toEqual(
+        [],
+      )
+    })
+
+    it('refuses the appointment before the member accepted', async () => {
+      await authorityEvent(alice, {
+        subject: dan,
+        action: 'moderator.grant',
+        basis: 'ownerAppointment',
+        version: 2,
+        predecessor: danMember,
+        evidence: offer,
+      })
+      await network.processAll()
+      expect(await rolesOf(dan)).toEqual(['member'])
+    })
+
+    it('appoints once the member accepted, and the offer is settled', async () => {
+      acceptance = await write(dan, 'com.para.community.roleAcceptance', {
+        community: board,
+        role: 'moderator',
+        subject: dan,
+        offer,
+        createdAt: new Date().toISOString(),
+      })
+      await network.processAll()
+      expect((await offersFor())[0].acceptanceUri).toBe(acceptance)
+
+      danModerator = await authorityEvent(alice, {
+        subject: dan,
+        action: 'moderator.grant',
+        basis: 'ownerAppointment',
+        version: 2,
+        predecessor: danMember,
+        evidence: acceptance,
+      })
+      await network.processAll()
+      expect(await rolesOf(dan)).toEqual(['member', 'moderator'])
+      const governance = await getGovernance(await boardSlug(board))
+      expect(governance.roleOffers).toEqual([])
+      expect(
+        governance.roleHolders.find(
+          (holder) => holder.did === dan && holder.role === 'moderator',
+        ),
+      ).toMatchObject({ eventUri: danModerator, eventVersion: 2 })
+    })
+
+    it('refuses a revocation that names no appointment of that member', async () => {
+      await authorityEvent(alice, {
+        subject: bob,
+        action: 'moderator.revoke',
+        basis: 'ownerAppointment',
+        version: 3,
+        predecessor: bobModerator,
+        evidence: danModerator,
+      })
+      await network.processAll()
+      expect(await rolesOf(bob)).toEqual(['member', 'moderator'])
+    })
+
+    it('does not let one acceptance ground a second appointment', async () => {
+      const revoked = await authorityEvent(alice, {
+        subject: dan,
+        action: 'moderator.revoke',
+        basis: 'ownerAppointment',
+        version: 3,
+        predecessor: danModerator,
+        evidence: acceptance,
+      })
+      await network.processAll()
+      expect(await rolesOf(dan)).toEqual(['member'])
+
+      await authorityEvent(alice, {
+        subject: dan,
+        action: 'moderator.grant',
+        basis: 'ownerAppointment',
+        version: 4,
+        predecessor: revoked,
+        evidence: acceptance,
       })
       await network.processAll()
       expect(await rolesOf(dan)).toEqual(['member'])

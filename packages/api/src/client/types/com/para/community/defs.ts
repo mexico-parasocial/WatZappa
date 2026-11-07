@@ -248,6 +248,10 @@ export interface RoleHolder {
   effectiveAt: string
   expiresAt?: string
   evidence: string
+  /** This person's latest authority event; the next one names it as its predecessor. */
+  eventUri?: string
+  /** The version of that event; the next one is this plus one. */
+  eventVersion?: number
 }
 
 const hashRoleHolder = 'roleHolder'
@@ -258,6 +262,31 @@ export function isRoleHolder<V>(v: V) {
 
 export function validateRoleHolder<V>(v: V) {
   return validate<RoleHolder & V>(v, id, hashRoleHolder)
+}
+
+export interface RoleOfferView {
+  $type?: 'com.para.community.defs#roleOfferView'
+  uri: string
+  role: 'moderator' | (string & {})
+  subject: string
+  offeredBy: string
+  createdAt: string
+  /** Present once the member accepted. It is the evidence of the appointment event. */
+  acceptanceUri?: string
+  acceptedAt?: string
+  /** The member's latest authority event, the predecessor of the appointment. */
+  subjectEventUri: string
+  subjectEventVersion: number
+}
+
+const hashRoleOfferView = 'roleOfferView'
+
+export function isRoleOfferView<V>(v: V) {
+  return is$typed(v, id, hashRoleOfferView)
+}
+
+export function validateRoleOfferView<V>(v: V) {
+  return validate<RoleOfferView & V>(v, id, hashRoleOfferView)
 }
 
 export interface AvailableAction {

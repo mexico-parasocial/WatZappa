@@ -307,3 +307,69 @@ export async function stopServer(server: Server) {
     })
   })
 }
+
+/**
+ * Appoints a moderator the way the AppView requires: the owner offers, the
+ * member accepts, and the owner publishes the appointment citing the
+ * acceptance. Both must already be indexed (call `processAll` first). Returns
+ * the URIs, the appointment's among them.
+ */
+export async function appointModerator(opts: {
+  sc: {
+    agent: {
+      com: {
+        atproto: { repo: { createRecord: (...args: any[]) => Promise<any> } }
+      }
+    }
+    getHeaders: (did: string) => Record<string, string>
+  }
+  network: { processAll: () => Promise<unknown> }
+  community: string
+  owner: string
+  nominee: string
+  /** The nominee's latest authority event. */
+  predecessor: string
+  version?: number
+}) {
+  const { sc, network, community, owner, nominee, predecessor } = opts
+  const create = async (by: string, collection: string, record: object) => {
+    const { data } = await sc.agent.com.atproto.repo.createRecord(
+      { repo: by, collection, record: { $type: collection, ...record } },
+      { encoding: 'application/json', headers: sc.getHeaders(by) },
+    )
+    return data.uri as string
+  }
+  const now = () => new Date().toISOString()
+  const offer = await create(owner, 'com.para.community.roleOffer', {
+    community,
+    role: 'moderator',
+    subject: nominee,
+    createdAt: now(),
+  })
+  await network.processAll()
+  const acceptance = await create(
+    nominee,
+    'com.para.community.roleAcceptance',
+    {
+      community,
+      role: 'moderator',
+      subject: nominee,
+      offer,
+      createdAt: now(),
+    },
+  )
+  await network.processAll()
+  const appointment = await create(owner, 'com.para.community.authorityEvent', {
+    community,
+    subject: nominee,
+    action: 'moderator.grant',
+    issuer: owner,
+    effectiveAt: new Date(Date.now() - 1000).toISOString(),
+    predecessor,
+    version: opts.version ?? 2,
+    basis: 'ownerAppointment',
+    evidence: acceptance,
+    createdAt: now(),
+  })
+  return { offer, acceptance, appointment }
+}
