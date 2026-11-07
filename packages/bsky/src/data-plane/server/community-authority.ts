@@ -157,6 +157,39 @@ export async function filterActiveMembers(
 }
 
 /**
+ * Every account that is an active member of the community by
+ * `filterActiveMembers`: anyone with an authority event, plus anyone with a
+ * membership record, judged by the same rule. Counting `membershipState`
+ * straight from the records would count what members say about themselves.
+ */
+export async function listActiveMembers(
+  db: Database,
+  communityUri: string,
+  now = Date.now(),
+): Promise<Set<string>> {
+  const [events, records] = await Promise.all([
+    db.db
+      .selectFrom('para_community_authority_event')
+      .where('communityUri', '=', communityUri)
+      .select('subject as did')
+      .distinct()
+      .execute(),
+    db.db
+      .selectFrom('para_community_membership')
+      .where('communityUri', '=', communityUri)
+      .select('creator as did')
+      .distinct()
+      .execute(),
+  ])
+  return filterActiveMembers(
+    db,
+    communityUri,
+    [...events, ...records].map((row) => row.did),
+    now,
+  )
+}
+
+/**
  * The assembly: accounts that are active members by authority events alone,
  * as of `at`. A membership record an account wrote itself never counts here,
  * because this set decides who holds authority.

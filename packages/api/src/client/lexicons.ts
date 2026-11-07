@@ -23892,9 +23892,13 @@ export const schemaDict: Record<string, LexiconDoc> = {
           },
           official: {
             type: 'boolean',
+            description:
+              "DEPRECATED 2026-11-06 (OD-10 §7.6), always false; to be removed. It came from the author's own post metadata, so it never established that an official account published the policy, and a policy result no longer depends on who published it.",
           },
           certified: {
             type: 'boolean',
+            description:
+              'DEPRECATED 2026-11-06 (OD-10 §7.6); to be removed. True when `outcome` is `passed` or `strong_passed`. A policy never closes, so nothing certifies it: read `outcome` instead.',
           },
           outcome: {
             type: 'string',
@@ -23905,10 +23909,18 @@ export const schemaDict: Record<string, LexiconDoc> = {
               'strong_passed',
               'failed',
             ],
+            description:
+              "A live reading of what the community's current ballots say, which changes as people change their votes. It binds no one: a binding decision goes through a cabildeo (OD-10 §7.6).",
           },
           state: {
             type: 'string',
+            description:
+              'The live reading as a state: `passing`, `failing`, `split` (votes without a majority either way) or `noQuorum`. The other known values are DEPRECATED 2026-11-06 (OD-10 §7.6), never returned, and will be removed.',
             knownValues: [
+              'passing',
+              'failing',
+              'split',
+              'noQuorum',
               'draft',
               'deliberation',
               'voting',
@@ -25409,7 +25421,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
               minimum: -3,
               maximum: 3,
               description:
-                "NOT ACCEPTED ON WRITE (OD-7 §5c). Weighted consensus signal for policy-style votes: -3 strong opposition, 0 neutral/abstain, +3 strong support. Publishing it here would put the voter's -3..+3 position in their own public repo, which §5b rules out until the replacement ballot exists.",
+                "NOT ACCEPTED ON WRITE (OD-7 §5c). Weighted consensus signal for policy-style votes: -3 strong opposition to +3 strong support. A policy ballot never carries 0: there is no neutral ballot, and taking no stance means casting none (OD-10 §7.5). Publishing it here would put the voter's -3..+3 position in their own public repo, which §5b rules out until the replacement ballot exists.",
             },
             reason: {
               type: 'string',

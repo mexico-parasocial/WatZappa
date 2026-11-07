@@ -135,6 +135,8 @@ describe('public policy ballot verification', () => {
     { signal: 4 },
     { signal: -4 },
     { signal: 0.5 },
+    // No neutral ballot (OD-10 §7.5).
+    { signal: 0 },
     { signal: undefined },
     { selectedOption: 1 },
     { cabildeo: 'at://did:plc:board/app.bsky.feed.post/policy' },

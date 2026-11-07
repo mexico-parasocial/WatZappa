@@ -373,8 +373,11 @@ export interface PolicyTally {
   eligibleVoterCount: number
   quorumTarget: number
   quorumMet: boolean
+  /** DEPRECATED 2026-11-06 (OD-10 §7.6), always false; to be removed. It came from the author's own post metadata, so it never established that an official account published the policy, and a policy result no longer depends on who published it. */
   official: boolean
+  /** DEPRECATED 2026-11-06 (OD-10 §7.6); to be removed. True when `outcome` is `passed` or `strong_passed`. A policy never closes, so nothing certifies it: read `outcome` instead. */
   certified: boolean
+  /** A live reading of what the community's current ballots say, which changes as people change their votes. It binds no one: a binding decision goes through a cabildeo (OD-10 §7.6). */
   outcome:
     | 'insufficient_quorum'
     | 'contested'
@@ -382,7 +385,12 @@ export interface PolicyTally {
     | 'strong_passed'
     | 'failed'
     | (string & {})
+  /** The live reading as a state: `passing`, `failing`, `split` (votes without a majority either way) or `noQuorum`. The other known values are DEPRECATED 2026-11-06 (OD-10 §7.6), never returned, and will be removed. */
   state:
+    | 'passing'
+    | 'failing'
+    | 'split'
+    | 'noQuorum'
     | 'draft'
     | 'deliberation'
     | 'voting'

@@ -120,9 +120,10 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
   filed under each of the six official matter groups and casts public policy
   ballots from the demo accounts, leaning by party. The proofs come from the
   dev-env verifier (`devPolicyVoteProof`), signed with a key that exists only
-  there. `com.para.civic.getPolicyCommunityVotes` reads `para_policy_vote`
-  joined to active `para_community_membership`; it is gated to members of that
-  community.
+  there. A policy tally and `com.para.civic.getPolicyCommunityVotes` count only
+  ballots from identities `filterActiveMembers` holds active in the policy's
+  community when read (OD-10 §7.7), never a 0 signal (`isPolicySignal`, §7.5);
+  the community view is gated to members of that community.
 
 - `packages/bsky/src/governance-lab` is a synthetic reference only. Its
   `g1-follow-signal-v1` policy is provisional; never import it into production

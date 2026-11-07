@@ -39,7 +39,10 @@ import {
   ParaSharedContentActionView,
   ParaStrongRef,
 } from '../../../proto/bsky_pb.js'
-import { getAuthoritySnapshot } from '../community-authority.js'
+import {
+  getAuthoritySnapshot,
+  listActiveMembers,
+} from '../community-authority.js'
 import {
   type GovernanceBoard,
   getTrustedGovernanceRecordJson,
@@ -271,27 +274,19 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       viewerIsAdmin: req.viewerIsAdmin,
     })
 
-    const members = db.db
-      .selectFrom('para_community_membership as membership')
-      .where('membership.communityUri', '=', board.uri)
-      .where('membership.membershipState', '=', 'active')
-    const voters = members
-      .innerJoin('para_policy_vote as vote', 'vote.creator', 'membership.creator')
-      .where('vote.subject', '=', req.postUri)
-      .where('vote.subjectType', '=', 'policy')
-
-    const [memberCount, breakdown, rows] = await Promise.all([
-      members
-        .select(sql<number>`count(*)`.as('count'))
-        .executeTakeFirst(),
-      voters
-        .select(['vote.signal as signal', sql<number>`count(*)`.as('count')])
-        .groupBy('vote.signal')
-        .orderBy('vote.signal', 'asc')
-        .execute(),
-      voters
+    // Membership is judged by authority events, the same rule as the policy
+    // tally (OD-10 §7.7): a membership record states only what its author
+    // says about themselves.
+    const now = Date.now()
+    const [members, castVotes] = await Promise.all([
+      listActiveMembers(db, board.uri, now),
+      db.db
+        .selectFrom('para_policy_vote as vote')
         .leftJoin('actor as actor', 'actor.did', 'vote.creator')
         .leftJoin('profile as profile', 'profile.creator', 'vote.creator')
+        .where('vote.subject', '=', req.postUri)
+        .where('vote.subjectType', '=', 'policy')
+        .where('vote.signal', '!=', 0) // OD-10 §7.5, as in the tally
         .select([
           'vote.creator as did',
           'vote.signal as signal',
@@ -301,20 +296,26 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         ])
         .orderBy('vote.createdAt', 'desc')
         .orderBy('vote.creator', 'asc')
-        .limit(normalizeLimit(req.limit))
         .execute(),
     ])
+    const votes = castVotes.filter((vote) => members.has(vote.did))
+    const signalCounts = new Map<number, number>()
+    for (const vote of votes) {
+      signalCounts.set(vote.signal, (signalCounts.get(vote.signal) ?? 0) + 1)
+    }
+    const breakdown = [...signalCounts]
+      .sort(([a], [b]) => a - b)
+      .map(([signal, count]) => ({ signal, count }))
+    const rows = votes.slice(0, normalizeLimit(req.limit))
+    const memberCount = members.size
 
-    const voterCount = breakdown.reduce((sum, row) => sum + Number(row.count), 0)
-    const signalSum = breakdown.reduce(
-      (sum, row) => sum + Number(row.signal) * Number(row.count),
-      0,
-    )
+    const voterCount = votes.length
+    const signalSum = votes.reduce((sum, vote) => sum + vote.signal, 0)
 
     return new GetParaPolicyCommunityVotesResponse({
       communityUri: board.uri,
       communityName: board.name ?? '',
-      memberCount: Number(memberCount?.count) || 0,
+      memberCount,
       voterCount,
       signalAverage: voterCount > 0 ? signalSum / voterCount : 0,
       breakdown: breakdown.map(

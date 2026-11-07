@@ -23,7 +23,7 @@ export interface Main {
   subjectType?: 'cabildeo' | 'policy' | 'matter' | 'governance' | (string & {})
   cabildeo?: string
   selectedOption?: number
-  /** NOT ACCEPTED ON WRITE (OD-7 §5c). Weighted consensus signal for policy-style votes: -3 strong opposition, 0 neutral/abstain, +3 strong support. Publishing it here would put the voter's -3..+3 position in their own public repo, which §5b rules out until the replacement ballot exists. */
+  /** NOT ACCEPTED ON WRITE (OD-7 §5c). Weighted consensus signal for policy-style votes: -3 strong opposition to +3 strong support. A policy ballot never carries 0: there is no neutral ballot, and taking no stance means casting none (OD-10 §7.5). Publishing it here would put the voter's -3..+3 position in their own public repo, which §5b rules out until the replacement ballot exists. */
   signal?: number
   /** Optional voter rationale for the signal. */
   reason?: string
