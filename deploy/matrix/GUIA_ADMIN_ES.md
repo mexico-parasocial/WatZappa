@@ -65,92 +65,62 @@ Edita `.env` en la raíz del proyecto:
 
 ```bash
 # ─── Matrix ───
-MATRIX_SERVER_NAME=matrix.para.social
+MATRIX_SERVER_NAME=matrix.para.social        # inmutable: forma parte de cada MXID
 MATRIX_DOMAIN=chat.para.social
 MATRIX_DB_NAME=matrix
-MATRIX_ADMIN_TOKEN=<token-de-admin-generado-en-paso-4>
-# Opcional pero recomendado: sesiones Matrix ligadas a dispositivo vía
-# appservice login. El valor es el `as_token` de
-# deploy/matrix/synapse/para-bridge-registration.yaml
-MATRIX_APPSERVICE_TOKEN=<as_token-de-para-bridge-registration>
-# hs_token de la misma registración: lo presenta Synapse al enviar
-# transacciones del appservice al bridge (ingestión push de mensajes).
-MATRIX_HS_TOKEN=<hs_token-de-para-bridge-registration>
+MATRIX_MAS_PUBLIC_URL=https://auth.para.social
+MATRIX_IDP_PUBLIC_URL=https://idp.para.social
+MATRIX_MAS_CLIENT_SECRET=<openssl rand -hex 32>
+POSTGRES_PASSWORD=<secreto-fuerte>           # obligatorio, sin valor por defecto
+MATRIX_ADMIN_TOKEN=<token de compatibilidad de MAS, paso 4>
 
 # ─── Bridge ───
-PDS_FIREHOSE_URL=wss://pds.para.social/xrpc/com.atproto.sync.subscribeRepos
-MATRIX_HOMESERVER_URL=http://synapse:8008
-M8_BASE_URL=http://host.docker.internal:8787/v1
-BRIDGE_DB_PATH=/data/bridge.db
+PDS_FIREHOSE_URL=wss://pds.para.social
+BRIDGE_AUTHORITY_APPVIEW_URL=https://appview.para.social
+PARA_AUTHORITY_SERVICE_TOKEN=<mismo valor que el AppView>
 BRIDGE_LOG_LEVEL=info
 ```
 
-### 3. Generar Configuración de Synapse
+### 3. Desplegar
 
 ```bash
-./WhatZatppa/deploy/matrix/setup.sh
+deploy/matrix/deploy-prod.sh
 ```
 
-Este script:
+El script genera la configuración de Synapse y MAS (una sola vez: contiene las
+claves de firma y cifrado; nunca regenerarla en un servidor vivo), migra MAS,
+inicia para-idp, MAS y Synapse, y se detiene si falta `MATRIX_ADMIN_TOKEN`.
 
-1. Genera `homeserver.yaml` con federation desactivada
-2. Genera `element-config.json` apuntando a tu servidor
-3. Muestra los snippets para `.well-known/matrix/*`
+### 4. Token de administración del bridge
 
-### 4. Crear Usuario Administrador
+No hay login con contraseña: MAS emite el token.
 
 ```bash
-# Iniciar solo Synapse y la base de datos
-docker compose -f WhatZatppa/docker-compose.matrix.yaml up -d synapse synapse-db
-
-# Crear usuario admin
-docker exec -it para-matrix-synapse \
-  register_new_matrix_user \
-  -c /data/homeserver.yaml \
-  -a \
-  -u admin \
-  -p <contraseña-segura>
-
-# Obtener token de acceso
-curl -XPOST \
-  -d '{"type":"m.login.password","user":"admin","password":"<contraseña>"}' \
-  http://localhost:8008/_matrix/client/v3/login
+docker compose -f docker-compose.matrix.yaml exec mas \
+  mas-cli manage register-user -c /config/config.yaml --yes admin   # solo la primera vez
+docker compose -f docker-compose.matrix.yaml exec mas \
+  mas-cli manage issue-compatibility-token -c /config/config.yaml admin PARABRIDGE \
+  --yes-i-want-to-grant-synapse-admin-privileges
 ```
 
-Guarda el `access_token` en `.env` como `MATRIX_ADMIN_TOKEN`.
+Guarda el token en `.env` como `MATRIX_ADMIN_TOKEN` y vuelve a ejecutar
+`deploy-prod.sh`; inicia Element Web y el bridge.
 
-### 5. Configurar Caddy (Reverse Proxy)
+### 5. Caddy (Reverse Proxy)
 
-Usa el `Caddyfile.matrix` proporcionado:
+Las rutas públicas están en `services/caddy/Caddyfile.prod` (Caddy en contenedor,
+red `para-edge`): `matrix.`, `auth.`, `idp.`, `chat.` y `bridge.` bajo
+`PARA_DOMAIN`. Para un Caddy en el host usa `deploy/matrix/Caddyfile.matrix`.
+Ambos rechazan `/_synapse/admin`, `/_synapse/mas`, `/_synapse/metrics`, las
+rutas de federación y `/metrics` del bridge.
 
-```caddy
-chat.para.social {
-    reverse_proxy localhost:8080  # Element Web
-}
+### 6. Servicios
 
-matrix.para.social {
-    reverse_proxy localhost:8008  # Synapse Client API
-}
-```
-
-Aplica:
-
-```bash
-sudo caddy reload --config WhatZatppa/deploy/matrix/Caddyfile.matrix
-```
-
-### 6. Iniciar Todos los Servicios
-
-```bash
-docker compose -f WhatZatppa/docker-compose.matrix.yaml up -d
-```
-
-Servicios que se iniciarán:
-
-- `para-matrix-synapse` (puerto 8008)
-- `para-matrix-db` (PostgreSQL interno)
-- `para-matrix-element` (puerto 8080)
-- `para-matrix-bridge` (puerto 3001)
+- `para-matrix-synapse` (8008 cliente, 9000 métricas internas)
+- `para-matrix-db`, `para-matrix-mas-db` (PostgreSQL interno)
+- `para-matrix-mas` (8080 público, 8081 admin privado) y `para-idp` (8090)
+- `para-matrix-element` (8082)
+- `para-matrix-bridge` (3001)
 
 ### 7. Verificar Estado
 
@@ -158,7 +128,7 @@ Servicios que se iniciarán:
 # Health check del bridge
 curl http://localhost:3001/healthz
 
-# Métricas Prometheus
+# Métricas Prometheus (solo desde el host; el edge las bloquea)
 curl http://localhost:3001/metrics
 
 # Logs en tiempo real
@@ -296,18 +266,18 @@ La versión está fijada por etiqueta en `docker-compose.matrix.yaml` (un
 3. En el servidor:
 
    ```bash
-   docker compose -f WhatZatppa/docker-compose.matrix.yaml pull synapse
-   docker compose -f WhatZatppa/docker-compose.matrix.yaml up -d synapse
+   docker compose -f docker-compose.matrix.yaml pull synapse
+   docker compose -f docker-compose.matrix.yaml up -d synapse
    ```
 
-4. Espera a que terminen las *background updates* antes de bajar de versión o
+4. Espera a que terminen las _background updates_ antes de bajar de versión o
    de apagar: `GET /_synapse/admin/v1/background_updates/enabled` y
    `/status` con el token de admin.
 
 ### Actualizar el Bridge
 
 ```bash
-cd WhatZatppa/services/matrix-bridge
+cd services/matrix-bridge
 git pull  # o copia los nuevos archivos
 pnpm install
 pnpm run build
@@ -322,7 +292,7 @@ Si la integración causa problemas:
 
 ```bash
 # 1. Detener solo el bridge (el resto de PARA sigue funcionando)
-docker compose -f WhatZatppa/docker-compose.matrix.yaml stop matrix-bridge
+docker compose -f docker-compose.matrix.yaml stop matrix-bridge
 
 # 2. Los usuarios conservan sus cuentas Matrix pero no hay más auto-invites
 # 3. Los propietarios de comunidades pueden gestionar manualmente sus espacios
@@ -347,7 +317,7 @@ docker compose -f WhatZatppa/docker-compose.matrix.yaml stop matrix-bridge
 - [Synapse Admin API](https://matrix-org.github.io/synapse/latest/usage/administration/admin_api/)
 - [Element Web Config](https://github.com/element-hq/element-web/blob/develop/docs/config.md)
 - [AT Protocol Firehose](https://atproto.com/specs/sync)
-- Documentación interna: `WhatZatppa/services/matrix-bridge/README.md`
+- Documentación interna: `services/matrix-bridge/README.md`
 
 ---
 

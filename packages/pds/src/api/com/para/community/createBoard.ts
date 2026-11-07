@@ -80,7 +80,6 @@ export default function (server: Server, ctx: AppContext) {
       const region = input.body.region?.trim() || undefined
       const founderStarterPackName =
         input.body.founderStarterPackName?.trim() || undefined
-      const governanceMode = input.body.governanceMode || undefined
       const admissionMode = input.body.admissionMode || undefined
 
       if (!name) {
@@ -112,7 +111,6 @@ export default function (server: Server, ctx: AppContext) {
           region,
           description,
           founderStarterPackName,
-          governanceMode,
           admissionMode,
           existing: existing ?? undefined,
           idempotencyKey,
@@ -141,7 +139,6 @@ const ensureBoardRecords = async ({
   region,
   description,
   founderStarterPackName,
-  governanceMode,
   admissionMode,
   existing,
   idempotencyKey,
@@ -153,13 +150,11 @@ const ensureBoardRecords = async ({
   region?: string
   description?: string
   founderStarterPackName?: string
-  governanceMode?: string
   admissionMode?: string
   existing?: LocalBoard
   idempotencyKey?: string
 }): Promise<com.para.community.createBoard.$OutputBody> => {
   const now = existing?.record.createdAt || new Date().toISOString()
-  governanceMode ??= existing?.record.governanceMode ?? 'hierarchical'
   admissionMode ??= existing?.record.admissionMode ?? 'open'
   description ??= existing?.record.description
   region ??= existing?.record.region
@@ -195,7 +190,6 @@ const ensureBoardRecords = async ({
     subdelegatesChatId,
     status: existing?.record.status ?? 'draft',
     founderStarterPackUri,
-    governanceMode,
     admissionMode,
     createdAt: now,
   }
@@ -237,7 +231,6 @@ const ensureBoardRecords = async ({
     name,
     slug,
     createdAt: now,
-    governanceMode,
   })
 
   const membershipAuthorityRkey = boardRkey
@@ -262,13 +255,9 @@ const ensureBoardRecords = async ({
     $type: AUTHORITY_EVENT_COLLECTION,
     community: boardRecordUri,
     subject: did,
-    action: governanceMode === 'horizontal' ? 'moderator.grant' : 'owner.grant',
+    action: 'owner.grant',
     issuer: did,
     effectiveAt: now,
-    expiresAt:
-      governanceMode === 'horizontal'
-        ? new Date(Date.parse(now) + 90 * 86400000).toISOString()
-        : undefined,
     predecessor: membershipAuthorityUri,
     version: 2,
     basis: 'foundingTransition',

@@ -19,19 +19,6 @@ export interface IdentityMatrixStore {
     observerRoom: string | null,
   ): Promise<void>
 
-  getChamberAssignment(
-    communityUri: string,
-    did: string,
-  ): Promise<string | undefined>
-
-  setChamberAssignment(
-    communityUri: string,
-    did: string,
-    chamber: string,
-  ): Promise<void>
-
-  getChamberMemberCount(communityUri: string, chamber: string): Promise<number>
-
   getActiveMemberCount(communityUri: string): Promise<number>
 
   /**
@@ -51,6 +38,11 @@ export interface IdentityMatrixStore {
   listDeviceSessions(did: string): Promise<DeviceSession[]>
 
   getDeviceSession(id: string): Promise<DeviceSession | undefined>
+
+  queueDeviceRevocation(did: string, id: string): Promise<void>
+  getPendingDeviceRevocations(limit?: number): Promise<DeviceSession[]>
+  incrementDeviceRevocationAttempts(id: string): Promise<void>
+  deleteDeviceRevocation(id: string): Promise<void>
 
   touchDeviceSession(id: string): Promise<void>
 
@@ -113,4 +105,14 @@ export interface IdentityMatrixStore {
       kind: 'main' | 'chamber-a' | 'chamber-b' | 'observers'
     }>
   >
+
+  getMemberList(
+    communityUri: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<{ did: string; roles: string[] }[]>
+  getCommunityMembers(
+    communityUri: string,
+  ): Promise<{ did: string; roles: string[] }[]>
+  getActiveCommunityUris(): Promise<string[]>
 }

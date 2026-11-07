@@ -11,6 +11,16 @@ global:
   external_labels:
     host: "{{ inventory_hostname }}"
 
+# deploy/matrix/alerts.yml, mounted by the monitoring role, delivered through
+# Alertmanager to the receivers in group_vars (alertmanager_*).
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
 scrape_configs:
   - job_name: prometheus
     static_configs:
@@ -31,19 +41,52 @@ scrape_configs:
     static_configs:
       - targets: ["matrix-bridge:3001"]
 
-  # Synapse is NOT scraped, and adding a job for it here would only produce a
-  # target that can never resolve. Two things are missing, both required:
-  #
-  #   1. Synapse does not join the `{{ edge_network_name }}` network. In
-  #      docker-compose.matrix.yaml, matrix-bridge is the only service that
-  #      does — every other Matrix service sits on that stack's default
-  #      network, where Prometheus cannot reach it by name.
-  #   2. `enable_metrics` is off in the homeserver config.
-  #
-  # To enable: add `{{ edge_network_name }}` to the synapse service's networks,
-  # set enable_metrics: true in deploy/matrix/hardening.yaml, and uncomment:
-  #
-  # - job_name: synapse
-  #   metrics_path: /_synapse/metrics
-  #   static_configs:
-  #     - targets: ["synapse:8008"]
+  # Synapse's metrics listener (deploy/matrix/hardening.yaml, port 9000) is
+  # bound inside its container and reached over `{{ edge_network_name }}`; it is
+  # never published to the host or proxied by Caddy.
+  - job_name: synapse
+    metrics_path: /_synapse/metrics
+    static_configs:
+      - targets: ["synapse:9000"]
+
+  - job_name: alertmanager
+    static_configs:
+      - targets: ["alertmanager:9093"]
+
+  # node-exporter's textfile collector carries backup freshness
+  # (para_matrix_backup_last_success_timestamp_seconds); it arrives through
+  # the `node` job above.
+
+  # MAS, para-idp and Element have health endpoints but no metrics we scrape;
+  # the bridge-facing public routes are checked through the real edge.
+  - job_name: matrix-health
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://mas:8081/health
+          - http://para-idp:8090/healthz
+          - http://element-web:80/
+          - https://{{ matrix_server_name }}/_matrix/client/versions
+          - https://{{ matrix_server_name }}/_matrix/client/v3/login
+          - https://auth.{{ para_domain }}/.well-known/openid-configuration
+    relabel_configs: &blackbox_relabel
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # Paths the edge must answer 404 for. Anything else means they are public.
+  - job_name: matrix-edge-closed
+    metrics_path: /probe
+    params:
+      module: [http_404]
+    static_configs:
+      - targets:
+          - https://{{ matrix_server_name }}/_synapse/admin/v1/server_version
+          - https://{{ matrix_server_name }}/_matrix/federation/v1/version
+          - https://bridge.{{ para_domain }}/metrics
+    relabel_configs: *blackbox_relabel

@@ -22,7 +22,7 @@ export interface Main {
   membershipState:
     'pending' | 'active' | 'left' | 'removed' | 'blocked' | (string & {})
   roles?: string[]
-  /** Structured role assignments with expiration and ratification for horizontal governance. */
+  /** Structured role assignments, optionally bounded in time. */
   roleAssignments?: RoleAssignment[]
   source?: string
   /** Assigned chamber for bicameral deliberation. Null until assigned by sortition. */
@@ -53,9 +53,9 @@ export interface RoleAssignment {
   role: string
   /** When this role assignment becomes valid. Defaults to creation time. */
   validFrom?: string
-  /** When this role assignment expires. Required for horizontal governance rotations. */
+  /** When this role assignment expires. Absent means it does not expire. */
   validUntil?: string
-  /** Reference to an approved com.para.community.decision or com.para.civic.cabildeo record that ratified this role. */
+  /** Reference to the com.para.civic.cabildeo record that ratified this role. */
   ratifiedBy?: string
 }
 

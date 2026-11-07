@@ -1,0 +1,83 @@
+{
+  "lexicon": 1,
+  "id": "com.para.civic.getConclusion",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "The conclusion of a cabildeo of kind forum or persuasion: the newest one by a current steward of its community, and the earlier ones in the order written. Empty when none is served, which does not mean the conversation was ignored.",
+      "parameters": {
+        "type": "params",
+        "required": ["cabildeo"],
+        "properties": {
+          "cabildeo": { "type": "string", "format": "at-uri" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["earlier"],
+          "properties": {
+            "conclusion": { "type": "ref", "ref": "#conclusionView" },
+            "communityUri": {
+              "type": "string",
+              "format": "at-uri",
+              "description": "The board this cabildeo resolves to. Present whenever conclusions can be served for it, even if there is none yet. A conclusion record must name it."
+            },
+            "earlier": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "#conclusionView" },
+              "description": "Superseded conclusions, newest first. History is append-only."
+            }
+          }
+        }
+      }
+    },
+    "conclusionView": {
+      "type": "object",
+      "required": [
+        "uri",
+        "cid",
+        "author",
+        "cabildeo",
+        "communityUri",
+        "text",
+        "cited",
+        "edited",
+        "createdAt"
+      ],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string" },
+        "author": { "type": "string", "format": "did" },
+        "cabildeo": { "type": "string", "format": "at-uri" },
+          "officialThreadSlug": { "type": "string", "maxLength": 80 },
+          "reviewDate": { "type": "string", "maxLength": 10 },
+        "communityUri": { "type": "string", "format": "at-uri" },
+        "text": { "type": "string" },
+        "cited": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#citedPosition" },
+          "description": "Cited positions that belong to this cabildeo, in the order cited. A cited position that does not is dropped."
+        },
+        "followUp": { "type": "string", "format": "at-uri" },
+        "edited": {
+          "type": "boolean",
+          "description": "The record was changed after it was first indexed. The committed version is what is shown."
+        },
+        "createdAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "citedPosition": {
+      "type": "object",
+      "required": ["uri", "author", "stance", "text"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "author": { "type": "string", "format": "did" },
+        "stance": { "type": "string" },
+        "optionIndex": { "type": "integer" },
+        "text": { "type": "string" }
+      }
+    }
+  }
+}

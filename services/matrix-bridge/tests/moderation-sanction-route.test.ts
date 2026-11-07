@@ -133,8 +133,8 @@ describe.each([
     ])
     await db.setCommunityMembership(member, community, 'active', [])
     await db.setCommunityMembership(bystander, community, 'active', [])
-    await db.ensureParticipationStats(member, community)
-    await db.ensureParticipationStats(bystander, community)
+    await db.setCommunityMembership(member, community, 'active', ['member'])
+    await db.setCommunityMembership(bystander, community, 'active', ['member'])
     const now = new Date().toISOString()
     await db.createDeviceSession({
       id: randomUUID(),
@@ -315,11 +315,11 @@ describe.each([
       expect(res.statusCode).toBe(200)
       expect(res.json.lifted).toBe(true)
       expect(await ctx.chatMod.getSanction(member, community)).toBeNull()
-      // Roles are re-projected, not a flat 0: observers must stay read-only.
+      // Restore the current verified roles when the sanction ends.
       expect(projection.applyMemberRoles).toHaveBeenCalledWith(
         expect.objectContaining({ communityUri: community }),
         member,
-        expect.objectContaining({ roles: [] }),
+        expect.objectContaining({ roles: ['member'] }),
       )
     })
 

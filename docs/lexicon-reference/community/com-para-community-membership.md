@@ -22,7 +22,7 @@ Membership state of an actor in a Para community.
 | `community` | `string` | ✅  | Reference to the community board record. | Format: `at-uri` |
 | `membershipState` | `string` | ✅  |  | Known Values: `pending`, `active`, `left`, `removed`, `blocked` |
 | `roles` | Array of `string` | ❌  |  | Max Items: 16 |
-| `roleAssignments` | Array of [`#roleAssignment`](#roleassignment) | ❌  | Structured role assignments with expiration and ratification for horizontal governance. | Max Items: 16 |
+| `roleAssignments` | Array of [`#roleAssignment`](#roleassignment) | ❌  | Structured role assignments, optionally bounded in time. | Max Items: 16 |
 | `source` | `string` | ❌  |  | Max Length: 64<br/>Max Graphemes: 64 |
 | `chamberAssignment` | `string` | ❌  | Assigned chamber for bicameral deliberation. Null until assigned by sortition. | Known Values: `A`, `B` |
 | `joinedAt` | `string` | ✅  |  | Format: `datetime` |
@@ -41,8 +41,8 @@ Membership state of an actor in a Para community.
 |------|------|----------|-------------|-------------|
 | `role` | `string` | ✅  |  | Max Length: 64<br/>Max Graphemes: 64 |
 | `validFrom` | `string` | ❌  | When this role assignment becomes valid. Defaults to creation time. | Format: `datetime` |
-| `validUntil` | `string` | ❌  | When this role assignment expires. Required for horizontal governance rotations. | Format: `datetime` |
-| `ratifiedBy` | `string` | ❌  | Reference to an approved com.para.community.decision or com.para.civic.cabildeo record that ratified this role. | Format: `at-uri` |
+| `validUntil` | `string` | ❌  | When this role assignment expires. Absent means it does not expire. | Format: `datetime` |
+| `ratifiedBy` | `string` | ❌  | Reference to the com.para.civic.cabildeo record that ratified this role. | Format: `at-uri` |
 
 ---
 
@@ -91,7 +91,7 @@ Membership state of an actor in a Para community.
           "roleAssignments": {
             "type": "array",
             "maxLength": 16,
-            "description": "Structured role assignments with expiration and ratification for horizontal governance.",
+            "description": "Structured role assignments, optionally bounded in time.",
             "items": {
               "type": "ref",
               "ref": "#roleAssignment"
@@ -140,12 +140,12 @@ Membership state of an actor in a Para community.
         "validUntil": {
           "type": "string",
           "format": "datetime",
-          "description": "When this role assignment expires. Required for horizontal governance rotations."
+          "description": "When this role assignment expires. Absent means it does not expire."
         },
         "ratifiedBy": {
           "type": "string",
           "format": "at-uri",
-          "description": "Reference to an approved com.para.community.decision or com.para.civic.cabildeo record that ratified this role."
+          "description": "Reference to the com.para.civic.cabildeo record that ratified this role."
         }
       }
     }

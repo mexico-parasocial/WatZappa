@@ -89,7 +89,12 @@
             ]
           },
           "phaseDeadline": { "type": "string", "format": "datetime" },
-          "createdAt": { "type": "string", "format": "datetime" }
+          "createdAt": { "type": "string", "format": "datetime" },
+          "protectedAction": {
+            "type": "ref",
+            "ref": "com.para.community.defs#protectedAction",
+            "description": "The community action this cabildeo asks its assembly to decide (approve a membership, recover ownership, amend governance, …). A claim only: it carries no authority by itself. The AppView grounds an authority event on this cabildeo only for membership.approve (member.activate) and owner.recover (owner.grant or owner.revoke), and only when the cabildeo names its community by board URI, has exactly two options (the first approves, the second rejects), is still the record version in which voting opened, and closed with a quorum and threshold met by members known from authority events. See com.para.community.authorityEvent evidence."
+          }
         }
       }
     },

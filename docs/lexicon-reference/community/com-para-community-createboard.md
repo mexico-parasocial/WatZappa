@@ -28,7 +28,6 @@ Creates a PARA community board. Automatically instantiates the underlying genera
 | `quadrant` | `string` | ✅  |  | Max Length: 64 |
 | `description` | `string` | ❌  |  | Max Length: 3000 |
 | `founderStarterPackName` | `string` | ❌  | User-provided name for the internal starter pack tracking founding members. If absent, a default name will be generated. | Max Length: 3000 |
-| `governanceMode` | `string` | ❌  | Governance model for this community. Hierarchical uses owner/moderator roles. Horizontal uses rotating facilitators and assembly votes. Defaults to hierarchical. | Known Values: `hierarchical`, `horizontal` |
 **Output:**
 
 - **Encoding:** `application/json`
@@ -82,14 +81,6 @@ Creates a PARA community board. Automatically instantiates the underlying genera
               "type": "string",
               "maxLength": 3000,
               "description": "User-provided name for the internal starter pack tracking founding members. If absent, a default name will be generated."
-            },
-            "governanceMode": {
-              "type": "string",
-              "knownValues": [
-                "hierarchical",
-                "horizontal"
-              ],
-              "description": "Governance model for this community. Hierarchical uses owner/moderator roles. Horizontal uses rotating facilitators and assembly votes. Defaults to hierarchical."
             }
           }
         }

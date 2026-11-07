@@ -1,0 +1,19 @@
+# Blackbox probes for services that expose a health endpoint but no metrics
+# (MAS, para-idp, Element) and for the public edge. See prometheus.yml.j2.
+modules:
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      preferred_ip_protocol: ip4
+      follow_redirects: false
+
+  # Paths the edge must refuse (Synapse admin, federation, bridge metrics).
+  # A probe that does NOT get a 404 means the path is reachable from outside.
+  http_404:
+    prober: http
+    timeout: 5s
+    http:
+      preferred_ip_protocol: ip4
+      follow_redirects: false
+      valid_status_codes: [404]

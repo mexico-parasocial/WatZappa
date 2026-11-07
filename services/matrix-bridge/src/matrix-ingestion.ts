@@ -10,7 +10,7 @@ export interface MatrixEventMetadata {
   originServerTs: number
 }
 
-/** Atomically persist metadata, participation and durable unread invalidations. */
+/** Atomically persist metadata and durable unread invalidations. */
 export async function ingestMatrixEvents(
   db: IBridgeDatabase,
   events: MatrixEventMetadata[],
@@ -27,19 +27,6 @@ export async function ingestMatrixEvents(
       if (!(await db.insertMatrixEvent({ ...event, content: '' }))) continue
       if (!['m.room.message', 'm.room.encrypted'].includes(event.type)) continue
       rooms.set(event.roomId, community.communityUri)
-      // Attribution resolves through minted device sessions (post-CD-M1):
-      // an MXID with no bridge-minted session — e.g. a MAS-native login —
-      // cannot be attributed to a DID, and that is the boundary holding, not
-      // a miss. Participation-from-chat for such senders is a known gap.
-      const did = await db.getDidForMxid(event.sender)
-      if (did) {
-        await db.ensureParticipationStats(
-          did,
-          community.communityUri,
-          event.roomId,
-        )
-        await db.incrementMessageCount(did, community.communityUri)
-      }
     }
     const persisted: BridgeEvent[] = []
     for (const [roomId, communityUri] of rooms) {

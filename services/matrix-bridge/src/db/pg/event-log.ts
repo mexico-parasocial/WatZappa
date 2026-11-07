@@ -1,8 +1,8 @@
 import type { BridgeEvent } from '../records.js'
-import { InstitutionsArea } from './institutions.js'
+import { MatrixEventsArea } from './matrix-events.js'
 
 /** event_log persistence for the SSE bus (see src/events/bus.ts). */
-export class EventLogArea extends InstitutionsArea {
+export class EventLogArea extends MatrixEventsArea {
   private mapEvent(row: any): BridgeEvent {
     let audience: string[] | null = null
     try {

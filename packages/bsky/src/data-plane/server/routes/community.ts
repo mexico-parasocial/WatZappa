@@ -1,4 +1,4 @@
-import { Code, ConnectError, ServiceImpl } from '@connectrpc/connect'
+import { Code, ConnectError, type ServiceImpl } from '@connectrpc/connect'
 import { sql } from 'kysely'
 import {
   AUTHORITY_EVENT_VERSION,
@@ -7,17 +7,17 @@ import {
   resolveAvailableAction,
 } from '@atproto/common'
 import { com } from '../../../lexicons/index.js'
-import { Service } from '../../../proto/bsky_connect.js'
+import type { Service } from '../../../proto/bsky_connect.js'
 import {
+  GetParaCommunityAuthorizationResponse,
   GetParaCommunityBoardResponse,
   GetParaCommunityBoardsResponse,
-  GetParaCommunityAuthorizationResponse,
   GetParaCommunityGovernanceResponse,
   GetParaCommunityMembersResponse,
   GetParaCommunityPostsResponse,
-  GetParaPolicyCommunityVotesResponse,
   GetParaCommunityRelationsResponse,
   GetParaCommunitySharedContentResponse,
+  GetParaPolicyCommunityVotesResponse,
   ParaAuthorFeedItem,
   ParaAvailableAction,
   ParaCommunityBoardView,
@@ -46,7 +46,7 @@ import {
   governanceSlugMatchSql,
   isTrustedBoardGovernanceSql,
 } from '../community-governance.js'
-import { Database } from '../db/index.js'
+import type { Database } from '../db/index.js'
 import {
   CreatedAtCidKeyset,
   IndexedAtCidKeyset,
@@ -78,7 +78,6 @@ type BoardRow = {
   officialCount: number | null
   deputyRoleCount: number | null
   lastPublishedAt: string | null
-  governanceMode: string | null
   admissionMode: string
 }
 
@@ -121,13 +120,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       })
     }
     const snapshot = await getAuthoritySnapshot(db, board.uri, req.viewerDid)
-    const authorization = resolveAvailableAction(
-      req.action,
-      snapshot.roles,
-      (board.governanceMode || 'hierarchical') as
-        | 'hierarchical'
-        | 'horizontal',
-    )
+    const authorization = resolveAvailableAction(req.action, snapshot.roles)
     return new GetParaCommunityAuthorizationResponse({
       roles: snapshot.roles,
       capabilities: snapshot.capabilities,
@@ -165,9 +158,6 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       const snapshot = req.viewerDid
         ? await getAuthoritySnapshot(db, board.uri, req.viewerDid)
         : undefined
-      const standard = (board.governanceMode || 'hierarchical') as
-        | 'hierarchical'
-        | 'horizontal'
 
       return new GetParaCommunityBoardResponse({
         board: toBoardView(board, memberCount, viewerMembership, {
@@ -181,7 +171,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
           ? AUTHORIZATION_ACTIONS.map(
               (action) =>
                 new ParaAvailableAction(
-                  resolveAvailableAction(action, snapshot.roles, standard),
+                  resolveAvailableAction(action, snapshot.roles),
                 ),
             )
           : [],
@@ -372,12 +362,8 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       return true
     }
 
-    const standard = (board?.governanceMode || 'hierarchical') as
-      | 'hierarchical'
-      | 'horizontal'
     const admissionMode = (board?.admissionMode || 'open') as
-      | 'open'
-      | 'assembly_approval'
+      'open' | 'assembly_approval'
     const authorityRows = board
       ? await db.db
           .selectFrom('para_community_authority_event')
@@ -428,48 +414,42 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       community,
       summary: new ParaCommunitySummary(counters),
       moderators:
-        record?.moderators
-          .filter(isValidGovernanceEntry)
-          .map(
-            (moderator) =>
-              new ParaCommunityModerator({
-                member: toGovernanceMember(moderator),
-                role: moderator.role,
-                badge: moderator.badge,
-              }),
-          ) ?? [],
+        record?.moderators.filter(isValidGovernanceEntry).map(
+          (moderator) =>
+            new ParaCommunityModerator({
+              member: toGovernanceMember(moderator),
+              role: moderator.role,
+              badge: moderator.badge,
+            }),
+        ) ?? [],
       officials:
-        record?.officials
-          .filter(isValidGovernanceEntry)
-          .map(
-            (official) =>
-              new ParaCommunityOfficial({
-                member: toGovernanceMember(official),
-                office: official.office,
-                mandate: official.mandate,
-              }),
-          ) ?? [],
+        record?.officials.filter(isValidGovernanceEntry).map(
+          (official) =>
+            new ParaCommunityOfficial({
+              member: toGovernanceMember(official),
+              office: official.office,
+              mandate: official.mandate,
+            }),
+        ) ?? [],
       deputies:
-        record?.deputies
-          .filter(isValidGovernanceEntry)
-          .map(
-            (deputy) =>
-              new ParaCommunityDeputyRole({
-                tier: Number(deputy.tier) || 0,
-                role: deputy.role,
-                activeHolder: deputy.activeHolder
-                  ? toGovernanceMember(deputy.activeHolder)
-                  : undefined,
-                votesBackingRole: deputy.votes,
-                applicants: deputy.applicants.map(
-                  (applicant) =>
-                    applicant.displayName ||
-                    applicant.handle ||
-                    applicant.did ||
-                    '',
-                ),
-              }),
-          ) ?? [],
+        record?.deputies.filter(isValidGovernanceEntry).map(
+          (deputy) =>
+            new ParaCommunityDeputyRole({
+              tier: Number(deputy.tier) || 0,
+              role: deputy.role,
+              activeHolder: deputy.activeHolder
+                ? toGovernanceMember(deputy.activeHolder)
+                : undefined,
+              votesBackingRole: deputy.votes,
+              applicants: deputy.applicants.map(
+                (applicant) =>
+                  applicant.displayName ||
+                  applicant.handle ||
+                  applicant.did ||
+                  '',
+              ),
+            }),
+        ) ?? [],
       computedAt: record?.updatedAt || record?.createdAt || computedAt,
       metadata: record?.metadata
         ? new ParaCommunityGovernanceMetadata({
@@ -498,10 +478,9 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
               summary: entry.summary,
             }),
         ) ?? [],
-      organizationStandard: standard,
       admissionMode,
       authorityEventVersion: AUTHORITY_EVENT_VERSION,
-      roleDefinitions: getRoleDefinitions(standard, admissionMode).map(
+      roleDefinitions: getRoleDefinitions(admissionMode).map(
         (definition) => new ParaRoleDefinition(definition),
       ),
       roleHolders,
@@ -624,7 +603,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       items: page.map((row) =>
         toSharedContentView(row, actionMap.get(row.uri), req.communityUri),
       ),
-      cursor: hasMore ? keyset.packFromResult(page) ?? '' : '',
+      cursor: hasMore ? (keyset.packFromResult(page) ?? '') : '',
     })
   },
 
@@ -678,7 +657,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     return new GetParaCommunityRelationsResponse({
       relations: page.map((row) => toRelationView(row)),
       cursor:
-        rows.length > page.length ? keyset.packFromResult(page) ?? '' : '',
+        rows.length > page.length ? (keyset.packFromResult(page) ?? '') : '',
     })
   },
 })
@@ -845,7 +824,7 @@ const selectBoards = async (
 
   return {
     boards: page,
-    cursor: hasMore ? keyset.packFromResult(page) ?? '' : '',
+    cursor: hasMore ? (keyset.packFromResult(page) ?? '') : '',
   }
 }
 
@@ -877,7 +856,6 @@ const boardBaseQuery = (db: Database) =>
       'board.region',
       'board.delegatesChatId',
       'board.subdelegatesChatId',
-      'board.governanceMode',
       'board.admissionMode',
       'board.createdAt',
       'board.indexedAt',
@@ -1042,8 +1020,8 @@ const toSharedContentView = (
     sortRank: row.sortRank ?? 0,
     createdAt: row.createdAt,
     removed,
-    removedAt: removed ? action?.createdAt ?? '' : '',
-    removedBy: removed ? action?.creator ?? '' : '',
+    removedAt: removed ? (action?.createdAt ?? '') : '',
+    removedBy: removed ? (action?.creator ?? '') : '',
     latestAction: action ? toSharedContentActionView(action) : undefined,
     hydrationState: 'unresolved',
   })
@@ -1085,10 +1063,13 @@ const getViewerMemberships = async (
   }
 
   const snapshots = await Promise.all(
-    communityUris.map(async (communityUri) => [
-      communityUri,
-      await getAuthoritySnapshot(db, communityUri, viewerDid),
-    ] as const),
+    communityUris.map(
+      async (communityUri) =>
+        [
+          communityUri,
+          await getAuthoritySnapshot(db, communityUri, viewerDid),
+        ] as const,
+    ),
   )
   return new Map(
     snapshots.map(([communityUri, snapshot]) => [
@@ -1196,7 +1177,6 @@ const toBoardView = (
     parentCommunityUris: summary?.parentCommunityUris ?? [],
     childCommunityCount: summary?.childCommunityCount ?? 0,
     sharedContentCount: summary?.sharedContentCount ?? 0,
-    governanceMode: board.governanceMode ?? 'hierarchical',
     admissionMode: board.admissionMode,
     region: board.region ?? '',
   })
@@ -1287,17 +1267,18 @@ const selectMembers = async (
       .execute()
     const page = rows.slice(0, opts.limit)
     const dids = page.map((row) => row.did)
-    const [voteCounts, delegationCounts, postCounts, authorities] = await Promise.all([
-      getVoteCounts(db, dids),
-      getDelegationCounts(db, dids),
-      getCommunityPostCounts(db, dids, communityUri),
-      Promise.all(
-        dids.map(async (did) => [
-          did,
-          await getAuthoritySnapshot(db, communityUri, did),
-        ] as const),
-      ),
-    ])
+    const [voteCounts, delegationCounts, postCounts, authorities] =
+      await Promise.all([
+        getVoteCounts(db, dids),
+        getDelegationCounts(db, dids),
+        getCommunityPostCounts(db, dids, communityUri),
+        Promise.all(
+          dids.map(
+            async (did) =>
+              [did, await getAuthoritySnapshot(db, communityUri, did)] as const,
+          ),
+        ),
+      ])
     const authorityByDid = new Map(authorities)
 
     return {
@@ -1345,17 +1326,18 @@ const selectMembers = async (
   const rows = await builder.execute()
   const page = rows.slice(0, opts.limit)
   const dids = page.map((row) => row.did)
-  const [voteCounts, delegationCounts, postCounts, authorities] = await Promise.all([
-    getVoteCounts(db, dids),
-    getDelegationCounts(db, dids),
-    getCommunityPostCounts(db, dids, communityUri),
-    Promise.all(
-      dids.map(async (did) => [
-        did,
-        await getAuthoritySnapshot(db, communityUri, did),
-      ] as const),
-    ),
-  ])
+  const [voteCounts, delegationCounts, postCounts, authorities] =
+    await Promise.all([
+      getVoteCounts(db, dids),
+      getDelegationCounts(db, dids),
+      getCommunityPostCounts(db, dids, communityUri),
+      Promise.all(
+        dids.map(
+          async (did) =>
+            [did, await getAuthoritySnapshot(db, communityUri, did)] as const,
+        ),
+      ),
+    ])
   const authorityByDid = new Map(authorities)
 
   return {
@@ -1376,7 +1358,7 @@ const selectMembers = async (
         matterPosts: postCount?.matterPosts ?? 0,
       }
     }),
-    cursor: rows.length > opts.limit ? keyset.packFromResult(page) ?? '' : '',
+    cursor: rows.length > opts.limit ? (keyset.packFromResult(page) ?? '') : '',
   }
 }
 

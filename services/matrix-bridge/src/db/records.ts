@@ -28,14 +28,6 @@ export interface SyncLogEntry {
   createdAt: string
 }
 
-export interface AiConsentRecord {
-  did: string
-  granted: boolean
-  policyVersion: number
-  grantedAt: string | null
-  revokedAt: string | null
-}
-
 export type CommunityRoomKind = 'main' | 'chamber-a' | 'chamber-b' | 'observers'
 
 export interface CommunityRoomSummary {
@@ -55,6 +47,7 @@ export interface DeviceSession {
   createdAt: string
   lastSeenAt: string
   revokedAt: string | null
+  revocationPending?: boolean
 }
 
 export interface BridgeEvent {

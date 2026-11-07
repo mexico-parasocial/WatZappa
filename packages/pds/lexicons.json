@@ -1077,7 +1077,7 @@
     },
     "com.para.civic.defs": {
       "uri": "file://../../lexicons/com/para/civic/defs.json",
-      "cid": "bafyreigtrxse6y2amzil32w4idwmsy4d2mz4sfajiszmkkpfb6eye62tf4"
+      "cid": "bafyreidpgjh4rfl5354yq6pv2frj6dnf4v6lxinmn7sbtga3z6r55hhsea"
     },
     "com.para.civic.delegation": {
       "uri": "file://../../lexicons/com/para/civic/delegation.json",
@@ -1113,7 +1113,7 @@
     },
     "com.para.community.createBoard": {
       "uri": "file://../../lexicons/com/para/community/createBoard.json",
-      "cid": "bafyreid2ldzx5nh4w77oziskberdyxegypphcdv5wditmlqueeioi5guzi"
+      "cid": "bafyreibxizxrhfq4mkzqt74uwpxiveh5hv5o5e5iwxbgcvlgjohifds4fa"
     },
     "com.para.community.createBriefingPack": {
       "uri": "file://../../lexicons/com/para/community/createBriefingPack.json",
@@ -1129,7 +1129,7 @@
     },
     "com.para.community.getBoard": {
       "uri": "file://../../lexicons/com/para/community/getBoard.json",
-      "cid": "bafyreibtbcoad7eenow6ne5dbfb676hrc5elyfbflbete4it6vhjzgsf3u"
+      "cid": "bafyreid4it7lu6retoevonjexb4s6rzwua37yas4oy7v7l32zhmvjs3wi4"
     },
     "com.para.community.intensity": {
       "uri": "file://../../lexicons/com/para/community/intensity.json",

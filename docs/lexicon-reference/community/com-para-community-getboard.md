@@ -72,7 +72,6 @@ Returns a hydrated PARA community board with viewer membership and governance su
 | `viewerRoles` | Array of `string` | ❌  |  |  |
 | `status` | `string` | ❌  |  | Known Values: `draft`, `active` |
 | `founderStarterPackUri` | `string` | ❌  |  | Format: `at-uri` |
-| `governanceMode` | `string` | ❌  |  | Known Values: `hierarchical`, `horizontal` |
 | `createdAt` | `string` | ✅  |  | Format: `datetime` |
 | `governanceSummary` | [`#governanceSummary`](#governancesummary) | ❌  |  |  |
 
@@ -246,13 +245,6 @@ Returns a hydrated PARA community board with viewer membership and governance su
         "founderStarterPackUri": {
           "type": "string",
           "format": "at-uri"
-        },
-        "governanceMode": {
-          "type": "string",
-          "knownValues": [
-            "hierarchical",
-            "horizontal"
-          ]
         },
         "createdAt": {
           "type": "string",

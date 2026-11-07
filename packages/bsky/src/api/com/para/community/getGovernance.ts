@@ -118,8 +118,6 @@ const getGovernance = async (inputs: {
       matterPosts: res.summary?.matterPosts ?? 0,
       badgeHolders: res.summary?.badgeHolders ?? 0,
     },
-    organizationStandard:
-      parseString(res.organizationStandard) || 'hierarchical',
     admissionMode: parseString(res.admissionMode) || 'open',
     authorityEventVersion: res.authorityEventVersion || 1,
     roleDefinitions: res.roleDefinitions.map((definition) => ({

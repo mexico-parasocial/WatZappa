@@ -80,6 +80,7 @@
     "viewerContext": {
       "type": "object",
       "properties": {
+        "canCastCabildeoVote": { "type": "boolean" },
         "currentVoteOption": { "type": "integer", "minimum": 0 },
         "currentVoteIsDirect": { "type": "boolean" },
         "currentVoteCreatedAt": { "type": "string", "format": "datetime" },
@@ -123,6 +124,80 @@
           "knownValues": ["draft", "open", "deliberating", "voting", "resolved"]
         },
         "expiresAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "assemblyDecisionView": {
+      "type": "object",
+      "description": "The assembly's count for a resolved cabildeo and the next authority event it may ground. The AppView recomputes all of it from the final tally.",
+      "properties": {
+        "problem": {
+          "type": "string",
+          "knownValues": [
+            "unknown-cabildeo",
+            "not-resolved",
+            "wrong-community",
+            "record-changed",
+            "too-short",
+            "not-decidable",
+            "options",
+            "not-admissible"
+          ],
+          "description": "Why this cabildeo cannot ground an authority event, when it cannot."
+        },
+        "action": { "type": "string" },
+        "subject": { "type": "string", "format": "did" },
+        "policy": {
+          "type": "string",
+          "knownValues": ["assembly_majority", "assembly_supermajority"]
+        },
+        "outcome": { "type": "ref", "ref": "#assemblyOutcome" },
+        "event": { "type": "ref", "ref": "#assemblyEvent" },
+        "appliedEvent": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "The authority event this cabildeo already grounds."
+        }
+      }
+    },
+    "assemblyOutcome": {
+      "type": "object",
+      "required": [
+        "approved",
+        "reason",
+        "electorate",
+        "quorumTarget",
+        "participants",
+        "approvals",
+        "rejections"
+      ],
+      "properties": {
+        "approved": { "type": "boolean" },
+        "reason": {
+          "type": "string",
+          "knownValues": [
+            "approved",
+            "no-ballots",
+            "quorum-not-met",
+            "threshold-not-met"
+          ]
+        },
+        "electorate": { "type": "integer", "minimum": 0 },
+        "quorumTarget": { "type": "integer", "minimum": 0 },
+        "participants": { "type": "integer", "minimum": 0 },
+        "approvals": { "type": "integer", "minimum": 0 },
+        "rejections": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "assemblyEvent": {
+      "type": "object",
+      "description": "The com.para.community.authorityEvent to publish, with basis assemblyDecision. Issuer is whoever publishes it; effectiveAt must not precede the cabildeo's close.",
+      "required": ["action", "subject", "version", "evidence"],
+      "properties": {
+        "action": { "type": "string" },
+        "subject": { "type": "string", "format": "did" },
+        "version": { "type": "integer", "minimum": 1 },
+        "predecessor": { "type": "string", "format": "at-uri" },
+        "evidence": { "type": "string", "format": "at-uri" }
       }
     },
     "cabildeoView": {
@@ -169,6 +244,11 @@
           "maxLength": 10
         },
         "minQuorum": { "type": "integer", "minimum": 1 },
+        "kind": {
+          "type": "string",
+          "knownValues": ["activity", "persuasion", "forum"],
+          "description": "A missing kind on the record is served as activity."
+        },
         "voteVisibility": {
           "type": "string",
           "knownValues": ["public", "party_only", "anonymous"]
@@ -177,6 +257,20 @@
           "type": "string",
           "knownValues": ["draft", "open", "deliberating", "voting", "resolved"]
         },
+        "minimumViewTier": { "type": "string" },
+        "minimumParticipationTier": { "type": "string" },
+        "protectedAction": {
+          "type": "ref",
+          "ref": "com.para.community.defs#protectedAction",
+          "description": "The community action this cabildeo asks its assembly to decide. A claim only; see the record."
+        },
+        "assemblyDecision": {
+          "type": "ref",
+          "ref": "#assemblyDecisionView",
+          "description": "Present once a cabildeo with a protectedAction has resolved: how the assembly counted and the authority event to publish. A convenience for clients; the AppView decides again when the event arrives."
+        },
+        "votingOpenedAt": { "type": "string", "format": "datetime" },
+        "votingClosedAt": { "type": "string", "format": "datetime" },
         "phaseDeadline": { "type": "string", "format": "datetime" },
         "createdAt": { "type": "string", "format": "datetime" },
         "optionSummary": {
@@ -214,12 +308,24 @@
         "cabildeo": { "type": "string", "format": "at-uri" },
         "stance": {
           "type": "string",
-          "knownValues": ["for", "against", "amendment"]
+          "knownValues": ["for", "against", "amendment", "question"]
         },
         "optionIndex": { "type": "integer", "minimum": 0 },
         "text": { "type": "string", "maxLength": 3000 },
         "compassQuadrant": { "type": "string", "maxLength": 100 },
-        "createdAt": { "type": "string", "format": "datetime" }
+        "createdAt": { "type": "string", "format": "datetime" },
+        "agreeCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Reactions of agree on this position (com.para.community.deliberationVote)."
+        },
+        "disagreeCount": { "type": "integer", "minimum": 0 },
+        "passCount": { "type": "integer", "minimum": 0 },
+        "viewerDirection": {
+          "type": "string",
+          "knownValues": ["agree", "disagree", "pass"],
+          "description": "Only ever the requesting viewer's own reaction; who else took which side is not part of this view."
+        }
       }
     },
     "policySignalBucket": {

@@ -28,7 +28,6 @@ A published governance record for a PARA community. This is the canonical contra
 | `officials` | Array of [`com.para.community.defs#officialView`]([[com-para-community-defs|com.para.community.defs#officialView]]) | ✅  |  |  |
 | `deputies` | Array of [`com.para.community.defs#deputyRoleView`]([[com-para-community-defs|com.para.community.defs#deputyRoleView]]) | ✅  |  |  |
 | `metadata` | [`com.para.community.defs#metadata`]([[com-para-community-defs|com.para.community.defs#metadata]]) | ❌  |  |  |
-| `roleRotationRules` | [`com.para.community.governanceConfig#roleRotationRules`]([[com-para-community-governanceconfig|com.para.community.governanceConfig#roleRotationRules]]) | ❌  |  |  |
 | `editHistory` | Array of [`com.para.community.defs#historyEntry`]([[com-para-community-defs|com.para.community.defs#historyEntry]]) | ❌  |  |  |
 
 ---
@@ -102,10 +101,6 @@ A published governance record for a PARA community. This is the canonical contra
           "metadata": {
             "type": "ref",
             "ref": "com.para.community.defs#metadata"
-          },
-          "roleRotationRules": {
-            "type": "ref",
-            "ref": "com.para.community.governanceConfig#roleRotationRules"
           },
           "editHistory": {
             "type": "array",

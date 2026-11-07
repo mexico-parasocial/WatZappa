@@ -38,13 +38,9 @@ only DM unread**), per-community badges, room-list refresh on
 `chat.unread`. `resync_required` → one `GET /api/unread` + `GET /api/rooms`,
 then continue from `maxSeq`. Push stays for background wake-ups.
 
-**4. Contexts in the Messages tab.** The list gains three sections —
-**Personal** (solidarity/DMs), **Comunidad** (PARA chambers, grouped by
-community with chamber chips), **Trabajo** (institutional, later). Today only
-Comunidad + existing Bluesky DMs exist; the structure ships with two live
-sections and the third reserved. Selection switches the Matrix profile
-(homeserver + session + crypto store) — the iM8 context manager will own
-this mapping; until then the app keeps a local profile registry.
+**4. Contexts in the Messages tab.** Personal direct messages and community
+conversations use client-owned Matrix profiles. Civic proceedings and institutional
+workspaces obtain their data and authorization from their responsible services.
 
 **5. Settings additions.** In `IdentityHubScreen` (or a new "Chat e
 identidades" section): device management (`GET /api/devices`,
@@ -58,14 +54,12 @@ reciprocal `com.para.identity.linkedChat` records, disabled until a Matrix owner
 
 María opens PARA after work. **Actions:** app start → M8 session restored
 (`restoreM8Session`) → SSE connects (`/api/events`, Last-Event-ID from
-storage) → `chat.unread` events arrive for Chamber A → bottom-bar Chat badge
-shows 4 → tap Chat → Messages tab, Comunidad section, "Asamblea CDMX —
-Cámara A" row with badge → tap → native room screen loads via device session
+storage) → `chat.unread` events arrive for her community → bottom-bar Chat badge
+shows 4 → tap Chat → Messages tab, Comunidad section, "Comunidad CDMX" row with badge → tap → native room screen loads via device session
 (sliding-sync scoped to the room) → reads timeline → back → badge clears
-(`mark-read` mutation + the SSE clear event updates her other devices) →
-sees "Votación abierta" pill (from a `proposal.state` event) → taps into the
-proposal → votes. **Objectives met with:** SSE badge, native room, mark-read
-feedback, proposal notification.
+(`mark-read` mutation + the SSE clear event updates her other devices).
+**Objectives met with:** SSE badge, native room, mark-read feedback. Cabildeo
+phases are the AppView's: the bridge emits no proposal events.
 
 ### US-2 — Pedro moderates a report
 
@@ -101,21 +95,6 @@ already supports it) → old phone: Settings → devices list (`GET
 (`POST /api/devices/revoke`) → its Matrix token dies server-side. Three
 distinct sign-outs stay separate in UI copy: cerrar sesión PARA (M8),
 revocar dispositivo Matrix, salir de una comunidad.
-
-### US-5 — Sortition selects María for an assembly
-
-**Actions:** none by María — the bridge processes the run (role-gated),
-publishes `sortition.selected` (direct) + Expo push "Fuiste seleccionada" →
-her badge and the Cabildeos list show the assembly → she taps through to her
-cryptographic proof (`GET /api/sortition-proof-as-record` — public,
-verifiable by anyone).
-
-### US-6 — Institutional handover (reserved)
-
-The Secretariat inbox transfers to a successor without sharing personal
-credentials: the handover must account for immutable creators in room version 12;
-institutional Matrix accounts own their rooms; the bridge observes, never
-custodies. Ships with the Trabajo context.
 
 ## Implementation notes for the app repo
 

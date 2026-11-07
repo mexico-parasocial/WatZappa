@@ -73,21 +73,35 @@ dc() { docker compose -p "$PROJECT" -f "$COMPOSE_FILE" "$@"; }
 mkdir "$WORK/operator"
 tar -xf "$WORK/operator.tar" -C "$WORK/operator"
 cmp -s "$COMPOSE_FILE" "$WORK/operator/docker-compose.matrix.yaml" || { echo 'Target compose definition differs from the backup; review and install the captured definition first' >&2; exit 2; }
-dc up -d --wait synapse-db mas-db
-COLLATION="$(dc exec -T synapse-db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT datcollate FROM pg_database WHERE datname=current_database()"')"
-[[ "$COLLATION" == C ]] || { echo 'Target Synapse database requires C collation; prepare a separate correctly initialized restore target' >&2; exit 2; }
-dc stop synapse mas para-idp element-web
+check_collation() {
+ COLLATION="$(dc exec -T synapse-db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT datcollate FROM pg_database WHERE datname=current_database()"')"
+ [[ "$COLLATION" == C ]] || { echo 'Target Synapse database requires C collation; prepare a separate correctly initialized restore target' >&2; exit 2; }
+}
+# An existing deployment is checked before anything changes. A fresh host has
+# no .env yet (Compose cannot even start the databases without it), so its
+# databases are created from the captured .env below and checked then.
+if [[ -f "$REPO_ROOT/.env" ]]; then
+ dc up -d --wait synapse-db mas-db
+ check_collation
+ dc stop synapse mas para-idp element-web
+fi
 ROLLBACK="$REPO_ROOT/backups/pre-restore-$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$ROLLBACK"
-tar -cf "$ROLLBACK/config.tar" -C "$SCRIPT_DIR" synapse mas hardening.yaml element-config.json
-cp "$REPO_ROOT/.env" "$ROLLBACK/operator.env"
+present=()
+for item in synapse mas hardening.yaml element-config.json; do [[ -e "$SCRIPT_DIR/$item" ]] && present+=("$item"); done
+(( ${#present[@]} == 0 )) || tar -cf "$ROLLBACK/config.tar" -C "$SCRIPT_DIR" "${present[@]}"
+[[ ! -f "$REPO_ROOT/.env" ]] || cp "$REPO_ROOT/.env" "$ROLLBACK/operator.env"
 rm -rf "$SCRIPT_DIR/synapse" "$SCRIPT_DIR/mas"
 tar -xf "$WORK/config.tar" -C "$SCRIPT_DIR"
 cp "$WORK/operator/.env" "$REPO_ROOT/.env"
 chmod 600 "$REPO_ROOT/.env"
 dc up -d --wait synapse-db mas-db
+check_collation
 dc exec -T synapse-db sh -c 'pg_restore --exit-on-error --clean --if-exists --no-owner -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$WORK/postgres.dump"
 dc exec -T mas-db sh -c 'pg_restore --exit-on-error --clean --if-exists --no-owner -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$WORK/mas.dump"
+# On a fresh host Synapse has never been created; create it (not started) so
+# its media volume exists to restore into.
+dc create --no-recreate synapse >/dev/null
 SYNAPSE_CONTAINER="$(dc ps -a -q synapse)"
 SYNAPSE_VOL="$(docker inspect -f '{{range .Mounts}}{{if and (eq .Type "volume") (eq .Destination "/data")}}{{.Name}}{{end}}{{end}}' "$SYNAPSE_CONTAINER")"
 [[ -n "$SYNAPSE_VOL" ]] || { echo 'Selected Synapse has no /data volume' >&2; exit 2; }

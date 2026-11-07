@@ -112,3 +112,6 @@ export * as _20261005T130000000Z from './20261005T130000000Z-revalidate-communit
 export * as _20261013T120000000Z from './20261013T120000000Z-reference-list-opt-outs.js'
 export * as _20261016T120000000Z from './20261016T120000000Z-add-community-activities.js'
 export * as _20261102T120000000Z from './20261102T120000000Z-add-follow-through.js'
+export * as _20261103T120000000Z from './20261103T120000000Z-add-conclusion.js'
+export * as _20261105T120000000Z from './20261105T120000000Z-drop-board-governance-mode.js'
+export * as _20261105T130000000Z from './20261105T130000000Z-add-close-policy-record-cid.js'

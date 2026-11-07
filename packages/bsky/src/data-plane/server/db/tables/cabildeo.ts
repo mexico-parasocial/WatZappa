@@ -124,6 +124,8 @@ export interface CabildeoClosePolicy {
   cabildeo: string
   deadline: string | null
   openedAt: string
+  /** CID of the record in which voting opened; null for rows from before it was kept. */
+  recordCid: string | null
 }
 
 export type PartialDB = {

@@ -53,37 +53,6 @@ export class IdentityMatrixArea extends SqliteBase {
       .run(chamberA, chamberB, observerRoom, communityUri)
   }
 
-  // Chamber assignments
-  getChamberAssignment(communityUri: string, did: string): string | undefined {
-    const row = this.db
-      .prepare(
-        'SELECT chamber FROM chamber_assignment WHERE community_uri = ? AND did = ?',
-      )
-      .get(communityUri, did) as { chamber: string } | undefined
-    return row?.chamber
-  }
-
-  setChamberAssignment(
-    communityUri: string,
-    did: string,
-    chamber: string,
-  ): void {
-    this.db
-      .prepare(
-        'INSERT OR REPLACE INTO chamber_assignment (community_uri, did, chamber) VALUES (?, ?, ?)',
-      )
-      .run(communityUri, did, chamber)
-  }
-
-  getChamberMemberCount(communityUri: string, chamber: string): number {
-    const row = this.db
-      .prepare(
-        'SELECT COUNT(*) as count FROM chamber_assignment WHERE community_uri = ? AND chamber = ?',
-      )
-      .get(communityUri, chamber) as { count: number }
-    return row.count
-  }
-
   getActiveMemberCount(communityUri: string): number {
     const row = this.db
       .prepare(
@@ -237,13 +206,10 @@ export class IdentityMatrixArea extends SqliteBase {
           csm.chamber_a_room_id,
           csm.chamber_b_room_id,
           csm.observer_room_id,
-          cms.roles_json,
-          ca.chamber
+          cms.roles_json
          FROM community_space_map csm
          INNER JOIN community_membership_state cms
            ON cms.community_uri = csm.community_uri
-         LEFT JOIN chamber_assignment ca
-           ON ca.community_uri = csm.community_uri AND ca.did = cms.did
          WHERE cms.did = ? AND cms.membership_state = 'active'`,
       )
       .all(did) as Array<{
@@ -255,7 +221,6 @@ export class IdentityMatrixArea extends SqliteBase {
       chamber_b_room_id: string | null
       observer_room_id: string | null
       roles_json: string
-      chamber: string | null
     }>
 
     return rows.flatMap((row) => {
@@ -290,33 +255,6 @@ export class IdentityMatrixArea extends SqliteBase {
         }
         return rooms
       }
-      const isObserver = roles.includes('observer')
-      if (isObserver && row.observer_room_id) {
-        rooms.push({
-          roomId: row.observer_room_id,
-          communityUri: row.community_uri,
-          slug: row.slug,
-          kind: 'observers',
-        })
-        return rooms
-      }
-
-      if (row.chamber === 'A' && row.chamber_a_room_id) {
-        rooms.push({
-          roomId: row.chamber_a_room_id,
-          communityUri: row.community_uri,
-          slug: row.slug,
-          kind: 'chamber-a',
-        })
-      } else if (row.chamber === 'B' && row.chamber_b_room_id) {
-        rooms.push({
-          roomId: row.chamber_b_room_id,
-          communityUri: row.community_uri,
-          slug: row.slug,
-          kind: 'chamber-b',
-        })
-      }
-
       return rooms
     })
   }
@@ -347,6 +285,7 @@ export class IdentityMatrixArea extends SqliteBase {
       createdAt: row.created_at,
       lastSeenAt: row.last_seen_at,
       revokedAt: row.revoked_at ?? null,
+      revocationPending: Boolean(row.revocation_pending),
     }
   }
 
@@ -373,7 +312,7 @@ export class IdentityMatrixArea extends SqliteBase {
   listDeviceSessions(did: string): Promise<DeviceSession[]> {
     const rows = this.db
       .prepare(
-        'SELECT * FROM device_sessions WHERE did = ? ORDER BY created_at DESC',
+        `SELECT ds.*, EXISTS (SELECT 1 FROM device_revocations dr JOIN device_sessions pending ON pending.id = dr.session_id WHERE pending.mxid = ds.mxid AND pending.device_id = ds.device_id) AS revocation_pending FROM device_sessions ds WHERE ds.did = ? ORDER BY ds.created_at DESC`,
       )
       .all(did) as any[]
     return Promise.resolve(rows.map((r) => this.mapDeviceSession(r)))
@@ -381,7 +320,9 @@ export class IdentityMatrixArea extends SqliteBase {
 
   getDeviceSession(id: string): Promise<DeviceSession | undefined> {
     const row = this.db
-      .prepare('SELECT * FROM device_sessions WHERE id = ?')
+      .prepare(
+        `SELECT ds.*, EXISTS (SELECT 1 FROM device_revocations dr JOIN device_sessions pending ON pending.id = dr.session_id WHERE pending.mxid = ds.mxid AND pending.device_id = ds.device_id) AS revocation_pending FROM device_sessions ds WHERE ds.id = ?`,
+      )
       .get(id) as any | undefined
     return Promise.resolve(row ? this.mapDeviceSession(row) : undefined)
   }
@@ -398,9 +339,75 @@ export class IdentityMatrixArea extends SqliteBase {
   revokeDeviceSession(did: string, id: string): Promise<boolean> {
     const res = this.db
       .prepare(
-        "UPDATE device_sessions SET revoked_at = datetime('now') WHERE id = ? AND did = ? AND revoked_at IS NULL",
+        "UPDATE device_sessions SET revoked_at = datetime('now') WHERE id IN (SELECT ds.id FROM device_sessions ds JOIN device_sessions target ON target.mxid = ds.mxid AND target.device_id = ds.device_id WHERE target.id = ? AND target.did = ? AND ds.did = target.did) AND revoked_at IS NULL",
       )
       .run(id, did)
     return Promise.resolve(res.changes > 0)
+  }
+
+  getMemberList(
+    communityUri: string,
+    limit = 100,
+    offset = 0,
+  ): { did: string; roles: string[] }[] {
+    const rows = this.db
+      .prepare(
+        "SELECT did, roles_json FROM community_membership_state WHERE community_uri = ? AND membership_state = 'active' ORDER BY did LIMIT ? OFFSET ?",
+      )
+      .all(communityUri, limit, offset) as { did: string; roles_json: string }[]
+    return rows.map((row) => ({
+      did: row.did,
+      roles: JSON.parse(row.roles_json) as string[],
+    }))
+  }
+  getCommunityMembers(
+    communityUri: string,
+  ): { did: string; roles: string[] }[] {
+    const rows = this.db
+      .prepare(
+        "SELECT did, roles_json FROM community_membership_state WHERE community_uri = ? AND membership_state = 'active' ORDER BY did",
+      )
+      .all(communityUri) as { did: string; roles_json: string }[]
+    return rows.map((row) => ({
+      did: row.did,
+      roles: JSON.parse(row.roles_json) as string[],
+    }))
+  }
+  getActiveCommunityUris(): string[] {
+    return (
+      this.db
+        .prepare(
+          "SELECT DISTINCT community_uri FROM community_membership_state WHERE membership_state = 'active'",
+        )
+        .all() as { community_uri: string }[]
+    ).map((row) => row.community_uri)
+  }
+
+  queueDeviceRevocation(did: string, id: string): void {
+    this.db
+      .prepare(
+        "INSERT OR IGNORE INTO device_revocations (session_id, requested_at) SELECT id, datetime('now') FROM device_sessions WHERE id = ? AND did = ?",
+      )
+      .run(id, did)
+  }
+  getPendingDeviceRevocations(limit = 50): DeviceSession[] {
+    const rows = this.db
+      .prepare(
+        'SELECT ds.*, 1 AS revocation_pending FROM device_revocations dr JOIN device_sessions ds ON ds.id = dr.session_id ORDER BY dr.attempts, dr.requested_at, dr.session_id LIMIT ?',
+      )
+      .all(limit)
+    return rows.map((row) => this.mapDeviceSession(row))
+  }
+  incrementDeviceRevocationAttempts(id: string): void {
+    this.db
+      .prepare(
+        'UPDATE device_revocations SET attempts = attempts + 1 WHERE session_id = ?',
+      )
+      .run(id)
+  }
+  deleteDeviceRevocation(id: string): void {
+    this.db
+      .prepare('DELETE FROM device_revocations WHERE session_id = ?')
+      .run(id)
   }
 }

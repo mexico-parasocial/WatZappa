@@ -168,7 +168,7 @@ export default function (server: Server, ctx: AppContext) {
       const swapCommitCid = swapCommit ? parseCid(swapCommit) : undefined
 
       const commit = await ctx.actorStore.transact(did, async (actorTxn) => {
-        await assertCommunityRepoWrites(actorTxn, did, preparedWrites)
+        assertCommunityRepoWrites(did, preparedWrites)
         const commit = await actorTxn.repo
           .processWrites(preparedWrites, swapCommitCid)
           .catch((err) => {

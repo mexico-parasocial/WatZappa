@@ -15,6 +15,7 @@ import type {
 } from '../../db/database-schema.js'
 import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
+import { finalizeDueCabildeos } from './finalize-cabildeos.js'
 
 const schema = com.para.community.authorityEvent.main
 type AuthorityEventSchema = typeof schema
@@ -91,6 +92,9 @@ async function insertFn(
   ) {
     return null
   }
+  // An assembly decision rests on a cabildeo's final tally, which is persisted
+  // lazily once its deadline passes; settle the due ones before judging it.
+  if (known.basis === 'assemblyDecision') await finalizeDueCabildeos(db)
   if (!(await verifyAuthorityEvent(database, uri, { ...event, ...known })))
     return null
   return (

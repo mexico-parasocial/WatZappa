@@ -74,7 +74,28 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
   membership roles never grant offices. `PARA_AUTHORITY_SERVICE_TOKEN` is a
   dedicated read credential for the bridge's specified-subject authorization
   query; redact its header, disable caching, and never reuse admin/M8 credentials.
-  Assembly-decision grants stay closed until a trusted tally verifier exists.
+  An `assemblyDecision` event is indexed only if the AppView recomputes the
+  decision from the evidence cabildeo's final tally (`verifyAssemblyDecision`
+  in `community-authority.ts`), and only for `membership.approve` and
+  `owner.recover` (`ASSEMBLY_DECISIONS`), never moderator election or
+  sanctions. Quorum and threshold are fixed in `@atproto/common`
+  (`evaluateAssemblyVote`), not read from a governance record its owner
+  publishes. The electorate is active members by authority events alone, and
+  voter eligibility everywhere else goes through `filterActiveMembers`, so a
+  self-written membership record never counts as a vote. Every community stays
+  hierarchical (owner appoints moderators): there is no governance-mode field.
+
+- **`com.para.civic.cabildeo` is the only proposal, deliberation and decision
+  pipeline.** Reactions to arguments are `deliberationVote` on a
+  `civic.position` (no m8 proof, OD-7 §5h); a decision is a cabildeo's
+  server-computed final tally, and its `protectedAction` is a claim only.
+  `com.para.community.proposal`, `deliberation` and `decision` have no
+  lexicon, route or indexer any more (their old `para_deliberation_statement`
+  rows stay, read only by Influence): do not bring them back or add a second
+  tally anywhere (the Matrix bridge decides nothing). A cabildeo grounds an authority event only if it
+  names its community by board URI, has exactly two options (the first
+  approves), and is still the record version voting opened in
+  (`cabildeo_close_policy.recordCid`).
 
 - Pilot planning: read [docs/QUARTER_PLAN_2026Q4.md](docs/QUARTER_PLAN_2026Q4.md)
   and its evidence before auditing or scheduling work. It is the canonical

@@ -9,13 +9,10 @@
         "type": "params",
         "required": ["cabildeo"],
         "properties": {
-          "cabildeo": {
-            "type": "string",
-            "format": "at-uri"
-          },
+          "cabildeo": { "type": "string", "format": "at-uri" },
           "stance": {
             "type": "string",
-            "knownValues": ["for", "against", "amendment"]
+            "knownValues": ["for", "against", "amendment", "question"]
           },
           "limit": {
             "type": "integer",

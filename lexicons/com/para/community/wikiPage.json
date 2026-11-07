@@ -33,6 +33,7 @@
             "format": "at-uri",
             "description": "For megathreads: the post that hosts the discussion."
           },
+          "pollUri": {"type": "string", "format": "at-uri"},
           "pinned": {"type": "boolean"},
           "sortOrder": {"type": "integer", "minimum": 0},
           "createdBy": {"type": "string", "format": "did"},

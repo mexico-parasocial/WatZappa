@@ -340,15 +340,21 @@ import * as ComParaBookSearchBooks from './types/com/para/book/searchBooks.js'
 import * as ComParaCivicAmendment from './types/com/para/civic/amendment.js'
 import * as ComParaCivicCabildeo from './types/com/para/civic/cabildeo.js'
 import * as ComParaCivicCastVote from './types/com/para/civic/castVote.js'
+import * as ComParaCivicConclusion from './types/com/para/civic/conclusion.js'
 import * as ComParaCivicDefs from './types/com/para/civic/defs.js'
 import * as ComParaCivicDelegation from './types/com/para/civic/delegation.js'
+import * as ComParaCivicFollowThrough from './types/com/para/civic/followThrough.js'
+import * as ComParaCivicFollowThroughUpdate from './types/com/para/civic/followThroughUpdate.js'
 import * as ComParaCivicGetCabildeo from './types/com/para/civic/getCabildeo.js'
+import * as ComParaCivicGetConclusion from './types/com/para/civic/getConclusion.js'
+import * as ComParaCivicGetFollowThrough from './types/com/para/civic/getFollowThrough.js'
 import * as ComParaCivicGetOpenQuestionThread from './types/com/para/civic/getOpenQuestionThread.js'
 import * as ComParaCivicGetPolicyCommunityVotes from './types/com/para/civic/getPolicyCommunityVotes.js'
 import * as ComParaCivicGetPolicyTally from './types/com/para/civic/getPolicyTally.js'
 import * as ComParaCivicListCabildeoPositions from './types/com/para/civic/listCabildeoPositions.js'
 import * as ComParaCivicListCabildeos from './types/com/para/civic/listCabildeos.js'
 import * as ComParaCivicListDelegationCandidates from './types/com/para/civic/listDelegationCandidates.js'
+import * as ComParaCivicListFollowThrough from './types/com/para/civic/listFollowThrough.js'
 import * as ComParaCivicOpenQuestion from './types/com/para/civic/openQuestion.js'
 import * as ComParaCivicOpenQuestionVote from './types/com/para/civic/openQuestionVote.js'
 import * as ComParaCivicPosition from './types/com/para/civic/position.js'
@@ -391,10 +397,8 @@ import * as ComParaCommunityCivicTreeVote from './types/com/para/community/civic
 import * as ComParaCommunityConstitution from './types/com/para/community/constitution.js'
 import * as ComParaCommunityCreateBoard from './types/com/para/community/createBoard.js'
 import * as ComParaCommunityCreateBriefingPack from './types/com/para/community/createBriefingPack.js'
-import * as ComParaCommunityDecision from './types/com/para/community/decision.js'
 import * as ComParaCommunityDefs from './types/com/para/community/defs.js'
 import * as ComParaCommunityDelegation from './types/com/para/community/delegation.js'
-import * as ComParaCommunityDeliberation from './types/com/para/community/deliberation.js'
 import * as ComParaCommunityDeliberationVote from './types/com/para/community/deliberationVote.js'
 import * as ComParaCommunityEconomicActivity from './types/com/para/community/economicActivity.js'
 import * as ComParaCommunityEigenstate from './types/com/para/community/eigenstate.js'
@@ -420,7 +424,6 @@ import * as ComParaCommunityListCivicTreeVotes from './types/com/para/community/
 import * as ComParaCommunityListCivicTrees from './types/com/para/community/listCivicTrees.js'
 import * as ComParaCommunityListCommunityRelations from './types/com/para/community/listCommunityRelations.js'
 import * as ComParaCommunityListDelegations from './types/com/para/community/listDelegations.js'
-import * as ComParaCommunityListDeliberations from './types/com/para/community/listDeliberations.js'
 import * as ComParaCommunityListIntensities from './types/com/para/community/listIntensities.js'
 import * as ComParaCommunityListMembers from './types/com/para/community/listMembers.js'
 import * as ComParaCommunityListParentCommunities from './types/com/para/community/listParentCommunities.js'
@@ -429,7 +432,6 @@ import * as ComParaCommunityListSharedContent from './types/com/para/community/l
 import * as ComParaCommunityListVotes from './types/com/para/community/listVotes.js'
 import * as ComParaCommunityListWikiPages from './types/com/para/community/listWikiPages.js'
 import * as ComParaCommunityMembership from './types/com/para/community/membership.js'
-import * as ComParaCommunityProposal from './types/com/para/community/proposal.js'
 import * as ComParaCommunityRelation from './types/com/para/community/relation.js'
 import * as ComParaCommunityRemoveSharedContent from './types/com/para/community/removeSharedContent.js'
 import * as ComParaCommunityRestoreSharedContent from './types/com/para/community/restoreSharedContent.js'
@@ -899,15 +901,21 @@ export * as ComParaBookSearchBooks from './types/com/para/book/searchBooks.js'
 export * as ComParaCivicAmendment from './types/com/para/civic/amendment.js'
 export * as ComParaCivicCabildeo from './types/com/para/civic/cabildeo.js'
 export * as ComParaCivicCastVote from './types/com/para/civic/castVote.js'
+export * as ComParaCivicConclusion from './types/com/para/civic/conclusion.js'
 export * as ComParaCivicDefs from './types/com/para/civic/defs.js'
 export * as ComParaCivicDelegation from './types/com/para/civic/delegation.js'
+export * as ComParaCivicFollowThrough from './types/com/para/civic/followThrough.js'
+export * as ComParaCivicFollowThroughUpdate from './types/com/para/civic/followThroughUpdate.js'
 export * as ComParaCivicGetCabildeo from './types/com/para/civic/getCabildeo.js'
+export * as ComParaCivicGetConclusion from './types/com/para/civic/getConclusion.js'
+export * as ComParaCivicGetFollowThrough from './types/com/para/civic/getFollowThrough.js'
 export * as ComParaCivicGetOpenQuestionThread from './types/com/para/civic/getOpenQuestionThread.js'
 export * as ComParaCivicGetPolicyCommunityVotes from './types/com/para/civic/getPolicyCommunityVotes.js'
 export * as ComParaCivicGetPolicyTally from './types/com/para/civic/getPolicyTally.js'
 export * as ComParaCivicListCabildeoPositions from './types/com/para/civic/listCabildeoPositions.js'
 export * as ComParaCivicListCabildeos from './types/com/para/civic/listCabildeos.js'
 export * as ComParaCivicListDelegationCandidates from './types/com/para/civic/listDelegationCandidates.js'
+export * as ComParaCivicListFollowThrough from './types/com/para/civic/listFollowThrough.js'
 export * as ComParaCivicOpenQuestion from './types/com/para/civic/openQuestion.js'
 export * as ComParaCivicOpenQuestionVote from './types/com/para/civic/openQuestionVote.js'
 export * as ComParaCivicPosition from './types/com/para/civic/position.js'
@@ -950,10 +958,8 @@ export * as ComParaCommunityCivicTreeVote from './types/com/para/community/civic
 export * as ComParaCommunityConstitution from './types/com/para/community/constitution.js'
 export * as ComParaCommunityCreateBoard from './types/com/para/community/createBoard.js'
 export * as ComParaCommunityCreateBriefingPack from './types/com/para/community/createBriefingPack.js'
-export * as ComParaCommunityDecision from './types/com/para/community/decision.js'
 export * as ComParaCommunityDefs from './types/com/para/community/defs.js'
 export * as ComParaCommunityDelegation from './types/com/para/community/delegation.js'
-export * as ComParaCommunityDeliberation from './types/com/para/community/deliberation.js'
 export * as ComParaCommunityDeliberationVote from './types/com/para/community/deliberationVote.js'
 export * as ComParaCommunityEconomicActivity from './types/com/para/community/economicActivity.js'
 export * as ComParaCommunityEigenstate from './types/com/para/community/eigenstate.js'
@@ -979,7 +985,6 @@ export * as ComParaCommunityListCivicTreeVotes from './types/com/para/community/
 export * as ComParaCommunityListCivicTrees from './types/com/para/community/listCivicTrees.js'
 export * as ComParaCommunityListCommunityRelations from './types/com/para/community/listCommunityRelations.js'
 export * as ComParaCommunityListDelegations from './types/com/para/community/listDelegations.js'
-export * as ComParaCommunityListDeliberations from './types/com/para/community/listDeliberations.js'
 export * as ComParaCommunityListIntensities from './types/com/para/community/listIntensities.js'
 export * as ComParaCommunityListMembers from './types/com/para/community/listMembers.js'
 export * as ComParaCommunityListParentCommunities from './types/com/para/community/listParentCommunities.js'
@@ -988,7 +993,6 @@ export * as ComParaCommunityListSharedContent from './types/com/para/community/l
 export * as ComParaCommunityListVotes from './types/com/para/community/listVotes.js'
 export * as ComParaCommunityListWikiPages from './types/com/para/community/listWikiPages.js'
 export * as ComParaCommunityMembership from './types/com/para/community/membership.js'
-export * as ComParaCommunityProposal from './types/com/para/community/proposal.js'
 export * as ComParaCommunityRelation from './types/com/para/community/relation.js'
 export * as ComParaCommunityRemoveSharedContent from './types/com/para/community/removeSharedContent.js'
 export * as ComParaCommunityRestoreSharedContent from './types/com/para/community/restoreSharedContent.js'
@@ -6667,7 +6671,10 @@ export class ComParaCivicNS {
   _client: XrpcClient
   amendment: ComParaCivicAmendmentRecord
   cabildeo: ComParaCivicCabildeoRecord
+  conclusion: ComParaCivicConclusionRecord
   delegation: ComParaCivicDelegationRecord
+  followThrough: ComParaCivicFollowThroughRecord
+  followThroughUpdate: ComParaCivicFollowThroughUpdateRecord
   openQuestion: ComParaCivicOpenQuestionRecord
   openQuestionVote: ComParaCivicOpenQuestionVoteRecord
   position: ComParaCivicPositionRecord
@@ -6677,7 +6684,10 @@ export class ComParaCivicNS {
     this._client = client
     this.amendment = new ComParaCivicAmendmentRecord(client)
     this.cabildeo = new ComParaCivicCabildeoRecord(client)
+    this.conclusion = new ComParaCivicConclusionRecord(client)
     this.delegation = new ComParaCivicDelegationRecord(client)
+    this.followThrough = new ComParaCivicFollowThroughRecord(client)
+    this.followThroughUpdate = new ComParaCivicFollowThroughUpdateRecord(client)
     this.openQuestion = new ComParaCivicOpenQuestionRecord(client)
     this.openQuestionVote = new ComParaCivicOpenQuestionVoteRecord(client)
     this.position = new ComParaCivicPositionRecord(client)
@@ -6705,6 +6715,29 @@ export class ComParaCivicNS {
       undefined,
       opts,
     )
+  }
+
+  getConclusion(
+    params?: ComParaCivicGetConclusion.QueryParams,
+    opts?: ComParaCivicGetConclusion.CallOptions,
+  ): Promise<ComParaCivicGetConclusion.Response> {
+    return this._client.call(
+      'com.para.civic.getConclusion',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  getFollowThrough(
+    params?: ComParaCivicGetFollowThrough.QueryParams,
+    opts?: ComParaCivicGetFollowThrough.CallOptions,
+  ): Promise<ComParaCivicGetFollowThrough.Response> {
+    return this._client
+      .call('com.para.civic.getFollowThrough', params, undefined, opts)
+      .catch((e) => {
+        throw ComParaCivicGetFollowThrough.toKnownErr(e)
+      })
   }
 
   getOpenQuestionThread(
@@ -6770,6 +6803,18 @@ export class ComParaCivicNS {
   ): Promise<ComParaCivicListDelegationCandidates.Response> {
     return this._client.call(
       'com.para.civic.listDelegationCandidates',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  listFollowThrough(
+    params?: ComParaCivicListFollowThrough.QueryParams,
+    opts?: ComParaCivicListFollowThrough.CallOptions,
+  ): Promise<ComParaCivicListFollowThrough.Response> {
+    return this._client.call(
+      'com.para.civic.listFollowThrough',
       params,
       undefined,
       opts,
@@ -6950,6 +6995,89 @@ export class ComParaCivicCabildeoRecord {
   }
 }
 
+export class ComParaCivicConclusionRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: ComParaCivicConclusion.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'com.para.civic.conclusion',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: ComParaCivicConclusion.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'com.para.civic.conclusion',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCivicConclusion.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.civic.conclusion'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCivicConclusion.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.civic.conclusion'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'com.para.civic.conclusion', ...params },
+      { headers },
+    )
+  }
+}
+
 export class ComParaCivicDelegationRecord {
   _client: XrpcClient
 
@@ -7028,6 +7156,172 @@ export class ComParaCivicDelegationRecord {
       'com.atproto.repo.deleteRecord',
       undefined,
       { collection: 'com.para.civic.delegation', ...params },
+      { headers },
+    )
+  }
+}
+
+export class ComParaCivicFollowThroughRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: ComParaCivicFollowThrough.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'com.para.civic.followThrough',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: ComParaCivicFollowThrough.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'com.para.civic.followThrough',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCivicFollowThrough.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.civic.followThrough'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCivicFollowThrough.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.civic.followThrough'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'com.para.civic.followThrough', ...params },
+      { headers },
+    )
+  }
+}
+
+export class ComParaCivicFollowThroughUpdateRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: ComParaCivicFollowThroughUpdate.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'com.para.civic.followThroughUpdate',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: ComParaCivicFollowThroughUpdate.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'com.para.civic.followThroughUpdate',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCivicFollowThroughUpdate.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.civic.followThroughUpdate'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCivicFollowThroughUpdate.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.civic.followThroughUpdate'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'com.para.civic.followThroughUpdate', ...params },
       { headers },
     )
   }
@@ -7443,9 +7737,7 @@ export class ComParaCommunityNS {
   civicTree: ComParaCommunityCivicTreeRecord
   civicTreeVote: ComParaCommunityCivicTreeVoteRecord
   constitution: ComParaCommunityConstitutionRecord
-  decision: ComParaCommunityDecisionRecord
   delegation: ComParaCommunityDelegationRecord
-  deliberation: ComParaCommunityDeliberationRecord
   deliberationVote: ComParaCommunityDeliberationVoteRecord
   economicActivity: ComParaCommunityEconomicActivityRecord
   eigenstate: ComParaCommunityEigenstateRecord
@@ -7453,7 +7745,6 @@ export class ComParaCommunityNS {
   governanceConfig: ComParaCommunityGovernanceConfigRecord
   intensity: ComParaCommunityIntensityRecord
   membership: ComParaCommunityMembershipRecord
-  proposal: ComParaCommunityProposalRecord
   relation: ComParaCommunityRelationRecord
   roleAcceptance: ComParaCommunityRoleAcceptanceRecord
   sharedContent: ComParaCommunitySharedContentRecord
@@ -7475,9 +7766,7 @@ export class ComParaCommunityNS {
     this.civicTree = new ComParaCommunityCivicTreeRecord(client)
     this.civicTreeVote = new ComParaCommunityCivicTreeVoteRecord(client)
     this.constitution = new ComParaCommunityConstitutionRecord(client)
-    this.decision = new ComParaCommunityDecisionRecord(client)
     this.delegation = new ComParaCommunityDelegationRecord(client)
-    this.deliberation = new ComParaCommunityDeliberationRecord(client)
     this.deliberationVote = new ComParaCommunityDeliberationVoteRecord(client)
     this.economicActivity = new ComParaCommunityEconomicActivityRecord(client)
     this.eigenstate = new ComParaCommunityEigenstateRecord(client)
@@ -7485,7 +7774,6 @@ export class ComParaCommunityNS {
     this.governanceConfig = new ComParaCommunityGovernanceConfigRecord(client)
     this.intensity = new ComParaCommunityIntensityRecord(client)
     this.membership = new ComParaCommunityMembershipRecord(client)
-    this.proposal = new ComParaCommunityProposalRecord(client)
     this.relation = new ComParaCommunityRelationRecord(client)
     this.roleAcceptance = new ComParaCommunityRoleAcceptanceRecord(client)
     this.sharedContent = new ComParaCommunitySharedContentRecord(client)
@@ -7744,18 +8032,6 @@ export class ComParaCommunityNS {
   ): Promise<ComParaCommunityListDelegations.Response> {
     return this._client.call(
       'com.para.community.listDelegations',
-      params,
-      undefined,
-      opts,
-    )
-  }
-
-  listDeliberations(
-    params?: ComParaCommunityListDeliberations.QueryParams,
-    opts?: ComParaCommunityListDeliberations.CallOptions,
-  ): Promise<ComParaCommunityListDeliberations.Response> {
-    return this._client.call(
-      'com.para.community.listDeliberations',
       params,
       undefined,
       opts,
@@ -9172,89 +9448,6 @@ export class ComParaCommunityConstitutionRecord {
   }
 }
 
-export class ComParaCommunityDecisionRecord {
-  _client: XrpcClient
-
-  constructor(client: XrpcClient) {
-    this._client = client
-  }
-
-  async list(
-    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
-  ): Promise<{
-    cursor?: string
-    records: { uri: string; value: ComParaCommunityDecision.Record }[]
-  }> {
-    const res = await this._client.call('com.atproto.repo.listRecords', {
-      collection: 'com.para.community.decision',
-      ...params,
-    })
-    return res.data
-  }
-
-  async get(
-    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
-  ): Promise<{
-    uri: string
-    cid: string
-    value: ComParaCommunityDecision.Record
-  }> {
-    const res = await this._client.call('com.atproto.repo.getRecord', {
-      collection: 'com.para.community.decision',
-      ...params,
-    })
-    return res.data
-  }
-
-  async create(
-    params: OmitKey<
-      ComAtprotoRepoCreateRecord.InputSchema,
-      'collection' | 'record'
-    >,
-    record: Un$Typed<ComParaCommunityDecision.Record>,
-    headers?: Record<string, string>,
-  ): Promise<{ uri: string; cid: string }> {
-    const collection = 'com.para.community.decision'
-    const res = await this._client.call(
-      'com.atproto.repo.createRecord',
-      undefined,
-      { collection, ...params, record: { ...record, $type: collection } },
-      { encoding: 'application/json', headers },
-    )
-    return res.data
-  }
-
-  async put(
-    params: OmitKey<
-      ComAtprotoRepoPutRecord.InputSchema,
-      'collection' | 'record'
-    >,
-    record: Un$Typed<ComParaCommunityDecision.Record>,
-    headers?: Record<string, string>,
-  ): Promise<{ uri: string; cid: string }> {
-    const collection = 'com.para.community.decision'
-    const res = await this._client.call(
-      'com.atproto.repo.putRecord',
-      undefined,
-      { collection, ...params, record: { ...record, $type: collection } },
-      { encoding: 'application/json', headers },
-    )
-    return res.data
-  }
-
-  async delete(
-    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
-    headers?: Record<string, string>,
-  ): Promise<void> {
-    await this._client.call(
-      'com.atproto.repo.deleteRecord',
-      undefined,
-      { collection: 'com.para.community.decision', ...params },
-      { headers },
-    )
-  }
-}
-
 export class ComParaCommunityDelegationRecord {
   _client: XrpcClient
 
@@ -9333,89 +9526,6 @@ export class ComParaCommunityDelegationRecord {
       'com.atproto.repo.deleteRecord',
       undefined,
       { collection: 'com.para.community.delegation', ...params },
-      { headers },
-    )
-  }
-}
-
-export class ComParaCommunityDeliberationRecord {
-  _client: XrpcClient
-
-  constructor(client: XrpcClient) {
-    this._client = client
-  }
-
-  async list(
-    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
-  ): Promise<{
-    cursor?: string
-    records: { uri: string; value: ComParaCommunityDeliberation.Record }[]
-  }> {
-    const res = await this._client.call('com.atproto.repo.listRecords', {
-      collection: 'com.para.community.deliberation',
-      ...params,
-    })
-    return res.data
-  }
-
-  async get(
-    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
-  ): Promise<{
-    uri: string
-    cid: string
-    value: ComParaCommunityDeliberation.Record
-  }> {
-    const res = await this._client.call('com.atproto.repo.getRecord', {
-      collection: 'com.para.community.deliberation',
-      ...params,
-    })
-    return res.data
-  }
-
-  async create(
-    params: OmitKey<
-      ComAtprotoRepoCreateRecord.InputSchema,
-      'collection' | 'record'
-    >,
-    record: Un$Typed<ComParaCommunityDeliberation.Record>,
-    headers?: Record<string, string>,
-  ): Promise<{ uri: string; cid: string }> {
-    const collection = 'com.para.community.deliberation'
-    const res = await this._client.call(
-      'com.atproto.repo.createRecord',
-      undefined,
-      { collection, ...params, record: { ...record, $type: collection } },
-      { encoding: 'application/json', headers },
-    )
-    return res.data
-  }
-
-  async put(
-    params: OmitKey<
-      ComAtprotoRepoPutRecord.InputSchema,
-      'collection' | 'record'
-    >,
-    record: Un$Typed<ComParaCommunityDeliberation.Record>,
-    headers?: Record<string, string>,
-  ): Promise<{ uri: string; cid: string }> {
-    const collection = 'com.para.community.deliberation'
-    const res = await this._client.call(
-      'com.atproto.repo.putRecord',
-      undefined,
-      { collection, ...params, record: { ...record, $type: collection } },
-      { encoding: 'application/json', headers },
-    )
-    return res.data
-  }
-
-  async delete(
-    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
-    headers?: Record<string, string>,
-  ): Promise<void> {
-    await this._client.call(
-      'com.atproto.repo.deleteRecord',
-      undefined,
-      { collection: 'com.para.community.deliberation', ...params },
       { headers },
     )
   }
@@ -9997,89 +10107,6 @@ export class ComParaCommunityMembershipRecord {
       'com.atproto.repo.deleteRecord',
       undefined,
       { collection: 'com.para.community.membership', ...params },
-      { headers },
-    )
-  }
-}
-
-export class ComParaCommunityProposalRecord {
-  _client: XrpcClient
-
-  constructor(client: XrpcClient) {
-    this._client = client
-  }
-
-  async list(
-    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
-  ): Promise<{
-    cursor?: string
-    records: { uri: string; value: ComParaCommunityProposal.Record }[]
-  }> {
-    const res = await this._client.call('com.atproto.repo.listRecords', {
-      collection: 'com.para.community.proposal',
-      ...params,
-    })
-    return res.data
-  }
-
-  async get(
-    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
-  ): Promise<{
-    uri: string
-    cid: string
-    value: ComParaCommunityProposal.Record
-  }> {
-    const res = await this._client.call('com.atproto.repo.getRecord', {
-      collection: 'com.para.community.proposal',
-      ...params,
-    })
-    return res.data
-  }
-
-  async create(
-    params: OmitKey<
-      ComAtprotoRepoCreateRecord.InputSchema,
-      'collection' | 'record'
-    >,
-    record: Un$Typed<ComParaCommunityProposal.Record>,
-    headers?: Record<string, string>,
-  ): Promise<{ uri: string; cid: string }> {
-    const collection = 'com.para.community.proposal'
-    const res = await this._client.call(
-      'com.atproto.repo.createRecord',
-      undefined,
-      { collection, ...params, record: { ...record, $type: collection } },
-      { encoding: 'application/json', headers },
-    )
-    return res.data
-  }
-
-  async put(
-    params: OmitKey<
-      ComAtprotoRepoPutRecord.InputSchema,
-      'collection' | 'record'
-    >,
-    record: Un$Typed<ComParaCommunityProposal.Record>,
-    headers?: Record<string, string>,
-  ): Promise<{ uri: string; cid: string }> {
-    const collection = 'com.para.community.proposal'
-    const res = await this._client.call(
-      'com.atproto.repo.putRecord',
-      undefined,
-      { collection, ...params, record: { ...record, $type: collection } },
-      { encoding: 'application/json', headers },
-    )
-    return res.data
-  }
-
-  async delete(
-    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
-    headers?: Record<string, string>,
-  ): Promise<void> {
-    await this._client.call(
-      'com.atproto.repo.deleteRecord',
-      undefined,
-      { collection: 'com.para.community.proposal', ...params },
       { headers },
     )
   }

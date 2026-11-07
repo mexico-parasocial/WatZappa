@@ -1,0 +1,38 @@
+{
+  "lexicon": 1,
+  "id": "com.para.civic.conclusion",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A steward's written summary of where a deliberation without a vote landed. It is the steward's reading, not the community's verdict. Served only for a cabildeo of kind forum or persuasion, and only when written by a current steward of the cabildeo's community.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["cabildeo", "communityUri", "text", "createdAt"],
+        "properties": {
+          "cabildeo": { "type": "string", "format": "at-uri" },
+          "officialThreadSlug": { "type": "string", "maxLength": 80 },
+          "reviewDate": { "type": "string", "maxLength": 10 },
+          "communityUri": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The board the cabildeo's community resolves to."
+          },
+          "text": { "type": "string", "maxLength": 3000, "maxGraphemes": 1500 },
+          "cited": {
+            "type": "array",
+            "maxLength": 10,
+            "items": { "type": "string", "format": "at-uri" },
+            "description": "Positions of the same cabildeo that the conclusion summarizes. Shown beneath it so readers can see what it rests on."
+          },
+          "followUp": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "A cabildeo opened because of this conclusion. Never created automatically."
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

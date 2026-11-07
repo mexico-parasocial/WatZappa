@@ -10,6 +10,7 @@ import {
   is$typed as _is$typed,
   type OmitKey,
 } from '../../../../util.js'
+import type * as ComParaCommunityDefs from '../community/defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -126,6 +127,7 @@ export function validateOutcomeSummary<V>(v: V) {
 
 export interface ViewerContext {
   $type?: 'com.para.civic.defs#viewerContext'
+  canCastCabildeoVote?: boolean
   currentVoteOption?: number
   currentVoteIsDirect?: boolean
   currentVoteCreatedAt?: string
@@ -185,6 +187,85 @@ export function validateCabildeoLive<V>(v: V) {
   return validate<CabildeoLive & V>(v, id, hashCabildeoLive)
 }
 
+/** The assembly's count for a resolved cabildeo and the next authority event it may ground. The AppView recomputes all of it from the final tally. */
+export interface AssemblyDecisionView {
+  $type?: 'com.para.civic.defs#assemblyDecisionView'
+  /** Why this cabildeo cannot ground an authority event, when it cannot. */
+  problem?:
+    | 'unknown-cabildeo'
+    | 'not-resolved'
+    | 'wrong-community'
+    | 'record-changed'
+    | 'too-short'
+    | 'not-decidable'
+    | 'options'
+    | 'not-admissible'
+    | (string & {})
+  action?: string
+  subject?: string
+  policy?: 'assembly_majority' | 'assembly_supermajority' | (string & {})
+  outcome?: AssemblyOutcome
+  event?: AssemblyEvent
+  /** The authority event this cabildeo already grounds. */
+  appliedEvent?: string
+}
+
+const hashAssemblyDecisionView = 'assemblyDecisionView'
+
+export function isAssemblyDecisionView<V>(v: V) {
+  return is$typed(v, id, hashAssemblyDecisionView)
+}
+
+export function validateAssemblyDecisionView<V>(v: V) {
+  return validate<AssemblyDecisionView & V>(v, id, hashAssemblyDecisionView)
+}
+
+export interface AssemblyOutcome {
+  $type?: 'com.para.civic.defs#assemblyOutcome'
+  approved: boolean
+  reason:
+    | 'approved'
+    | 'no-ballots'
+    | 'quorum-not-met'
+    | 'threshold-not-met'
+    | (string & {})
+  electorate: number
+  quorumTarget: number
+  participants: number
+  approvals: number
+  rejections: number
+}
+
+const hashAssemblyOutcome = 'assemblyOutcome'
+
+export function isAssemblyOutcome<V>(v: V) {
+  return is$typed(v, id, hashAssemblyOutcome)
+}
+
+export function validateAssemblyOutcome<V>(v: V) {
+  return validate<AssemblyOutcome & V>(v, id, hashAssemblyOutcome)
+}
+
+/** The com.para.community.authorityEvent to publish, with basis assemblyDecision. Issuer is whoever publishes it; effectiveAt must not precede the cabildeo's close. */
+export interface AssemblyEvent {
+  $type?: 'com.para.civic.defs#assemblyEvent'
+  action: string
+  subject: string
+  version: number
+  predecessor?: string
+  evidence: string
+}
+
+const hashAssemblyEvent = 'assemblyEvent'
+
+export function isAssemblyEvent<V>(v: V) {
+  return is$typed(v, id, hashAssemblyEvent)
+}
+
+export function validateAssemblyEvent<V>(v: V) {
+  return validate<AssemblyEvent & V>(v, id, hashAssemblyEvent)
+}
+
 export interface CabildeoView {
   $type?: 'com.para.civic.defs#cabildeoView'
   uri: string
@@ -201,9 +282,17 @@ export interface CabildeoView {
   geo?: GeoPoint
   options: CabildeoOption[]
   minQuorum?: number
+  /** A missing kind on the record is served as activity. */
+  kind?: 'activity' | 'persuasion' | 'forum' | (string & {})
   voteVisibility?: 'public' | 'party_only' | 'anonymous' | (string & {})
   phase:
     'draft' | 'open' | 'deliberating' | 'voting' | 'resolved' | (string & {})
+  minimumViewTier?: string
+  minimumParticipationTier?: string
+  protectedAction?: ComParaCommunityDefs.ProtectedAction
+  assemblyDecision?: AssemblyDecisionView
+  votingOpenedAt?: string
+  votingClosedAt?: string
   phaseDeadline?: string
   createdAt: string
   optionSummary: OptionSummary[]
@@ -232,11 +321,17 @@ export interface PositionView {
   creator: string
   indexedAt: string
   cabildeo: string
-  stance: 'for' | 'against' | 'amendment' | (string & {})
+  stance: 'for' | 'against' | 'amendment' | 'question' | (string & {})
   optionIndex?: number
   text: string
   compassQuadrant?: string
   createdAt: string
+  /** Reactions of agree on this position (com.para.community.deliberationVote). */
+  agreeCount?: number
+  disagreeCount?: number
+  passCount?: number
+  /** Only ever the requesting viewer's own reaction; who else took which side is not part of this view. */
+  viewerDirection?: 'agree' | 'disagree' | 'pass' | (string & {})
 }
 
 const hashPositionView = 'positionView'

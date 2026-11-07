@@ -1,8 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import type { Config } from '../config.js'
-import type { InstitutionMembership, InstitutionRole } from '../institutions.js'
 import type {
-  AiConsentRecord,
   CommunitySpaceMap,
   DeviceSession,
   IBridgeDatabase,
@@ -136,32 +134,6 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     )
   }
 
-  getChamberAssignment(
-    communityUri: string,
-    did: string,
-  ): Promise<string | undefined> {
-    return this.wrap(() => this.inner.getChamberAssignment(communityUri, did))
-  }
-
-  setChamberAssignment(
-    communityUri: string,
-    did: string,
-    chamber: string,
-  ): Promise<void> {
-    return this.wrap(() =>
-      this.inner.setChamberAssignment(communityUri, did, chamber),
-    )
-  }
-
-  getChamberMemberCount(
-    communityUri: string,
-    chamber: string,
-  ): Promise<number> {
-    return this.wrap(() =>
-      this.inner.getChamberMemberCount(communityUri, chamber),
-    )
-  }
-
   getActiveMemberCount(communityUri: string): Promise<number> {
     return this.wrap(() => this.inner.getActiveMemberCount(communityUri))
   }
@@ -183,6 +155,10 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
 
   getFailedSyncs(limit = 100): Promise<SyncLogEntry[]> {
     return this.wrap(() => this.inner.getFailedSyncs(limit))
+  }
+
+  getAccessRetryJobs(limit = 50): Promise<SyncLogEntry[]> {
+    return this.wrap(() => this.inner.getAccessRetryJobs(limit))
   }
 
   getProvisioningRetryJobs(limit = 50): Promise<SyncLogEntry[]> {
@@ -267,6 +243,19 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     return this.wrap(() => this.inner.getDeviceSession(id))
   }
 
+  queueDeviceRevocation(did: string, id: string): Promise<void> {
+    return this.wrap(() => this.inner.queueDeviceRevocation(did, id))
+  }
+  getPendingDeviceRevocations(limit = 50): Promise<DeviceSession[]> {
+    return this.wrap(() => this.inner.getPendingDeviceRevocations(limit))
+  }
+  incrementDeviceRevocationAttempts(id: string): Promise<void> {
+    return this.wrap(() => this.inner.incrementDeviceRevocationAttempts(id))
+  }
+  deleteDeviceRevocation(id: string): Promise<void> {
+    return this.wrap(() => this.inner.deleteDeviceRevocation(id))
+  }
+
   async touchDeviceSession(id: string): Promise<void> {
     await this.wrap(() => this.inner.touchDeviceSession(id))
   }
@@ -325,195 +314,6 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     | undefined
   > {
     return this.wrap(() => this.inner.getConstitution(communityUri))
-  }
-
-  // ── Proposals ──
-
-  insertProposal(
-    uri: string,
-    communityUri: string,
-    authorDid: string,
-    title: string,
-    body: string,
-    proposalType: string,
-    budgetRequest: number | null,
-    createdAt: string,
-  ): Promise<void> {
-    return this.wrap(() =>
-      this.inner.insertProposal(
-        uri,
-        communityUri,
-        authorDid,
-        title,
-        body,
-        proposalType,
-        budgetRequest,
-        createdAt,
-      ),
-    )
-  }
-
-  getProposal(uri: string): Promise<any | undefined> {
-    return this.wrap(() => this.inner.getProposal(uri))
-  }
-
-  getProposalsByCommunity(
-    communityUri: string,
-    state?: string,
-  ): Promise<any[]> {
-    return this.wrap(() =>
-      this.inner.getProposalsByCommunity(communityUri, state),
-    )
-  }
-
-  getProposalsByState(state: string): Promise<any[]> {
-    return this.wrap(() => this.inner.getProposalsByState(state))
-  }
-
-  updateProposalState(
-    uri: string,
-    state: string,
-    votingStartsAt?: string,
-    votingEndsAt?: string,
-  ): Promise<void> {
-    return this.wrap(() =>
-      this.inner.updateProposalState(uri, state, votingStartsAt, votingEndsAt),
-    )
-  }
-
-  updateProposalVoteCounts(
-    uri: string,
-    forVotes: number,
-    againstVotes: number,
-    abstainVotes: number,
-  ): Promise<void> {
-    return this.wrap(() =>
-      this.inner.updateProposalVoteCounts(
-        uri,
-        forVotes,
-        againstVotes,
-        abstainVotes,
-      ),
-    )
-  }
-
-  finalizeProposal(
-    uri: string,
-    result: string,
-    decidedAt: string,
-  ): Promise<void> {
-    return this.wrap(() => this.inner.finalizeProposal(uri, result, decidedAt))
-  }
-
-  // ── Votes ──
-
-  insertVote(
-    uri: string,
-    proposalUri: string,
-    communityUri: string,
-    voterDid: string,
-    choice: string,
-    weight: number,
-    createdAt: string,
-  ): Promise<void> {
-    return this.wrap(() =>
-      this.inner.insertVote(
-        uri,
-        proposalUri,
-        communityUri,
-        voterDid,
-        choice,
-        weight,
-        createdAt,
-      ),
-    )
-  }
-
-  getVotesForProposal(proposalUri: string): Promise<any[]> {
-    return this.wrap(() => this.inner.getVotesForProposal(proposalUri))
-  }
-
-  // ── Decisions ──
-
-  insertDecision(
-    proposalUri: string,
-    communityUri: string,
-    result: string,
-    votesFor: number,
-    votesAgainst: number,
-    votesAbstain: number,
-    totalMembers: number | null,
-    quorumRequired: number,
-    thresholdRequired: number,
-    constitutionVersion: number,
-    budgetAllocated: number | null,
-    createdAt: string,
-  ): Promise<void> {
-    return this.wrap(() =>
-      this.inner.insertDecision(
-        proposalUri,
-        communityUri,
-        result,
-        votesFor,
-        votesAgainst,
-        votesAbstain,
-        totalMembers,
-        quorumRequired,
-        thresholdRequired,
-        constitutionVersion,
-        budgetAllocated,
-        createdAt,
-      ),
-    )
-  }
-
-  getDecision(proposalUri: string): Promise<any | undefined> {
-    return this.wrap(() => this.inner.getDecision(proposalUri))
-  }
-
-  getDecisionsByCommunity(communityUri: string): Promise<any[]> {
-    return this.wrap(() => this.inner.getDecisionsByCommunity(communityUri))
-  }
-
-  // ── Sortition ──
-
-  saveSortitionProof(proof: {
-    did: string
-    communityUri: string
-    chamber: 'A' | 'B'
-    drandRound: number
-    drandRandomness: string
-    hashInput: string
-    hashOutput: string
-    threshold: number
-    timestamp: string
-  }): Promise<void> {
-    return this.wrap(() => this.inner.saveSortitionProof(proof))
-  }
-
-  getSortitionProof(
-    did: string,
-    communityUri: string,
-  ): Promise<any | undefined> {
-    return this.wrap(() => this.inner.getSortitionProof(did, communityUri))
-  }
-
-  getSortitionProofsByCommunity(communityUri: string): Promise<any[]> {
-    return this.wrap(() =>
-      this.inner.getSortitionProofsByCommunity(communityUri),
-    )
-  }
-
-  getUnverifiedProofs(limit = 100): Promise<any[]> {
-    return this.wrap(() => this.inner.getUnverifiedProofs(limit))
-  }
-
-  markProofVerified(id: number): Promise<void> {
-    return this.wrap(() => this.inner.markProofVerified(id))
-  }
-
-  getSortitionProofCount(): Promise<number> {
-    return this.wrap(() => this.inner.getSortitionProofCount())
   }
 
   // ── Moderation ──
@@ -590,57 +390,6 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
         reportedEventId,
         days,
       ),
-    )
-  }
-
-  // ── Participation ──
-
-  getParticipationStats(
-    did: string,
-    communityUri: string,
-  ): Promise<any | undefined> {
-    return this.wrap(() => this.inner.getParticipationStats(did, communityUri))
-  }
-
-  ensureParticipationStats(
-    did: string,
-    communityUri: string,
-    matrixRoomId?: string,
-  ): Promise<void> {
-    return this.wrap(() =>
-      this.inner.ensureParticipationStats(did, communityUri, matrixRoomId),
-    )
-  }
-
-  incrementMessageCount(did: string, communityUri: string): Promise<void> {
-    return this.wrap(() => this.inner.incrementMessageCount(did, communityUri))
-  }
-
-  incrementVoteCount(did: string, communityUri: string): Promise<void> {
-    return this.wrap(() => this.inner.incrementVoteCount(did, communityUri))
-  }
-
-  incrementProposalCount(did: string, communityUri: string): Promise<void> {
-    return this.wrap(() => this.inner.incrementProposalCount(did, communityUri))
-  }
-
-  setParticipationRoles(
-    did: string,
-    communityUri: string,
-    roles: {
-      isDelegate?: boolean
-      isModerator?: boolean
-      chamber?: string | null
-    },
-  ): Promise<void> {
-    return this.wrap(() =>
-      this.inner.setParticipationRoles(did, communityUri, roles),
-    )
-  }
-
-  getParticipationStatsByCommunity(communityUri: string): Promise<any[]> {
-    return this.wrap(() =>
-      this.inner.getParticipationStatsByCommunity(communityUri),
     )
   }
 
@@ -728,25 +477,6 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
 
   purgeExpiredDmRequests(now: string): Promise<number> {
     return this.wrap(() => this.inner.purgeExpiredDmRequests(now))
-  }
-
-  getAiConsent(did: string): Promise<AiConsentRecord> {
-    return this.wrap(() => this.inner.getAiConsent(did))
-  }
-
-  setAiConsent(
-    did: string,
-    granted: boolean,
-    policyVersion: number,
-  ): Promise<void> {
-    return this.wrap(() => this.inner.setAiConsent(did, granted, policyVersion))
-  }
-
-  getConsentingDids(
-    dids: string[],
-    policyVersion: number,
-  ): Promise<Set<string>> {
-    return this.wrap(() => this.inner.getConsentingDids(dids, policyVersion))
   }
 
   // ── Matrix Events ──
@@ -902,386 +632,10 @@ export class SqliteBridgeDatabase implements IBridgeDatabase {
     return this.wrap(() => this.inner.getActiveCommunityRoomsForDid(did))
   }
 
-  createSortitionRun(run: {
-    id: string
-    cabildeoUri: string
-    communityUri: string
-    createdByDid: string
-    assemblySize: number
-    eligibilityFilter: string
-    drandRound: number
-    configRecordJson: string
-    createdAt: string
-  }): Promise<any> {
-    return this.wrap(() => this.inner.createSortitionRun(run))
-  }
-
-  getSortitionRun(id: string): Promise<any | undefined> {
-    return this.wrap(() => this.inner.getSortitionRun(id))
-  }
-
-  getSortitionRunByCabildeo(cabildeoUri: string): Promise<any | undefined> {
-    return this.wrap(() => this.inner.getSortitionRunByCabildeo(cabildeoUri))
-  }
-
-  getScheduledSortitionRuns(limit = 10): Promise<any[]> {
-    return this.wrap(() => this.inner.getScheduledSortitionRuns(limit))
-  }
-
-  replaceSortitionCandidates(
-    runId: string,
-    candidates: Array<{
-      did: string
-      communityUri: string
-      cabildeoUri: string
-      hashInput: string
-      hashOutput: string
-      hashValue: number
-      threshold: number
-      selected: boolean
-      createdAt: string
-    }>,
-  ): Promise<void> {
-    return this.wrap(() =>
-      this.inner.replaceSortitionCandidates(runId, candidates),
-    )
-  }
-
-  activateSortitionRun(run: {
-    id: string
-    drandRandomness: string
-    threshold: number
-    eligibleCount: number
-    selectedCount: number
-    processedAt: string
-  }): Promise<any | undefined> {
-    return this.wrap(() => this.inner.activateSortitionRun(run))
-  }
-
-  failSortitionRun(id: string): Promise<void> {
-    return this.wrap(() => this.inner.failSortitionRun(id))
-  }
-
-  getSortitionCandidates(runId: string, selectedOnly = false): Promise<any[]> {
-    return this.wrap(() =>
-      this.inner.getSortitionCandidates(runId, selectedOnly),
-    )
-  }
-
-  getSortitionCandidate(runId: string, did: string): Promise<any | undefined> {
-    return this.wrap(() => this.inner.getSortitionCandidate(runId, did))
-  }
-
-  insertCommunityMapContribution(contribution: {
-    id: string
-    communityUri: string
-    authorDid: string
-    title: string
-    content?: string
-    sourceUrl?: string
-    sourceType: string
-    metadata?: string
-  }): Promise<void> {
-    return this.wrap(() =>
-      this.inner.insertCommunityMapContribution(contribution),
-    )
-  }
-
-  getCommunityMapContributions(
+  getCommunityMembers(
     communityUri: string,
-    opts?: { status?: string; viewerDid?: string; limit?: number },
-  ): Promise<any[]> {
-    return this.wrap(() =>
-      this.inner.getCommunityMapContributions(communityUri, opts),
-    )
-  }
-
-  getCommunityMapContribution(
-    id: string,
-    viewerDid?: string,
-  ): Promise<any | undefined> {
-    return this.wrap(() =>
-      this.inner.getCommunityMapContribution(id, viewerDid),
-    )
-  }
-
-  getCommunityContributionVote(
-    contributionId: string,
-    voterDid: string,
-  ): Promise<{ vote: string } | undefined> {
-    return this.wrap(() =>
-      this.inner.getCommunityContributionVote(contributionId, voterDid),
-    )
-  }
-
-  getCommunityContributionVoteCounts(
-    contributionId: string,
-  ): Promise<{ approve: number; reject: number }> {
-    return this.wrap(() =>
-      this.inner.getCommunityContributionVoteCounts(contributionId),
-    )
-  }
-
-  voteCommunityMapContribution(
-    contributionId: string,
-    voterDid: string,
-    vote: 'approve' | 'reject',
-  ): Promise<any> {
-    return this.wrap(() =>
-      this.inner.voteCommunityMapContribution(contributionId, voterDid, vote),
-    )
-  }
-
-  // ── Deliberation Cards ──
-
-  insertCard(card: {
-    id: string
-    communityUri: string
-    authorDid: string
-    title: string
-    content?: string
-    cardType: string
-    sourceRoomId?: string
-    sourceEventId?: string
-    sourceUrl?: string
-    isPublic?: number
-    passportVisible?: number
-    metadata?: string
-  }): Promise<void> {
-    return this.wrap(() => this.inner.insertCard(card))
-  }
-
-  getCardsForCommunity(
-    communityUri: string,
-    opts?: {
-      limit?: number
-      offset?: number
-      cardType?: string
-      authorDid?: string
-    },
-  ): Promise<any[]> {
-    return this.wrap(() => this.inner.getCardsForCommunity(communityUri, opts))
-  }
-
-  getCard(id: string): Promise<any | undefined> {
-    return this.wrap(() => this.inner.getCard(id))
-  }
-
-  getCardCount(communityUri: string): Promise<number> {
-    return this.wrap(() => this.inner.getCardCount(communityUri))
-  }
-
-  getCardsPendingLLMEnrichment(limit = 10): Promise<any[]> {
-    return this.wrap(() => this.inner.getCardsPendingLLMEnrichment(limit))
-  }
-
-  markCardEnriched(id: string, model: string): Promise<void> {
-    return this.wrap(() => this.inner.markCardEnriched(id, model))
-  }
-
-  updateCardVisibility(
-    id: string,
-    isPublic: number,
-    passportVisible: number,
-  ): Promise<void> {
-    return this.wrap(() =>
-      this.inner.updateCardVisibility(id, isPublic, passportVisible),
-    )
-  }
-
-  // ── Card Votes ──
-
-  upsertCardVote(
-    cardId: string,
-    voterDid: string,
-    influence: number,
-  ): Promise<void> {
-    return this.wrap(() =>
-      this.inner.upsertCardVote(cardId, voterDid, influence),
-    )
-  }
-
-  getCardVote(
-    cardId: string,
-    voterDid: string,
-  ): Promise<{ influence: number } | undefined> {
-    return this.wrap(() => this.inner.getCardVote(cardId, voterDid))
-  }
-
-  getCardVotes(
-    cardId: string,
-  ): Promise<Array<{ voter_did: string; influence: number }>> {
-    return this.wrap(() => this.inner.getCardVotes(cardId))
-  }
-
-  getCardInfluenceScores(cardIds: string[]): Promise<Map<string, number>> {
-    return this.wrap(() => this.inner.getCardInfluenceScores(cardIds))
-  }
-
-  getCardVoteStats(
-    cardIds: string[],
-  ): Promise<Map<string, { total: number; count: number }>> {
-    return this.wrap(() => this.inner.getCardVoteStats(cardIds))
-  }
-
-  // ── Relationships ──
-
-  insertRelationship(rel: {
-    id: string
-    sourceCardId: string
-    targetCardId: string
-    relationshipType: string
-    authorDid: string
-  }): Promise<void> {
-    return this.wrap(() => this.inner.insertRelationship(rel))
-  }
-
-  getRelationshipsForCard(cardId: string): Promise<any[]> {
-    return this.wrap(() => this.inner.getRelationshipsForCard(cardId))
-  }
-
-  getGraphForCommunity(
-    communityUri: string,
-  ): Promise<{ nodes: any[]; edges: any[] }> {
-    return this.wrap(() => this.inner.getGraphForCommunity(communityUri))
-  }
-
-  deleteRelationship(id: string): Promise<void> {
-    return this.wrap(() => this.inner.deleteRelationship(id))
-  }
-
-  // ── Suggested Relationships ──
-
-  insertSuggestedRelationship(sugg: {
-    id: string
-    sourceCardId: string
-    targetCardId: string
-    relationshipType: string
-    confidence: number
-    reason: string
-  }): Promise<void> {
-    return this.wrap(() => this.inner.insertSuggestedRelationship(sugg))
-  }
-
-  getSuggestionsForCommunity(
-    communityUri: string,
-    opts?: { status?: string; limit?: number },
-  ): Promise<any[]> {
-    return this.wrap(() =>
-      this.inner.getSuggestionsForCommunity(communityUri, opts),
-    )
-  }
-
-  acceptSuggestion(id: string, authorDid: string): Promise<void> {
-    return this.wrap(() => this.inner.acceptSuggestion(id, authorDid))
-  }
-
-  async getSuggestion(
-    id: string,
-  ): Promise<
-    | { id: string; sourceCardId: string; targetCardId: string; status: string }
-    | undefined
-  > {
-    return this.wrap(() => this.inner.getSuggestion(id))
-  }
-
-  rejectSuggestion(id: string): Promise<void> {
-    return this.wrap(() => this.inner.rejectSuggestion(id))
-  }
-
-  // ── Extracted Entities ──
-
-  insertEntity(entity: {
-    cardId: string
-    entityType: string
-    entityValue: string
-    startPos?: number
-    endPos?: number
-  }): Promise<void> {
-    return this.wrap(() => this.inner.insertEntity(entity))
-  }
-
-  getEntitiesForCard(cardId: string): Promise<any[]> {
-    return this.wrap(() => this.inner.getEntitiesForCard(cardId))
-  }
-
-  // ── Community Pulse ──
-
-  getCommunityPulse(
-    communityUri: string,
-    voterDid?: string,
-  ): Promise<{
-    stanceDistribution: { pro: number; con: number; neutral: number }
-    topEntities: Array<{ value: string; type: string; count: number }>
-    trendingClaims: Array<{
-      id: string
-      title: string
-      stance: string
-      influence: number
-      voteCount: number
-      cardType: string
-    }>
-    controversialClaims: Array<{
-      id: string
-      title: string
-      influence: number
-      voteCount: number
-      cardType: string
-    }>
-    userStats?: {
-      votesCast: number
-      proVotes: number
-      conVotes: number
-      neutralVotes: number
-    }
-  }> {
-    return this.wrap(() => this.inner.getCommunityPulse(communityUri, voterDid))
-  }
-
-  // ── Institutional memberships ──
-
-  setInstitutionMembership(m: {
-    institutionId: string
-    workspaceId: string | null
-    did: string
-    role: InstitutionRole
-    expiresAt: string | null
-  }): Promise<void> {
-    return this.wrap(() => this.inner.setInstitutionMembership(m))
-  }
-
-  revokeInstitutionMembership(
-    institutionId: string,
-    workspaceId: string | null,
-    did: string,
-  ): Promise<void> {
-    return this.wrap(() =>
-      this.inner.revokeInstitutionMembership(institutionId, workspaceId, did),
-    )
-  }
-
-  getInstitutionMemberships(
-    institutionId: string,
-    did: string,
-  ): Promise<InstitutionMembership[]> {
-    return this.wrap(() =>
-      this.inner.getInstitutionMemberships(institutionId, did),
-    )
-  }
-
-  listInstitutionMemberships(
-    institutionId: string,
-    workspaceId?: string,
-  ): Promise<InstitutionMembership[]> {
-    return this.wrap(() =>
-      this.inner.listInstitutionMemberships(institutionId, workspaceId),
-    )
-  }
-
-  getInstitutionOwners(
-    institutionId: string,
-  ): Promise<Map<string, InstitutionMembership>> {
-    return this.wrap(() => this.inner.getInstitutionOwners(institutionId))
+  ): Promise<{ did: string; roles: string[] }[]> {
+    return this.wrap(() => this.inner.getCommunityMembers(communityUri))
   }
 
   close(): Promise<void> {

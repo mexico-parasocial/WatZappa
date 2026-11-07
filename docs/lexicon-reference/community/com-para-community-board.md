@@ -29,7 +29,6 @@ A repository record acting as the anchor for a PARA community, linking the spati
 | `founderStarterPackUri` | `string` | ❌  | Reference to the starter pack used to track the founding member quorum. | Format: `at-uri` |
 | `visibility` | `string` | ❌  | Visibility of the community. | Known Values: `open`, `closed`, `secret`<br/>Default: `open` |
 | `chamberMode` | `string` | ❌  | Deliberation structure. | Known Values: `unicameral`, `bicameral`<br/>Default: `unicameral` |
-| `governanceMode` | `string` | ❌  | Governance model for this community. | Known Values: `hierarchical`, `horizontal`<br/>Default: `hierarchical` |
 | `createdAt` | `string` | ✅  |  | Format: `datetime` |
 
 ---
@@ -129,15 +128,6 @@ Geographic coordinates in E7 (degrees × 10⁷) for map placement.
               "bicameral"
             ],
             "default": "unicameral"
-          },
-          "governanceMode": {
-            "type": "string",
-            "description": "Governance model for this community.",
-            "knownValues": [
-              "hierarchical",
-              "horizontal"
-            ],
-            "default": "hierarchical"
           },
           "createdAt": {
             "type": "string",
