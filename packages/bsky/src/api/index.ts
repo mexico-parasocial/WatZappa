@@ -150,6 +150,7 @@ import listParaDelegations from './com/para/community/listDelegations.js'
 import listParaDeliberations from './com/para/community/listDeliberations.js'
 import listParaIntensities from './com/para/community/listIntensities.js'
 import listParaCommunityMembers from './com/para/community/listMembers.js'
+import listParaCommunityOpenOffers from './com/para/community/listOpenOffers.js'
 import listParaParentCommunities from './com/para/community/listParentCommunities.js'
 import listParaCommunityPosts from './com/para/community/listPosts.js'
 import listParaCommunitySharedContent from './com/para/community/listSharedContent.js'
@@ -323,6 +324,7 @@ export default function (server: Server, ctx: AppContext) {
   listParaCivicTrees(server, ctx)
   listParaCivicTreeVotes(server, ctx)
   listParaCommunityMembers(server, ctx)
+  listParaCommunityOpenOffers(server, ctx)
   listParaCommunityPosts(server, ctx)
   listParaCommunitySharedContent(server, ctx)
   listParaCommunityRelations(server, ctx)

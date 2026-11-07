@@ -16,16 +16,51 @@
           "expiresAt"
         ],
         "properties": {
-          "community": { "type": "string", "format": "did" },
-          "action": { "type": "string", "maxLength": 64 },
-          "subject": { "type": "string", "format": "did" },
-          "offer": { "type": "integer", "minimum": 1 },
-          "suspensionDays": { "type": "integer", "minimum": 1, "maximum": 7 },
-          "createdAt": { "type": "string", "format": "datetime" },
+          "community": {
+            "type": "string",
+            "format": "did"
+          },
+          "action": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "subject": {
+            "type": "string",
+            "format": "did"
+          },
+          "offer": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "suspensionDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 7
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
           "expiresAt": {
             "type": "string",
             "format": "datetime",
             "description": "The event must be created before this, and at most a day after createdAt."
+          },
+          "sanction": {
+            "type": "string",
+            "knownValues": ["remove", "block"]
+          },
+          "target": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "targetCid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "profile": {
+            "type": "ref",
+            "ref": "com.para.community.profile#update"
           }
         }
       }
