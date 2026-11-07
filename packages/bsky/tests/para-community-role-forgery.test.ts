@@ -16,7 +16,7 @@ import {
 import { up as dropSelfDeclaredRoles } from '../src/data-plane/server/db/migrations/20261004T120000000Z-drop-self-declared-community-roles.js'
 import { up as reindexGovernance } from '../src/data-plane/server/db/migrations/20261005T120000000Z-reindex-para-community-governance.js'
 import { up as revalidateAuthority } from '../src/data-plane/server/db/migrations/20261005T130000000Z-revalidate-community-authority.js'
-import { up as dropGovernanceMode } from '../src/data-plane/server/db/migrations/20261105T120000000Z-drop-board-governance-mode.js'
+import { up as dropGovernanceMode } from '../src/data-plane/server/db/migrations/20261107T130000000Z-drop-board-governance-mode.js'
 
 const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
 

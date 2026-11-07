@@ -1,7 +1,8 @@
 import { ServiceImpl } from '@connectrpc/connect'
 import { Service } from '../../../proto/bsky_connect.js'
-import { Database } from '../db/index.js'
 import { GetParaPersonalCivicTreeResponse } from '../../../proto/bsky_pb.js'
+import { communityAccountUri } from '../community-membership.js'
+import { Database } from '../db/index.js'
 
 export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   async getParaPersonalCivicTree(req) {
@@ -12,13 +13,45 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
 
     const maxItems = limit || 500
 
-    // Gather communities
-    const communities = await db.db
+    // Gather communities: legacy board memberships, then OD-9 accounts
+    // from their folded chains, in the legacy rows' shape.
+    const legacyCommunities = await db.db
       .selectFrom('para_community_membership')
       .where('creator', '=', actorDid)
       .selectAll()
       .limit(maxItems)
       .execute()
+    const accountCommunities = await db.db
+      .selectFrom('para_community_member_state')
+      .where('did', '=', actorDid)
+      .selectAll()
+      .limit(maxItems)
+      .execute()
+    const now = Date.now()
+    const communities = [
+      ...legacyCommunities,
+      ...accountCommunities.map((row) => {
+        const suspended =
+          row.status === 'suspended' &&
+          !!row.suspendedUntil &&
+          Date.parse(row.suspendedUntil) > now
+        const status =
+          row.status === 'suspended' && !suspended ? 'active' : row.status
+        return {
+          uri: '',
+          cid: '',
+          creator: actorDid,
+          communityUri: communityAccountUri(row.community),
+          membershipState: status,
+          roles: status === 'active' ? row.offices : [],
+          roleAssignments: null,
+          source: 'community-account',
+          joinedAt: row.joinedAt ?? '',
+          leftAt: null,
+          indexedAt: '',
+        }
+      }),
+    ].slice(0, maxItems)
 
     // Gather cabildeos
     const cabildeos = await db.db

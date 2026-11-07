@@ -9,6 +9,7 @@ import {
 } from '@atproto/syntax'
 import { InvalidRequestError } from '@atproto/xrpc-server'
 import type { ActorStoreReader } from '../../../../actor-store/actor-store-reader.js'
+import type { ActorStoreTransactor } from '../../../../actor-store/actor-store-transactor.js'
 import type { RecordReader } from '../../../../actor-store/record/reader.js'
 import type { com } from '../../../../lexicons/index.js'
 import type { PreparedWrite } from '../../../../repo/index.js'
@@ -400,16 +401,6 @@ export const getValidRoles = (
   return membership.roles ?? []
 }
 
-export const isCommunitySteward = (
-  membership: MembershipRecord | null | undefined,
-) => {
-  if (!isActiveMembership(membership)) return false
-  const roles = getValidRoles(membership)
-  return roles.some((role) =>
-    ['owner', 'moderator', 'steward', 'official'].includes(role),
-  )
-}
-
 export const getViewerCapabilities = (
   membership?: Pick<
     MembershipRecord,
@@ -556,13 +547,22 @@ export const toGovernanceSummary = (
 
 /**
  * PARA's community write rules for generic repo writes (createRecord,
- * putRecord, applyWrites, deleteRecord): authority events are append-only and
- * self-issued.
+ * putRecord, applyWrites, deleteRecord): a community account's repo is written
+ * only by its policy, and authority events are append-only and self-issued.
+ * Call inside the write transaction.
  */
-export const assertCommunityRepoWrites = (
+export const assertCommunityRepoWrites = async (
+  actorTxn: ActorStoreTransactor,
   did: DidString,
   writes: PreparedWrite[],
 ) => {
+  // OD-9: a community account's repo is written only by its policy.
+  if (await actorTxn.community.isCommunity()) {
+    throw new InvalidRequestError(
+      'Community repos are written only through com.para.community.act.',
+      'CommunityRepo',
+    )
+  }
   for (const write of writes) {
     if (write.uri.collection !== AUTHORITY_EVENT_COLLECTION) continue
     if (write.action !== WriteOpAction.Create) {

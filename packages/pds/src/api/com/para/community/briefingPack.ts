@@ -6,6 +6,7 @@ import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 import { prepareCreate, prepareUpdate } from '../../../../repo/index.js'
 import { commitWrites, stripUndefined, updateRepoRoot } from '../util.js'
+import { assertCommunityCapability, stewardRequired } from './authority.js'
 
 export const BRIEFING_PACK_COLLECTION = 'com.para.community.briefingPack'
 
@@ -75,6 +76,7 @@ export function createBriefingPack(server: Server, ctx: AppContext) {
       if (body.packType !== 'party_lobbying') {
         throw new InvalidRequestError('Unsupported briefing pack type')
       }
+      await assertBriefingManager(ctx, did, body.communityUri)
 
       const now = new Date().toISOString()
       const record: BriefingPackRecord = {
@@ -146,6 +148,16 @@ export function updateBriefingPack(server: Server, ctx: AppContext) {
         )
       }
 
+      const existing = await ctx.actorStore.read(did, (store) =>
+        store.record.getRecord(uri, null, true),
+      )
+      if (!existing) throw new InvalidRequestError('Briefing pack not found')
+      const { communityUri } = existing.value as Partial<BriefingPackRecord>
+      if (typeof communityUri !== 'string') {
+        throw new InvalidRequestError('Briefing pack has no community')
+      }
+      await assertBriefingManager(ctx, did, communityUri)
+
       const now = new Date().toISOString()
       const { commit, write, record } = await ctx.actorStore.transact(
         did,
@@ -210,3 +222,21 @@ export function updateBriefingPack(server: Server, ctx: AppContext) {
     },
   })
 }
+
+/**
+ * The AppView lists a pack only while its author is an owner or moderator of
+ * its community, so refuse the write up front rather than accept a pack
+ * nobody will see.
+ */
+const assertBriefingManager = (
+  ctx: AppContext,
+  did: DidString,
+  communityUri: string,
+) =>
+  assertCommunityCapability(
+    ctx,
+    did,
+    communityUri as AtUriString,
+    'briefing.manage',
+    stewardRequired('Only community stewards can manage briefing packs.'),
+  )

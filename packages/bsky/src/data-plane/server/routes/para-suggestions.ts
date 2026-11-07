@@ -1,6 +1,10 @@
 import { ServiceImpl } from '@connectrpc/connect'
 import { sql } from 'kysely'
 import { Service } from '../../../proto/bsky_connect.js'
+import {
+  activeCommunityUrisOf,
+  activeMemberships,
+} from '../community-membership.js'
 import { Database } from '../db/index.js'
 
 const PARA_CIVIC_SUBTAGS: Record<string, string[]> = {
@@ -106,13 +110,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     // 2. Viewer's community memberships (for overlap scoring)
     const viewerCommunityUris: string[] = []
     if (viewerDid) {
-      const rows = await db.db
-        .selectFrom('para_community_membership')
-        .where('creator', '=', viewerDid)
-        .where('membershipState', '=', 'active')
-        .select('communityUri')
-        .execute()
-      for (const r of rows) viewerCommunityUris.push(r.communityUri)
+      viewerCommunityUris.push(...(await activeCommunityUrisOf(db, viewerDid)))
     }
 
     // 3. Follows to exclude (people viewer already follows)
@@ -170,16 +168,11 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     // 7. Score each candidate
     const communityOverlapByDid = new Map<string, number>()
     if (viewerCommunityUris.length > 0) {
-      const overlapRows = await db.db
-        .selectFrom('para_community_membership')
-        .where('communityUri', 'in', viewerCommunityUris)
-        .where('membershipState', '=', 'active')
-        .select('creator')
-        .execute()
-      for (const r of overlapRows) {
+      const overlapRows = await activeMemberships(db, viewerCommunityUris)
+      for (const [, did] of overlapRows) {
         communityOverlapByDid.set(
-          r.creator,
-          (communityOverlapByDid.get(r.creator) ?? 0) + 1,
+          did,
+          (communityOverlapByDid.get(did) ?? 0) + 1,
         )
       }
     }

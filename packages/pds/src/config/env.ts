@@ -106,6 +106,9 @@ export function readEnv() {
     // PARA: m8 identity broker, verifies iM8 second-factor tokens
     m8BaseUrl: envStr('PDS_M8_BASE_URL'),
 
+    // PARA (OD-9): handle domain of community accounts, apart from user domains
+    paraCommunityHandleDomain: envStr('PDS_PARA_COMMUNITY_HANDLE_DOMAIN'),
+
     // mod service
     modServiceUrl: envStr('PDS_MOD_SERVICE_URL'),
     modServiceDid: envStr('PDS_MOD_SERVICE_DID'),

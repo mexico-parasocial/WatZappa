@@ -1,5 +1,7 @@
 import { sql } from 'kysely'
+import { resolveCommunityAccountUris } from './community-membership.js'
 import type { DatabaseSchema } from './db/database-schema.js'
+import type { Database } from './db/index.js'
 
 export const normalizeCommunitySlug = (value: string) =>
   value
@@ -9,14 +11,26 @@ export const normalizeCommunitySlug = (value: string) =>
     .replace(/^-+|-+$/g, '')
 
 /**
- * The community board a cabildeo's `community` names: the board's URI, its
- * slug, or its name. Voter eligibility is judged against this board's authority
- * events, so every path that asks who may vote resolves the board here.
+ * The community a cabildeo's or policy's `community` names: a board by its
+ * URI, slug or name, or else a community account (OD-9) by its profile URI,
+ * DID, handle or slug. Voter eligibility is judged against this community's
+ * authority (`filterActiveMembers`), so every path that asks who may vote
+ * resolves it here.
  */
 export async function resolveCabildeoBoard(
   db: DatabaseSchema,
   community: string,
 ): Promise<{ uri: string } | undefined> {
+  const board = await selectBoard(db, community)
+  if (board) return board
+  const [account] = await resolveCommunityAccountUris(
+    { db } as Database,
+    community,
+  )
+  return account ? { uri: account } : undefined
+}
+
+function selectBoard(db: DatabaseSchema, community: string) {
   const slug = normalizeCommunitySlug(community)
   return db
     .selectFrom('para_community_board')
