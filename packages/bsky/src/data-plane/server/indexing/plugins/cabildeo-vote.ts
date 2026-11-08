@@ -245,27 +245,11 @@ const getCabildeoVoteEligibility = async (
     return null
   }
 
-  const community = normalizeCommunitySlug(cabildeo.community)
-  const board = await db
-    .selectFrom('para_community_board')
-    .where((eb) =>
-      eb.or([
-        eb('uri', '=', cabildeo.community),
-        eb('slug', '=', community),
-        eb(
-          sql`regexp_replace(lower(coalesce("name", '')), '[^a-z0-9]+', '-', 'g')`,
-          '=',
-          community,
-        ),
-      ]),
-    )
-    .select(['uri'])
-    .executeTakeFirst()
-
   const database = { db } as Database
-  const communityUri =
-    board?.uri ??
-    (await resolveCommunityAccountUris(database, cabildeo.community))[0]
+  const [communityUri] = await resolveCommunityAccountUris(
+    database,
+    cabildeo.community,
+  )
   if (!communityUri) {
     return null
   }
@@ -274,13 +258,6 @@ const getCabildeoVoteEligibility = async (
     ? { cabildeo }
     : null
 }
-
-const normalizeCommunitySlug = (value: string) =>
-  value
-    .replace(/^p\//, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
 
 const normalizeOpaqueProofField = (value: unknown, maxLength: number) => {
   if (typeof value !== 'string') return null

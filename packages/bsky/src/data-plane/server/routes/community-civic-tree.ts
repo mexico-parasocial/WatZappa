@@ -2,6 +2,7 @@ import { Code, ConnectError, ServiceImpl } from '@connectrpc/connect'
 import { Service } from '../../../proto/bsky_connect.js'
 import { Database } from '../db/index.js'
 import { getAuthoritySnapshot } from '../community-authority.js'
+import { communityAccountDid } from '../community-membership.js'
 import { tableName as cardTableName } from '../db/tables/para-community-civic-tree-card.js'
 import { tableName as voteTableName } from '../db/tables/para-community-civic-tree-contribution-vote.js'
 import { tableName as contributionTableName } from '../db/tables/para-community-civic-tree-contribution.js'
@@ -15,7 +16,6 @@ import { tableName as relationshipTableName } from '../db/tables/para-community-
 const APPROVAL_THRESHOLD = 3
 
 /** Roles that may settle a contribution on their own under `moderator_gate`. */
-const MODERATOR_ROLES = new Set(['moderator', 'owner'])
 
 type MembershipRow = {
   membershipState: string
@@ -42,9 +42,6 @@ const getMembership = async (
 
 const isActiveMember = (membership?: MembershipRow) =>
   membership?.membershipState === 'active'
-
-const isModerator = (membership?: MembershipRow) =>
-  (membership?.roles ?? []).some((role) => MODERATOR_ROLES.has(role))
 
 /**
  * Shapes a contribution row for the wire, adding the viewer's own vote. Field
@@ -144,12 +141,15 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   },
 
   async submitParaCommunityCivicTreeContribution(req) {
-    const board = await db.db
-      .selectFrom('para_community_board')
-      .select(['uri'])
-      .where('uri', '=', req.communityUri)
-      .executeTakeFirst()
-    if (!board) {
+    const accountDid = communityAccountDid(req.communityUri)
+    const account = accountDid
+      ? await db.db
+          .selectFrom('para_community_account')
+          .select(['did'])
+          .where('did', '=', accountDid)
+          .executeTakeFirst()
+      : undefined
+    if (!account) {
       throw new ConnectError('CommunityNotFound', Code.NotFound)
     }
 
@@ -259,17 +259,6 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         throw new ConnectError('NotAMember', Code.PermissionDenied)
       }
 
-      const board = await txn.db
-        .selectFrom('para_community_board')
-        .select(['governanceMode'])
-        .where('uri', '=', contribution.communityUri)
-        .executeTakeFirst()
-      const governanceMode = board?.governanceMode || 'votes_sortition'
-
-      if (governanceMode === 'moderator_gate' && !isModerator(membership)) {
-        throw new ConnectError('NotAMember', Code.PermissionDenied)
-      }
-
       const timestamp = now()
 
       /*
@@ -302,8 +291,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       const approveCount = tallies.filter((t) => t.vote === 'approve').length
       const rejectCount = tallies.filter((t) => t.vote === 'reject').length
 
-      const threshold =
-        governanceMode === 'moderator_gate' ? 1 : APPROVAL_THRESHOLD
+      const threshold = APPROVAL_THRESHOLD
 
       let status = 'pending'
       if (approveCount >= threshold && approveCount > rejectCount) {

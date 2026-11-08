@@ -117,3 +117,4 @@ export * as _20261105T120000000Z from './20261105T120000000Z-add-community-accou
 export * as _20261106T120000000Z from './20261106T120000000Z-add-community-member-joined-at.js'
 export * as _20261107T120000000Z from './20261107T120000000Z-add-community-phase-4.js'
 export * as _20261108T120000000Z from './20261108T120000000Z-add-community-profile-update.js'
+export * as _20261109T120000000Z from './20261109T120000000Z-drop-legacy-community-tables.js'

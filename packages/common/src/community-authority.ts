@@ -7,49 +7,6 @@ export type OrganizationStandard = 'hierarchical' | 'horizontal'
 export type AdmissionMode = 'open' | 'assembly_approval'
 export type AuthorizationStatus = 'allowed' | 'requires_approval' | 'denied'
 
-export type AuthorityAction =
-  | 'member.activate'
-  | 'member.suspend'
-  | 'member.reinstate'
-  | 'member.remove'
-  | 'member.block'
-  | 'moderator.grant'
-  | 'moderator.revoke'
-  | 'moderator.resign'
-  | 'owner.grant'
-  | 'owner.revoke'
-
-export type AuthorityBasis =
-  | 'openAdmission'
-  | 'assemblyDecision'
-  | 'ownerAppointment'
-  | 'ownerTransfer'
-  | 'foundingTransition'
-  | 'resignation'
-  | 'expiry'
-  | 'migration'
-
-export interface CommunityAuthorityEvent {
-  uri: string
-  creator: string
-  community: string
-  subject: string
-  action: AuthorityAction
-  issuer: string
-  effectiveAt: string
-  expiresAt?: string | null
-  predecessor?: string | null
-  version: number
-  basis: AuthorityBasis
-  evidence?: string | null
-}
-
-export interface EffectiveAuthority {
-  membershipState: 'none' | 'active' | 'suspended' | 'removed' | 'blocked'
-  roles: CommunityRole[]
-  evidence: Partial<Record<CommunityRole, CommunityAuthorityEvent>>
-}
-
 export interface AvailableAction {
   action: string
   status: AuthorizationStatus
@@ -252,60 +209,4 @@ export function resolveAvailableAction(
     policy: 'role_required',
     reason: 'The current verified roles do not permit this action.',
   }
-}
-
-export function deriveEffectiveAuthority(
-  events: readonly CommunityAuthorityEvent[],
-  now = Date.now(),
-): EffectiveAuthority {
-  let membershipState: EffectiveAuthority['membershipState'] = 'none'
-  const evidence: EffectiveAuthority['evidence'] = {}
-  const active = new Set<CommunityRole>()
-  const ordered = [...events].sort((a, b) => {
-    const version = a.version - b.version
-    return version || a.uri.localeCompare(b.uri)
-  })
-  for (const event of ordered) {
-    const effectiveAt = Date.parse(event.effectiveAt)
-    const expiresAt = event.expiresAt ? Date.parse(event.expiresAt) : Infinity
-    if (effectiveAt > now || expiresAt <= now) continue
-    if (event.action === 'member.activate') {
-      membershipState = 'active'
-      active.add('member')
-      evidence.member = event
-    } else if (event.action === 'member.reinstate') {
-      membershipState = 'active'
-      active.add('member')
-      evidence.member = event
-    } else if (event.action === 'member.suspend') {
-      membershipState = 'suspended'
-      active.clear()
-    } else if (event.action === 'member.remove') {
-      membershipState = 'removed'
-      active.clear()
-    } else if (event.action === 'member.block') {
-      membershipState = 'blocked'
-      active.clear()
-    } else if (event.action === 'moderator.grant') {
-      if (membershipState === 'active') {
-        active.add('moderator')
-        evidence.moderator = event
-      }
-    } else if (
-      event.action === 'moderator.revoke' ||
-      event.action === 'moderator.resign'
-    ) {
-      active.delete('moderator')
-      delete evidence.moderator
-    } else if (event.action === 'owner.grant') {
-      if (membershipState === 'active') {
-        active.add('owner')
-        evidence.owner = event
-      }
-    } else if (event.action === 'owner.revoke') {
-      active.delete('owner')
-      delete evidence.owner
-    }
-  }
-  return { membershipState, roles: [...active], evidence }
 }

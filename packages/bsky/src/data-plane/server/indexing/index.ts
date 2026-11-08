@@ -47,14 +47,8 @@ import * as OpenQuestionVote from './plugins/open-question-vote.js'
 import * as OpenQuestion from './plugins/open-question.js'
 import * as ParaCommunityAccountProfile from './plugins/para-community-account-profile.js'
 import * as ParaCommunityActivity from './plugins/para-community-activity.js'
-import * as ParaCommunityAuthorityEvent from './plugins/para-community-authority-event.js'
-import * as ParaCommunityBoard from './plugins/para-community-board.js'
 import * as ParaCommunityBriefingPack from './plugins/para-community-briefing-pack.js'
 import * as ParaCommunityChainEvent from './plugins/para-community-chain-event.js'
-import * as ParaCommunityGovernance from './plugins/para-community-governance.js'
-import * as ParaCommunityMembership from './plugins/para-community-membership.js'
-import * as ParaCommunityRelation from './plugins/para-community-relation.js'
-import * as ParaCommunitySharedContentAction from './plugins/para-community-shared-content-action.js'
 import * as ParaCommunitySharedContent from './plugins/para-community-shared-content.js'
 import * as ParaDeliberationStatement from './plugins/para-deliberation-statement.js'
 import * as ParaDeliberationVote from './plugins/para-deliberation-vote.js'
@@ -109,14 +103,9 @@ export class IndexingService {
     openQuestion: OpenQuestion.PluginType
     openQuestionVote: OpenQuestionVote.PluginType
     paraPost: ParaPost.PluginType
-    paraCommunityBoard: ParaCommunityBoard.PluginType
-    paraCommunityAuthorityEvent: ParaCommunityAuthorityEvent.PluginType
     paraCommunityAccountProfile: ParaCommunityAccountProfile.PluginType
     paraCommunityChainEvent: ParaCommunityChainEvent.PluginType
     paraCommunityBriefingPack: ParaCommunityBriefingPack.PluginType
-    paraCommunityGovernance: ParaCommunityGovernance.PluginType
-    paraCommunityMembership: ParaCommunityMembership.PluginType
-    paraCommunityRelation: ParaCommunityRelation.PluginType
     paraCommunitySocialActivity: ParaCommunityActivity.ActivityPluginType
     paraCommunityEconomicActivity: ParaCommunityActivity.ActivityPluginType
     paraCommunityLedgerEntry: ParaCommunityActivity.LedgerEntryPluginType
@@ -124,7 +113,6 @@ export class IndexingService {
     paraFollowThrough: ParaFollowThrough.FollowThroughPluginType
     paraFollowThroughUpdate: ParaFollowThrough.FollowThroughUpdatePluginType
     paraCommunitySharedContent: ParaCommunitySharedContent.PluginType
-    paraCommunitySharedContentAction: ParaCommunitySharedContentAction.PluginType
     paraPostMeta: ParaPostMeta.PluginType
     paraQvlCivicTree: ParaQvlCivicTree.PluginType
     paraQvlCivicTreeVote: ParaQvlCivicTreeVote.PluginType
@@ -180,14 +168,6 @@ export class IndexingService {
       openQuestion: OpenQuestion.makePlugin(this.db, this.background),
       openQuestionVote: OpenQuestionVote.makePlugin(this.db, this.background),
       paraPost: ParaPost.makePlugin(this.db, this.background),
-      paraCommunityBoard: ParaCommunityBoard.makePlugin(
-        this.db,
-        this.background,
-      ),
-      paraCommunityAuthorityEvent: ParaCommunityAuthorityEvent.makePlugin(
-        this.db,
-        this.background,
-      ),
       paraCommunityAccountProfile: ParaCommunityAccountProfile.makePlugin(
         this.db,
         this.background,
@@ -201,19 +181,6 @@ export class IndexingService {
         },
       ),
       paraCommunityBriefingPack: ParaCommunityBriefingPack.makePlugin(
-        this.db,
-        this.background,
-      ),
-      paraCommunityGovernance: ParaCommunityGovernance.makePlugin(
-        this.db,
-        this.background,
-      ),
-      paraCommunityMembership: ParaCommunityMembership.makePlugin(
-        this.db,
-        this.background,
-        this.paraCache,
-      ),
-      paraCommunityRelation: ParaCommunityRelation.makePlugin(
         this.db,
         this.background,
       ),
@@ -247,8 +214,6 @@ export class IndexingService {
         this.db,
         this.background,
       ),
-      paraCommunitySharedContentAction:
-        ParaCommunitySharedContentAction.makePlugin(this.db, this.background),
       paraPostMeta: ParaPostMeta.makePlugin(
         this.db,
         this.background,
@@ -625,23 +590,7 @@ export class IndexingService {
       )
       .execute()
     await this.db.db
-      .deleteFrom('para_community_membership')
-      .where('creator', '=', did)
-      .execute()
-    await this.db.db
-      .deleteFrom('para_community_relation')
-      .where('creator', '=', did)
-      .execute()
-    await this.db.db
-      .deleteFrom('para_community_shared_content_action')
-      .where('creator', '=', did)
-      .execute()
-    await this.db.db
       .deleteFrom('para_community_shared_content')
-      .where('creator', '=', did)
-      .execute()
-    await this.db.db
-      .deleteFrom('para_community_board')
       .where('creator', '=', did)
       .execute()
     await this.db.db

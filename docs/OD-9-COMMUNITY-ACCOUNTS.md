@@ -472,8 +472,18 @@ document unless noted.
      account.
    - **Open for stage 3 (bridge):** the demo seed no longer sets bicameral
      chambers or the officials and deputies lists; accounts have neither.
-   - **Stage 2, readers:** delete the indexers, tables, capability models and
-     the legacy branch of `getAuthoritySnapshots`.
+   - **Stage 2, readers** (same branch). The AppView no longer indexes
+     `board`, `membership`, `governance`, `relation`, `authorityEvent` or
+     `sharedContentAction`; their six tables are dropped by migration
+     `20261109T120000000Z`, and `getAuthoritySnapshots` answers from a
+     community's chain alone (anything else has no members). `community.ts`,
+     the cabildeo routes, the civic trees, RAQ, records and briefing packs
+     serve accounts only. A briefing pack, relation or share counts only
+     through a chain event. `@atproto/common` loses `deriveEffectiveAuthority`
+     and the authority-event types. Lost, with no account equivalent yet:
+     self-nominated delegate candidates, governance `matterFlairIds` and
+     `policyFlairIds` (the board list's flair filters match nothing),
+     officials and deputies, and `moderator_gate` contribution voting.
    - **Stage 3, Matrix bridge:** authority from the accounts' effective state.
    - **Stage 4, lexicons:** retire the NSIDs, regenerate clients.
 6. **Cleanup.**

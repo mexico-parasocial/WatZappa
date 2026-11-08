@@ -1,5 +1,5 @@
 import { Code, ConnectError, ServiceImpl } from '@connectrpc/connect'
-import { type Selectable, sql } from 'kysely'
+import { sql } from 'kysely'
 import {
   AUTHORITY_EVENT_VERSION,
   type CommunityMember,
@@ -8,7 +8,6 @@ import {
   getRoleDefinitions,
   resolveAvailableAction,
 } from '@atproto/common'
-import { com } from '../../../lexicons/index.js'
 import { Service } from '../../../proto/bsky_connect.js'
 import {
   GetParaCommunityBoardResponse,
@@ -23,14 +22,10 @@ import {
   ParaAuthorFeedItem,
   ParaAvailableAction,
   ParaCommunityBoardView,
-  ParaCommunityDeputyRole,
-  ParaCommunityGovernanceHistoryEntry,
-  ParaCommunityGovernanceMetadata,
   ParaCommunityGovernanceSummary,
   ParaCommunityMember,
   ParaCommunityMemberView,
   ParaCommunityModerator,
-  ParaCommunityOfficial,
   ParaCommunityRelationView,
   ParaCommunitySharedContentView,
   ParaCommunitySummary,
@@ -39,7 +34,6 @@ import {
   ParaPolicySignalBucket,
   ParaRoleDefinition,
   ParaRoleHolder,
-  ParaSharedContentActionView,
   ParaStrongRef,
 } from '../../../proto/bsky_pb.js'
 import {
@@ -58,18 +52,9 @@ import {
   resolveCommunityAccountUris,
 } from '../community-membership.js'
 import {
-  type AuthoritySnapshot,
-  filterByOfficeWhenIndexed,
   getAuthoritySnapshot,
   getAuthoritySnapshots,
 } from '../community-authority.js'
-import {
-  type GovernanceBoard,
-  getTrustedGovernanceRecordJson,
-  governanceSlugMatchSql,
-  isTrustedBoardGovernanceSql,
-} from '../community-governance.js'
-import type { DatabaseSchemaType } from '../db/database-schema.js'
 import { Database } from '../db/index.js'
 import {
   CreatedAtCidKeyset,
@@ -115,7 +100,12 @@ type MembershipRow = {
   joinedAt?: string
 }
 
-type GovernanceRecord = com.para.community.governance.Main
+type GovernanceBoard = {
+  uri: string
+  creator: string
+  name: string | null
+  slug: string | null
+}
 
 const AUTHORIZATION_ACTIONS = [
   'content.create',
@@ -373,66 +363,16 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     const community = normalizeCommunitySlug(req.community)
     const board = await selectBoard(db, req.community, undefined)
     const accountDid = board ? communityAccountDid(board.uri) : null
-    const [record, counters] = await Promise.all([
-      board ? getPublishedGovernanceRecord(db, board) : null,
-      getCommunityCounters(db, community),
-    ])
+    const counters = await getCommunityCounters(db, community)
 
     const computedAt = new Date().toISOString()
-    const now = Date.now()
-
-    const isValidGovernanceEntry = (entry: {
-      validFrom?: string
-      validUntil?: string
-    }) => {
-      const validFrom = entry.validFrom ? Date.parse(entry.validFrom) : 0
-      const validUntil = entry.validUntil
-        ? Date.parse(entry.validUntil)
-        : Infinity
-      if (validFrom > now) return false
-      if (validUntil <= now) return false
-      return true
-    }
-
     const standard = (board?.governanceMode || 'hierarchical') as
       'hierarchical' | 'horizontal'
     const admissionMode = (board?.admissionMode || 'open') as
       'open' | 'assembly_approval'
-    const authoritySubjects =
-      board && !accountDid
-        ? await db.db
-            .selectFrom('para_community_authority_event')
-            .where('communityUri', '=', board.uri)
-            .select('subject')
-            .distinct()
-            .execute()
-        : []
-    const authorities =
-      board && !accountDid
-        ? await getAuthoritySnapshots(
-            db,
-            board.uri,
-            authoritySubjects.map((row) => row.subject),
-          )
-        : new Map<string, AuthoritySnapshot>()
     const roleHolders: ParaRoleHolder[] = []
     if (accountDid)
       roleHolders.push(...(await accountRoleHolders(db, accountDid)))
-    for (const [did, authority] of authorities) {
-      for (const role of authority.roles) {
-        const evidence = authority.evidence[role]
-        if (!evidence) continue
-        roleHolders.push(
-          new ParaRoleHolder({
-            did,
-            role,
-            effectiveAt: evidence.effectiveAt,
-            expiresAt: evidence.expiresAt ?? '',
-            evidence: evidence.evidence || evidence.uri,
-          }),
-        )
-      }
-    }
 
     return new GetParaCommunityGovernanceResponse({
       community,
@@ -446,72 +386,13 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
             }
           : counters,
       ),
-      moderators: accountDid
-        ? await accountModerators(db, accountDid)
-        : (record?.moderators.filter(isValidGovernanceEntry).map(
-            (moderator) =>
-              new ParaCommunityModerator({
-                member: toGovernanceMember(moderator),
-                role: moderator.role,
-                badge: moderator.badge,
-              }),
-          ) ?? []),
-      officials:
-        record?.officials.filter(isValidGovernanceEntry).map(
-          (official) =>
-            new ParaCommunityOfficial({
-              member: toGovernanceMember(official),
-              office: official.office,
-              mandate: official.mandate,
-            }),
-        ) ?? [],
-      deputies:
-        record?.deputies.filter(isValidGovernanceEntry).map(
-          (deputy) =>
-            new ParaCommunityDeputyRole({
-              tier: Number(deputy.tier) || 0,
-              role: deputy.role,
-              activeHolder: deputy.activeHolder
-                ? toGovernanceMember(deputy.activeHolder)
-                : undefined,
-              votesBackingRole: deputy.votes,
-              applicants: deputy.applicants.map(
-                (applicant) =>
-                  applicant.displayName ||
-                  applicant.handle ||
-                  applicant.did ||
-                  '',
-              ),
-            }),
-        ) ?? [],
-      computedAt: record?.updatedAt || record?.createdAt || computedAt,
-      metadata: record?.metadata
-        ? new ParaCommunityGovernanceMetadata({
-            termLengthDays: record.metadata.termLengthDays ?? 0,
-            reviewCadence: record.metadata.reviewCadence ?? '',
-            escalationPath: record.metadata.escalationPath ?? '',
-            publicContact: record.metadata.publicContact ?? '',
-            lastPublishedAt:
-              record.metadata.lastPublishedAt ||
-              record.updatedAt ||
-              record.createdAt,
-            state: record.metadata.state ?? '',
-            matterFlairIds: record.metadata.matterFlairIds ?? [],
-            policyFlairIds: record.metadata.policyFlairIds ?? [],
-          })
-        : undefined,
-      editHistory:
-        record?.editHistory?.map(
-          (entry) =>
-            new ParaCommunityGovernanceHistoryEntry({
-              id: entry.id,
-              action: entry.action,
-              actorDid: entry.actorDid ?? '',
-              actorHandle: entry.actorHandle ?? '',
-              createdAt: entry.createdAt,
-              summary: entry.summary,
-            }),
-        ) ?? [],
+      moderators: accountDid ? await accountModerators(db, accountDid) : [],
+      // @NOTE an account lists its officers from its chain (OD-9 §3.8); it
+      // has no officials, deputies or published governance record.
+      officials: [],
+      deputies: [],
+      computedAt,
+      editHistory: [],
       organizationStandard: standard,
       admissionMode,
       authorityEventVersion: AUTHORITY_EVENT_VERSION,
@@ -622,30 +503,23 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     })
 
     const rows = await builder.execute()
-    const actionMap = await getLatestSharedContentActions(db, rows)
     const overlays = await accountShareOverlays(db, rows)
 
+    // A share in a community counts while its author is still a member, and
+    // only a steward's chain event hides it. Any other share names no
+    // community, so it is not served.
     const visible = rows.filter((row) => {
       const overlay = overlays.get(row.uri)
-      if (overlay) {
-        // In a community account the author must still be a member, and
-        // only a steward's event hides an item.
-        return overlay.counts && (req.includeRemoved || !overlay.hidden)
-      }
-      if (req.includeRemoved) return true
-      return !isRemovedAction(actionMap.get(row.uri)?.action)
+      return (
+        overlay && overlay.counts && (req.includeRemoved || !overlay.hidden)
+      )
     })
     const page = visible.slice(0, normalizeLimit(req.limit))
     const hasMore = visible.length > page.length || rows.length > page.length
 
     return new GetParaCommunitySharedContentResponse({
       items: page.map((row) =>
-        toSharedContentView(
-          row,
-          actionMap.get(row.uri),
-          req.communityUri,
-          overlays.get(row.uri),
-        ),
+        toSharedContentView(row, req.communityUri, overlays.get(row.uri)),
       ),
       cursor: hasMore ? (keyset.packFromResult(page) ?? '') : '',
     })
@@ -658,19 +532,6 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       ref('relation.cid'),
     )
     const limit = normalizeLimit(req.limit)
-
-    // A relation joins two communities of one kind: boards through their
-    // authors' records, accounts through the halves in their own chains.
-    const named = [
-      req.communityUri,
-      req.parentCommunityUri,
-      req.childCommunityUri,
-    ].filter(Boolean)
-    const namesAccount = named.some((uri) => communityAccountDid(uri))
-    const namesBoard = named.some((uri) => !communityAccountDid(uri))
-    const wantsBoards = !namesAccount
-    const wantsAccounts =
-      !namesBoard && (!req.relation || req.relation === 'parentChild')
 
     const filtered = <T extends { where: any }>(builder: T): T => {
       let out: any = builder
@@ -707,47 +568,24 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       })
     }
 
-    const boardRows = wantsBoards
-      ? await filtered(
-          db.db
-            .selectFrom('para_community_relation as relation')
-            .selectAll('relation')
-            .where(relationAuthorCandidateSql('relation')),
-        ).execute()
-      : []
-    const accountRows = wantsAccounts
-      ? await filtered(
-          db.db.selectFrom(accountRelationRows(db).as('relation')).selectAll(),
-        ).execute()
-      : []
-
-    const fromAccount = new Set(accountRows.map((row: any) => row.uri))
-    const merged = [...boardRows, ...accountRows].sort(
-      (a: any, b: any) =>
-        (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0) ||
-        (a.cid < b.cid ? 1 : a.cid > b.cid ? -1 : 0),
-    )
-    const raw = merged.slice(0, limit)
-    // The SQL filter is only a cheap necessary condition for boards; the page
-    // can come back short, but the cursor still follows the rows that were
-    // read. Account relations were verified by the chain fold.
-    const trusted = new Set(
-      (
-        await filterTrustedRelations(
-          db,
-          raw.filter((row: any) => !fromAccount.has(row.uri)) as RelationRow[],
-        )
-      ).map((row) => row.uri),
-    )
-    const page = raw.filter(
-      (row: any) => fromAccount.has(row.uri) || trusted.has(row.uri),
-    )
+    // A relation joins two community accounts through the halves in their own
+    // chains, so the fold has verified it already. Only `parentChild` exists.
+    if (req.relation && req.relation !== 'parentChild') {
+      return new GetParaCommunityRelationsResponse({
+        relations: [],
+        cursor: '',
+      })
+    }
+    const rows: any[] = await filtered(
+      db.db.selectFrom(accountRelationRows(db).as('relation')).selectAll(),
+    ).execute()
+    const page = rows.slice(0, limit)
 
     return new GetParaCommunityRelationsResponse({
       relations: page.map((row) => toRelationView(row)),
       cursor:
-        merged.length > raw.length
-          ? (keyset.packFromResult(raw as any) ?? '')
+        rows.length > page.length
+          ? (keyset.packFromResult(page as any) ?? '')
           : '',
     })
   },
@@ -775,11 +613,7 @@ const selectBoard = async (
   communityId?: string,
   uri?: string,
 ): Promise<BoardRow | undefined> => {
-  if (uri && communityAccountDid(uri)) {
-    return selectCommunityAccount(db, uri)
-  }
-  const board = await selectLegacyBoard(db, communityId, uri)
-  return board ?? selectCommunityAccount(db, uri || communityId)
+  return selectCommunityAccount(db, uri || communityId)
 }
 
 /**
@@ -841,51 +675,13 @@ const selectCommunityAccount = async (
   }
 }
 
-const selectLegacyBoard = async (
-  db: Database,
-  communityId?: string,
-  uri?: string,
-): Promise<BoardRow | undefined> => {
-  let builder = boardBaseQuery(db)
-
-  if (uri) {
-    builder = builder.where('board.uri', '=', uri)
-  } else if (communityId) {
-    const normalizedCommunity = normalizeCommunitySlug(communityId)
-    builder = builder.where(
-      sql<boolean>`(
-        "board"."uri" = ${communityId}
-        or "board"."slug" = ${communityId}
-        or "board"."slug" = ${normalizedCommunity}
-        or regexp_replace(lower(coalesce("board"."name", '')), '[^a-z0-9]+', '-', 'g') = ${normalizedCommunity}
-      )`,
-    )
-  } else {
-    return undefined
-  }
-
-  return (await builder.executeTakeFirst()) as BoardRow | undefined
-}
-
 const selectBoardPostIdentity = async (
   db: Database,
   communityId?: string,
 ): Promise<Pick<BoardRow, 'name' | 'slug'> | undefined> => {
   if (!communityId) return undefined
-  const normalizedCommunity = normalizeCommunitySlug(communityId)
-
-  return db.db
-    .selectFrom('para_community_board as board')
-    .where(
-      sql<boolean>`(
-        "board"."uri" = ${communityId}
-        or "board"."slug" = ${communityId}
-        or "board"."slug" = ${normalizedCommunity}
-        or regexp_replace(lower(coalesce("board"."name", '')), '[^a-z0-9]+', '-', 'g') = ${normalizedCommunity}
-      )`,
-    )
-    .select(['board.name', 'board.slug'])
-    .executeTakeFirst()
+  const account = await selectCommunityAccount(db, communityId)
+  return account ? { name: account.name, slug: account.slug } : undefined
 }
 
 const MAX_OFFSET = 1000
@@ -956,9 +752,6 @@ const selectBoards = async (
     const pageOffset = Math.min(decodeOffsetCursor(opts.cursor), MAX_OFFSET)
     const ordered = builder.orderBy(
       sql`(
-        select count(*) from para_community_membership as m
-        where m."communityUri" = board.uri and m."membershipState" = 'active'
-      ) + (
         select count(*) from para_community_member_state as ms
         where ms.community = board.did and ${effectivelyActiveSql('ms')}
       )`,
@@ -1009,11 +802,9 @@ const selectBoards = async (
 }
 
 /**
- * Boards and OD-9 community accounts in one list, under one set of columns.
- * An account has the same shape as a board row (see `selectCommunityAccount`)
- * and is the only row with a `did`. A union matches columns by position, so
- * both branches list them in the same order. A founded account is listed even while
- * frozen, with the state `frozen`.
+ * Community accounts as a list of board-shaped rows (see
+ * `selectCommunityAccount`). A founded account is listed even while frozen,
+ * with the state `frozen`.
  */
 const listedBoardsQuery = (db: Database) => {
   const accounts = db.db
@@ -1068,56 +859,8 @@ const listedBoardsQuery = (db: Database) => {
       sql<string | null>`null::varchar`.as('creatorDisplayName'),
       'account.did as did',
     ])
-  const boards = boardBaseQuery(db).select(
-    sql<string | null>`null::varchar`.as('did'),
-  )
-  return db.db
-    .selectFrom(boards.unionAll(accounts as any).as('board'))
-    .selectAll('board')
+  return db.db.selectFrom(accounts.as('board')).selectAll('board')
 }
-
-const boardBaseQuery = (db: Database) =>
-  db.db
-    .selectFrom('para_community_board as board')
-    .leftJoin('actor as actor', 'actor.did', 'board.creator')
-    // The board's trusted governance record only: see community-governance.ts.
-    .leftJoinLateral(
-      (eb) =>
-        eb
-          .selectFrom('para_community_governance as candidate')
-          .where(isTrustedBoardGovernanceSql('candidate', 'board'))
-          .orderBy(governanceSlugMatchSql('candidate', 'board'), 'desc')
-          .orderBy('candidate.indexedAt', 'desc')
-          .limit(1)
-          .selectAll('candidate')
-          .as('gov'),
-      (join) => join.onTrue(),
-    )
-    .select([
-      'board.uri',
-      'board.cid',
-      'board.creator',
-      'board.slug',
-      'board.name',
-      'board.description',
-      'board.quadrant',
-      'board.region',
-      'board.delegatesChatId',
-      'board.subdelegatesChatId',
-      'board.governanceMode',
-      'board.admissionMode',
-      'board.createdAt',
-      'board.indexedAt',
-      'gov.state',
-      'gov.matterFlairIds',
-      'gov.policyFlairIds',
-      'gov.moderatorCount',
-      'gov.officialCount',
-      'gov.deputyRoleCount',
-      'gov.lastPublishedAt',
-    ])
-    .select('actor.handle as creatorHandle')
-    .select(sql<string | null>`null`.as('creatorDisplayName'))
 
 const getMemberCounts = (db: Database, communityUris: string[]) =>
   countActiveMembers(db, communityUris)
@@ -1130,22 +873,7 @@ const getSharedContentCounts = async (
     return new Map<string, number>()
   }
 
-  const boards = communityUris.filter((uri) => !communityAccountDid(uri))
-  const rows = boards.length
-    ? await db.db
-        .selectFrom('para_community_shared_content as share')
-        .where('share.communityUri', 'in', boards)
-        .select(['share.communityUri', sql<number>`count(*)`.as('shareCount')])
-        .groupBy('share.communityUri')
-        .execute()
-    : []
-
-  return new Map([
-    ...rows.map(
-      (row) => [row.communityUri, Number(row.shareCount) || 0] as const,
-    ),
-    ...(await countAccountShares(db, communityUris)),
-  ])
+  return countAccountShares(db, communityUris)
 }
 
 const getChildCommunityCounts = async (
@@ -1210,98 +938,17 @@ const getCommunityAndChildren = async (
   return [communityUri, ...new Set(rows.map((row) => row.childCommunityUri))]
 }
 
-type RelationRow = Selectable<DatabaseSchemaType['para_community_relation']>
-
-/**
- * A relation record lives in its author's repo, and anyone can write one
- * naming any two communities. It counts only if its author owned the parent
- * community when the AppView indexed it, or, for a horizontal parent (which
- * has no owner), founded it. The child's side is not consulted: in the normal
- * case the child's owner is the one linking it.
- */
-const filterTrustedRelations = async <
-  T extends Pick<RelationRow, 'parentCommunityUri' | 'creator' | 'indexedAt'>,
->(
-  db: Database,
-  rows: readonly T[],
-): Promise<T[]> => {
-  if (rows.length === 0) return []
-  const parents = [...new Set(rows.map((row) => row.parentCommunityUri))]
-  const horizontalFounders = new Set(
-    (
-      await db.db
-        .selectFrom('para_community_board')
-        .where('uri', 'in', parents)
-        .where('governanceMode', '=', 'horizontal')
-        .select(['uri', 'creator'])
-        .execute()
-    ).map((board) => `${board.uri} ${board.creator}`),
-  )
-  const byFounder = rows.filter((row) =>
-    horizontalFounders.has(`${row.parentCommunityUri} ${row.creator}`),
-  )
-  const byOwner = await filterByOfficeWhenIndexed(
-    db,
-    rows.filter((row) => !byFounder.includes(row)),
-    (row) => ({
-      community: row.parentCommunityUri,
-      author: row.creator,
-      indexedAt: row.indexedAt,
-    }),
-    ['owner'],
-  )
-  const trusted = new Set([...byFounder, ...byOwner])
-  return rows.filter((row) => trusted.has(row))
-}
-
-/**
- * Necessary condition for `filterTrustedRelations`, cheap enough for SQL: the
- * author has some owner grant in the parent, or created the parent board.
- */
-const relationAuthorCandidateSql = (alias: string) => {
-  const ref = (column: string) => sql.ref(`${alias}.${column}`)
-  return sql<boolean>`(
-    exists (
-      select 1 from para_community_authority_event grant_event
-      where grant_event."communityUri" = ${ref('parentCommunityUri')}
-        and grant_event.subject = ${ref('creator')}
-        and grant_event.action = 'owner.grant'
-    )
-    or exists (
-      select 1 from para_community_board parent_board
-      where parent_board.uri = ${ref('parentCommunityUri')}
-        and parent_board.creator = ${ref('creator')}
-    )
-  )`
-}
-
-/** Trusted `parentChild` relations whose `side` is one of `uris`. */
+/** `parentChild` relations whose `side` is one of `uris`. */
 const selectParentChildRelations = async (
   db: Database,
   side: 'parentCommunityUri' | 'childCommunityUri',
   uris: string[],
 ) => {
-  if (uris.length === 0) return []
   const accountUris = uris.filter((uri) => communityAccountDid(uri))
-  const accountRows = accountUris.length
-    ? await db.db
-        .selectFrom(accountRelationRows(db).as('relation'))
-        .where(`relation.${side}`, 'in', accountUris)
-        .select([
-          'relation.parentCommunityUri',
-          'relation.childCommunityUri',
-          'relation.creator',
-          'relation.indexedAt',
-        ])
-        .execute()
-    : []
-  const boardUris = uris.filter((uri) => !communityAccountDid(uri))
-  if (boardUris.length === 0) return accountRows
-  const rows = await db.db
-    .selectFrom('para_community_relation as relation')
-    .where('relation.relation', '=', 'parentChild')
-    .where(`relation.${side}`, 'in', boardUris)
-    .where(relationAuthorCandidateSql('relation'))
+  if (accountUris.length === 0) return []
+  return db.db
+    .selectFrom(accountRelationRows(db).as('relation'))
+    .where(`relation.${side}`, 'in', accountUris)
     .select([
       'relation.parentCommunityUri',
       'relation.childCommunityUri',
@@ -1309,77 +956,14 @@ const selectParentChildRelations = async (
       'relation.indexedAt',
     ])
     .execute()
-  return [...accountRows, ...(await filterTrustedRelations(db, rows))]
 }
-
-/**
- * The latest moderation action on each shared item, counting only actions by
- * an owner or moderator of the item's own community. Anyone can write a
- * `sharedContentAction` record into their repo, so an action from any other
- * author, or one naming a different community, is ignored.
- *
- * Authority is judged at the action's `indexedAt`, which its author cannot
- * choose: a moderator's past removals survive the end of their term, and a
- * revoked moderator cannot backdate new ones. For ordering, `createdAt` is
- * capped at `indexedAt`, so a future date cannot pin an action on top.
- */
-const getLatestSharedContentActions = async (
-  db: Database,
-  shares: ReadonlyArray<{ uri: string; communityUri: string }>,
-) => {
-  const result = new Map<string, SharedContentActionRow>()
-  if (shares.length === 0) return result
-
-  const communityOf = new Map(
-    shares.map((share) => [share.uri, share.communityUri]),
-  )
-  const rows = await db.db
-    .selectFrom('para_community_shared_content_action')
-    .where('sharedContentUri', 'in', [...communityOf.keys()])
-    .selectAll()
-    .execute()
-  const candidates = rows.filter(
-    (row) => communityOf.get(row.sharedContentUri) === row.communityUri,
-  )
-  const authorized = await filterByOfficeWhenIndexed(
-    db,
-    candidates,
-    (row) => ({
-      community: row.communityUri,
-      author: row.creator,
-      indexedAt: row.indexedAt,
-    }),
-    ['owner', 'moderator'],
-  )
-
-  const effectiveTime = (row: SharedContentActionRow) =>
-    Math.min(Date.parse(row.createdAt), Date.parse(row.indexedAt))
-  authorized.sort(
-    (a, b) =>
-      effectiveTime(b) - effectiveTime(a) ||
-      (a.cid < b.cid ? 1 : a.cid > b.cid ? -1 : 0),
-  )
-  for (const row of authorized) {
-    if (!result.has(row.sharedContentUri)) {
-      result.set(row.sharedContentUri, row)
-    }
-  }
-  return result
-}
-
-type SharedContentActionRow = Selectable<
-  DatabaseSchemaType['para_community_shared_content_action']
->
-
-const isRemovedAction = (action?: string) => action === 'remove'
 
 const toSharedContentView = (
   row: any,
-  action: any | undefined,
   requestedCommunityUri: string,
   overlay?: AccountShareOverlay,
 ) => {
-  const removed = overlay ? overlay.hidden : isRemovedAction(action?.action)
+  const removed = overlay?.hidden ?? false
   return new ParaCommunitySharedContentView({
     uri: row.uri,
     cid: row.cid,
@@ -1395,32 +979,16 @@ const toSharedContentView = (
     note: row.note ?? '',
     visibility: row.visibility ?? '',
     sourceApp: row.sourceApp ?? '',
-    // A community account is pinned by its stewards, never by the sharer.
-    pinned: overlay ? overlay.pinned : Boolean(row.pinned),
+    // A community is pinned by its stewards, never by the sharer.
+    pinned: overlay?.pinned ?? false,
     sortRank: row.sortRank ?? 0,
     createdAt: row.createdAt,
     removed,
-    removedAt: removed ? (overlay?.hiddenAt ?? action?.createdAt ?? '') : '',
-    removedBy: removed ? (overlay?.hiddenBy ?? action?.creator ?? '') : '',
-    latestAction: action ? toSharedContentActionView(action) : undefined,
+    removedAt: removed ? (overlay?.hiddenAt ?? '') : '',
+    removedBy: removed ? (overlay?.hiddenBy ?? '') : '',
     hydrationState: 'unresolved',
   })
 }
-
-const toSharedContentActionView = (row: any) =>
-  new ParaSharedContentActionView({
-    uri: row.uri,
-    cid: row.cid,
-    sharedContent: new ParaStrongRef({
-      uri: row.sharedContentUri,
-      cid: row.sharedContentCid,
-    }),
-    communityUri: row.communityUri,
-    action: row.action,
-    note: row.note ?? '',
-    createdAt: row.createdAt,
-    createdBy: row.creator,
-  })
 
 const toRelationView = (row: any) =>
   new ParaCommunityRelationView({
@@ -1573,182 +1141,12 @@ const selectMembers = async (
     cursor?: string
   },
 ) => {
-  if (communityAccountDid(communityUri)) {
-    return selectAccountMembers(db, communityUri, opts)
-  }
-  const requestedState = opts.membershipState?.trim() || 'active'
-  let builder = db.db
-    .selectFrom('para_community_membership as membership')
-    .leftJoin('actor as actor', 'actor.did', 'membership.creator')
-    .leftJoin('profile as profile', 'profile.creator', 'membership.creator')
-    .where('membership.communityUri', '=', communityUri)
-    .where('membership.membershipState', '=', requestedState)
-    .select([
-      'membership.creator as did',
-      'membership.cid',
-      'membership.membershipState',
-      'membership.joinedAt',
-      'actor.handle as handle',
-      'profile.displayName as displayName',
-    ])
-
-  const role = opts.role?.trim()
-  if (role) {
-    if (role === 'member') {
-      builder = builder.where('membership.membershipState', '=', 'active')
-    } else if (role === 'moderator' || role === 'owner') {
-      const grant = `${role}.grant`
-      const terminal =
-        role === 'moderator'
-          ? ['moderator.revoke', 'moderator.resign']
-          : ['owner.revoke']
-      builder = builder.where(
-        sql<boolean>`exists (
-          select 1 from para_community_authority_event granted
-          where granted."communityUri" = "membership"."communityUri"
-            and granted.subject = "membership".creator
-            and granted.action = ${grant}
-            and granted."effectiveAt"::timestamptz <= now()
-            and (granted."expiresAt" is null or granted."expiresAt"::timestamptz > now())
-            and not exists (
-              select 1 from para_community_authority_event terminal
-              where terminal."communityUri" = granted."communityUri"
-                and terminal.subject = granted.subject
-                and terminal.action in (${sql.join(terminal)})
-                and terminal.version > granted.version
-            )
-        )`,
-      )
-    } else {
-      builder = builder.where(sql<boolean>`false`)
-    }
-  }
-
-  // Subquery-based sorts (participation) cannot use keyset cursors efficiently.
-  // Fall back to offset with a hard cap to prevent deep-paging abuse.
-  // Replace correlated subquery with LEFT JOIN to pre-aggregated vote counts
-  // for O(n + m) hash join instead of O(n × m) correlated execution.
-  if (opts.sort === 'participation') {
-    const offset = Math.min(decodeOffsetCursor(opts.cursor), MAX_OFFSET)
-
-    const voteCountsSubquery = db.db
-      .selectFrom('cabildeo_vote')
-      .select(['creator', sql<number>`count(*)`.as('voteCount')])
-      .groupBy('creator')
-
-    builder = builder
-      .leftJoin(
-        voteCountsSubquery.as('vote_counts'),
-        'vote_counts.creator',
-        'membership.creator',
-      )
-      .orderBy(sql`coalesce("vote_counts"."voteCount", 0)`, 'desc')
-      .orderBy('membership.cid', 'desc')
-
-    const rows = await builder
-      .offset(offset)
-      .limit(opts.limit + 1)
-      .execute()
-    const page = rows.slice(0, opts.limit)
-    const dids = page.map((row) => row.did)
-    const [voteCounts, delegationCounts, postCounts, authorities] =
-      await Promise.all([
-        getVoteCounts(db, dids),
-        getDelegationCounts(db, dids),
-        getCommunityPostCounts(db, dids, communityUri),
-        Promise.all(
-          dids.map(
-            async (did) =>
-              [did, await getAuthoritySnapshot(db, communityUri, did)] as const,
-          ),
-        ),
-      ])
-    const authorityByDid = new Map(authorities)
-
-    return {
-      members: page.map((row) => {
-        const postCount = postCounts.get(row.did)
-        return {
-          did: row.did,
-          handle: row.handle ?? '',
-          displayName: row.displayName ?? '',
-          avatar: '',
-          membershipState:
-            authorityByDid.get(row.did)?.membershipState ?? row.membershipState,
-          roles: authorityByDid.get(row.did)?.roles ?? [],
-          joinedAt: row.joinedAt,
-          votesCast: voteCounts.get(row.did) ?? 0,
-          delegationsReceived: delegationCounts.get(row.did) ?? 0,
-          policyPosts: postCount?.policyPosts ?? 0,
-          matterPosts: postCount?.matterPosts ?? 0,
-        }
-      }),
-      cursor:
-        rows.length > opts.limit && offset < MAX_OFFSET
-          ? encodeOffsetCursor(offset + page.length)
-          : '',
-    }
-  }
-
-  // Cursor-based pagination for joinedAt sort
-  const { ref } = db.db.dynamic
-  const keyset = new JoinedAtCidKeyset(
-    ref('membership.joinedAt'),
-    ref('membership.cid'),
-  )
-
-  // Gracefully degrade old offset cursors to first page
-  const cursor = isOffsetCursor(opts.cursor) ? undefined : opts.cursor
-
-  builder = paginate(builder, {
-    limit: opts.limit + 1,
-    cursor,
-    keyset,
-    tryIndex: true,
-  })
-
-  const rows = await builder.execute()
-  const page = rows.slice(0, opts.limit)
-  const dids = page.map((row) => row.did)
-  const [voteCounts, delegationCounts, postCounts, authorities] =
-    await Promise.all([
-      getVoteCounts(db, dids),
-      getDelegationCounts(db, dids),
-      getCommunityPostCounts(db, dids, communityUri),
-      Promise.all(
-        dids.map(
-          async (did) =>
-            [did, await getAuthoritySnapshot(db, communityUri, did)] as const,
-        ),
-      ),
-    ])
-  const authorityByDid = new Map(authorities)
-
-  return {
-    members: page.map((row) => {
-      const postCount = postCounts.get(row.did)
-      return {
-        did: row.did,
-        handle: row.handle ?? '',
-        displayName: row.displayName ?? '',
-        avatar: '',
-        membershipState:
-          authorityByDid.get(row.did)?.membershipState ?? row.membershipState,
-        roles: authorityByDid.get(row.did)?.roles ?? [],
-        joinedAt: row.joinedAt,
-        votesCast: voteCounts.get(row.did) ?? 0,
-        delegationsReceived: delegationCounts.get(row.did) ?? 0,
-        policyPosts: postCount?.policyPosts ?? 0,
-        matterPosts: postCount?.matterPosts ?? 0,
-      }
-    }),
-    cursor: rows.length > opts.limit ? (keyset.packFromResult(page) ?? '') : '',
-  }
+  return selectAccountMembers(db, communityUri, opts)
 }
 
 /**
- * `selectMembers` for an OD-9 account, from its folded chain. States are as
- * of now: a suspension whose end has passed lists as active.
+ * Members of an OD-9 account, from its folded chain. States are as of now: a
+ * suspension whose end has passed lists as active.
  */
 const selectAccountMembers = async (
   db: Database,
@@ -1922,17 +1320,10 @@ const getCommunityPostCounts = async (
         .selectFrom('actor')
         .where('did', '=', accountDid)
         .select(sql<string>`split_part(handle, '.', 1)`.as('slug'))
-        .select(sql<string>`''`.as('name'))
         .executeTakeFirst()
-    : await db.db
-        .selectFrom('para_community_board')
-        .where('uri', '=', communityUri)
-        .select(['name', 'slug'])
-        .executeTakeFirst()
+    : undefined
 
-  const community = board
-    ? normalizeCommunitySlug(board.slug || board.name)
-    : ''
+  const community = board ? normalizeCommunitySlug(board.slug) : ''
   // A community with no name to match counts no posts, rather than all.
   if (!community) {
     return new Map<string, { policyPosts: number; matterPosts: number }>()
@@ -1978,23 +1369,12 @@ const getGovernanceSummary = async (
   db: Database,
   board: GovernanceBoard & { moderatorCount?: number | null },
 ): Promise<ParaCommunityGovernanceSummary | null> => {
-  // An OD-9 account's summary is its folded chain's (see selectCommunityAccount).
-  if (communityAccountDid(board.uri)) {
-    return new ParaCommunityGovernanceSummary({
-      moderatorCount: board.moderatorCount ?? 0,
-      officialCount: 0,
-      deputyRoleCount: 0,
-    })
-  }
-  const record = await getPublishedGovernanceRecord(db, board)
-  if (!record) return null
-
+  // A community's summary is its folded chain's (see selectCommunityAccount).
+  if (!communityAccountDid(board.uri)) return null
   return new ParaCommunityGovernanceSummary({
-    moderatorCount: record.moderators.length,
-    officialCount: record.officials.length,
-    deputyRoleCount: record.deputies.length,
-    lastPublishedAt:
-      record.metadata?.lastPublishedAt || record.updatedAt || record.createdAt,
+    moderatorCount: board.moderatorCount ?? 0,
+    officialCount: 0,
+    deputyRoleCount: 0,
   })
 }
 
@@ -2187,37 +1567,6 @@ const toGovernanceMember = (person: {
     displayName: person.displayName ?? undefined,
     avatar: person.avatar ?? undefined,
   })
-
-const getPublishedGovernanceRecord = async (
-  db: Database,
-  board: GovernanceBoard,
-): Promise<GovernanceRecord | null> => {
-  // @NOTE an OD-9 account lists its officers from its chain (OD-9 §3.8);
-  // it has no founder-written governance record.
-  if (communityAccountDid(board.uri)) return null
-  const json = await getTrustedGovernanceRecordJson(db, board)
-  return json ? parseGovernanceRecord(json) : null
-}
-
-const parseGovernanceRecord = (json: string): GovernanceRecord | null => {
-  try {
-    const parsed = JSON.parse(json)
-    const validated = com.para.community.governance.$safeValidate(parsed)
-    if (validated.success) return validated.value as GovernanceRecord
-    if (
-      typeof parsed?.community === 'string' &&
-      typeof parsed?.slug === 'string' &&
-      Array.isArray(parsed?.moderators) &&
-      Array.isArray(parsed?.officials) &&
-      Array.isArray(parsed?.deputies)
-    ) {
-      return parsed as GovernanceRecord
-    }
-    return null
-  } catch {
-    return null
-  }
-}
 
 const normalizeCommunitySlug = (value?: string | null) =>
   (value || '')

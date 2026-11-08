@@ -9,11 +9,7 @@ import {
   isLiveCabildeoPhase,
   presenceExpiry,
 } from '../cabildeo-live.js'
-import {
-  getAuthoritySnapshot,
-  getAuthoritySnapshots,
-} from '../community-authority.js'
-import { getTrustedGovernanceRecordJson } from '../community-governance.js'
+import { getAuthoritySnapshot } from '../community-authority.js'
 import {
   accountOfficeHolders,
   communityAccountDid,
@@ -188,20 +184,12 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         viewerDid: req.viewerDid,
         viewerIsAdmin: req.viewerIsAdmin,
       })
-      const [governance, moderators, nominees] = await Promise.all([
-        getTrustedGovernanceRecordJson(db, board).then((json) =>
-          json ? parseCandidateGovernance(json) : null,
-        ),
-        selectVerifiedModerators(db, board.uri),
-        selectSelfNominatedDelegates(db, board.uri),
-      ])
-
-      addGovernanceCandidates(rolesByDid, governance)
-      for (const did of moderators) {
+      for (const did of await accountOfficeHolders(
+        db,
+        communityAccountDid(board.uri) ?? '',
+        'moderator',
+      )) {
         ensureRoleSet(rolesByDid, did).add('moderator')
-      }
-      for (const did of nominees) {
-        ensureRoleSet(rolesByDid, did).add(SELF_NOMINATED_ROLE)
       }
     }
 
@@ -407,48 +395,11 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   },
 })
 
-type CandidateGovernancePerson = {
-  did?: string
-  handle?: string
-  displayName?: string
-}
-
-type CandidateGovernanceRecord = {
-  moderators?: Array<CandidateGovernancePerson & { role?: string }>
-  officials?: Array<CandidateGovernancePerson & { office?: string }>
-  deputies?: Array<{
-    role?: string
-    activeHolder?: CandidateGovernancePerson
-  }>
-}
-
+/** The community account a request names, by URI, DID, handle or slug. */
 export const selectCandidateCommunityBoard = async (
   db: Database,
   communityId: string,
 ) => {
-  const normalizedSlug = normalizeCommunitySlug(communityId)
-
-  if (communityId.startsWith('at://')) {
-    const byUri = await db.db
-      .selectFrom('para_community_board')
-      .where('uri', '=', communityId)
-      .select(['uri', 'creator', 'name', 'slug'])
-      .executeTakeFirst()
-    if (byUri) return byUri
-  }
-
-  const board = await db.db
-    .selectFrom('para_community_board')
-    .where(
-      sql<boolean>`(
-        "slug" = ${normalizedSlug}
-        or regexp_replace(lower(coalesce("name", '')), '[^a-z0-9]+', '-', 'g') = ${normalizedSlug}
-      )`,
-    )
-    .select(['uri', 'creator', 'name', 'slug'])
-    .executeTakeFirst()
-  if (board) return board
-  // An OD-9 community account, by URI, DID, handle or slug.
   const [uri] = await resolveCommunityAccountUris(db, communityId)
   const did = uri ? communityAccountDid(uri) : null
   if (!uri || !did) return undefined
@@ -461,76 +412,11 @@ export const selectCandidateCommunityBoard = async (
 }
 
 /*
- * Delegation candidates and the roles reported for them.
- *
- * A member may nominate themselves as a delegate candidate: the membership
- * record they write themselves can say so, and is reported only as
- * `delegate`. Offices cannot be self-declared. Moderators come from verified
- * authority events, and moderators, officials and deputies from the trusted
- * governance record (`getTrustedGovernanceRecordJson`). Any other role in a
- * membership record (`moderator`, `official`, `deputy`, `representative`, ...)
- * is ignored.
- *
- * Being listed, by nomination or office, is not proof of electoral weight.
+ * Delegation candidates and the roles reported for them: the community's
+ * moderators, by its chain. Offices are never self-declared. Being listed is
+ * not proof of electoral weight. Self-nomination as a delegate has no chain
+ * action yet.
  */
-const SELF_NOMINATED_ROLE = 'delegate'
-
-// Membership-record roles that opt a member in as a delegate candidate.
-const SELF_NOMINATION_ROLES = ['delegate', 'delegado', 'subdelegate', 'agent']
-
-/** Members holding the moderator role by verified authority events. */
-const selectVerifiedModerators = async (db: Database, communityUri: string) => {
-  const accountDid = communityAccountDid(communityUri)
-  if (accountDid) return accountOfficeHolders(db, accountDid, 'moderator')
-  const rows = await db.db
-    .selectFrom('para_community_authority_event')
-    .where('communityUri', '=', communityUri)
-    .where('action', '=', 'moderator.grant')
-    .select('subject')
-    .distinct()
-    .execute()
-  const snapshots = await getAuthoritySnapshots(
-    db,
-    communityUri,
-    rows.map((row) => row.subject),
-  )
-  return [...snapshots]
-    .filter(([, snapshot]) => snapshot.roles.includes('moderator'))
-    .map(([did]) => did)
-}
-
-/**
- * Members whose own membership record nominates them as a delegate, and who
- * are active members by `getAuthoritySnapshot`.
- */
-const selectSelfNominatedDelegates = async (
-  db: Database,
-  communityUri: string,
-) => {
-  // @NOTE an OD-9 account has no self-written membership records to
-  // nominate from; self-nomination returns as a chain action in phase 4.
-  if (communityAccountDid(communityUri)) return []
-  const rows = await db.db
-    .selectFrom('para_community_membership')
-    .where('communityUri', '=', communityUri)
-    .where('membershipState', '=', 'active')
-    .where(
-      // `roles` is a jsonb array: `?|` is true when it holds any listed role.
-      sql<boolean>`coalesce("roles", '[]'::jsonb) ?| array[${sql.join(
-        SELF_NOMINATION_ROLES.map((role) => sql`${role}`),
-      )}]::text[]`,
-    )
-    .select('creator')
-    .execute()
-  const snapshots = await getAuthoritySnapshots(
-    db,
-    communityUri,
-    rows.map((row) => row.creator),
-  )
-  return [...snapshots]
-    .filter(([, snapshot]) => snapshot.membershipState === 'active')
-    .map(([did]) => did)
-}
 
 const assertActiveCommunityViewer = async (
   db: Database,
@@ -557,42 +443,6 @@ const assertActiveCommunityViewer = async (
       'Active community membership is required',
       Code.PermissionDenied,
     )
-  }
-}
-
-const parseCandidateGovernance = (
-  json: string,
-): CandidateGovernanceRecord | null => {
-  try {
-    const parsed = JSON.parse(json)
-    if (!parsed || typeof parsed !== 'object') return null
-    return parsed as CandidateGovernanceRecord
-  } catch {
-    return null
-  }
-}
-
-const addGovernanceCandidates = (
-  rolesByDid: Map<string, Set<string>>,
-  governance: CandidateGovernanceRecord | null,
-) => {
-  for (const moderator of governance?.moderators ?? []) {
-    if (!moderator.did) continue
-    const roles = ensureRoleSet(rolesByDid, moderator.did)
-    roles.add(moderator.role || 'moderator')
-  }
-
-  for (const official of governance?.officials ?? []) {
-    if (!official.did) continue
-    const roles = ensureRoleSet(rolesByDid, official.did)
-    roles.add(official.office || 'official')
-  }
-
-  for (const deputy of governance?.deputies ?? []) {
-    const holder = deputy.activeHolder
-    if (!holder?.did) continue
-    const roles = ensureRoleSet(rolesByDid, holder.did)
-    roles.add(deputy.role || 'deputy')
   }
 }
 
@@ -1016,16 +866,6 @@ const asNumberArray = (value: unknown, length: number): number[] => {
 const normalizeCommunity = (value: string | undefined) => {
   return value?.trim().toLowerCase().replace(/^p\//, '') || ''
 }
-
-const normalizeCommunitySlug = (value: string) =>
-  value
-    .trim()
-    .replace(/^p\//i, '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
 
 const normalizeLimit = (limit: number) => {
   if (!limit || Number.isNaN(limit)) return 50

@@ -159,30 +159,10 @@ export const recomputeCabildeoAggregates = async (
   }> = []
 
   if (process.env.PARA_CABILDEO_DELEGATION_TALLY_ENABLED === '1') {
-    const communitySlug = cabildeo.community
-      .replace(/^p\//, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-    const board = await db
-      .selectFrom('para_community_board')
-      .where((eb) =>
-        eb.or([
-          eb('uri', '=', cabildeo.community),
-          eb('slug', '=', communitySlug),
-          eb(
-            sql`regexp_replace(lower(coalesce("name", '')), '[^a-z0-9]+', '-', 'g')`,
-            '=',
-            communitySlug,
-          ),
-        ]),
-      )
-      .select('uri')
-      .executeTakeFirst()
     const database = { db } as Database
-    const communityUri =
-      board?.uri ??
-      (await resolveCommunityAccountUris(database, cabildeo.community))[0]
+    const communityUri = (
+      await resolveCommunityAccountUris(database, cabildeo.community)
+    )[0]
     const [grants, statuses] = await Promise.all([
       db
         .selectFrom('cabildeo_delegation')

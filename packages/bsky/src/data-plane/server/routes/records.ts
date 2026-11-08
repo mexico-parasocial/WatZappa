@@ -273,29 +273,10 @@ const getEligiblePolicyVoterCount = async (
     return 0
   }
 
-  const boardUris = await db.db
-    .selectFrom('para_community_board')
-    .select('uri')
-    .where((eb) =>
-      eb.or([
-        eb(
-          sql`lower(regexp_replace(coalesce("slug", ''), '^p/', ''))`,
-          '=',
-          normalizedCommunity,
-        ),
-        eb(
-          sql`lower(regexp_replace(coalesce("name", ''), '^p/', ''))`,
-          '=',
-          normalizedCommunity,
-        ),
-      ]),
-    )
-    .execute()
-
-  const communityUris = [
-    ...boardUris.map((row) => row.uri),
-    ...(await resolveCommunityAccountUris(db, normalizedCommunity)),
-  ]
+  const communityUris = await resolveCommunityAccountUris(
+    db,
+    normalizedCommunity,
+  )
   if (communityUris.length === 0) {
     return 0
   }
