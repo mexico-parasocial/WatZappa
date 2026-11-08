@@ -250,7 +250,8 @@ describe('para dataplane queries', () => {
       postUri: post.uri,
     })
     expect(explicit.post?.postType).toEqual('policy')
-    expect(explicit.post?.voteScore).toEqual(9)
+    // The author's metadata never awards points: only public reactions do.
+    expect(explicit.post?.voteScore).toEqual(0)
     expect(explicit.post?.official).toBe(true)
     expect(explicit.post?.party).toEqual('Independent')
     expect(explicit.post?.community).toEqual('mx-federal')
@@ -258,6 +259,14 @@ describe('para dataplane queries', () => {
     expect(explicit.post?.tags).toEqual(['meta-tag'])
     expect(explicit.post?.flairs).toEqual(['meta-flair'])
     expect(explicit.post?.interactionMode).toEqual('policy_ballot')
+
+    await writeParaFixture(network, async () => {
+      await sc.like(bob, { raw: { uri: post.uri, cid: post.cid } })
+    })
+    const reacted = await network.bsky.ctx.dataplane.getParaPostMeta({
+      postUri: post.uri,
+    })
+    expect(reacted.post?.voteScore).toEqual(1)
   })
 
   it('queries para profile stats and status', async () => {

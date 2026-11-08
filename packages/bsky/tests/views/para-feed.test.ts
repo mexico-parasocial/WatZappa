@@ -1012,30 +1012,6 @@ describe('para feed views', () => {
       bob,
     )
     expect(detail.cabildeo.liveSession?.activeParticipantCount).toBe(2)
-
-    const profile = await agent.api.app.bsky.actor.getProfile(
-      { actor: dan },
-      {
-        headers: await network.serviceHeaders(bob, ids.AppBskyActorGetProfile),
-      },
-    )
-    expect(profile.data.cabildeoLive).toEqual(
-      expect.objectContaining({
-        cabildeoUri: cabildeo.uri,
-        community: 'mx-live',
-        phase: 'open',
-      }),
-    )
-
-    const profiles = await agent.api.app.bsky.actor.getProfiles(
-      { actors: [dan] },
-      {
-        headers: await network.serviceHeaders(bob, ids.AppBskyActorGetProfiles),
-      },
-    )
-    expect(profiles.data.profiles[0]?.cabildeoLive?.cabildeoUri).toBe(
-      cabildeo.uri,
-    )
   })
 
   it('boosts live cabildeos ahead of non-live cabildeos within a community', async () => {
@@ -1113,6 +1089,9 @@ describe('para feed views', () => {
       bob,
     )
 
+    // The generic live status stays a status: `cabildeoLive` is not part of
+    // the app.bsky profile view (089b2f50a), so presence is read from the
+    // cabildeo itself.
     const bobGenericLive = await agent.api.app.bsky.actor.getProfile(
       { actor: bob },
       {
@@ -1123,23 +1102,19 @@ describe('para feed views', () => {
       },
     )
     expect(bobGenericLive.data.status?.isActive).toBe(true)
-    expect(bobGenericLive.data.cabildeoLive).toBeUndefined()
 
     await createLiveStatusRecord(sc, bob, {
       uri: 'https://live.example.com/cabildeo/shared',
     })
     await network.processAll()
 
-    const bobMatchedLive = await agent.api.app.bsky.actor.getProfile(
-      { actor: bob },
-      {
-        headers: await network.serviceHeaders(
-          alice,
-          ids.AppBskyActorGetProfile,
-        ),
-      },
+    const matched = await callPara<ParaListCabildeosOutput>(
+      network,
+      'com.para.civic.listCabildeos',
+      { community: 'mx-live-expiring', limit: 10 },
+      alice,
     )
-    expect(bobMatchedLive.data.cabildeoLive?.cabildeoUri).toBe(cabildeo.uri)
+    expect(matched.cabildeos[0]?.liveSession?.activeParticipantCount).toBe(2)
 
     await network.bsky.db.db
       .updateTable('cabildeo_live_presence')
@@ -1154,17 +1129,6 @@ describe('para feed views', () => {
       alice,
     )
     expect(listed.cabildeos[0]?.liveSession).toBeUndefined()
-
-    const expiredProfile = await agent.api.app.bsky.actor.getProfile(
-      { actor: bob },
-      {
-        headers: await network.serviceHeaders(
-          alice,
-          ids.AppBskyActorGetProfile,
-        ),
-      },
-    )
-    expect(expiredProfile.data.cabildeoLive).toBeUndefined()
   })
 
   it('filters blocked participants out of live preview dids', async () => {
