@@ -2,8 +2,10 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   type SeedClient,
   TestNetwork,
+  actInCommunity,
   createCommunityBoardRecord,
   createCommunityMembershipRecord,
+  paraCall,
   seedCommunityActivities,
   usersSeed,
 } from '@atproto/dev-env'
@@ -24,18 +26,16 @@ type ActivityView = {
 }
 
 // Activities, ledgers and wiki pages are served only when written by one of
-// the community's current organizers: the board's creator, or an owner or
-// moderator by verified authority events. Self-declared roles do not count.
+// the community's current organizers: an owner or moderator by the community's
+// chain. A member's own claims do not count.
 maybeDescribe('community activities (AppView)', () => {
   let network: TestNetwork
   let sc: SeedClient
   let alice: DidString // board creator and owner
   let bob: DidString // moderator appointed by alice
-  let carol: DidString // member who declares herself a moderator
+  let carol: DidString // member
   let dan: DidString // outsider
   let board: string
-  let bobMembership: string
-  let bobModerator: string
 
   const xrpc = async <T>(nsid: string, params: Record<string, string>) => {
     const url = new URL(`/xrpc/${nsid}`, network.bsky.url)
@@ -71,24 +71,9 @@ maybeDescribe('community activities (AppView)', () => {
     return data.uri
   }
 
-  const authorityEvent = (
-    issuer: DidString,
-    event: {
-      subject: string
-      action: string
-      basis: string
-      version: number
-      predecessor?: string
-      evidence?: string
-    },
-  ) =>
-    write(issuer, 'com.para.community.authorityEvent', {
-      community: board,
-      issuer,
-      effectiveAt: new Date(Date.now() - 1000).toISOString(),
-      createdAt: new Date().toISOString(),
-      ...event,
-    })
+  /** Takes a chain action in `board`, as `by`. */
+  const act = (by: DidString, input: Record<string, unknown>) =>
+    actInCommunity(paraCall(sc.agent, sc.getHeaders(by)), board, input)
 
   const socialActivity = (
     by: DidString,
@@ -193,52 +178,13 @@ maybeDescribe('community activities (AppView)', () => {
     ).uri
     await network.processAll()
 
-    // alice founds the board and owns it; she appoints bob as moderator.
-    const aliceMember = await authorityEvent(alice, {
-      subject: alice,
-      action: 'member.activate',
-      basis: 'foundingTransition',
-      version: 1,
-    })
-    await network.processAll()
-    await authorityEvent(alice, {
-      subject: alice,
-      action: 'owner.grant',
-      basis: 'foundingTransition',
-      version: 2,
-      predecessor: aliceMember,
-    })
-    bobMembership = await authorityEvent(bob, {
-      subject: bob,
-      action: 'member.activate',
-      basis: 'openAdmission',
-      version: 1,
-    })
-    await network.processAll()
-    bobModerator = await authorityEvent(alice, {
-      subject: bob,
-      action: 'moderator.grant',
-      basis: 'ownerAppointment',
-      version: 2,
-      predecessor: bobMembership,
-      evidence: `at://${alice}/com.para.community.decision/appoint-bob`,
-    })
-    // carol claims a moderator role in her own membership record.
-    await sc.agent.com.atproto.repo.createRecord(
-      {
-        repo: carol,
-        collection: 'com.para.community.membership',
-        record: {
-          $type: 'com.para.community.membership',
-          community: board,
-          membershipState: 'active',
-          roles: ['moderator'],
-          joinedAt: new Date().toISOString(),
-        },
-      },
-      { encoding: 'application/json', headers: sc.getHeaders(carol) },
-    )
-    await createCommunityMembershipRecord(sc, dan, board, 'active')
+    // alice founds the community and owns it; carol and dan join, and she
+    // appoints bob as moderator.
+    for (const did of [bob, carol, dan]) {
+      await createCommunityMembershipRecord(sc, did, board, 'active')
+    }
+    const offer = await act(alice, { action: 'moderator.offer', subject: bob })
+    await act(bob, { action: 'moderator.accept', offer: offer.seq })
     await network.processAll()
   })
 
@@ -400,14 +346,7 @@ maybeDescribe('community activities (AppView)', () => {
   })
 
   it('stops serving a moderator’s records once the role is revoked', async () => {
-    await authorityEvent(alice, {
-      subject: bob,
-      action: 'moderator.revoke',
-      basis: 'ownerAppointment',
-      version: 3,
-      predecessor: bobModerator,
-      evidence: `at://${alice}/com.para.community.decision/revoke-bob`,
-    })
+    await act(alice, { action: 'moderator.revoke', subject: bob })
     await network.processAll()
     const { activities } = await listActivities({ community: board })
     expect(activities.some((a) => a.author === bob)).toBe(false)

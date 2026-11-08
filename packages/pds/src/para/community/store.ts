@@ -1,12 +1,13 @@
 import { sql } from 'kysely'
-import type {
-  CommunityMember,
-  CommunityOffer,
-  CommunityOfferKind,
-  CommunityOffice,
-  CommunityPatch,
-  CommunitySettings,
-  CommunityStateView,
+import {
+  type CommunityMember,
+  type CommunityOffer,
+  type CommunityOfferKind,
+  type CommunityOffice,
+  type CommunityPatch,
+  type CommunitySettings,
+  type CommunityStateView,
+  effectiveCommunityMember,
 } from '@atproto/common'
 import type { ActorDb } from '../../actor-store/db/index.js'
 
@@ -99,6 +100,18 @@ export class CommunityStore {
       openOffer: (seq) => (offer && offer.seq === seq ? offer : undefined),
       ownerCount: () => Number(owners.count),
     }
+  }
+
+  /** Whether `did` is an active member of this community as of `at`. */
+  async isActiveMember(did: string, at = Date.now()): Promise<boolean> {
+    const row = await this.db.db
+      .selectFrom('community_member')
+      .selectAll()
+      .where('did', '=', did)
+      .executeTakeFirst()
+    return (
+      effectiveCommunityMember(row && toMember(row), at)?.status === 'active'
+    )
   }
 
   async apply(

@@ -70,6 +70,13 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
 
 ## Architecture notes
 
+- **A community is an account; its old records are retired.**
+  `assertCommunityRepoWrites` refuses new `board`, `membership`, `governance`,
+  `roleAcceptance`, `authorityEvent`, `relation` and `sharedContentAction`
+  records in every repo (deletes pass). Found a community with
+  `com.para.community.create`, change it with `com.para.community.act`; fixtures
+  use `packages/dev-env/src/seed/community-account.ts`, never raw records.
+
 - Community authority comes from verified authority-event chains; self-authored
   membership roles never grant offices. An active membership record opens a
   subject's chain at version 0 (`community.join` writes no activation event);

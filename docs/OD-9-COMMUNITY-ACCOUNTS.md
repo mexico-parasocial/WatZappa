@@ -9,7 +9,7 @@ community an account with its own `did:plc` and repo, which is the only place
 its authority is written, through one PDS endpoint that checks permission at
 write time.
 
-**Status:** accepted, 2026-11-04; phase 4 in progress. Decided with the
+**Status:** accepted, 2026-11-04; phase 5 in progress. Decided with the
 product owner: communities get their own `did:plc`; there is no migration of
 existing boards (fresh start); horizontal mode and assembly-approval admission
 stay hidden until a trusted tally verifier exists; permissioned spaces may be
@@ -451,11 +451,31 @@ document unless noted.
      missing, mismatched or foreign request.
    - Not done: request proofs signed by a rotated key (see the key rotation
      note above).
-5. **Cut over and delete.**
+5. **Cut over and delete.** Four stages, each its own commit so one can be
+   reverted without the rest. The removal is all-or-nothing in the AppView
+   (boards still depend on authority events), so the producers go first.
    - Retire the old NSIDs, drop their tables, delete the code in §4, rewrite
      the dev-env seeds, release with PARA and the bridge.
    - Exit: `check-fork-surface.sh` updated; quarter plan P0 re-accepted on the
      new model.
+   - **Stage 1, producers** (`claude/od-9-phase-5`, stacked on phase 4;
+     unmerged, undeployed). The PDS refuses new records of the retired types
+     (`LegacyCommunityRecord`) and no longer serves `createBoard`, `join`,
+     `leave`, `acceptDraftInvite`, `removeSharedContent`, `restoreSharedContent`,
+     its `getBoard`/`listBoards`, or the name-uniqueness check (a handle is
+     unique, a display name no longer is). Dev-env helpers and the demo seed
+     found accounts. Tests of the legacy authority model (role forgery,
+     moderation authority, self-nominated delegates) are deleted with it.
+     Porting the fixtures exposed four phase 3 gaps, now fixed: a slug did not
+     resolve to an account, a chain event did not re-tally open cabildeos, an
+     account's stewards were read from boards, and activities did not name an
+     account.
+   - **Open for stage 3 (bridge):** the demo seed no longer sets bicameral
+     chambers or the officials and deputies lists; accounts have neither.
+   - **Stage 2, readers:** delete the indexers, tables, capability models and
+     the legacy branch of `getAuthoritySnapshots`.
+   - **Stage 3, Matrix bridge:** authority from the accounts' effective state.
+   - **Stage 4, lexicons:** retire the NSIDs, regenerate clients.
 6. **Cleanup.**
    - Indexer side effects moved to daemon jobs.
    - Remaining `@ts-nocheck` removed from community plugins.

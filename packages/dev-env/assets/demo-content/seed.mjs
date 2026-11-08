@@ -255,13 +255,13 @@ async function prepareCommunities(ctx, owner, content, sync) {
     board ||= candidates[0]
     if (!board) {
       const created = await xrpc(ctx, {
-        nsid: 'com.para.community.createBoard',
+        nsid: 'com.para.community.create',
         method: 'POST',
         token: owner.token,
         body: {
           name: tree.community,
+          slug: communitySlug(tree.community),
           quadrant: 'centro',
-          admissionMode: 'open',
           description: 'Comunidad de demostración del árbol cívico.',
         },
       })
@@ -300,16 +300,16 @@ async function prepareCommunities(ctx, owner, content, sync) {
           )
         continue
       }
-      const joined = await xrpc(ctx, {
-        nsid: 'com.para.community.join',
+      // Admission is open, so a join is taken at once or refused.
+      await xrpc(ctx, {
+        nsid: 'com.para.community.act',
         method: 'POST',
         token: session.token,
-        body: { communityUri: board.uri },
+        body: {
+          community: board.uri.split('/')[2],
+          action: 'member.join',
+        },
       })
-      if (joined.membershipState !== 'active')
-        throw new Error(
-          `${handle} needs membership approval for "${tree.community}"`,
-        )
     }
     await sync()
   }
@@ -317,6 +317,18 @@ async function prepareCommunities(ctx, owner, content, sync) {
 
 // ---------------------------------------------------------------------------
 // Memes, comments and reactions
+
+/** A slug the PDS accepts for a community: 3 to 40 lowercase characters. */
+function communitySlug(name) {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+    .replace(/-+$/g, '')
+}
 
 async function seedMemes(ctx, content, boards, imagesDir) {
   const refs = new Map()

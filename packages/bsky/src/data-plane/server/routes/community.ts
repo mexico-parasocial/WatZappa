@@ -148,9 +148,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     const authorization = resolveAvailableAction(
       req.action,
       snapshot.roles,
-      (board.governanceMode || 'hierarchical') as
-        | 'hierarchical'
-        | 'horizontal',
+      (board.governanceMode || 'hierarchical') as 'hierarchical' | 'horizontal',
     )
     return new GetParaCommunityAuthorizationResponse({
       roles: snapshot.roles,
@@ -190,8 +188,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         ? await getAuthoritySnapshot(db, board.uri, req.viewerDid)
         : undefined
       const standard = (board.governanceMode || 'hierarchical') as
-        | 'hierarchical'
-        | 'horizontal'
+        'hierarchical' | 'horizontal'
 
       return new GetParaCommunityBoardResponse({
         board: toBoardView(board, memberCount, viewerMembership, {
@@ -336,7 +333,10 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         .execute(),
     ])
 
-    const voterCount = breakdown.reduce((sum, row) => sum + Number(row.count), 0)
+    const voterCount = breakdown.reduce(
+      (sum, row) => sum + Number(row.count),
+      0,
+    )
     const signalSum = breakdown.reduce(
       (sum, row) => sum + Number(row.signal) * Number(row.count),
       0,
@@ -647,7 +647,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
           overlays.get(row.uri),
         ),
       ),
-      cursor: hasMore ? keyset.packFromResult(page) ?? '' : '',
+      cursor: hasMore ? (keyset.packFromResult(page) ?? '') : '',
     })
   },
 
@@ -779,7 +779,7 @@ const selectBoard = async (
     return selectCommunityAccount(db, uri)
   }
   const board = await selectLegacyBoard(db, communityId, uri)
-  return board ?? selectCommunityAccount(db, uri ?? communityId)
+  return board ?? selectCommunityAccount(db, uri || communityId)
 }
 
 /**
@@ -929,13 +929,9 @@ const selectBoards = async (
   const flairId = opts.flairId?.trim()
   if (flairId) {
     if (opts.participationKind === 'matter') {
-      builder = builder.where(
-        sql<boolean>`board."matterFlairIds" ? ${flairId}`,
-      )
+      builder = builder.where(sql<boolean>`board."matterFlairIds" ? ${flairId}`)
     } else if (opts.participationKind === 'policy') {
-      builder = builder.where(
-        sql<boolean>`board."policyFlairIds" ? ${flairId}`,
-      )
+      builder = builder.where(sql<boolean>`board."policyFlairIds" ? ${flairId}`)
     }
   }
 
@@ -1008,7 +1004,7 @@ const selectBoards = async (
 
   return {
     boards: page,
-    cursor: hasMore ? keyset.packFromResult(page) ?? '' : '',
+    cursor: hasMore ? (keyset.packFromResult(page) ?? '') : '',
   }
 }
 
@@ -1447,10 +1443,13 @@ const getViewerMemberships = async (
   }
 
   const snapshots = await Promise.all(
-    communityUris.map(async (communityUri) => [
-      communityUri,
-      await getAuthoritySnapshot(db, communityUri, viewerDid),
-    ] as const),
+    communityUris.map(
+      async (communityUri) =>
+        [
+          communityUri,
+          await getAuthoritySnapshot(db, communityUri, viewerDid),
+        ] as const,
+    ),
   )
   return new Map(
     snapshots.map(([communityUri, snapshot]) => [
@@ -1652,17 +1651,18 @@ const selectMembers = async (
       .execute()
     const page = rows.slice(0, opts.limit)
     const dids = page.map((row) => row.did)
-    const [voteCounts, delegationCounts, postCounts, authorities] = await Promise.all([
-      getVoteCounts(db, dids),
-      getDelegationCounts(db, dids),
-      getCommunityPostCounts(db, dids, communityUri),
-      Promise.all(
-        dids.map(async (did) => [
-          did,
-          await getAuthoritySnapshot(db, communityUri, did),
-        ] as const),
-      ),
-    ])
+    const [voteCounts, delegationCounts, postCounts, authorities] =
+      await Promise.all([
+        getVoteCounts(db, dids),
+        getDelegationCounts(db, dids),
+        getCommunityPostCounts(db, dids, communityUri),
+        Promise.all(
+          dids.map(
+            async (did) =>
+              [did, await getAuthoritySnapshot(db, communityUri, did)] as const,
+          ),
+        ),
+      ])
     const authorityByDid = new Map(authorities)
 
     return {
@@ -1710,17 +1710,18 @@ const selectMembers = async (
   const rows = await builder.execute()
   const page = rows.slice(0, opts.limit)
   const dids = page.map((row) => row.did)
-  const [voteCounts, delegationCounts, postCounts, authorities] = await Promise.all([
-    getVoteCounts(db, dids),
-    getDelegationCounts(db, dids),
-    getCommunityPostCounts(db, dids, communityUri),
-    Promise.all(
-      dids.map(async (did) => [
-        did,
-        await getAuthoritySnapshot(db, communityUri, did),
-      ] as const),
-    ),
-  ])
+  const [voteCounts, delegationCounts, postCounts, authorities] =
+    await Promise.all([
+      getVoteCounts(db, dids),
+      getDelegationCounts(db, dids),
+      getCommunityPostCounts(db, dids, communityUri),
+      Promise.all(
+        dids.map(
+          async (did) =>
+            [did, await getAuthoritySnapshot(db, communityUri, did)] as const,
+        ),
+      ),
+    ])
   const authorityByDid = new Map(authorities)
 
   return {

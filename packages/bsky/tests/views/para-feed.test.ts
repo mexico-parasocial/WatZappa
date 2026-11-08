@@ -9,7 +9,6 @@ import {
   createCabildeoRecord,
   createCabildeoVoteRecord,
   createCommunityBoardRecord,
-  createCommunityGovernanceRecord,
   createCommunityMembershipRecord,
   createLiveStatusRecord,
   createParaPost,
@@ -559,125 +558,6 @@ describe('para feed views', () => {
     )
     expect(res.status).toBe(400)
     expect((res.body as { error?: string }).error).toBe('NotFound')
-  })
-
-  it('returns published para community governance merged with computed counters', async () => {
-    await createParaStatus(sc, alice, {
-      status: 'Alice status',
-      party: 'Independent',
-      community: 'mx-federal',
-    })
-    await createParaStatus(sc, bob, {
-      status: 'Bob status',
-      party: 'PAN',
-      community: 'mx-federal',
-    })
-
-    const alicePost = await createParaPost(sc, alice, 'gov policy post', {
-      postType: 'policy',
-    })
-    const bobPost = await createParaPost(sc, bob, 'gov matter post', {
-      postType: 'matter',
-    })
-    await createParaPostMeta(sc, alice, alicePost.uri, {
-      postType: 'policy',
-      voteScore: 3,
-      community: 'mx-federal',
-    })
-    await createParaPostMeta(sc, bob, bobPost.uri, {
-      postType: 'matter',
-      voteScore: 2,
-      community: 'mx-federal',
-    })
-    await createCommunityGovernanceRecord(sc, alice, 'mx-federal', {
-      moderators: [
-        {
-          did: alice,
-          handle: 'alice.test',
-          displayName: 'Alice Moderator',
-          role: 'Lead moderator',
-          badge: 'Moderation Lead',
-          capabilities: ['publish_governance_updates'],
-        },
-      ],
-      officials: [
-        {
-          did: bob,
-          handle: 'bob.test',
-          displayName: 'Bob Official',
-          office: 'Official representative',
-          mandate: 'Represents policy consensus.',
-        },
-      ],
-      deputies: [
-        {
-          key: 'policy-deputy',
-          tier: 'Tier II',
-          role: 'Policy Deputy',
-          description: 'Maintains policy queues.',
-          capabilities: ['Triage policy proposals'],
-          activeHolder: {
-            did: bob,
-            handle: 'bob.test',
-            displayName: 'Bob Official',
-          },
-          votes: 12,
-          applicants: [
-            {
-              did: carol,
-              displayName: 'Carol Applicant',
-              appliedAt: new Date().toISOString(),
-              status: 'applied',
-            },
-          ],
-        },
-      ],
-      metadata: {
-        state: 'Federal District',
-        reviewCadence: 'Monthly governance review',
-        matterFlairIds: ['matter_democracia'],
-        policyFlairIds: ['policy_limite_mandatos'],
-      },
-      editHistory: [
-        {
-          id: 'seed-governance',
-          action: 'publish_governance_updates',
-          createdAt: new Date().toISOString(),
-          summary: 'Initial governance seeded.',
-        },
-      ],
-    })
-    await likeParaRecord(sc, bob, alicePost)
-    await network.processAll()
-
-    const governance = await callPara<ParaCommunityGovernanceOutput>(
-      network,
-      'com.para.community.getGovernance',
-      { community: 'mx-federal', limit: 25 },
-      alice,
-    )
-
-    expect(governance.community).toEqual('mx-federal')
-    expect(governance.slug).toEqual('mx-federal')
-    expect(governance.counters.members).toBeGreaterThanOrEqual(2)
-    expect(governance.counters.policyPosts).toBeGreaterThanOrEqual(1)
-    expect(governance.counters.matterPosts).toBeGreaterThanOrEqual(1)
-    expect(governance.moderators).toHaveLength(1)
-    expect(governance.moderators[0]?.did).toEqual(alice)
-    expect(governance.officials).toHaveLength(1)
-    expect(governance.officials[0]?.did).toEqual(bob)
-    expect(governance.deputies).toHaveLength(1)
-    expect(governance.deputies[0]?.key).toEqual('policy-deputy')
-    expect(governance.deputies[0]?.votes).toEqual(12)
-    expect(governance.metadata?.reviewCadence).toEqual(
-      'Monthly governance review',
-    )
-    expect(governance.metadata?.state).toEqual('Federal District')
-    expect(governance.metadata?.matterFlairIds).toEqual(['matter_democracia'])
-    expect(governance.metadata?.policyFlairIds).toEqual([
-      'policy_limite_mandatos',
-    ])
-    expect(governance.editHistory[0]?.id).toEqual('seed-governance')
   })
 
   it('returns empty governance rosters when no governance record exists', async () => {

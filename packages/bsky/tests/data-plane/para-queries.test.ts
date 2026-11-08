@@ -136,16 +136,18 @@ describe('para dataplane queries', () => {
       .where('uri', '=', post.uri)
       .execute()
     const indexedBoard = await network.bsky.db.db
-      .selectFrom('para_community_board')
-      .select(['name', 'slug'])
-      .where('slug', '=', board.slug)
+      .selectFrom('para_community_account')
+      .innerJoin('actor', 'actor.did', 'para_community_account.did')
+      .select(['para_community_account.name', 'actor.handle'])
+      .where('para_community_account.did', '=', board.did)
       .executeTakeFirst()
     const indexedMeta = await network.bsky.db.db
       .selectFrom('para_post_meta')
       .select(['postUri', 'community'])
       .where('postUri', '=', post.uri)
       .executeTakeFirst()
-    expect(indexedBoard).toMatchObject({ name: 'Morena', slug: board.slug })
+    expect(indexedBoard?.name).toBe('Morena')
+    expect(indexedBoard?.handle.split('.')[0]).toBe(board.slug)
     expect(indexedMeta).toMatchObject({
       postUri: post.uri,
       community: board.slug,

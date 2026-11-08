@@ -1,5 +1,10 @@
 import type { HandleString } from '@atproto/syntax'
 import { RecordRef, type SeedClient } from './client.js'
+import {
+  createCommunityAccount,
+  joinCommunity,
+  paraCall,
+} from './community-account.js'
 import { ParaSeedCheckpointRunner } from './para-checkpoints.js'
 import { seedCommunityActivities } from './para-community-activities.js'
 import { seedDemoMemes } from './para-memes.js'
@@ -583,59 +588,25 @@ export default async (sc: SeedClient) => {
     },
   ]
 
+  // Each party is a community account (OD-9) founded by its creator, who is
+  // its owner. Party members join through `act`; the founder already is one.
+  // Bicameral chambers and the officials/deputies lists of the old governance
+  // record have no account equivalent yet; the bridge stage decides them.
   const partyBoards: any[] = []
   for (const p of partyDefs) {
     const creator = users.find((u) => u.short === p.creator)!
-    const board = await creator.agent.com.para.community.createBoard({
+    const account = await createCommunityAccount(paraCall(creator.agent), {
       name: p.name,
       quadrant: 'national',
       description: `Comunidad oficial del partido político ${p.name}. Espacio de deliberación, propuestas y coordinación ciudadana.`,
     })
-    const uri = board.data.uri
-    const rkey = uri.split('/').pop()!
-    const slugBase = p.name
-      .trim()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-    const slug = `${slugBase}-${rkey}`
     partyBoards.push({
       ...p,
-      uri,
-      cid: board.data.cid,
+      uri: account.uri,
+      cid: account.cid,
+      did: account.did,
       creatorDid: creator.did,
-      slug,
-      rkey,
-    })
-  }
-
-  // The official parties deliberate in two chambers, so the bridge gives each
-  // one a Cámara A, a Cámara B and an observer council besides the main room.
-  // `createBoard` does not take `chamberMode`; it is set on the record, as
-  // `status` is below. The other parties and all topic communities stay
-  // unicameral (main room only).
-  const bicameralParties = new Set(['Morena', 'PAN', 'PRI', 'PVEM', 'PT', 'MC'])
-
-  // Activate boards
-  for (const pb of partyBoards) {
-    const creator = users.find((u) => u.did === pb.creatorDid)!
-    const current = await creator.agent.com.atproto.repo.getRecord({
-      repo: pb.creatorDid,
-      collection: 'com.para.community.board',
-      rkey: pb.rkey,
-    })
-    await creator.agent.com.atproto.repo.putRecord({
-      repo: pb.creatorDid,
-      collection: 'com.para.community.board',
-      rkey: pb.rkey,
-      record: {
-        ...(current.data.value as any),
-        status: 'active',
-        ...(bicameralParties.has(pb.name) && { chamberMode: 'bicameral' }),
-      },
-      swapRecord: current.data.cid,
+      slug: account.handle.split('.')[0],
     })
   }
 
@@ -649,89 +620,12 @@ export default async (sc: SeedClient) => {
         // auto-joined by being in party; skip explicit join
       } else {
         try {
-          await user.agent.com.para.community.join({ communityUri: pb.uri })
+          await joinCommunity(paraCall(user.agent), pb.uri)
         } catch {
           /* ignore */
         }
       }
     }
-  }
-
-  // Governance with officials and deputies
-  for (let i = 0; i < partyDefs.length; i++) {
-    const p = partyDefs[i]
-    const pb = partyBoards[i]
-    const creator = users.find((u) => u.short === p.creator)!
-    const deputy1 = users.find((u) => u.short === p.deputy)!
-    const deputy2 = users.find((u) => u.short === p.deputy2)!
-    const current = await creator.agent.com.atproto.repo.getRecord({
-      repo: creator.did,
-      collection: 'com.para.community.governance',
-      rkey: pb.slug,
-    })
-    const currentGov = current.data.value as any
-    await creator.agent.com.atproto.repo.putRecord({
-      repo: creator.did,
-      collection: 'com.para.community.governance',
-      rkey: pb.slug,
-      record: {
-        ...currentGov,
-        updatedAt: createdAt(),
-        officials: [
-          {
-            did: creator.did,
-            office: 'Representante Oficial',
-            mandate: `Mandato como representante oficial de ${p.name}`,
-          },
-        ],
-        deputies: [
-          {
-            key: `deputy-1-${p.name.toLowerCase()}`,
-            tier: 'community',
-            role: 'Diputado Digital',
-            description: `Representante digital de ${p.name}`,
-            capabilities: ['vote', 'propose', 'delegate'],
-            activeHolder: {
-              did: deputy1.did,
-              handle: `${deputy1.short}.test`,
-              displayName: deputy1.name,
-            },
-            votes: 1,
-            applicants: [],
-          },
-          {
-            key: `deputy-2-${p.name.toLowerCase()}`,
-            tier: 'community',
-            role: 'Vocal Ciudadano',
-            description: `Voz ciudadana de ${p.name}`,
-            capabilities: ['vote', 'propose'],
-            activeHolder: {
-              did: deputy2.did,
-              handle: `${deputy2.short}.test`,
-              displayName: deputy2.name,
-            },
-            votes: 1,
-            applicants: [],
-          },
-        ],
-        metadata: {
-          ...currentGov.metadata,
-          state: 'active',
-          lastPublishedAt: createdAt(),
-        },
-        editHistory: [
-          ...(currentGov.editHistory || []),
-          {
-            id: `seed-officials-${p.name.toLowerCase()}`,
-            action: 'set_official_representatives',
-            actorDid: creator.did,
-            createdAt: createdAt(),
-            summary: `Seeded officials for ${p.name}.`,
-          },
-        ],
-      },
-      swapRecord: current.data.cid,
-    })
   }
 
   await checkpoints.flush('partyCommunities')
@@ -890,17 +784,17 @@ export default async (sc: SeedClient) => {
   for (const c of communityCreators) {
     if (!KEPT_COMMUNITIES.includes(c.name)) continue
     const creator = users.find((u) => u.short === c.creator)!
-    const board = await creator.agent.com.para.community.createBoard({
+    const account = await createCommunityAccount(paraCall(creator.agent), {
       name: c.name,
       quadrant: c.quadrant as any,
       region: c.region,
       description: c.description,
     })
     communities.push({
-      uri: board.data.uri,
+      uri: account.uri,
       name: c.name,
       creatorDid: creator.did,
-      cid: board.data.cid,
+      cid: account.cid,
     })
   }
 
@@ -909,7 +803,7 @@ export default async (sc: SeedClient) => {
     for (const comm of communities) {
       if (user.did !== comm.creatorDid) {
         try {
-          await user.agent.com.para.community.join({ communityUri: comm.uri })
+          await joinCommunity(paraCall(user.agent), comm.uri)
         } catch {
           /* ignore */
         }
@@ -2076,7 +1970,11 @@ export default async (sc: SeedClient) => {
       text: 'La reforma energética debe garantizar precios justos de electricidad a todas las familias. La soberanía energética es prioridad nacional — no podemos depender de importaciones cuando tenemos recursos propios.',
       postType: 'policy',
       bskyTags: ['policy', 'energia', 'reforma'],
-      paraFlairs: ['||#Policy', '||#EmpresaPublicaDeAgua', '|#IndustriaEnergetica'],
+      paraFlairs: [
+        '||#Policy',
+        '||#EmpresaPublicaDeAgua',
+        '|#IndustriaEnergetica',
+      ],
     },
     {
       agent: 'alice',
@@ -2236,7 +2134,11 @@ export default async (sc: SeedClient) => {
       text: 'Impulso la modernización del sector energético con inversión privada participativa y transición sustentable. El reto es hacerlo sin dejar atrás a las comunidades petroleras.',
       postType: 'policy',
       bskyTags: ['policy', 'energia', 'modernizacion'],
-      paraFlairs: ['||#Policy', '||#FondoDeAdaptacionAlCambioClimatico', '|#IndustriaEnergetica'],
+      paraFlairs: [
+        '||#Policy',
+        '||#FondoDeAdaptacionAlCambioClimatico',
+        '|#IndustriaEnergetica',
+      ],
     },
     {
       agent: 'carla',
@@ -2265,7 +2167,11 @@ export default async (sc: SeedClient) => {
       text: 'Metas claras de reducción de emisiones para 2030 y fondo de adaptación ecológica. Sin ley, sin compromiso; sin compromiso, sin futuro.',
       postType: 'policy',
       bskyTags: ['policy', 'clima', 'emisiones'],
-      paraFlairs: ['||#Policy', '||#FondoDeAdaptacionAlCambioClimatico', '|#EmisionesCO2'],
+      paraFlairs: [
+        '||#Policy',
+        '||#FondoDeAdaptacionAlCambioClimatico',
+        '|#EmisionesCO2',
+      ],
     },
     {
       agent: 'dan',
@@ -2325,7 +2231,11 @@ export default async (sc: SeedClient) => {
       text: 'Votación digital ciudadana y transparencia total en el gasto público. Cada peso, rastreable. La rendición de cuentas no puede esperar a que alguien más la exija.',
       postType: 'policy',
       bskyTags: ['policy', 'presupuesto', 'digital'],
-      paraFlairs: ['||#Policy', '||#PresupuestoParticipativo', '|#TransparenciaFiscal'],
+      paraFlairs: [
+        '||#Policy',
+        '||#PresupuestoParticipativo',
+        '|#TransparenciaFiscal',
+      ],
     },
     {
       agent: 'fernando',

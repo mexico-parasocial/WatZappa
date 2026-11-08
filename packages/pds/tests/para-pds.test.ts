@@ -5,8 +5,7 @@ import type { AppContext } from '../src/index.js'
 
 /*
  * PARA's own PDS methods (src/api/com/para) and the community write rules the
- * generic repo methods enforce. The network has no AppView, so the AppView
- * calls createBoard makes for its name check are stubbed.
+ * generic repo methods enforce.
  */
 describe('PARA PDS methods', () => {
   let network: TestNetworkNoAppView
@@ -72,15 +71,9 @@ describe('PARA PDS methods', () => {
     })
     alice = sc.dids.alice
     bob = sc.dids.bob
-
-    // The name check's AppView half: no other community exists.
-    jest
-      .spyOn(ctx.bskyAppView!.client, 'call')
-      .mockResolvedValue({ boards: [], canCreateCommunity: true } as never)
   })
 
   afterAll(async () => {
-    jest.restoreAllMocks()
     await network.close()
   })
 
@@ -166,116 +159,72 @@ describe('PARA PDS methods', () => {
   })
 
   describe('communities', () => {
-    let boardUri: string
+    let community: string
+    let communityUri: string
+    let profileCid: string
 
-    it('creates a board with its founding records', async () => {
-      const res = await xrpc('com.para.community.createBoard', {
+    const act = (did: string, input: object) =>
+      xrpc('com.para.community.act', {
+        did,
+        body: { community, ...input },
+      })
+
+    it('founds a community account with its profile and first event', async () => {
+      const res = await xrpc('com.para.community.create', {
         did: alice,
-        body: { name: 'Agua Limpia', quadrant: 'norte', region: 'Jalisco' },
-      })
-      expect(res.status).toBe(200)
-      boardUri = res.body.uri
-      const rkey = boardUri.split('/').pop()
-
-      const board = await network.pds.ctx.actorStore.read(
-        alice as `did:${string}:${string}`,
-        (store) => store.record.getRecord(boardUri as never, null),
-      )
-      expect(board?.value).toMatchObject({
-        name: 'Agua Limpia',
-        status: 'draft',
-        region: 'Jalisco',
-      })
-
-      const membership = await xrpc('com.atproto.repo.getRecord', {
-        params: {
-          repo: alice,
-          collection: 'com.para.community.membership',
-          rkey: rkey!,
+        body: {
+          name: 'Agua Limpia',
+          slug: 'agua-limpia',
+          quadrant: 'norte',
+          region: 'Jalisco',
         },
       })
-      expect(membership.body.value).toMatchObject({
-        membershipState: 'active',
-        roles: ['owner', 'moderator'],
+      expect(res.status).toBe(200)
+      community = res.body.did
+      communityUri = res.body.uri
+      profileCid = res.body.cid
+      expect(communityUri).toBe(
+        `at://${community}/com.para.community.profile/self`,
+      )
+
+      const profile = await xrpc('com.atproto.repo.getRecord', {
+        params: {
+          repo: community,
+          collection: 'com.para.community.profile',
+          rkey: 'self',
+        },
+      })
+      expect(profile.body.value).toMatchObject({
+        name: 'Agua Limpia',
+        region: 'Jalisco',
       })
 
       const events = await xrpc('com.atproto.repo.listRecords', {
-        params: {
-          repo: alice,
-          collection: 'com.para.community.authorityEvent',
-        },
+        params: { repo: community, collection: 'com.para.community.event' },
       })
-      expect(events.body.records).toHaveLength(2)
-    })
-
-    it('replays an identical request without demoting the board', async () => {
-      // Activate the board and add a field createBoard does not manage.
-      const rkey = boardUri.split('/').pop()!
-      const current = await xrpc('com.atproto.repo.getRecord', {
-        params: { repo: alice, collection: 'com.para.community.board', rkey },
-      })
-      await xrpc('com.atproto.repo.putRecord', {
-        did: alice,
-        body: {
-          repo: alice,
-          collection: 'com.para.community.board',
-          rkey,
-          record: {
-            ...current.body.value,
-            status: 'active',
-            chamberMode: 'bicameral',
-          },
-        },
-      })
-
-      const res = await xrpc('com.para.community.createBoard', {
-        did: alice,
-        body: { name: 'Agua Limpia', quadrant: 'norte' },
-      })
-      expect(res.status).toBe(200)
-      expect(res.body.uri).toBe(boardUri)
-
-      const after = await xrpc('com.atproto.repo.getRecord', {
-        params: { repo: alice, collection: 'com.para.community.board', rkey },
-      })
-      expect(after.body.value).toMatchObject({
-        status: 'active',
-        chamberMode: 'bicameral',
-        region: 'Jalisco',
+      expect(events.body.records).toHaveLength(1)
+      expect(events.body.records[0].value).toMatchObject({
+        seq: 1,
+        action: 'community.found',
+        actor: alice,
       })
     })
 
-    it('refuses a name already used by the creator', async () => {
-      const res = await xrpc('com.para.community.createBoard', {
-        did: alice,
-        body: { name: 'agua limpia', quadrant: 'sur' },
-      })
-      expect(res.status).toBe(400)
-      expect(res.body.error).toBe('CommunityNameTaken')
-    })
-
-    it('joins and leaves a community', async () => {
-      const joined = await xrpc('com.para.community.join', {
-        did: bob,
-        body: { communityUri: boardUri },
-      })
+    it('joins and leaves a community through act', async () => {
+      const joined = await act(bob, { action: 'member.join' })
       expect(joined.status).toBe(200)
-      expect(joined.body.membershipState).toBe('active')
-      expect(joined.body.viewerCapabilities).toContain('leave_community')
-
-      const left = await xrpc('com.para.community.leave', {
-        did: bob,
-        body: { communityUri: boardUri },
-      })
-      expect(left.body.membershipState).toBe('left')
+      expect(joined.body.seq).toBe(2)
+      expect((await act(bob, { action: 'member.join' })).body.error).toBe(
+        'InvalidSubject',
+      )
+      const left = await act(bob, { action: 'member.leave' })
+      expect(left.status).toBe(200)
     })
 
-    it('does not let the owner leave', async () => {
-      const res = await xrpc('com.para.community.leave', {
-        did: alice,
-        body: { communityUri: boardUri },
-      })
-      expect(res.body.error).toBe('CommunityOwnerCannotLeave')
+    it('does not let the last owner leave', async () => {
+      const res = await act(alice, { action: 'member.leave' })
+      expect(res.status).toBe(400)
+      expect(res.body.error).toBe('LastOwner')
     })
 
     it('shares content only as an active member', async () => {
@@ -287,82 +236,54 @@ describe('PARA PDS methods', () => {
         xrpc('com.para.community.shareContent', {
           did,
           body: {
-            communityUri: boardUri,
+            communityUri,
             subject: { uri: post.body.uri, cid: post.body.cid },
             contentType: 'post',
           },
         })
 
+      // bob left above.
       expect((await share(bob)).body.error).toBe('CommunityMembershipRequired')
       const shared = await share(alice)
       expect(shared.status).toBe(200)
       expect(shared.body.sharedContent.sharedBy).toBe(alice)
       expect((await share(alice)).body.error).toBe('DuplicateSharedContent')
     })
+
+    it('names a community only by its account profile', async () => {
+      const res = await xrpc('com.para.community.shareContent', {
+        did: alice,
+        body: {
+          communityUri: `at://${alice}/com.para.community.board/3kxyz`,
+          subject: { uri: communityUri, cid: profileCid },
+          contentType: 'post',
+        },
+      })
+      expect(res.status).toBe(400)
+      expect(res.body.message).toMatch(/community account profile/)
+    })
   })
 
-  describe('authority events', () => {
-    const event = (did: string, overrides: object = {}) => ({
-      $type: 'com.para.community.authorityEvent',
-      community: `at://${did}/com.para.community.board/3kxyz`,
-      subject: did,
-      action: 'member.activate',
-      issuer: did,
-      effectiveAt: new Date().toISOString(),
-      version: 1,
-      basis: 'openAdmission',
-      createdAt: new Date().toISOString(),
-      ...overrides,
-    })
-
-    it('refuses an event issued by someone else', async () => {
-      const res = await createRecord(
-        alice,
-        'com.para.community.authorityEvent',
-        event(alice, { issuer: bob }),
-      )
-      expect(res.status).toBe(400)
-      expect(res.body.message).toMatch(/issuer must match/)
-    })
-
-    it('refuses service-generated migration events', async () => {
-      const res = await createRecord(
-        alice,
-        'com.para.community.authorityEvent',
-        event(alice, { basis: 'migration' }),
-      )
-      expect(res.status).toBe(400)
-    })
-
-    it('keeps accepted events immutable', async () => {
-      const created = await createRecord(
-        alice,
-        'com.para.community.authorityEvent',
-        event(alice),
-      )
-      expect(created.status).toBe(200)
-      const rkey = created.body.uri.split('/').pop()
-
-      const deleted = await xrpc('com.atproto.repo.deleteRecord', {
+  describe('retired community records', () => {
+    it.each([
+      'com.para.community.board',
+      'com.para.community.membership',
+      'com.para.community.governance',
+      'com.para.community.roleAcceptance',
+      'com.para.community.authorityEvent',
+      'com.para.community.relation',
+      'com.para.community.sharedContentAction',
+    ])('refuses a new %s record', async (collection) => {
+      const res = await xrpc('com.atproto.repo.createRecord', {
         did: alice,
         body: {
           repo: alice,
-          collection: 'com.para.community.authorityEvent',
-          rkey,
+          collection,
+          record: { $type: collection, createdAt: new Date().toISOString() },
         },
       })
-      expect(deleted.body.message).toMatch(/immutable/)
-
-      const put = await xrpc('com.atproto.repo.putRecord', {
-        did: alice,
-        body: {
-          repo: alice,
-          collection: 'com.para.community.authorityEvent',
-          rkey,
-          record: event(alice, { version: 2 }),
-        },
-      })
-      expect(put.body.message).toMatch(/immutable/)
+      expect(res.status).toBe(400)
+      expect(res.body.error).toBe('LegacyCommunityRecord')
     })
   })
 
