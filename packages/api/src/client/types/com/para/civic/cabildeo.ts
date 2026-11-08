@@ -28,6 +28,10 @@ export interface Main {
   /** Precision tier the author chose. The indexer never stores more precision than the scope allows. */
   geoScope?: 'state' | 'district' | 'city' | 'neighborhood' | (string & {})
   options: CabildeoOption[]
+  /** activity: the community decides to do something, and the winning option can be followed (com.para.civic.followThrough). persuasion: make the case to change positions on the policy named in `subject`. forum: a public conversation for the place given by region, geoScope and geo, with no decision to follow. Existing records default to activity. */
+  kind?: 'activity' | 'persuasion' | 'forum' | (string & {})
+  /** The policy post a persuasion cabildeo is about. */
+  subject?: string
   minQuorum?: number
   /** Minimum tier required to view the cabildeo. Existing records default to public. */
   minimumViewTier?:

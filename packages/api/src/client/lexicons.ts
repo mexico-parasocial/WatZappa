@@ -22926,6 +22926,17 @@ export const schemaDict: Record<string, LexiconDoc> = {
               },
               maxLength: 10,
             },
+            kind: {
+              type: 'string',
+              knownValues: ['activity', 'persuasion', 'forum'],
+              description:
+                'activity: the community decides to do something, and the winning option can be followed (com.para.civic.followThrough). persuasion: make the case to change positions on the policy named in `subject`. forum: a public conversation for the place given by region, geoScope and geo, with no decision to follow. Existing records default to activity.',
+            },
+            subject: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'The policy post a persuasion cabildeo is about.',
+            },
             minQuorum: {
               type: 'integer',
               minimum: 1,
@@ -23769,6 +23780,153 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
+  ComParaCivicFollowThrough: {
+    lexicon: 1,
+    id: 'com.para.civic.followThrough',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "One compromiso: something that must happen because a cabildeo resolved, written by a steward of the cabildeo's community into their own repo. Title, responsible party and first due date are committed when first indexed; later edits are flagged, not served. Everything that changes afterwards is a com.para.civic.followThroughUpdate.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: [
+            'cabildeo',
+            'communityUri',
+            'optionIndex',
+            'title',
+            'createdAt',
+          ],
+          properties: {
+            cabildeo: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'The resolved com.para.civic.cabildeo this follows.',
+            },
+            communityUri: {
+              type: 'string',
+              format: 'at-uri',
+              description:
+                "Board URI. Must be the board the cabildeo's community resolves to.",
+            },
+            optionIndex: {
+              type: 'integer',
+              minimum: 0,
+              description:
+                "The option this follows. Served only when it is the cabildeo's winning option.",
+            },
+            parent: {
+              type: 'string',
+              format: 'at-uri',
+              description:
+                'Another followThrough on the same cabildeo that has no parent itself. Only one level of nesting is served.',
+            },
+            title: {
+              type: 'string',
+              maxLength: 300,
+            },
+            summary: {
+              type: 'string',
+              maxLength: 2000,
+            },
+            responsibleDid: {
+              type: 'string',
+              format: 'did',
+              description: 'The account responsible, when it has one.',
+            },
+            responsibleLabel: {
+              type: 'string',
+              maxLength: 200,
+              description:
+                'An office or body responsible, for example an ayuntamiento.',
+            },
+            dueAt: {
+              type: 'string',
+              format: 'datetime',
+              description:
+                'First due date. A later one is an update with a note.',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCivicFollowThroughUpdate: {
+    lexicon: 1,
+    id: 'com.para.civic.followThroughUpdate',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          'A dated note on a com.para.civic.followThrough: status, progress and evidence. Append-only: the first indexed version is the one served, and a later edit only marks it as edited.',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['subject', 'status', 'occurredAt', 'createdAt'],
+          properties: {
+            subject: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'The com.para.civic.followThrough this updates.',
+            },
+            status: {
+              type: 'string',
+              maxLength: 32,
+              knownValues: [
+                'planned',
+                'in_progress',
+                'completed',
+                'blocked',
+                'abandoned',
+              ],
+            },
+            progress: {
+              type: 'integer',
+              minimum: 0,
+              maximum: 100,
+              description:
+                'Leaf compromisos only. Ignored on one that has children; completed always shows as 100.',
+            },
+            note: {
+              type: 'string',
+              maxLength: 2000,
+              description:
+                'Required when dueAt changes or status is blocked or abandoned.',
+            },
+            evidenceUris: {
+              type: 'array',
+              maxLength: 5,
+              items: {
+                type: 'string',
+                format: 'uri',
+                maxLength: 1000,
+              },
+              description: 'An oficio, an acta, a public portal link.',
+            },
+            dueAt: {
+              type: 'string',
+              format: 'datetime',
+              description: 'A new due date. Shown as a reschedule.',
+            },
+            occurredAt: {
+              type: 'string',
+              format: 'datetime',
+              description: 'When it happened, not when it was written.',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
   ComParaCivicGetCabildeo: {
     lexicon: 1,
     id: 'com.para.civic.getCabildeo',
@@ -23800,6 +23958,45 @@ export const schemaDict: Record<string, LexiconDoc> = {
             },
           },
         },
+      },
+    },
+  },
+  ComParaCivicGetFollowThrough: {
+    lexicon: 1,
+    id: 'com.para.civic.getFollowThrough',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'One compromiso with its children and its full timeline. Not found when it is not served under the rules of com.para.civic.listFollowThrough.',
+        parameters: {
+          type: 'params',
+          required: ['uri'],
+          properties: {
+            uri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['item'],
+            properties: {
+              item: {
+                type: 'ref',
+                ref: 'lex:com.para.civic.listFollowThrough#followThroughView',
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'NotFound',
+          },
+        ],
       },
     },
   },
@@ -24301,6 +24498,295 @@ export const schemaDict: Record<string, LexiconDoc> = {
           },
           cursor: {
             type: 'string',
+          },
+        },
+      },
+    },
+  },
+  ComParaCivicListFollowThrough: {
+    lexicon: 1,
+    id: 'com.para.civic.listFollowThrough',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          "Lists the compromisos of resolved cabildeos. Only records by a steward of the cabildeo's community are served, and only for a cabildeo of kind activity that resolved with a single winning option and met its quorum. Anything else yields nothing, so an empty list does not mean the cabildeo was ignored.",
+        parameters: {
+          type: 'params',
+          properties: {
+            cabildeo: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            community: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'Board URI. Omit to list across all communities.',
+            },
+            status: {
+              type: 'string',
+              knownValues: [
+                'planned',
+                'in_progress',
+                'completed',
+                'blocked',
+                'abandoned',
+              ],
+            },
+            overdue: {
+              type: 'boolean',
+              description:
+                'Only compromisos past their due date and not completed or abandoned.',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 25,
+              description:
+                'Cabildeos per page. The compromisos of one cabildeo are never split across pages.',
+            },
+            cursor: {
+              type: 'string',
+              maxLength: 512,
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['items', 'summaries'],
+            properties: {
+              items: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.civic.listFollowThrough#followThroughView',
+                },
+              },
+              summaries: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.civic.listFollowThrough#summaryView',
+                },
+                description: 'One per cabildeo that appears in items.',
+              },
+              cursor: {
+                type: 'string',
+              },
+            },
+          },
+        },
+      },
+      followThroughView: {
+        type: 'object',
+        required: [
+          'uri',
+          'cid',
+          'author',
+          'cabildeo',
+          'communityUri',
+          'optionIndex',
+          'title',
+          'status',
+          'overdue',
+          'rescheduledCount',
+          'edited',
+          'createdAt',
+        ],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+          },
+          author: {
+            type: 'string',
+            format: 'did',
+          },
+          cabildeo: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          communityUri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          optionIndex: {
+            type: 'integer',
+          },
+          parent: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          title: {
+            type: 'string',
+          },
+          summary: {
+            type: 'string',
+          },
+          responsibleDid: {
+            type: 'string',
+            format: 'did',
+          },
+          responsibleLabel: {
+            type: 'string',
+          },
+          dueAt: {
+            type: 'string',
+            format: 'datetime',
+            description: 'The committed first due date.',
+          },
+          currentDueAt: {
+            type: 'string',
+            format: 'datetime',
+            description: 'The latest due date, after any reschedules.',
+          },
+          rescheduledCount: {
+            type: 'integer',
+          },
+          status: {
+            type: 'string',
+            knownValues: [
+              'planned',
+              'in_progress',
+              'completed',
+              'blocked',
+              'abandoned',
+            ],
+            description: 'For an item with children, derived from them.',
+          },
+          progress: {
+            type: 'integer',
+            description:
+              'Absent when it cannot be determined from what was written.',
+          },
+          overdue: {
+            type: 'boolean',
+          },
+          lastUpdateAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          edited: {
+            type: 'boolean',
+            description:
+              'The record was changed after it was first indexed. The committed version is what is shown.',
+          },
+          withdrawnUpdates: {
+            type: 'integer',
+            description: 'Updates that were written and later deleted.',
+          },
+          children: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.civic.listFollowThrough#followThroughView',
+            },
+          },
+          updates: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.civic.listFollowThrough#updateView',
+            },
+            description: 'Oldest first. Present on getFollowThrough only.',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      updateView: {
+        type: 'object',
+        required: [
+          'uri',
+          'author',
+          'status',
+          'evidenceUris',
+          'edited',
+          'occurredAt',
+          'createdAt',
+        ],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          author: {
+            type: 'string',
+            format: 'did',
+          },
+          status: {
+            type: 'string',
+          },
+          progress: {
+            type: 'integer',
+          },
+          note: {
+            type: 'string',
+          },
+          evidenceUris: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+          dueAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          edited: {
+            type: 'boolean',
+          },
+          occurredAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      summaryView: {
+        type: 'object',
+        required: ['cabildeo', 'total', 'completed', 'overdue', 'abandoned'],
+        properties: {
+          cabildeo: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          total: {
+            type: 'integer',
+            description: 'Top-level compromisos.',
+          },
+          completed: {
+            type: 'integer',
+          },
+          overdue: {
+            type: 'integer',
+          },
+          abandoned: {
+            type: 'integer',
+          },
+          progress: {
+            type: 'integer',
+            description:
+              'Absent unless every active compromiso has a determinable progress.',
+          },
+          nextDueAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          lastUpdateAt: {
+            type: 'string',
+            format: 'datetime',
           },
         },
       },
@@ -25182,50 +25668,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
-  ComParaCommunityAcceptDraftInvite: {
-    lexicon: 1,
-    id: 'com.para.community.acceptDraftInvite',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          'Accept an invitation to a draft community and track founder quorum. Some implementations require the creator to finalize activation.',
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['communityUri'],
-            properties: {
-              communityUri: {
-                type: 'string',
-                format: 'at-uri',
-              },
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['status', 'memberCount'],
-            properties: {
-              status: {
-                type: 'string',
-              },
-              memberCount: {
-                type: 'integer',
-              },
-              requiresCreatorFinalization: {
-                type: 'boolean',
-                description:
-                  'The accepted quorum is complete and the creator must sign activation.',
-              },
-            },
-          },
-        },
-      },
-    },
-  },
   ComParaCommunityActivityLedgerEntry: {
     lexicon: 1,
     id: 'com.para.community.activityLedgerEntry',
@@ -25329,216 +25771,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
               maxLength: 120,
               description: 'For sale income: which item was sold.',
             },
-          },
-        },
-      },
-    },
-  },
-  ComParaCommunityAuthorityEvent: {
-    lexicon: 1,
-    id: 'com.para.community.authorityEvent',
-    defs: {
-      main: {
-        type: 'record',
-        description:
-          'An append-only, verifiable change to community membership or organizational authority. A later event is required to reverse an event.',
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: [
-            'community',
-            'subject',
-            'action',
-            'issuer',
-            'effectiveAt',
-            'version',
-            'basis',
-            'createdAt',
-          ],
-          properties: {
-            community: {
-              type: 'string',
-              format: 'at-uri',
-            },
-            subject: {
-              type: 'string',
-              format: 'did',
-            },
-            action: {
-              type: 'string',
-              knownValues: [
-                'member.activate',
-                'member.suspend',
-                'member.reinstate',
-                'member.remove',
-                'member.block',
-                'moderator.grant',
-                'moderator.revoke',
-                'moderator.resign',
-                'owner.grant',
-                'owner.revoke',
-              ],
-            },
-            issuer: {
-              type: 'string',
-              format: 'did',
-            },
-            effectiveAt: {
-              type: 'string',
-              format: 'datetime',
-            },
-            expiresAt: {
-              type: 'string',
-              format: 'datetime',
-            },
-            predecessor: {
-              type: 'string',
-              format: 'at-uri',
-            },
-            version: {
-              type: 'integer',
-              minimum: 1,
-            },
-            basis: {
-              type: 'string',
-              knownValues: [
-                'openAdmission',
-                'assemblyDecision',
-                'ownerAppointment',
-                'ownerTransfer',
-                'foundingTransition',
-                'resignation',
-                'expiry',
-                'migration',
-              ],
-            },
-            evidence: {
-              type: 'string',
-              format: 'at-uri',
-            },
-            createdAt: {
-              type: 'string',
-              format: 'datetime',
-            },
-          },
-        },
-      },
-    },
-  },
-  ComParaCommunityBoard: {
-    lexicon: 1,
-    id: 'com.para.community.board',
-    defs: {
-      main: {
-        type: 'record',
-        description:
-          'A repository record acting as the anchor for a PARA community, linking the spatial map quadrant to the underlying ATProto group chats.',
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: [
-            'name',
-            'quadrant',
-            'delegatesChatId',
-            'subdelegatesChatId',
-            'createdAt',
-            'status',
-          ],
-          properties: {
-            name: {
-              type: 'string',
-              minLength: 1,
-              maxGraphemes: 128,
-              maxLength: 1280,
-            },
-            description: {
-              type: 'string',
-              maxLength: 3000,
-            },
-            quadrant: {
-              type: 'string',
-              description:
-                'Spatial mapping token indicating the nonant or 25th block.',
-              maxLength: 64,
-            },
-            region: {
-              type: 'string',
-              description:
-                "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
-              maxGraphemes: 64,
-              maxLength: 128,
-            },
-            geo: {
-              type: 'ref',
-              ref: 'lex:com.para.community.board#geoPoint',
-            },
-            delegatesChatId: {
-              type: 'string',
-              description:
-                'Reference to the 270-member bounded bsky group chat.',
-            },
-            subdelegatesChatId: {
-              type: 'string',
-              description:
-                'Reference to the 30-member bounded public-view bsky group chat.',
-            },
-            status: {
-              type: 'string',
-              description: 'The lifecycle status of the community.',
-              knownValues: ['draft', 'active'],
-            },
-            founderStarterPackUri: {
-              type: 'string',
-              format: 'at-uri',
-              description:
-                'Reference to the starter pack used to track the founding member quorum.',
-            },
-            visibility: {
-              type: 'string',
-              description: 'Visibility of the community.',
-              knownValues: ['open', 'closed', 'secret'],
-              default: 'open',
-            },
-            chamberMode: {
-              type: 'string',
-              description: 'Deliberation structure.',
-              knownValues: ['unicameral', 'bicameral'],
-              default: 'unicameral',
-            },
-            governanceMode: {
-              type: 'string',
-              description: 'Governance model for this community.',
-              knownValues: ['hierarchical', 'horizontal'],
-              default: 'hierarchical',
-            },
-            admissionMode: {
-              type: 'string',
-              description: 'How an account becomes an active member.',
-              knownValues: ['open', 'assembly_approval'],
-              default: 'open',
-            },
-            createdAt: {
-              type: 'string',
-              format: 'datetime',
-            },
-          },
-        },
-      },
-      geoPoint: {
-        type: 'object',
-        description:
-          'Geographic coordinates in E7 (degrees × 10⁷) for map placement.',
-        required: ['latE7', 'lngE7'],
-        properties: {
-          latE7: {
-            type: 'integer',
-            minimum: -900000000,
-            maximum: 900000000,
-          },
-          lngE7: {
-            type: 'integer',
-            minimum: -1800000000,
-            maximum: 1800000000,
           },
         },
       },
@@ -27219,94 +27451,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
           roundDurationDays: {
             type: 'integer',
             description: 'Duration of each quadratic funding round',
-          },
-        },
-      },
-    },
-  },
-  ComParaCommunityCreateBoard: {
-    lexicon: 1,
-    id: 'com.para.community.createBoard',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          'Creates a PARA community board. Automatically instantiates the underlying general (270) and subdelegate (30) chats in the bsky chat server. Generates a founder starter pack draft.',
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['name', 'quadrant'],
-            properties: {
-              name: {
-                type: 'string',
-                minLength: 1,
-                maxGraphemes: 128,
-                maxLength: 1280,
-              },
-              quadrant: {
-                type: 'string',
-                maxLength: 64,
-              },
-              region: {
-                type: 'string',
-                description:
-                  "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
-                maxGraphemes: 64,
-                maxLength: 128,
-              },
-              description: {
-                type: 'string',
-                maxLength: 3000,
-              },
-              founderStarterPackName: {
-                type: 'string',
-                maxLength: 3000,
-                description:
-                  'User-provided name for the internal starter pack tracking founding members. If absent, a default name will be generated.',
-              },
-              governanceMode: {
-                type: 'string',
-                knownValues: ['hierarchical', 'horizontal'],
-                description:
-                  'Governance model for this community. Hierarchical uses owner/moderator roles. Horizontal uses rotating facilitators and assembly votes. Defaults to hierarchical.',
-              },
-              admissionMode: {
-                type: 'string',
-                knownValues: ['open', 'assembly_approval'],
-                description:
-                  'Open communities admit immediately; assembly approval communities create a pending membership request.',
-              },
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['uri', 'cid', 'delegatesChatId', 'subdelegatesChatId'],
-            properties: {
-              uri: {
-                type: 'string',
-                format: 'at-uri',
-              },
-              cid: {
-                type: 'string',
-                format: 'cid',
-              },
-              delegatesChatId: {
-                type: 'string',
-              },
-              subdelegatesChatId: {
-                type: 'string',
-              },
-              founderStarterPackUri: {
-                type: 'string',
-                format: 'at-uri',
-                description:
-                  'Reference to the newly created founder starter pack. Present if status is draft.',
-              },
-            },
           },
         },
       },
@@ -29817,91 +29961,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
-  ComParaCommunityGovernance: {
-    lexicon: 1,
-    id: 'com.para.community.governance',
-    defs: {
-      main: {
-        type: 'record',
-        description:
-          'A published governance record for a PARA community. This is the canonical contract for moderators, officials, deputy roles, and governance metadata exposed to clients.',
-        key: 'any',
-        record: {
-          type: 'object',
-          required: [
-            'community',
-            'slug',
-            'createdAt',
-            'updatedAt',
-            'moderators',
-            'officials',
-            'deputies',
-          ],
-          properties: {
-            community: {
-              type: 'string',
-              maxGraphemes: 128,
-              maxLength: 256,
-            },
-            communityId: {
-              type: 'string',
-              maxGraphemes: 128,
-              maxLength: 256,
-            },
-            slug: {
-              type: 'string',
-              maxGraphemes: 128,
-              maxLength: 128,
-            },
-            createdAt: {
-              type: 'string',
-              format: 'datetime',
-            },
-            updatedAt: {
-              type: 'string',
-              format: 'datetime',
-            },
-            moderators: {
-              type: 'array',
-              items: {
-                type: 'ref',
-                ref: 'lex:com.para.community.defs#moderatorView',
-              },
-            },
-            officials: {
-              type: 'array',
-              items: {
-                type: 'ref',
-                ref: 'lex:com.para.community.defs#officialView',
-              },
-            },
-            deputies: {
-              type: 'array',
-              items: {
-                type: 'ref',
-                ref: 'lex:com.para.community.defs#deputyRoleView',
-              },
-            },
-            metadata: {
-              type: 'ref',
-              ref: 'lex:com.para.community.defs#metadata',
-            },
-            roleRotationRules: {
-              type: 'ref',
-              ref: 'lex:com.para.community.governanceConfig#roleRotationRules',
-            },
-            editHistory: {
-              type: 'array',
-              items: {
-                type: 'ref',
-                ref: 'lex:com.para.community.defs#historyEntry',
-              },
-            },
-          },
-        },
-      },
-    },
-  },
   ComParaCommunityGovernanceConfig: {
     lexicon: 1,
     id: 'com.para.community.governanceConfig',
@@ -30186,150 +30245,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
             createdAt: {
               type: 'string',
               format: 'datetime',
-            },
-          },
-        },
-      },
-    },
-  },
-  ComParaCommunityJoin: {
-    lexicon: 1,
-    id: 'com.para.community.join',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          "Joins a PARA community board by creating or reactivating the caller's membership record.",
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['communityUri'],
-            properties: {
-              communityUri: {
-                type: 'string',
-                format: 'at-uri',
-                description:
-                  'URI of the com.para.community.board record to join.',
-              },
-              source: {
-                type: 'string',
-                maxLength: 64,
-                maxGraphemes: 64,
-                description: 'Optional source label for how the viewer joined.',
-              },
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'ref',
-            ref: 'lex:com.para.community.join#output',
-          },
-        },
-      },
-      output: {
-        type: 'object',
-        required: [
-          'uri',
-          'cid',
-          'communityUri',
-          'membershipState',
-          'viewerCapabilities',
-        ],
-        properties: {
-          uri: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          cid: {
-            type: 'string',
-            format: 'cid',
-          },
-          communityUri: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          membershipState: {
-            type: 'string',
-            knownValues: ['pending', 'active', 'left', 'removed', 'blocked'],
-          },
-          viewerCapabilities: {
-            type: 'array',
-            items: {
-              type: 'string',
-              maxGraphemes: 64,
-              maxLength: 128,
-            },
-          },
-        },
-      },
-    },
-  },
-  ComParaCommunityLeave: {
-    lexicon: 1,
-    id: 'com.para.community.leave',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          "Leaves a PARA community board by marking the caller's membership record as left.",
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['communityUri'],
-            properties: {
-              communityUri: {
-                type: 'string',
-                format: 'at-uri',
-                description:
-                  'URI of the com.para.community.board record to leave.',
-              },
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'ref',
-            ref: 'lex:com.para.community.leave#output',
-          },
-        },
-      },
-      output: {
-        type: 'object',
-        required: [
-          'uri',
-          'cid',
-          'communityUri',
-          'membershipState',
-          'viewerCapabilities',
-        ],
-        properties: {
-          uri: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          cid: {
-            type: 'string',
-            format: 'cid',
-          },
-          communityUri: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          membershipState: {
-            type: 'string',
-            knownValues: ['pending', 'active', 'left', 'removed', 'blocked'],
-          },
-          viewerCapabilities: {
-            type: 'array',
-            items: {
-              type: 'string',
-              maxGraphemes: 64,
-              maxLength: 128,
             },
           },
         },
@@ -31782,99 +31697,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
-  ComParaCommunityMembership: {
-    lexicon: 1,
-    id: 'com.para.community.membership',
-    defs: {
-      main: {
-        type: 'record',
-        description: 'Membership state of an actor in a Para community.',
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: ['community', 'membershipState', 'joinedAt'],
-          properties: {
-            community: {
-              type: 'string',
-              format: 'at-uri',
-              description: 'Reference to the community board record.',
-            },
-            membershipState: {
-              type: 'string',
-              knownValues: ['pending', 'active', 'left', 'removed', 'blocked'],
-            },
-            roles: {
-              type: 'array',
-              maxLength: 16,
-              items: {
-                type: 'string',
-                maxLength: 64,
-                maxGraphemes: 64,
-              },
-            },
-            roleAssignments: {
-              type: 'array',
-              maxLength: 16,
-              description:
-                'Structured role assignments with expiration and ratification for horizontal governance.',
-              items: {
-                type: 'ref',
-                ref: 'lex:com.para.community.membership#roleAssignment',
-              },
-            },
-            source: {
-              type: 'string',
-              maxLength: 64,
-              maxGraphemes: 64,
-            },
-            chamberAssignment: {
-              type: 'string',
-              description:
-                'Assigned chamber for bicameral deliberation. Null until assigned by sortition.',
-              knownValues: ['A', 'B'],
-            },
-            joinedAt: {
-              type: 'string',
-              format: 'datetime',
-            },
-            leftAt: {
-              type: 'string',
-              format: 'datetime',
-            },
-          },
-        },
-      },
-      roleAssignment: {
-        type: 'object',
-        required: ['role'],
-        properties: {
-          role: {
-            type: 'string',
-            maxLength: 64,
-            maxGraphemes: 64,
-          },
-          validFrom: {
-            type: 'string',
-            format: 'datetime',
-            description:
-              'When this role assignment becomes valid. Defaults to creation time.',
-          },
-          validUntil: {
-            type: 'string',
-            format: 'datetime',
-            description:
-              'When this role assignment expires. Required for horizontal governance rotations.',
-          },
-          ratifiedBy: {
-            type: 'string',
-            format: 'at-uri',
-            description:
-              'Reference to an approved com.para.community.decision or com.para.civic.cabildeo record that ratified this role.',
-          },
-        },
-      },
-    },
-  },
   ComParaCommunityProposal: {
     lexicon: 1,
     id: 'com.para.community.proposal',
@@ -31914,207 +31736,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
             protectedAction: {
               type: 'ref',
               ref: 'lex:com.para.community.defs#protectedAction',
-            },
-            createdAt: {
-              type: 'string',
-              format: 'datetime',
-            },
-          },
-        },
-      },
-    },
-  },
-  ComParaCommunityRelation: {
-    lexicon: 1,
-    id: 'com.para.community.relation',
-    defs: {
-      main: {
-        type: 'record',
-        description:
-          'A member or steward-authored relation between two PARA community boards.',
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: [
-            'parentCommunityUri',
-            'childCommunityUri',
-            'relation',
-            'createdAt',
-          ],
-          properties: {
-            parentCommunityUri: {
-              type: 'string',
-              format: 'at-uri',
-            },
-            childCommunityUri: {
-              type: 'string',
-              format: 'at-uri',
-            },
-            relation: {
-              type: 'string',
-              knownValues: ['parentChild'],
-            },
-            createdAt: {
-              type: 'string',
-              format: 'datetime',
-            },
-          },
-        },
-      },
-    },
-  },
-  ComParaCommunityRemoveSharedContent: {
-    lexicon: 1,
-    id: 'com.para.community.removeSharedContent',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          'Hides a sharedContent wrapper from a community feed by creating a moderation action record.',
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'ref',
-            ref: 'lex:com.para.community.removeSharedContent#input',
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'ref',
-            ref: 'lex:com.para.community.removeSharedContent#output',
-          },
-        },
-      },
-      input: {
-        type: 'object',
-        required: ['sharedContent', 'communityUri'],
-        properties: {
-          sharedContent: {
-            type: 'ref',
-            ref: 'lex:com.atproto.repo.strongRef',
-          },
-          communityUri: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          note: {
-            type: 'string',
-            maxGraphemes: 300,
-            maxLength: 3000,
-          },
-        },
-      },
-      output: {
-        type: 'object',
-        required: ['uri', 'cid', 'action'],
-        properties: {
-          uri: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          cid: {
-            type: 'string',
-            format: 'cid',
-          },
-          action: {
-            type: 'ref',
-            ref: 'lex:com.para.community.defs#sharedContentActionView',
-          },
-        },
-      },
-    },
-  },
-  ComParaCommunityRestoreSharedContent: {
-    lexicon: 1,
-    id: 'com.para.community.restoreSharedContent',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          'Restores a previously removed sharedContent wrapper by creating a moderation action record.',
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'ref',
-            ref: 'lex:com.para.community.restoreSharedContent#input',
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'ref',
-            ref: 'lex:com.para.community.restoreSharedContent#output',
-          },
-        },
-      },
-      input: {
-        type: 'object',
-        required: ['sharedContent', 'communityUri'],
-        properties: {
-          sharedContent: {
-            type: 'ref',
-            ref: 'lex:com.atproto.repo.strongRef',
-          },
-          communityUri: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          note: {
-            type: 'string',
-            maxGraphemes: 300,
-            maxLength: 3000,
-          },
-        },
-      },
-      output: {
-        type: 'object',
-        required: ['uri', 'cid', 'action'],
-        properties: {
-          uri: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          cid: {
-            type: 'string',
-            format: 'cid',
-          },
-          action: {
-            type: 'ref',
-            ref: 'lex:com.para.community.defs#sharedContentActionView',
-          },
-        },
-      },
-    },
-  },
-  ComParaCommunityRoleAcceptance: {
-    lexicon: 1,
-    id: 'com.para.community.roleAcceptance',
-    defs: {
-      main: {
-        type: 'record',
-        description:
-          "A member's explicit acceptance of an offered community role.",
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: ['community', 'role', 'subject', 'offer', 'createdAt'],
-          properties: {
-            community: {
-              type: 'string',
-              format: 'at-uri',
-            },
-            role: {
-              type: 'string',
-              knownValues: ['moderator', 'owner'],
-            },
-            subject: {
-              type: 'string',
-              format: 'did',
-            },
-            offer: {
-              type: 'string',
-              format: 'at-uri',
             },
             createdAt: {
               type: 'string',
@@ -32277,45 +31898,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
             },
             sortRank: {
               type: 'integer',
-            },
-            createdAt: {
-              type: 'string',
-              format: 'datetime',
-            },
-          },
-        },
-      },
-    },
-  },
-  ComParaCommunitySharedContentAction: {
-    lexicon: 1,
-    id: 'com.para.community.sharedContentAction',
-    defs: {
-      main: {
-        type: 'record',
-        description:
-          'A community moderation or audit action against a member-owned shared content wrapper.',
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: ['sharedContent', 'communityUri', 'action', 'createdAt'],
-          properties: {
-            sharedContent: {
-              type: 'ref',
-              ref: 'lex:com.atproto.repo.strongRef',
-            },
-            communityUri: {
-              type: 'string',
-              format: 'at-uri',
-            },
-            action: {
-              type: 'string',
-              knownValues: ['remove', 'restore', 'pin', 'unpin'],
-            },
-            note: {
-              type: 'string',
-              maxGraphemes: 300,
-              maxLength: 3000,
             },
             createdAt: {
               type: 'string',
@@ -44990,7 +44572,10 @@ export const ids = {
   ComParaCivicCastVote: 'com.para.civic.castVote',
   ComParaCivicDefs: 'com.para.civic.defs',
   ComParaCivicDelegation: 'com.para.civic.delegation',
+  ComParaCivicFollowThrough: 'com.para.civic.followThrough',
+  ComParaCivicFollowThroughUpdate: 'com.para.civic.followThroughUpdate',
   ComParaCivicGetCabildeo: 'com.para.civic.getCabildeo',
+  ComParaCivicGetFollowThrough: 'com.para.civic.getFollowThrough',
   ComParaCivicGetOpenQuestionThread: 'com.para.civic.getOpenQuestionThread',
   ComParaCivicGetPolicyCommunityVotes: 'com.para.civic.getPolicyCommunityVotes',
   ComParaCivicGetPolicyTally: 'com.para.civic.getPolicyTally',
@@ -44998,6 +44583,7 @@ export const ids = {
   ComParaCivicListCabildeos: 'com.para.civic.listCabildeos',
   ComParaCivicListDelegationCandidates:
     'com.para.civic.listDelegationCandidates',
+  ComParaCivicListFollowThrough: 'com.para.civic.listFollowThrough',
   ComParaCivicOpenQuestion: 'com.para.civic.openQuestion',
   ComParaCivicOpenQuestionVote: 'com.para.civic.openQuestionVote',
   ComParaCivicPosition: 'com.para.civic.position',
@@ -45010,10 +44596,7 @@ export const ids = {
   ComParaCollectionGetCollection: 'com.para.collection.getCollection',
   ComParaCollectionListCollections: 'com.para.collection.listCollections',
   ComParaCollectionUpdateCollection: 'com.para.collection.updateCollection',
-  ComParaCommunityAcceptDraftInvite: 'com.para.community.acceptDraftInvite',
   ComParaCommunityActivityLedgerEntry: 'com.para.community.activityLedgerEntry',
-  ComParaCommunityAuthorityEvent: 'com.para.community.authorityEvent',
-  ComParaCommunityBoard: 'com.para.community.board',
   ComParaCommunityBriefingPack: 'com.para.community.briefingPack',
   ComParaCommunityCivicTree: 'com.para.community.civicTree',
   ComParaCommunityCivicTreeAcceptSuggestion:
@@ -45052,7 +44635,6 @@ export const ids = {
     'com.para.community.civicTree.voteContribution',
   ComParaCommunityCivicTreeVote: 'com.para.community.civicTreeVote',
   ComParaCommunityConstitution: 'com.para.community.constitution',
-  ComParaCommunityCreateBoard: 'com.para.community.createBoard',
   ComParaCommunityCreateBriefingPack: 'com.para.community.createBriefingPack',
   ComParaCommunityDecision: 'com.para.community.decision',
   ComParaCommunityDefs: 'com.para.community.defs',
@@ -45070,11 +44652,8 @@ export const ids = {
   ComParaCommunityGetCivicTree: 'com.para.community.getCivicTree',
   ComParaCommunityGetGovernance: 'com.para.community.getGovernance',
   ComParaCommunityGetTallySimulation: 'com.para.community.getTallySimulation',
-  ComParaCommunityGovernance: 'com.para.community.governance',
   ComParaCommunityGovernanceConfig: 'com.para.community.governanceConfig',
   ComParaCommunityIntensity: 'com.para.community.intensity',
-  ComParaCommunityJoin: 'com.para.community.join',
-  ComParaCommunityLeave: 'com.para.community.leave',
   ComParaCommunityListActivities: 'com.para.community.listActivities',
   ComParaCommunityListBoards: 'com.para.community.listBoards',
   ComParaCommunityListBriefingPacks: 'com.para.community.listBriefingPacks',
@@ -45094,16 +44673,9 @@ export const ids = {
   ComParaCommunityListSharedContent: 'com.para.community.listSharedContent',
   ComParaCommunityListVotes: 'com.para.community.listVotes',
   ComParaCommunityListWikiPages: 'com.para.community.listWikiPages',
-  ComParaCommunityMembership: 'com.para.community.membership',
   ComParaCommunityProposal: 'com.para.community.proposal',
-  ComParaCommunityRelation: 'com.para.community.relation',
-  ComParaCommunityRemoveSharedContent: 'com.para.community.removeSharedContent',
-  ComParaCommunityRestoreSharedContent:
-    'com.para.community.restoreSharedContent',
-  ComParaCommunityRoleAcceptance: 'com.para.community.roleAcceptance',
   ComParaCommunityShareContent: 'com.para.community.shareContent',
   ComParaCommunitySharedContent: 'com.para.community.sharedContent',
-  ComParaCommunitySharedContentAction: 'com.para.community.sharedContentAction',
   ComParaCommunitySocialActivity: 'com.para.community.socialActivity',
   ComParaCommunityUpdateBriefingPack: 'com.para.community.updateBriefingPack',
   ComParaCommunityVote: 'com.para.community.vote',

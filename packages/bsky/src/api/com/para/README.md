@@ -45,7 +45,7 @@ Implementation split follows the standard atproto topology:
 | com.para.alpha.createInvite / requestAccess / getAccess | external (frontend) |
 | com.para.alpha.getRolloutStatus | external (frontend, unauthenticated) |
 | com.para.civic.castVote | external (frontend) — writes a `com.para.civic.vote` repo record |
-| com.para.community.{join, leave, acceptDraftInvite, createBoard, createBriefingPack, updateBriefingPack, shareContent, removeSharedContent, restoreSharedContent} | `dev-env/src/seed/para-demo.ts` (createBoard, join); rest external (frontend) |
+| com.para.community.{create, act, createBriefingPack, updateBriefingPack, shareContent} | `dev-env/src/seed/community-account.ts` (create, act); rest external (frontend) |
 
 ## Deliberately unimplemented (see lexicon-exceptions.json)
 

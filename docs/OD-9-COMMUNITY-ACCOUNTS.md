@@ -9,7 +9,7 @@ community an account with its own `did:plc` and repo, which is the only place
 its authority is written, through one PDS endpoint that checks permission at
 write time.
 
-**Status:** accepted, 2026-11-04; phase 5 in progress. Decided with the
+**Status:** accepted, 2026-11-04; phase 5 implemented, unreleased. Decided with the
 product owner: communities get their own `did:plc`; there is no migration of
 existing boards (fresh start); horizontal mode and assembly-approval admission
 stay hidden until a trusted tally verifier exists; permissioned spaces may be
@@ -492,7 +492,13 @@ document unless noted.
      `board`, `membership` or `authorityEvent` records, and the stale
      `communities.json` is gone. Every community is unicameral until chambers
      have an account field.
-   - **Stage 4, lexicons:** retire the NSIDs, regenerate clients.
+   - **Stage 4, lexicons** (same branch). The seven record lexicons and six
+     procedures are deleted from `lexicons/`, from the four packages'
+     `lexicons.json`, from the regenerated `@atproto/api` client and from the
+     lexicon reference. The PDS keeps refusing new records of those types
+     (`LEGACY_COMMUNITY_COLLECTIONS`), now without a lexicon behind them.
+   - **Still open for phase 5:** release together with PARA and the bridge,
+     and re-accept quarter plan P0 on the new model. Neither is a code change.
 6. **Cleanup.**
    - Indexer side effects moved to daemon jobs.
    - Remaining `@ts-nocheck` removed from community plugins.

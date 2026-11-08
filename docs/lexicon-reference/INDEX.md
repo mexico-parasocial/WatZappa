@@ -76,8 +76,6 @@ Generated from [`lexicons/com/para`](https://github.com/mexico-parasocial/WatZap
 
 | Lexicon | Type | Description |
 |---|---|---|
-| [[com-para-community-acceptdraftinvite|com.para.community.acceptDraftInvite]] | `procedure` |  |
-| [[com-para-community-board|com.para.community.board]] | `record` |  |
 | [[com-para-community-briefingpack|com.para.community.briefingPack]] | `record` |  |
 | [[com-para-community-civictree|com.para.community.civicTree]] | `record` |  |
 | [[com-para-community-civictree-acceptsuggestion|com.para.community.civicTree.acceptSuggestion]] | `procedure` |  |
@@ -102,7 +100,6 @@ Generated from [`lexicons/com/para`](https://github.com/mexico-parasocial/WatZap
 | [[com-para-community-civictree-votecontribution|com.para.community.civicTree.voteContribution]] | `procedure` |  |
 | [[com-para-community-civictreevote|com.para.community.civicTreeVote]] | `record` |  |
 | [[com-para-community-constitution|com.para.community.constitution]] | `record` |  |
-| [[com-para-community-createboard|com.para.community.createBoard]] | `procedure` |  |
 | [[com-para-community-createbriefingpack|com.para.community.createBriefingPack]] | `procedure` |  |
 | [[com-para-community-decision|com.para.community.decision]] | `record` |  |
 | [[com-para-community-defs|com.para.community.defs]] | `unknown` |  |
@@ -117,11 +114,8 @@ Generated from [`lexicons/com/para`](https://github.com/mexico-parasocial/WatZap
 | [[com-para-community-getcivictree|com.para.community.getCivicTree]] | `query` |  |
 | [[com-para-community-getgovernance|com.para.community.getGovernance]] | `query` |  |
 | [[com-para-community-gettallysimulation|com.para.community.getTallySimulation]] | `query` |  |
-| [[com-para-community-governance|com.para.community.governance]] | `record` |  |
 | [[com-para-community-governanceconfig|com.para.community.governanceConfig]] | `record` |  |
 | [[com-para-community-intensity|com.para.community.intensity]] | `record` |  |
-| [[com-para-community-join|com.para.community.join]] | `procedure` |  |
-| [[com-para-community-leave|com.para.community.leave]] | `procedure` |  |
 | [[com-para-community-listboards|com.para.community.listBoards]] | `query` |  |
 | [[com-para-community-listbriefingpacks|com.para.community.listBriefingPacks]] | `query` |  |
 | [[com-para-community-listchildcommunities|com.para.community.listChildCommunities]] | `query` |  |
@@ -136,14 +130,9 @@ Generated from [`lexicons/com/para`](https://github.com/mexico-parasocial/WatZap
 | [[com-para-community-listposts|com.para.community.listPosts]] | `query` |  |
 | [[com-para-community-listsharedcontent|com.para.community.listSharedContent]] | `query` |  |
 | [[com-para-community-listvotes|com.para.community.listVotes]] | `query` |  |
-| [[com-para-community-membership|com.para.community.membership]] | `record` |  |
 | [[com-para-community-proposal|com.para.community.proposal]] | `record` |  |
-| [[com-para-community-relation|com.para.community.relation]] | `record` |  |
-| [[com-para-community-removesharedcontent|com.para.community.removeSharedContent]] | `procedure` |  |
-| [[com-para-community-restoresharedcontent|com.para.community.restoreSharedContent]] | `procedure` |  |
 | [[com-para-community-sharecontent|com.para.community.shareContent]] | `procedure` |  |
 | [[com-para-community-sharedcontent|com.para.community.sharedContent]] | `record` |  |
-| [[com-para-community-sharedcontentaction|com.para.community.sharedContentAction]] | `record` |  |
 | [[com-para-community-updatebriefingpack|com.para.community.updateBriefingPack]] | `procedure` |  |
 | [[com-para-community-vote|com.para.community.vote]] | `record` |  |
 
