@@ -8,13 +8,13 @@ import {
 import { ParaSeedCheckpointRunner } from './para-checkpoints.js'
 import { seedCommunityActivities } from './para-community-activities.js'
 import { seedDemoMemes } from './para-memes.js'
-import { seedTid } from './seed-tid.js'
 import {
   EXTRA_POLICIES,
   LEGACY_POLICY_STANCE,
   castPolicyVotes,
   planPolicyVotes,
 } from './para-policies.js'
+import { seedTid } from './seed-tid.js'
 
 export default async (sc: SeedClient) => {
   const checkpoints = new ParaSeedCheckpointRunner(sc.network)
@@ -2850,131 +2850,6 @@ export default async (sc: SeedClient) => {
   await checkpoints.flush('highlights')
 
   // ═══════════════════════════════════════════════════════════════════════
-  //  LIVE SESSIONS  (3 active cabildeo live sessions)
-  // ═══════════════════════════════════════════════════════════════════════
-
-  // Create live session records for 3 deliberating cabildeos
-  const liveCabildeoIdxs = [6, 8, 10] // Salario, Policía, Bilingües
-  for (const cabIdx of liveCabildeoIdxs) {
-    const cab = cabildeos[cabIdx]
-    const creator = users.find((u) => u.short === cab.creator)!
-    try {
-      await creator.agent.com.atproto.repo.createRecord({
-        repo: creator.did,
-        collection: 'com.para.civic.liveSession',
-        record: {
-          $type: 'com.para.civic.liveSession',
-          cabildeo: cab.uri,
-          title: `Sesión en vivo: ${cab.title}`,
-          description:
-            'Debate ciudadano en tiempo real sobre esta propuesta. Participa con tu posición y voto.',
-          startedAt: createdAt(),
-          status: 'active',
-          maxParticipants: 500,
-          createdAt: createdAt(),
-        },
-      })
-    } catch {
-      /* ignore */
-    }
-  }
-
-  // Put live presence for some participants
-  const liveParticipants = [
-    {
-      cabIdx: 6,
-      users: [
-        'alice',
-        'bob',
-        'carla',
-        'eva',
-        'rodrigo',
-        'fernando',
-        'hector',
-        'pablo',
-      ],
-    },
-    {
-      cabIdx: 8,
-      users: [
-        'isabel',
-        'bob',
-        'gabriela',
-        'mariana',
-        'alice',
-        'dan',
-        'carla',
-        'hector',
-      ],
-    },
-    {
-      cabIdx: 10,
-      users: [
-        'karla',
-        'quetzali',
-        'pablo',
-        'alice',
-        'eva',
-        'carla',
-        'isabel',
-        'hector',
-      ],
-    },
-  ]
-
-  // Ensure host accounts have an active live status with an external embed
-  // before starting or joining the live sessions, as required by putLivePresence
-  for (const session of liveParticipants) {
-    const cab = cabildeos[session.cabIdx]
-    const host = users.find((u) => u.short === session.users[0])!
-    try {
-      await host.agent.com.atproto.repo.putRecord({
-        repo: host.did,
-        collection: 'app.bsky.actor.status',
-        rkey: 'self',
-        record: {
-          $type: 'app.bsky.actor.status',
-          status: 'app.bsky.actor.status#live',
-          embed: {
-            $type: 'app.bsky.embed.external',
-            external: {
-              uri: `https://live.para.social/stream/${cab.uri.split('/').pop()!}`,
-              title: `Transmisión en vivo: ${cab.title}`,
-              description:
-                'Debate ciudadano en tiempo real sobre esta propuesta. Transmisión oficial.',
-            },
-          },
-          durationMinutes: 120,
-          createdAt: createdAt(),
-        },
-      })
-    } catch (_err) {
-      /* ignore */
-    }
-  }
-
-  // Ingest status records so the AppView hydrator recognizes active host status
-  await sc.network.processAll()
-
-  for (const session of liveParticipants) {
-    const cab = cabildeos[session.cabIdx]
-    for (const userShort of session.users) {
-      const user = users.find((u) => u.short === userShort)!
-      try {
-        await user.agent.com.para.civic.putLivePresence({
-          cabildeo: cab.uri,
-          sessionId: `live-${cab.uri.split('/').pop()!}`,
-          present: true,
-        })
-      } catch {
-        /* ignore */
-      }
-    }
-  }
-
-  await checkpoints.flush('liveSessions')
-
-  // ═══════════════════════════════════════════════════════════════════════
   //  LISTS  (5 curated lists)
   // ═══════════════════════════════════════════════════════════════════════
 
@@ -3391,9 +3266,6 @@ export default async (sc: SeedClient) => {
   )
   console.log(
     `║  Highlights:         12  (public/private annotations)                ║`,
-  )
-  console.log(
-    `║  Live sessions:      3   (active deliberation rooms)                 ║`,
   )
   console.log(
     `║  RAQ assessments:    2   (public alignment profiles)                 ║`,

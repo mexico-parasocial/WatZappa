@@ -4344,11 +4344,6 @@ export class ActorInfo extends Message<ActorInfo> {
    */
   allowGroupChatInvitesFrom = "";
 
-  /**
-   * @generated from field: string cabildeo_live_json = 23;
-   */
-  cabildeoLiveJson = "";
-
   constructor(data?: PartialMessage<ActorInfo>) {
     super();
     proto3.util.initPartial(data, this);
@@ -4377,7 +4372,6 @@ export class ActorInfo extends Message<ActorInfo> {
     { no: 19, name: "age_assurance_status", kind: "message", T: AgeAssuranceStatus, opt: true },
     { no: 21, name: "germ_record", kind: "message", T: Record },
     { no: 22, name: "allow_group_chat_invites_from", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 23, name: "cabildeo_live_json", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ActorInfo {
@@ -15639,116 +15633,6 @@ export class GetParaDelegationCandidatesResponse extends Message<GetParaDelegati
 
   static equals(a: GetParaDelegationCandidatesResponse | PlainMessage<GetParaDelegationCandidatesResponse> | undefined, b: GetParaDelegationCandidatesResponse | PlainMessage<GetParaDelegationCandidatesResponse> | undefined): boolean {
     return proto3.util.equals(GetParaDelegationCandidatesResponse, a, b);
-  }
-}
-
-/**
- * @generated from message bsky.PutParaCabildeoLivePresenceRequest
- */
-export class PutParaCabildeoLivePresenceRequest extends Message<PutParaCabildeoLivePresenceRequest> {
-  /**
-   * @generated from field: string actor_did = 1;
-   */
-  actorDid = "";
-
-  /**
-   * @generated from field: string cabildeo_uri = 2;
-   */
-  cabildeoUri = "";
-
-  /**
-   * @generated from field: string session_id = 3;
-   */
-  sessionId = "";
-
-  /**
-   * @generated from field: bool present = 4;
-   */
-  present = false;
-
-  /**
-   * @generated from field: string host_live_uri = 5;
-   */
-  hostLiveUri = "";
-
-  constructor(data?: PartialMessage<PutParaCabildeoLivePresenceRequest>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "bsky.PutParaCabildeoLivePresenceRequest";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "actor_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "cabildeo_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "session_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "present", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-    { no: 5, name: "host_live_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PutParaCabildeoLivePresenceRequest {
-    return new PutParaCabildeoLivePresenceRequest().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): PutParaCabildeoLivePresenceRequest {
-    return new PutParaCabildeoLivePresenceRequest().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): PutParaCabildeoLivePresenceRequest {
-    return new PutParaCabildeoLivePresenceRequest().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: PutParaCabildeoLivePresenceRequest | PlainMessage<PutParaCabildeoLivePresenceRequest> | undefined, b: PutParaCabildeoLivePresenceRequest | PlainMessage<PutParaCabildeoLivePresenceRequest> | undefined): boolean {
-    return proto3.util.equals(PutParaCabildeoLivePresenceRequest, a, b);
-  }
-}
-
-/**
- * @generated from message bsky.PutParaCabildeoLivePresenceResponse
- */
-export class PutParaCabildeoLivePresenceResponse extends Message<PutParaCabildeoLivePresenceResponse> {
-  /**
-   * @generated from field: string cabildeo_uri = 1;
-   */
-  cabildeoUri = "";
-
-  /**
-   * @generated from field: bool present = 2;
-   */
-  present = false;
-
-  /**
-   * @generated from field: string expires_at = 3;
-   */
-  expiresAt = "";
-
-  constructor(data?: PartialMessage<PutParaCabildeoLivePresenceResponse>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "bsky.PutParaCabildeoLivePresenceResponse";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "cabildeo_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "present", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-    { no: 3, name: "expires_at", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PutParaCabildeoLivePresenceResponse {
-    return new PutParaCabildeoLivePresenceResponse().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): PutParaCabildeoLivePresenceResponse {
-    return new PutParaCabildeoLivePresenceResponse().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): PutParaCabildeoLivePresenceResponse {
-    return new PutParaCabildeoLivePresenceResponse().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: PutParaCabildeoLivePresenceResponse | PlainMessage<PutParaCabildeoLivePresenceResponse> | undefined, b: PutParaCabildeoLivePresenceResponse | PlainMessage<PutParaCabildeoLivePresenceResponse> | undefined): boolean {
-    return proto3.util.equals(PutParaCabildeoLivePresenceResponse, a, b);
   }
 }
 

@@ -58,7 +58,6 @@ Generated from [`lexicons/com/para`](https://github.com/mexico-parasocial/WatZap
 | [[com-para-civic-openquestion|com.para.civic.openQuestion]] | `record` |  |
 | [[com-para-civic-openquestionvote|com.para.civic.openQuestionVote]] | `record` |  |
 | [[com-para-civic-position|com.para.civic.position]] | `record` |  |
-| [[com-para-civic-putlivepresence|com.para.civic.putLivePresence]] | `procedure` |  |
 | [[com-para-civic-vote|com.para.civic.vote]] | `record` |  |
 
 ## collection

@@ -1,12 +1,10 @@
-import { request } from 'undici'
 import type { DidString } from '@atproto/syntax'
-import { AppBskyEmbedExternal } from '@atproto/api'
 import {
   type DevDelegationClaim,
   devCabildeoVoteProof,
   devDelegationProof,
 } from '../civic-verifier.js'
-import { SeedClient } from './client.js'
+import type { SeedClient } from './client.js'
 import {
   actInCommunity,
   createCommunityAccount,
@@ -32,7 +30,6 @@ const COM_PARA_CIVIC_VOTE = 'com.para.civic.vote'
 const COM_PARA_CIVIC_DELEGATION = 'com.para.civic.delegation'
 const COM_PARA_SOCIAL_POST_META = 'com.para.social.postMeta'
 const COM_PARA_STATUS = 'com.para.status'
-const APP_BSKY_ACTOR_STATUS = 'app.bsky.actor.status'
 const APP_BSKY_FEED_LIKE = 'app.bsky.feed.like'
 
 export const createParaPost = async (
@@ -431,75 +428,6 @@ export const createCabildeoDelegationRecord = async (
   )
 
   return { uri: data.uri, cid: data.cid }
-}
-
-export const createLiveStatusRecord = async (
-  sc: SeedClient,
-  by: DidString,
-  opts: { uri: string; durationMinutes?: number },
-): Promise<ParaStrongRef> => {
-  const embed: AppBskyEmbedExternal.Main = {
-    $type: 'app.bsky.embed.external',
-    external: {
-      uri: opts.uri,
-      title: 'Live room',
-      description: 'Live cabildeo room',
-    },
-  }
-
-  const { data } = await sc.agent.com.atproto.repo.putRecord(
-    {
-      repo: by,
-      collection: APP_BSKY_ACTOR_STATUS,
-      rkey: 'self',
-      record: {
-        $type: APP_BSKY_ACTOR_STATUS,
-        status: 'app.bsky.actor.status#live',
-        embed,
-        durationMinutes: opts.durationMinutes ?? 10,
-        createdAt: new Date().toISOString(),
-      },
-    },
-    {
-      encoding: 'application/json',
-      headers: sc.getHeaders(by),
-    },
-  )
-
-  return { uri: data.uri, cid: data.cid }
-}
-
-export const putCabildeoLivePresence = async (
-  network: {
-    bsky: { url: string }
-    serviceHeaders(did: string, lxm: string): Promise<Record<string, string>>
-  },
-  by: DidString,
-  opts: {
-    cabildeo: string
-    sessionId: string
-  },
-): Promise<{ status: number; body: unknown }> => {
-  const authHeaders = await network.serviceHeaders(
-    by,
-    'com.para.civic.putLivePresence',
-  )
-  const res = await request(
-    new URL('/xrpc/com.para.civic.putLivePresence', network.bsky.url),
-    {
-      method: 'POST',
-      headers: {
-        ...authHeaders,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify(opts),
-    },
-  )
-
-  return {
-    status: res.statusCode,
-    body: await res.body.json(),
-  }
 }
 
 export const writeParaFixture = async <T>(

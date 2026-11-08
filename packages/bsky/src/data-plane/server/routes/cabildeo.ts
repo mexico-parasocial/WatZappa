@@ -1,14 +1,6 @@
 import { Code, ConnectError, type ServiceImpl } from '@connectrpc/connect'
 import { sql } from 'kysely'
 import type { Service } from '../../../proto/bsky_connect.js'
-import {
-  LIVE_CABILDEO_ALLOWED_PHASES,
-  activeHostPresenceExistsSql,
-  getActiveLiveSession,
-  getLiveSessionSummary,
-  isLiveCabildeoPhase,
-  presenceExpiry,
-} from '../cabildeo-live.js'
 import { getAuthoritySnapshot } from '../community-authority.js'
 import {
   accountOfficeHolders,
@@ -23,34 +15,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     const { ref } = db.db.dynamic
     const normalizedCommunity = normalizeCommunity(req.community)
     const phase = req.phase?.trim()
-    const now = new Date()
-
-    const activeLiveSql = sql<boolean>`(
-      "cabildeo_cabildeo"."phase" in (${sql.join(
-        LIVE_CABILDEO_ALLOWED_PHASES.map((item) => sql`${item}`),
-        sql`, `,
-      )})
-      and exists (
-        select 1
-        from cabildeo_live_session as live_session
-        where live_session.cabildeo = "cabildeo_cabildeo"."uri"
-          and live_session."endedAt" is null
-          and ${activeHostPresenceExistsSql('live_session', now)}
-      )
-    )`
-    const sortRankSql = sql<string>`case
-      when ${activeLiveSql}
-        then to_char(
-          "cabildeo_cabildeo"."sortAt"::timestamptz + interval '100 years',
-          'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
-        )
-      else "cabildeo_cabildeo"."sortAt"
-    end`
-
-    let builder = db.db
-      .selectFrom('cabildeo_cabildeo')
-      .selectAll()
-      .select(sortRankSql.as('sortRank'))
+    let builder = db.db.selectFrom('cabildeo_cabildeo').selectAll()
 
     if (normalizedCommunity) {
       builder = builder.where(
@@ -71,8 +36,8 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       )
     }
 
-    const keyset = new RankedTimeCidKeyset(
-      sortRankSql,
+    const keyset = new TimeCidKeyset(
+      ref('cabildeo_cabildeo.sortAt'),
       ref('cabildeo_cabildeo.cid'),
     )
 
@@ -85,9 +50,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
 
     const rows = await builder.execute()
     const views = await Promise.all(
-      rows.map((row) =>
-        mapCabildeoRow(db, row, req.viewerDid || undefined, now),
-      ),
+      rows.map((row) => mapCabildeoRow(db, row, req.viewerDid || undefined)),
     )
 
     return {
@@ -97,7 +60,6 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   },
 
   async getParaCabildeo(req) {
-    const now = new Date()
     const row = await db.db
       .selectFrom('cabildeo_cabildeo')
       .where('uri', '=', req.cabildeoUri)
@@ -110,7 +72,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
 
     return {
       cabildeoJson: JSON.stringify(
-        await mapCabildeoRow(db, row, req.viewerDid || undefined, now),
+        await mapCabildeoRow(db, row, req.viewerDid || undefined),
       ),
     }
   },
@@ -258,141 +220,6 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
           : '',
     }
   },
-
-  async putParaCabildeoLivePresence(req) {
-    const now = new Date()
-    const nowIso = now.toISOString()
-    const cabildeo = await db.db
-      .selectFrom('cabildeo_cabildeo')
-      .where('uri', '=', req.cabildeoUri)
-      .select(['uri', 'phase'])
-      .executeTakeFirst()
-
-    if (!cabildeo || !isLiveCabildeoPhase(cabildeo.phase)) {
-      return {
-        cabildeoUri: req.cabildeoUri,
-        present: false,
-      }
-    }
-
-    if (!req.present) {
-      await db.db
-        .deleteFrom('cabildeo_live_presence')
-        .where('cabildeo', '=', req.cabildeoUri)
-        .where('actorDid', '=', req.actorDid)
-        .where('sessionId', '=', req.sessionId)
-        .execute()
-
-      const session = await db.db
-        .selectFrom('cabildeo_live_session')
-        .where('cabildeo', '=', req.cabildeoUri)
-        .select(['hostDid'])
-        .executeTakeFirst()
-
-      if (session?.hostDid === req.actorDid) {
-        await db.db
-          .updateTable('cabildeo_live_session')
-          .set({
-            endedAt: nowIso,
-            updatedAt: nowIso,
-          })
-          .where('cabildeo', '=', req.cabildeoUri)
-          .execute()
-      }
-
-      return {
-        cabildeoUri: req.cabildeoUri,
-        present: false,
-      }
-    }
-
-    let session = await getActiveLiveSession(db, req.cabildeoUri, now)
-    if (!session) {
-      if (!req.hostLiveUri) {
-        return {
-          cabildeoUri: req.cabildeoUri,
-          present: false,
-        }
-      }
-
-      await db.db
-        .insertInto('cabildeo_live_session')
-        .values({
-          cabildeo: req.cabildeoUri,
-          hostDid: req.actorDid,
-          liveUri: req.hostLiveUri,
-          startedAt: nowIso,
-          endedAt: null,
-          createdAt: nowIso,
-          updatedAt: nowIso,
-        })
-        .onConflict((oc) =>
-          oc.column('cabildeo').doUpdateSet({
-            hostDid: req.actorDid,
-            liveUri: req.hostLiveUri,
-            startedAt: nowIso,
-            endedAt: null,
-            updatedAt: nowIso,
-          }),
-        )
-        .execute()
-
-      session = await getActiveLiveSession(db, req.cabildeoUri, now)
-    } else if (
-      session.hostDid === req.actorDid &&
-      req.hostLiveUri &&
-      req.hostLiveUri !== session.liveUri
-    ) {
-      await db.db
-        .updateTable('cabildeo_live_session')
-        .set({
-          liveUri: req.hostLiveUri,
-          updatedAt: nowIso,
-        })
-        .where('cabildeo', '=', req.cabildeoUri)
-        .execute()
-    }
-
-    const expiresAt = presenceExpiry()
-    const existing = await db.db
-      .selectFrom('cabildeo_live_presence')
-      .where('cabildeo', '=', req.cabildeoUri)
-      .where('actorDid', '=', req.actorDid)
-      .where('sessionId', '=', req.sessionId)
-      .select(['joinedAt'])
-      .executeTakeFirst()
-
-    if (existing) {
-      await db.db
-        .updateTable('cabildeo_live_presence')
-        .set({
-          lastHeartbeatAt: nowIso,
-          expiresAt,
-        })
-        .where('cabildeo', '=', req.cabildeoUri)
-        .where('actorDid', '=', req.actorDid)
-        .where('sessionId', '=', req.sessionId)
-        .execute()
-    } else {
-      await db.db
-        .insertInto('cabildeo_live_presence')
-        .values({
-          cabildeo: req.cabildeoUri,
-          actorDid: req.actorDid,
-          sessionId: req.sessionId,
-          joinedAt: nowIso,
-          lastHeartbeatAt: nowIso,
-          expiresAt,
-        })
-        .execute()
-    }
-
-    return {
-      cabildeoUri: req.cabildeoUri,
-      present: true,
-      expiresAt,
-    }
-  },
 })
 
 /** The community account a request names, by URI, DID, handle or slug. */
@@ -511,15 +338,6 @@ const getCandidateVotes = async (
   return votes
 }
 
-class RankedTimeCidKeyset extends TimeCidKeyset<{
-  sortRank: string
-  cid: string
-}> {
-  labelResult(result: { sortRank: string; cid: string }) {
-    return { primary: result.sortRank, secondary: result.cid }
-  }
-}
-
 const mapCabildeoRow = async (
   db: Database,
   row: {
@@ -555,10 +373,8 @@ const mapCabildeoRow = async (
     optionPositionCounts: unknown
     winningOption: number | null
     isTie: 0 | 1
-    sortRank?: string
   },
   viewerDid?: string,
-  now?: Date,
 ) => {
   const options = asOptions(row.options)
   const voteCounts = asNumberArray(row.optionVoteCounts, options.length)
@@ -610,9 +426,6 @@ const mapCabildeoRow = async (
   const viewerContext = viewerDid
     ? await getViewerContext(db, row.uri, viewerDid)
     : undefined
-  const liveSession = isLiveCabildeoPhase(row.phase)
-    ? await getLiveSessionSummary(db, row.uri, now ?? new Date())
-    : undefined
   const partyVoteSummary =
     voteVisibility === 'party_only'
       ? await getPartyVoteSummary(db, row.uri, options.length)
@@ -649,7 +462,6 @@ const mapCabildeoRow = async (
     partyVoteSummary,
     outcomeSummary,
     viewerContext,
-    liveSession,
   }
 }
 

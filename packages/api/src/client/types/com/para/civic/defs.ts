@@ -147,44 +147,6 @@ export function validateViewerContext<V>(v: V) {
   return validate<ViewerContext & V>(v, id, hashViewerContext)
 }
 
-export interface LiveSessionView {
-  $type?: 'com.para.civic.defs#liveSessionView'
-  isLive: boolean
-  hostDid: string
-  activeParticipantCount: number
-  startedAt: string
-  participantPreviewDids: string[]
-}
-
-const hashLiveSessionView = 'liveSessionView'
-
-export function isLiveSessionView<V>(v: V) {
-  return is$typed(v, id, hashLiveSessionView)
-}
-
-export function validateLiveSessionView<V>(v: V) {
-  return validate<LiveSessionView & V>(v, id, hashLiveSessionView)
-}
-
-export interface CabildeoLive {
-  $type?: 'com.para.civic.defs#cabildeoLive'
-  cabildeoUri: string
-  community: string
-  phase:
-    'draft' | 'open' | 'deliberating' | 'voting' | 'resolved' | (string & {})
-  expiresAt: string
-}
-
-const hashCabildeoLive = 'cabildeoLive'
-
-export function isCabildeoLive<V>(v: V) {
-  return is$typed(v, id, hashCabildeoLive)
-}
-
-export function validateCabildeoLive<V>(v: V) {
-  return validate<CabildeoLive & V>(v, id, hashCabildeoLive)
-}
-
 export interface CabildeoView {
   $type?: 'com.para.civic.defs#cabildeoView'
   uri: string
@@ -212,7 +174,6 @@ export interface CabildeoView {
   partyVoteSummary?: PartyVoteSummary[]
   outcomeSummary?: OutcomeSummary
   viewerContext?: ViewerContext
-  liveSession?: LiveSessionView
 }
 
 const hashCabildeoView = 'cabildeoView'
