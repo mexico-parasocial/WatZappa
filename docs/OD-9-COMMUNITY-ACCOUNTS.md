@@ -484,7 +484,14 @@ document unless noted.
      self-nominated delegate candidates, governance `matterFlairIds` and
      `policyFlairIds` (the board list's flair filters match nothing),
      officials and deputies, and `moderator_gate` contribution voting.
-   - **Stage 3, Matrix bridge:** authority from the accounts' effective state.
+   - **Stage 3, Matrix bridge** (same branch). Authority was already read
+     from the AppView's `getAuthorization`; what changed is discovery. The
+     firehose consumer follows a community's `profile` (provision the space,
+     keyed by the profile URI, alias from the DID) and its `event` chain (re-check
+     the subject of membership and office events). It no longer reads
+     `board`, `membership` or `authorityEvent` records, and the stale
+     `communities.json` is gone. Every community is unicameral until chambers
+     have an account field.
    - **Stage 4, lexicons:** retire the NSIDs, regenerate clients.
 6. **Cleanup.**
    - Indexer side effects moved to daemon jobs.

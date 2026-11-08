@@ -5,6 +5,11 @@ import type { CommitEvt, Event } from '@atproto/sync'
 import { CHAT_DISABLED, isProvisionedSpace } from './chat-mode.js'
 import type { ChatModerationEngine } from './chat-moderation.js'
 import type { AuthorityResolver } from './community-authority.js'
+import {
+  communityAlias,
+  communityDidOf,
+  communityProfileUri,
+} from './community-uri.js'
 import type { Config } from './config.js'
 import { parseConstitution } from './constitution.js'
 import type { IBridgeDatabase } from './db/index.js'
@@ -17,6 +22,7 @@ import type { ProposalEngine } from './proposals.js'
 import { assignChamberBalanced, assignChamberVerifiable } from './sortition.js'
 
 const CURSOR_SAVE_INTERVAL_MS = 30000
+const MAX_REMEMBERED_FOUNDERS = 1000
 
 /**
  * ATProto firehose consumer — the governance half of the bridge (CD-M2).
@@ -42,6 +48,8 @@ export class FirehoseConsumer {
 
   private events?: EventBus
   private authorityWork = new Map<string, Promise<void>>()
+  /** Founder of each community seen founded, newest kept (see handleChainEvent). */
+  private founders = new Map<string, string>()
 
   constructor(
     private config: Config,
@@ -73,9 +81,8 @@ export class FirehoseConsumer {
       service: config.pdsFirehoseUrl,
       idResolver,
       filterCollections: [
-        'com.para.community.board',
-        'com.para.community.membership',
-        'com.para.community.authorityEvent',
+        'com.para.community.profile',
+        'com.para.community.event',
         'com.para.community.constitution',
         'com.para.community.proposal',
         'com.para.community.vote',
@@ -191,22 +198,21 @@ export class FirehoseConsumer {
 
     if (evt.event === 'delete') return
 
-    if (collection === 'com.para.community.board' && evt.event === 'create') {
-      await this.handleCommunityCreate(
-        did,
-        evt.record,
-        evt.uri.toString(),
-        evt.rkey,
-      )
-    } else if (collection === 'com.para.community.membership') {
-      if (typeof evt.record.community === 'string')
-        await this.refreshMembership(evt.record.community, did)
-    } else if (collection === 'com.para.community.authorityEvent') {
-      if (
-        typeof evt.record.community === 'string' &&
-        typeof evt.record.subject === 'string'
-      )
-        await this.refreshMembership(evt.record.community, evt.record.subject)
+    if (collection === 'com.para.community.profile') {
+      // A community is an account (OD-9): its profile is created in the
+      // commit that founds it. The founder is named by the founding event
+      // just before it; failing that, the community itself stands in and the
+      // first verified refresh settles who belongs.
+      if (evt.event === 'create' && evt.rkey === 'self') {
+        await this.handleCommunityCreate(
+          this.founders.get(did) ?? did,
+          evt.record,
+          evt.uri.toString(),
+          communityAlias(did),
+        )
+      }
+    } else if (collection === 'com.para.community.event') {
+      await this.handleChainEvent(did, evt.record)
     } else if (collection === 'com.para.community.constitution') {
       await this.handleConstitutionUpdate(did, evt.record)
     } else if (
@@ -222,19 +228,45 @@ export class FirehoseConsumer {
     }
   }
 
+  /**
+   * A community's chain event. The bridge learns nothing from it but who to
+   * re-check: the authority service decides what the member is now, so a
+   * member's own claim is never an input. Content, relation, briefing and
+   * profile events change no membership.
+   */
+  private async handleChainEvent(
+    communityDid: string,
+    record: any,
+  ): Promise<void> {
+    const action = typeof record?.action === 'string' ? record.action : ''
+    if (!record || typeof record.subject !== 'string') return
+    if (action === 'community.found') {
+      if (this.founders.size >= MAX_REMEMBERED_FOUNDERS) {
+        this.founders.delete(this.founders.keys().next().value as string)
+      }
+      this.founders.set(communityDid, record.subject)
+    }
+    if (/^(content|relation|briefing|profile)\./.test(action)) return
+    const community = communityProfileUri(communityDid)
+    const subjects = new Set<string>([record.subject])
+    if (/^(owner|moderator)\./.test(action) && typeof record.actor === 'string')
+      subjects.add(record.actor)
+    for (const subject of subjects)
+      await this.refreshMembership(community, subject)
+  }
+
   /** Retry from the current record at this configured PDS, never a stale payload. */
   async retryCommunityProvision(
     communityUri: string,
     creatorDid: string,
   ): Promise<void> {
-    const prefix = `at://${creatorDid}/com.para.community.board/`
-    const rkey = communityUri.slice(prefix.length)
-    if (!communityUri.startsWith(prefix) || !/^[a-zA-Z0-9._~:-]+$/.test(rkey))
-      throw new Error('Invalid community provisioning job')
+    const communityDid = communityDidOf(communityUri)
+    if (!communityDid) throw new Error('Invalid community provisioning job')
+    const rkey = 'self'
     const base = this.config.pdsFirehoseUrl.replace(/^ws/, 'http')
     const url = new URL('/xrpc/com.atproto.repo.getRecord', base)
-    url.searchParams.set('repo', creatorDid)
-    url.searchParams.set('collection', 'com.para.community.board')
+    url.searchParams.set('repo', communityDid)
+    url.searchParams.set('collection', 'com.para.community.profile')
     url.searchParams.set('rkey', rkey)
     const response = await fetch(url, {
       signal: AbortSignal.timeout(15_000),
@@ -256,33 +288,27 @@ export class FirehoseConsumer {
       creatorDid,
       record.value,
       communityUri,
-      rkey,
+      communityAlias(communityDid),
       true,
     )
   }
 
   /**
-   * @param communityUri the board record's real at-uri, as the firehose
-   *   reports it. It has to be this and not a reconstruction: membership
-   *   records reference the board by exactly this string, and the space is
-   *   looked up by it. A previous version rebuilt the uri from a `slug`
-   *   property the board lexicon does not define, so every community was
-   *   filed under `at://<did>/com.para.community.board/community` while every
-   *   membership asked for `.../<rkey>`. The lookup missed, membership sync
-   *   logged "no Matrix space found" at debug level, and nobody was ever
-   *   invited to anything.
-   * @param rkey used as the room-alias localpart. Unique per record, where the
-   *   old constant slug made every community fight over `#community:<server>`.
+   * @param communityUri the community account's profile at-uri, as the
+   *   firehose reports it. Authority is asked of the AppView by exactly this
+   *   string, and the space is looked up by it; never rebuild it from a name.
+   * @param slug the room-alias localpart, unique per community account (see
+   *   `communityAlias`), where a constant would make every community fight
+   *   over one alias.
    */
   private async handleCommunityCreate(
     creatorDid: string,
     record: any,
     communityUri: string,
-    rkey: string,
+    slug: string,
     retry = false,
   ): Promise<void> {
     if (!record) return
-    const slug = rkey
     const name = (record.name ?? 'Unnamed Community') as string
     const chamberMode = (record.chamberMode ?? 'unicameral') as string
 

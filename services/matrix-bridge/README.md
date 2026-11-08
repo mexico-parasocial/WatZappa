@@ -9,7 +9,7 @@ The bridge uses [`matrix-bot-sdk`](https://github.com/turt2live/matrix-bot-sdk) 
 ## How It Works
 
 1. **Consumes** `com.atproto.sync.subscribeRepos` firehose
-2. **Filters** `com.para.community.board` (create) and `com.para.community.membership` records
+2. **Filters** a community account's `com.para.community.profile` (create) and its `com.para.community.event` chain (OD-9)
 3. **Creates** a Matrix space for each new PARA community
 4. **Records governance state** (membership, roles, chambers via verifiable sortition) — and pushes no one into any room
 5. **Membership is pull-based** (CD-M6): a member joins by presenting an M8 session plus a CD-M4 proof of possession of the identity key behind their MXID (`POST /api/community-join`); the bridge derives the MXID, ensures the account and force-joins it with the right power levels (owners → 100, moderators → 50, members → 0)
@@ -121,7 +121,7 @@ For existing communities created before the bridge was deployed:
 pnpm run backfill --pds https://pds.para.social
 ```
 
-> **Note:** The backfill script is a skeleton. You must adapt it to query your AppView's database or custom endpoint for all `com.para.community.board` and `com.para.community.membership` records.
+> **Note:** The backfill script is a skeleton. You must adapt it to query your AppView's database or custom endpoint for all community accounts (`com.para.community.profile`).
 
 ## Architecture Notes
 
