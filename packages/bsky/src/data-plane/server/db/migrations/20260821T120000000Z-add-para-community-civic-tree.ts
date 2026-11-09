@@ -112,10 +112,10 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn('vote', 'varchar', (col) => col.notNull())
     .addColumn('createdAt', 'varchar', (col) => col.notNull())
     .addColumn('indexedAt', 'varchar', (col) => col.notNull())
-    .addPrimaryKeyConstraint('para_community_civic_tree_contribution_vote_pkey', [
-      'contributionId',
-      'voterDid',
-    ])
+    .addPrimaryKeyConstraint(
+      'para_community_civic_tree_contribution_vote_pkey',
+      ['contributionId', 'voterDid'],
+    )
     .execute()
 }
 
@@ -123,11 +123,7 @@ export async function down(db: Kysely<unknown>): Promise<void> {
   await db.schema
     .dropTable('para_community_civic_tree_contribution_vote')
     .execute()
-  await db.schema
-    .dropTable('para_community_civic_tree_contribution')
-    .execute()
-  await db.schema
-    .dropTable('para_community_civic_tree_relationship')
-    .execute()
+  await db.schema.dropTable('para_community_civic_tree_contribution').execute()
+  await db.schema.dropTable('para_community_civic_tree_relationship').execute()
   await db.schema.dropTable('para_community_civic_tree_card').execute()
 }

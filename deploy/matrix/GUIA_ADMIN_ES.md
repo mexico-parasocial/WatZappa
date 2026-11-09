@@ -300,7 +300,7 @@ La versión está fijada por etiqueta en `docker-compose.matrix.yaml` (un
    docker compose -f WhatZatppa/docker-compose.matrix.yaml up -d synapse
    ```
 
-4. Espera a que terminen las *background updates* antes de bajar de versión o
+4. Espera a que terminen las _background updates_ antes de bajar de versión o
    de apagar: `GET /_synapse/admin/v1/background_updates/enabled` y
    `/status` con el token de admin.
 

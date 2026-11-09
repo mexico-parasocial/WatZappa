@@ -173,10 +173,17 @@
       "type": "object",
       "description": "Term limits and rotation constraints for horizontal governance.",
       "properties": {
-        "facilitatorMaxDays": { "type": "integer", "minimum": 1, "maximum": 90 },
+        "facilitatorMaxDays": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 90
+        },
         "moderatorMaxDays": { "type": "integer", "minimum": 1, "maximum": 180 },
         "stewardMaxDays": { "type": "integer", "minimum": 1, "maximum": 365 },
-        "requiresAssemblyRatification": { "type": "boolean", "description": "Whether role changes require an approved assembly decision record." }
+        "requiresAssemblyRatification": {
+          "type": "boolean",
+          "description": "Whether role changes require an approved assembly decision record."
+        }
       }
     }
   }

@@ -2,11 +2,13 @@
 title: com.para.community.proposal
 description: Reference for the com.para.community.proposal lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -15,19 +17,20 @@ description: Reference for the com.para.community.proposal lexicon
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `community` | `string` | ✅  |  | Format: `at-uri` |
-| `title` | `string` | ✅  |  | Max Length: 200 |
-| `body` | `string` | ✅  |  | Max Length: 10000 |
-| `author` | `string` | ✅  |  | Format: `did` |
-| `type` | `string` | ❌  |  | Enum: `general`, `budget`, `amendment`, `moderation`<br/>Default: `general` |
-| `budgetRequest` | `string` | ❌  | If type=budget, amount requested |  |
-| `createdAt` | `string` | ❌  |  | Format: `datetime` |
+| Name            | Type     | Req'd | Description                      | Constraints                                                                 |
+| --------------- | -------- | ----- | -------------------------------- | --------------------------------------------------------------------------- |
+| `community`     | `string` | ✅    |                                  | Format: `at-uri`                                                            |
+| `title`         | `string` | ✅    |                                  | Max Length: 200                                                             |
+| `body`          | `string` | ✅    |                                  | Max Length: 10000                                                           |
+| `author`        | `string` | ✅    |                                  | Format: `did`                                                               |
+| `type`          | `string` | ❌    |                                  | Enum: `general`, `budget`, `amendment`, `moderation`<br/>Default: `general` |
+| `budgetRequest` | `string` | ❌    | If type=budget, amount requested |                                                                             |
+| `createdAt`     | `string` | ❌    |                                  | Format: `datetime`                                                          |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -38,12 +41,7 @@ description: Reference for the com.para.community.proposal lexicon
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "community",
-          "title",
-          "body",
-          "author"
-        ],
+        "required": ["community", "title", "body", "author"],
         "properties": {
           "community": {
             "type": "string",
@@ -63,12 +61,7 @@ description: Reference for the com.para.community.proposal lexicon
           },
           "type": {
             "type": "string",
-            "enum": [
-              "general",
-              "budget",
-              "amendment",
-              "moderation"
-            ],
+            "enum": ["general", "budget", "amendment", "moderation"],
             "default": "general"
           },
           "budgetRequest": {

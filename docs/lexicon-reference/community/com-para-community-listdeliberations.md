@@ -2,11 +2,13 @@
 title: com.para.community.listDeliberations
 description: Reference for the com.para.community.listDeliberations lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,49 +17,51 @@ List deliberation statements for a proposal.
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `proposal` | `string` | ✅  |  | Format: `at-uri` |
-| `limit` | `integer` | ❌  |  | Min: 1<br/>Max: 100 |
-| `cursor` | `string` | ❌  |  |  |
-**Output:**
+| Name        | Type      | Req'd | Description | Constraints         |
+| ----------- | --------- | ----- | ----------- | ------------------- |
+| `proposal`  | `string`  | ✅    |             | Format: `at-uri`    |
+| `limit`     | `integer` | ❌    |             | Min: 1<br/>Max: 100 |
+| `cursor`    | `string`  | ❌    |             |                     |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cursor` | `string` | ❌  |  |  |
-| `statements` | Array of [`#deliberationStatement`](#deliberationstatement) | ❌  |  |  |
+| Name         | Type                                                        | Req'd | Description | Constraints |
+| ------------ | ----------------------------------------------------------- | ----- | ----------- | ----------- |
+| `cursor`     | `string`                                                    | ❌    |             |             |
+| `statements` | Array of [`#deliberationStatement`](#deliberationstatement) | ❌    |             |             |
 
 ---
 
 <a name="deliberationstatement"></a>
+
 ### `deliberationStatement`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `cid` | `string` | ✅  |  | Format: `cid` |
-| `creator` | `string` | ✅  |  | Format: `did` |
-| `proposal` | `string` | ✅  |  | Format: `at-uri` |
-| `body` | `string` | ✅  |  | Max Length: 10000 |
-| `stance` | `string` | ✅  |  | Max Length: 100 |
-| `agreeCount` | `integer` | ✅  |  | Min: 0 |
-| `disagreeCount` | `integer` | ✅  |  | Min: 0 |
-| `passCount` | `integer` | ✅  |  | Min: 0 |
-| `viewerDirection` | `string` | ❌  | How the requesting viewer already weighed this argument, if they did. Absent for a logged-out viewer. | Known Values: `agree`, `disagree`, `pass` |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name              | Type      | Req'd | Description                                                                                           | Constraints                               |
+| ----------------- | --------- | ----- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `uri`             | `string`  | ✅    |                                                                                                       | Format: `at-uri`                          |
+| `cid`             | `string`  | ✅    |                                                                                                       | Format: `cid`                             |
+| `creator`         | `string`  | ✅    |                                                                                                       | Format: `did`                             |
+| `proposal`        | `string`  | ✅    |                                                                                                       | Format: `at-uri`                          |
+| `body`            | `string`  | ✅    |                                                                                                       | Max Length: 10000                         |
+| `stance`          | `string`  | ✅    |                                                                                                       | Max Length: 100                           |
+| `agreeCount`      | `integer` | ✅    |                                                                                                       | Min: 0                                    |
+| `disagreeCount`   | `integer` | ✅    |                                                                                                       | Min: 0                                    |
+| `passCount`       | `integer` | ✅    |                                                                                                       | Min: 0                                    |
+| `viewerDirection` | `string`  | ❌    | How the requesting viewer already weighed this argument, if they did. Absent for a logged-out viewer. | Known Values: `agree`, `disagree`, `pass` |
+| `createdAt`       | `string`  | ✅    |                                                                                                       | Format: `datetime`                        |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -68,9 +72,7 @@ List deliberation statements for a proposal.
       "description": "List deliberation statements for a proposal.",
       "parameters": {
         "type": "params",
-        "required": [
-          "proposal"
-        ],
+        "required": ["proposal"],
         "properties": {
           "proposal": {
             "type": "string",
@@ -158,11 +160,7 @@ List deliberation statements for a proposal.
         },
         "viewerDirection": {
           "type": "string",
-          "knownValues": [
-            "agree",
-            "disagree",
-            "pass"
-          ],
+          "knownValues": ["agree", "disagree", "pass"],
           "description": "How the requesting viewer already weighed this argument, if they did. Absent for a logged-out viewer."
         },
         "createdAt": {

@@ -2,8 +2,7 @@ import { DynamicModule, RawBuilder, SelectQueryBuilder } from 'kysely'
 import type { Pool as PgPool } from 'pg'
 
 export type DbRef =
-  | RawBuilder<unknown>
-  | ReturnType<DynamicModule<unknown>['ref']>
+  RawBuilder<unknown> | ReturnType<DynamicModule<unknown>['ref']>
 
 export type AnyQb = SelectQueryBuilder<any, any, any>
 

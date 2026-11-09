@@ -52,7 +52,9 @@ const isCommunitySteward = async (
   // The legacy fallback reads roles from the member's own membership record,
   // which they can write themselves; only verified authority events count.
   if (authority.usedLegacyFallback) return false
-  return authority.roles.some((role) => role === 'owner' || role === 'moderator')
+  return authority.roles.some(
+    (role) => role === 'owner' || role === 'moderator',
+  )
 }
 
 const normalizeLimit = (limit: number) =>
@@ -134,7 +136,8 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         )
       )`
       if (time === 'upcoming') builder = builder.where(upcoming)
-      if (time === 'past') builder = builder.where(sql<boolean>`not ${upcoming}`)
+      if (time === 'past')
+        builder = builder.where(sql<boolean>`not ${upcoming}`)
       if (cursor) {
         const { startsAt, uri } = cursor
         builder = builder.where((eb) =>

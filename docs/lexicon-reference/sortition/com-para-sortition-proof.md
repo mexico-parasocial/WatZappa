@@ -2,11 +2,13 @@
 title: com.para.sortition.proof
 description: Reference for the com.para.sortition.proof lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -15,21 +17,22 @@ description: Reference for the com.para.sortition.proof lexicon
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `did` | `string` | ✅  |  | Format: `did` |
-| `community` | `string` | ✅  |  | Format: `at-uri` |
-| `chamber` | `string` | ✅  |  | Enum: `A`, `B` |
-| `drandRound` | `integer` | ✅  | drand beacon round number used for sortition |  |
-| `drandRandomness` | `string` | ✅  | Hex-encoded drand randomness beacon |  |
-| `hashInput` | `string` | ✅  | Hex-encoded input to SHA-256: beacon || did || communityUri |  |
-| `hashOutput` | `string` | ✅  | Hex-encoded SHA-256 output |  |
-| `threshold` | `string` | ✅  | Load-balancing threshold used (0.0-1.0) |  |
-| `timestamp` | `string` | ✅  |  | Format: `datetime` |
+| Name              | Type      | Req'd | Description                                  | Constraints        |
+| ----------------- | --------- | ----- | -------------------------------------------- | ------------------ |
+| `did`             | `string`  | ✅    |                                              | Format: `did`      |
+| `community`       | `string`  | ✅    |                                              | Format: `at-uri`   |
+| `chamber`         | `string`  | ✅    |                                              | Enum: `A`, `B`     |
+| `drandRound`      | `integer` | ✅    | drand beacon round number used for sortition |                    |
+| `drandRandomness` | `string`  | ✅    | Hex-encoded drand randomness beacon          |                    |
+| `hashInput`       | `string`  | ✅    | Hex-encoded input to SHA-256: beacon         |                    | did |     | communityUri |     |
+| `hashOutput`      | `string`  | ✅    | Hex-encoded SHA-256 output                   |                    |
+| `threshold`       | `string`  | ✅    | Load-balancing threshold used (0.0-1.0)      |                    |
+| `timestamp`       | `string`  | ✅    |                                              | Format: `datetime` |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -62,10 +65,7 @@ description: Reference for the com.para.sortition.proof lexicon
           },
           "chamber": {
             "type": "string",
-            "enum": [
-              "A",
-              "B"
-            ]
+            "enum": ["A", "B"]
           },
           "drandRound": {
             "type": "integer",

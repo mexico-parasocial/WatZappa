@@ -8,7 +8,7 @@
 
 - name: Check that the Matrix config tree was synced
   ansible.builtin.stat:
-    path: "{{ para_deploy_dir }}/deploy/matrix"
+    path: '{{ para_deploy_dir }}/deploy/matrix'
   register: matrix_stack_dir
 
 - name: Fail if the Matrix config tree is missing
@@ -21,7 +21,7 @@
 - name: Generate the Synapse configuration
   ansible.builtin.command:
     cmd: ./deploy/matrix/setup.sh
-    chdir: "{{ para_deploy_dir }}"
+    chdir: '{{ para_deploy_dir }}'
   register: matrix_stack_synapse_setup
   changed_when: "'already exists' not in matrix_stack_synapse_setup.stdout"
   # Idempotent: the script skips generation when the config is present. It
@@ -31,7 +31,7 @@
 - name: Generate the MAS configuration and Synapse delegation block
   ansible.builtin.command:
     cmd: ./deploy/matrix/setup-mas.sh
-    chdir: "{{ para_deploy_dir }}"
+    chdir: '{{ para_deploy_dir }}'
   register: matrix_stack_mas_setup
   changed_when: "'already exists' not in matrix_stack_mas_setup.stdout"
 
@@ -40,7 +40,7 @@
     cmd: >-
       docker compose -f {{ matrix_compose_file }}
       run --rm mas database migrate -c /config/config.yaml
-    chdir: "{{ para_deploy_dir }}"
+    chdir: '{{ para_deploy_dir }}'
   register: matrix_stack_migrate
   changed_when: "'Migrating' in matrix_stack_migrate.stderr"
   # The image entrypoint is already mas-cli, so the subcommand starts at
@@ -49,8 +49,8 @@
 
 - name: Start the Matrix stack
   ansible.builtin.command:
-    cmd: "docker compose -f {{ matrix_compose_file }} up -d --build"
-    chdir: "{{ para_deploy_dir }}"
+    cmd: 'docker compose -f {{ matrix_compose_file }} up -d --build'
+    chdir: '{{ para_deploy_dir }}'
   register: matrix_stack_up
   changed_when: >-
     'Started' in matrix_stack_up.stderr or 'Created' in matrix_stack_up.stderr
@@ -68,7 +68,7 @@
         $3 != "" && $3 != "<nil>" && $3 != "healthy" { bad=1 }
         END { exit bad+0 }
       '
-    chdir: "{{ para_deploy_dir }}"
+    chdir: '{{ para_deploy_dir }}'
   register: matrix_stack_ps
   changed_when: false
   retries: 36
@@ -83,11 +83,11 @@
 
 - name: Check each Matrix service over HTTP
   ansible.builtin.uri:
-    url: "http://127.0.0.1:{{ item.port }}{{ item.health }}"
+    url: 'http://127.0.0.1:{{ item.port }}{{ item.health }}'
     status_code: 200
-  loop: "{{ matrix_services }}"
+  loop: '{{ matrix_services }}'
   loop_control:
-    label: "{{ item.name }}:{{ item.port }}"
+    label: '{{ item.name }}:{{ item.port }}'
   register: matrix_stack_http
   retries: 6
   delay: 5
@@ -100,7 +100,7 @@
     cmd: >-
       docker compose -f {{ matrix_compose_file }}
       exec -T mas mas-cli doctor -c /config/config.yaml
-    chdir: "{{ para_deploy_dir }}"
+    chdir: '{{ para_deploy_dir }}'
   register: matrix_stack_doctor
   changed_when: false
   failed_when: false
@@ -115,11 +115,11 @@
       MAS is not correctly delegating for Synapse. Full doctor output:
 
       {{ matrix_stack_doctor.stderr }}
-    success_msg: "MAS to Synapse delegation verified."
+    success_msg: 'MAS to Synapse delegation verified.'
 
 - name: Verify the compat login endpoint is answered by MAS, not Synapse
   ansible.builtin.uri:
-    url: "https://{{ matrix_server_name }}/_matrix/client/v3/login"
+    url: 'https://{{ matrix_server_name }}/_matrix/client/v3/login'
     status_code: 200
   register: matrix_stack_compat_login
   retries: 6
@@ -136,4 +136,4 @@
 
 - name: Report Matrix stack state
   ansible.builtin.debug:
-    msg: "{{ matrix_stack_ps.stdout_lines }}"
+    msg: '{{ matrix_stack_ps.stdout_lines }}'

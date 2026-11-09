@@ -15,17 +15,9 @@ export type ParaStrongRef = {
 
 export type ParaPostType = 'policy' | 'matter' | 'meme'
 export type CabildeoPhase =
-  | 'draft'
-  | 'open'
-  | 'deliberating'
-  | 'voting'
-  | 'resolved'
+  'draft' | 'open' | 'deliberating' | 'voting' | 'resolved'
 export type CommunityMembershipState =
-  | 'pending'
-  | 'active'
-  | 'left'
-  | 'removed'
-  | 'blocked'
+  'pending' | 'active' | 'left' | 'removed' | 'blocked'
 
 const COM_PARA_POST = 'com.para.post'
 const COM_PARA_COMMUNITY_BOARD = 'com.para.community.board'

@@ -1,7 +1,11 @@
 import type { Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
-import { PipethroughUpstreamError, computeProxyTo, pipethrough } from '../../../../pipethrough.js'
+import {
+  PipethroughUpstreamError,
+  computeProxyTo,
+  pipethrough,
+} from '../../../../pipethrough.js'
 import { formatMungedResponse } from '../../../../read-after-write/index.js'
 import {
   findLocalBoard,

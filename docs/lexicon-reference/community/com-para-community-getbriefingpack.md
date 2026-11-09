@@ -2,34 +2,37 @@
 title: com.para.community.getBriefingPack
 description: Reference for the com.para.community.getBriefingPack lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-**Output:**
+| Name        | Type     | Req'd | Description | Constraints      |
+| ----------- | -------- | ----- | ----------- | ---------------- |
+| `uri`       | `string` | ✅    |             | Format: `at-uri` |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `pack` | [`com.para.community.defs#briefingPackView`]([[com-para-community-defs|com.para.community.defs#briefingPackView]]) | ✅  |  |  |
+| Name   | Type                                                                   | Req'd                                       | Description | Constraints |
+| ------ | ---------------------------------------------------------------------- | ------------------------------------------- | ----------- | ----------- |
+| `pack` | [`com.para.community.defs#briefingPackView`]([[com-para-community-defs | com.para.community.defs#briefingPackView]]) | ✅          |             |     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -39,9 +42,7 @@ description: Reference for the com.para.community.getBriefingPack lexicon
       "type": "query",
       "parameters": {
         "type": "params",
-        "required": [
-          "uri"
-        ],
+        "required": ["uri"],
         "properties": {
           "uri": {
             "type": "string",
@@ -53,9 +54,7 @@ description: Reference for the com.para.community.getBriefingPack lexicon
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "pack"
-          ],
+          "required": ["pack"],
           "properties": {
             "pack": {
               "type": "ref",

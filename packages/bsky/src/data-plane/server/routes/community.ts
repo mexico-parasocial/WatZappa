@@ -140,9 +140,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     const authorization = resolveAvailableAction(
       req.action,
       snapshot.roles,
-      (board.governanceMode || 'hierarchical') as
-        | 'hierarchical'
-        | 'horizontal',
+      (board.governanceMode || 'hierarchical') as 'hierarchical' | 'horizontal',
     )
     return new GetParaCommunityAuthorizationResponse({
       roles: snapshot.roles,
@@ -182,8 +180,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         ? await getAuthoritySnapshot(db, board.uri, req.viewerDid)
         : undefined
       const standard = (board.governanceMode || 'hierarchical') as
-        | 'hierarchical'
-        | 'horizontal'
+        'hierarchical' | 'horizontal'
 
       return new GetParaCommunityBoardResponse({
         board: toBoardView(board, memberCount, viewerMembership, {
@@ -328,7 +325,10 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         .execute(),
     ])
 
-    const voterCount = breakdown.reduce((sum, row) => sum + Number(row.count), 0)
+    const voterCount = breakdown.reduce(
+      (sum, row) => sum + Number(row.count),
+      0,
+    )
     const signalSum = breakdown.reduce(
       (sum, row) => sum + Number(row.signal) * Number(row.count),
       0,
@@ -627,7 +627,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       items: page.map((row) =>
         toSharedContentView(row, actionMap.get(row.uri), req.communityUri),
       ),
-      cursor: hasMore ? keyset.packFromResult(page) ?? '' : '',
+      cursor: hasMore ? (keyset.packFromResult(page) ?? '') : '',
     })
   },
 
@@ -926,7 +926,7 @@ const selectBoards = async (
 
   return {
     boards: page,
-    cursor: hasMore ? keyset.packFromResult(page) ?? '' : '',
+    cursor: hasMore ? (keyset.packFromResult(page) ?? '') : '',
   }
 }
 
@@ -1231,8 +1231,8 @@ const toSharedContentView = (
     sortRank: row.sortRank ?? 0,
     createdAt: row.createdAt,
     removed,
-    removedAt: removed ? action?.createdAt ?? '' : '',
-    removedBy: removed ? action?.creator ?? '' : '',
+    removedAt: removed ? (action?.createdAt ?? '') : '',
+    removedBy: removed ? (action?.creator ?? '') : '',
     latestAction: action ? toSharedContentActionView(action) : undefined,
     hydrationState: 'unresolved',
   })
@@ -1274,10 +1274,13 @@ const getViewerMemberships = async (
   }
 
   const snapshots = await Promise.all(
-    communityUris.map(async (communityUri) => [
-      communityUri,
-      await getAuthoritySnapshot(db, communityUri, viewerDid),
-    ] as const),
+    communityUris.map(
+      async (communityUri) =>
+        [
+          communityUri,
+          await getAuthoritySnapshot(db, communityUri, viewerDid),
+        ] as const,
+    ),
   )
   return new Map(
     snapshots.map(([communityUri, snapshot]) => [
@@ -1479,17 +1482,18 @@ const selectMembers = async (
       .execute()
     const page = rows.slice(0, opts.limit)
     const dids = page.map((row) => row.did)
-    const [voteCounts, delegationCounts, postCounts, authorities] = await Promise.all([
-      getVoteCounts(db, dids),
-      getDelegationCounts(db, dids),
-      getCommunityPostCounts(db, dids, communityUri),
-      Promise.all(
-        dids.map(async (did) => [
-          did,
-          await getAuthoritySnapshot(db, communityUri, did),
-        ] as const),
-      ),
-    ])
+    const [voteCounts, delegationCounts, postCounts, authorities] =
+      await Promise.all([
+        getVoteCounts(db, dids),
+        getDelegationCounts(db, dids),
+        getCommunityPostCounts(db, dids, communityUri),
+        Promise.all(
+          dids.map(
+            async (did) =>
+              [did, await getAuthoritySnapshot(db, communityUri, did)] as const,
+          ),
+        ),
+      ])
     const authorityByDid = new Map(authorities)
 
     return {
@@ -1537,17 +1541,18 @@ const selectMembers = async (
   const rows = await builder.execute()
   const page = rows.slice(0, opts.limit)
   const dids = page.map((row) => row.did)
-  const [voteCounts, delegationCounts, postCounts, authorities] = await Promise.all([
-    getVoteCounts(db, dids),
-    getDelegationCounts(db, dids),
-    getCommunityPostCounts(db, dids, communityUri),
-    Promise.all(
-      dids.map(async (did) => [
-        did,
-        await getAuthoritySnapshot(db, communityUri, did),
-      ] as const),
-    ),
-  ])
+  const [voteCounts, delegationCounts, postCounts, authorities] =
+    await Promise.all([
+      getVoteCounts(db, dids),
+      getDelegationCounts(db, dids),
+      getCommunityPostCounts(db, dids, communityUri),
+      Promise.all(
+        dids.map(
+          async (did) =>
+            [did, await getAuthoritySnapshot(db, communityUri, did)] as const,
+        ),
+      ),
+    ])
   const authorityByDid = new Map(authorities)
 
   return {

@@ -274,8 +274,8 @@ a request. All four endpoints take the M8 bearer token.
    `201 { id, expiresAt }` (`200` refreshes an existing request to the same
    recipient). `429 TOO_MANY_PENDING_DM_REQUESTS` past 20 pending.
 2. **List** — `GET /api/dm-requests` → `{ incoming: [{ id, requesterDid,
-   createdAt, expiresAt }], outgoing: [{ id, recipientDid, status,
-   createdAt, expiresAt }] }`. No MXIDs. Incoming lists pending requests only;
+createdAt, expiresAt }], outgoing: [{ id, recipientDid, status,
+createdAt, expiresAt }] }`. No MXIDs. Incoming lists pending requests only;
    outgoing shows the caller's own as `pending` or `accepted`.
 3. **Accept** (recipient only) — `POST /api/dm-requests/accept` `{ id }` →
    `{ requesterDid, requesterMxid }`, once; the request becomes `accepted`

@@ -6,9 +6,7 @@
       "type": "query",
       "parameters": {
         "type": "params",
-        "required": [
-          "community"
-        ],
+        "required": ["community"],
         "properties": {
           "community": {
             "type": "string",

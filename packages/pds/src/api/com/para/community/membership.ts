@@ -126,11 +126,7 @@ const writeMembership = async (
         viewerDid: did,
         boardUri: communityUri.toString(),
       })
-      const current = await actorTxn.record.getRecord(
-        membershipUri,
-        null,
-        true,
-      )
+      const current = await actorTxn.record.getRecord(membershipUri, null, true)
       const fields = next(
         current?.value as Partial<MembershipRecord> | undefined,
         now,

@@ -7,9 +7,9 @@
       "parameters": {
         "type": "params",
         "properties": {
-          "community": {"type": "string", "format": "at-uri"},
-          "briefingPack": {"type": "string", "format": "at-uri"},
-          "collection": {"type": "string"}
+          "community": { "type": "string", "format": "at-uri" },
+          "briefingPack": { "type": "string", "format": "at-uri" },
+          "collection": { "type": "string" }
         }
       },
       "output": {
@@ -18,10 +18,13 @@
           "type": "object",
           "required": ["generatedAt", "files"],
           "properties": {
-            "generatedAt": {"type": "string", "format": "datetime"},
+            "generatedAt": { "type": "string", "format": "datetime" },
             "files": {
               "type": "array",
-              "items": { "type": "ref", "ref": "com.para.community.defs#obsidianFileView" }
+              "items": {
+                "type": "ref",
+                "ref": "com.para.community.defs#obsidianFileView"
+              }
             }
           }
         }

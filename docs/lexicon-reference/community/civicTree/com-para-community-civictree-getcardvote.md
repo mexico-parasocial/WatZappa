@@ -2,35 +2,38 @@
 title: com.para.community.civicTree.getCardVote
 description: Reference for the com.para.community.civicTree.getCardVote lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `card` | `string` | ✅  |  |  |
-| `voter` | `string` | ✅  |  | Format: `did` |
-**Output:**
+| Name        | Type     | Req'd | Description | Constraints   |
+| ----------- | -------- | ----- | ----------- | ------------- |
+| `card`      | `string` | ✅    |             |               |
+| `voter`     | `string` | ✅    |             | Format: `did` |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `vote` | [`com.para.community.civicTree.defs#cardVoteView`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#cardVoteView]]) | ❌  |  |  |
+| Name   | Type                                                                                   | Req'd                                             | Description | Constraints |
+| ------ | -------------------------------------------------------------------------------------- | ------------------------------------------------- | ----------- | ----------- |
+| `vote` | [`com.para.community.civicTree.defs#cardVoteView`]([[com-para-community-civictree-defs | com.para.community.civicTree.defs#cardVoteView]]) | ❌          |             |     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -40,10 +43,7 @@ description: Reference for the com.para.community.civicTree.getCardVote lexicon
       "type": "query",
       "parameters": {
         "type": "params",
-        "required": [
-          "card",
-          "voter"
-        ],
+        "required": ["card", "voter"],
         "properties": {
           "card": {
             "type": "string"

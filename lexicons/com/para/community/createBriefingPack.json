@@ -8,13 +8,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "packType",
-            "communityUri",
-            "party",
-            "title",
-            "summary"
-          ],
+          "required": ["packType", "communityUri", "party", "title", "summary"],
           "properties": {
             "packType": {
               "type": "string",
@@ -72,7 +66,10 @@
           "type": "object",
           "required": ["pack"],
           "properties": {
-            "pack": { "type": "ref", "ref": "com.para.community.defs#briefingPackView" }
+            "pack": {
+              "type": "ref",
+              "ref": "com.para.community.defs#briefingPackView"
+            }
           }
         }
       }

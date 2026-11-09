@@ -2,11 +2,13 @@
 title: com.para.civic.putLivePresence
 description: Reference for the com.para.civic.putLivePresence lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `procedure`
@@ -22,24 +24,24 @@ Create, refresh, or clear the caller's live cabildeo presence. Requires auth.
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cabildeo` | `string` | ✅  |  | Format: `at-uri` |
-| `sessionId` | `string` | ✅  |  | Max Length: 128<br/>Max Graphemes: 128 |
-| `present` | `boolean` | ❌  |  | Default: `true` |
-**Output:**
+| Name        | Type      | Req'd | Description | Constraints                            |
+| ----------- | --------- | ----- | ----------- | -------------------------------------- |
+| `cabildeo`  | `string`  | ✅    |             | Format: `at-uri`                       |
+| `sessionId` | `string`  | ✅    |             | Max Length: 128<br/>Max Graphemes: 128 |
+| `present`   | `boolean` | ❌    |             | Default: `true`                        |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cabildeo` | `string` | ✅  |  | Format: `at-uri` |
-| `present` | `boolean` | ✅  |  |  |
-| `expiresAt` | `string` | ❌  |  | Format: `datetime` |
-**Possible Errors:**
+| Name                 | Type      | Req'd | Description | Constraints        |
+| -------------------- | --------- | ----- | ----------- | ------------------ |
+| `cabildeo`           | `string`  | ✅    |             | Format: `at-uri`   |
+| `present`            | `boolean` | ✅    |             |                    |
+| `expiresAt`          | `string`  | ❌    |             | Format: `datetime` |
+| **Possible Errors:** |
 
 - `NotFound`: The target cabildeo does not exist.
 - `InvalidPhase`: The target cabildeo is not currently eligible for live participation.
@@ -48,6 +50,7 @@ Create, refresh, or clear the caller's live cabildeo presence. Requires auth.
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -60,10 +63,7 @@ Create, refresh, or clear the caller's live cabildeo presence. Requires auth.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "cabildeo",
-            "sessionId"
-          ],
+          "required": ["cabildeo", "sessionId"],
           "properties": {
             "cabildeo": {
               "type": "string",
@@ -85,10 +85,7 @@ Create, refresh, or clear the caller's live cabildeo presence. Requires auth.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "cabildeo",
-            "present"
-          ],
+          "required": ["cabildeo", "present"],
           "properties": {
             "cabildeo": {
               "type": "string",

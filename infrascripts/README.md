@@ -7,7 +7,7 @@ separate bare-metal track.
 ## What was wrong with all of them
 
 Every script defaulted `BACKEND_DIR` to `WatZappa`, i.e. it expected to be run
-from a *parent* directory with `WatZappa/` inside it. They live *inside* that
+from a _parent_ directory with `WatZappa/` inside it. They live _inside_ that
 repo, so every relative path missed by one level. Fourteen of them documented
 their own usage as `./scripts/…`, which in this repo is a different directory
 containing unrelated dev scripts.
@@ -26,16 +26,16 @@ files parse under `bash -n`.
 
 ### Keep — no ansible equivalent
 
-| Script | Why it stays |
-| --- | --- |
-| `generate-secrets.sh` | Produces the stack `.env`. The ansible `app_stack` role points users at it by name and refuses to deploy without it. |
-| `pre-deploy-check.sh` | 300 lines of env/secret/build validation. Complements ansible rather than duplicating it — run it before the first `site.yml`. |
-| `create-admin-and-update-env.sh` | Breaks the first-admin chicken-and-egg (Ozone needs `ADMIN_DIDS`, DIDs only exist after account creation, and invites are required). Nothing in ansible does this. |
-| `alpha-doctor.sh` | Reads the real `alpha_rollout` table — a live PDS feature (`packages/pds/src/account-manager/db/schema/alpha-rollout.ts`, `com.para.alpha.getRolloutStatus`), not leftovers. |
-| `smoke-test-production.sh` | Public-URL verification from outside the host. Ansible's checks run on the box; this one proves the edge works. |
-| `cloudflare-tunnel-local.sh` + `cloudflare-tunnel-config.yml` | Exposes a local stack over a real hostname with no VPS. The cheapest way to finish the browser-login verification the MAS repair sprint left open. |
-| `pull-vps-backups.sh` | Pull-based off-site copy — production never holds credentials for the backup destination, which is the right direction. Now **requires** `VPS_SSH`; it used to default to the dead `74.50.126.41`. |
-| `push-demo-repos.sh` | Pushes the demo remotes. Already resolved its own paths correctly. |
+| Script                                                        | Why it stays                                                                                                                                                                                       |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `generate-secrets.sh`                                         | Produces the stack `.env`. The ansible `app_stack` role points users at it by name and refuses to deploy without it.                                                                               |
+| `pre-deploy-check.sh`                                         | 300 lines of env/secret/build validation. Complements ansible rather than duplicating it — run it before the first `site.yml`.                                                                     |
+| `create-admin-and-update-env.sh`                              | Breaks the first-admin chicken-and-egg (Ozone needs `ADMIN_DIDS`, DIDs only exist after account creation, and invites are required). Nothing in ansible does this.                                 |
+| `alpha-doctor.sh`                                             | Reads the real `alpha_rollout` table — a live PDS feature (`packages/pds/src/account-manager/db/schema/alpha-rollout.ts`, `com.para.alpha.getRolloutStatus`), not leftovers.                       |
+| `smoke-test-production.sh`                                    | Public-URL verification from outside the host. Ansible's checks run on the box; this one proves the edge works.                                                                                    |
+| `cloudflare-tunnel-local.sh` + `cloudflare-tunnel-config.yml` | Exposes a local stack over a real hostname with no VPS. The cheapest way to finish the browser-login verification the MAS repair sprint left open.                                                 |
+| `pull-vps-backups.sh`                                         | Pull-based off-site copy — production never holds credentials for the backup destination, which is the right direction. Now **requires** `VPS_SSH`; it used to default to the dead `74.50.126.41`. |
+| `push-demo-repos.sh`                                          | Pushes the demo remotes. Already resolved its own paths correctly.                                                                                                                                 |
 
 ### Keep — bare-metal track
 
@@ -61,11 +61,11 @@ the migration is done and confirmed)
 
 Nothing here has been removed. Each is replaced by something in `ansible/`:
 
-| Script | Replaced by | Delete when |
-| --- | --- | --- |
-| `deploy-production.sh` | `playbooks/site.yml`, `playbooks/deploy.yml` | Ansible has deployed to a real host **at least once**. It is still the only path that has ever produced a running deployment, so it stays until the replacement is proven — not before. |
-| `setup-firewall.sh` | `roles/common` (UFW, fail2ban, sysctl) | Now. Ansible's version also opens port 80, which this one does not — and without 80 the ACME HTTP-01 challenge fails and every hostname serves a TLS error. |
-| `backup-postgres.sh` | `roles/postgres` (systemd timer) | Now. It backs up one database of three — the Synapse and MAS databases are not covered — and connects over `localhost:5432`, which reaches nothing: no Postgres container publishes a port. |
+| Script                 | Replaced by                                  | Delete when                                                                                                                                                                                 |
+| ---------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deploy-production.sh` | `playbooks/site.yml`, `playbooks/deploy.yml` | Ansible has deployed to a real host **at least once**. It is still the only path that has ever produced a running deployment, so it stays until the replacement is proven — not before.     |
+| `setup-firewall.sh`    | `roles/common` (UFW, fail2ban, sysctl)       | Now. Ansible's version also opens port 80, which this one does not — and without 80 the ACME HTTP-01 challenge fails and every hostname serves a TLS error.                                 |
+| `backup-postgres.sh`   | `roles/postgres` (systemd timer)             | Now. It backs up one database of three — the Synapse and MAS databases are not covered — and connects over `localhost:5432`, which reaches nothing: no Postgres container publishes a port. |
 
 ---
 

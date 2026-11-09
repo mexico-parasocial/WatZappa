@@ -4,7 +4,10 @@ import { sql } from 'kysely'
 import { ensureValidRecordKey } from '@atproto/syntax'
 import { AppContext } from '../context.js'
 import { Database } from '../db/index.js'
-import { OperationMethod, createOperationChannel } from '../db/schema/operation.js'
+import {
+  OperationMethod,
+  createOperationChannel,
+} from '../db/schema/operation.js'
 import { Service } from '../proto/bsync_connect.js'
 import {
   Method,
@@ -14,7 +17,9 @@ import {
 import { authWithApiKey } from './auth.js'
 import { isValidDid, validateNamespace } from './util.js'
 
-export default (ctx: AppContext): Partial<FixedServiceImpl<typeof Service>> => ({
+export default (
+  ctx: AppContext,
+): Partial<FixedServiceImpl<typeof Service>> => ({
   async putOperation(req, handlerCtx) {
     authWithApiKey(ctx, handlerCtx)
     const { db } = ctx

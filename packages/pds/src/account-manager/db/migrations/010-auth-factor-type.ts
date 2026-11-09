@@ -8,8 +8,5 @@ export async function up(db: Kysely<unknown>): Promise<void> {
 }
 
 export async function down(db: Kysely<unknown>): Promise<void> {
-  await db.schema
-    .alterTable('account')
-    .dropColumn('authFactorType')
-    .execute()
+  await db.schema.alterTable('account').dropColumn('authFactorType').execute()
 }

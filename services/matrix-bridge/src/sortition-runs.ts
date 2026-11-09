@@ -1,10 +1,7 @@
 import type pino from 'pino'
 
 import { type IBridgeDatabase } from './db/index.js'
-import {
-  computeAssemblySortitionHash,
-  fetchBeacon,
-} from './drand.js'
+import { computeAssemblySortitionHash, fetchBeacon } from './drand.js'
 import { sendExpoNotifications } from './push.js'
 import type { EventBus } from './events/bus.js'
 

@@ -2,11 +2,13 @@
 title: com.para.social.getPostMeta
 description: Reference for the com.para.social.getPostMeta lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,16 +17,15 @@ Get Para social metadata for a post.
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `post` | `string` | ✅  |  | Format: `at-uri` |
-**Output:**
+| Name        | Type     | Req'd | Description | Constraints      |
+| ----------- | -------- | ----- | ----------- | ---------------- |
+| `post`      | `string` | ✅    |             | Format: `at-uri` |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** [`#postMeta`](#postmeta)
-
 
 **Possible Errors:**
 
@@ -33,29 +34,31 @@ Get Para social metadata for a post.
 ---
 
 <a name="postmeta"></a>
+
 ### `postMeta`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `postType` | `string` | ❌  |  | Enum: `policy`, `matter`, `meme` |
-| `official` | `boolean` | ❌  |  |  |
-| `party` | `string` | ❌  |  |  |
-| `community` | `string` | ❌  |  |  |
-| `category` | `string` | ❌  |  |  |
-| `tags` | Array of `string` | ❌  |  |  |
-| `flairs` | Array of `string` | ❌  |  |  |
-| `voteScore` | `integer` | ✅  |  |  |
-| `interactionMode` | `string` | ✅  |  | Enum: `policy_ballot`, `reddit_votes` |
-| `createdAt` | `string` | ❌  |  | Format: `datetime` |
+| Name              | Type              | Req'd | Description | Constraints                           |
+| ----------------- | ----------------- | ----- | ----------- | ------------------------------------- |
+| `uri`             | `string`          | ✅    |             | Format: `at-uri`                      |
+| `postType`        | `string`          | ❌    |             | Enum: `policy`, `matter`, `meme`      |
+| `official`        | `boolean`         | ❌    |             |                                       |
+| `party`           | `string`          | ❌    |             |                                       |
+| `community`       | `string`          | ❌    |             |                                       |
+| `category`        | `string`          | ❌    |             |                                       |
+| `tags`            | Array of `string` | ❌    |             |                                       |
+| `flairs`          | Array of `string` | ❌    |             |                                       |
+| `voteScore`       | `integer`         | ✅    |             |                                       |
+| `interactionMode` | `string`          | ✅    |             | Enum: `policy_ballot`, `reddit_votes` |
+| `createdAt`       | `string`          | ❌    |             | Format: `datetime`                    |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -66,9 +69,7 @@ Get Para social metadata for a post.
       "description": "Get Para social metadata for a post.",
       "parameters": {
         "type": "params",
-        "required": [
-          "post"
-        ],
+        "required": ["post"],
         "properties": {
           "post": {
             "type": "string",
@@ -91,11 +92,7 @@ Get Para social metadata for a post.
     },
     "postMeta": {
       "type": "object",
-      "required": [
-        "uri",
-        "interactionMode",
-        "voteScore"
-      ],
+      "required": ["uri", "interactionMode", "voteScore"],
       "properties": {
         "uri": {
           "type": "string",
@@ -103,11 +100,7 @@ Get Para social metadata for a post.
         },
         "postType": {
           "type": "string",
-          "enum": [
-            "policy",
-            "matter",
-            "meme"
-          ]
+          "enum": ["policy", "matter", "meme"]
         },
         "official": {
           "type": "boolean"
@@ -138,10 +131,7 @@ Get Para social metadata for a post.
         },
         "interactionMode": {
           "type": "string",
-          "enum": [
-            "policy_ballot",
-            "reddit_votes"
-          ]
+          "enum": ["policy_ballot", "reddit_votes"]
         },
         "createdAt": {
           "type": "string",

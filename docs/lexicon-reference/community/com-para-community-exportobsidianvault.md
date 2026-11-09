@@ -2,37 +2,40 @@
 title: com.para.community.exportObsidianVault
 description: Reference for the com.para.community.exportObsidianVault lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `community` | `string` | ❌  |  | Format: `at-uri` |
-| `briefingPack` | `string` | ❌  |  | Format: `at-uri` |
-| `collection` | `string` | ❌  |  |  |
-**Output:**
+| Name           | Type     | Req'd | Description | Constraints      |
+| -------------- | -------- | ----- | ----------- | ---------------- |
+| `community`    | `string` | ❌    |             | Format: `at-uri` |
+| `briefingPack` | `string` | ❌    |             | Format: `at-uri` |
+| `collection`   | `string` | ❌    |             |                  |
+| **Output:**    |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `generatedAt` | `string` | ✅  |  | Format: `datetime` |
-| `files` | Array of [`com.para.community.defs#obsidianFileView`]([[com-para-community-defs|com.para.community.defs#obsidianFileView]]) | ✅  |  |  |
+| Name          | Type                                                                            | Req'd                                       | Description | Constraints        |
+| ------------- | ------------------------------------------------------------------------------- | ------------------------------------------- | ----------- | ------------------ |
+| `generatedAt` | `string`                                                                        | ✅                                          |             | Format: `datetime` |
+| `files`       | Array of [`com.para.community.defs#obsidianFileView`]([[com-para-community-defs | com.para.community.defs#obsidianFileView]]) | ✅          |                    |     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -60,10 +63,7 @@ description: Reference for the com.para.community.exportObsidianVault lexicon
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "generatedAt",
-            "files"
-          ],
+          "required": ["generatedAt", "files"],
           "properties": {
             "generatedAt": {
               "type": "string",

@@ -2076,7 +2076,11 @@ export default async (sc: SeedClient) => {
       text: 'La reforma energética debe garantizar precios justos de electricidad a todas las familias. La soberanía energética es prioridad nacional — no podemos depender de importaciones cuando tenemos recursos propios.',
       postType: 'policy',
       bskyTags: ['policy', 'energia', 'reforma'],
-      paraFlairs: ['||#Policy', '||#EmpresaPublicaDeAgua', '|#IndustriaEnergetica'],
+      paraFlairs: [
+        '||#Policy',
+        '||#EmpresaPublicaDeAgua',
+        '|#IndustriaEnergetica',
+      ],
     },
     {
       agent: 'alice',
@@ -2236,7 +2240,11 @@ export default async (sc: SeedClient) => {
       text: 'Impulso la modernización del sector energético con inversión privada participativa y transición sustentable. El reto es hacerlo sin dejar atrás a las comunidades petroleras.',
       postType: 'policy',
       bskyTags: ['policy', 'energia', 'modernizacion'],
-      paraFlairs: ['||#Policy', '||#FondoDeAdaptacionAlCambioClimatico', '|#IndustriaEnergetica'],
+      paraFlairs: [
+        '||#Policy',
+        '||#FondoDeAdaptacionAlCambioClimatico',
+        '|#IndustriaEnergetica',
+      ],
     },
     {
       agent: 'carla',
@@ -2265,7 +2273,11 @@ export default async (sc: SeedClient) => {
       text: 'Metas claras de reducción de emisiones para 2030 y fondo de adaptación ecológica. Sin ley, sin compromiso; sin compromiso, sin futuro.',
       postType: 'policy',
       bskyTags: ['policy', 'clima', 'emisiones'],
-      paraFlairs: ['||#Policy', '||#FondoDeAdaptacionAlCambioClimatico', '|#EmisionesCO2'],
+      paraFlairs: [
+        '||#Policy',
+        '||#FondoDeAdaptacionAlCambioClimatico',
+        '|#EmisionesCO2',
+      ],
     },
     {
       agent: 'dan',
@@ -2325,7 +2337,11 @@ export default async (sc: SeedClient) => {
       text: 'Votación digital ciudadana y transparencia total en el gasto público. Cada peso, rastreable. La rendición de cuentas no puede esperar a que alguien más la exija.',
       postType: 'policy',
       bskyTags: ['policy', 'presupuesto', 'digital'],
-      paraFlairs: ['||#Policy', '||#PresupuestoParticipativo', '|#TransparenciaFiscal'],
+      paraFlairs: [
+        '||#Policy',
+        '||#PresupuestoParticipativo',
+        '|#TransparenciaFiscal',
+      ],
     },
     {
       agent: 'fernando',

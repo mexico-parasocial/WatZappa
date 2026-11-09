@@ -5,7 +5,7 @@
   changed_when: false
 
 - name: Initialize Docker Swarm (first manager only)
-  shell: "docker swarm init --advertise-addr {{ ansible_host }} --listen-addr {{ ansible_host }}:{{ swarm_port }}"
+  shell: 'docker swarm init --advertise-addr {{ ansible_host }} --listen-addr {{ ansible_host }}:{{ swarm_port }}'
   when:
     - inventory_hostname == groups['swarm_managers'][0]
     - swarm_state.stdout != "active"
@@ -32,7 +32,7 @@
 
 - name: Create overlay network for PARA stack
   docker_network:
-    name: "{{ swarm_overlay_network }}"
+    name: '{{ swarm_overlay_network }}'
     driver: overlay
     attachable: yes
     state: present
@@ -40,13 +40,13 @@
   run_once: true
 
 - name: Label manager nodes
-  shell: "docker node update --label-add {{ item }} {{ inventory_hostname }}"
-  loop: "{{ node_labels | default([]) }}"
+  shell: 'docker node update --label-add {{ item }} {{ inventory_hostname }}'
+  loop: '{{ node_labels | default([]) }}'
   when: inventory_hostname in groups['swarm_managers']
   delegate_to: "{{ groups['swarm_managers'][0] }}"
 
 - name: Label worker nodes
-  shell: "docker node update --label-add {{ item }} {{ inventory_hostname }}"
-  loop: "{{ node_labels | default([]) }}"
+  shell: 'docker node update --label-add {{ item }} {{ inventory_hostname }}'
+  loop: '{{ node_labels | default([]) }}'
   when: inventory_hostname in groups['swarm_workers']
   delegate_to: "{{ groups['swarm_managers'][0] }}"

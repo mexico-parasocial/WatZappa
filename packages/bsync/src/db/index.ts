@@ -21,7 +21,8 @@ import { DatabaseSchema, DatabaseSchemaType } from './schema/index.js'
 import { PgOptions } from './types.js'
 
 const require = createRequire(import.meta.url)
-const { Pool: PgPoolClass, types: pgTypes } = require('pg') as typeof import('pg')
+const { Pool: PgPoolClass, types: pgTypes } =
+  require('pg') as typeof import('pg')
 
 export class Database {
   pool: PgPool

@@ -1,5 +1,11 @@
 import { createHash, timingSafeEqual } from 'node:crypto'
-import { SignJWT, exportJWK, generateKeyPair, importPKCS8, type JWK } from 'jose'
+import {
+  SignJWT,
+  exportJWK,
+  generateKeyPair,
+  importPKCS8,
+  type JWK,
+} from 'jose'
 
 /*
  * The OIDC half of para-idp.
@@ -56,7 +62,10 @@ export class Signer {
    * production PARA_IDP_PRIVATE_KEY must be set, or MAS will intermittently
    * reject tokens it cannot verify.
    */
-  static async load(pkcs8Pem?: string, alg: SigningAlg = DEFAULT_ALG): Promise<Signer> {
+  static async load(
+    pkcs8Pem?: string,
+    alg: SigningAlg = DEFAULT_ALG,
+  ): Promise<Signer> {
     const { privateKey, publicKey } = pkcs8Pem
       ? {
           privateKey: await importPKCS8(pkcs8Pem, alg, { extractable: true }),
@@ -65,7 +74,9 @@ export class Signer {
       : await generateKeyPair(alg, { extractable: true })
 
     // Derive the public JWK from whichever half we have.
-    const jwk = publicKey ? await exportJWK(publicKey) : await exportJWK(privateKey)
+    const jwk = publicKey
+      ? await exportJWK(publicKey)
+      : await exportJWK(privateKey)
     // Strip every private field before this is ever published as JWKS. RSA
     // private keys carry more than `d` — leaving any of these in would publish
     // the signing key itself.
@@ -78,7 +89,15 @@ export class Signer {
     jwk.alg = alg
     jwk.use = 'sig'
     const kid = createHash('sha256')
-      .update(JSON.stringify({ crv: jwk.crv, kty: jwk.kty, x: jwk.x, n: jwk.n, e: jwk.e }))
+      .update(
+        JSON.stringify({
+          crv: jwk.crv,
+          kty: jwk.kty,
+          x: jwk.x,
+          n: jwk.n,
+          e: jwk.e,
+        }),
+      )
       .digest('base64url')
       .slice(0, 16)
     jwk.kid = kid
@@ -135,7 +154,8 @@ export function discoveryDocument(
  * would let a client downgrade itself by choosing the method.
  */
 export function verifyPkce(verifier: string, challenge: string): boolean {
-  if (typeof verifier !== 'string' || typeof challenge !== 'string') return false
+  if (typeof verifier !== 'string' || typeof challenge !== 'string')
+    return false
   if (verifier.length < 43 || verifier.length > 128) return false
   const computed = createHash('sha256').update(verifier).digest('base64url')
   const a = Buffer.from(computed)
@@ -162,7 +182,8 @@ export function authenticateClient(
   clientId: unknown,
   clientSecret: unknown,
 ): OidcClient | undefined {
-  if (typeof clientId !== 'string' || typeof clientSecret !== 'string') return undefined
+  if (typeof clientId !== 'string' || typeof clientSecret !== 'string')
+    return undefined
   const client = config.clients.find((c) => c.clientId === clientId)
   if (!client) return undefined
   const a = Buffer.from(client.clientSecret)

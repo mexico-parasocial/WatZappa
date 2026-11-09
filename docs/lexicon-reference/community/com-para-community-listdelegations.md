@@ -2,61 +2,65 @@
 title: com.para.community.listDelegations
 description: Reference for the com.para.community.listDelegations lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `delegator` | `string` | ❌  |  | Format: `did` |
-| `delegate` | `string` | ❌  |  | Format: `did` |
-| `community` | `string` | ❌  |  | Format: `at-uri` |
-| `limit` | `integer` | ❌  |  | Min: 1<br/>Max: 100<br/>Default: `50` |
-| `cursor` | `string` | ❌  |  |  |
-**Output:**
+| Name        | Type      | Req'd | Description | Constraints                           |
+| ----------- | --------- | ----- | ----------- | ------------------------------------- |
+| `delegator` | `string`  | ❌    |             | Format: `did`                         |
+| `delegate`  | `string`  | ❌    |             | Format: `did`                         |
+| `community` | `string`  | ❌    |             | Format: `at-uri`                      |
+| `limit`     | `integer` | ❌    |             | Min: 1<br/>Max: 100<br/>Default: `50` |
+| `cursor`    | `string`  | ❌    |             |                                       |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cursor` | `string` | ❌  |  |  |
-| `delegations` | Array of [`#delegationView`](#delegationview) | ✅  |  |  |
+| Name          | Type                                          | Req'd | Description | Constraints |
+| ------------- | --------------------------------------------- | ----- | ----------- | ----------- |
+| `cursor`      | `string`                                      | ❌    |             |             |
+| `delegations` | Array of [`#delegationView`](#delegationview) | ✅    |             |             |
 
 ---
 
 <a name="delegationview"></a>
+
 ### `delegationView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `cid` | `string` | ✅  |  | Format: `cid` |
-| `delegate` | `string` | ✅  |  | Format: `did` |
-| `delegator` | `string` | ✅  |  | Format: `did` |
-| `delegateRole` | `string` | ❌  |  |  |
-| `party` | `string` | ❌  |  |  |
-| `scope` | [`com.para.community.delegation#delegationScope`]([[com-para-community-delegation|com.para.community.delegation#delegationScope]]) | ✅  |  |  |
-| `expiresAt` | `string` | ❌  |  | Format: `datetime` |
-| `revokedAt` | `string` | ❌  |  | Format: `datetime` |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name           | Type                                                                              | Req'd                                            | Description | Constraints        |
+| -------------- | --------------------------------------------------------------------------------- | ------------------------------------------------ | ----------- | ------------------ |
+| `uri`          | `string`                                                                          | ✅                                               |             | Format: `at-uri`   |
+| `cid`          | `string`                                                                          | ✅                                               |             | Format: `cid`      |
+| `delegate`     | `string`                                                                          | ✅                                               |             | Format: `did`      |
+| `delegator`    | `string`                                                                          | ✅                                               |             | Format: `did`      |
+| `delegateRole` | `string`                                                                          | ❌                                               |             |                    |
+| `party`        | `string`                                                                          | ❌                                               |             |                    |
+| `scope`        | [`com.para.community.delegation#delegationScope`]([[com-para-community-delegation | com.para.community.delegation#delegationScope]]) | ✅          |                    |     |
+| `expiresAt`    | `string`                                                                          | ❌                                               |             | Format: `datetime` |
+| `revokedAt`    | `string`                                                                          | ❌                                               |             | Format: `datetime` |
+| `createdAt`    | `string`                                                                          | ✅                                               |             | Format: `datetime` |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -94,9 +98,7 @@ description: Reference for the com.para.community.listDelegations lexicon
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "delegations"
-          ],
+          "required": ["delegations"],
           "properties": {
             "cursor": {
               "type": "string"
@@ -114,14 +116,7 @@ description: Reference for the com.para.community.listDelegations lexicon
     },
     "delegationView": {
       "type": "object",
-      "required": [
-        "uri",
-        "cid",
-        "delegate",
-        "delegator",
-        "scope",
-        "createdAt"
-      ],
+      "required": ["uri", "cid", "delegate", "delegator", "scope", "createdAt"],
       "properties": {
         "uri": {
           "type": "string",

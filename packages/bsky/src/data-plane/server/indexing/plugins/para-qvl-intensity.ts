@@ -47,7 +47,10 @@ const insertFn = async (
     delegationDepth: obj.delegationDepth ?? 0,
     effectiveWeight: obj.effectiveWeight ?? null,
     voteNullifier: normalizeOpaqueProofField(obj.voteNullifier, 128),
-    eligibilityProofRef: normalizeOpaqueProofField(obj.eligibilityProofRef, 512),
+    eligibilityProofRef: normalizeOpaqueProofField(
+      obj.eligibilityProofRef,
+      512,
+    ),
     createdAt: normalizeDatetimeAlways(obj.createdAt),
     indexedAt: timestamp,
   }

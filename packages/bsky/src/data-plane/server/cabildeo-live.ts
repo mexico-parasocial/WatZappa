@@ -1,6 +1,9 @@
 import { Selectable, sql } from 'kysely'
 import { Database } from './db/index.js'
-import { CabildeoLivePresence, CabildeoLiveSession } from './db/tables/cabildeo.js'
+import {
+  CabildeoLivePresence,
+  CabildeoLiveSession,
+} from './db/tables/cabildeo.js'
 
 export const LIVE_CABILDEO_ALLOWED_PHASES = [
   'open',

@@ -2,56 +2,60 @@
 title: com.para.community.listVotes
 description: Reference for the com.para.community.listVotes lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `proposal` | `string` | ✅  |  | Format: `at-uri` |
-| `limit` | `integer` | ❌  |  | Min: 1<br/>Max: 100<br/>Default: `50` |
-| `cursor` | `string` | ❌  |  |  |
-**Output:**
+| Name        | Type      | Req'd | Description | Constraints                           |
+| ----------- | --------- | ----- | ----------- | ------------------------------------- |
+| `proposal`  | `string`  | ✅    |             | Format: `at-uri`                      |
+| `limit`     | `integer` | ❌    |             | Min: 1<br/>Max: 100<br/>Default: `50` |
+| `cursor`    | `string`  | ❌    |             |                                       |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cursor` | `string` | ❌  |  |  |
-| `votes` | Array of [`#voteView`](#voteview) | ✅  |  |  |
+| Name     | Type                              | Req'd | Description | Constraints |
+| -------- | --------------------------------- | ----- | ----------- | ----------- |
+| `cursor` | `string`                          | ❌    |             |             |
+| `votes`  | Array of [`#voteView`](#voteview) | ✅    |             |             |
 
 ---
 
 <a name="voteview"></a>
+
 ### `voteView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `cid` | `string` | ✅  |  | Format: `cid` |
-| `creator` | `string` | ✅  |  | Format: `did` |
-| `proposal` | `string` | ✅  |  | Format: `at-uri` |
-| `community` | `string` | ✅  |  | Format: `at-uri` |
-| `signal` | `integer` | ✅  |  | Min: -3<br/>Max: 3 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name        | Type      | Req'd | Description | Constraints        |
+| ----------- | --------- | ----- | ----------- | ------------------ |
+| `uri`       | `string`  | ✅    |             | Format: `at-uri`   |
+| `cid`       | `string`  | ✅    |             | Format: `cid`      |
+| `creator`   | `string`  | ✅    |             | Format: `did`      |
+| `proposal`  | `string`  | ✅    |             | Format: `at-uri`   |
+| `community` | `string`  | ✅    |             | Format: `at-uri`   |
+| `signal`    | `integer` | ✅    |             | Min: -3<br/>Max: 3 |
+| `createdAt` | `string`  | ✅    |             | Format: `datetime` |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -61,9 +65,7 @@ description: Reference for the com.para.community.listVotes lexicon
       "type": "query",
       "parameters": {
         "type": "params",
-        "required": [
-          "proposal"
-        ],
+        "required": ["proposal"],
         "properties": {
           "proposal": {
             "type": "string",
@@ -84,9 +86,7 @@ description: Reference for the com.para.community.listVotes lexicon
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "votes"
-          ],
+          "required": ["votes"],
           "properties": {
             "cursor": {
               "type": "string"

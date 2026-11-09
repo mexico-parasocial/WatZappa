@@ -9,9 +9,9 @@
         "type": "params",
         "required": ["proposal"],
         "properties": {
-          "proposal": {"type": "string", "format": "at-uri"},
-          "limit": {"type": "integer", "minimum": 1, "maximum": 100},
-          "cursor": {"type": "string"}
+          "proposal": { "type": "string", "format": "at-uri" },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 100 },
+          "cursor": { "type": "string" }
         }
       },
       "output": {
@@ -19,10 +19,10 @@
         "schema": {
           "type": "object",
           "properties": {
-            "cursor": {"type": "string"},
+            "cursor": { "type": "string" },
             "statements": {
               "type": "array",
-              "items": {"type": "ref", "ref": "#deliberationStatement"}
+              "items": { "type": "ref", "ref": "#deliberationStatement" }
             }
           }
         }
@@ -43,21 +43,21 @@
         "createdAt"
       ],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"},
-        "cid": {"type": "string", "format": "cid"},
-        "creator": {"type": "string", "format": "did"},
-        "proposal": {"type": "string", "format": "at-uri"},
-        "body": {"type": "string", "maxLength": 10000},
-        "stance": {"type": "string", "maxLength": 100},
-        "agreeCount": {"type": "integer", "minimum": 0},
-        "disagreeCount": {"type": "integer", "minimum": 0},
-        "passCount": {"type": "integer", "minimum": 0},
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "creator": { "type": "string", "format": "did" },
+        "proposal": { "type": "string", "format": "at-uri" },
+        "body": { "type": "string", "maxLength": 10000 },
+        "stance": { "type": "string", "maxLength": 100 },
+        "agreeCount": { "type": "integer", "minimum": 0 },
+        "disagreeCount": { "type": "integer", "minimum": 0 },
+        "passCount": { "type": "integer", "minimum": 0 },
         "viewerDirection": {
           "type": "string",
           "knownValues": ["agree", "disagree", "pass"],
           "description": "How the requesting viewer already weighed this argument, if they did. Absent for a logged-out viewer."
         },
-        "createdAt": {"type": "string", "format": "datetime"}
+        "createdAt": { "type": "string", "format": "datetime" }
       }
     }
   }

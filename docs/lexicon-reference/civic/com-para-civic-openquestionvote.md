@@ -2,11 +2,13 @@
 title: com.para.civic.openQuestionVote
 description: Reference for the com.para.civic.openQuestionVote lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -17,17 +19,18 @@ A vote on an open question reply. Stores the voter's upvote/downvote on a specif
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `subject` | `string` | ✅  | The reply post URI being voted on. | Format: `at-uri` |
-| `value` | `integer` | ✅  | Vote value: -1 = downvote, 0 = none (removal), 1 = upvote. | Min: -1<br/>Max: 1 |
-| `voteNullifier` | `string` | ❌  | DEPRECATED 2026-09-22 (OD-7 §5h): this collection is a public reaction and its count decides nothing, so no m8 nullifier is requested. The PDS refuses any write of this record that carries this field; do not set it. When reactions did request one, issuance made m8 derive the value server-side from a stable person identifier and store a durable (person, subject) row beside it. | Max Length: 128 |
-| `eligibilityProofRef` | `string` | ❌  | DEPRECATED 2026-09-22 (OD-7 §5h): this reaction carries no m8 proof. The PDS refuses any write of this record that carries this field; do not set it. | Max Length: 512 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name                  | Type      | Req'd | Description                                                                                                                                                                                                                                                                                                                                                                                | Constraints        |
+| --------------------- | --------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| `subject`             | `string`  | ✅    | The reply post URI being voted on.                                                                                                                                                                                                                                                                                                                                                         | Format: `at-uri`   |
+| `value`               | `integer` | ✅    | Vote value: -1 = downvote, 0 = none (removal), 1 = upvote.                                                                                                                                                                                                                                                                                                                                 | Min: -1<br/>Max: 1 |
+| `voteNullifier`       | `string`  | ❌    | DEPRECATED 2026-09-22 (OD-7 §5h): this collection is a public reaction and its count decides nothing, so no m8 nullifier is requested. The PDS refuses any write of this record that carries this field; do not set it. When reactions did request one, issuance made m8 derive the value server-side from a stable person identifier and store a durable (person, subject) row beside it. | Max Length: 128    |
+| `eligibilityProofRef` | `string`  | ❌    | DEPRECATED 2026-09-22 (OD-7 §5h): this reaction carries no m8 proof. The PDS refuses any write of this record that carries this field; do not set it.                                                                                                                                                                                                                                      | Max Length: 512    |
+| `createdAt`           | `string`  | ✅    |                                                                                                                                                                                                                                                                                                                                                                                            | Format: `datetime` |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -39,11 +42,7 @@ A vote on an open question reply. Stores the voter's upvote/downvote on a specif
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "subject",
-          "value",
-          "createdAt"
-        ],
+        "required": ["subject", "value", "createdAt"],
         "properties": {
           "subject": {
             "type": "string",

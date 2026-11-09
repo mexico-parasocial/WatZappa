@@ -45,9 +45,9 @@
 - name: Configure UFW — allow inbound TCP
   community.general.ufw:
     rule: allow
-    port: "{{ item }}"
+    port: '{{ item }}'
     proto: tcp
-  loop: "{{ ufw_allowed_tcp_ports }}"
+  loop: '{{ ufw_allowed_tcp_ports }}'
   # 80 is in this list on purpose. Caddy needs it for the ACME HTTP-01
   # challenge and the HTTPS redirect; without it, certificate issuance fails
   # and every hostname serves a TLS error.
@@ -55,7 +55,7 @@
 - name: Configure UFW — Matrix federation port
   community.general.ufw:
     rule: "{{ 'allow' if ufw_allow_matrix_federation else 'deny' }}"
-    port: "8448"
+    port: '8448'
     proto: tcp
   # Default is deny. deploy/matrix/hardening.yaml sets an empty
   # federation_domain_whitelist, so this server federates with nobody; an open
@@ -71,7 +71,7 @@
   ansible.builtin.template:
     src: jail.local.j2
     dest: /etc/fail2ban/jail.local
-    mode: "0644"
+    mode: '0644'
   notify: Restart fail2ban
 
 - name: Ensure fail2ban is running
@@ -82,9 +82,9 @@
 
 - name: Create the PARA deploy directory
   ansible.builtin.file:
-    path: "{{ para_deploy_dir }}"
+    path: '{{ para_deploy_dir }}'
     state: directory
-    mode: "0750"
+    mode: '0750'
   # 0750, not 0755: this directory holds the stack .env, the Synapse signing
   # key and the MAS shared secret. It has no business being world-readable.
 
@@ -99,18 +99,18 @@
   ansible.builtin.copy:
     content: "br_netfilter\n"
     dest: /etc/modules-load.d/br_netfilter.conf
-    mode: "0644"
+    mode: '0644'
 
 - name: Tune kernel params for Docker
   ansible.posix.sysctl:
-    name: "{{ item.key }}"
-    value: "{{ item.value }}"
+    name: '{{ item.key }}'
+    value: '{{ item.value }}'
     state: present
     reload: true
   loop:
-    - {key: "net.ipv4.ip_forward", value: "1"}
-    - {key: "net.bridge.bridge-nf-call-iptables", value: "1"}
-    - {key: "net.bridge.bridge-nf-call-ip6tables", value: "1"}
-    - {key: "vm.max_map_count", value: "262144"}
+    - { key: 'net.ipv4.ip_forward', value: '1' }
+    - { key: 'net.bridge.bridge-nf-call-iptables', value: '1' }
+    - { key: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
+    - { key: 'vm.max_map_count', value: '262144' }
   loop_control:
-    label: "{{ item.key }}"
+    label: '{{ item.key }}'

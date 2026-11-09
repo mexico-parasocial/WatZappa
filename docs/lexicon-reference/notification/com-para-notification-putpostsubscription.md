@@ -2,11 +2,13 @@
 title: com.para.notification.putPostSubscription
 description: Reference for the com.para.notification.putPostSubscription lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `procedure`
@@ -22,28 +24,29 @@ Enable or disable notification subscriptions for a post. Requires auth.
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `post` | `string` | ✅  |  | Format: `at-uri` |
-| `reply` | `boolean` | ✅  |  |  |
-| `quote` | `boolean` | ✅  |  |  |
-**Output:**
+| Name        | Type      | Req'd | Description | Constraints      |
+| ----------- | --------- | ----- | ----------- | ---------------- |
+| `post`      | `string`  | ✅    |             | Format: `at-uri` |
+| `reply`     | `boolean` | ✅    |             |                  |
+| `quote`     | `boolean` | ✅    |             |                  |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `post` | `string` | ✅  |  | Format: `at-uri` |
-| `reply` | `boolean` | ✅  |  |  |
-| `quote` | `boolean` | ✅  |  |  |
-| `indexedAt` | `string` | ❌  |  | Format: `datetime` |
+| Name        | Type      | Req'd | Description | Constraints        |
+| ----------- | --------- | ----- | ----------- | ------------------ |
+| `post`      | `string`  | ✅    |             | Format: `at-uri`   |
+| `reply`     | `boolean` | ✅    |             |                    |
+| `quote`     | `boolean` | ✅    |             |                    |
+| `indexedAt` | `string`  | ❌    |             | Format: `datetime` |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -56,11 +59,7 @@ Enable or disable notification subscriptions for a post. Requires auth.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "post",
-            "reply",
-            "quote"
-          ],
+          "required": ["post", "reply", "quote"],
           "properties": {
             "post": {
               "type": "string",
@@ -79,11 +78,7 @@ Enable or disable notification subscriptions for a post. Requires auth.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "post",
-            "reply",
-            "quote"
-          ],
+          "required": ["post", "reply", "quote"],
           "properties": {
             "post": {
               "type": "string",

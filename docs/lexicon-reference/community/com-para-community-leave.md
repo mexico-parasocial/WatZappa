@@ -2,11 +2,13 @@
 title: com.para.community.leave
 description: Reference for the com.para.community.leave lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `procedure`
@@ -22,38 +24,38 @@ Leaves a PARA community board by marking the caller's membership record as left.
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `communityUri` | `string` | ✅  | URI of the com.para.community.board record to leave. | Format: `at-uri` |
-**Output:**
+| Name           | Type     | Req'd | Description                                          | Constraints      |
+| -------------- | -------- | ----- | ---------------------------------------------------- | ---------------- |
+| `communityUri` | `string` | ✅    | URI of the com.para.community.board record to leave. | Format: `at-uri` |
+| **Output:**    |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** [`#output`](#output)
 
-
-
 ---
 
 <a name="output"></a>
+
 ### `output`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `cid` | `string` | ✅  |  | Format: `cid` |
-| `communityUri` | `string` | ✅  |  | Format: `at-uri` |
-| `membershipState` | `string` | ✅  |  | Known Values: `pending`, `active`, `left`, `removed`, `blocked` |
-| `viewerCapabilities` | Array of `string` | ✅  |  |  |
+| Name                 | Type              | Req'd | Description | Constraints                                                     |
+| -------------------- | ----------------- | ----- | ----------- | --------------------------------------------------------------- |
+| `uri`                | `string`          | ✅    |             | Format: `at-uri`                                                |
+| `cid`                | `string`          | ✅    |             | Format: `cid`                                                   |
+| `communityUri`       | `string`          | ✅    |             | Format: `at-uri`                                                |
+| `membershipState`    | `string`          | ✅    |             | Known Values: `pending`, `active`, `left`, `removed`, `blocked` |
+| `viewerCapabilities` | Array of `string` | ✅    |             |                                                                 |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -66,9 +68,7 @@ Leaves a PARA community board by marking the caller's membership record as left.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "communityUri"
-          ],
+          "required": ["communityUri"],
           "properties": {
             "communityUri": {
               "type": "string",
@@ -110,13 +110,7 @@ Leaves a PARA community board by marking the caller's membership record as left.
         },
         "membershipState": {
           "type": "string",
-          "knownValues": [
-            "pending",
-            "active",
-            "left",
-            "removed",
-            "blocked"
-          ]
+          "knownValues": ["pending", "active", "left", "removed", "blocked"]
         },
         "viewerCapabilities": {
           "type": "array",

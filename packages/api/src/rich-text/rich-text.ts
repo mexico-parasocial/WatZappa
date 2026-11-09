@@ -91,7 +91,11 @@ F: 0 1 2 3 4 5 6 7 8 910   // string indices
    ^-------^               // target slice {start: 0, end: 5}
  */
 
-import { AppBskyFeedPost, AppBskyRichtextFacet, AtpBaseClient } from '../client/index.js'
+import {
+  AppBskyFeedPost,
+  AppBskyRichtextFacet,
+  AtpBaseClient,
+} from '../client/index.js'
 import { detectFacets } from './detection.js'
 import { sanitizeRichText } from './sanitization.js'
 import { UnicodeString } from './unicode.js'

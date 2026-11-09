@@ -2,11 +2,13 @@
 title: com.para.community.civicTree.rejectSuggestion
 description: Reference for the com.para.community.civicTree.rejectSuggestion lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `procedure`
@@ -20,14 +22,15 @@ description: Reference for the com.para.community.civicTree.rejectSuggestion lex
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `id` | `string` | ✅  |  |  |
-| `communityUri` | `string` | ❌  |  | Format: `at-uri` |
+| Name           | Type     | Req'd | Description | Constraints      |
+| -------------- | -------- | ----- | ----------- | ---------------- |
+| `id`           | `string` | ✅    |             |                  |
+| `communityUri` | `string` | ❌    |             | Format: `at-uri` |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -39,9 +42,7 @@ description: Reference for the com.para.community.civicTree.rejectSuggestion lex
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "properties": {
             "id": {
               "type": "string"

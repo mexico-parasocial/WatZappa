@@ -2,124 +2,131 @@
 title: com.para.community.civicTree.defs
 description: Reference for the com.para.community.civicTree.defs lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="cardview"></a>
+
 ### `cardView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `id` | `string` | ✅  |  |  |
-| `uri` | `string` | ❌  |  | Format: `at-uri` |
-| `cid` | `string` | ❌  |  | Format: `cid` |
-| `community_uri` | `string` | ✅  |  | Format: `at-uri` |
-| `author_did` | `string` | ✅  |  | Format: `did` |
-| `title` | `string` | ✅  |  | Max Length: 500 |
-| `content` | `string` | ❌  |  | Max Length: 10000 |
-| `card_type` | `string` | ✅  |  | Max Length: 64 |
-| `source_uri` | `string` | ❌  |  | Format: `at-uri` |
-| `source_url` | `string` | ❌  |  | Format: `uri` |
-| `metadata` | `string` | ❌  |  | Max Length: 20000 |
-| `influence` | `integer` | ❌  |  |  |
-| `vote_count` | `integer` | ❌  |  | Min: 0 |
-| `stance` | `string` | ❌  |  | Known Values: `pro`, `con`, `neutral` |
-| `compass_quadrant` | `string` | ❌  |  | Max Length: 64 |
-| `created_at` | `string` | ❌  |  | Format: `datetime` |
-| `updated_at` | `string` | ❌  |  | Format: `datetime` |
+| Name               | Type      | Req'd | Description | Constraints                           |
+| ------------------ | --------- | ----- | ----------- | ------------------------------------- |
+| `id`               | `string`  | ✅    |             |                                       |
+| `uri`              | `string`  | ❌    |             | Format: `at-uri`                      |
+| `cid`              | `string`  | ❌    |             | Format: `cid`                         |
+| `community_uri`    | `string`  | ✅    |             | Format: `at-uri`                      |
+| `author_did`       | `string`  | ✅    |             | Format: `did`                         |
+| `title`            | `string`  | ✅    |             | Max Length: 500                       |
+| `content`          | `string`  | ❌    |             | Max Length: 10000                     |
+| `card_type`        | `string`  | ✅    |             | Max Length: 64                        |
+| `source_uri`       | `string`  | ❌    |             | Format: `at-uri`                      |
+| `source_url`       | `string`  | ❌    |             | Format: `uri`                         |
+| `metadata`         | `string`  | ❌    |             | Max Length: 20000                     |
+| `influence`        | `integer` | ❌    |             |                                       |
+| `vote_count`       | `integer` | ❌    |             | Min: 0                                |
+| `stance`           | `string`  | ❌    |             | Known Values: `pro`, `con`, `neutral` |
+| `compass_quadrant` | `string`  | ❌    |             | Max Length: 64                        |
+| `created_at`       | `string`  | ❌    |             | Format: `datetime`                    |
+| `updated_at`       | `string`  | ❌    |             | Format: `datetime`                    |
 
 ---
 
 <a name="relationshipview"></a>
+
 ### `relationshipView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `id` | `string` | ✅  |  |  |
-| `uri` | `string` | ❌  |  | Format: `at-uri` |
-| `cid` | `string` | ❌  |  | Format: `cid` |
-| `community_uri` | `string` | ❌  |  | Format: `at-uri` |
-| `source_card_id` | `string` | ✅  |  |  |
-| `target_card_id` | `string` | ✅  |  |  |
-| `relationship_type` | `string` | ✅  |  | Max Length: 64 |
-| `author_did` | `string` | ✅  |  | Format: `did` |
-| `created_at` | `string` | ✅  |  | Format: `datetime` |
+| Name                | Type     | Req'd | Description | Constraints        |
+| ------------------- | -------- | ----- | ----------- | ------------------ |
+| `id`                | `string` | ✅    |             |                    |
+| `uri`               | `string` | ❌    |             | Format: `at-uri`   |
+| `cid`               | `string` | ❌    |             | Format: `cid`      |
+| `community_uri`     | `string` | ❌    |             | Format: `at-uri`   |
+| `source_card_id`    | `string` | ✅    |             |                    |
+| `target_card_id`    | `string` | ✅    |             |                    |
+| `relationship_type` | `string` | ✅    |             | Max Length: 64     |
+| `author_did`        | `string` | ✅    |             | Format: `did`      |
+| `created_at`        | `string` | ✅    |             | Format: `datetime` |
 
 ---
 
 <a name="contributionview"></a>
+
 ### `contributionView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `id` | `string` | ✅  |  |  |
-| `uri` | `string` | ❌  |  | Format: `at-uri` |
-| `cid` | `string` | ❌  |  | Format: `cid` |
-| `community_uri` | `string` | ✅  |  | Format: `at-uri` |
-| `author_did` | `string` | ✅  |  | Format: `did` |
-| `title` | `string` | ✅  |  | Max Length: 500 |
-| `content` | `string` | ❌  |  | Max Length: 10000 |
-| `source_uri` | `string` | ❌  |  | Format: `at-uri` |
-| `source_url` | `string` | ❌  |  | Format: `uri` |
-| `source_type` | `string` | ✅  |  | Max Length: 64 |
-| `metadata` | `string` | ❌  |  | Max Length: 20000 |
-| `status` | `string` | ✅  |  | Known Values: `pending`, `approved`, `rejected` |
-| `approved_card_id` | `string` | ❌  |  |  |
-| `created_at` | `string` | ✅  |  | Format: `datetime` |
-| `decided_at` | `string` | ❌  |  | Format: `datetime` |
-| `approve_count` | `integer` | ✅  |  | Min: 0 |
-| `reject_count` | `integer` | ✅  |  | Min: 0 |
-| `viewer_vote` | `string` | ❌  |  | Known Values: `approve`, `reject` |
+| Name               | Type      | Req'd | Description | Constraints                                     |
+| ------------------ | --------- | ----- | ----------- | ----------------------------------------------- |
+| `id`               | `string`  | ✅    |             |                                                 |
+| `uri`              | `string`  | ❌    |             | Format: `at-uri`                                |
+| `cid`              | `string`  | ❌    |             | Format: `cid`                                   |
+| `community_uri`    | `string`  | ✅    |             | Format: `at-uri`                                |
+| `author_did`       | `string`  | ✅    |             | Format: `did`                                   |
+| `title`            | `string`  | ✅    |             | Max Length: 500                                 |
+| `content`          | `string`  | ❌    |             | Max Length: 10000                               |
+| `source_uri`       | `string`  | ❌    |             | Format: `at-uri`                                |
+| `source_url`       | `string`  | ❌    |             | Format: `uri`                                   |
+| `source_type`      | `string`  | ✅    |             | Max Length: 64                                  |
+| `metadata`         | `string`  | ❌    |             | Max Length: 20000                               |
+| `status`           | `string`  | ✅    |             | Known Values: `pending`, `approved`, `rejected` |
+| `approved_card_id` | `string`  | ❌    |             |                                                 |
+| `created_at`       | `string`  | ✅    |             | Format: `datetime`                              |
+| `decided_at`       | `string`  | ❌    |             | Format: `datetime`                              |
+| `approve_count`    | `integer` | ✅    |             | Min: 0                                          |
+| `reject_count`     | `integer` | ✅    |             | Min: 0                                          |
+| `viewer_vote`      | `string`  | ❌    |             | Known Values: `approve`, `reject`               |
 
 ---
 
 <a name="graphview"></a>
+
 ### `graphView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `nodes` | Array of [`com.para.community.civicTree.defs#cardView`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#cardView]]) | ✅  |  |  |
-| `edges` | Array of [`com.para.community.civicTree.defs#relationshipView`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#relationshipView]]) | ✅  |  |  |
+| Name    | Type                                                                                                | Req'd                                                 | Description | Constraints |
+| ------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------- | ----------- |
+| `nodes` | Array of [`com.para.community.civicTree.defs#cardView`]([[com-para-community-civictree-defs         | com.para.community.civicTree.defs#cardView]])         | ✅          |             |     |
+| `edges` | Array of [`com.para.community.civicTree.defs#relationshipView`]([[com-para-community-civictree-defs | com.para.community.civicTree.defs#relationshipView]]) | ✅          |             |     |
 
 ---
 
 <a name="configview"></a>
+
 ### `configView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `community_uri` | `string` | ✅  |  | Format: `at-uri` |
-| `governance_mode` | `string` | ✅  |  | Known Values: `votes_sortition`, `moderator_gate` |
-| `approvals_required` | `integer` | ✅  |  | Min: 1 |
-| `approval_margin_required` | `integer` | ✅  |  | Min: 0 |
-| `moderator_gate_enabled` | `boolean` | ❌  |  |  |
-| `sortition_enabled` | `boolean` | ❌  |  |  |
-| `updated_at` | `string` | ❌  |  | Format: `datetime` |
+| Name                       | Type      | Req'd | Description | Constraints                                       |
+| -------------------------- | --------- | ----- | ----------- | ------------------------------------------------- |
+| `community_uri`            | `string`  | ✅    |             | Format: `at-uri`                                  |
+| `governance_mode`          | `string`  | ✅    |             | Known Values: `votes_sortition`, `moderator_gate` |
+| `approvals_required`       | `integer` | ✅    |             | Min: 1                                            |
+| `approval_margin_required` | `integer` | ✅    |             | Min: 0                                            |
+| `moderator_gate_enabled`   | `boolean` | ❌    |             |                                                   |
+| `sortition_enabled`        | `boolean` | ❌    |             |                                                   |
+| `updated_at`               | `string`  | ❌    |             | Format: `datetime`                                |
 
 ---
 
 <a name="cardvoteview"></a>
+
 ### `cardVoteView`
 
 **Type:** `object`
@@ -128,103 +135,110 @@ A viewer's own influence vote on a card.
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `influence` | `integer` | ✅  |  | Min: -3<br/>Max: 3 |
+| Name        | Type      | Req'd | Description | Constraints        |
+| ----------- | --------- | ----- | ----------- | ------------------ |
+| `influence` | `integer` | ✅    |             | Min: -3<br/>Max: 3 |
 
 ---
 
 <a name="stancedistribution"></a>
+
 ### `stanceDistribution`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `pro` | `integer` | ✅  |  |  |
-| `con` | `integer` | ✅  |  |  |
-| `neutral` | `integer` | ✅  |  |  |
+| Name      | Type      | Req'd | Description | Constraints |
+| --------- | --------- | ----- | ----------- | ----------- |
+| `pro`     | `integer` | ✅    |             |             |
+| `con`     | `integer` | ✅    |             |             |
+| `neutral` | `integer` | ✅    |             |             |
 
 ---
 
 <a name="normalizedclaim"></a>
+
 ### `normalizedClaim`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `claim` | `string` | ✅  |  |  |
-| `stance` | `string` | ✅  |  | Known Values: `support`, `oppose`, `unsure`, `amendment`, `needs_evidence` |
-| `sourceType` | `string` | ✅  |  |  |
-| `sourceId` | `string` | ❌  |  |  |
+| Name         | Type     | Req'd | Description | Constraints                                                                |
+| ------------ | -------- | ----- | ----------- | -------------------------------------------------------------------------- |
+| `claim`      | `string` | ✅    |             |                                                                            |
+| `stance`     | `string` | ✅    |             | Known Values: `support`, `oppose`, `unsure`, `amendment`, `needs_evidence` |
+| `sourceType` | `string` | ✅    |             |                                                                            |
+| `sourceId`   | `string` | ❌    |             |                                                                            |
 
 ---
 
 <a name="tensionline"></a>
+
 ### `tensionLine`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `axis` | `string` | ✅  |  |  |
-| `summary` | `string` | ✅  |  |  |
-| `sides` | Array of `string` | ✅  |  |  |
-| `relatedClaimIds` | Array of `string` | ❌  |  |  |
+| Name              | Type              | Req'd | Description | Constraints |
+| ----------------- | ----------------- | ----- | ----------- | ----------- |
+| `axis`            | `string`          | ✅    |             |             |
+| `summary`         | `string`          | ✅    |             |             |
+| `sides`           | Array of `string` | ✅    |             |             |
+| `relatedClaimIds` | Array of `string` | ❌    |             |             |
 
 ---
 
 <a name="openquestion"></a>
+
 ### `openQuestion`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `question` | `string` | ✅  |  |  |
-| `whyItMatters` | `string` | ✅  |  |  |
-| `relatedClaimIds` | Array of `string` | ❌  |  |  |
+| Name              | Type              | Req'd | Description | Constraints |
+| ----------------- | ----------------- | ----- | ----------- | ----------- |
+| `question`        | `string`          | ✅    |             |             |
+| `whyItMatters`    | `string`          | ✅    |             |             |
+| `relatedClaimIds` | Array of `string` | ❌    |             |             |
 
 ---
 
 <a name="consensusarea"></a>
+
 ### `consensusArea`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `topic` | `string` | ✅  |  |  |
-| `claims` | Array of `string` | ✅  |  |  |
+| Name     | Type              | Req'd | Description | Constraints |
+| -------- | ----------------- | ----- | ----------- | ----------- |
+| `topic`  | `string`          | ✅    |             |             |
+| `claims` | Array of `string` | ✅    |             |             |
 
 ---
 
 <a name="unresolvedconflict"></a>
+
 ### `unresolvedConflict`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `topic` | `string` | ✅  |  |  |
-| `opposingClaims` | Array of `string` | ✅  |  |  |
+| Name             | Type              | Req'd | Description | Constraints |
+| ---------------- | ----------------- | ----- | ----------- | ----------- |
+| `topic`          | `string`          | ✅    |             |             |
+| `opposingClaims` | Array of `string` | ✅    |             |             |
 
 ---
 
 <a name="summaryview"></a>
+
 ### `summaryView`
 
 **Type:** `object`
@@ -233,71 +247,75 @@ Derived reading of a community civic tree: what is claimed, where it conflicts, 
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `normalizedClaims` | Array of [`com.para.community.civicTree.defs#normalizedClaim`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#normalizedClaim]]) | ✅  |  |  |
-| `tensionLines` | Array of [`com.para.community.civicTree.defs#tensionLine`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#tensionLine]]) | ✅  |  |  |
-| `openQuestions` | Array of [`com.para.community.civicTree.defs#openQuestion`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#openQuestion]]) | ✅  |  |  |
-| `consensusAreas` | Array of [`com.para.community.civicTree.defs#consensusArea`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#consensusArea]]) | ✅  |  |  |
-| `unresolvedConflicts` | Array of [`com.para.community.civicTree.defs#unresolvedConflict`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#unresolvedConflict]]) | ✅  |  |  |
-| `bridgeStatements` | Array of `string` | ✅  |  |  |
-| `stanceDistribution` | [`com.para.community.civicTree.defs#stanceDistribution`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#stanceDistribution]]) | ✅  |  |  |
-| `totalClaims` | `integer` | ✅  |  |  |
-| `totalRelationships` | `integer` | ✅  |  |  |
-| `generatedAt` | `string` | ✅  |  | Format: `datetime` |
+| Name                  | Type                                                                                                  | Req'd                                                   | Description | Constraints        |
+| --------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ----------- | ------------------ |
+| `normalizedClaims`    | Array of [`com.para.community.civicTree.defs#normalizedClaim`]([[com-para-community-civictree-defs    | com.para.community.civicTree.defs#normalizedClaim]])    | ✅          |                    |     |
+| `tensionLines`        | Array of [`com.para.community.civicTree.defs#tensionLine`]([[com-para-community-civictree-defs        | com.para.community.civicTree.defs#tensionLine]])        | ✅          |                    |     |
+| `openQuestions`       | Array of [`com.para.community.civicTree.defs#openQuestion`]([[com-para-community-civictree-defs       | com.para.community.civicTree.defs#openQuestion]])       | ✅          |                    |     |
+| `consensusAreas`      | Array of [`com.para.community.civicTree.defs#consensusArea`]([[com-para-community-civictree-defs      | com.para.community.civicTree.defs#consensusArea]])      | ✅          |                    |     |
+| `unresolvedConflicts` | Array of [`com.para.community.civicTree.defs#unresolvedConflict`]([[com-para-community-civictree-defs | com.para.community.civicTree.defs#unresolvedConflict]]) | ✅          |                    |     |
+| `bridgeStatements`    | Array of `string`                                                                                     | ✅                                                      |             |                    |
+| `stanceDistribution`  | [`com.para.community.civicTree.defs#stanceDistribution`]([[com-para-community-civictree-defs          | com.para.community.civicTree.defs#stanceDistribution]]) | ✅          |                    |     |
+| `totalClaims`         | `integer`                                                                                             | ✅                                                      |             |                    |
+| `totalRelationships`  | `integer`                                                                                             | ✅                                                      |             |                    |
+| `generatedAt`         | `string`                                                                                              | ✅                                                      |             | Format: `datetime` |
 
 ---
 
 <a name="topentity"></a>
+
 ### `topEntity`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `value` | `string` | ✅  |  |  |
-| `type` | `string` | ✅  |  |  |
-| `count` | `integer` | ✅  |  |  |
+| Name    | Type      | Req'd | Description | Constraints |
+| ------- | --------- | ----- | ----------- | ----------- |
+| `value` | `string`  | ✅    |             |             |
+| `type`  | `string`  | ✅    |             |             |
+| `count` | `integer` | ✅    |             |             |
 
 ---
 
 <a name="pulseclaim"></a>
+
 ### `pulseClaim`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `id` | `string` | ✅  |  |  |
-| `title` | `string` | ✅  |  |  |
-| `stance` | `string` | ❌  |  |  |
-| `influence` | `integer` | ✅  |  |  |
-| `voteCount` | `integer` | ✅  |  |  |
-| `cardType` | `string` | ✅  |  |  |
+| Name        | Type      | Req'd | Description | Constraints |
+| ----------- | --------- | ----- | ----------- | ----------- |
+| `id`        | `string`  | ✅    |             |             |
+| `title`     | `string`  | ✅    |             |             |
+| `stance`    | `string`  | ❌    |             |             |
+| `influence` | `integer` | ✅    |             |             |
+| `voteCount` | `integer` | ✅    |             |             |
+| `cardType`  | `string`  | ✅    |             |             |
 
 ---
 
 <a name="pulseuserstats"></a>
+
 ### `pulseUserStats`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `votesCast` | `integer` | ✅  |  |  |
-| `proVotes` | `integer` | ✅  |  |  |
-| `conVotes` | `integer` | ✅  |  |  |
-| `neutralVotes` | `integer` | ✅  |  |  |
+| Name           | Type      | Req'd | Description | Constraints |
+| -------------- | --------- | ----- | ----------- | ----------- |
+| `votesCast`    | `integer` | ✅    |             |             |
+| `proVotes`     | `integer` | ✅    |             |             |
+| `conVotes`     | `integer` | ✅    |             |             |
+| `neutralVotes` | `integer` | ✅    |             |             |
 
 ---
 
 <a name="pulseview"></a>
+
 ### `pulseView`
 
 **Type:** `object`
@@ -306,17 +324,18 @@ Live activity signals for a community civic tree.
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `stanceDistribution` | [`com.para.community.civicTree.defs#stanceDistribution`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#stanceDistribution]]) | ✅  |  |  |
-| `topEntities` | Array of [`com.para.community.civicTree.defs#topEntity`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#topEntity]]) | ✅  |  |  |
-| `trendingClaims` | Array of [`com.para.community.civicTree.defs#pulseClaim`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#pulseClaim]]) | ✅  |  |  |
-| `controversialClaims` | Array of [`com.para.community.civicTree.defs#pulseClaim`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#pulseClaim]]) | ✅  |  |  |
-| `userStats` | [`com.para.community.civicTree.defs#pulseUserStats`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#pulseUserStats]]) | ❌  |  |  |
+| Name                  | Type                                                                                          | Req'd                                                   | Description | Constraints |
+| --------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ----------- | ----------- |
+| `stanceDistribution`  | [`com.para.community.civicTree.defs#stanceDistribution`]([[com-para-community-civictree-defs  | com.para.community.civicTree.defs#stanceDistribution]]) | ✅          |             |     |
+| `topEntities`         | Array of [`com.para.community.civicTree.defs#topEntity`]([[com-para-community-civictree-defs  | com.para.community.civicTree.defs#topEntity]])          | ✅          |             |     |
+| `trendingClaims`      | Array of [`com.para.community.civicTree.defs#pulseClaim`]([[com-para-community-civictree-defs | com.para.community.civicTree.defs#pulseClaim]])         | ✅          |             |     |
+| `controversialClaims` | Array of [`com.para.community.civicTree.defs#pulseClaim`]([[com-para-community-civictree-defs | com.para.community.civicTree.defs#pulseClaim]])         | ✅          |             |     |
+| `userStats`           | [`com.para.community.civicTree.defs#pulseUserStats`]([[com-para-community-civictree-defs      | com.para.community.civicTree.defs#pulseUserStats]])     | ❌          |             |     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -324,13 +343,7 @@ Live activity signals for a community civic tree.
   "defs": {
     "cardView": {
       "type": "object",
-      "required": [
-        "id",
-        "community_uri",
-        "author_did",
-        "title",
-        "card_type"
-      ],
+      "required": ["id", "community_uri", "author_did", "title", "card_type"],
       "properties": {
         "id": {
           "type": "string"
@@ -384,11 +397,7 @@ Live activity signals for a community civic tree.
         },
         "stance": {
           "type": "string",
-          "knownValues": [
-            "pro",
-            "con",
-            "neutral"
-          ]
+          "knownValues": ["pro", "con", "neutral"]
         },
         "compass_quadrant": {
           "type": "string",
@@ -509,11 +518,7 @@ Live activity signals for a community civic tree.
         },
         "status": {
           "type": "string",
-          "knownValues": [
-            "pending",
-            "approved",
-            "rejected"
-          ]
+          "knownValues": ["pending", "approved", "rejected"]
         },
         "approved_card_id": {
           "type": "string"
@@ -536,19 +541,13 @@ Live activity signals for a community civic tree.
         },
         "viewer_vote": {
           "type": "string",
-          "knownValues": [
-            "approve",
-            "reject"
-          ]
+          "knownValues": ["approve", "reject"]
         }
       }
     },
     "graphView": {
       "type": "object",
-      "required": [
-        "nodes",
-        "edges"
-      ],
+      "required": ["nodes", "edges"],
       "properties": {
         "nodes": {
           "type": "array",
@@ -581,10 +580,7 @@ Live activity signals for a community civic tree.
         },
         "governance_mode": {
           "type": "string",
-          "knownValues": [
-            "votes_sortition",
-            "moderator_gate"
-          ]
+          "knownValues": ["votes_sortition", "moderator_gate"]
         },
         "approvals_required": {
           "type": "integer",
@@ -609,9 +605,7 @@ Live activity signals for a community civic tree.
     "cardVoteView": {
       "type": "object",
       "description": "A viewer's own influence vote on a card.",
-      "required": [
-        "influence"
-      ],
+      "required": ["influence"],
       "properties": {
         "influence": {
           "type": "integer",
@@ -622,11 +616,7 @@ Live activity signals for a community civic tree.
     },
     "stanceDistribution": {
       "type": "object",
-      "required": [
-        "pro",
-        "con",
-        "neutral"
-      ],
+      "required": ["pro", "con", "neutral"],
       "properties": {
         "pro": {
           "type": "integer"
@@ -641,11 +631,7 @@ Live activity signals for a community civic tree.
     },
     "normalizedClaim": {
       "type": "object",
-      "required": [
-        "claim",
-        "stance",
-        "sourceType"
-      ],
+      "required": ["claim", "stance", "sourceType"],
       "properties": {
         "claim": {
           "type": "string"
@@ -670,11 +656,7 @@ Live activity signals for a community civic tree.
     },
     "tensionLine": {
       "type": "object",
-      "required": [
-        "axis",
-        "summary",
-        "sides"
-      ],
+      "required": ["axis", "summary", "sides"],
       "properties": {
         "axis": {
           "type": "string"
@@ -698,10 +680,7 @@ Live activity signals for a community civic tree.
     },
     "openQuestion": {
       "type": "object",
-      "required": [
-        "question",
-        "whyItMatters"
-      ],
+      "required": ["question", "whyItMatters"],
       "properties": {
         "question": {
           "type": "string"
@@ -719,10 +698,7 @@ Live activity signals for a community civic tree.
     },
     "consensusArea": {
       "type": "object",
-      "required": [
-        "topic",
-        "claims"
-      ],
+      "required": ["topic", "claims"],
       "properties": {
         "topic": {
           "type": "string"
@@ -737,10 +713,7 @@ Live activity signals for a community civic tree.
     },
     "unresolvedConflict": {
       "type": "object",
-      "required": [
-        "topic",
-        "opposingClaims"
-      ],
+      "required": ["topic", "opposingClaims"],
       "properties": {
         "topic": {
           "type": "string"
@@ -828,11 +801,7 @@ Live activity signals for a community civic tree.
     },
     "topEntity": {
       "type": "object",
-      "required": [
-        "value",
-        "type",
-        "count"
-      ],
+      "required": ["value", "type", "count"],
       "properties": {
         "value": {
           "type": "string"
@@ -847,13 +816,7 @@ Live activity signals for a community civic tree.
     },
     "pulseClaim": {
       "type": "object",
-      "required": [
-        "id",
-        "title",
-        "influence",
-        "voteCount",
-        "cardType"
-      ],
+      "required": ["id", "title", "influence", "voteCount", "cardType"],
       "properties": {
         "id": {
           "type": "string"
@@ -877,12 +840,7 @@ Live activity signals for a community civic tree.
     },
     "pulseUserStats": {
       "type": "object",
-      "required": [
-        "votesCast",
-        "proVotes",
-        "conVotes",
-        "neutralVotes"
-      ],
+      "required": ["votesCast", "proVotes", "conVotes", "neutralVotes"],
       "properties": {
         "votesCast": {
           "type": "integer"

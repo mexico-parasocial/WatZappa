@@ -8,12 +8,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "communityUri",
-            "authorDid",
-            "title",
-            "sourceType"
-          ],
+          "required": ["communityUri", "authorDid", "title", "sourceType"],
           "properties": {
             "communityUri": {
               "type": "string",
@@ -54,9 +49,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "contribution"
-          ],
+          "required": ["contribution"],
           "properties": {
             "contribution": {
               "type": "ref",

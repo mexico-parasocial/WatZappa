@@ -43,7 +43,9 @@ describe('P-256 did:key', () => {
       const didKey = did.formatDidKey('ES256', keypair.publicKeyBytes())
       expect(didKey).toEqual(vector.id)
       const { jwtAlg, keyBytes } = did.parseDidKey(didKey)
-      expect(uint8arrays.equals(keyBytes, p256Decompress(keypair.publicKeyBytes()))).toBeTruthy()
+      expect(
+        uint8arrays.equals(keyBytes, p256Decompress(keypair.publicKeyBytes())),
+      ).toBeTruthy()
     }
   })
 })

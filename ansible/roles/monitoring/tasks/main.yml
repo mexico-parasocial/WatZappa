@@ -8,33 +8,33 @@
 
 - name: Create the monitoring directory
   ansible.builtin.file:
-    path: "{{ para_deploy_dir }}/monitoring"
+    path: '{{ para_deploy_dir }}/monitoring'
     state: directory
-    mode: "0750"
+    mode: '0750'
 
 - name: Deploy the Prometheus scrape config
   ansible.builtin.template:
     src: prometheus.yml.j2
-    dest: "{{ para_deploy_dir }}/monitoring/prometheus.yml"
-    mode: "0644"
+    dest: '{{ para_deploy_dir }}/monitoring/prometheus.yml'
+    mode: '0644'
   register: monitoring_prom_config
 
 - name: Run node-exporter
   community.docker.docker_container:
     name: node-exporter
-    image: "prom/node-exporter:v{{ node_exporter_version }}"
+    image: 'prom/node-exporter:v{{ node_exporter_version }}'
     restart_policy: unless-stopped
     networks:
-      - name: "{{ edge_network_name }}"
+      - name: '{{ edge_network_name }}'
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /:/rootfs:ro
     command:
-      - "--path.procfs=/host/proc"
-      - "--path.rootfs=/rootfs"
-      - "--path.sysfs=/host/sys"
-      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     # No published ports: Prometheus reaches it over the shared network.
     # Exposing node-exporter publicly hands out a detailed inventory of the
     # host to anyone who asks.
@@ -42,10 +42,10 @@
 - name: Run cAdvisor
   community.docker.docker_container:
     name: cadvisor
-    image: "gcr.io/cadvisor/cadvisor:v{{ cadvisor_version }}"
+    image: 'gcr.io/cadvisor/cadvisor:v{{ cadvisor_version }}'
     restart_policy: unless-stopped
     networks:
-      - name: "{{ edge_network_name }}"
+      - name: '{{ edge_network_name }}'
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -55,28 +55,28 @@
 - name: Run Prometheus
   community.docker.docker_container:
     name: prometheus
-    image: "prom/prometheus:{{ prometheus_version }}"
+    image: 'prom/prometheus:{{ prometheus_version }}'
     restart_policy: unless-stopped
     networks:
-      - name: "{{ edge_network_name }}"
+      - name: '{{ edge_network_name }}'
     volumes:
-      - "{{ para_deploy_dir }}/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
-      - "prometheus_data:/prometheus"
+      - '{{ para_deploy_dir }}/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro'
+      - 'prometheus_data:/prometheus'
     command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--storage.tsdb.retention.time={{ prometheus_retention }}"
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time={{ prometheus_retention }}'
     ports:
-      - "127.0.0.1:9090:9090"
+      - '127.0.0.1:9090:9090'
     # Bound to loopback. Reach it over an SSH tunnel:
     #   ssh -L 9090:127.0.0.1:9090 <host>
     # Prometheus has no authentication of its own; publishing it would expose
     # the full internal topology.
-    restart: "{{ monitoring_prom_config is changed | bool }}"
+    restart: '{{ monitoring_prom_config is changed | bool }}'
 
 - name: Wait for Prometheus to answer
   ansible.builtin.uri:
-    url: "http://127.0.0.1:9090/-/ready"
+    url: 'http://127.0.0.1:9090/-/ready'
     status_code: 200
   register: monitoring_prom_ready
   retries: 12
@@ -85,7 +85,7 @@
 
 - name: Report scrape target health
   ansible.builtin.uri:
-    url: "http://127.0.0.1:9090/api/v1/targets?state=active"
+    url: 'http://127.0.0.1:9090/api/v1/targets?state=active'
     return_content: true
   register: monitoring_prom_targets
   changed_when: false

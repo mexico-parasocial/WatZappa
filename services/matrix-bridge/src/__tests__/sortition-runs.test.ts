@@ -121,7 +121,9 @@ describe('sortition engine', () => {
 
     // Wipe the run entirely (cabildeo_uri is UNIQUE) and recreate it identical.
     const raw = (db as any).inner.db
-    raw.prepare('DELETE FROM sortition_candidates WHERE run_id = ?').run('run-a')
+    raw
+      .prepare('DELETE FROM sortition_candidates WHERE run_id = ?')
+      .run('run-a')
     raw.prepare('DELETE FROM sortition_runs WHERE id = ?').run('run-a')
     await seedRun(db, { id: 'run-a', assemblySize: 2 })
 
@@ -180,7 +182,7 @@ describe('sortition engine', () => {
     const result = await engine.processRun('run-senior2')
 
     expect(result.run?.eligibleCount).toBe(1)
-    expect(result.selected?.[0]?.did).toBe("did:plc:elder")
+    expect(result.selected?.[0]?.did).toBe('did:plc:elder')
   })
 
   it('processScheduled drains scheduled runs and reports them active', async () => {

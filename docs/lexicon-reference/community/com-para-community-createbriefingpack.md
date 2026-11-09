@@ -2,11 +2,13 @@
 title: com.para.community.createBriefingPack
 description: Reference for the com.para.community.createBriefingPack lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `procedure`
@@ -20,33 +22,34 @@ description: Reference for the com.para.community.createBriefingPack lexicon
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `packType` | `string` | ✅  |  | Enum: `party_lobbying` |
-| `communityUri` | `string` | ✅  |  | Format: `at-uri` |
-| `party` | `string` | ✅  |  | Max Length: 120 |
-| `title` | `string` | ✅  |  | Max Length: 300 |
-| `summary` | `string` | ✅  |  | Max Length: 5000 |
-| `cabildeoUris` | Array of `string` | ❌  |  | Max Items: 100 |
-| `civicTreeCardIds` | Array of `string` | ❌  |  | Max Items: 200 |
-| `evidenceUris` | Array of `string` | ❌  |  | Max Items: 300 |
-| `sembleCollectionUri` | `string` | ❌  |  | Format: `at-uri` |
-| `marginCollectionUri` | `string` | ❌  |  | Format: `at-uri` |
-| `obsidianExportUri` | `string` | ❌  |  | Max Length: 2000 |
-**Output:**
+| Name                  | Type              | Req'd | Description | Constraints            |
+| --------------------- | ----------------- | ----- | ----------- | ---------------------- |
+| `packType`            | `string`          | ✅    |             | Enum: `party_lobbying` |
+| `communityUri`        | `string`          | ✅    |             | Format: `at-uri`       |
+| `party`               | `string`          | ✅    |             | Max Length: 120        |
+| `title`               | `string`          | ✅    |             | Max Length: 300        |
+| `summary`             | `string`          | ✅    |             | Max Length: 5000       |
+| `cabildeoUris`        | Array of `string` | ❌    |             | Max Items: 100         |
+| `civicTreeCardIds`    | Array of `string` | ❌    |             | Max Items: 200         |
+| `evidenceUris`        | Array of `string` | ❌    |             | Max Items: 300         |
+| `sembleCollectionUri` | `string`          | ❌    |             | Format: `at-uri`       |
+| `marginCollectionUri` | `string`          | ❌    |             | Format: `at-uri`       |
+| `obsidianExportUri`   | `string`          | ❌    |             | Max Length: 2000       |
+| **Output:**           |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `pack` | [`com.para.community.defs#briefingPackView`]([[com-para-community-defs|com.para.community.defs#briefingPackView]]) | ✅  |  |  |
+| Name   | Type                                                                   | Req'd                                       | Description | Constraints |
+| ------ | ---------------------------------------------------------------------- | ------------------------------------------- | ----------- | ----------- |
+| `pack` | [`com.para.community.defs#briefingPackView`]([[com-para-community-defs | com.para.community.defs#briefingPackView]]) | ✅          |             |     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -58,19 +61,11 @@ description: Reference for the com.para.community.createBriefingPack lexicon
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "packType",
-            "communityUri",
-            "party",
-            "title",
-            "summary"
-          ],
+          "required": ["packType", "communityUri", "party", "title", "summary"],
           "properties": {
             "packType": {
               "type": "string",
-              "enum": [
-                "party_lobbying"
-              ]
+              "enum": ["party_lobbying"]
             },
             "communityUri": {
               "type": "string",
@@ -131,9 +126,7 @@ description: Reference for the com.para.community.createBriefingPack lexicon
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "pack"
-          ],
+          "required": ["pack"],
           "properties": {
             "pack": {
               "type": "ref",

@@ -52,7 +52,10 @@ export class LoginStore {
   private challenges = new Map<string, LoginRequest>()
   private codes = new Map<string, AuthorizationCode>()
   /** sessionId -> the redirect the waiting browser should follow. */
-  private completions = new Map<string, { redirectUri: string; createdAt: number }>()
+  private completions = new Map<
+    string,
+    { redirectUri: string; createdAt: number }
+  >()
 
   /**
    * Issues a challenge bound to one OIDC request, plus the session handle the
@@ -69,7 +72,11 @@ export class LoginStore {
     this.sweep()
     const challenge = randomBytes(32).toString('base64url')
     const sessionId = randomBytes(32).toString('base64url')
-    this.challenges.set(challenge, { ...request, sessionId, createdAt: Date.now() })
+    this.challenges.set(challenge, {
+      ...request,
+      sessionId,
+      createdAt: Date.now(),
+    })
     return { challenge, sessionId }
   }
 
@@ -81,11 +88,14 @@ export class LoginStore {
   /** Single-use, like everything else here. */
   takeCompletion(sessionId: string): string | undefined {
     this.sweep()
-    if (typeof sessionId !== 'string' || sessionId.length === 0) return undefined
+    if (typeof sessionId !== 'string' || sessionId.length === 0)
+      return undefined
     for (const [key, value] of this.completions) {
       if (constantTimeEquals(key, sessionId)) {
         this.completions.delete(key)
-        return Date.now() - value.createdAt > CHALLENGE_TTL_MS ? undefined : value.redirectUri
+        return Date.now() - value.createdAt > CHALLENGE_TTL_MS
+          ? undefined
+          : value.redirectUri
       }
     }
     return undefined
@@ -98,13 +108,16 @@ export class LoginStore {
    */
   takeChallenge(challenge: string): LoginRequest | undefined {
     this.sweep()
-    if (typeof challenge !== 'string' || challenge.length === 0) return undefined
+    if (typeof challenge !== 'string' || challenge.length === 0)
+      return undefined
     // Constant-time comparison against stored keys; Map lookup would leak
     // timing on the key itself.
     for (const [key, value] of this.challenges) {
       if (constantTimeEquals(key, challenge)) {
         this.challenges.delete(key)
-        return Date.now() - value.createdAt > CHALLENGE_TTL_MS ? undefined : value
+        return Date.now() - value.createdAt > CHALLENGE_TTL_MS
+          ? undefined
+          : value
       }
     }
     return undefined

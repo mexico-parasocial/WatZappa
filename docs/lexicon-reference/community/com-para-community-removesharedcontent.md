@@ -2,11 +2,13 @@
 title: com.para.community.removeSharedContent
 description: Reference for the com.para.community.removeSharedContent lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `procedure`
@@ -22,7 +24,6 @@ Hides a sharedContent wrapper from a community feed by creating a moderation act
 
 **Schema Type:** [`#input`](#input)
 
-
 **Output:**
 
 - **Encoding:** `application/json`
@@ -30,41 +31,42 @@ Hides a sharedContent wrapper from a community feed by creating a moderation act
 
 **Schema Type:** [`#output`](#output)
 
-
-
 ---
 
 <a name="input"></a>
+
 ### `input`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `sharedContent` | [`com.atproto.repo.strongRef`](https://github.com/bluesky-social/atproto/tree/main/lexicons/com/atproto/repo/strongref.json#undefined) | ✅  |  |  |
-| `communityUri` | `string` | ✅  |  | Format: `at-uri` |
-| `note` | `string` | ❌  |  | Max Length: 3000<br/>Max Graphemes: 300 |
+| Name            | Type                                                                                                                                   | Req'd | Description | Constraints                             |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----------- | --------------------------------------- |
+| `sharedContent` | [`com.atproto.repo.strongRef`](https://github.com/bluesky-social/atproto/tree/main/lexicons/com/atproto/repo/strongref.json#undefined) | ✅    |             |                                         |
+| `communityUri`  | `string`                                                                                                                               | ✅    |             | Format: `at-uri`                        |
+| `note`          | `string`                                                                                                                               | ❌    |             | Max Length: 3000<br/>Max Graphemes: 300 |
 
 ---
 
 <a name="output"></a>
+
 ### `output`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `cid` | `string` | ✅  |  | Format: `cid` |
-| `action` | [`com.para.community.defs#sharedContentActionView`]([[com-para-community-defs|com.para.community.defs#sharedContentActionView]]) | ✅  |  |  |
+| Name     | Type                                                                          | Req'd                                              | Description | Constraints      |
+| -------- | ----------------------------------------------------------------------------- | -------------------------------------------------- | ----------- | ---------------- |
+| `uri`    | `string`                                                                      | ✅                                                 |             | Format: `at-uri` |
+| `cid`    | `string`                                                                      | ✅                                                 |             | Format: `cid`    |
+| `action` | [`com.para.community.defs#sharedContentActionView`]([[com-para-community-defs | com.para.community.defs#sharedContentActionView]]) | ✅          |                  |     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -90,10 +92,7 @@ Hides a sharedContent wrapper from a community feed by creating a moderation act
     },
     "input": {
       "type": "object",
-      "required": [
-        "sharedContent",
-        "communityUri"
-      ],
+      "required": ["sharedContent", "communityUri"],
       "properties": {
         "sharedContent": {
           "type": "ref",
@@ -112,11 +111,7 @@ Hides a sharedContent wrapper from a community feed by creating a moderation act
     },
     "output": {
       "type": "object",
-      "required": [
-        "uri",
-        "cid",
-        "action"
-      ],
+      "required": ["uri", "cid", "action"],
       "properties": {
         "uri": {
           "type": "string",

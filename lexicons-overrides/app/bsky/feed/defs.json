@@ -4,13 +4,7 @@
   "defs": {
     "postView": {
       "type": "object",
-      "required": [
-        "uri",
-        "cid",
-        "author",
-        "record",
-        "indexedAt"
-      ],
+      "required": ["uri", "cid", "author", "record", "indexedAt"],
       "properties": {
         "uri": {
           "type": "string",
@@ -119,10 +113,7 @@
     "knownLikers": {
       "type": "object",
       "description": "The post's likers whom you also follow",
-      "required": [
-        "count",
-        "actors"
-      ],
+      "required": ["count", "actors"],
       "properties": {
         "count": {
           "type": "integer"
@@ -150,9 +141,7 @@
     },
     "feedViewPost": {
       "type": "object",
-      "required": [
-        "post"
-      ],
+      "required": ["post"],
       "properties": {
         "post": {
           "type": "ref",
@@ -172,10 +161,7 @@
         },
         "reason": {
           "type": "union",
-          "refs": [
-            "#reasonRepost",
-            "#reasonPin"
-          ]
+          "refs": ["#reasonRepost", "#reasonPin"]
         },
         "feedContext": {
           "type": "string",
@@ -191,26 +177,15 @@
     },
     "replyRef": {
       "type": "object",
-      "required": [
-        "root",
-        "parent"
-      ],
+      "required": ["root", "parent"],
       "properties": {
         "root": {
           "type": "union",
-          "refs": [
-            "#postView",
-            "#notFoundPost",
-            "#blockedPost"
-          ]
+          "refs": ["#postView", "#notFoundPost", "#blockedPost"]
         },
         "parent": {
           "type": "union",
-          "refs": [
-            "#postView",
-            "#notFoundPost",
-            "#blockedPost"
-          ]
+          "refs": ["#postView", "#notFoundPost", "#blockedPost"]
         },
         "grandparentAuthor": {
           "type": "ref",
@@ -221,10 +196,7 @@
     },
     "reasonRepost": {
       "type": "object",
-      "required": [
-        "by",
-        "indexedAt"
-      ],
+      "required": ["by", "indexedAt"],
       "properties": {
         "by": {
           "type": "ref",
@@ -250,9 +222,7 @@
     },
     "threadViewPost": {
       "type": "object",
-      "required": [
-        "post"
-      ],
+      "required": ["post"],
       "properties": {
         "post": {
           "type": "ref",
@@ -260,21 +230,13 @@
         },
         "parent": {
           "type": "union",
-          "refs": [
-            "#threadViewPost",
-            "#notFoundPost",
-            "#blockedPost"
-          ]
+          "refs": ["#threadViewPost", "#notFoundPost", "#blockedPost"]
         },
         "replies": {
           "type": "array",
           "items": {
             "type": "union",
-            "refs": [
-              "#threadViewPost",
-              "#notFoundPost",
-              "#blockedPost"
-            ]
+            "refs": ["#threadViewPost", "#notFoundPost", "#blockedPost"]
           }
         },
         "threadContext": {
@@ -285,10 +247,7 @@
     },
     "notFoundPost": {
       "type": "object",
-      "required": [
-        "uri",
-        "notFound"
-      ],
+      "required": ["uri", "notFound"],
       "properties": {
         "uri": {
           "type": "string",
@@ -302,11 +261,7 @@
     },
     "blockedPost": {
       "type": "object",
-      "required": [
-        "uri",
-        "blocked",
-        "author"
-      ],
+      "required": ["uri", "blocked", "author"],
       "properties": {
         "uri": {
           "type": "string",
@@ -324,9 +279,7 @@
     },
     "blockedAuthor": {
       "type": "object",
-      "required": [
-        "did"
-      ],
+      "required": ["did"],
       "properties": {
         "did": {
           "type": "string",
@@ -340,14 +293,7 @@
     },
     "generatorView": {
       "type": "object",
-      "required": [
-        "uri",
-        "cid",
-        "did",
-        "creator",
-        "displayName",
-        "indexedAt"
-      ],
+      "required": ["uri", "cid", "did", "creator", "displayName", "indexedAt"],
       "properties": {
         "uri": {
           "type": "string",
@@ -426,9 +372,7 @@
     },
     "skeletonFeedPost": {
       "type": "object",
-      "required": [
-        "post"
-      ],
+      "required": ["post"],
       "properties": {
         "post": {
           "type": "string",
@@ -436,10 +380,7 @@
         },
         "reason": {
           "type": "union",
-          "refs": [
-            "#skeletonReasonRepost",
-            "#skeletonReasonPin"
-          ]
+          "refs": ["#skeletonReasonRepost", "#skeletonReasonPin"]
         },
         "feedContext": {
           "type": "string",
@@ -450,9 +391,7 @@
     },
     "skeletonReasonRepost": {
       "type": "object",
-      "required": [
-        "repost"
-      ],
+      "required": ["repost"],
       "properties": {
         "repost": {
           "type": "string",

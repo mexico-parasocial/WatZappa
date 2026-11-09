@@ -2,11 +2,13 @@
 title: com.para.community.board
 description: Reference for the com.para.community.board lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -17,24 +19,25 @@ A repository record acting as the anchor for a PARA community, linking the spati
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `name` | `string` | ✅  |  | Min Length: 1<br/>Max Length: 1280<br/>Max Graphemes: 128 |
-| `description` | `string` | ❌  |  | Max Length: 3000 |
-| `quadrant` | `string` | ✅  | Spatial mapping token indicating the nonant or 25th block. | Max Length: 64 |
-| `geo` | [`#geoPoint`](#geopoint) | ❌  |  |  |
-| `delegatesChatId` | `string` | ✅  | Reference to the 270-member bounded bsky group chat. |  |
-| `subdelegatesChatId` | `string` | ✅  | Reference to the 30-member bounded public-view bsky group chat. |  |
-| `status` | `string` | ✅  | The lifecycle status of the community. | Known Values: `draft`, `active` |
-| `founderStarterPackUri` | `string` | ❌  | Reference to the starter pack used to track the founding member quorum. | Format: `at-uri` |
-| `visibility` | `string` | ❌  | Visibility of the community. | Known Values: `open`, `closed`, `secret`<br/>Default: `open` |
-| `chamberMode` | `string` | ❌  | Deliberation structure. | Known Values: `unicameral`, `bicameral`<br/>Default: `unicameral` |
-| `governanceMode` | `string` | ❌  | Governance model for this community. | Known Values: `hierarchical`, `horizontal`<br/>Default: `hierarchical` |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name                    | Type                     | Req'd | Description                                                             | Constraints                                                            |
+| ----------------------- | ------------------------ | ----- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `name`                  | `string`                 | ✅    |                                                                         | Min Length: 1<br/>Max Length: 1280<br/>Max Graphemes: 128              |
+| `description`           | `string`                 | ❌    |                                                                         | Max Length: 3000                                                       |
+| `quadrant`              | `string`                 | ✅    | Spatial mapping token indicating the nonant or 25th block.              | Max Length: 64                                                         |
+| `geo`                   | [`#geoPoint`](#geopoint) | ❌    |                                                                         |                                                                        |
+| `delegatesChatId`       | `string`                 | ✅    | Reference to the 270-member bounded bsky group chat.                    |                                                                        |
+| `subdelegatesChatId`    | `string`                 | ✅    | Reference to the 30-member bounded public-view bsky group chat.         |                                                                        |
+| `status`                | `string`                 | ✅    | The lifecycle status of the community.                                  | Known Values: `draft`, `active`                                        |
+| `founderStarterPackUri` | `string`                 | ❌    | Reference to the starter pack used to track the founding member quorum. | Format: `at-uri`                                                       |
+| `visibility`            | `string`                 | ❌    | Visibility of the community.                                            | Known Values: `open`, `closed`, `secret`<br/>Default: `open`           |
+| `chamberMode`           | `string`                 | ❌    | Deliberation structure.                                                 | Known Values: `unicameral`, `bicameral`<br/>Default: `unicameral`      |
+| `governanceMode`        | `string`                 | ❌    | Governance model for this community.                                    | Known Values: `hierarchical`, `horizontal`<br/>Default: `hierarchical` |
+| `createdAt`             | `string`                 | ✅    |                                                                         | Format: `datetime`                                                     |
 
 ---
 
 <a name="geopoint"></a>
+
 ### `geoPoint`
 
 **Type:** `object`
@@ -43,14 +46,15 @@ Geographic coordinates in E7 (degrees × 10⁷) for map placement.
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `latE7` | `integer` | ✅  |  | Min: -900000000<br/>Max: 900000000 |
-| `lngE7` | `integer` | ✅  |  | Min: -1800000000<br/>Max: 1800000000 |
+| Name    | Type      | Req'd | Description | Constraints                          |
+| ------- | --------- | ----- | ----------- | ------------------------------------ |
+| `latE7` | `integer` | ✅    |             | Min: -900000000<br/>Max: 900000000   |
+| `lngE7` | `integer` | ✅    |             | Min: -1800000000<br/>Max: 1800000000 |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -101,10 +105,7 @@ Geographic coordinates in E7 (degrees × 10⁷) for map placement.
           "status": {
             "type": "string",
             "description": "The lifecycle status of the community.",
-            "knownValues": [
-              "draft",
-              "active"
-            ]
+            "knownValues": ["draft", "active"]
           },
           "founderStarterPackUri": {
             "type": "string",
@@ -114,29 +115,19 @@ Geographic coordinates in E7 (degrees × 10⁷) for map placement.
           "visibility": {
             "type": "string",
             "description": "Visibility of the community.",
-            "knownValues": [
-              "open",
-              "closed",
-              "secret"
-            ],
+            "knownValues": ["open", "closed", "secret"],
             "default": "open"
           },
           "chamberMode": {
             "type": "string",
             "description": "Deliberation structure.",
-            "knownValues": [
-              "unicameral",
-              "bicameral"
-            ],
+            "knownValues": ["unicameral", "bicameral"],
             "default": "unicameral"
           },
           "governanceMode": {
             "type": "string",
             "description": "Governance model for this community.",
-            "knownValues": [
-              "hierarchical",
-              "horizontal"
-            ],
+            "knownValues": ["hierarchical", "horizontal"],
             "default": "hierarchical"
           },
           "createdAt": {
@@ -149,10 +140,7 @@ Geographic coordinates in E7 (degrees × 10⁷) for map placement.
     "geoPoint": {
       "type": "object",
       "description": "Geographic coordinates in E7 (degrees × 10⁷) for map placement.",
-      "required": [
-        "latE7",
-        "lngE7"
-      ],
+      "required": ["latE7", "lngE7"],
       "properties": {
         "latE7": {
           "type": "integer",

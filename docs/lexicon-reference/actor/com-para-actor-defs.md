@@ -2,11 +2,13 @@
 title: com.para.actor.defs
 description: Reference for the com.para.actor.defs lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="profilestats"></a>
+
 ### `profileStats`
 
 **Type:** `object`
@@ -15,18 +17,19 @@ Aggregated Para profile statistics.
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `influence` | `integer` | ✅  | All-time influence score (Para equivalent of cumulative karma). |  |
-| `votesReceivedAllTime` | `integer` | ✅  | Total support received by this actor's Para posts across all time. |  |
-| `votesCastAllTime` | `integer` | ✅  | Total votes/interactions cast by this actor across all time. |  |
-| `contributions` | [`#contributions`](#contributions) | ✅  |  |  |
-| `activeIn` | Array of `string` | ✅  | Top communities where this actor contributes. |  |
-| `computedAt` | `string` | ✅  | Timestamp of the last stats computation. | Format: `datetime` |
+| Name                   | Type                               | Req'd | Description                                                        | Constraints        |
+| ---------------------- | ---------------------------------- | ----- | ------------------------------------------------------------------ | ------------------ |
+| `influence`            | `integer`                          | ✅    | All-time influence score (Para equivalent of cumulative karma).    |                    |
+| `votesReceivedAllTime` | `integer`                          | ✅    | Total support received by this actor's Para posts across all time. |                    |
+| `votesCastAllTime`     | `integer`                          | ✅    | Total votes/interactions cast by this actor across all time.       |                    |
+| `contributions`        | [`#contributions`](#contributions) | ✅    |                                                                    |                    |
+| `activeIn`             | Array of `string`                  | ✅    | Top communities where this actor contributes.                      |                    |
+| `computedAt`           | `string`                           | ✅    | Timestamp of the last stats computation.                           | Format: `datetime` |
 
 ---
 
 <a name="contributions"></a>
+
 ### `contributions`
 
 **Type:** `object`
@@ -35,15 +38,16 @@ All-time contribution counters.
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `policies` | `integer` | ✅  |  |  |
-| `matters` | `integer` | ✅  |  |  |
-| `comments` | `integer` | ✅  |  |  |
+| Name       | Type      | Req'd | Description | Constraints |
+| ---------- | --------- | ----- | ----------- | ----------- |
+| `policies` | `integer` | ✅    |             |             |
+| `matters`  | `integer` | ✅    |             |             |
+| `comments` | `integer` | ✅    |             |             |
 
 ---
 
 <a name="statusview"></a>
+
 ### `statusView`
 
 **Type:** `object`
@@ -52,16 +56,17 @@ Resolved Para account status view.
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `status` | `string` | ✅  |  | Max Length: 300<br/>Max Graphemes: 300 |
-| `party` | `string` | ❌  |  | Max Length: 64<br/>Max Graphemes: 64 |
-| `community` | `string` | ❌  |  | Max Length: 64<br/>Max Graphemes: 64 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name        | Type     | Req'd | Description | Constraints                            |
+| ----------- | -------- | ----- | ----------- | -------------------------------------- |
+| `status`    | `string` | ✅    |             | Max Length: 300<br/>Max Graphemes: 300 |
+| `party`     | `string` | ❌    |             | Max Length: 64<br/>Max Graphemes: 64   |
+| `community` | `string` | ❌    |             | Max Length: 64<br/>Max Graphemes: 64   |
+| `createdAt` | `string` | ✅    |             | Format: `datetime`                     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -114,11 +119,7 @@ Resolved Para account status view.
     "contributions": {
       "type": "object",
       "description": "All-time contribution counters.",
-      "required": [
-        "policies",
-        "matters",
-        "comments"
-      ],
+      "required": ["policies", "matters", "comments"],
       "properties": {
         "policies": {
           "type": "integer"
@@ -134,10 +135,7 @@ Resolved Para account status view.
     "statusView": {
       "type": "object",
       "description": "Resolved Para account status view.",
-      "required": [
-        "status",
-        "createdAt"
-      ],
+      "required": ["status", "createdAt"],
       "properties": {
         "status": {
           "type": "string",

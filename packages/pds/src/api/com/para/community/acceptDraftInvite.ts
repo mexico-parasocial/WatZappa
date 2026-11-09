@@ -72,13 +72,11 @@ export default function (server: Server, ctx: AppContext) {
             true,
           )
           const listUri = starterPack?.value.list
-          const listItems = await creatorStore.record.listRecordsForCollection(
-            {
-              collection: LIST_ITEM_COLLECTION,
-              limit: 100,
-              reverse: false,
-            },
-          )
+          const listItems = await creatorStore.record.listRecordsForCollection({
+            collection: LIST_ITEM_COLLECTION,
+            limit: 100,
+            reverse: false,
+          })
           return {
             board,
             listUri: typeof listUri === 'string' ? listUri : undefined,
@@ -97,7 +95,9 @@ export default function (server: Server, ctx: AppContext) {
         throw new InvalidRequestError('Starter pack missing')
       }
 
-      const itemsInList = listItems.filter((item) => item.value.list === listUri)
+      const itemsInList = listItems.filter(
+        (item) => item.value.list === listUri,
+      )
       if (itemsInList.some((item) => item.value.subject === did)) {
         throw new InvalidRequestError('Already accepted')
       }

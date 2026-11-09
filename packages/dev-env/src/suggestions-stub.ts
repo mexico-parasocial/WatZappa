@@ -70,8 +70,8 @@ export class SuggestionsAgentStub {
       try {
         this.handle(req, res)
       } catch (err) {
-        res.writeHead(500, {'content-type': 'application/json'})
-        res.end(JSON.stringify({error: 'InternalServerError'}))
+        res.writeHead(500, { 'content-type': 'application/json' })
+        res.end(JSON.stringify({ error: 'InternalServerError' }))
       }
     })
   }
@@ -106,7 +106,7 @@ export class SuggestionsAgentStub {
     const limit = clampInt(url.searchParams.get('limit'), 1, 50, 25)
 
     const json = (body: unknown) => {
-      res.writeHead(200, {'content-type': 'application/json'})
+      res.writeHead(200, { 'content-type': 'application/json' })
       res.end(JSON.stringify(body))
     }
 
@@ -116,7 +116,7 @@ export class SuggestionsAgentStub {
       case NSIDS.getSuggestedUsersForSeeMoreSkeleton:
       case NSIDS.getSuggestedUsersForDiscoverSkeleton:
       case NSIDS.getOnboardingSuggestedUsersSkeleton:
-        return json({dids: this.users.slice(0, limit).map((u) => u.did)})
+        return json({ dids: this.users.slice(0, limit).map((u) => u.did) })
 
       case NSIDS.getTrendsSkeleton: {
         const dids = this.users.slice(0, 3).map((u) => u.did)
@@ -147,20 +147,25 @@ export class SuggestionsAgentStub {
         })
 
       case NSIDS.getSuggestedFeedsSkeleton:
-        return json({feeds: []})
+        return json({ feeds: [] })
 
       case NSIDS.getSuggestedStarterPacksSkeleton:
       case NSIDS.getOnboardingSuggestedStarterPacksSkeleton:
-        return json({starterPacks: []})
+        return json({ starterPacks: [] })
 
       default:
-        res.writeHead(404, {'content-type': 'application/json'})
-        return res.end(JSON.stringify({error: 'XRPCNotSupported'}))
+        res.writeHead(404, { 'content-type': 'application/json' })
+        return res.end(JSON.stringify({ error: 'XRPCNotSupported' }))
     }
   }
 }
 
-function clampInt(raw: string | null, min: number, max: number, fallback: number) {
+function clampInt(
+  raw: string | null,
+  min: number,
+  max: number,
+  fallback: number,
+) {
   const parsed = raw === null ? NaN : Number.parseInt(raw, 10)
   if (Number.isNaN(parsed)) return fallback
   return Math.min(max, Math.max(min, parsed))

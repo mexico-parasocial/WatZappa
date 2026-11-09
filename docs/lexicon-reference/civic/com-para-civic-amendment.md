@@ -2,11 +2,13 @@
 title: com.para.civic.amendment
 description: Reference for the com.para.civic.amendment lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -17,19 +19,20 @@ An inline amendment proposing a specific text replacement in a Cabildeo.
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `subject` | `string` | ✅  | The AT-URI of the Cabildeo being amended. | Format: `at-uri` |
-| `start` | `integer` | ✅  | Start index in the original text. | Min: 0 |
-| `end` | `integer` | ✅  | End index in the original text. | Min: 0 |
-| `originalText` | `string` | ✅  | The exact substring being replaced. | Max Length: 1000 |
-| `replacementText` | `string` | ✅  | The proposed replacement text. | Max Length: 1000 |
-| `justification` | `string` | ❌  | Rationale for the amendment. | Max Length: 5000 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name              | Type      | Req'd | Description                               | Constraints        |
+| ----------------- | --------- | ----- | ----------------------------------------- | ------------------ |
+| `subject`         | `string`  | ✅    | The AT-URI of the Cabildeo being amended. | Format: `at-uri`   |
+| `start`           | `integer` | ✅    | Start index in the original text.         | Min: 0             |
+| `end`             | `integer` | ✅    | End index in the original text.           | Min: 0             |
+| `originalText`    | `string`  | ✅    | The exact substring being replaced.       | Max Length: 1000   |
+| `replacementText` | `string`  | ✅    | The proposed replacement text.            | Max Length: 1000   |
+| `justification`   | `string`  | ❌    | Rationale for the amendment.              | Max Length: 5000   |
+| `createdAt`       | `string`  | ✅    |                                           | Format: `datetime` |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,

@@ -2,35 +2,38 @@
 title: com.para.community.getCivicTree
 description: Reference for the com.para.community.getCivicTree lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `community` | `string` | ✅  |  | Format: `at-uri` |
-**Output:**
+| Name        | Type     | Req'd | Description | Constraints      |
+| ----------- | -------- | ----- | ----------- | ---------------- |
+| `community` | `string` | ✅    |             | Format: `at-uri` |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `nodes` | Array of `unknown` | ✅  |  |  |
-| `edges` | Array of `unknown` | ✅  |  |  |
+| Name    | Type               | Req'd | Description | Constraints |
+| ------- | ------------------ | ----- | ----------- | ----------- |
+| `nodes` | Array of `unknown` | ✅    |             |             |
+| `edges` | Array of `unknown` | ✅    |             |             |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -40,9 +43,7 @@ description: Reference for the com.para.community.getCivicTree lexicon
       "type": "query",
       "parameters": {
         "type": "params",
-        "required": [
-          "community"
-        ],
+        "required": ["community"],
         "properties": {
           "community": {
             "type": "string",
@@ -54,10 +55,7 @@ description: Reference for the com.para.community.getCivicTree lexicon
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "nodes",
-            "edges"
-          ],
+          "required": ["nodes", "edges"],
           "properties": {
             "nodes": {
               "type": "array",

@@ -41,16 +41,9 @@ describe('appview search v2', () => {
         ],
       },
     ])
-    await sc.post(
-      alice,
-      'doggo en español',
-      undefined,
-      undefined,
-      undefined,
-      {
-        langs: ['es-ES'],
-      },
-    )
+    await sc.post(alice, 'doggo en español', undefined, undefined, undefined, {
+      langs: ['es-ES'],
+    })
     await network.processAll()
   })
 
@@ -72,9 +65,7 @@ describe('appview search v2', () => {
       { headers: await v2Headers(alice) },
     )
     expect(res.data.posts.length).toBeGreaterThan(0)
-    expect(
-      res.data.posts.every((p) => p.author.did === alice),
-    ).toBe(true)
+    expect(res.data.posts.every((p) => p.author.did === alice)).toBe(true)
   })
 
   it('forwards mentions filter to data-plane search v2', async () => {

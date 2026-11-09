@@ -683,7 +683,11 @@ const handleCollectionOpsOperation: HandleOperation = async (
   await db.db
     .deleteFrom('private_data')
     .where('actorDid', '=', actorDid)
-    .where('namespace', '=', Namespaces.ComParaCollectionDefsCollectionOps.$type)
+    .where(
+      'namespace',
+      '=',
+      Namespaces.ComParaCollectionDefsCollectionOps.$type,
+    )
     .where('key', '=', key)
     .execute()
 }

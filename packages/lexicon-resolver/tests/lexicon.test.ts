@@ -16,10 +16,8 @@ jest.unstable_mockModule('node:dns/promises', () => {
   }
 })
 
-const {
-  buildLexiconResolver,
-  resolveLexiconDidAuthority,
-} = await import('../src/index.js')
+const { buildLexiconResolver, resolveLexiconDidAuthority } =
+  await import('../src/index.js')
 
 describe('Lexicon resolution', () => {
   let network: TestNetworkNoAppView

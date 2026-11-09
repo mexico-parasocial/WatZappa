@@ -5,7 +5,10 @@ import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
 import { BackgroundQueue } from '../../background.js'
 import { Database } from '../../db/index.js'
 import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
-import { deletePostDiscourse, indexPostDiscourse } from '../discourse-indexing.js'
+import {
+  deletePostDiscourse,
+  indexPostDiscourse,
+} from '../discourse-indexing.js'
 import { RecordProcessor } from '../processor.js'
 import { recomputeParaProfileStats } from './para-profile-stats.js'
 

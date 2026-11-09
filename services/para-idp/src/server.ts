@@ -1,4 +1,8 @@
-import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
+import {
+  createServer,
+  type IncomingMessage,
+  type ServerResponse,
+} from 'node:http'
 import {
   authenticateClient,
   discoveryDocument,
@@ -8,7 +12,11 @@ import {
   type IdpConfig,
 } from './oidc.js'
 import { LoginStore } from './store.js'
-import { subjectFor, verifyIdentityAssertion, type SignedAssertion } from './identity.js'
+import {
+  subjectFor,
+  verifyIdentityAssertion,
+  type SignedAssertion,
+} from './identity.js'
 
 /*
  * para-idp — the OIDC shim between a PARA identity and Matrix Authentication
@@ -49,8 +57,12 @@ function html(res: ServerResponse, status: number, body: string): void {
 }
 
 function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
+  return value.replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[
+        c
+      ]!,
   )
 }
 
@@ -64,7 +76,11 @@ function escapeHtml(value: string): string {
  * Deliberately dependency-free and inline — a login page that pulls in remote
  * scripts is a login page whose behaviour someone else controls.
  */
-function loginPage(deepLink: string, sessionId: string, appName: string): string {
+function loginPage(
+  deepLink: string,
+  sessionId: string,
+  appName: string,
+): string {
   return `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -117,10 +133,16 @@ function oauthError(
   error: string,
   description?: string,
 ): void {
-  json(res, status, { error, ...(description ? { error_description: description } : {}) })
+  json(res, status, {
+    error,
+    ...(description ? { error_description: description } : {}),
+  })
 }
 
-async function readJsonBody(req: IncomingMessage, limitBytes = 64 * 1024): Promise<unknown> {
+async function readJsonBody(
+  req: IncomingMessage,
+  limitBytes = 64 * 1024,
+): Promise<unknown> {
   const chunks: Buffer[] = []
   let size = 0
   for await (const chunk of req) {
@@ -132,7 +154,9 @@ async function readJsonBody(req: IncomingMessage, limitBytes = 64 * 1024): Promi
   return JSON.parse(Buffer.concat(chunks).toString('utf8'))
 }
 
-async function readFormBody(req: IncomingMessage): Promise<Record<string, string>> {
+async function readFormBody(
+  req: IncomingMessage,
+): Promise<Record<string, string>> {
   const chunks: Buffer[] = []
   let size = 0
   for await (const chunk of req) {
@@ -154,14 +178,20 @@ export interface ServerDeps {
 export function createHandler(deps: ServerDeps) {
   const { config, signer, store } = deps
 
-  return async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  return async function handler(
+    req: IncomingMessage,
+    res: ServerResponse,
+  ): Promise<void> {
     const url = new URL(req.url ?? '/', config.issuer)
     const path = url.pathname
 
     try {
       if (path === '/healthz') return json(res, 200, { ok: true })
 
-      if (path === '/.well-known/openid-configuration' && req.method === 'GET') {
+      if (
+        path === '/.well-known/openid-configuration' &&
+        req.method === 'GET'
+      ) {
         return json(res, 200, discoveryDocument(config.issuer, signer.alg))
       }
 
@@ -181,19 +211,34 @@ export function createHandler(deps: ServerDeps) {
         // code to whoever asked. Fail in place instead.
         const resolved = resolveRedirectUri(client, redirectUri)
         if (!client || !resolved) {
-          return oauthError(res, 400, 'invalid_request', 'unknown client or redirect_uri')
+          return oauthError(
+            res,
+            400,
+            'invalid_request',
+            'unknown client or redirect_uri',
+          )
         }
         if (q.get('response_type') !== 'code') {
           return oauthError(res, 400, 'unsupported_response_type')
         }
         if (q.get('code_challenge_method') !== 'S256') {
-          return oauthError(res, 400, 'invalid_request', 'PKCE S256 is required')
+          return oauthError(
+            res,
+            400,
+            'invalid_request',
+            'PKCE S256 is required',
+          )
         }
         const codeChallenge = q.get('code_challenge') ?? ''
         const nonce = q.get('nonce') ?? ''
         const state = q.get('state') ?? ''
         if (!codeChallenge || !nonce) {
-          return oauthError(res, 400, 'invalid_request', 'code_challenge and nonce are required')
+          return oauthError(
+            res,
+            400,
+            'invalid_request',
+            'code_challenge and nonce are required',
+          )
         }
 
         const { challenge, sessionId } = store.createChallenge({
@@ -234,14 +279,24 @@ export function createHandler(deps: ServerDeps) {
           signature?: unknown
         }
         if (typeof body?.challenge !== 'string') {
-          return oauthError(res, 400, 'invalid_request', 'challenge is required')
+          return oauthError(
+            res,
+            400,
+            'invalid_request',
+            'challenge is required',
+          )
         }
 
         // Taking the challenge consumes it: a replay of this request finds
         // nothing, whether or not the signature was valid.
         const pending = store.takeChallenge(body.challenge)
         if (!pending) {
-          return oauthError(res, 400, 'invalid_grant', 'unknown or expired challenge')
+          return oauthError(
+            res,
+            400,
+            'invalid_grant',
+            'unknown or expired challenge',
+          )
         }
 
         const signed = {
@@ -256,7 +311,12 @@ export function createHandler(deps: ServerDeps) {
           now: deps.now?.(),
         })
         if (!ok) {
-          return oauthError(res, 401, 'access_denied', 'assertion did not verify')
+          return oauthError(
+            res,
+            401,
+            'access_denied',
+            'assertion did not verify',
+          )
         }
 
         const code = store.createCode({
@@ -283,7 +343,11 @@ export function createHandler(deps: ServerDeps) {
         res.writeHead(200, { ...JSON_HEADERS, 'Cache-Control': 'no-store' })
         // Always 200: a polling page must not be able to distinguish "no such
         // session" from "not finished yet", or it becomes a session oracle.
-        res.end(JSON.stringify(redirectUri ? { redirect_uri: redirectUri } : { pending: true }))
+        res.end(
+          JSON.stringify(
+            redirectUri ? { redirect_uri: redirectUri } : { pending: true },
+          ),
+        )
         return
       }
 
@@ -293,25 +357,44 @@ export function createHandler(deps: ServerDeps) {
         if (form.grant_type !== 'authorization_code') {
           return oauthError(res, 400, 'unsupported_grant_type')
         }
-        const client = authenticateClient(config, form.client_id, form.client_secret)
+        const client = authenticateClient(
+          config,
+          form.client_id,
+          form.client_secret,
+        )
         if (!client) {
           return oauthError(res, 401, 'invalid_client')
         }
 
         const record = store.takeCode(form.code ?? '')
         if (!record) {
-          return oauthError(res, 400, 'invalid_grant', 'unknown or expired code')
+          return oauthError(
+            res,
+            400,
+            'invalid_grant',
+            'unknown or expired code',
+          )
         }
         // A code issued to one client must not be redeemable by another, even
         // with valid credentials.
         if (record.clientId !== client.clientId) {
-          return oauthError(res, 400, 'invalid_grant', 'code was issued to another client')
+          return oauthError(
+            res,
+            400,
+            'invalid_grant',
+            'code was issued to another client',
+          )
         }
         if (record.redirectUri !== form.redirect_uri) {
           return oauthError(res, 400, 'invalid_grant', 'redirect_uri mismatch')
         }
         if (!verifyPkce(form.code_verifier ?? '', record.codeChallenge)) {
-          return oauthError(res, 400, 'invalid_grant', 'PKCE verification failed')
+          return oauthError(
+            res,
+            400,
+            'invalid_grant',
+            'PKCE verification failed',
+          )
         }
 
         const idToken = await signer.issueIdToken({

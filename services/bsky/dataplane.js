@@ -37,7 +37,13 @@ const log = Object.fromEntries(
     (fields, msg) => {
       if (typeof fields === 'string') [fields, msg] = [{}, fields]
       console.log(
-        JSON.stringify({ level, time: Date.now(), name: 'dataplane', ...fields, msg }),
+        JSON.stringify({
+          level,
+          time: Date.now(),
+          name: 'dataplane',
+          ...fields,
+          msg,
+        }),
       )
     },
   ]),

@@ -2,11 +2,13 @@
 title: com.para.community.decision
 description: Reference for the com.para.community.decision lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -15,24 +17,25 @@ description: Reference for the com.para.community.decision lexicon
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `proposal` | `string` | ✅  |  | Format: `at-uri` |
-| `community` | `string` | ✅  |  | Format: `at-uri` |
-| `result` | `string` | ✅  |  | Enum: `approved`, `rejected`, `tied`, `quorum_not_met` |
-| `votesFor` | `integer` | ✅  |  |  |
-| `votesAgainst` | `integer` | ✅  |  |  |
-| `votesAbstain` | `integer` | ✅  |  |  |
-| `totalMembers` | `integer` | ❌  | Total eligible voters at time of decision |  |
-| `quorumRequired` | `string` | ❌  |  |  |
-| `thresholdRequired` | `string` | ❌  |  |  |
-| `constitutionVersion` | `integer` | ❌  |  |  |
-| `budgetAllocated` | `string` | ❌  | If budget proposal, amount approved |  |
-| `createdAt` | `string` | ❌  |  | Format: `datetime` |
+| Name                  | Type      | Req'd | Description                               | Constraints                                            |
+| --------------------- | --------- | ----- | ----------------------------------------- | ------------------------------------------------------ |
+| `proposal`            | `string`  | ✅    |                                           | Format: `at-uri`                                       |
+| `community`           | `string`  | ✅    |                                           | Format: `at-uri`                                       |
+| `result`              | `string`  | ✅    |                                           | Enum: `approved`, `rejected`, `tied`, `quorum_not_met` |
+| `votesFor`            | `integer` | ✅    |                                           |                                                        |
+| `votesAgainst`        | `integer` | ✅    |                                           |                                                        |
+| `votesAbstain`        | `integer` | ✅    |                                           |                                                        |
+| `totalMembers`        | `integer` | ❌    | Total eligible voters at time of decision |                                                        |
+| `quorumRequired`      | `string`  | ❌    |                                           |                                                        |
+| `thresholdRequired`   | `string`  | ❌    |                                           |                                                        |
+| `constitutionVersion` | `integer` | ❌    |                                           |                                                        |
+| `budgetAllocated`     | `string`  | ❌    | If budget proposal, amount approved       |                                                        |
+| `createdAt`           | `string`  | ❌    |                                           | Format: `datetime`                                     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -62,12 +65,7 @@ description: Reference for the com.para.community.decision lexicon
           },
           "result": {
             "type": "string",
-            "enum": [
-              "approved",
-              "rejected",
-              "tied",
-              "quorum_not_met"
-            ]
+            "enum": ["approved", "rejected", "tied", "quorum_not_met"]
           },
           "votesFor": {
             "type": "integer"

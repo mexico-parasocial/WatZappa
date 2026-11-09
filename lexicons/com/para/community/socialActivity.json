@@ -19,12 +19,12 @@
           "updatedAt"
         ],
         "properties": {
-          "communityUri": {"type": "string", "format": "at-uri"},
-          "title": {"type": "string", "maxLength": 300},
-          "description": {"type": "string", "maxLength": 5000},
-          "startsAt": {"type": "string", "format": "datetime"},
-          "endsAt": {"type": "string", "format": "datetime"},
-          "location": {"type": "string", "maxLength": 300},
+          "communityUri": { "type": "string", "format": "at-uri" },
+          "title": { "type": "string", "maxLength": 300 },
+          "description": { "type": "string", "maxLength": 5000 },
+          "startsAt": { "type": "string", "format": "datetime" },
+          "endsAt": { "type": "string", "format": "datetime" },
+          "location": { "type": "string", "maxLength": 300 },
           "status": {
             "type": "string",
             "maxLength": 32,
@@ -32,16 +32,21 @@
           },
           "details": {
             "type": "union",
-            "refs": ["#peacefulMarch", "#signatureDrive", "#assembly", "#cabildeo"]
+            "refs": [
+              "#peacefulMarch",
+              "#signatureDrive",
+              "#assembly",
+              "#cabildeo"
+            ]
           },
           "links": {
             "type": "array",
-            "items": {"type": "string", "format": "uri"},
+            "items": { "type": "string", "format": "uri" },
             "maxLength": 20
           },
-          "createdBy": {"type": "string", "format": "did"},
-          "createdAt": {"type": "string", "format": "datetime"},
-          "updatedAt": {"type": "string", "format": "datetime"}
+          "createdBy": { "type": "string", "format": "did" },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
         }
       }
     },
@@ -49,23 +54,23 @@
       "type": "object",
       "required": ["meetingPoint", "permitStatus"],
       "properties": {
-        "meetingPoint": {"type": "string", "maxLength": 300},
-        "route": {"type": "string", "maxLength": 2000},
-        "destination": {"type": "string", "maxLength": 300},
+        "meetingPoint": { "type": "string", "maxLength": 300 },
+        "route": { "type": "string", "maxLength": 2000 },
+        "destination": { "type": "string", "maxLength": 300 },
         "permitStatus": {
           "type": "string",
           "maxLength": 32,
           "description": "Status of the notice or permit before local authorities.",
           "knownValues": ["not_required", "requested", "granted", "denied"]
         },
-        "permitReference": {"type": "string", "maxLength": 300},
-        "expectedAttendance": {"type": "integer", "minimum": 0},
+        "permitReference": { "type": "string", "maxLength": 300 },
+        "expectedAttendance": { "type": "integer", "minimum": 0 },
         "safetyContact": {
           "type": "string",
           "maxLength": 300,
           "description": "Public contact of the safety or logistics team (never a personal phone without consent)."
         },
-        "accessibilityNotes": {"type": "string", "maxLength": 1000}
+        "accessibilityNotes": { "type": "string", "maxLength": 1000 }
       }
     },
     "signatureDrive": {
@@ -83,14 +88,14 @@
             "petition"
           ]
         },
-        "instrumentTitle": {"type": "string", "maxLength": 300},
-        "instrumentUrl": {"type": "string", "format": "uri"},
-        "targetSignatures": {"type": "integer", "minimum": 1},
-        "signaturesCollected": {"type": "integer", "minimum": 0},
-        "deadline": {"type": "string", "format": "datetime"},
+        "instrumentTitle": { "type": "string", "maxLength": 300 },
+        "instrumentUrl": { "type": "string", "format": "uri" },
+        "targetSignatures": { "type": "integer", "minimum": 1 },
+        "signaturesCollected": { "type": "integer", "minimum": 0 },
+        "deadline": { "type": "string", "format": "datetime" },
         "collectionPoints": {
           "type": "array",
-          "items": {"type": "string", "maxLength": 300},
+          "items": { "type": "string", "maxLength": 300 },
           "maxLength": 50
         },
         "signerRequirements": {
@@ -109,13 +114,13 @@
           "maxLength": 32,
           "knownValues": ["in_person", "online", "hybrid"]
         },
-        "meetingUrl": {"type": "string", "format": "uri"},
+        "meetingUrl": { "type": "string", "format": "uri" },
         "agenda": {
           "type": "array",
-          "items": {"type": "string", "maxLength": 300},
+          "items": { "type": "string", "maxLength": 300 },
           "maxLength": 30
         },
-        "quorumRequired": {"type": "integer", "minimum": 0}
+        "quorumRequired": { "type": "integer", "minimum": 0 }
       }
     },
     "cabildeo": {
@@ -128,19 +133,19 @@
           "maxLength": 32,
           "knownValues": ["in_person", "online", "hybrid"]
         },
-        "meetingUrl": {"type": "string", "format": "uri"},
-        "recordingUrl": {"type": "string", "format": "uri"},
+        "meetingUrl": { "type": "string", "format": "uri" },
+        "recordingUrl": { "type": "string", "format": "uri" },
         "participants": {
           "type": "array",
-          "items": {"type": "string", "maxLength": 200},
+          "items": { "type": "string", "maxLength": 200 },
           "maxLength": 100
         },
         "arguments": {
           "type": "array",
-          "items": {"type": "string", "maxLength": 500},
+          "items": { "type": "string", "maxLength": 500 },
           "maxLength": 50
         },
-        "outcome": {"type": "string", "maxLength": 2000}
+        "outcome": { "type": "string", "maxLength": 2000 }
       }
     }
   }

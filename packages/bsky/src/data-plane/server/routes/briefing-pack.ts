@@ -12,14 +12,18 @@ import { CreatedAtCidKeyset, paginate } from '../db/pagination.js'
 
 export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   async getParaCommunityBriefingPacks(req) {
-    const { communityUri, viewerDid: _viewerDid, limit, cursor, query, status } = req
+    const {
+      communityUri,
+      viewerDid: _viewerDid,
+      limit,
+      cursor,
+      query,
+      status,
+    } = req
     const { ref } = db.db.dynamic
 
     const pageLimit = normalizeLimit(limit)
-    const keyset = new CreatedAtCidKeyset(
-      ref('bp.createdAt'),
-      ref('bp.cid'),
-    )
+    const keyset = new CreatedAtCidKeyset(ref('bp.createdAt'), ref('bp.cid'))
 
     let builder = db.db
       .selectFrom('para_community_briefing_pack as bp')
@@ -63,7 +67,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
 
     return new GetParaCommunityBriefingPacksResponse({
       briefingPacks: page.map((row) => toProtoView(row)),
-      cursor: hasMore ? keyset.packFromResult(raw) ?? '' : '',
+      cursor: hasMore ? (keyset.packFromResult(raw) ?? '') : '',
     })
   },
 

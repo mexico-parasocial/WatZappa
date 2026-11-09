@@ -2,284 +2,299 @@
 title: com.para.community.defs
 description: Reference for the com.para.community.defs lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="summary"></a>
+
 ### `summary`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `members` | `integer` | ✅  |  |  |
-| `visiblePosters` | `integer` | ✅  |  |  |
-| `policyPosts` | `integer` | ✅  |  |  |
-| `matterPosts` | `integer` | ✅  |  |  |
-| `badgeHolders` | `integer` | ✅  |  |  |
+| Name             | Type      | Req'd | Description | Constraints |
+| ---------------- | --------- | ----- | ----------- | ----------- |
+| `members`        | `integer` | ✅    |             |             |
+| `visiblePosters` | `integer` | ✅    |             |             |
+| `policyPosts`    | `integer` | ✅    |             |             |
+| `matterPosts`    | `integer` | ✅    |             |             |
+| `badgeHolders`   | `integer` | ✅    |             |             |
 
 ---
 
 <a name="person"></a>
+
 ### `person`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `did` | `string` | ❌  |  | Format: `did` |
-| `handle` | `string` | ❌  |  | Format: `handle` |
-| `displayName` | `string` | ❌  |  | Max Length: 640<br/>Max Graphemes: 64 |
-| `avatar` | `string` | ❌  |  | Format: `uri` |
+| Name          | Type     | Req'd | Description | Constraints                           |
+| ------------- | -------- | ----- | ----------- | ------------------------------------- |
+| `did`         | `string` | ❌    |             | Format: `did`                         |
+| `handle`      | `string` | ❌    |             | Format: `handle`                      |
+| `displayName` | `string` | ❌    |             | Max Length: 640<br/>Max Graphemes: 64 |
+| `avatar`      | `string` | ❌    |             | Format: `uri`                         |
 
 ---
 
 <a name="moderatorview"></a>
+
 ### `moderatorView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `did` | `string` | ❌  |  | Format: `did` |
-| `handle` | `string` | ❌  |  | Format: `handle` |
-| `displayName` | `string` | ❌  |  | Max Length: 640<br/>Max Graphemes: 64 |
-| `avatar` | `string` | ❌  |  | Format: `uri` |
-| `role` | `string` | ✅  |  | Max Length: 64<br/>Max Graphemes: 64 |
-| `badge` | `string` | ✅  |  | Max Length: 64<br/>Max Graphemes: 64 |
-| `capabilities` | Array of `string` | ✅  |  |  |
-| `validFrom` | `string` | ❌  |  | Format: `datetime` |
-| `validUntil` | `string` | ❌  |  | Format: `datetime` |
-| `ratifiedBy` | `string` | ❌  |  | Format: `at-uri` |
+| Name           | Type              | Req'd | Description | Constraints                           |
+| -------------- | ----------------- | ----- | ----------- | ------------------------------------- |
+| `did`          | `string`          | ❌    |             | Format: `did`                         |
+| `handle`       | `string`          | ❌    |             | Format: `handle`                      |
+| `displayName`  | `string`          | ❌    |             | Max Length: 640<br/>Max Graphemes: 64 |
+| `avatar`       | `string`          | ❌    |             | Format: `uri`                         |
+| `role`         | `string`          | ✅    |             | Max Length: 64<br/>Max Graphemes: 64  |
+| `badge`        | `string`          | ✅    |             | Max Length: 64<br/>Max Graphemes: 64  |
+| `capabilities` | Array of `string` | ✅    |             |                                       |
+| `validFrom`    | `string`          | ❌    |             | Format: `datetime`                    |
+| `validUntil`   | `string`          | ❌    |             | Format: `datetime`                    |
+| `ratifiedBy`   | `string`          | ❌    |             | Format: `at-uri`                      |
 
 ---
 
 <a name="officialview"></a>
+
 ### `officialView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `did` | `string` | ❌  |  | Format: `did` |
-| `handle` | `string` | ❌  |  | Format: `handle` |
-| `displayName` | `string` | ❌  |  | Max Length: 640<br/>Max Graphemes: 64 |
-| `avatar` | `string` | ❌  |  | Format: `uri` |
-| `office` | `string` | ✅  |  | Max Length: 64<br/>Max Graphemes: 64 |
-| `mandate` | `string` | ✅  |  | Max Length: 1000<br/>Max Graphemes: 200 |
-| `validFrom` | `string` | ❌  |  | Format: `datetime` |
-| `validUntil` | `string` | ❌  |  | Format: `datetime` |
-| `ratifiedBy` | `string` | ❌  |  | Format: `at-uri` |
+| Name          | Type     | Req'd | Description | Constraints                             |
+| ------------- | -------- | ----- | ----------- | --------------------------------------- |
+| `did`         | `string` | ❌    |             | Format: `did`                           |
+| `handle`      | `string` | ❌    |             | Format: `handle`                        |
+| `displayName` | `string` | ❌    |             | Max Length: 640<br/>Max Graphemes: 64   |
+| `avatar`      | `string` | ❌    |             | Format: `uri`                           |
+| `office`      | `string` | ✅    |             | Max Length: 64<br/>Max Graphemes: 64    |
+| `mandate`     | `string` | ✅    |             | Max Length: 1000<br/>Max Graphemes: 200 |
+| `validFrom`   | `string` | ❌    |             | Format: `datetime`                      |
+| `validUntil`  | `string` | ❌    |             | Format: `datetime`                      |
+| `ratifiedBy`  | `string` | ❌    |             | Format: `at-uri`                        |
 
 ---
 
 <a name="applicant"></a>
+
 ### `applicant`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `did` | `string` | ❌  |  | Format: `did` |
-| `handle` | `string` | ❌  |  | Format: `handle` |
-| `displayName` | `string` | ❌  |  | Max Length: 640<br/>Max Graphemes: 64 |
-| `avatar` | `string` | ❌  |  | Format: `uri` |
-| `appliedAt` | `string` | ✅  |  | Format: `datetime` |
-| `status` | `string` | ✅  |  | Known Values: `applied`, `approved`, `rejected` |
-| `note` | `string` | ❌  |  | Max Length: 1000<br/>Max Graphemes: 200 |
+| Name          | Type     | Req'd | Description | Constraints                                     |
+| ------------- | -------- | ----- | ----------- | ----------------------------------------------- |
+| `did`         | `string` | ❌    |             | Format: `did`                                   |
+| `handle`      | `string` | ❌    |             | Format: `handle`                                |
+| `displayName` | `string` | ❌    |             | Max Length: 640<br/>Max Graphemes: 64           |
+| `avatar`      | `string` | ❌    |             | Format: `uri`                                   |
+| `appliedAt`   | `string` | ✅    |             | Format: `datetime`                              |
+| `status`      | `string` | ✅    |             | Known Values: `applied`, `approved`, `rejected` |
+| `note`        | `string` | ❌    |             | Max Length: 1000<br/>Max Graphemes: 200         |
 
 ---
 
 <a name="deputyroleview"></a>
+
 ### `deputyRoleView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `key` | `string` | ✅  |  | Max Length: 128<br/>Max Graphemes: 128 |
-| `tier` | `string` | ✅  |  | Max Length: 32<br/>Max Graphemes: 32 |
-| `role` | `string` | ✅  |  | Max Length: 64<br/>Max Graphemes: 64 |
-| `description` | `string` | ✅  |  | Max Length: 2000<br/>Max Graphemes: 300 |
-| `capabilities` | Array of `string` | ✅  |  |  |
-| `activeHolder` | [`#person`](#person) | ❌  |  |  |
-| `activeSince` | `string` | ❌  |  | Format: `datetime` |
-| `validFrom` | `string` | ❌  |  | Format: `datetime` |
-| `validUntil` | `string` | ❌  |  | Format: `datetime` |
-| `ratifiedBy` | `string` | ❌  |  | Format: `at-uri` |
-| `votes` | `integer` | ✅  |  |  |
-| `applicants` | Array of [`#applicant`](#applicant) | ✅  |  |  |
+| Name           | Type                                | Req'd | Description | Constraints                             |
+| -------------- | ----------------------------------- | ----- | ----------- | --------------------------------------- |
+| `key`          | `string`                            | ✅    |             | Max Length: 128<br/>Max Graphemes: 128  |
+| `tier`         | `string`                            | ✅    |             | Max Length: 32<br/>Max Graphemes: 32    |
+| `role`         | `string`                            | ✅    |             | Max Length: 64<br/>Max Graphemes: 64    |
+| `description`  | `string`                            | ✅    |             | Max Length: 2000<br/>Max Graphemes: 300 |
+| `capabilities` | Array of `string`                   | ✅    |             |                                         |
+| `activeHolder` | [`#person`](#person)                | ❌    |             |                                         |
+| `activeSince`  | `string`                            | ❌    |             | Format: `datetime`                      |
+| `validFrom`    | `string`                            | ❌    |             | Format: `datetime`                      |
+| `validUntil`   | `string`                            | ❌    |             | Format: `datetime`                      |
+| `ratifiedBy`   | `string`                            | ❌    |             | Format: `at-uri`                        |
+| `votes`        | `integer`                           | ✅    |             |                                         |
+| `applicants`   | Array of [`#applicant`](#applicant) | ✅    |             |                                         |
 
 ---
 
 <a name="metadata"></a>
+
 ### `metadata`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `termLengthDays` | `integer` | ❌  |  |  |
-| `reviewCadence` | `string` | ❌  |  | Max Length: 256<br/>Max Graphemes: 128 |
-| `escalationPath` | `string` | ❌  |  | Max Length: 256<br/>Max Graphemes: 128 |
-| `publicContact` | `string` | ❌  |  | Max Length: 256<br/>Max Graphemes: 128 |
-| `lastPublishedAt` | `string` | ❌  |  | Format: `datetime` |
-| `state` | `string` | ❌  |  | Max Length: 128<br/>Max Graphemes: 64 |
-| `matterFlairIds` | Array of `string` | ❌  |  |  |
-| `policyFlairIds` | Array of `string` | ❌  |  |  |
+| Name              | Type              | Req'd | Description | Constraints                            |
+| ----------------- | ----------------- | ----- | ----------- | -------------------------------------- |
+| `termLengthDays`  | `integer`         | ❌    |             |                                        |
+| `reviewCadence`   | `string`          | ❌    |             | Max Length: 256<br/>Max Graphemes: 128 |
+| `escalationPath`  | `string`          | ❌    |             | Max Length: 256<br/>Max Graphemes: 128 |
+| `publicContact`   | `string`          | ❌    |             | Max Length: 256<br/>Max Graphemes: 128 |
+| `lastPublishedAt` | `string`          | ❌    |             | Format: `datetime`                     |
+| `state`           | `string`          | ❌    |             | Max Length: 128<br/>Max Graphemes: 64  |
+| `matterFlairIds`  | Array of `string` | ❌    |             |                                        |
+| `policyFlairIds`  | Array of `string` | ❌    |             |                                        |
 
 ---
 
 <a name="historyentry"></a>
+
 ### `historyEntry`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `id` | `string` | ✅  |  | Max Length: 128<br/>Max Graphemes: 128 |
-| `action` | `string` | ✅  |  | Max Length: 128<br/>Max Graphemes: 128 |
-| `actorDid` | `string` | ❌  |  | Format: `did` |
-| `actorHandle` | `string` | ❌  |  | Format: `handle` |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
-| `summary` | `string` | ✅  |  | Max Length: 2000<br/>Max Graphemes: 300 |
-| `ratifiedBy` | `string` | ❌  | Reference to an approved assembly decision that authorized this change. | Format: `at-uri` |
+| Name          | Type     | Req'd | Description                                                             | Constraints                             |
+| ------------- | -------- | ----- | ----------------------------------------------------------------------- | --------------------------------------- |
+| `id`          | `string` | ✅    |                                                                         | Max Length: 128<br/>Max Graphemes: 128  |
+| `action`      | `string` | ✅    |                                                                         | Max Length: 128<br/>Max Graphemes: 128  |
+| `actorDid`    | `string` | ❌    |                                                                         | Format: `did`                           |
+| `actorHandle` | `string` | ❌    |                                                                         | Format: `handle`                        |
+| `createdAt`   | `string` | ✅    |                                                                         | Format: `datetime`                      |
+| `summary`     | `string` | ✅    |                                                                         | Max Length: 2000<br/>Max Graphemes: 300 |
+| `ratifiedBy`  | `string` | ❌    | Reference to an approved assembly decision that authorized this change. | Format: `at-uri`                        |
 
 ---
 
 <a name="sharedcontentview"></a>
+
 ### `sharedContentView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `cid` | `string` | ✅  |  | Format: `cid` |
-| `subject` | [`com.atproto.repo.strongRef`](https://github.com/bluesky-social/atproto/tree/main/lexicons/com/atproto/repo/strongref.json#undefined) | ✅  |  |  |
-| `communityUri` | `string` | ✅  |  | Format: `at-uri` |
-| `sourceCommunityUri` | `string` | ❌  |  | Format: `at-uri` |
-| `contentType` | `string` | ✅  |  | Known Values: `post`, `cabildeo`, `collection`, `mapInitiative`, `external` |
-| `sharedBy` | `string` | ✅  |  | Format: `did` |
-| `sharedByHandle` | `string` | ❌  |  | Format: `handle` |
-| `note` | `string` | ❌  |  | Max Length: 3000<br/>Max Graphemes: 300 |
-| `visibility` | `string` | ❌  |  | Known Values: `community`, `public`, `stewards` |
-| `sourceApp` | `string` | ❌  |  | Max Length: 512<br/>Max Graphemes: 128 |
-| `embedContext` | `unknown` | ❌  |  |  |
-| `pinned` | `boolean` | ❌  |  |  |
-| `sortRank` | `integer` | ❌  |  |  |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
-| `removed` | `boolean` | ✅  |  |  |
-| `removedAt` | `string` | ❌  |  | Format: `datetime` |
-| `removedBy` | `string` | ❌  |  | Format: `did` |
-| `latestAction` | [`#sharedContentActionView`](#sharedcontentactionview) | ❌  |  |  |
-| `hydrationState` | `string` | ❌  |  | Known Values: `ready`, `unresolved`, `deleted` |
+| Name                 | Type                                                                                                                                   | Req'd | Description | Constraints                                                                 |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----------- | --------------------------------------------------------------------------- |
+| `uri`                | `string`                                                                                                                               | ✅    |             | Format: `at-uri`                                                            |
+| `cid`                | `string`                                                                                                                               | ✅    |             | Format: `cid`                                                               |
+| `subject`            | [`com.atproto.repo.strongRef`](https://github.com/bluesky-social/atproto/tree/main/lexicons/com/atproto/repo/strongref.json#undefined) | ✅    |             |                                                                             |
+| `communityUri`       | `string`                                                                                                                               | ✅    |             | Format: `at-uri`                                                            |
+| `sourceCommunityUri` | `string`                                                                                                                               | ❌    |             | Format: `at-uri`                                                            |
+| `contentType`        | `string`                                                                                                                               | ✅    |             | Known Values: `post`, `cabildeo`, `collection`, `mapInitiative`, `external` |
+| `sharedBy`           | `string`                                                                                                                               | ✅    |             | Format: `did`                                                               |
+| `sharedByHandle`     | `string`                                                                                                                               | ❌    |             | Format: `handle`                                                            |
+| `note`               | `string`                                                                                                                               | ❌    |             | Max Length: 3000<br/>Max Graphemes: 300                                     |
+| `visibility`         | `string`                                                                                                                               | ❌    |             | Known Values: `community`, `public`, `stewards`                             |
+| `sourceApp`          | `string`                                                                                                                               | ❌    |             | Max Length: 512<br/>Max Graphemes: 128                                      |
+| `embedContext`       | `unknown`                                                                                                                              | ❌    |             |                                                                             |
+| `pinned`             | `boolean`                                                                                                                              | ❌    |             |                                                                             |
+| `sortRank`           | `integer`                                                                                                                              | ❌    |             |                                                                             |
+| `createdAt`          | `string`                                                                                                                               | ✅    |             | Format: `datetime`                                                          |
+| `removed`            | `boolean`                                                                                                                              | ✅    |             |                                                                             |
+| `removedAt`          | `string`                                                                                                                               | ❌    |             | Format: `datetime`                                                          |
+| `removedBy`          | `string`                                                                                                                               | ❌    |             | Format: `did`                                                               |
+| `latestAction`       | [`#sharedContentActionView`](#sharedcontentactionview)                                                                                 | ❌    |             |                                                                             |
+| `hydrationState`     | `string`                                                                                                                               | ❌    |             | Known Values: `ready`, `unresolved`, `deleted`                              |
 
 ---
 
 <a name="sharedcontentactionview"></a>
+
 ### `sharedContentActionView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `cid` | `string` | ✅  |  | Format: `cid` |
-| `sharedContent` | [`com.atproto.repo.strongRef`](https://github.com/bluesky-social/atproto/tree/main/lexicons/com/atproto/repo/strongref.json#undefined) | ✅  |  |  |
-| `communityUri` | `string` | ✅  |  | Format: `at-uri` |
-| `action` | `string` | ✅  |  | Known Values: `remove`, `restore`, `pin`, `unpin` |
-| `note` | `string` | ❌  |  | Max Length: 3000<br/>Max Graphemes: 300 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
-| `createdBy` | `string` | ✅  |  | Format: `did` |
+| Name            | Type                                                                                                                                   | Req'd | Description | Constraints                                       |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----------- | ------------------------------------------------- |
+| `uri`           | `string`                                                                                                                               | ✅    |             | Format: `at-uri`                                  |
+| `cid`           | `string`                                                                                                                               | ✅    |             | Format: `cid`                                     |
+| `sharedContent` | [`com.atproto.repo.strongRef`](https://github.com/bluesky-social/atproto/tree/main/lexicons/com/atproto/repo/strongref.json#undefined) | ✅    |             |                                                   |
+| `communityUri`  | `string`                                                                                                                               | ✅    |             | Format: `at-uri`                                  |
+| `action`        | `string`                                                                                                                               | ✅    |             | Known Values: `remove`, `restore`, `pin`, `unpin` |
+| `note`          | `string`                                                                                                                               | ❌    |             | Max Length: 3000<br/>Max Graphemes: 300           |
+| `createdAt`     | `string`                                                                                                                               | ✅    |             | Format: `datetime`                                |
+| `createdBy`     | `string`                                                                                                                               | ✅    |             | Format: `did`                                     |
 
 ---
 
 <a name="communityrelationview"></a>
+
 ### `communityRelationView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `cid` | `string` | ✅  |  | Format: `cid` |
-| `parentCommunityUri` | `string` | ✅  |  | Format: `at-uri` |
-| `childCommunityUri` | `string` | ✅  |  | Format: `at-uri` |
-| `relation` | `string` | ✅  |  | Known Values: `parentChild` |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
-| `createdBy` | `string` | ✅  |  | Format: `did` |
+| Name                 | Type     | Req'd | Description | Constraints                 |
+| -------------------- | -------- | ----- | ----------- | --------------------------- |
+| `uri`                | `string` | ✅    |             | Format: `at-uri`            |
+| `cid`                | `string` | ✅    |             | Format: `cid`               |
+| `parentCommunityUri` | `string` | ✅    |             | Format: `at-uri`            |
+| `childCommunityUri`  | `string` | ✅    |             | Format: `at-uri`            |
+| `relation`           | `string` | ✅    |             | Known Values: `parentChild` |
+| `createdAt`          | `string` | ✅    |             | Format: `datetime`          |
+| `createdBy`          | `string` | ✅    |             | Format: `did`               |
 
 ---
 
 <a name="briefingpackview"></a>
+
 ### `briefingPackView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `cid` | `string` | ✅  |  | Format: `cid` |
-| `packType` | `string` | ✅  |  | Enum: `party_lobbying` |
-| `communityUri` | `string` | ✅  |  | Format: `at-uri` |
-| `party` | `string` | ✅  |  | Max Length: 120 |
-| `title` | `string` | ✅  |  | Max Length: 300 |
-| `summary` | `string` | ❌  |  | Max Length: 5000 |
-| `cabildeoUris` | Array of `string` | ❌  |  | Max Items: 100 |
-| `civicTreeCardIds` | Array of `string` | ❌  |  | Max Items: 200 |
-| `evidenceUris` | Array of `string` | ❌  |  | Max Items: 300 |
-| `sembleCollectionUri` | `string` | ❌  |  | Format: `at-uri` |
-| `marginCollectionUri` | `string` | ❌  |  | Format: `at-uri` |
-| `obsidianExportUri` | `string` | ❌  |  | Max Length: 2000 |
-| `status` | `string` | ✅  |  | Enum: `draft`, `published`, `archived` |
-| `createdBy` | `string` | ✅  |  | Format: `did` |
-| `creator` | [`app.bsky.actor.defs#profileView`](https://github.com/bluesky-social/atproto/tree/main/lexicons/app/bsky/actor/defs.json#profileView) | ❌  |  |  |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
-| `updatedAt` | `string` | ✅  |  | Format: `datetime` |
+| Name                  | Type                                                                                                                                   | Req'd | Description | Constraints                            |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----------- | -------------------------------------- |
+| `uri`                 | `string`                                                                                                                               | ✅    |             | Format: `at-uri`                       |
+| `cid`                 | `string`                                                                                                                               | ✅    |             | Format: `cid`                          |
+| `packType`            | `string`                                                                                                                               | ✅    |             | Enum: `party_lobbying`                 |
+| `communityUri`        | `string`                                                                                                                               | ✅    |             | Format: `at-uri`                       |
+| `party`               | `string`                                                                                                                               | ✅    |             | Max Length: 120                        |
+| `title`               | `string`                                                                                                                               | ✅    |             | Max Length: 300                        |
+| `summary`             | `string`                                                                                                                               | ❌    |             | Max Length: 5000                       |
+| `cabildeoUris`        | Array of `string`                                                                                                                      | ❌    |             | Max Items: 100                         |
+| `civicTreeCardIds`    | Array of `string`                                                                                                                      | ❌    |             | Max Items: 200                         |
+| `evidenceUris`        | Array of `string`                                                                                                                      | ❌    |             | Max Items: 300                         |
+| `sembleCollectionUri` | `string`                                                                                                                               | ❌    |             | Format: `at-uri`                       |
+| `marginCollectionUri` | `string`                                                                                                                               | ❌    |             | Format: `at-uri`                       |
+| `obsidianExportUri`   | `string`                                                                                                                               | ❌    |             | Max Length: 2000                       |
+| `status`              | `string`                                                                                                                               | ✅    |             | Enum: `draft`, `published`, `archived` |
+| `createdBy`           | `string`                                                                                                                               | ✅    |             | Format: `did`                          |
+| `creator`             | [`app.bsky.actor.defs#profileView`](https://github.com/bluesky-social/atproto/tree/main/lexicons/app/bsky/actor/defs.json#profileView) | ❌    |             |                                        |
+| `createdAt`           | `string`                                                                                                                               | ✅    |             | Format: `datetime`                     |
+| `updatedAt`           | `string`                                                                                                                               | ✅    |             | Format: `datetime`                     |
 
 ---
 
 <a name="obsidianfileview"></a>
+
 ### `obsidianFileView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `path` | `string` | ✅  |  |  |
-| `content` | `string` | ✅  |  |  |
+| Name      | Type     | Req'd | Description | Constraints |
+| --------- | -------- | ----- | ----------- | ----------- |
+| `path`    | `string` | ✅    |             |             |
+| `content` | `string` | ✅    |             |             |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -336,11 +351,7 @@ description: Reference for the com.para.community.defs lexicon
     },
     "moderatorView": {
       "type": "object",
-      "required": [
-        "role",
-        "badge",
-        "capabilities"
-      ],
+      "required": ["role", "badge", "capabilities"],
       "properties": {
         "did": {
           "type": "string",
@@ -393,10 +404,7 @@ description: Reference for the com.para.community.defs lexicon
     },
     "officialView": {
       "type": "object",
-      "required": [
-        "office",
-        "mandate"
-      ],
+      "required": ["office", "mandate"],
       "properties": {
         "did": {
           "type": "string",
@@ -441,10 +449,7 @@ description: Reference for the com.para.community.defs lexicon
     },
     "applicant": {
       "type": "object",
-      "required": [
-        "appliedAt",
-        "status"
-      ],
+      "required": ["appliedAt", "status"],
       "properties": {
         "did": {
           "type": "string",
@@ -469,11 +474,7 @@ description: Reference for the com.para.community.defs lexicon
         },
         "status": {
           "type": "string",
-          "knownValues": [
-            "applied",
-            "approved",
-            "rejected"
-          ]
+          "knownValues": ["applied", "approved", "rejected"]
         },
         "note": {
           "type": "string",
@@ -604,12 +605,7 @@ description: Reference for the com.para.community.defs lexicon
     },
     "historyEntry": {
       "type": "object",
-      "required": [
-        "id",
-        "action",
-        "createdAt",
-        "summary"
-      ],
+      "required": ["id", "action", "createdAt", "summary"],
       "properties": {
         "id": {
           "type": "string",
@@ -703,11 +699,7 @@ description: Reference for the com.para.community.defs lexicon
         },
         "visibility": {
           "type": "string",
-          "knownValues": [
-            "community",
-            "public",
-            "stewards"
-          ]
+          "knownValues": ["community", "public", "stewards"]
         },
         "sourceApp": {
           "type": "string",
@@ -744,11 +736,7 @@ description: Reference for the com.para.community.defs lexicon
         },
         "hydrationState": {
           "type": "string",
-          "knownValues": [
-            "ready",
-            "unresolved",
-            "deleted"
-          ]
+          "knownValues": ["ready", "unresolved", "deleted"]
         }
       }
     },
@@ -782,12 +770,7 @@ description: Reference for the com.para.community.defs lexicon
         },
         "action": {
           "type": "string",
-          "knownValues": [
-            "remove",
-            "restore",
-            "pin",
-            "unpin"
-          ]
+          "knownValues": ["remove", "restore", "pin", "unpin"]
         },
         "note": {
           "type": "string",
@@ -834,9 +817,7 @@ description: Reference for the com.para.community.defs lexicon
         },
         "relation": {
           "type": "string",
-          "knownValues": [
-            "parentChild"
-          ]
+          "knownValues": ["parentChild"]
         },
         "createdAt": {
           "type": "string",
@@ -873,9 +854,7 @@ description: Reference for the com.para.community.defs lexicon
         },
         "packType": {
           "type": "string",
-          "enum": [
-            "party_lobbying"
-          ]
+          "enum": ["party_lobbying"]
         },
         "communityUri": {
           "type": "string",
@@ -931,11 +910,7 @@ description: Reference for the com.para.community.defs lexicon
         },
         "status": {
           "type": "string",
-          "enum": [
-            "draft",
-            "published",
-            "archived"
-          ]
+          "enum": ["draft", "published", "archived"]
         },
         "createdBy": {
           "type": "string",
@@ -957,10 +932,7 @@ description: Reference for the com.para.community.defs lexicon
     },
     "obsidianFileView": {
       "type": "object",
-      "required": [
-        "path",
-        "content"
-      ],
+      "required": ["path", "content"],
       "properties": {
         "path": {
           "type": "string"

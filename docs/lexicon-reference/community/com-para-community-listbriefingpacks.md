@@ -2,41 +2,44 @@
 title: com.para.community.listBriefingPacks
 description: Reference for the com.para.community.listBriefingPacks lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `community` | `string` | ❌  |  | Format: `at-uri` |
-| `party` | `string` | ❌  |  |  |
-| `cabildeo` | `string` | ❌  |  | Format: `at-uri` |
-| `civicTreeCard` | `string` | ❌  |  |  |
-| `status` | `string` | ❌  |  | Enum: `draft`, `published`, `archived` |
-| `limit` | `integer` | ❌  |  | Min: 1<br/>Max: 100 |
-| `cursor` | `string` | ❌  |  |  |
-**Output:**
+| Name            | Type      | Req'd | Description | Constraints                            |
+| --------------- | --------- | ----- | ----------- | -------------------------------------- |
+| `community`     | `string`  | ❌    |             | Format: `at-uri`                       |
+| `party`         | `string`  | ❌    |             |                                        |
+| `cabildeo`      | `string`  | ❌    |             | Format: `at-uri`                       |
+| `civicTreeCard` | `string`  | ❌    |             |                                        |
+| `status`        | `string`  | ❌    |             | Enum: `draft`, `published`, `archived` |
+| `limit`         | `integer` | ❌    |             | Min: 1<br/>Max: 100                    |
+| `cursor`        | `string`  | ❌    |             |                                        |
+| **Output:**     |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `packs` | Array of [`com.para.community.defs#briefingPackView`]([[com-para-community-defs|com.para.community.defs#briefingPackView]]) | ✅  |  |  |
-| `cursor` | `string` | ❌  |  |  |
+| Name     | Type                                                                            | Req'd                                       | Description | Constraints |
+| -------- | ------------------------------------------------------------------------------- | ------------------------------------------- | ----------- | ----------- |
+| `packs`  | Array of [`com.para.community.defs#briefingPackView`]([[com-para-community-defs | com.para.community.defs#briefingPackView]]) | ✅          |             |     |
+| `cursor` | `string`                                                                        | ❌                                          |             |             |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -63,11 +66,7 @@ description: Reference for the com.para.community.listBriefingPacks lexicon
           },
           "status": {
             "type": "string",
-            "enum": [
-              "draft",
-              "published",
-              "archived"
-            ]
+            "enum": ["draft", "published", "archived"]
           },
           "limit": {
             "type": "integer",
@@ -83,9 +82,7 @@ description: Reference for the com.para.community.listBriefingPacks lexicon
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "packs"
-          ],
+          "required": ["packs"],
           "properties": {
             "packs": {
               "type": "array",

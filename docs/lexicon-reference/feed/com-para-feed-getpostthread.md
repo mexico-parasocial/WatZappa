@@ -2,11 +2,13 @@
 title: com.para.feed.getPostThread
 description: Reference for the com.para.feed.getPostThread lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,30 +17,31 @@ Get a Para post thread around a post URI.
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  | Reference (AT-URI) to the post record. | Format: `at-uri` |
-| `depth` | `integer` | ❌  | How many levels of reply depth to include. | Min: 0<br/>Max: 1000<br/>Default: `6` |
-| `parentHeight` | `integer` | ❌  | How many levels of parent posts to include. | Min: 0<br/>Max: 1000<br/>Default: `80` |
-**Output:**
+| Name           | Type      | Req'd | Description                                 | Constraints                            |
+| -------------- | --------- | ----- | ------------------------------------------- | -------------------------------------- |
+| `uri`          | `string`  | ✅    | Reference (AT-URI) to the post record.      | Format: `at-uri`                       |
+| `depth`        | `integer` | ❌    | How many levels of reply depth to include.  | Min: 0<br/>Max: 1000<br/>Default: `6`  |
+| `parentHeight` | `integer` | ❌    | How many levels of parent posts to include. | Min: 0<br/>Max: 1000<br/>Default: `80` |
+| **Output:**    |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `post` | [`com.para.feed.getAuthorFeed#postView`]([[com-para-feed-getauthorfeed|com.para.feed.getAuthorFeed#postView]]) | ✅  |  |  |
-| `parents` | Array of [`com.para.feed.getAuthorFeed#postView`]([[com-para-feed-getauthorfeed|com.para.feed.getAuthorFeed#postView]]) | ✅  |  |  |
-| `replies` | Array of [`com.para.feed.getAuthorFeed#postView`]([[com-para-feed-getauthorfeed|com.para.feed.getAuthorFeed#postView]]) | ✅  |  |  |
-**Possible Errors:**
+| Name                 | Type                                                                            | Req'd                                   | Description | Constraints |
+| -------------------- | ------------------------------------------------------------------------------- | --------------------------------------- | ----------- | ----------- |
+| `post`               | [`com.para.feed.getAuthorFeed#postView`]([[com-para-feed-getauthorfeed          | com.para.feed.getAuthorFeed#postView]]) | ✅          |             |     |
+| `parents`            | Array of [`com.para.feed.getAuthorFeed#postView`]([[com-para-feed-getauthorfeed | com.para.feed.getAuthorFeed#postView]]) | ✅          |             |     |
+| `replies`            | Array of [`com.para.feed.getAuthorFeed#postView`]([[com-para-feed-getauthorfeed | com.para.feed.getAuthorFeed#postView]]) | ✅          |             |     |
+| **Possible Errors:** |
 
 - `NotFound`
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -49,9 +52,7 @@ Get a Para post thread around a post URI.
       "description": "Get a Para post thread around a post URI.",
       "parameters": {
         "type": "params",
-        "required": [
-          "uri"
-        ],
+        "required": ["uri"],
         "properties": {
           "uri": {
             "type": "string",
@@ -78,11 +79,7 @@ Get a Para post thread around a post URI.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "post",
-            "parents",
-            "replies"
-          ],
+          "required": ["post", "parents", "replies"],
           "properties": {
             "post": {
               "type": "ref",

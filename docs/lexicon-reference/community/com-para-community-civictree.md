@@ -2,11 +2,13 @@
 title: com.para.community.civicTree
 description: Reference for the com.para.community.civicTree lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -15,18 +17,19 @@ description: Reference for the com.para.community.civicTree lexicon
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `proposal` | `string` | ✅  | URI of the proposal being deliberated on | Format: `at-uri` |
-| `community` | `string` | ✅  |  | Format: `at-uri` |
-| `author` | `string` | ✅  |  | Format: `did` |
-| `body` | `string` | ✅  | Short statement for civicTree, like a Polis comment | Max Length: 500 |
-| `stance` | `string` | ❌  | Author's self-reported stance. Bridging = attempts to find common ground. | Enum: `for`, `against`, `neutral`, `bridging` |
-| `createdAt` | `string` | ❌  |  | Format: `datetime` |
+| Name        | Type     | Req'd | Description                                                               | Constraints                                   |
+| ----------- | -------- | ----- | ------------------------------------------------------------------------- | --------------------------------------------- |
+| `proposal`  | `string` | ✅    | URI of the proposal being deliberated on                                  | Format: `at-uri`                              |
+| `community` | `string` | ✅    |                                                                           | Format: `at-uri`                              |
+| `author`    | `string` | ✅    |                                                                           | Format: `did`                                 |
+| `body`      | `string` | ✅    | Short statement for civicTree, like a Polis comment                       | Max Length: 500                               |
+| `stance`    | `string` | ❌    | Author's self-reported stance. Bridging = attempts to find common ground. | Enum: `for`, `against`, `neutral`, `bridging` |
+| `createdAt` | `string` | ❌    |                                                                           | Format: `datetime`                            |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -37,12 +40,7 @@ description: Reference for the com.para.community.civicTree lexicon
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "proposal",
-          "community",
-          "author",
-          "body"
-        ],
+        "required": ["proposal", "community", "author", "body"],
         "properties": {
           "proposal": {
             "type": "string",
@@ -64,12 +62,7 @@ description: Reference for the com.para.community.civicTree lexicon
           },
           "stance": {
             "type": "string",
-            "enum": [
-              "for",
-              "against",
-              "neutral",
-              "bridging"
-            ],
+            "enum": ["for", "against", "neutral", "bridging"],
             "description": "Author's self-reported stance. Bridging = attempts to find common ground."
           },
           "createdAt": {

@@ -252,7 +252,9 @@ maybeDescribe('RAQ indexing and queries', () => {
   })
 
   it('omits compass for a community with no RAQ data instead of returning {}', async () => {
-    const qs = new URLSearchParams({ community: 'no-such-community' }).toString()
+    const qs = new URLSearchParams({
+      community: 'no-such-community',
+    }).toString()
     const res = await fetch(
       `${network.bsky.url}/xrpc/com.para.raq.getCommunityAlignment?${qs}`,
     )

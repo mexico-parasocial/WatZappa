@@ -8,12 +8,7 @@
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "proposal",
-          "community",
-          "voter",
-          "signal"
-        ],
+        "required": ["proposal", "community", "voter", "signal"],
         "properties": {
           "proposal": {
             "type": "string",

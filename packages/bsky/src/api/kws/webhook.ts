@@ -12,7 +12,11 @@ import {
   KwsWebhookBody,
   webhookBodyIntermediateSchema,
 } from './types.js'
-import { createStashEvent, kwsWwwAuthenticate, validateSignature } from './util.js'
+import {
+  createStashEvent,
+  kwsWwwAuthenticate,
+  validateSignature,
+} from './util.js'
 
 export const webhookAuth =
   ({ secret }: { secret: string }): RequestHandler =>

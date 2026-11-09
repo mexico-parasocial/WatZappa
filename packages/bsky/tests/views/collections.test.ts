@@ -41,9 +41,14 @@ describe('appview collections', () => {
     })
 
   const create = async (actor: string, name: string) => {
-    const res = await call(actor, 'com.para.collection.createCollection', {}, {
-      name,
-    })
+    const res = await call(
+      actor,
+      'com.para.collection.createCollection',
+      {},
+      {
+        name,
+      },
+    )
     await network.processAll()
     return res.data.id as string
   }
@@ -74,7 +79,13 @@ describe('appview collections', () => {
         collection: {
           id,
           name: 'Transit & Roads',
-          items: [{ itemId: 'i1', title: 'Bus lanes', addedAt: new Date().toISOString() }],
+          items: [
+            {
+              itemId: 'i1',
+              title: 'Bus lanes',
+              addedAt: new Date().toISOString(),
+            },
+          ],
           relations: [],
         },
       },

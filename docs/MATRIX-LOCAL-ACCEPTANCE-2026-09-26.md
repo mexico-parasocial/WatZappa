@@ -69,7 +69,6 @@ The fixture owner has moderation powers. This does not cover removal of a
 moderator-only role, which requires a separate governance fixture and remains
 an acceptance item.
 
-
 ## 2026-10-08 — connectivity, provisioning and release update
 
 The September fixture is historical. The current PDS is a different,
@@ -162,14 +161,12 @@ Required continuation:
    stack. Test a complete backup in an isolated deployment, alerts and rollback
    before declaring user readiness.
 
-
 ## 2026-10-14 — isolated persistent profile restored
 
 The prior bridge/build blockage is cleared for an independent acceptance profile.
 The original running demo on 2583 and September/rescue data remain intact.
 `make run-messaging-env` uses `.messaging-dev-data`, isolated PostgreSQL/Redis
-ports 5544/6481, PDS/PLC/AppView/chat 3583/3582/3584/3590 and the host bridge on
-3001. The launcher provisions its existing dedicated AppView authority read
+ports 5544/6481, PDS/PLC/AppView/chat 3583/3582/3584/3590 and the host bridge on 3001. The launcher provisions its existing dedicated AppView authority read
 credential. A source-bound restart preserved PDS generation, service DIDs and
 cursor; bridge integrity/health passed with no failed syncs. This is a separate
 profile, not a data-preserving migration of existing demo accounts.

@@ -2,11 +2,13 @@
 title: com.para.community.sharedContentAction
 description: Reference for the com.para.community.sharedContentAction lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -17,17 +19,18 @@ A community moderation or audit action against a member-owned shared content wra
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `sharedContent` | [`com.atproto.repo.strongRef`](https://github.com/bluesky-social/atproto/tree/main/lexicons/com/atproto/repo/strongref.json#undefined) | ✅  |  |  |
-| `communityUri` | `string` | ✅  |  | Format: `at-uri` |
-| `action` | `string` | ✅  |  | Known Values: `remove`, `restore`, `pin`, `unpin` |
-| `note` | `string` | ❌  |  | Max Length: 3000<br/>Max Graphemes: 300 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name            | Type                                                                                                                                   | Req'd | Description | Constraints                                       |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----------- | ------------------------------------------------- |
+| `sharedContent` | [`com.atproto.repo.strongRef`](https://github.com/bluesky-social/atproto/tree/main/lexicons/com/atproto/repo/strongref.json#undefined) | ✅    |             |                                                   |
+| `communityUri`  | `string`                                                                                                                               | ✅    |             | Format: `at-uri`                                  |
+| `action`        | `string`                                                                                                                               | ✅    |             | Known Values: `remove`, `restore`, `pin`, `unpin` |
+| `note`          | `string`                                                                                                                               | ❌    |             | Max Length: 3000<br/>Max Graphemes: 300           |
+| `createdAt`     | `string`                                                                                                                               | ✅    |             | Format: `datetime`                                |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -39,12 +42,7 @@ A community moderation or audit action against a member-owned shared content wra
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "sharedContent",
-          "communityUri",
-          "action",
-          "createdAt"
-        ],
+        "required": ["sharedContent", "communityUri", "action", "createdAt"],
         "properties": {
           "sharedContent": {
             "type": "ref",
@@ -56,12 +54,7 @@ A community moderation or audit action against a member-owned shared content wra
           },
           "action": {
             "type": "string",
-            "knownValues": [
-              "remove",
-              "restore",
-              "pin",
-              "unpin"
-            ]
+            "knownValues": ["remove", "restore", "pin", "unpin"]
           },
           "note": {
             "type": "string",
