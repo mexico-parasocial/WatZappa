@@ -1,7 +1,7 @@
 // @ts-nocheck
 import type { Selectable } from 'kysely'
 import type { CID } from 'multiformats/cid'
-import { type AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
+import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
 import type { BackgroundQueue } from '../../background.js'
 import type {
   DatabaseSchema,
