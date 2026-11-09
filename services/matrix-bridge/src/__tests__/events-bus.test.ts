@@ -4,7 +4,7 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { BridgeDatabase } from '../db/sqlite/index.js'
 import { SqliteBridgeDatabase } from '../db/sqlite-wrapper.js'
-import { audienceFilterFor, EventBus } from '../events/bus.js'
+import { EventBus, audienceFilterFor } from '../events/bus.js'
 
 const silentLog = { warn: () => {} }
 

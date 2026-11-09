@@ -1,7 +1,7 @@
 // @ts-nocheck
 import {
-  InterpretedLabelValueDefinition,
-  ModerationOpts,
+  type InterpretedLabelValueDefinition,
+  type ModerationOpts,
   interpretLabelValueDefinition,
   mock,
   moderatePost,

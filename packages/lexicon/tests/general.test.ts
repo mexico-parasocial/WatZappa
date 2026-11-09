@@ -1,7 +1,7 @@
 // @ts-nocheck
 import assert from 'node:assert'
 import { CID } from 'multiformats/cid'
-import { LexiconDoc, Lexicons, parseLexiconDoc } from '../src/index.js'
+import { type LexiconDoc, Lexicons, parseLexiconDoc } from '../src/index.js'
 import LexiconDocs from './_scaffolds/lexicons.js'
 
 describe('Lexicons collection', () => {

@@ -2,11 +2,13 @@
 title: com.para.alpha.requestAccess
 description: Reference for the com.para.alpha.requestAccess lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `procedure`
@@ -22,26 +24,27 @@ Request alpha access for a given state. Optionally provide an invite code to ski
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `state` | `string` | ✅  | Mexican state abbreviation or name | Min Length: 1<br/>Max Length: 64 |
-| `inviteCode` | `string` | ❌  | Optional invite code in format STATE-XXXX-XXXX | Min Length: 1<br/>Max Length: 64 |
-**Output:**
+| Name         | Type     | Req'd | Description                                    | Constraints                      |
+| ------------ | -------- | ----- | ---------------------------------------------- | -------------------------------- |
+| `state`      | `string` | ✅    | Mexican state abbreviation or name             | Min Length: 1<br/>Max Length: 64 |
+| `inviteCode` | `string` | ❌    | Optional invite code in format STATE-XXXX-XXXX | Min Length: 1<br/>Max Length: 64 |
+| **Output:**  |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `status` | `string` | ✅  |  | Known Values: `approved`, `waitlisted`, `rejected`, `already_has_access` |
-| `position` | `integer` | ❌  |  |  |
-| `state` | `string` | ❌  |  |  |
+| Name       | Type      | Req'd | Description | Constraints                                                              |
+| ---------- | --------- | ----- | ----------- | ------------------------------------------------------------------------ |
+| `status`   | `string`  | ✅    |             | Known Values: `approved`, `waitlisted`, `rejected`, `already_has_access` |
+| `position` | `integer` | ❌    |             |                                                                          |
+| `state`    | `string`  | ❌    |             |                                                                          |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -54,9 +57,7 @@ Request alpha access for a given state. Optionally provide an invite code to ski
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "state"
-          ],
+          "required": ["state"],
           "properties": {
             "state": {
               "type": "string",
@@ -77,9 +78,7 @@ Request alpha access for a given state. Optionally provide an invite code to ski
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "status"
-          ],
+          "required": ["status"],
           "properties": {
             "status": {
               "type": "string",

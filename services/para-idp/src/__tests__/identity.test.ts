@@ -100,7 +100,9 @@ describe('localpart derivation (CD-M1)', () => {
 describe('signature verification against mubEZ vectors', () => {
   it('encodes the canonical payload byte for byte', () => {
     for (const v of sigVectors) {
-      expect(new TextDecoder().decode(encodeAssertion(v.assertion))).toBe(v.encoded)
+      expect(new TextDecoder().decode(encodeAssertion(v.assertion))).toBe(
+        v.encoded,
+      )
     }
   })
 
@@ -148,21 +150,41 @@ describe('verifier rejections', () => {
   })
 
   it('refuses a mismatched audience or challenge', () => {
-    expect(verifyIdentityAssertion(signed, { ...base, audience: 'evil' })).toBe(false)
-    expect(verifyIdentityAssertion(signed, { ...base, challenge: 'other' })).toBe(false)
+    expect(verifyIdentityAssertion(signed, { ...base, audience: 'evil' })).toBe(
+      false,
+    )
+    expect(
+      verifyIdentityAssertion(signed, { ...base, challenge: 'other' }),
+    ).toBe(false)
   })
 
   it('refuses stale and future-dated assertions', () => {
     expect(
-      verifyIdentityAssertion(signed, { ...base, now: new Date('2026-08-24T13:00:00Z') }),
+      verifyIdentityAssertion(signed, {
+        ...base,
+        now: new Date('2026-08-24T13:00:00Z'),
+      }),
     ).toBe(false)
     expect(
-      verifyIdentityAssertion(signed, { ...base, now: new Date('2026-08-24T11:00:00Z') }),
+      verifyIdentityAssertion(signed, {
+        ...base,
+        now: new Date('2026-08-24T11:00:00Z'),
+      }),
     ).toBe(false)
   })
 
   it('returns false rather than throwing on hostile input', () => {
-    const junk: unknown[] = [null, undefined, '', 'zz', 'ff'.repeat(64), 'gg'.repeat(64), 42, {}, []]
+    const junk: unknown[] = [
+      null,
+      undefined,
+      '',
+      'zz',
+      'ff'.repeat(64),
+      'gg'.repeat(64),
+      42,
+      {},
+      [],
+    ]
     for (const sig of junk) {
       for (const pub of junk) {
         expect(
@@ -176,7 +198,15 @@ describe('verifier rejections', () => {
         ).toBe(false)
       }
     }
-    for (const shape of [null, undefined, 'x', 1, [], {}, { assertion: null, signature: 'a' }]) {
+    for (const shape of [
+      null,
+      undefined,
+      'x',
+      1,
+      [],
+      {},
+      { assertion: null, signature: 'a' },
+    ]) {
       expect(verifyIdentityAssertion(shape as never, base)).toBe(false)
     }
   })

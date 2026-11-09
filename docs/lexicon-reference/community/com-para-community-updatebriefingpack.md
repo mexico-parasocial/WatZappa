@@ -2,11 +2,13 @@
 title: com.para.community.updateBriefingPack
 description: Reference for the com.para.community.updateBriefingPack lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `procedure`
@@ -20,47 +22,49 @@ description: Reference for the com.para.community.updateBriefingPack lexicon
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `cid` | `string` | ❌  |  | Format: `cid` |
-| `pack` | [`#packInput`](#packinput) | ✅  |  |  |
-**Output:**
+| Name        | Type                       | Req'd | Description | Constraints      |
+| ----------- | -------------------------- | ----- | ----------- | ---------------- |
+| `uri`       | `string`                   | ✅    |             | Format: `at-uri` |
+| `cid`       | `string`                   | ❌    |             | Format: `cid`    |
+| `pack`      | [`#packInput`](#packinput) | ✅    |             |                  |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `pack` | [`com.para.community.defs#briefingPackView`]([[com-para-community-defs|com.para.community.defs#briefingPackView]]) | ✅  |  |  |
+| Name   | Type                                                                   | Req'd                                       | Description | Constraints |
+| ------ | ---------------------------------------------------------------------- | ------------------------------------------- | ----------- | ----------- |
+| `pack` | [`com.para.community.defs#briefingPackView`]([[com-para-community-defs | com.para.community.defs#briefingPackView]]) | ✅          |             |     |
 
 ---
 
 <a name="packinput"></a>
+
 ### `packInput`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `party` | `string` | ❌  |  | Max Length: 120 |
-| `title` | `string` | ❌  |  | Max Length: 300 |
-| `summary` | `string` | ❌  |  | Max Length: 5000 |
-| `cabildeoUris` | Array of `string` | ❌  |  | Max Items: 100 |
-| `civicTreeCardIds` | Array of `string` | ❌  |  | Max Items: 200 |
-| `evidenceUris` | Array of `string` | ❌  |  | Max Items: 300 |
-| `sembleCollectionUri` | `string` | ❌  |  | Format: `at-uri` |
-| `marginCollectionUri` | `string` | ❌  |  | Format: `at-uri` |
-| `obsidianExportUri` | `string` | ❌  |  | Max Length: 2000 |
-| `status` | `string` | ❌  |  | Enum: `draft`, `published`, `archived` |
+| Name                  | Type              | Req'd | Description | Constraints                            |
+| --------------------- | ----------------- | ----- | ----------- | -------------------------------------- |
+| `party`               | `string`          | ❌    |             | Max Length: 120                        |
+| `title`               | `string`          | ❌    |             | Max Length: 300                        |
+| `summary`             | `string`          | ❌    |             | Max Length: 5000                       |
+| `cabildeoUris`        | Array of `string` | ❌    |             | Max Items: 100                         |
+| `civicTreeCardIds`    | Array of `string` | ❌    |             | Max Items: 200                         |
+| `evidenceUris`        | Array of `string` | ❌    |             | Max Items: 300                         |
+| `sembleCollectionUri` | `string`          | ❌    |             | Format: `at-uri`                       |
+| `marginCollectionUri` | `string`          | ❌    |             | Format: `at-uri`                       |
+| `obsidianExportUri`   | `string`          | ❌    |             | Max Length: 2000                       |
+| `status`              | `string`          | ❌    |             | Enum: `draft`, `published`, `archived` |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -72,10 +76,7 @@ description: Reference for the com.para.community.updateBriefingPack lexicon
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "uri",
-            "pack"
-          ],
+          "required": ["uri", "pack"],
           "properties": {
             "uri": {
               "type": "string",
@@ -96,9 +97,7 @@ description: Reference for the com.para.community.updateBriefingPack lexicon
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "pack"
-          ],
+          "required": ["pack"],
           "properties": {
             "pack": {
               "type": "ref",
@@ -161,11 +160,7 @@ description: Reference for the com.para.community.updateBriefingPack lexicon
         },
         "status": {
           "type": "string",
-          "enum": [
-            "draft",
-            "published",
-            "archived"
-          ]
+          "enum": ["draft", "published", "archived"]
         }
       }
     }

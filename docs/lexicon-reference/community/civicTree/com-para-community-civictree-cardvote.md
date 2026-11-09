@@ -2,11 +2,13 @@
 title: com.para.community.civicTree.cardVote
 description: Reference for the com.para.community.civicTree.cardVote lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -15,16 +17,17 @@ description: Reference for the com.para.community.civicTree.cardVote lexicon
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `card` | `string` | ✅  |  | Format: `at-uri` |
-| `voterDid` | `string` | ✅  |  | Format: `did` |
-| `influence` | `integer` | ✅  |  | Min: -3<br/>Max: 3 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name        | Type      | Req'd | Description | Constraints        |
+| ----------- | --------- | ----- | ----------- | ------------------ |
+| `card`      | `string`  | ✅    |             | Format: `at-uri`   |
+| `voterDid`  | `string`  | ✅    |             | Format: `did`      |
+| `influence` | `integer` | ✅    |             | Min: -3<br/>Max: 3 |
+| `createdAt` | `string`  | ✅    |             | Format: `datetime` |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -35,12 +38,7 @@ description: Reference for the com.para.community.civicTree.cardVote lexicon
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "card",
-          "voterDid",
-          "influence",
-          "createdAt"
-        ],
+        "required": ["card", "voterDid", "influence", "createdAt"],
         "properties": {
           "card": {
             "type": "string",

@@ -2,11 +2,13 @@
 title: com.para.collection.deleteCollection
 description: Reference for the com.para.collection.deleteCollection lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `procedure`
@@ -22,13 +24,14 @@ Delete a policy collection.
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `id` | `string` | ✅  |  |  |
+| Name | Type     | Req'd | Description | Constraints |
+| ---- | -------- | ----- | ----------- | ----------- |
+| `id` | `string` | ✅    |             |             |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -41,9 +44,7 @@ Delete a policy collection.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "properties": {
             "id": {
               "type": "string"

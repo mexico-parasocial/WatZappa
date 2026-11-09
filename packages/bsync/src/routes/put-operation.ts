@@ -1,20 +1,25 @@
 import { Code, ConnectError } from '@connectrpc/connect'
-import { FixedServiceImpl } from '../types/connect-fix.js'
 import { sql } from 'kysely'
 import { ensureValidRecordKey } from '@atproto/syntax'
-import { AppContext } from '../context.js'
-import { Database } from '../db/index.js'
-import { OperationMethod, createOperationChannel } from '../db/schema/operation.js'
-import { Service } from '../proto/bsync_connect.js'
+import type { AppContext } from '../context.js'
+import type { Database } from '../db/index.js'
+import {
+  type OperationMethod,
+  createOperationChannel,
+} from '../db/schema/operation.js'
+import type { Service } from '../proto/bsync_connect.js'
 import {
   Method,
-  PutOperationRequest,
+  type PutOperationRequest,
   PutOperationResponse,
 } from '../proto/bsync_pb.js'
+import type { FixedServiceImpl } from '../types/connect-fix.js'
 import { authWithApiKey } from './auth.js'
 import { isValidDid, validateNamespace } from './util.js'
 
-export default (ctx: AppContext): Partial<FixedServiceImpl<typeof Service>> => ({
+export default (
+  ctx: AppContext,
+): Partial<FixedServiceImpl<typeof Service>> => ({
   async putOperation(req, handlerCtx) {
     authWithApiKey(ctx, handlerCtx)
     const { db } = ctx

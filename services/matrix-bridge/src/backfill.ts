@@ -23,7 +23,7 @@ import { AtpAgent } from '@atproto/api'
 import { isProvisionedSpace } from './chat-mode.js'
 import { communityAlias, communityDidOf } from './community-uri.js'
 import { loadConfig } from './config.js'
-import { type IBridgeDatabase, createDatabase } from './db/index.js'
+import { createDatabase } from './db/index.js'
 import { MatrixAdminClient, extractServerName } from './matrix.js'
 
 const log = pino({

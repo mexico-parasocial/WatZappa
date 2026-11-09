@@ -1,7 +1,11 @@
 // @ts-nocheck
-import { SeedClient, TestNetworkNoAppView, usersSeed } from '@atproto/dev-env'
-import { DidString, NSID } from '@atproto/syntax'
 import { jest } from '@jest/globals'
+import {
+  type SeedClient,
+  TestNetworkNoAppView,
+  usersSeed,
+} from '@atproto/dev-env'
+import { type DidString, NSID } from '@atproto/syntax'
 import type { AtprotoLexiconResolver } from '../src/index.js'
 
 const dnsEntries: [entry: string, ...result: string[][]][] = []
@@ -16,10 +20,8 @@ jest.unstable_mockModule('node:dns/promises', () => {
   }
 })
 
-const {
-  buildLexiconResolver,
-  resolveLexiconDidAuthority,
-} = await import('../src/index.js')
+const { buildLexiconResolver, resolveLexiconDidAuthority } =
+  await import('../src/index.js')
 
 describe('Lexicon resolution', () => {
   let network: TestNetworkNoAppView

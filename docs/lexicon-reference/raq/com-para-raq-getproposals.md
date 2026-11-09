@@ -2,11 +2,13 @@
 title: com.para.raq.getProposals
 description: Reference for the com.para.raq.getProposals lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,53 +17,55 @@ Get proposed RAQ questions with vote and answer aggregations.
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `community` | `string` | ❌  |  | Max Length: 128 |
-| `limit` | `integer` | ❌  |  | Min: 1<br/>Max: 100<br/>Default: `50` |
-| `cursor` | `string` | ❌  |  |  |
-**Output:**
+| Name        | Type      | Req'd | Description | Constraints                           |
+| ----------- | --------- | ----- | ----------- | ------------------------------------- |
+| `community` | `string`  | ❌    |             | Max Length: 128                       |
+| `limit`     | `integer` | ❌    |             | Min: 1<br/>Max: 100<br/>Default: `50` |
+| `cursor`    | `string`  | ❌    |             |                                       |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cursor` | `string` | ❌  |  |  |
-| `proposals` | Array of [`#proposalView`](#proposalview) | ✅  |  |  |
+| Name        | Type                                      | Req'd | Description | Constraints |
+| ----------- | ----------------------------------------- | ----- | ----------- | ----------- |
+| `cursor`    | `string`                                  | ❌    |             |             |
+| `proposals` | Array of [`#proposalView`](#proposalview) | ✅    |             |             |
 
 ---
 
 <a name="proposalview"></a>
+
 ### `proposalView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `cid` | `string` | ✅  |  | Format: `cid` |
-| `creator` | `string` | ✅  |  | Format: `did` |
-| `text` | `string` | ✅  |  | Max Length: 1000 |
-| `targetAxis` | `string` | ❌  |  | Max Length: 64 |
-| `targetCommunity` | `string` | ❌  |  | Max Length: 128 |
-| `upvotes` | `integer` | ✅  |  |  |
-| `downvotes` | `integer` | ✅  |  |  |
-| `answerCount` | `integer` | ❌  |  |  |
-| `answerAverage` | `integer` | ❌  |  |  |
-| `viewerUpvote` | `boolean` | ❌  |  |  |
-| `viewerDownvote` | `boolean` | ❌  |  |  |
-| `viewerAnswer` | `integer` | ❌  |  |  |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
-| `indexedAt` | `string` | ❌  |  | Format: `datetime` |
+| Name              | Type      | Req'd | Description | Constraints        |
+| ----------------- | --------- | ----- | ----------- | ------------------ |
+| `uri`             | `string`  | ✅    |             | Format: `at-uri`   |
+| `cid`             | `string`  | ✅    |             | Format: `cid`      |
+| `creator`         | `string`  | ✅    |             | Format: `did`      |
+| `text`            | `string`  | ✅    |             | Max Length: 1000   |
+| `targetAxis`      | `string`  | ❌    |             | Max Length: 64     |
+| `targetCommunity` | `string`  | ❌    |             | Max Length: 128    |
+| `upvotes`         | `integer` | ✅    |             |                    |
+| `downvotes`       | `integer` | ✅    |             |                    |
+| `answerCount`     | `integer` | ❌    |             |                    |
+| `answerAverage`   | `integer` | ❌    |             |                    |
+| `viewerUpvote`    | `boolean` | ❌    |             |                    |
+| `viewerDownvote`  | `boolean` | ❌    |             |                    |
+| `viewerAnswer`    | `integer` | ❌    |             |                    |
+| `createdAt`       | `string`  | ✅    |             | Format: `datetime` |
+| `indexedAt`       | `string`  | ❌    |             | Format: `datetime` |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -92,9 +96,7 @@ Get proposed RAQ questions with vote and answer aggregations.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "proposals"
-          ],
+          "required": ["proposals"],
           "properties": {
             "cursor": {
               "type": "string"

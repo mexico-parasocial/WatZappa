@@ -1,10 +1,9 @@
 // @ts-nocheck
-import { vi } from 'vitest'
 import crypto from 'node:crypto'
 import { once } from 'node:events'
-import { Server, createServer } from 'node:http'
+import { type Server, createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import express, { Application, json } from 'express'
+import express, { type Application, json } from 'express'
 import {
   afterAll,
   afterEach,
@@ -13,16 +12,17 @@ import {
   describe,
   expect,
   it,
+  vi,
 } from 'vitest'
 import {
-  AppBskyAgeassuranceBegin,
-  AppBskyAgeassuranceDefs,
-  AppBskyAgeassuranceGetState,
-  AtpAgent,
+  type AppBskyAgeassuranceBegin,
+  type AppBskyAgeassuranceDefs,
+  type AppBskyAgeassuranceGetState,
+  type AtpAgent,
   ageAssuranceRuleIDs as ruleIds,
   ids,
 } from '@atproto/api'
-import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 import {
   type KWSWebhookAgeVerified,
   serializeKWSAgeVerifiedStatus,
@@ -32,7 +32,7 @@ import {
   serializeKWSExternalPayloadV1,
   serializeKWSExternalPayloadV2,
 } from '../../src/api/age-assurance/kws/external-payload.js'
-import { KwsWebhookBody } from '../../src/api/kws/types.js'
+import type { KwsWebhookBody } from '../../src/api/kws/types.js'
 
 type Database = TestNetwork['bsky']['db']
 

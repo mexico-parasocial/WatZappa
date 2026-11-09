@@ -1,4 +1,4 @@
-import { ColumnType, GeneratedAlways } from 'kysely'
+import type { ColumnType, GeneratedAlways } from 'kysely'
 import type { com } from '../../../../lexicons.js'
 
 export const tableName = 'raq_assessment'

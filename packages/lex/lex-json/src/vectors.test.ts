@@ -1,8 +1,8 @@
 // @ts-nocheck
 import { describe, expect, it, test } from 'vitest'
-import { LexValue, lexEquals, parseCid } from '@atproto/lex-data'
+import { type LexValue, lexEquals, parseCid } from '@atproto/lex-data'
 import { jsonToLex } from './json-to-lex.js'
-import { JsonValue } from './json.js'
+import type { JsonValue } from './json.js'
 import { lexParse, lexParseJsonBytes } from './lex-parse.js'
 import { lexStringify } from './lex-stringify.js'
 import { lexToJson } from './lex-to-json.js'

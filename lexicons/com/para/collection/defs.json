@@ -4,11 +4,7 @@
   "defs": {
     "collection": {
       "type": "object",
-      "required": [
-        "id",
-        "name",
-        "items"
-      ],
+      "required": ["id", "name", "items"],
       "properties": {
         "id": {
           "type": "string"
@@ -43,9 +39,7 @@
     },
     "civicTreeItem": {
       "type": "object",
-      "required": [
-        "addedAt"
-      ],
+      "required": ["addedAt"],
       "properties": {
         "itemId": {
           "type": "string",
@@ -127,13 +121,7 @@
     },
     "civicTreeRelation": {
       "type": "object",
-      "required": [
-        "id",
-        "fromItemId",
-        "toItemId",
-        "kind",
-        "createdAt"
-      ],
+      "required": ["id", "fromItemId", "toItemId", "kind", "createdAt"],
       "properties": {
         "id": {
           "type": "string",
@@ -170,13 +158,7 @@
     },
     "collectionView": {
       "type": "object",
-      "required": [
-        "id",
-        "name",
-        "items",
-        "createdAt",
-        "updatedAt"
-      ],
+      "required": ["id", "name", "items", "createdAt", "updatedAt"],
       "properties": {
         "id": {
           "type": "string"
@@ -309,9 +291,7 @@
     "collectionOp": {
       "type": "object",
       "description": "One edit to a collection. `type` selects which of the other fields apply: addItem(item), updateItem(itemKey, patch), removeItem(itemKey), addRelation(relation), removeRelation(relationId), updateDetails(fields).",
-      "required": [
-        "type"
-      ],
+      "required": ["type"],
       "properties": {
         "type": {
           "type": "string",
@@ -354,11 +334,7 @@
     "collectionOps": {
       "type": "object",
       "description": "A batch of edits to one collection, as stored in the operation log. The appview applies these in log order to the collection's current state.",
-      "required": [
-        "collection",
-        "ops",
-        "createdAt"
-      ],
+      "required": ["collection", "ops", "createdAt"],
       "properties": {
         "collection": {
           "type": "string",

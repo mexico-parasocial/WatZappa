@@ -1,4 +1,4 @@
-import { type Kysely } from 'kysely'
+import type { Kysely } from 'kysely'
 
 /**
  * OD-9 phase 5: a community's membership, offices, relations and moderation

@@ -2,39 +2,42 @@
 title: com.para.community.civicTree.listContributions
 description: Reference for the com.para.community.civicTree.listContributions lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `community` | `string` | ✅  |  | Format: `at-uri` |
-| `status` | `string` | ❌  |  | Known Values: `pending`, `approved`, `rejected` |
-| `viewer` | `string` | ❌  |  | Format: `did` |
-| `limit` | `integer` | ❌  |  | Min: 1<br/>Max: 100 |
-| `cursor` | `string` | ❌  |  |  |
-**Output:**
+| Name        | Type      | Req'd | Description | Constraints                                     |
+| ----------- | --------- | ----- | ----------- | ----------------------------------------------- |
+| `community` | `string`  | ✅    |             | Format: `at-uri`                                |
+| `status`    | `string`  | ❌    |             | Known Values: `pending`, `approved`, `rejected` |
+| `viewer`    | `string`  | ❌    |             | Format: `did`                                   |
+| `limit`     | `integer` | ❌    |             | Min: 1<br/>Max: 100                             |
+| `cursor`    | `string`  | ❌    |             |                                                 |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cursor` | `string` | ❌  |  |  |
-| `contributions` | Array of [`com.para.community.civicTree.defs#contributionView`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#contributionView]]) | ✅  |  |  |
+| Name            | Type                                                                                                | Req'd                                                 | Description | Constraints |
+| --------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------- | ----------- |
+| `cursor`        | `string`                                                                                            | ❌                                                    |             |             |
+| `contributions` | Array of [`com.para.community.civicTree.defs#contributionView`]([[com-para-community-civictree-defs | com.para.community.civicTree.defs#contributionView]]) | ✅          |             |     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -44,9 +47,7 @@ description: Reference for the com.para.community.civicTree.listContributions le
       "type": "query",
       "parameters": {
         "type": "params",
-        "required": [
-          "community"
-        ],
+        "required": ["community"],
         "properties": {
           "community": {
             "type": "string",
@@ -54,11 +55,7 @@ description: Reference for the com.para.community.civicTree.listContributions le
           },
           "status": {
             "type": "string",
-            "knownValues": [
-              "pending",
-              "approved",
-              "rejected"
-            ]
+            "knownValues": ["pending", "approved", "rejected"]
           },
           "viewer": {
             "type": "string",
@@ -78,9 +75,7 @@ description: Reference for the com.para.community.civicTree.listContributions le
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "contributions"
-          ],
+          "required": ["contributions"],
           "properties": {
             "cursor": {
               "type": "string"

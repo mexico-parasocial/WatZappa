@@ -2,11 +2,13 @@
 title: com.para.official.entity
 description: Reference for the com.para.official.entity lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -17,24 +19,25 @@ Official civic entity account reserved or verified by PARA.
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `kind` | `string` | ✅  |  | Known Values: `representative`, `office`, `community`, `party`, `ngo` |
-| `status` | `string` | ✅  |  | Known Values: `unclaimed`, `verified`, `retired` |
-| `name` | `string` | ✅  |  | Max Length: 300 |
-| `handle` | `string` | ❌  |  | Max Length: 300 |
-| `entityDid` | `string` | ❌  |  | Format: `did` |
-| `representativeId` | `string` | ❌  |  | Max Length: 200 |
-| `office` | `string` | ❌  |  | Max Length: 300 |
-| `jurisdiction` | `string` | ❌  |  | Max Length: 300 |
-| `state` | `string` | ❌  |  | Max Length: 120 |
-| `source` | `string` | ❌  |  | Max Length: 2000 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
-| `updatedAt` | `string` | ❌  |  | Format: `datetime` |
+| Name               | Type     | Req'd | Description | Constraints                                                           |
+| ------------------ | -------- | ----- | ----------- | --------------------------------------------------------------------- |
+| `kind`             | `string` | ✅    |             | Known Values: `representative`, `office`, `community`, `party`, `ngo` |
+| `status`           | `string` | ✅    |             | Known Values: `unclaimed`, `verified`, `retired`                      |
+| `name`             | `string` | ✅    |             | Max Length: 300                                                       |
+| `handle`           | `string` | ❌    |             | Max Length: 300                                                       |
+| `entityDid`        | `string` | ❌    |             | Format: `did`                                                         |
+| `representativeId` | `string` | ❌    |             | Max Length: 200                                                       |
+| `office`           | `string` | ❌    |             | Max Length: 300                                                       |
+| `jurisdiction`     | `string` | ❌    |             | Max Length: 300                                                       |
+| `state`            | `string` | ❌    |             | Max Length: 120                                                       |
+| `source`           | `string` | ❌    |             | Max Length: 2000                                                      |
+| `createdAt`        | `string` | ✅    |             | Format: `datetime`                                                    |
+| `updatedAt`        | `string` | ❌    |             | Format: `datetime`                                                    |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -46,12 +49,7 @@ Official civic entity account reserved or verified by PARA.
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "kind",
-          "status",
-          "name",
-          "createdAt"
-        ],
+        "required": ["kind", "status", "name", "createdAt"],
         "properties": {
           "kind": {
             "type": "string",
@@ -65,11 +63,7 @@ Official civic entity account reserved or verified by PARA.
           },
           "status": {
             "type": "string",
-            "knownValues": [
-              "unclaimed",
-              "verified",
-              "retired"
-            ]
+            "knownValues": ["unclaimed", "verified", "retired"]
           },
           "name": {
             "type": "string",

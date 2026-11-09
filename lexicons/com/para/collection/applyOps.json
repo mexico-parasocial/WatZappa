@@ -9,10 +9,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "id",
-            "ops"
-          ],
+          "required": ["id", "ops"],
           "properties": {
             "id": {
               "type": "string",
@@ -34,9 +31,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "opId"
-          ],
+          "required": ["opId"],
           "properties": {
             "opId": {
               "type": "string",

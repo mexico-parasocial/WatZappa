@@ -2,11 +2,13 @@
 title: com.para.community.listSharedContent
 description: Reference for the com.para.community.listSharedContent lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,40 +17,40 @@ Lists content shared into a PARA community, optionally including child community
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `communityUri` | `string` | ✅  |  | Format: `at-uri` |
-| `contentType` | `string` | ❌  |  | Known Values: `post`, `cabildeo`, `collection`, `mapInitiative`, `external` |
-| `includeRemoved` | `boolean` | ❌  |  | Default: `false` |
-| `includeChildren` | `boolean` | ❌  |  | Default: `false` |
-| `limit` | `integer` | ❌  |  | Min: 1<br/>Max: 100<br/>Default: `50` |
-| `cursor` | `string` | ❌  |  |  |
-**Output:**
+| Name              | Type      | Req'd | Description | Constraints                                                                 |
+| ----------------- | --------- | ----- | ----------- | --------------------------------------------------------------------------- |
+| `communityUri`    | `string`  | ✅    |             | Format: `at-uri`                                                            |
+| `contentType`     | `string`  | ❌    |             | Known Values: `post`, `cabildeo`, `collection`, `mapInitiative`, `external` |
+| `includeRemoved`  | `boolean` | ❌    |             | Default: `false`                                                            |
+| `includeChildren` | `boolean` | ❌    |             | Default: `false`                                                            |
+| `limit`           | `integer` | ❌    |             | Min: 1<br/>Max: 100<br/>Default: `50`                                       |
+| `cursor`          | `string`  | ❌    |             |                                                                             |
+| **Output:**       |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** [`#output`](#output)
 
-
-
 ---
 
 <a name="output"></a>
+
 ### `output`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `items` | Array of [`com.para.community.defs#sharedContentView`]([[com-para-community-defs|com.para.community.defs#sharedContentView]]) | ✅  |  |  |
-| `cursor` | `string` | ❌  |  |  |
+| Name     | Type                                                                             | Req'd                                        | Description | Constraints |
+| -------- | -------------------------------------------------------------------------------- | -------------------------------------------- | ----------- | ----------- |
+| `items`  | Array of [`com.para.community.defs#sharedContentView`]([[com-para-community-defs | com.para.community.defs#sharedContentView]]) | ✅          |             |     |
+| `cursor` | `string`                                                                         | ❌                                           |             |             |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -59,9 +61,7 @@ Lists content shared into a PARA community, optionally including child community
       "description": "Lists content shared into a PARA community, optionally including child community shares and removed shares for stewards.",
       "parameters": {
         "type": "params",
-        "required": [
-          "communityUri"
-        ],
+        "required": ["communityUri"],
         "properties": {
           "communityUri": {
             "type": "string",
@@ -106,9 +106,7 @@ Lists content shared into a PARA community, optionally including child community
     },
     "output": {
       "type": "object",
-      "required": [
-        "items"
-      ],
+      "required": ["items"],
       "properties": {
         "items": {
           "type": "array",

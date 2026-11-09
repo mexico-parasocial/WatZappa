@@ -2,11 +2,13 @@
 title: com.para.civic.openQuestion
 description: Reference for the com.para.civic.openQuestion lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -17,16 +19,17 @@ An open question post — a community question designed for structured replies a
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `text` | `string` | ✅  | The question text. | Max Length: 3000<br/>Max Graphemes: 300 |
-| `community` | `string` | ❌  | Optional community this question is posted to. | Max Length: 100 |
-| `tags` | Array of `string` | ❌  |  | Max Items: 8 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name        | Type              | Req'd | Description                                    | Constraints                             |
+| ----------- | ----------------- | ----- | ---------------------------------------------- | --------------------------------------- |
+| `text`      | `string`          | ✅    | The question text.                             | Max Length: 3000<br/>Max Graphemes: 300 |
+| `community` | `string`          | ❌    | Optional community this question is posted to. | Max Length: 100                         |
+| `tags`      | Array of `string` | ❌    |                                                | Max Items: 8                            |
+| `createdAt` | `string`          | ✅    |                                                | Format: `datetime`                      |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -38,10 +41,7 @@ An open question post — a community question designed for structured replies a
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "text",
-          "createdAt"
-        ],
+        "required": ["text", "createdAt"],
         "properties": {
           "text": {
             "type": "string",

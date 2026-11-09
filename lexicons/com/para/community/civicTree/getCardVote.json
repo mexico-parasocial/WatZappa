@@ -6,10 +6,7 @@
       "type": "query",
       "parameters": {
         "type": "params",
-        "required": [
-          "card",
-          "voter"
-        ],
+        "required": ["card", "voter"],
         "properties": {
           "card": {
             "type": "string"

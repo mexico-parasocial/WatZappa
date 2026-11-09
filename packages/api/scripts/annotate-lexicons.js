@@ -7,5 +7,8 @@ const declaration = 'export const schemaDict: Record<string, LexiconDoc> = {'
 if (!source.includes(declaration)) {
   if (!source.includes('export const schemaDict = {'))
     throw new Error('Unexpected generated Lexicon dictionary')
-  await writeFile(file, source.replace('export const schemaDict = {', declaration))
+  await writeFile(
+    file,
+    source.replace('export const schemaDict = {', declaration),
+  )
 }

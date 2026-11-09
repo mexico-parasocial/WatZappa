@@ -86,7 +86,12 @@ describe('DevCivicVerifier', () => {
 
   it('accepts a vote proof it minted and refuses an altered one', async () => {
     const proof = devCabildeoVoteProof(actorDid, cabildeo, 1)
-    const claim = { actorDid, subjectUri: cabildeo, selectedOption: 1, ...proof }
+    const claim = {
+      actorDid,
+      subjectUri: cabildeo,
+      selectedOption: 1,
+      ...proof,
+    }
     expect((await post(claim)).status).toBe(204)
     expect((await post({ ...claim, selectedOption: 0 })).status).toBe(422)
   })
@@ -131,7 +136,11 @@ describe('DevCivicVerifier', () => {
   })
 
   it('verifies and resolves a delegation grant it minted', async () => {
-    const claim = { mode: 'active' as const, delegateTo: 'did:plc:rep', cabildeo }
+    const claim = {
+      mode: 'active' as const,
+      delegateTo: 'did:plc:rep',
+      cabildeo,
+    }
     const body = {
       actorDid,
       ...claim,

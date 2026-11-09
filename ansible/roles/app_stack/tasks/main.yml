@@ -3,7 +3,7 @@
 
 - name: Fail if the source .env is missing
   ansible.builtin.stat:
-    path: "{{ app_stack_env_source }}"
+    path: '{{ app_stack_env_source }}'
   register: app_stack_env
   delegate_to: localhost
   become: false
@@ -22,25 +22,25 @@
 
 - name: Sync the working tree to the server
   ansible.posix.synchronize:
-    src: "{{ playbook_dir }}/../../"
-    dest: "{{ para_deploy_dir }}/"
+    src: '{{ playbook_dir }}/../../'
+    dest: '{{ para_deploy_dir }}/'
     delete: true
     rsync_opts: "{{ app_stack_rsync_excludes | map('regex_replace', '^', '--exclude=') | list }}"
   when: para_source_strategy == 'rsync'
 
 - name: Clone or update the repository on the server
   ansible.builtin.git:
-    repo: "{{ para_repo_url }}"
-    dest: "{{ para_deploy_dir }}"
-    version: "{{ para_repo_branch }}"
+    repo: '{{ para_repo_url }}'
+    dest: '{{ para_deploy_dir }}'
+    version: '{{ para_repo_branch }}'
     force: true
   when: para_source_strategy == 'git'
 
 - name: Upload the stack .env
   ansible.builtin.copy:
-    src: "{{ app_stack_env_source }}"
-    dest: "{{ para_deploy_dir }}/.env"
-    mode: "0600"
+    src: '{{ app_stack_env_source }}'
+    dest: '{{ para_deploy_dir }}/.env'
+    mode: '0600'
   no_log: true
   # `copy`, not `template`: this file contains secrets, and running it through
   # Jinja means any `{{ }}` or `{%` sequence inside a generated password is
@@ -49,16 +49,16 @@
 
 - name: Ensure PARA_DOMAIN is set in the stack .env
   ansible.builtin.lineinfile:
-    path: "{{ para_deploy_dir }}/.env"
-    regexp: "^PARA_DOMAIN="
-    line: "PARA_DOMAIN={{ para_domain }}"
-    mode: "0600"
+    path: '{{ para_deploy_dir }}/.env'
+    regexp: '^PARA_DOMAIN='
+    line: 'PARA_DOMAIN={{ para_domain }}'
+    mode: '0600'
   # docker-compose.prod.yaml now fails fast without it, and Caddyfile.prod
   # builds every site address from it.
 
 - name: Refuse to deploy with the dead domain in .env
   ansible.builtin.command:
-    cmd: "grep -c para-g0v.app {{ para_deploy_dir }}/.env"
+    cmd: 'grep -c para-g0v.app {{ para_deploy_dir }}/.env'
   register: app_stack_dead_domain
   changed_when: false
   failed_when: false
@@ -76,8 +76,8 @@
 
 - name: Rebuild app images without cache
   ansible.builtin.command:
-    cmd: "docker compose -f {{ app_compose_file }} build --no-cache"
-    chdir: "{{ para_deploy_dir }}"
+    cmd: 'docker compose -f {{ app_compose_file }} build --no-cache'
+    chdir: '{{ para_deploy_dir }}'
   when: compose_build_no_cache | bool
   changed_when: true
   # --no-cache is a `build` flag. `docker compose up --build --no-cache` is
@@ -85,8 +85,8 @@
 
 - name: Build and start the app stack
   ansible.builtin.command:
-    cmd: "docker compose -f {{ app_compose_file }} up -d --build"
-    chdir: "{{ para_deploy_dir }}"
+    cmd: 'docker compose -f {{ app_compose_file }} up -d --build'
+    chdir: '{{ para_deploy_dir }}'
   register: app_stack_up
   changed_when: >-
     'Started' in app_stack_up.stderr or 'Created' in app_stack_up.stderr
@@ -110,7 +110,7 @@
         $3 != "" && $3 != "<nil>" && $3 != "healthy" { bad=1 }
         END { exit bad+0 }
       '
-    chdir: "{{ para_deploy_dir }}"
+    chdir: '{{ para_deploy_dir }}'
   register: app_stack_ps
   changed_when: false
   retries: 24
@@ -119,4 +119,4 @@
 
 - name: Report app stack state
   ansible.builtin.debug:
-    msg: "{{ app_stack_ps.stdout_lines }}"
+    msg: '{{ app_stack_ps.stdout_lines }}'

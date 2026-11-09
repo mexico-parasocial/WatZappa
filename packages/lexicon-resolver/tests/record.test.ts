@@ -1,7 +1,11 @@
 // @ts-nocheck
 import assert from 'node:assert'
-import { SeedClient, TestNetworkNoAppView, usersSeed } from '@atproto/dev-env'
-import { AtUriString, l } from '@atproto/lex'
+import {
+  type SeedClient,
+  TestNetworkNoAppView,
+  usersSeed,
+} from '@atproto/dev-env'
+import { type AtUriString, l } from '@atproto/lex'
 import { encode } from '@atproto/lex-cbor'
 import { buildRecordResolver } from '../src/index.js'
 import type { AtprotoRecordResolver } from '../src/index.js'

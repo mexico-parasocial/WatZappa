@@ -171,7 +171,11 @@
         "actorHandle": { "type": "string", "format": "handle" },
         "createdAt": { "type": "string", "format": "datetime" },
         "summary": { "type": "string", "maxGraphemes": 300, "maxLength": 2000 },
-        "ratifiedBy": { "type": "string", "format": "at-uri", "description": "Reference to an approved assembly decision that authorized this change." }
+        "ratifiedBy": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "Reference to an approved assembly decision that authorized this change."
+        }
       }
     },
     "protectedAction": {
@@ -180,7 +184,19 @@
       "properties": {
         "action": {
           "type": "string",
-          "knownValues": ["membership.approve", "member.remove", "member.block", "moderator.elect", "moderator.recall", "moderation.appeal", "governance.amend", "organization.change", "admission.change", "owner.recover", "budget.approve"]
+          "knownValues": [
+            "membership.approve",
+            "member.remove",
+            "member.block",
+            "moderator.elect",
+            "moderator.recall",
+            "moderation.appeal",
+            "governance.amend",
+            "organization.change",
+            "admission.change",
+            "owner.recover",
+            "budget.approve"
+          ]
         },
         "subject": { "type": "string", "format": "did" },
         "payloadHash": { "type": "string", "maxLength": 128 }
@@ -188,13 +204,35 @@
     },
     "roleDefinition": {
       "type": "object",
-      "required": ["role", "howToObtain", "responsibilities", "actions", "permissions"],
+      "required": [
+        "role",
+        "howToObtain",
+        "responsibilities",
+        "actions",
+        "permissions"
+      ],
       "properties": {
-        "role": { "type": "string", "knownValues": ["visitor", "member", "moderator", "owner", "assembly"] },
-        "howToObtain": { "type": "string", "maxGraphemes": 300, "maxLength": 2000 },
-        "responsibilities": { "type": "array", "items": { "type": "string", "maxLength": 256 } },
-        "actions": { "type": "array", "items": { "type": "string", "maxLength": 128 } },
-        "permissions": { "type": "array", "items": { "type": "string", "maxLength": 128 } }
+        "role": {
+          "type": "string",
+          "knownValues": ["visitor", "member", "moderator", "owner", "assembly"]
+        },
+        "howToObtain": {
+          "type": "string",
+          "maxGraphemes": 300,
+          "maxLength": 2000
+        },
+        "responsibilities": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 256 }
+        },
+        "actions": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 128 }
+        },
+        "permissions": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 128 }
+        }
       }
     },
     "roleHolder": {
@@ -202,7 +240,10 @@
       "required": ["did", "role", "effectiveAt", "evidence"],
       "properties": {
         "did": { "type": "string", "format": "did" },
-        "role": { "type": "string", "knownValues": ["member", "moderator", "owner"] },
+        "role": {
+          "type": "string",
+          "knownValues": ["member", "moderator", "owner"]
+        },
         "effectiveAt": { "type": "string", "format": "datetime" },
         "expiresAt": { "type": "string", "format": "datetime" },
         "evidence": { "type": "string", "format": "at-uri" }
@@ -213,7 +254,10 @@
       "required": ["action", "status", "policy"],
       "properties": {
         "action": { "type": "string", "maxLength": 128 },
-        "status": { "type": "string", "knownValues": ["allowed", "requires_approval", "denied"] },
+        "status": {
+          "type": "string",
+          "knownValues": ["allowed", "requires_approval", "denied"]
+        },
         "policy": { "type": "string", "maxLength": 128 },
         "reason": { "type": "string", "maxGraphemes": 300, "maxLength": 2000 },
         "evidence": { "type": "string", "format": "at-uri" }

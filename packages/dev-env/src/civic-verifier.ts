@@ -43,8 +43,9 @@ const canonicalClaim = (claim: DevDelegationClaim) =>
         claim.delegateTo.trim(),
         claim.party.trim(),
         claim.community.trim(),
-        [...new Set(claim.scopeFlairs.map((f) => f.trim()).filter(Boolean))]
-          .sort(),
+        [
+          ...new Set(claim.scopeFlairs.map((f) => f.trim()).filter(Boolean)),
+        ].sort(),
       ]
 
 /** The per-person, per-cabildeo nullifier; each dev account is its own person. */

@@ -2,11 +2,13 @@
 title: com.para.community.civicTree.config
 description: Reference for the com.para.community.civicTree.config lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -15,19 +17,20 @@ description: Reference for the com.para.community.civicTree.config lexicon
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `communityUri` | `string` | ✅  |  | Format: `at-uri` |
-| `governanceMode` | `string` | ✅  |  | Known Values: `votes_sortition`, `moderator_gate` |
-| `approvalsRequired` | `integer` | ✅  |  | Min: 1 |
-| `approvalMarginRequired` | `integer` | ✅  |  | Min: 0 |
-| `moderatorGateEnabled` | `boolean` | ❌  |  |  |
-| `sortitionEnabled` | `boolean` | ❌  |  |  |
-| `updatedAt` | `string` | ✅  |  | Format: `datetime` |
+| Name                     | Type      | Req'd | Description | Constraints                                       |
+| ------------------------ | --------- | ----- | ----------- | ------------------------------------------------- |
+| `communityUri`           | `string`  | ✅    |             | Format: `at-uri`                                  |
+| `governanceMode`         | `string`  | ✅    |             | Known Values: `votes_sortition`, `moderator_gate` |
+| `approvalsRequired`      | `integer` | ✅    |             | Min: 1                                            |
+| `approvalMarginRequired` | `integer` | ✅    |             | Min: 0                                            |
+| `moderatorGateEnabled`   | `boolean` | ❌    |             |                                                   |
+| `sortitionEnabled`       | `boolean` | ❌    |             |                                                   |
+| `updatedAt`              | `string`  | ✅    |             | Format: `datetime`                                |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -52,10 +55,7 @@ description: Reference for the com.para.community.civicTree.config lexicon
           },
           "governanceMode": {
             "type": "string",
-            "knownValues": [
-              "votes_sortition",
-              "moderator_gate"
-            ]
+            "knownValues": ["votes_sortition", "moderator_gate"]
           },
           "approvalsRequired": {
             "type": "integer",

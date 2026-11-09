@@ -2,16 +2,16 @@ import assert from 'node:assert'
 import { lexParse } from '@atproto/lex-json'
 import { AtUri } from '@atproto/syntax'
 import {
+  type CollectionOp,
+  type CollectionPayload,
+  applyCollectionOps,
+} from '../../api/com/para/collection/ops.js'
+import {
   type BsyncClient,
   authWithApiKey,
   createBsyncClient,
 } from '../../bsync.js'
 import type { ServerConfig } from '../../config.js'
-import {
-  type CollectionOp,
-  type CollectionPayload,
-  applyCollectionOps,
-} from '../../api/com/para/collection/ops.js'
 import { app } from '../../lexicons/index.js'
 import { subLogger as log } from '../../logger.js'
 import {
@@ -683,7 +683,11 @@ const handleCollectionOpsOperation: HandleOperation = async (
   await db.db
     .deleteFrom('private_data')
     .where('actorDid', '=', actorDid)
-    .where('namespace', '=', Namespaces.ComParaCollectionDefsCollectionOps.$type)
+    .where(
+      'namespace',
+      '=',
+      Namespaces.ComParaCollectionDefsCollectionOps.$type,
+    )
     .where('key', '=', key)
     .execute()
 }

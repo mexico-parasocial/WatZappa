@@ -1,6 +1,6 @@
-import { SkeletonHandler } from '@atproto/pds'
-import { AtUri, AtUriString } from '@atproto/syntax'
-import { TestNetwork } from '../network.js'
+import type { SkeletonHandler } from '@atproto/pds'
+import { AtUri, type AtUriString } from '@atproto/syntax'
+import type { TestNetwork } from '../network.js'
 
 /**
  * Seed data shape returned by para-demo.ts

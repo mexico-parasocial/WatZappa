@@ -2,11 +2,13 @@
 title: com.para.collection.updateCollection
 description: Reference for the com.para.collection.updateCollection lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `procedure`
@@ -22,17 +24,18 @@ Update an existing policy collection.
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `id` | `string` | ✅  |  |  |
-| `collection` | [`com.para.collection.defs#collection`]([[com-para-collection-defs|com.para.collection.defs#collection]]) | ✅  |  |  |
-**Possible Errors:**
+| Name                 | Type                                                               | Req'd                                  | Description | Constraints |
+| -------------------- | ------------------------------------------------------------------ | -------------------------------------- | ----------- | ----------- |
+| `id`                 | `string`                                                           | ✅                                     |             |             |
+| `collection`         | [`com.para.collection.defs#collection`]([[com-para-collection-defs | com.para.collection.defs#collection]]) | ✅          |             |     |
+| **Possible Errors:** |
 
 - `NotFound`
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -45,10 +48,7 @@ Update an existing policy collection.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "id",
-            "collection"
-          ],
+          "required": ["id", "collection"],
           "properties": {
             "id": {
               "type": "string"

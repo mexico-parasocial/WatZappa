@@ -1,7 +1,7 @@
 // @ts-nocheck
-import { AtUri, AtpAgent, ids } from '@atproto/api'
-import type { DidString, HandleString } from '@atproto/syntax'
-import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import { AtUri, type AtpAgent, ids } from '@atproto/api'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import type { DidString } from '@atproto/syntax'
 
 describe('bsky actor likes feed views', () => {
   let network: TestNetwork

@@ -2,11 +2,13 @@
 title: com.para.feed.getAuthorFeed
 description: Reference for the com.para.feed.getAuthorFeed lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,27 +17,27 @@ Get a paginated feed of Para posts authored by the given actor.
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `actor` | `string` | ✅  | Handle or DID of the actor. | Format: `at-identifier` |
-| `limit` | `integer` | ❌  |  | Min: 1<br/>Max: 100<br/>Default: `50` |
-| `cursor` | `string` | ❌  |  |  |
-| `party` | `string` | ❌  |  | Max Length: 128 |
-| `community` | `string` | ❌  |  | Max Length: 128 |
-| `flairTag` | `string` | ❌  | Filter by an exact Para flair tag, e.g. |#Sanidad or ||#TransportePublico. | Max Length: 128 |
-| `postType` | `string` | ❌  | Filter by post type, e.g. meme, proposal, debate. | Max Length: 64 |
-**Output:**
+| Name        | Type      | Req'd | Description                                       | Constraints                           |
+| ----------- | --------- | ----- | ------------------------------------------------- | ------------------------------------- |
+| `actor`     | `string`  | ✅    | Handle or DID of the actor.                       | Format: `at-identifier`               |
+| `limit`     | `integer` | ❌    |                                                   | Min: 1<br/>Max: 100<br/>Default: `50` |
+| `cursor`    | `string`  | ❌    |                                                   |                                       |
+| `party`     | `string`  | ❌    |                                                   | Max Length: 128                       |
+| `community` | `string`  | ❌    |                                                   | Max Length: 128                       |
+| `flairTag`  | `string`  | ❌    | Filter by an exact Para flair tag, e.g.           | #Sanidad or                           |     | #TransportePublico. | Max Length: 128 |
+| `postType`  | `string`  | ❌    | Filter by post type, e.g. meme, proposal, debate. | Max Length: 64                        |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cursor` | `string` | ❌  |  |  |
-| `feed` | Array of [`#postView`](#postview) | ✅  |  |  |
-**Possible Errors:**
+| Name                 | Type                              | Req'd | Description | Constraints |
+| -------------------- | --------------------------------- | ----- | ----------- | ----------- |
+| `cursor`             | `string`                          | ❌    |             |             |
+| `feed`               | Array of [`#postView`](#postview) | ✅    |             |             |
+| **Possible Errors:** |
 
 - `BlockedActor`
 - `BlockedByActor`
@@ -43,29 +45,31 @@ Get a paginated feed of Para posts authored by the given actor.
 ---
 
 <a name="postview"></a>
+
 ### `postView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `cid` | `string` | ✅  |  | Format: `cid` |
-| `author` | `string` | ✅  |  | Format: `did` |
-| `text` | `string` | ✅  |  | Max Length: 3000<br/>Max Graphemes: 300 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
-| `replyRoot` | `string` | ❌  |  | Format: `at-uri` |
-| `replyParent` | `string` | ❌  |  | Format: `at-uri` |
-| `langs` | Array of `string` | ❌  |  | Max Items: 3 |
-| `tags` | Array of `string` | ❌  |  | Max Items: 8 |
-| `flairs` | Array of `string` | ❌  |  | Max Items: 8 |
-| `postType` | `string` | ❌  |  | Max Length: 64<br/>Max Graphemes: 64 |
+| Name          | Type              | Req'd | Description | Constraints                             |
+| ------------- | ----------------- | ----- | ----------- | --------------------------------------- |
+| `uri`         | `string`          | ✅    |             | Format: `at-uri`                        |
+| `cid`         | `string`          | ✅    |             | Format: `cid`                           |
+| `author`      | `string`          | ✅    |             | Format: `did`                           |
+| `text`        | `string`          | ✅    |             | Max Length: 3000<br/>Max Graphemes: 300 |
+| `createdAt`   | `string`          | ✅    |             | Format: `datetime`                      |
+| `replyRoot`   | `string`          | ❌    |             | Format: `at-uri`                        |
+| `replyParent` | `string`          | ❌    |             | Format: `at-uri`                        |
+| `langs`       | Array of `string` | ❌    |             | Max Items: 3                            |
+| `tags`        | Array of `string` | ❌    |             | Max Items: 8                            |
+| `flairs`      | Array of `string` | ❌    |             | Max Items: 8                            |
+| `postType`    | `string`          | ❌    |             | Max Length: 64<br/>Max Graphemes: 64    |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -76,9 +80,7 @@ Get a paginated feed of Para posts authored by the given actor.
       "description": "Get a paginated feed of Para posts authored by the given actor.",
       "parameters": {
         "type": "params",
-        "required": [
-          "actor"
-        ],
+        "required": ["actor"],
         "properties": {
           "actor": {
             "type": "string",
@@ -118,9 +120,7 @@ Get a paginated feed of Para posts authored by the given actor.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "feed"
-          ],
+          "required": ["feed"],
           "properties": {
             "cursor": {
               "type": "string"
@@ -146,13 +146,7 @@ Get a paginated feed of Para posts authored by the given actor.
     },
     "postView": {
       "type": "object",
-      "required": [
-        "uri",
-        "cid",
-        "author",
-        "text",
-        "createdAt"
-      ],
+      "required": ["uri", "cid", "author", "text", "createdAt"],
       "properties": {
         "uri": {
           "type": "string",

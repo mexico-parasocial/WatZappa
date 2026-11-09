@@ -1,5 +1,5 @@
 // @ts-nocheck
-import {
+import type {
   ComAtprotoLabelDefs,
   LabelPreference,
   ModerationOpts,
@@ -8,11 +8,7 @@ import {
 import { mock as m } from '../../src/mocker.js'
 
 export type ModerationTestSuiteResultFlag =
-  | 'filter'
-  | 'blur'
-  | 'alert'
-  | 'inform'
-  | 'noOverride'
+  'filter' | 'blur' | 'alert' | 'inform' | 'noOverride'
 
 export interface ModerationTestSuiteScenario {
   cfg: string

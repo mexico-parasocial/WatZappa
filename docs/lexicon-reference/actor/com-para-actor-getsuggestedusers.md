@@ -2,11 +2,13 @@
 title: com.para.actor.getSuggestedUsers
 description: Reference for the com.para.actor.getSuggestedUsers lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,25 +17,25 @@ Get suggested PARA users ranked by civic relevance: shared community memberships
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `category` | `string` | ❌  | Civic pillar to bias the suggestions toward. Authors who have recently posted under this pillar's sub-tags will rank higher. | Known Values: `public-services`, `internal-revenue`, `economy`, `social-issues`, `external-affairs`, `internal-affairs` |
-| `interests` | Array of `string` | ❌  | Optional list of sub-tag interest keys (e.g. 'healthcare', 'minimum-wage'). When provided, authors with matching post tags are boosted. |  |
-| `limit` | `integer` | ❌  |  | Min: 1<br/>Max: 100<br/>Default: `25` |
-| `cursor` | `string` | ❌  |  |  |
-**Output:**
+| Name        | Type              | Req'd | Description                                                                                                                             | Constraints                                                                                                             |
+| ----------- | ----------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `category`  | `string`          | ❌    | Civic pillar to bias the suggestions toward. Authors who have recently posted under this pillar's sub-tags will rank higher.            | Known Values: `public-services`, `internal-revenue`, `economy`, `social-issues`, `external-affairs`, `internal-affairs` |
+| `interests` | Array of `string` | ❌    | Optional list of sub-tag interest keys (e.g. 'healthcare', 'minimum-wage'). When provided, authors with matching post tags are boosted. |                                                                                                                         |
+| `limit`     | `integer`         | ❌    |                                                                                                                                         | Min: 1<br/>Max: 100<br/>Default: `25`                                                                                   |
+| `cursor`    | `string`          | ❌    |                                                                                                                                         |                                                                                                                         |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `actors` | Array of [`app.bsky.actor.defs#profileView`](https://github.com/bluesky-social/atproto/tree/main/lexicons/app/bsky/actor/defs.json#profileView) | ✅  |  |  |
-| `recId` | `string` | ❌  |  |  |
-| `cursor` | `string` | ❌  |  |  |
-**Possible Errors:**
+| Name                 | Type                                                                                                                                            | Req'd | Description | Constraints |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----------- | ----------- |
+| `actors`             | Array of [`app.bsky.actor.defs#profileView`](https://github.com/bluesky-social/atproto/tree/main/lexicons/app/bsky/actor/defs.json#profileView) | ✅    |             |             |
+| `recId`              | `string`                                                                                                                                        | ❌    |             |             |
+| `cursor`             | `string`                                                                                                                                        | ❌    |             |             |
+| **Possible Errors:** |
 
 - `NotFound`
 - `BlockedActor`
@@ -42,6 +44,7 @@ Get suggested PARA users ranked by civic relevance: shared community memberships
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -87,9 +90,7 @@ Get suggested PARA users ranked by civic relevance: shared community memberships
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "actors"
-          ],
+          "required": ["actors"],
           "properties": {
             "actors": {
               "type": "array",

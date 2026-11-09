@@ -2,87 +2,93 @@
 title: com.para.community.getTallySimulation
 description: Reference for the com.para.community.getTallySimulation lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `proposal` | `string` | ✅  |  | Format: `at-uri` |
-**Output:**
+| Name        | Type     | Req'd | Description | Constraints      |
+| ----------- | -------- | ----- | ----------- | ---------------- |
+| `proposal`  | `string` | ✅    |             | Format: `at-uri` |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `flat` | [`#tallyResult`](#tallyresult) | ✅  |  |  |
-| `sqrtN` | [`#tallyResult`](#tallyresult) | ✅  |  |  |
-| `correlation` | [`#tallyResult`](#tallyresult) | ✅  |  |  |
-| `metrics` | [`#concentrationMetrics`](#concentrationmetrics) | ✅  |  |  |
+| Name          | Type                                             | Req'd | Description | Constraints |
+| ------------- | ------------------------------------------------ | ----- | ----------- | ----------- |
+| `flat`        | [`#tallyResult`](#tallyresult)                   | ✅    |             |             |
+| `sqrtN`       | [`#tallyResult`](#tallyresult)                   | ✅    |             |             |
+| `correlation` | [`#tallyResult`](#tallyresult)                   | ✅    |             |             |
+| `metrics`     | [`#concentrationMetrics`](#concentrationmetrics) | ✅    |             |             |
 
 ---
 
 <a name="tallyresult"></a>
+
 ### `tallyResult`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `voteCount` | `integer` | ✅  |  |  |
-| `signalSum` | `string` | ✅  |  |  |
-| `signalAverage` | `string` | ✅  |  |  |
-| `effectiveWeightSum` | `string` | ❌  |  |  |
-| `quorumMet` | `boolean` | ✅  |  |  |
-| `quorumTarget` | `integer` | ❌  |  |  |
-| `breakdown` | Array of [`#breakdownBucket`](#breakdownbucket) | ❌  |  |  |
+| Name                 | Type                                            | Req'd | Description | Constraints |
+| -------------------- | ----------------------------------------------- | ----- | ----------- | ----------- |
+| `voteCount`          | `integer`                                       | ✅    |             |             |
+| `signalSum`          | `string`                                        | ✅    |             |             |
+| `signalAverage`      | `string`                                        | ✅    |             |             |
+| `effectiveWeightSum` | `string`                                        | ❌    |             |             |
+| `quorumMet`          | `boolean`                                       | ✅    |             |             |
+| `quorumTarget`       | `integer`                                       | ❌    |             |             |
+| `breakdown`          | Array of [`#breakdownBucket`](#breakdownbucket) | ❌    |             |             |
 
 ---
 
 <a name="breakdownbucket"></a>
+
 ### `breakdownBucket`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `signal` | `integer` | ✅  |  |  |
-| `count` | `integer` | ✅  |  |  |
+| Name     | Type      | Req'd | Description | Constraints |
+| -------- | --------- | ----- | ----------- | ----------- |
+| `signal` | `integer` | ✅    |             |             |
+| `count`  | `integer` | ✅    |             |             |
 
 ---
 
 <a name="concentrationmetrics"></a>
+
 ### `concentrationMetrics`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `maxWeightRatio` | `string` | ✅  | Max effective weight / total effective weight (post-√n). 0 = equal, 1 = all power in one block. |  |
-| `effectiveParticipants` | `string` | ✅  | 1 / HHI over effective weights. Approximate number of equally-weighted voters. |  |
-| `revocationRate` | `string` | ✅  | Percentage of delegations that were revoked. |  |
-| `directVotePct` | `string` | ✅  | Percentage of votes cast directly (not delegated) |  |
-| `shadowMode` | `boolean` | ✅  | Whether these tallies are advisory only |  |
+| Name                    | Type      | Req'd | Description                                                                                     | Constraints |
+| ----------------------- | --------- | ----- | ----------------------------------------------------------------------------------------------- | ----------- |
+| `maxWeightRatio`        | `string`  | ✅    | Max effective weight / total effective weight (post-√n). 0 = equal, 1 = all power in one block. |             |
+| `effectiveParticipants` | `string`  | ✅    | 1 / HHI over effective weights. Approximate number of equally-weighted voters.                  |             |
+| `revocationRate`        | `string`  | ✅    | Percentage of delegations that were revoked.                                                    |             |
+| `directVotePct`         | `string`  | ✅    | Percentage of votes cast directly (not delegated)                                               |             |
+| `shadowMode`            | `boolean` | ✅    | Whether these tallies are advisory only                                                         |             |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -92,9 +98,7 @@ description: Reference for the com.para.community.getTallySimulation lexicon
       "type": "query",
       "parameters": {
         "type": "params",
-        "required": [
-          "proposal"
-        ],
+        "required": ["proposal"],
         "properties": {
           "proposal": {
             "type": "string",
@@ -106,12 +110,7 @@ description: Reference for the com.para.community.getTallySimulation lexicon
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "flat",
-            "sqrtN",
-            "correlation",
-            "metrics"
-          ],
+          "required": ["flat", "sqrtN", "correlation", "metrics"],
           "properties": {
             "flat": {
               "type": "ref",
@@ -135,12 +134,7 @@ description: Reference for the com.para.community.getTallySimulation lexicon
     },
     "tallyResult": {
       "type": "object",
-      "required": [
-        "voteCount",
-        "signalSum",
-        "signalAverage",
-        "quorumMet"
-      ],
+      "required": ["voteCount", "signalSum", "signalAverage", "quorumMet"],
       "properties": {
         "voteCount": {
           "type": "integer"
@@ -171,10 +165,7 @@ description: Reference for the com.para.community.getTallySimulation lexicon
     },
     "breakdownBucket": {
       "type": "object",
-      "required": [
-        "signal",
-        "count"
-      ],
+      "required": ["signal", "count"],
       "properties": {
         "signal": {
           "type": "integer"

@@ -1,11 +1,11 @@
-import { ServiceImpl } from '@connectrpc/connect'
+import type { ServiceImpl } from '@connectrpc/connect'
 import { sql } from 'kysely'
-import { Service } from '../../../proto/bsky_connect.js'
+import type { Service } from '../../../proto/bsky_connect.js'
 import {
   activeCommunityUrisOf,
   activeMemberships,
 } from '../community-membership.js'
-import { Database } from '../db/index.js'
+import type { Database } from '../db/index.js'
 
 const PARA_CIVIC_SUBTAGS: Record<string, string[]> = {
   'public-services': [
@@ -69,7 +69,9 @@ const parseCompass = (raw: unknown): Compass => {
       const { x, y, ninth } = c as { x: number; y: number; ninth?: string }
       return { x, y, ninth }
     }
-  } catch {}
+  } catch {
+    // fall through to null
+  }
   return null
 }
 

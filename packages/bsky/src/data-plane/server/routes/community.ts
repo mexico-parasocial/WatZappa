@@ -143,56 +143,52 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   },
 
   async getParaCommunityBoard(req) {
-    try {
-      const board = await selectBoard(db, req.communityId, req.uri)
-      if (!board) {
-        return new GetParaCommunityBoardResponse()
-      }
-      const [
-        viewerMembership,
-        memberCount,
-        governanceSummary,
-        childCounts,
-        sharedCounts,
-        parentUris,
-      ] = await Promise.all([
-        req.viewerDid
-          ? getViewerMemberships(db, req.viewerDid, [board.uri]).then(
-              (memberships) => memberships.get(board.uri),
-            )
-          : Promise.resolve(undefined),
-        getMemberCounts(db, [board.uri]).then(
-          (counts) => counts.get(board.uri) ?? 0,
-        ),
-        getGovernanceSummary(db, board).catch(() => null),
-        getChildCommunityCounts(db, [board.uri]),
-        getSharedContentCounts(db, [board.uri]),
-        getParentCommunityUris(db, [board.uri]),
-      ])
-      const snapshot = req.viewerDid
-        ? await getAuthoritySnapshot(db, board.uri, req.viewerDid)
-        : undefined
-
-      return new GetParaCommunityBoardResponse({
-        board: toBoardView(board, memberCount, viewerMembership, {
-          childCommunityCount: childCounts.get(board.uri) ?? 0,
-          sharedContentCount: sharedCounts.get(board.uri) ?? 0,
-          parentCommunityUris: parentUris.get(board.uri) ?? [],
-        }),
-        governanceSummary: governanceSummary ?? undefined,
-        viewerCapabilities: snapshot?.capabilities ?? [],
-        availableActions: snapshot
-          ? AUTHORIZATION_ACTIONS.map(
-              (action) =>
-                new ParaAvailableAction(
-                  resolveAvailableAction(action, snapshot.roles),
-                ),
-            )
-          : [],
-      })
-    } catch (err) {
-      throw err
+    const board = await selectBoard(db, req.communityId, req.uri)
+    if (!board) {
+      return new GetParaCommunityBoardResponse()
     }
+    const [
+      viewerMembership,
+      memberCount,
+      governanceSummary,
+      childCounts,
+      sharedCounts,
+      parentUris,
+    ] = await Promise.all([
+      req.viewerDid
+        ? getViewerMemberships(db, req.viewerDid, [board.uri]).then(
+            (memberships) => memberships.get(board.uri),
+          )
+        : Promise.resolve(undefined),
+      getMemberCounts(db, [board.uri]).then(
+        (counts) => counts.get(board.uri) ?? 0,
+      ),
+      getGovernanceSummary(db, board).catch(() => null),
+      getChildCommunityCounts(db, [board.uri]),
+      getSharedContentCounts(db, [board.uri]),
+      getParentCommunityUris(db, [board.uri]),
+    ])
+    const snapshot = req.viewerDid
+      ? await getAuthoritySnapshot(db, board.uri, req.viewerDid)
+      : undefined
+
+    return new GetParaCommunityBoardResponse({
+      board: toBoardView(board, memberCount, viewerMembership, {
+        childCommunityCount: childCounts.get(board.uri) ?? 0,
+        sharedContentCount: sharedCounts.get(board.uri) ?? 0,
+        parentCommunityUris: parentUris.get(board.uri) ?? [],
+      }),
+      governanceSummary: governanceSummary ?? undefined,
+      viewerCapabilities: snapshot?.capabilities ?? [],
+      availableActions: snapshot
+        ? AUTHORIZATION_ACTIONS.map(
+            (action) =>
+              new ParaAvailableAction(
+                resolveAvailableAction(action, snapshot.roles),
+              ),
+          )
+        : [],
+    })
   },
 
   async getParaCommunityBoards(req) {

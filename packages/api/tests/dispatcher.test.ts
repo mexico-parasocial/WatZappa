@@ -5,8 +5,8 @@ import { getPdsEndpoint, isValidDidDoc } from '@atproto/common-web'
 import { TestNetworkNoAppView } from '@atproto/dev-env'
 import {
   AtpAgent,
-  AtpSessionData,
-  AtpSessionEvent,
+  type AtpSessionData,
+  type AtpSessionEvent,
   BSKY_LABELER_DID,
 } from '../src/index.js'
 import { createHeaderEchoServer } from './util/echo-server.js'

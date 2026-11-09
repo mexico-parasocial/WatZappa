@@ -1,11 +1,11 @@
 // @ts-nocheck
 import {
-  AppBskyGraphGetLists,
-  AppBskyGraphGetListsWithMembership,
-  AtpAgent,
+  type AppBskyGraphGetLists,
+  type AppBskyGraphGetListsWithMembership,
+  type AtpAgent,
   ids,
 } from '@atproto/api'
-import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 import { forSnapshot, paginateAll } from '../_util.js'
 
 describe('bsky actor likes feed views', () => {

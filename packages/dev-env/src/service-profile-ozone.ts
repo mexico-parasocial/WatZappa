@@ -1,11 +1,11 @@
-import { AtpAgent } from '@atproto/api'
-import { Secp256k1Keypair } from '@atproto/crypto'
+import type { AtpAgent } from '@atproto/api'
+import type { Secp256k1Keypair } from '@atproto/crypto'
 import { defaultDevIdentityProvider } from './identity.js'
-import { TestPds } from './pds.js'
+import type { TestPds } from './pds.js'
 import {
-  ServiceMigrationOptions,
+  type ServiceMigrationOptions,
   ServiceProfile,
-  ServiceUserDetails,
+  type ServiceUserDetails,
 } from './service-profile.js'
 
 export class OzoneServiceProfile extends ServiceProfile {
@@ -56,7 +56,7 @@ export class OzoneServiceProfile extends ServiceProfile {
       await this.agent.com.atproto.server.revokeAppPassword({
         name: 'ozone-verifier',
       })
-    } catch (e) {
+    } catch {
       // Ignore errors if it doesn't exist
     }
     const { data } = await this.agent.com.atproto.server.createAppPassword({

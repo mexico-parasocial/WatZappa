@@ -2,11 +2,13 @@
 title: com.para.community.constitution
 description: Reference for the com.para.community.constitution lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -15,67 +17,71 @@ description: Reference for the com.para.community.constitution lexicon
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `community` | `string` | ✅  |  | Format: `at-uri` |
-| `version` | `integer` | ✅  | Constitution version, incremented on each amendment |  |
-| `rules` | [`#rules`](#rules) | ✅  |  |  |
-| `createdAt` | `string` | ❌  |  | Format: `datetime` |
+| Name        | Type               | Req'd | Description                                         | Constraints        |
+| ----------- | ------------------ | ----- | --------------------------------------------------- | ------------------ |
+| `community` | `string`           | ✅    |                                                     | Format: `at-uri`   |
+| `version`   | `integer`          | ✅    | Constitution version, incremented on each amendment |                    |
+| `rules`     | [`#rules`](#rules) | ✅    |                                                     |                    |
+| `createdAt` | `string`           | ❌    |                                                     | Format: `datetime` |
 
 ---
 
 <a name="rules"></a>
+
 ### `rules`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `quorum` | `string` | ❌  | Fraction of members required for quorum (0.0 - 1.0) |  |
-| `approvalThreshold` | `string` | ❌  | Fraction of votes required to approve (0.0 - 1.0) |  |
-| `deliberationDays` | `integer` | ❌  | Minimum days of deliberation before voting | Min: 1 |
-| `votingDays` | `integer` | ❌  | Days voting remains open | Min: 1 |
-| `chamberSize` | `integer` | ❌  | Max members per chamber | Min: 1 |
-| `observerSize` | `integer` | ❌  | Max observer council size | Min: 1 |
-| `autoModeration` | [`#autoModeration`](#automoderation) | ❌  |  |  |
-| `budget` | [`#budget`](#budget) | ❌  |  |  |
+| Name                | Type                                 | Req'd | Description                                         | Constraints |
+| ------------------- | ------------------------------------ | ----- | --------------------------------------------------- | ----------- |
+| `quorum`            | `string`                             | ❌    | Fraction of members required for quorum (0.0 - 1.0) |             |
+| `approvalThreshold` | `string`                             | ❌    | Fraction of votes required to approve (0.0 - 1.0)   |             |
+| `deliberationDays`  | `integer`                            | ❌    | Minimum days of deliberation before voting          | Min: 1      |
+| `votingDays`        | `integer`                            | ❌    | Days voting remains open                            | Min: 1      |
+| `chamberSize`       | `integer`                            | ❌    | Max members per chamber                             | Min: 1      |
+| `observerSize`      | `integer`                            | ❌    | Max observer council size                           | Min: 1      |
+| `autoModeration`    | [`#autoModeration`](#automoderation) | ❌    |                                                     |             |
+| `budget`            | [`#budget`](#budget)                 | ❌    |                                                     |             |
 
 ---
 
 <a name="automoderation"></a>
+
 ### `autoModeration`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `enabled` | `boolean` | ❌  |  |  |
-| `spamThreshold` | `integer` | ❌  | Max identical messages per hour |  |
-| `toxicityThreshold` | `string` | ❌  | ML toxicity score threshold (0.0 - 1.0) |  |
+| Name                | Type      | Req'd | Description                             | Constraints |
+| ------------------- | --------- | ----- | --------------------------------------- | ----------- |
+| `enabled`           | `boolean` | ❌    |                                         |             |
+| `spamThreshold`     | `integer` | ❌    | Max identical messages per hour         |             |
+| `toxicityThreshold` | `string`  | ❌    | ML toxicity score threshold (0.0 - 1.0) |             |
 
 ---
 
 <a name="budget"></a>
+
 ### `budget`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `enabled` | `boolean` | ❌  |  |  |
-| `matchingPool` | `string` | ❌  | Total matching funds available |  |
-| `minContribution` | `string` | ❌  | Minimum individual contribution |  |
-| `roundDurationDays` | `integer` | ❌  | Duration of each quadratic funding round |  |
+| Name                | Type      | Req'd | Description                              | Constraints |
+| ------------------- | --------- | ----- | ---------------------------------------- | ----------- |
+| `enabled`           | `boolean` | ❌    |                                          |             |
+| `matchingPool`      | `string`  | ❌    | Total matching funds available           |             |
+| `minContribution`   | `string`  | ❌    | Minimum individual contribution          |             |
+| `roundDurationDays` | `integer` | ❌    | Duration of each quadratic funding round |             |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -86,11 +92,7 @@ description: Reference for the com.para.community.constitution lexicon
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "community",
-          "version",
-          "rules"
-        ],
+        "required": ["community", "version", "rules"],
         "properties": {
           "community": {
             "type": "string",

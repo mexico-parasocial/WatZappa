@@ -1,12 +1,12 @@
-import { ServiceImpl } from '@connectrpc/connect'
+import type { ServiceImpl } from '@connectrpc/connect'
 import { sql } from 'kysely'
-import { Service } from '../../../proto/bsky_connect.js'
+import type { Service } from '../../../proto/bsky_connect.js'
 import {
   activeMemberDids,
   communityAccountDid,
   resolveCommunityAccountUris,
 } from '../community-membership.js'
-import { Database } from '../db/index.js'
+import type { Database } from '../db/index.js'
 
 // Normalize a community name/identifier the way board slugs are formed:
 // lowercase, runs of non-alphanumerics collapsed to hyphens, edges trimmed.

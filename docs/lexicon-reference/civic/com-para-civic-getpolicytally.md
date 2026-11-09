@@ -2,11 +2,13 @@
 title: com.para.civic.getPolicyTally
 description: Reference for the com.para.civic.getPolicyTally lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,26 +17,27 @@ Get the weighted consensus tally for a policy post using civic vote signals from
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `post` | `string` | ✅  |  | Format: `at-uri` |
-**Output:**
+| Name        | Type     | Req'd | Description | Constraints      |
+| ----------- | -------- | ----- | ----------- | ---------------- |
+| `post`      | `string` | ✅    |             | Format: `at-uri` |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `tally` | [`com.para.civic.defs#policyTally`]([[com-para-civic-defs|com.para.civic.defs#policyTally]]) | ✅  |  |  |
-**Possible Errors:**
+| Name                 | Type                                                      | Req'd                              | Description | Constraints |
+| -------------------- | --------------------------------------------------------- | ---------------------------------- | ----------- | ----------- |
+| `tally`              | [`com.para.civic.defs#policyTally`]([[com-para-civic-defs | com.para.civic.defs#policyTally]]) | ✅          |             |     |
+| **Possible Errors:** |
 
 - `NotFound`
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -45,9 +48,7 @@ Get the weighted consensus tally for a policy post using civic vote signals from
       "description": "Get the weighted consensus tally for a policy post using civic vote signals from -3 to +3.",
       "parameters": {
         "type": "params",
-        "required": [
-          "post"
-        ],
+        "required": ["post"],
         "properties": {
           "post": {
             "type": "string",
@@ -59,9 +60,7 @@ Get the weighted consensus tally for a policy post using civic vote signals from
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "tally"
-          ],
+          "required": ["tally"],
           "properties": {
             "tally": {
               "type": "ref",

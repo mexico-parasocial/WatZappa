@@ -16,34 +16,34 @@ Implementation split follows the standard atproto topology:
 
 ## AppView methods
 
-| Method | In-repo callers |
-| --- | --- |
-| com.para.actor.getProfileStats | PDS proxy (`pds/src/api/com/para/actor`) |
-| com.para.actor.getSuggestedUsers | external (frontend) |
-| com.para.actor.exportCivicTree | `bsky/tests/views/para-civic-tree-export.test.ts` |
-| com.para.agent.getConversation / sendMessage | external (frontend) |
-| com.para.alpha.getAccess / getRolloutStatus | external (frontend); PDS mirrors read-only |
-| com.para.book.searchBooks | external (frontend); proxies Open Library, see `book/open-library.ts` |
-| com.para.civic.getCabildeo, getOpenQuestionThread, getPolicyTally, listCabildeos, listCabildeoPositions, listDelegationCandidates | external (frontend); getCabildeo/getBoard also called by PDS `civic/castVote` |
-| com.para.collection.* (5 methods) | external (frontend) |
-| com.para.community.* (~25 list/get queries) | mostly external (frontend); getBoard via PDS proxy + `castVote`; a subset covered by `bsky/tests/qvl-*`, `views/*` |
-| com.para.community.civicTree.{listContributions, submitContribution, voteContribution, createRelationship} | `bsky/tests/views/para-civic-tree-export.test.ts` and civicTree tests |
-| com.para.discourse.getSnapshot / getTopics / getTopology | external (frontend) |
-| com.para.feed.getTimeline / getPosts / getPostThread / searchPosts | `bsky/tests/views/para-feed*.test.ts`; PDS feed proxies |
-| com.para.feed.getMemes, getAuthorFeed | external (frontend) |
-| com.para.highlight.* | external (frontend) |
-| com.para.notification.getPostSubscription / putPostSubscription | `bsky/tests/data-plane/post-subscriptions.test.ts` |
-| com.para.raq.* | `bsky/tests/raq-indexing.test.ts` |
-| com.para.social.getPostMeta | `bsky/tests/views/para-feed.test.ts`; PDS proxy |
+| Method                                                                                                                            | In-repo callers                                                                                                    |
+| --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| com.para.actor.getProfileStats                                                                                                    | PDS proxy (`pds/src/api/com/para/actor`)                                                                           |
+| com.para.actor.getSuggestedUsers                                                                                                  | external (frontend)                                                                                                |
+| com.para.actor.exportCivicTree                                                                                                    | `bsky/tests/views/para-civic-tree-export.test.ts`                                                                  |
+| com.para.agent.getConversation / sendMessage                                                                                      | external (frontend)                                                                                                |
+| com.para.alpha.getAccess / getRolloutStatus                                                                                       | external (frontend); PDS mirrors read-only                                                                         |
+| com.para.book.searchBooks                                                                                                         | external (frontend); proxies Open Library, see `book/open-library.ts`                                              |
+| com.para.civic.getCabildeo, getOpenQuestionThread, getPolicyTally, listCabildeos, listCabildeoPositions, listDelegationCandidates | external (frontend); getCabildeo/getBoard also called by PDS `civic/castVote`                                      |
+| com.para.collection.* (5 methods)                                                                                                 | external (frontend)                                                                                                |
+| com.para.community.* (~25 list/get queries)                                                                                       | mostly external (frontend); getBoard via PDS proxy + `castVote`; a subset covered by `bsky/tests/qvl-*`, `views/*` |
+| com.para.community.civicTree.{listContributions, submitContribution, voteContribution, createRelationship}                        | `bsky/tests/views/para-civic-tree-export.test.ts` and civicTree tests                                              |
+| com.para.discourse.getSnapshot / getTopics / getTopology                                                                          | external (frontend)                                                                                                |
+| com.para.feed.getTimeline / getPosts / getPostThread / searchPosts                                                                | `bsky/tests/views/para-feed*.test.ts`; PDS feed proxies                                                            |
+| com.para.feed.getMemes, getAuthorFeed                                                                                             | external (frontend)                                                                                                |
+| com.para.highlight.*                                                                                                              | external (frontend)                                                                                                |
+| com.para.notification.getPostSubscription / putPostSubscription                                                                   | `bsky/tests/data-plane/post-subscriptions.test.ts`                                                                 |
+| com.para.raq.*                                                                                                                    | `bsky/tests/raq-indexing.test.ts`                                                                                  |
+| com.para.social.getPostMeta                                                                                                       | `bsky/tests/views/para-feed.test.ts`; PDS proxy                                                                    |
 
 ## PDS-only methods
 
-| Method | In-repo callers |
-| --- | --- |
-| com.para.account.getAuthFactor / setAuthFactor | external (frontend) |
-| com.para.alpha.createInvite / requestAccess / getAccess | external (frontend) |
-| com.para.alpha.getRolloutStatus | external (frontend, unauthenticated) |
-| com.para.civic.castVote | external (frontend) — writes a `com.para.civic.vote` repo record |
+| Method                                                                                 | In-repo callers                                                                 |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| com.para.account.getAuthFactor / setAuthFactor                                         | external (frontend)                                                             |
+| com.para.alpha.createInvite / requestAccess / getAccess                                | external (frontend)                                                             |
+| com.para.alpha.getRolloutStatus                                                        | external (frontend, unauthenticated)                                            |
+| com.para.civic.castVote                                                                | external (frontend) — writes a `com.para.civic.vote` repo record                |
 | com.para.community.{create, act, createBriefingPack, updateBriefingPack, shareContent} | `dev-env/src/seed/community-account.ts` (create, act); rest external (frontend) |
 
 ## Deliberately unimplemented (see lexicon-exceptions.json)

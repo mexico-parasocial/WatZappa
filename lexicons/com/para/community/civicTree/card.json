@@ -37,11 +37,7 @@
           },
           "stance": {
             "type": "string",
-            "knownValues": [
-              "pro",
-              "con",
-              "neutral"
-            ]
+            "knownValues": ["pro", "con", "neutral"]
           },
           "compassQuadrant": {
             "type": "string",

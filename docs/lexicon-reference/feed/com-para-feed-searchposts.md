@@ -2,11 +2,13 @@
 title: com.para.feed.searchPosts
 description: Reference for the com.para.feed.searchPosts lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,46 +17,47 @@ Find Para posts matching search criteria.
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `q` | `string` | ✅  |  |  |
-| `sort` | `string` | ❌  |  | Known Values: `top`, `latest`<br/>Default: `latest` |
-| `since` | `string` | ❌  |  |  |
-| `until` | `string` | ❌  |  |  |
-| `mentions` | `string` | ❌  |  | Format: `at-identifier` |
-| `author` | `string` | ❌  |  | Format: `at-identifier` |
-| `lang` | `string` | ❌  |  | Format: `language` |
-| `domain` | `string` | ❌  |  |  |
-| `url` | `string` | ❌  |  | Format: `uri` |
-| `tag` | Array of `string` | ❌  |  |  |
-| `limit` | `integer` | ❌  |  | Default: `25` |
-| `cursor` | `string` | ❌  |  |  |
-| `communityUris` | Array of `string` | ❌  |  |  |
-| `cabildeoUris` | Array of `string` | ❌  |  |  |
-| `politicalCompassPositions` | Array of `string` | ❌  |  |  |
-| `postType` | `string` | ❌  |  | Max Length: 64 |
-| `flairs` | Array of `string` | ❌  |  |  |
-| `party` | `string` | ❌  |  | Max Length: 128 |
-| `verifiedPublicFigure` | `boolean` | ❌  |  |  |
-| `state` | `string` | ❌  |  | Max Length: 128 |
-| `districtKey` | `string` | ❌  |  | Max Length: 128 |
-| `cabildeoPhase` | `string` | ❌  |  | Max Length: 64 |
-**Output:**
+| Name                        | Type              | Req'd | Description | Constraints                                         |
+| --------------------------- | ----------------- | ----- | ----------- | --------------------------------------------------- |
+| `q`                         | `string`          | ✅    |             |                                                     |
+| `sort`                      | `string`          | ❌    |             | Known Values: `top`, `latest`<br/>Default: `latest` |
+| `since`                     | `string`          | ❌    |             |                                                     |
+| `until`                     | `string`          | ❌    |             |                                                     |
+| `mentions`                  | `string`          | ❌    |             | Format: `at-identifier`                             |
+| `author`                    | `string`          | ❌    |             | Format: `at-identifier`                             |
+| `lang`                      | `string`          | ❌    |             | Format: `language`                                  |
+| `domain`                    | `string`          | ❌    |             |                                                     |
+| `url`                       | `string`          | ❌    |             | Format: `uri`                                       |
+| `tag`                       | Array of `string` | ❌    |             |                                                     |
+| `limit`                     | `integer`         | ❌    |             | Default: `25`                                       |
+| `cursor`                    | `string`          | ❌    |             |                                                     |
+| `communityUris`             | Array of `string` | ❌    |             |                                                     |
+| `cabildeoUris`              | Array of `string` | ❌    |             |                                                     |
+| `politicalCompassPositions` | Array of `string` | ❌    |             |                                                     |
+| `postType`                  | `string`          | ❌    |             | Max Length: 64                                      |
+| `flairs`                    | Array of `string` | ❌    |             |                                                     |
+| `party`                     | `string`          | ❌    |             | Max Length: 128                                     |
+| `verifiedPublicFigure`      | `boolean`         | ❌    |             |                                                     |
+| `state`                     | `string`          | ❌    |             | Max Length: 128                                     |
+| `districtKey`               | `string`          | ❌    |             | Max Length: 128                                     |
+| `cabildeoPhase`             | `string`          | ❌    |             | Max Length: 64                                      |
+| **Output:**                 |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cursor` | `string` | ❌  |  |  |
-| `hitsTotal` | `integer` | ❌  |  |  |
-| `posts` | Array of [`com.para.feed.getAuthorFeed#postView`]([[com-para-feed-getauthorfeed|com.para.feed.getAuthorFeed#postView]]) | ✅  |  |  |
+| Name        | Type                                                                            | Req'd                                   | Description | Constraints |
+| ----------- | ------------------------------------------------------------------------------- | --------------------------------------- | ----------- | ----------- |
+| `cursor`    | `string`                                                                        | ❌                                      |             |             |
+| `hitsTotal` | `integer`                                                                       | ❌                                      |             |             |
+| `posts`     | Array of [`com.para.feed.getAuthorFeed#postView`]([[com-para-feed-getauthorfeed | com.para.feed.getAuthorFeed#postView]]) | ✅          |             |     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -65,19 +68,14 @@ Find Para posts matching search criteria.
       "description": "Find Para posts matching search criteria.",
       "parameters": {
         "type": "params",
-        "required": [
-          "q"
-        ],
+        "required": ["q"],
         "properties": {
           "q": {
             "type": "string"
           },
           "sort": {
             "type": "string",
-            "knownValues": [
-              "top",
-              "latest"
-            ],
+            "knownValues": ["top", "latest"],
             "default": "latest"
           },
           "since": {
@@ -174,9 +172,7 @@ Find Para posts matching search criteria.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "posts"
-          ],
+          "required": ["posts"],
           "properties": {
             "cursor": {
               "type": "string"

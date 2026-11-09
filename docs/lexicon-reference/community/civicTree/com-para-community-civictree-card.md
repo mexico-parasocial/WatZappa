@@ -2,11 +2,13 @@
 title: com.para.community.civicTree.card
 description: Reference for the com.para.community.civicTree.card lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -15,24 +17,25 @@ description: Reference for the com.para.community.civicTree.card lexicon
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `communityUri` | `string` | ✅  |  | Format: `at-uri` |
-| `authorDid` | `string` | ✅  |  | Format: `did` |
-| `title` | `string` | ✅  |  | Max Length: 500 |
-| `content` | `string` | ❌  |  | Max Length: 10000 |
-| `cardType` | `string` | ✅  |  | Max Length: 64 |
-| `stance` | `string` | ❌  |  | Known Values: `pro`, `con`, `neutral` |
-| `compassQuadrant` | `string` | ❌  |  | Max Length: 64 |
-| `sourceUri` | `string` | ❌  |  | Format: `at-uri` |
-| `sourceUrl` | `string` | ❌  |  | Format: `uri` |
-| `metadata` | `string` | ❌  |  | Max Length: 20000 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
-| `updatedAt` | `string` | ❌  |  | Format: `datetime` |
+| Name              | Type     | Req'd | Description | Constraints                           |
+| ----------------- | -------- | ----- | ----------- | ------------------------------------- |
+| `communityUri`    | `string` | ✅    |             | Format: `at-uri`                      |
+| `authorDid`       | `string` | ✅    |             | Format: `did`                         |
+| `title`           | `string` | ✅    |             | Max Length: 500                       |
+| `content`         | `string` | ❌    |             | Max Length: 10000                     |
+| `cardType`        | `string` | ✅    |             | Max Length: 64                        |
+| `stance`          | `string` | ❌    |             | Known Values: `pro`, `con`, `neutral` |
+| `compassQuadrant` | `string` | ❌    |             | Max Length: 64                        |
+| `sourceUri`       | `string` | ❌    |             | Format: `at-uri`                      |
+| `sourceUrl`       | `string` | ❌    |             | Format: `uri`                         |
+| `metadata`        | `string` | ❌    |             | Max Length: 20000                     |
+| `createdAt`       | `string` | ✅    |             | Format: `datetime`                    |
+| `updatedAt`       | `string` | ❌    |             | Format: `datetime`                    |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -73,11 +76,7 @@ description: Reference for the com.para.community.civicTree.card lexicon
           },
           "stance": {
             "type": "string",
-            "knownValues": [
-              "pro",
-              "con",
-              "neutral"
-            ]
+            "knownValues": ["pro", "con", "neutral"]
           },
           "compassQuadrant": {
             "type": "string",

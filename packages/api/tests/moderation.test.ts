@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { ModerationOpts } from '../dist/index.js'
+import type { ModerationOpts } from '../dist/index.js'
 import {
   interpretLabelValueDefinition,
   mock,

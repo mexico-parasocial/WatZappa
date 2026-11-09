@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { Server as XrpcServer } from '@atproto/xrpc-server'
+import api from '../src/api/index.js'
 
 // Ensures the com.para.* XRPC surface stays coherent:
 //  - every method lexicon under lexicons/com/para is either served by this
@@ -51,9 +52,6 @@ const ctxStub = {
   ),
   bskyAppView: { client: {} },
 } as unknown as Parameters<typeof api>[1]
-
-// eslint-disable-next-line import/order
-import api from '../src/api/index.js'
 
 describe('com.para lexicon parity', () => {
   const lexiconMethods = collectMethodLexicons(LEXICONS_DIR)

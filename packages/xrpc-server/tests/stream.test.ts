@@ -6,7 +6,7 @@ import { WebSocket } from 'ws'
 import { XRPCError } from '@atproto/xrpc'
 import {
   ErrorFrame,
-  Frame,
+  type Frame,
   MessageFrame,
   XrpcStreamServer,
   byFrame,

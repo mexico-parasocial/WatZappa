@@ -5,7 +5,6 @@ import { lexStringify } from './lex-stringify.js'
 
 describe(lexStringify, () => {
   describe('deeply nested structure', () => {
-
     it('enforces strict depth limit in strict mode', () => {
       type NestedObject = { level: number; nested?: NestedObject }
       const nestedObject: NestedObject = { level: 0 }

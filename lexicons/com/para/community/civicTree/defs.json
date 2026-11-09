@@ -4,13 +4,7 @@
   "defs": {
     "cardView": {
       "type": "object",
-      "required": [
-        "id",
-        "community_uri",
-        "author_did",
-        "title",
-        "card_type"
-      ],
+      "required": ["id", "community_uri", "author_did", "title", "card_type"],
       "properties": {
         "id": {
           "type": "string"
@@ -64,11 +58,7 @@
         },
         "stance": {
           "type": "string",
-          "knownValues": [
-            "pro",
-            "con",
-            "neutral"
-          ]
+          "knownValues": ["pro", "con", "neutral"]
         },
         "compass_quadrant": {
           "type": "string",
@@ -189,11 +179,7 @@
         },
         "status": {
           "type": "string",
-          "knownValues": [
-            "pending",
-            "approved",
-            "rejected"
-          ]
+          "knownValues": ["pending", "approved", "rejected"]
         },
         "approved_card_id": {
           "type": "string"
@@ -216,19 +202,13 @@
         },
         "viewer_vote": {
           "type": "string",
-          "knownValues": [
-            "approve",
-            "reject"
-          ]
+          "knownValues": ["approve", "reject"]
         }
       }
     },
     "graphView": {
       "type": "object",
-      "required": [
-        "nodes",
-        "edges"
-      ],
+      "required": ["nodes", "edges"],
       "properties": {
         "nodes": {
           "type": "array",
@@ -261,10 +241,7 @@
         },
         "governance_mode": {
           "type": "string",
-          "knownValues": [
-            "votes_sortition",
-            "moderator_gate"
-          ]
+          "knownValues": ["votes_sortition", "moderator_gate"]
         },
         "approvals_required": {
           "type": "integer",
@@ -289,9 +266,7 @@
     "cardVoteView": {
       "type": "object",
       "description": "A viewer's own influence vote on a card.",
-      "required": [
-        "influence"
-      ],
+      "required": ["influence"],
       "properties": {
         "influence": {
           "type": "integer",
@@ -302,11 +277,7 @@
     },
     "stanceDistribution": {
       "type": "object",
-      "required": [
-        "pro",
-        "con",
-        "neutral"
-      ],
+      "required": ["pro", "con", "neutral"],
       "properties": {
         "pro": {
           "type": "integer"
@@ -321,11 +292,7 @@
     },
     "normalizedClaim": {
       "type": "object",
-      "required": [
-        "claim",
-        "stance",
-        "sourceType"
-      ],
+      "required": ["claim", "stance", "sourceType"],
       "properties": {
         "claim": {
           "type": "string"
@@ -350,11 +317,7 @@
     },
     "tensionLine": {
       "type": "object",
-      "required": [
-        "axis",
-        "summary",
-        "sides"
-      ],
+      "required": ["axis", "summary", "sides"],
       "properties": {
         "axis": {
           "type": "string"
@@ -378,10 +341,7 @@
     },
     "openQuestion": {
       "type": "object",
-      "required": [
-        "question",
-        "whyItMatters"
-      ],
+      "required": ["question", "whyItMatters"],
       "properties": {
         "question": {
           "type": "string"
@@ -399,10 +359,7 @@
     },
     "consensusArea": {
       "type": "object",
-      "required": [
-        "topic",
-        "claims"
-      ],
+      "required": ["topic", "claims"],
       "properties": {
         "topic": {
           "type": "string"
@@ -417,10 +374,7 @@
     },
     "unresolvedConflict": {
       "type": "object",
-      "required": [
-        "topic",
-        "opposingClaims"
-      ],
+      "required": ["topic", "opposingClaims"],
       "properties": {
         "topic": {
           "type": "string"
@@ -508,11 +462,7 @@
     },
     "topEntity": {
       "type": "object",
-      "required": [
-        "value",
-        "type",
-        "count"
-      ],
+      "required": ["value", "type", "count"],
       "properties": {
         "value": {
           "type": "string"
@@ -527,13 +477,7 @@
     },
     "pulseClaim": {
       "type": "object",
-      "required": [
-        "id",
-        "title",
-        "influence",
-        "voteCount",
-        "cardType"
-      ],
+      "required": ["id", "title", "influence", "voteCount", "cardType"],
       "properties": {
         "id": {
           "type": "string"
@@ -557,12 +501,7 @@
     },
     "pulseUserStats": {
       "type": "object",
-      "required": [
-        "votesCast",
-        "proVotes",
-        "conVotes",
-        "neutralVotes"
-      ],
+      "required": ["votesCast", "proVotes", "conVotes", "neutralVotes"],
       "properties": {
         "votesCast": {
           "type": "integer"

@@ -2,10 +2,10 @@
 import { describe, expect, it, test } from 'vitest'
 import { MAX_CBOR_NESTED_LEVELS } from '@atproto/lex-data'
 import {
-  JsonStringifyDeepOptions,
+  type JsonStringifyDeepOptions,
   jsonStringifyDeep,
 } from './json-stringify-deep.js'
-import { JsonValue } from './json.js'
+import type { JsonValue } from './json.js'
 
 const UNSAFE_JSON_STRINGIFY_OPTIONS: Required<JsonStringifyDeepOptions> = {
   allowNonSafeIntegers: true,

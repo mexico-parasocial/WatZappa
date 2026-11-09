@@ -2,11 +2,13 @@
 title: com.para.alpha.getAccess
 description: Reference for the com.para.alpha.getAccess lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -22,15 +24,16 @@ Check if the authenticated user has alpha access.
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `hasAccess` | `boolean` | ✅  |  |  |
-| `state` | `string` | ❌  |  |  |
-| `waitlistPosition` | `integer` | ❌  |  |  |
+| Name               | Type      | Req'd | Description | Constraints |
+| ------------------ | --------- | ----- | ----------- | ----------- |
+| `hasAccess`        | `boolean` | ✅    |             |             |
+| `state`            | `string`  | ❌    |             |             |
+| `waitlistPosition` | `integer` | ❌    |             |             |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -47,9 +50,7 @@ Check if the authenticated user has alpha access.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "hasAccess"
-          ],
+          "required": ["hasAccess"],
           "properties": {
             "hasAccess": {
               "type": "boolean"

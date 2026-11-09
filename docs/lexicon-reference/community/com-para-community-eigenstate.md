@@ -2,11 +2,13 @@
 title: com.para.community.eigenstate
 description: Reference for the com.para.community.eigenstate lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -15,48 +17,51 @@ description: Reference for the com.para.community.eigenstate lexicon
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `community` | `string` | ✅  |  | Format: `at-uri` |
-| `computedAt` | `string` | ✅  |  | Format: `datetime` |
-| `eigenvalues` | Array of [`#eigenvalueEntry`](#eigenvalueentry) | ✅  |  |  |
-| `correlationMatrix` | Array of [`#correlationEntry`](#correlationentry) | ✅  |  |  |
-| `ttlSeconds` | `integer` | ❌  | Time-to-live for this snapshot before recomputation | Default: `3600` |
+| Name                | Type                                              | Req'd | Description                                         | Constraints        |
+| ------------------- | ------------------------------------------------- | ----- | --------------------------------------------------- | ------------------ |
+| `community`         | `string`                                          | ✅    |                                                     | Format: `at-uri`   |
+| `computedAt`        | `string`                                          | ✅    |                                                     | Format: `datetime` |
+| `eigenvalues`       | Array of [`#eigenvalueEntry`](#eigenvalueentry)   | ✅    |                                                     |                    |
+| `correlationMatrix` | Array of [`#correlationEntry`](#correlationentry) | ✅    |                                                     |                    |
+| `ttlSeconds`        | `integer`                                         | ❌    | Time-to-live for this snapshot before recomputation | Default: `3600`    |
 
 ---
 
 <a name="eigenvalueentry"></a>
+
 ### `eigenvalueEntry`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `component` | `string` | ✅  | Identifier for this eigencomponent (e.g., 'party_a', 'delegate_pedro') |  |
-| `value` | `integer` | ✅  | Eigenvalue magnitude, fixed-point scaled by 10000 (e.g. 8675 = 0.8675) |  |
-| `dids` | Array of `string` | ✅  | DIDs that load heavily on this component |  |
+| Name        | Type              | Req'd | Description                                                            | Constraints |
+| ----------- | ----------------- | ----- | ---------------------------------------------------------------------- | ----------- |
+| `component` | `string`          | ✅    | Identifier for this eigencomponent (e.g., 'party_a', 'delegate_pedro') |             |
+| `value`     | `integer`         | ✅    | Eigenvalue magnitude, fixed-point scaled by 10000 (e.g. 8675 = 0.8675) |             |
+| `dids`      | Array of `string` | ✅    | DIDs that load heavily on this component                               |             |
 
 ---
 
 <a name="correlationentry"></a>
+
 ### `correlationEntry`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `didA` | `string` | ✅  |  | Format: `did` |
-| `didB` | `string` | ✅  |  | Format: `did` |
-| `correlation` | `integer` | ✅  | Correlation coefficient between these two voters, fixed-point scaled by 10000 (e.g. 8675 = 0.8675) | Min: 0<br/>Max: 10000 |
-| `sources` | Array of `string` | ❌  | Why they are correlated: party, delegation, civic_stamps, etc. |  |
+| Name          | Type              | Req'd | Description                                                                                        | Constraints           |
+| ------------- | ----------------- | ----- | -------------------------------------------------------------------------------------------------- | --------------------- |
+| `didA`        | `string`          | ✅    |                                                                                                    | Format: `did`         |
+| `didB`        | `string`          | ✅    |                                                                                                    | Format: `did`         |
+| `correlation` | `integer`         | ✅    | Correlation coefficient between these two voters, fixed-point scaled by 10000 (e.g. 8675 = 0.8675) | Min: 0<br/>Max: 10000 |
+| `sources`     | Array of `string` | ❌    | Why they are correlated: party, delegation, civic_stamps, etc.                                     |                       |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -106,11 +111,7 @@ description: Reference for the com.para.community.eigenstate lexicon
     },
     "eigenvalueEntry": {
       "type": "object",
-      "required": [
-        "component",
-        "value",
-        "dids"
-      ],
+      "required": ["component", "value", "dids"],
       "properties": {
         "component": {
           "type": "string",
@@ -132,11 +133,7 @@ description: Reference for the com.para.community.eigenstate lexicon
     },
     "correlationEntry": {
       "type": "object",
-      "required": [
-        "didA",
-        "didB",
-        "correlation"
-      ],
+      "required": ["didA", "didB", "correlation"],
       "properties": {
         "didA": {
           "type": "string",

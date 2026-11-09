@@ -5,11 +5,11 @@ Updated 2026-10-06. This records P1 evidence for
 
 ## Revisions and status
 
-| Repository | Local candidate | Status |
-| --- | --- | --- |
-| PARA | `b303625db`, `feat/personal-civic-tree-revamp` | Committed; focused local checks pass. Full-app type checks remain blocked by separate working-tree edits. |
-| mubEZ | `2003f6f`, `feat/nullifier-v2` | Committed; broker build, focused tests and deployment preflight pass locally. |
-| para-platform | `d6c23de`, `main` (P1 wrapper at `7da45d0`) | Production handoff template, paired authority settings and container preflight command committed; no deployment configured here. |
+| Repository    | Local candidate                                | Status                                                                                                                           |
+| ------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| PARA          | `b303625db`, `feat/personal-civic-tree-revamp` | Committed; focused local checks pass. Full-app type checks remain blocked by separate working-tree edits.                        |
+| mubEZ         | `2003f6f`, `feat/nullifier-v2`                 | Committed; broker build, focused tests and deployment preflight pass locally.                                                    |
+| para-platform | `d6c23de`, `main` (P1 wrapper at `7da45d0`)    | Production handoff template, paired authority settings and container preflight command committed; no deployment configured here. |
 
 No push, release-branch integration, staging deployment, live PDS login or
 native-device acceptance was performed. PARA's unrelated Map/Messages/tree,
@@ -122,15 +122,15 @@ the target broker and separately record the deployed revisions.
 
 Observed on this machine:
 
-| Check | Observed result / remaining action |
-| --- | --- |
-| Local services | PDS `localhost:2583`, broker `localhost:8787` and bridge `localhost:3001` refused connections. Start an identified acceptance stack before attempting a real grant. |
-| Public example broker | `mubez.para-g0v.site` did not resolve from this machine. This example is not evidence of a working staging target. |
-| Platform deployment configuration | `para-platform/.env` and `env/identity.env` are absent. No actual deployment origin/configuration is established. The production example now includes explicit handoff on, bootstrap off and the current native callback. |
-| Local callback | Added `para://m8-auth` to ignored `mubEZ/.env`, preserving its existing callbacks. The old callback was insufficient. No native/browser grant was attempted. |
-| Local acceptance settings | Dev bootstrap remains on; CORS is `*`; no exact web callback is configured. The `localhost:8081` preflight probe is a local diagnostic candidate, not a selected pilot web origin. |
-| Local migration | 040 is recorded; 041 is missing. The original database was not migrated. |
-| Latest PARA web type check | Two remaining errors: unresolved `#/components/icons/Attie` and missing `revertToEmbedded` at `Settings.tsx:399`. The earlier unresolved `#/lib/at-card` error is absent from this run. Native checks were not repeated in this follow-up. |
+| Check                             | Observed result / remaining action                                                                                                                                                                                                         |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Local services                    | PDS `localhost:2583`, broker `localhost:8787` and bridge `localhost:3001` refused connections. Start an identified acceptance stack before attempting a real grant.                                                                        |
+| Public example broker             | `mubez.para-g0v.site` did not resolve from this machine. This example is not evidence of a working staging target.                                                                                                                         |
+| Platform deployment configuration | `para-platform/.env` and `env/identity.env` are absent. No actual deployment origin/configuration is established. The production example now includes explicit handoff on, bootstrap off and the current native callback.                  |
+| Local callback                    | Added `para://m8-auth` to ignored `mubEZ/.env`, preserving its existing callbacks. The old callback was insufficient. No native/browser grant was attempted.                                                                               |
+| Local acceptance settings         | Dev bootstrap remains on; CORS is `*`; no exact web callback is configured. The `localhost:8081` preflight probe is a local diagnostic candidate, not a selected pilot web origin.                                                         |
+| Local migration                   | 040 is recorded; 041 is missing. The original database was not migrated.                                                                                                                                                                   |
+| Latest PARA web type check        | Two remaining errors: unresolved `#/components/icons/Attie` and missing `revertToEmbedded` at `Settings.tsx:399`. The earlier unresolved `#/lib/at-card` error is absent from this run. Native checks were not repeated in this follow-up. |
 
 Validation added:
 

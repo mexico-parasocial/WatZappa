@@ -6,7 +6,7 @@ import {
   TestNetwork,
   basicSeed,
 } from '@atproto/dev-env'
-import type { DidString, HandleString } from '@atproto/syntax'
+import type { DidString } from '@atproto/syntax'
 import { forSnapshot } from '../_util.js'
 
 describe('bsky views with mutes from mute lists', () => {

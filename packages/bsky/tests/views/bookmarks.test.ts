@@ -1,17 +1,22 @@
 // @ts-nocheck
-import { vi } from 'vitest'
 import assert from 'node:assert'
+import { vi } from 'vitest'
 import {
-  $Typed,
+  type $Typed,
   AppBskyBookmarkCreateBookmark,
-  AppBskyBookmarkDefs,
+  type AppBskyBookmarkDefs,
   AppBskyBookmarkDeleteBookmark,
-  AppBskyBookmarkGetBookmarks,
+  type AppBskyBookmarkGetBookmarks,
   AppBskyFeedDefs,
-  AtpAgent,
+  type AtpAgent,
   ids,
 } from '@atproto/api'
-import { RecordRef, SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import {
+  type RecordRef,
+  type SeedClient,
+  TestNetwork,
+  basicSeed,
+} from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
 import { forSnapshot, paginateAll } from '../_util.js'
 

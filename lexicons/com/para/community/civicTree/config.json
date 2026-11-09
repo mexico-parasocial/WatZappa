@@ -21,10 +21,7 @@
           },
           "governanceMode": {
             "type": "string",
-            "knownValues": [
-              "votes_sortition",
-              "moderator_gate"
-            ]
+            "knownValues": ["votes_sortition", "moderator_gate"]
           },
           "approvalsRequired": {
             "type": "integer",

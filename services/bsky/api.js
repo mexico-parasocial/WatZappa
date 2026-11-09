@@ -1,5 +1,3 @@
-/* eslint-env node */
-
 import assert from 'node:assert'
 import cluster from 'node:cluster'
 import { BskyAppView, ServerConfig } from '@atproto/bsky'

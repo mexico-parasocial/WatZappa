@@ -27,13 +27,13 @@
 
 - name: Create backup directories
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: '{{ item }}'
     state: directory
-    mode: "0700"
+    mode: '0700'
   loop:
-    - "{{ para_deploy_dir }}/postgres"
-    - "{{ postgres_backup_dir }}"
-    - "{{ para_deploy_dir }}/postgres/scripts"
+    - '{{ para_deploy_dir }}/postgres'
+    - '{{ postgres_backup_dir }}'
+    - '{{ para_deploy_dir }}/postgres/scripts'
 
 - name: Install the AWS CLI for off-site upload
   ansible.builtin.apt:
@@ -44,26 +44,26 @@
 - name: Deploy the backup script
   ansible.builtin.template:
     src: backup.sh.j2
-    dest: "{{ para_deploy_dir }}/postgres/scripts/backup.sh"
-    mode: "0700"
+    dest: '{{ para_deploy_dir }}/postgres/scripts/backup.sh'
+    mode: '0700'
 
 - name: Deploy the restore helper
   ansible.builtin.template:
     src: restore.sh.j2
-    dest: "{{ para_deploy_dir }}/postgres/scripts/restore.sh"
-    mode: "0700"
+    dest: '{{ para_deploy_dir }}/postgres/scripts/restore.sh'
+    mode: '0700'
 
 - name: Deploy the backup systemd service
   ansible.builtin.template:
     src: postgres-backup.service.j2
     dest: /etc/systemd/system/para-postgres-backup.service
-    mode: "0644"
+    mode: '0644'
 
 - name: Deploy the backup systemd timer
   ansible.builtin.template:
     src: postgres-backup.timer.j2
     dest: /etc/systemd/system/para-postgres-backup.timer
-    mode: "0644"
+    mode: '0644'
 
 - name: Enable and start the backup timer
   ansible.builtin.systemd:
@@ -74,7 +74,7 @@
 
 - name: Run a backup now to prove the path works
   ansible.builtin.command:
-    cmd: "{{ para_deploy_dir }}/postgres/scripts/backup.sh"
+    cmd: '{{ para_deploy_dir }}/postgres/scripts/backup.sh'
   register: postgres_first_backup
   changed_when: true
   # A backup system that has never run is not a backup system. This fails the

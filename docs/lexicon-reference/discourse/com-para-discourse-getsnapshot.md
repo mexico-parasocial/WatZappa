@@ -2,11 +2,13 @@
 title: com.para.discourse.getSnapshot
 description: Reference for the com.para.discourse.getSnapshot lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,56 +17,59 @@ Get a high-level executive summary of the current state of a deliberation, inclu
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `subject` | `string` | ✅  |  | Format: `at-uri` |
-**Output:**
+| Name        | Type     | Req'd | Description | Constraints      |
+| ----------- | -------- | ----- | ----------- | ---------------- |
+| `subject`   | `string` | ✅    |             | Format: `at-uri` |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `subject` | `string` | ✅  |  | Format: `at-uri` |
-| `status` | `string` | ✅  | Short human-readable status (e.g., 'Altamente polarizado'). |  |
-| `keyTakeaways` | Array of `string` | ✅  |  | Max Items: 5 |
-| `consensusLevel` | `integer` | ✅  |  | Min: 0<br/>Max: 100 |
-| `participationMetrics` | [`#participationMetrics`](#participationmetrics) | ❌  |  |  |
-| `compassDistribution` | Array of [`#compassPoint`](#compasspoint) | ❌  | The ideological spread of the participants in this consensus. |  |
+| Name                   | Type                                             | Req'd | Description                                                   | Constraints         |
+| ---------------------- | ------------------------------------------------ | ----- | ------------------------------------------------------------- | ------------------- |
+| `subject`              | `string`                                         | ✅    |                                                               | Format: `at-uri`    |
+| `status`               | `string`                                         | ✅    | Short human-readable status (e.g., 'Altamente polarizado').   |                     |
+| `keyTakeaways`         | Array of `string`                                | ✅    |                                                               | Max Items: 5        |
+| `consensusLevel`       | `integer`                                        | ✅    |                                                               | Min: 0<br/>Max: 100 |
+| `participationMetrics` | [`#participationMetrics`](#participationmetrics) | ❌    |                                                               |                     |
+| `compassDistribution`  | Array of [`#compassPoint`](#compasspoint)        | ❌    | The ideological spread of the participants in this consensus. |                     |
 
 ---
 
 <a name="participationmetrics"></a>
+
 ### `participationMetrics`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `totalVoices` | `integer` | ❌  |  |  |
-| `diversityIndex` | `integer` | ❌  | Measure of ideological breadth from the compass. |  |
+| Name             | Type      | Req'd | Description                                      | Constraints |
+| ---------------- | --------- | ----- | ------------------------------------------------ | ----------- |
+| `totalVoices`    | `integer` | ❌    |                                                  |             |
+| `diversityIndex` | `integer` | ❌    | Measure of ideological breadth from the compass. |             |
 
 ---
 
 <a name="compasspoint"></a>
+
 ### `compassPoint`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `position` | `string` | ✅  |  | Known Values: `auth-left`, `auth-center`, `auth-right`, `center-left`, `center`, `center-right`, `lib-left`, `lib-center`, `lib-right` |
-| `density` | `integer` | ✅  | Percentage of voices coming from this quadrant (0-100). |  |
+| Name       | Type      | Req'd | Description                                             | Constraints                                                                                                                            |
+| ---------- | --------- | ----- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `position` | `string`  | ✅    |                                                         | Known Values: `auth-left`, `auth-center`, `auth-right`, `center-left`, `center`, `center-right`, `lib-left`, `lib-center`, `lib-right` |
+| `density`  | `integer` | ✅    | Percentage of voices coming from this quadrant (0-100). |                                                                                                                                        |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -81,20 +86,13 @@ Get a high-level executive summary of the current state of a deliberation, inclu
             "format": "at-uri"
           }
         },
-        "required": [
-          "subject"
-        ]
+        "required": ["subject"]
       },
       "output": {
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "subject",
-            "status",
-            "keyTakeaways",
-            "consensusLevel"
-          ],
+          "required": ["subject", "status", "keyTakeaways", "consensusLevel"],
           "properties": {
             "subject": {
               "type": "string",
@@ -146,10 +144,7 @@ Get a high-level executive summary of the current state of a deliberation, inclu
     },
     "compassPoint": {
       "type": "object",
-      "required": [
-        "position",
-        "density"
-      ],
+      "required": ["position", "density"],
       "properties": {
         "position": {
           "type": "string",

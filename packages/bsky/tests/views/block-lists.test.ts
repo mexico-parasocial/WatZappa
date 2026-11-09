@@ -1,7 +1,12 @@
 // @ts-nocheck
-import { AtUri, AtpAgent, ids } from '@atproto/api'
-import type { DidString, HandleString } from '@atproto/syntax'
-import { RecordRef, SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import { AtUri, type AtpAgent, ids } from '@atproto/api'
+import {
+  type RecordRef,
+  type SeedClient,
+  TestNetwork,
+  basicSeed,
+} from '@atproto/dev-env'
+import type { DidString } from '@atproto/syntax'
 import { forSnapshot } from '../_util.js'
 
 describe('pds views with blocking from block lists', () => {

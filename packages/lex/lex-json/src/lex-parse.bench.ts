@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { bench, describe } from 'vitest'
-import { JsonValue } from './json.js'
-import { LexParseOptions, lexParse } from './lex-parse.js'
+import type { JsonValue } from './json.js'
+import { type LexParseOptions, lexParse } from './lex-parse.js'
 import { parseSpecialJsonObject } from './special-objects.js'
 
 // This benchmark compares the performance of two implementations of

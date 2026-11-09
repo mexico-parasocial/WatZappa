@@ -7,9 +7,7 @@
       "description": "Gets one community activity and, for economic activities, its ledger entries recorded by the community's current organizers.",
       "parameters": {
         "type": "params",
-        "required": [
-          "uri"
-        ],
+        "required": ["uri"],
         "properties": {
           "uri": {
             "type": "string",
@@ -21,10 +19,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "activity",
-            "ledger"
-          ],
+          "required": ["activity", "ledger"],
           "properties": {
             "activity": {
               "type": "ref",
@@ -49,13 +44,7 @@
     },
     "ledgerEntryView": {
       "type": "object",
-      "required": [
-        "uri",
-        "cid",
-        "author",
-        "record",
-        "indexedAt"
-      ],
+      "required": ["uri", "cid", "author", "record", "indexedAt"],
       "properties": {
         "uri": {
           "type": "string",

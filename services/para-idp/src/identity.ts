@@ -1,5 +1,5 @@
 import { sha256 } from '@noble/hashes/sha2'
-import { utf8ToBytes, concatBytes } from '@noble/hashes/utils'
+import { concatBytes, utf8ToBytes } from '@noble/hashes/utils'
 import { verify } from '@scure/sr25519'
 
 /*

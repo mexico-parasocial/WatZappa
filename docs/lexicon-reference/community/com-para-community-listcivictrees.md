@@ -2,60 +2,64 @@
 title: com.para.community.listCivicTrees
 description: Reference for the com.para.community.listCivicTrees lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `proposal` | `string` | ✅  |  | Format: `at-uri` |
-| `stance` | `string` | ❌  |  | Enum: `for`, `against`, `neutral`, `bridging` |
-| `limit` | `integer` | ❌  |  | Min: 1<br/>Max: 100<br/>Default: `50` |
-| `cursor` | `string` | ❌  |  |  |
-**Output:**
+| Name        | Type      | Req'd | Description | Constraints                                   |
+| ----------- | --------- | ----- | ----------- | --------------------------------------------- |
+| `proposal`  | `string`  | ✅    |             | Format: `at-uri`                              |
+| `stance`    | `string`  | ❌    |             | Enum: `for`, `against`, `neutral`, `bridging` |
+| `limit`     | `integer` | ❌    |             | Min: 1<br/>Max: 100<br/>Default: `50`         |
+| `cursor`    | `string`  | ❌    |             |                                               |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cursor` | `string` | ❌  |  |  |
-| `statements` | Array of [`#statementView`](#statementview) | ✅  |  |  |
+| Name         | Type                                        | Req'd | Description | Constraints |
+| ------------ | ------------------------------------------- | ----- | ----------- | ----------- |
+| `cursor`     | `string`                                    | ❌    |             |             |
+| `statements` | Array of [`#statementView`](#statementview) | ✅    |             |             |
 
 ---
 
 <a name="statementview"></a>
+
 ### `statementView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `cid` | `string` | ✅  |  | Format: `cid` |
-| `creator` | `string` | ✅  |  | Format: `did` |
-| `proposal` | `string` | ✅  |  | Format: `at-uri` |
-| `body` | `string` | ✅  |  |  |
-| `stance` | `string` | ✅  |  | Enum: `for`, `against`, `neutral`, `bridging` |
-| `agreeCount` | `integer` | ✅  |  |  |
-| `disagreeCount` | `integer` | ✅  |  |  |
-| `passCount` | `integer` | ✅  |  |  |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name            | Type      | Req'd | Description | Constraints                                   |
+| --------------- | --------- | ----- | ----------- | --------------------------------------------- |
+| `uri`           | `string`  | ✅    |             | Format: `at-uri`                              |
+| `cid`           | `string`  | ✅    |             | Format: `cid`                                 |
+| `creator`       | `string`  | ✅    |             | Format: `did`                                 |
+| `proposal`      | `string`  | ✅    |             | Format: `at-uri`                              |
+| `body`          | `string`  | ✅    |             |                                               |
+| `stance`        | `string`  | ✅    |             | Enum: `for`, `against`, `neutral`, `bridging` |
+| `agreeCount`    | `integer` | ✅    |             |                                               |
+| `disagreeCount` | `integer` | ✅    |             |                                               |
+| `passCount`     | `integer` | ✅    |             |                                               |
+| `createdAt`     | `string`  | ✅    |             | Format: `datetime`                            |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -65,9 +69,7 @@ description: Reference for the com.para.community.listCivicTrees lexicon
       "type": "query",
       "parameters": {
         "type": "params",
-        "required": [
-          "proposal"
-        ],
+        "required": ["proposal"],
         "properties": {
           "proposal": {
             "type": "string",
@@ -75,12 +77,7 @@ description: Reference for the com.para.community.listCivicTrees lexicon
           },
           "stance": {
             "type": "string",
-            "enum": [
-              "for",
-              "against",
-              "neutral",
-              "bridging"
-            ]
+            "enum": ["for", "against", "neutral", "bridging"]
           },
           "limit": {
             "type": "integer",
@@ -97,9 +94,7 @@ description: Reference for the com.para.community.listCivicTrees lexicon
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "statements"
-          ],
+          "required": ["statements"],
           "properties": {
             "cursor": {
               "type": "string"
@@ -151,12 +146,7 @@ description: Reference for the com.para.community.listCivicTrees lexicon
         },
         "stance": {
           "type": "string",
-          "enum": [
-            "for",
-            "against",
-            "neutral",
-            "bridging"
-          ]
+          "enum": ["for", "against", "neutral", "bridging"]
         },
         "agreeCount": {
           "type": "integer"

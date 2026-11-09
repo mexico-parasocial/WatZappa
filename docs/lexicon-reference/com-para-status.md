@@ -2,11 +2,13 @@
 title: com.para.status
 description: Reference for the com.para.status lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -17,16 +19,17 @@ Current public status for a Para account.
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `status` | `string` | ✅  | User's public status message. | Max Length: 300<br/>Max Graphemes: 300 |
-| `party` | `string` | ❌  | Optional political party affiliation. | Max Length: 64<br/>Max Graphemes: 64 |
-| `community` | `string` | ❌  | Optional primary community label. | Max Length: 64<br/>Max Graphemes: 64 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name        | Type     | Req'd | Description                           | Constraints                            |
+| ----------- | -------- | ----- | ------------------------------------- | -------------------------------------- |
+| `status`    | `string` | ✅    | User's public status message.         | Max Length: 300<br/>Max Graphemes: 300 |
+| `party`     | `string` | ❌    | Optional political party affiliation. | Max Length: 64<br/>Max Graphemes: 64   |
+| `community` | `string` | ❌    | Optional primary community label.     | Max Length: 64<br/>Max Graphemes: 64   |
+| `createdAt` | `string` | ✅    |                                       | Format: `datetime`                     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -38,10 +41,7 @@ Current public status for a Para account.
       "key": "literal:self",
       "record": {
         "type": "object",
-        "required": [
-          "status",
-          "createdAt"
-        ],
+        "required": ["status", "createdAt"],
         "properties": {
           "status": {
             "type": "string",

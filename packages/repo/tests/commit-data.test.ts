@@ -1,6 +1,11 @@
 // @ts-nocheck
 import { Secp256k1Keypair } from '@atproto/crypto'
-import { Repo, WriteOpAction, blocksToCarFile, verifyProofs } from '../src/index.js'
+import {
+  Repo,
+  WriteOpAction,
+  blocksToCarFile,
+  verifyProofs,
+} from '../src/index.js'
 import { MemoryBlockstore } from '../src/storage/index.js'
 
 describe('Commit data', () => {

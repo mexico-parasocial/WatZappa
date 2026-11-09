@@ -1,21 +1,26 @@
 // @ts-nocheck
 import { sql } from 'kysely'
 import {
-  AppBskyActorProfile,
-  AppBskyFeedLike,
-  AppBskyFeedPost,
-  AppBskyFeedRepost,
-  AppBskyGraphFollow,
+  type AppBskyActorProfile,
+  type AppBskyFeedLike,
+  type AppBskyFeedPost,
+  type AppBskyFeedRepost,
+  type AppBskyGraphFollow,
   AtpAgent,
   ids,
 } from '@atproto/api'
 import { TID, cidForCbor } from '@atproto/common'
-import { SeedClient, TestNetwork, basicSeed, usersSeed } from '@atproto/dev-env'
-import { Cid } from '@atproto/lex'
+import {
+  type SeedClient,
+  TestNetwork,
+  basicSeed,
+  usersSeed,
+} from '@atproto/dev-env'
+import type { Cid } from '@atproto/lex'
 import { repoPrepare } from '@atproto/pds'
 import { WriteOpAction } from '@atproto/repo'
 import { AtUri } from '@atproto/syntax'
-import { Database } from '../../src/data-plane/server/db/index.js'
+import type { Database } from '../../src/data-plane/server/db/index.js'
 import { forSnapshot } from '../_util.js'
 
 describe('indexing', () => {

@@ -2,11 +2,13 @@
 title: com.para.community.civicTree.submitContribution
 description: Reference for the com.para.community.civicTree.submitContribution lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `procedure`
@@ -20,30 +22,31 @@ description: Reference for the com.para.community.civicTree.submitContribution l
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `communityUri` | `string` | ✅  |  | Format: `at-uri` |
-| `authorDid` | `string` | ✅  |  | Format: `did` |
-| `title` | `string` | ✅  |  | Max Length: 500 |
-| `content` | `string` | ❌  |  | Max Length: 10000 |
-| `sourceUri` | `string` | ❌  |  | Format: `at-uri` |
-| `sourceUrl` | `string` | ❌  |  | Format: `uri` |
-| `sourceType` | `string` | ✅  |  | Max Length: 64 |
-| `metadata` | `string` | ❌  |  | Max Length: 20000 |
-**Output:**
+| Name           | Type     | Req'd | Description | Constraints       |
+| -------------- | -------- | ----- | ----------- | ----------------- |
+| `communityUri` | `string` | ✅    |             | Format: `at-uri`  |
+| `authorDid`    | `string` | ✅    |             | Format: `did`     |
+| `title`        | `string` | ✅    |             | Max Length: 500   |
+| `content`      | `string` | ❌    |             | Max Length: 10000 |
+| `sourceUri`    | `string` | ❌    |             | Format: `at-uri`  |
+| `sourceUrl`    | `string` | ❌    |             | Format: `uri`     |
+| `sourceType`   | `string` | ✅    |             | Max Length: 64    |
+| `metadata`     | `string` | ❌    |             | Max Length: 20000 |
+| **Output:**    |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `contribution` | [`com.para.community.civicTree.defs#contributionView`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#contributionView]]) | ✅  |  |  |
+| Name           | Type                                                                                       | Req'd                                                 | Description | Constraints |
+| -------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------- | ----------- | ----------- |
+| `contribution` | [`com.para.community.civicTree.defs#contributionView`]([[com-para-community-civictree-defs | com.para.community.civicTree.defs#contributionView]]) | ✅          |             |     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -55,12 +58,7 @@ description: Reference for the com.para.community.civicTree.submitContribution l
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "communityUri",
-            "authorDid",
-            "title",
-            "sourceType"
-          ],
+          "required": ["communityUri", "authorDid", "title", "sourceType"],
           "properties": {
             "communityUri": {
               "type": "string",
@@ -101,9 +99,7 @@ description: Reference for the com.para.community.civicTree.submitContribution l
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "contribution"
-          ],
+          "required": ["contribution"],
           "properties": {
             "contribution": {
               "type": "ref",
