@@ -2,11 +2,13 @@
 title: com.para.community.governanceConfig
 description: Reference for the com.para.community.governanceConfig lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -15,96 +17,102 @@ description: Reference for the com.para.community.governanceConfig lexicon
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `community` | `string` | ✅  | Community this governance config applies to | Format: `at-uri` |
-| `version` | `string` | ✅  | Semver of this config. Changes only by direct flat vote (no delegation). |  |
-| `metaRules` | [`#metaRules`](#metarules) | ✅  |  |  |
-| `deliberation` | [`#deliberationRules`](#deliberationrules) | ❌  |  |  |
-| `delegation` | [`#delegationRules`](#delegationrules) | ❌  |  |  |
-| `counting` | [`#countingRules`](#countingrules) | ❌  |  |  |
-| `visibility` | [`#visibilityRules`](#visibilityrules) | ❌  |  |  |
-| `createdAt` | `string` | ❌  |  | Format: `datetime` |
+| Name           | Type                                       | Req'd | Description                                                              | Constraints        |
+| -------------- | ------------------------------------------ | ----- | ------------------------------------------------------------------------ | ------------------ |
+| `community`    | `string`                                   | ✅    | Community this governance config applies to                              | Format: `at-uri`   |
+| `version`      | `string`                                   | ✅    | Semver of this config. Changes only by direct flat vote (no delegation). |                    |
+| `metaRules`    | [`#metaRules`](#metarules)                 | ✅    |                                                                          |                    |
+| `deliberation` | [`#deliberationRules`](#deliberationrules) | ❌    |                                                                          |                    |
+| `delegation`   | [`#delegationRules`](#delegationrules)     | ❌    |                                                                          |                    |
+| `counting`     | [`#countingRules`](#countingrules)         | ❌    |                                                                          |                    |
+| `visibility`   | [`#visibilityRules`](#visibilityrules)     | ❌    |                                                                          |                    |
+| `createdAt`    | `string`                                   | ❌    |                                                                          | Format: `datetime` |
 
 ---
 
 <a name="metarules"></a>
+
 ### `metaRules`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `quorumPct` | `integer` | ✅  | Minimum participation % for a vote to be valid | Min: 0<br/>Max: 100 |
-| `thresholdPct` | `integer` | ✅  | Approval threshold for ordinary proposals | Min: 0<br/>Max: 100 |
-| `amendmentQuorumPct` | `integer` | ✅  | Higher quorum required to amend this config itself | Min: 0<br/>Max: 100 |
-| `maxIntensityUnits` | `integer` | ❌  | Cap on quadratic voice credits per voter per proposal | Min: 1<br/>Max: 16 |
+| Name                 | Type      | Req'd | Description                                           | Constraints         |
+| -------------------- | --------- | ----- | ----------------------------------------------------- | ------------------- |
+| `quorumPct`          | `integer` | ✅    | Minimum participation % for a vote to be valid        | Min: 0<br/>Max: 100 |
+| `thresholdPct`       | `integer` | ✅    | Approval threshold for ordinary proposals             | Min: 0<br/>Max: 100 |
+| `amendmentQuorumPct` | `integer` | ✅    | Higher quorum required to amend this config itself    | Min: 0<br/>Max: 100 |
+| `maxIntensityUnits`  | `integer` | ❌    | Cap on quadratic voice credits per voter per proposal | Min: 1<br/>Max: 16  |
 
 ---
 
 <a name="deliberationrules"></a>
+
 ### `deliberationRules`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `windowHours` | `integer` | ❌  | Hours of mandatory deliberation before voting opens |  |
-| `minStatements` | `integer` | ❌  | Minimum statements required to open voting |  |
-| `clusteringEnabled` | `boolean` | ❌  | Whether Polis-style clustering is active |  |
+| Name                | Type      | Req'd | Description                                         | Constraints |
+| ------------------- | --------- | ----- | --------------------------------------------------- | ----------- |
+| `windowHours`       | `integer` | ❌    | Hours of mandatory deliberation before voting opens |             |
+| `minStatements`     | `integer` | ❌    | Minimum statements required to open voting          |             |
+| `clusteringEnabled` | `boolean` | ❌    | Whether Polis-style clustering is active            |             |
 
 ---
 
 <a name="delegationrules"></a>
+
 ### `delegationRules`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `eligibleRoles` | Array of `string` | ❌  | Roles that can receive delegation: representative, moderator, official, board_member, etc. |  |
-| `maxDepth` | `integer` | ❌  | Max delegation hops. PARA default is 1. | Min: 0<br/>Max: 2 |
-| `autoExpireDays` | `integer` | ❌  | Default delegation expiry in days |  |
+| Name             | Type              | Req'd | Description                                                                                | Constraints       |
+| ---------------- | ----------------- | ----- | ------------------------------------------------------------------------------------------ | ----------------- |
+| `eligibleRoles`  | Array of `string` | ❌    | Roles that can receive delegation: representative, moderator, official, board_member, etc. |                   |
+| `maxDepth`       | `integer`         | ❌    | Max delegation hops. PARA default is 1.                                                    | Min: 0<br/>Max: 2 |
+| `autoExpireDays` | `integer`         | ❌    | Default delegation expiry in days                                                          |                   |
 
 ---
 
 <a name="countingrules"></a>
+
 ### `countingRules`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `modes` | Array of `string` | ❌  | Available tally modes. Only flat is binding; others run in shadow mode until explicitly promoted. |  |
-| `correlationAlpha` | `integer` | ❌  | Correlation discount strength, fixed-point scaled by 10000 (e.g. 2500 = 0.25). 0 = disabled. | Min: 0<br/>Max: 10000 |
-| `bindingMode` | `string` | ❌  | Which mode currently produces the binding tally. Default: flat. | Enum: `flat`, `sqrt_n`, `correlation_adjusted` |
+| Name               | Type              | Req'd | Description                                                                                       | Constraints                                    |
+| ------------------ | ----------------- | ----- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `modes`            | Array of `string` | ❌    | Available tally modes. Only flat is binding; others run in shadow mode until explicitly promoted. |                                                |
+| `correlationAlpha` | `integer`         | ❌    | Correlation discount strength, fixed-point scaled by 10000 (e.g. 2500 = 0.25). 0 = disabled.      | Min: 0<br/>Max: 10000                          |
+| `bindingMode`      | `string`          | ❌    | Which mode currently produces the binding tally. Default: flat.                                   | Enum: `flat`, `sqrt_n`, `correlation_adjusted` |
 
 ---
 
 <a name="visibilityrules"></a>
+
 ### `visibilityRules`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `deliberationPublic` | `boolean` | ❌  | Whether deliberation statements are publicly visible |  |
-| `votesPublic` | `boolean` | ❌  | Whether individual votes are public or only aggregates |  |
-| `delegationGraphPublic` | `boolean` | ❌  | Whether delegation chains are publicly observable |  |
+| Name                    | Type      | Req'd | Description                                            | Constraints |
+| ----------------------- | --------- | ----- | ------------------------------------------------------ | ----------- |
+| `deliberationPublic`    | `boolean` | ❌    | Whether deliberation statements are publicly visible   |             |
+| `votesPublic`           | `boolean` | ❌    | Whether individual votes are public or only aggregates |             |
+| `delegationGraphPublic` | `boolean` | ❌    | Whether delegation chains are publicly observable      |             |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -115,11 +123,7 @@ description: Reference for the com.para.community.governanceConfig lexicon
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "community",
-          "version",
-          "metaRules"
-        ],
+        "required": ["community", "version", "metaRules"],
         "properties": {
           "community": {
             "type": "string",
@@ -159,11 +163,7 @@ description: Reference for the com.para.community.governanceConfig lexicon
     },
     "metaRules": {
       "type": "object",
-      "required": [
-        "quorumPct",
-        "thresholdPct",
-        "amendmentQuorumPct"
-      ],
+      "required": ["quorumPct", "thresholdPct", "amendmentQuorumPct"],
       "properties": {
         "quorumPct": {
           "type": "integer",
@@ -237,11 +237,7 @@ description: Reference for the com.para.community.governanceConfig lexicon
           "type": "array",
           "items": {
             "type": "string",
-            "enum": [
-              "flat",
-              "sqrt_n",
-              "correlation_adjusted"
-            ]
+            "enum": ["flat", "sqrt_n", "correlation_adjusted"]
           },
           "description": "Available tally modes. Only flat is binding; others run in shadow mode until explicitly promoted."
         },
@@ -253,11 +249,7 @@ description: Reference for the com.para.community.governanceConfig lexicon
         },
         "bindingMode": {
           "type": "string",
-          "enum": [
-            "flat",
-            "sqrt_n",
-            "correlation_adjusted"
-          ],
+          "enum": ["flat", "sqrt_n", "correlation_adjusted"],
           "description": "Which mode currently produces the binding tally. Default: flat."
         }
       }

@@ -30,11 +30,11 @@ any of this (OD-8 §4.1).
 Three roles, two of which must not be the same operator for the privacy claim
 to hold:
 
-| Role             | Knows                                           | Must not know           |
-| ---------------- | ----------------------------------------------- | ----------------------- |
-| **m8 (issuer)**  | that a person received a token for a subject    | the token, the choice   |
-| **Box (tally)**  | each token's current choice                     | which person holds it   |
-| **Voter client** | its token, its recast key, its choice           | -                       |
+| Role             | Knows                                        | Must not know         |
+| ---------------- | -------------------------------------------- | --------------------- |
+| **m8 (issuer)**  | that a person received a token for a subject | the token, the choice |
+| **Box (tally)**  | each token's current choice                  | which person holds it |
+| **Voter client** | its token, its recast key, its choice        | -                     |
 
 ### 2a. Issuance
 

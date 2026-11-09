@@ -436,6 +436,7 @@ import * as ComParaCommunityRelation from './types/com/para/community/relation.j
 import * as ComParaCommunityRemoveSharedContent from './types/com/para/community/removeSharedContent.js'
 import * as ComParaCommunityRestoreSharedContent from './types/com/para/community/restoreSharedContent.js'
 import * as ComParaCommunityRoleAcceptance from './types/com/para/community/roleAcceptance.js'
+import * as ComParaCommunityRoleOffer from './types/com/para/community/roleOffer.js'
 import * as ComParaCommunityShareContent from './types/com/para/community/shareContent.js'
 import * as ComParaCommunitySharedContent from './types/com/para/community/sharedContent.js'
 import * as ComParaCommunitySharedContentAction from './types/com/para/community/sharedContentAction.js'
@@ -997,6 +998,7 @@ export * as ComParaCommunityRelation from './types/com/para/community/relation.j
 export * as ComParaCommunityRemoveSharedContent from './types/com/para/community/removeSharedContent.js'
 export * as ComParaCommunityRestoreSharedContent from './types/com/para/community/restoreSharedContent.js'
 export * as ComParaCommunityRoleAcceptance from './types/com/para/community/roleAcceptance.js'
+export * as ComParaCommunityRoleOffer from './types/com/para/community/roleOffer.js'
 export * as ComParaCommunityShareContent from './types/com/para/community/shareContent.js'
 export * as ComParaCommunitySharedContent from './types/com/para/community/sharedContent.js'
 export * as ComParaCommunitySharedContentAction from './types/com/para/community/sharedContentAction.js'
@@ -7747,6 +7749,7 @@ export class ComParaCommunityNS {
   membership: ComParaCommunityMembershipRecord
   relation: ComParaCommunityRelationRecord
   roleAcceptance: ComParaCommunityRoleAcceptanceRecord
+  roleOffer: ComParaCommunityRoleOfferRecord
   sharedContent: ComParaCommunitySharedContentRecord
   sharedContentAction: ComParaCommunitySharedContentActionRecord
   socialActivity: ComParaCommunitySocialActivityRecord
@@ -7776,6 +7779,7 @@ export class ComParaCommunityNS {
     this.membership = new ComParaCommunityMembershipRecord(client)
     this.relation = new ComParaCommunityRelationRecord(client)
     this.roleAcceptance = new ComParaCommunityRoleAcceptanceRecord(client)
+    this.roleOffer = new ComParaCommunityRoleOfferRecord(client)
     this.sharedContent = new ComParaCommunitySharedContentRecord(client)
     this.sharedContentAction = new ComParaCommunitySharedContentActionRecord(
       client,
@@ -10273,6 +10277,89 @@ export class ComParaCommunityRoleAcceptanceRecord {
       'com.atproto.repo.deleteRecord',
       undefined,
       { collection: 'com.para.community.roleAcceptance', ...params },
+      { headers },
+    )
+  }
+}
+
+export class ComParaCommunityRoleOfferRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: ComParaCommunityRoleOffer.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'com.para.community.roleOffer',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: ComParaCommunityRoleOffer.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'com.para.community.roleOffer',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityRoleOffer.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.roleOffer'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCommunityRoleOffer.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.community.roleOffer'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'com.para.community.roleOffer', ...params },
       { headers },
     )
   }

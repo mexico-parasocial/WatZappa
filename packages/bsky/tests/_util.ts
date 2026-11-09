@@ -12,7 +12,7 @@ import {
   lexToJson,
 } from '@atproto/api'
 import { ifCid, validateCidString } from '@atproto/lex'
-import { AtUri } from '@atproto/syntax'
+import { AtUri, type DidString } from '@atproto/syntax'
 
 type ThreadViewPost = Extract<
   AppBskyFeedGetPostThread.OutputSchema['thread'],
@@ -321,18 +321,18 @@ export async function appointModerator(opts: {
         atproto: { repo: { createRecord: (...args: any[]) => Promise<any> } }
       }
     }
-    getHeaders: (did: string) => Record<string, string>
+    getHeaders: (did: DidString) => Record<string, string>
   }
   network: { processAll: () => Promise<unknown> }
   community: string
-  owner: string
-  nominee: string
-  /** The nominee's latest authority event. */
-  predecessor: string
+  owner: DidString
+  nominee: DidString
+  /** The nominee's latest authority event, if they have one. */
+  predecessor?: string
   version?: number
 }) {
   const { sc, network, community, owner, nominee, predecessor } = opts
-  const create = async (by: string, collection: string, record: object) => {
+  const create = async (by: DidString, collection: string, record: object) => {
     const { data } = await sc.agent.com.atproto.repo.createRecord(
       { repo: by, collection, record: { $type: collection, ...record } },
       { encoding: 'application/json', headers: sc.getHeaders(by) },

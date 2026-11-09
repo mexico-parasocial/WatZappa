@@ -30,8 +30,12 @@ const insertFn = async (
   if (obj.parentCommunityUri === obj.childCommunityUri) {
     return null
   }
+  // Only the author's own reverse link counts: anyone can write a relation
+  // naming any two communities, so another repo's reverse link must not
+  // keep a legitimate one from being indexed.
   const directCycle = await db
     .selectFrom('para_community_relation')
+    .where('creator', '=', uri.host)
     .where('parentCommunityUri', '=', obj.childCommunityUri)
     .where('childCommunityUri', '=', obj.parentCommunityUri)
     .where('relation', '=', obj.relation)
@@ -61,13 +65,16 @@ const insertFn = async (
   return inserted ?? null
 }
 
+// Per author: anyone can write a relation naming any pair, so another repo's
+// earlier record must not keep the parent owner's own link out.
 const findDuplicate = async (
   db: DatabaseSchema,
-  _uri: AtUri,
+  uri: AtUri,
   obj: ParaCommunityRelationRecord,
 ): Promise<AtUri | null> => {
   const found = await db
     .selectFrom('para_community_relation')
+    .where('creator', '=', uri.host)
     .where('parentCommunityUri', '=', obj.parentCommunityUri)
     .where('childCommunityUri', '=', obj.childCommunityUri)
     .where('relation', '=', obj.relation)

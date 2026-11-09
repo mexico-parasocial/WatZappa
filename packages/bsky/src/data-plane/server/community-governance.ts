@@ -1,8 +1,6 @@
 import { type Expression, sql } from 'kysely'
-import {
-  type CommunityAuthorityEvent,
-  deriveEffectiveAuthority,
-} from '@atproto/common'
+import { getAuthoritySnapshots } from './community-authority.js'
+import { communityAccountDid } from './community-membership.js'
 import type { Database } from './db/index.js'
 
 /*
@@ -47,10 +45,13 @@ const appliesNow = (alias: string) =>
   )
 
 /**
- * The SQL twin of `deriveEffectiveAuthority(events).roles.includes('owner')`:
- * `did` holds an owner grant that applies now, was made while an active
- * member, and has not since been ended by a revocation, suspension, removal
- * or block.
+ * The SQL twin of `getAuthoritySnapshot(...).roles.includes('owner')`: `did`
+ * holds an owner grant that applies now, was made while an active member, and
+ * has not since been ended by a revocation, suspension, removal or block.
+ * Membership comes from an activation earlier in the chain, or from an active
+ * legacy membership record, which opens the chain at version 0. A `left`
+ * legacy record ends it once it applies, unless an activation or
+ * reinstatement became effective later (`leftBeforeRejoining`).
  */
 export const isCommunityOwnerSql = (
   community: Expression<unknown>,
@@ -69,24 +70,63 @@ export const isCommunityOwnerSql = (
         and ended.version > granted.version
         and ${appliesNow('ended')}
     )
-    and exists (
-      select 1 from para_community_authority_event joined
-      where joined."communityUri" = granted."communityUri"
-        and joined.subject = granted.subject
-        and joined.action in ('member.activate', 'member.reinstate')
-        and joined.version < granted.version
-        and ${appliesNow('joined')}
+    and (
+      exists (
+        select 1 from para_community_authority_event joined
+        where joined."communityUri" = granted."communityUri"
+          and joined.subject = granted.subject
+          and joined.action in ('member.activate', 'member.reinstate')
+          and joined.version < granted.version
+          and ${appliesNow('joined')}
+          and not exists (
+            select 1 from para_community_authority_event cleared
+            where cleared."communityUri" = granted."communityUri"
+              and cleared.subject = granted.subject
+              and cleared.action in ('member.suspend', 'member.remove', 'member.block')
+              and cleared.version > joined.version
+              and cleared.version < granted.version
+              and ${appliesNow('cleared')}
+          )
+      )
+      or (
+        exists (
+          select 1 from para_community_membership legacy
+          where legacy."communityUri" = granted."communityUri"
+            and legacy.creator = granted.subject
+            and legacy."membershipState" = 'active'
+        )
         and not exists (
           select 1 from para_community_authority_event cleared
           where cleared."communityUri" = granted."communityUri"
             and cleared.subject = granted.subject
             and cleared.action in ('member.suspend', 'member.remove', 'member.block')
-            and cleared.version > joined.version
             and cleared.version < granted.version
             and ${appliesNow('cleared')}
         )
+      )
+    )
+    and not exists (
+      select 1 from para_community_membership departed
+      where departed."communityUri" = granted."communityUri"
+        and departed.creator = granted.subject
+        and departed."membershipState" = 'left'
+        and ${leftAtSql('departed')} <= now()
+        and not exists (
+          select 1 from para_community_authority_event rejoined
+          where rejoined."communityUri" = granted."communityUri"
+            and rejoined.subject = granted.subject
+            and rejoined.action in ('member.activate', 'member.reinstate')
+            and rejoined."effectiveAt"::timestamptz > ${leftAtSql('departed')}
+            and ${appliesNow('rejoined')}
+        )
     )
 )`
+
+/** When a `left` legacy record takes effect: `leftAt`, never before indexing. */
+const leftAtSql = (alias: string) =>
+  sql.raw(
+    `greatest(coalesce(${alias}."leftAt", ${alias}."indexedAt")::timestamptz, ${alias}."indexedAt"::timestamptz)`,
+  )
 
 /**
  * For a `para_community_governance` row (`row`) and a `para_community_board`
@@ -118,42 +158,22 @@ export const getGovernanceAuthors = async (
   board: Pick<GovernanceBoard, 'uri' | 'creator'>,
   now = Date.now(),
 ): Promise<string[]> => {
-  const rows = await db.db
+  const grantees = await db.db
     .selectFrom('para_community_authority_event')
     .where('communityUri', '=', board.uri)
-    .where('subject', 'in', (qb) =>
-      qb
-        .selectFrom('para_community_authority_event')
-        .where('communityUri', '=', board.uri)
-        .where('action', '=', 'owner.grant')
-        .select('subject'),
-    )
-    .selectAll()
+    .where('action', '=', 'owner.grant')
+    .select('subject')
+    .distinct()
     .execute()
-  const eventsBySubject = new Map<string, CommunityAuthorityEvent[]>()
-  for (const row of rows) {
-    const events = eventsBySubject.get(row.subject) ?? []
-    events.push({
-      uri: row.uri,
-      creator: row.creator,
-      community: row.communityUri,
-      subject: row.subject,
-      action: row.action as CommunityAuthorityEvent['action'],
-      issuer: row.issuer,
-      effectiveAt: row.effectiveAt,
-      expiresAt: row.expiresAt,
-      predecessor: row.predecessor,
-      version: row.version,
-      basis: row.basis as CommunityAuthorityEvent['basis'],
-      evidence: row.evidence,
-    })
-    eventsBySubject.set(row.subject, events)
-  }
+  const snapshots = await getAuthoritySnapshots(
+    db,
+    board.uri,
+    grantees.map((row) => row.subject),
+    now,
+  )
   const authors = new Set([board.creator])
-  for (const [subject, events] of eventsBySubject) {
-    if (deriveEffectiveAuthority(events, now).roles.includes('owner')) {
-      authors.add(subject)
-    }
+  for (const [subject, snapshot] of snapshots) {
+    if (snapshot.roles.includes('owner')) authors.add(subject)
   }
   return [...authors]
 }
@@ -167,6 +187,8 @@ export const getTrustedGovernanceRecordJson = async (
   db: Database,
   board: GovernanceBoard,
 ): Promise<string | null> => {
+  // @NOTE an OD-9 account lists its officers from its chain (OD-9 §3.8).
+  if (communityAccountDid(board.uri)) return null
   const authors = await getGovernanceAuthors(db, board)
 
   const slugMatch = await db.db

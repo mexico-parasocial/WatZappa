@@ -128,7 +128,7 @@ export default function (server: Server, ctx: AppContext) {
             throw err
           }
 
-          assertCommunityRepoWrites(did, [write])
+          await assertCommunityRepoWrites(actorTxn, did, [write])
 
           // no-op
           if (current && current.cid === write.cid.toString()) {

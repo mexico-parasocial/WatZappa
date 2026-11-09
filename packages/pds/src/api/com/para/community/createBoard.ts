@@ -336,9 +336,7 @@ const ensureBoardRecords = async ({
         )
       }
 
-      const boardCid = boardWrite
-        ? boardWrite.cid
-        : parseCid(existing!.cid)
+      const boardCid = boardWrite ? boardWrite.cid : parseCid(existing!.cid)
 
       const pending = writes.filter((w) => w !== null)
       if (pending.length === 0) {

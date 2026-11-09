@@ -32735,6 +32735,40 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
+  ComParaCommunityRoleOffer: {
+    lexicon: 1,
+    id: 'com.para.community.roleOffer',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "An owner's offer of a community role to a member. The member accepts it with a com.para.community.roleAcceptance; the owner then publishes the authority event that carries the appointment out.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['community', 'role', 'subject', 'createdAt'],
+          properties: {
+            community: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            role: {
+              type: 'string',
+              knownValues: ['moderator'],
+            },
+            subject: {
+              type: 'string',
+              format: 'did',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
   ComParaCommunityShareContent: {
     lexicon: 1,
     id: 'com.para.community.shareContent',
@@ -45717,6 +45751,7 @@ export const ids = {
   ComParaCommunityRestoreSharedContent:
     'com.para.community.restoreSharedContent',
   ComParaCommunityRoleAcceptance: 'com.para.community.roleAcceptance',
+  ComParaCommunityRoleOffer: 'com.para.community.roleOffer',
   ComParaCommunityShareContent: 'com.para.community.shareContent',
   ComParaCommunitySharedContent: 'com.para.community.sharedContent',
   ComParaCommunitySharedContentAction: 'com.para.community.sharedContentAction',

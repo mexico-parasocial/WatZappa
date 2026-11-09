@@ -51,8 +51,8 @@
         "cid": { "type": "string" },
         "author": { "type": "string", "format": "did" },
         "cabildeo": { "type": "string", "format": "at-uri" },
-          "officialThreadSlug": { "type": "string", "maxLength": 80 },
-          "reviewDate": { "type": "string", "maxLength": 10 },
+        "officialThreadSlug": { "type": "string", "maxLength": 80 },
+        "reviewDate": { "type": "string", "maxLength": 10 },
         "communityUri": { "type": "string", "format": "at-uri" },
         "text": { "type": "string" },
         "cited": {

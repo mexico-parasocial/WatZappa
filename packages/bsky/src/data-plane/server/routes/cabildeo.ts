@@ -15,6 +15,11 @@ import {
   getAuthoritySnapshots,
 } from '../community-authority.js'
 import { getTrustedGovernanceRecordJson } from '../community-governance.js'
+import {
+  accountOfficeHolders,
+  communityAccountDid,
+  resolveCommunityAccountUris,
+} from '../community-membership.js'
 import type { Database } from '../db/index.js'
 import { TimeCidKeyset, paginate } from '../db/pagination.js'
 import { getCabildeoVoteEligibility } from '../indexing/plugins/cabildeo-vote.js'
@@ -441,7 +446,7 @@ export const selectCandidateCommunityBoard = async (
     if (byUri) return byUri
   }
 
-  return db.db
+  const board = await db.db
     .selectFrom('para_community_board')
     .where(
       sql<boolean>`(
@@ -451,6 +456,17 @@ export const selectCandidateCommunityBoard = async (
     )
     .select(['uri', 'creator', 'name', 'slug'])
     .executeTakeFirst()
+  if (board) return board
+  // An OD-9 community account, by URI, DID, handle or slug.
+  const [uri] = await resolveCommunityAccountUris(db, communityId)
+  const did = uri ? communityAccountDid(uri) : null
+  if (!uri || !did) return undefined
+  const account = await db.db
+    .selectFrom('para_community_account')
+    .where('did', '=', did)
+    .select(['name'])
+    .executeTakeFirst()
+  return { uri, creator: did, name: account?.name ?? null, slug: null }
 }
 
 /*
@@ -473,6 +489,8 @@ const SELF_NOMINATION_ROLES = ['delegate', 'delegado', 'subdelegate', 'agent']
 
 /** Members holding the moderator role by verified authority events. */
 const selectVerifiedModerators = async (db: Database, communityUri: string) => {
+  const accountDid = communityAccountDid(communityUri)
+  if (accountDid) return accountOfficeHolders(db, accountDid, 'moderator')
   const rows = await db.db
     .selectFrom('para_community_authority_event')
     .where('communityUri', '=', communityUri)
@@ -498,6 +516,9 @@ const selectSelfNominatedDelegates = async (
   db: Database,
   communityUri: string,
 ) => {
+  // @NOTE an OD-9 account has no self-written membership records to
+  // nominate from; self-nomination returns as a chain action in phase 4.
+  if (communityAccountDid(communityUri)) return []
   const rows = await db.db
     .selectFrom('para_community_membership')
     .where('communityUri', '=', communityUri)

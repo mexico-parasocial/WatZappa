@@ -17,6 +17,8 @@ required_paths=(
   packages/pds/src/account-manager/helpers/im8-token.ts
   packages/pds/src/para/auth-factor.ts
   packages/pds/src/para/read-after-write.ts
+  packages/pds/src/para/community/chain.ts
+  packages/pds/src/api/com/para/community/act.ts
   packages/pds/src/account-manager/db/migrations/009-alpha-rollout.ts
   packages/pds/src/account-manager/db/migrations/010-auth-factor-type.ts
   packages/pds/tests/para-pds.test.ts
@@ -29,6 +31,10 @@ required_anchors=(
   'packages/pds/src/repo/prepare.ts|ballotWritePolicyRefusal'
   'packages/pds/src/api/com/atproto/server/createSession.ts|assertParaAuthFactor'
   'packages/pds/src/config/config.ts|m8BaseUrl'
+  'packages/pds/src/config/config.ts|paraCommunityHandleDomain'
+  'packages/pds/src/actor-store/actor-store-transactor.ts|CommunityStore'
+  'packages/pds/src/actor-store/actor-store-reader.ts|CommunityStore'
+  'packages/pds/src/actor-store/db/migrations/index.ts|006-community'
   'packages/pds/src/actor-store/record/reader.ts|collectParaLocalRecord'
   'packages/pds/lexicons.json|com.para.*'
   'packages/pds/.gitignore|/lexicons/com/para'
