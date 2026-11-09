@@ -356,7 +356,6 @@ import * as ComParaCivicListFollowThrough from './types/com/para/civic/listFollo
 import * as ComParaCivicOpenQuestion from './types/com/para/civic/openQuestion.js'
 import * as ComParaCivicOpenQuestionVote from './types/com/para/civic/openQuestionVote.js'
 import * as ComParaCivicPosition from './types/com/para/civic/position.js'
-import * as ComParaCivicPutLivePresence from './types/com/para/civic/putLivePresence.js'
 import * as ComParaCivicVote from './types/com/para/civic/vote.js'
 import * as ComParaCollectionApplyOps from './types/com/para/collection/applyOps.js'
 import * as ComParaCollectionCreateCollection from './types/com/para/collection/createCollection.js'
@@ -906,7 +905,6 @@ export * as ComParaCivicListFollowThrough from './types/com/para/civic/listFollo
 export * as ComParaCivicOpenQuestion from './types/com/para/civic/openQuestion.js'
 export * as ComParaCivicOpenQuestionVote from './types/com/para/civic/openQuestionVote.js'
 export * as ComParaCivicPosition from './types/com/para/civic/position.js'
-export * as ComParaCivicPutLivePresence from './types/com/para/civic/putLivePresence.js'
 export * as ComParaCivicVote from './types/com/para/civic/vote.js'
 export * as ComParaCollectionApplyOps from './types/com/para/collection/applyOps.js'
 export * as ComParaCollectionCreateCollection from './types/com/para/collection/createCollection.js'
@@ -6783,17 +6781,6 @@ export class ComParaCivicNS {
       undefined,
       opts,
     )
-  }
-
-  putLivePresence(
-    data?: ComParaCivicPutLivePresence.InputSchema,
-    opts?: ComParaCivicPutLivePresence.CallOptions,
-  ): Promise<ComParaCivicPutLivePresence.Response> {
-    return this._client
-      .call('com.para.civic.putLivePresence', opts?.qp, data, opts)
-      .catch((e) => {
-        throw ComParaCivicPutLivePresence.toKnownErr(e)
-      })
   }
 }
 

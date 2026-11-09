@@ -91,40 +91,6 @@
         "delegateVoteDismissed": { "type": "boolean" }
       }
     },
-    "liveSessionView": {
-      "type": "object",
-      "required": [
-        "isLive",
-        "hostDid",
-        "activeParticipantCount",
-        "startedAt",
-        "participantPreviewDids"
-      ],
-      "properties": {
-        "isLive": { "type": "boolean" },
-        "hostDid": { "type": "string", "format": "did" },
-        "activeParticipantCount": { "type": "integer", "minimum": 0 },
-        "startedAt": { "type": "string", "format": "datetime" },
-        "participantPreviewDids": {
-          "type": "array",
-          "maxLength": 5,
-          "items": { "type": "string", "format": "did" }
-        }
-      }
-    },
-    "cabildeoLive": {
-      "type": "object",
-      "required": ["cabildeoUri", "community", "phase", "expiresAt"],
-      "properties": {
-        "cabildeoUri": { "type": "string", "format": "at-uri" },
-        "community": { "type": "string", "maxLength": 100 },
-        "phase": {
-          "type": "string",
-          "knownValues": ["draft", "open", "deliberating", "voting", "resolved"]
-        },
-        "expiresAt": { "type": "string", "format": "datetime" }
-      }
-    },
     "cabildeoView": {
       "type": "object",
       "required": [
@@ -190,8 +156,7 @@
           "items": { "type": "ref", "ref": "#partyVoteSummary" }
         },
         "outcomeSummary": { "type": "ref", "ref": "#outcomeSummary" },
-        "viewerContext": { "type": "ref", "ref": "#viewerContext" },
-        "liveSession": { "type": "ref", "ref": "#liveSessionView" }
+        "viewerContext": { "type": "ref", "ref": "#viewerContext" }
       }
     },
     "positionView": {

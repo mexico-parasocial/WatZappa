@@ -8,7 +8,7 @@ import type { AppContext } from '../../../../context.js'
 import { parseCid, parseString } from '../../../../hydration/util.js'
 import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
-import { getVisibleParticipantDids, parseDataplaneJson } from './util.js'
+import { parseDataplaneJson } from './util.js'
 
 type CabildeoView = com.para.civic.defs.CabildeoView
 
@@ -22,7 +22,6 @@ export default function (server: Server, ctx: AppContext) {
         ctx,
         params,
         viewer: viewer ?? undefined,
-        labelers,
       })
       const repoRev = await ctx.hydrator.actor.getRepoRevSafe(viewer)
 
@@ -39,9 +38,8 @@ const getCabildeo = async (inputs: {
   ctx: AppContext
   params: com.para.civic.getCabildeo.$Params
   viewer?: string
-  labelers: ReturnType<AppContext['reqLabelers']>
 }) => {
-  const { ctx, params, viewer, labelers } = inputs
+  const { ctx, params, viewer } = inputs
   const res = await ctx.dataplane.getParaCabildeo({
     cabildeoUri: params.cabildeo,
     viewerDid: viewer ?? '',
@@ -55,28 +53,7 @@ const getCabildeo = async (inputs: {
     throw new InvalidRequestError('Cabildeo not found', 'NotFound')
   }
 
-  const cabildeo = mapCabildeoView(cabildeoView)
-  const visiblePreviewDids = await getVisibleParticipantDids({
-    ctx,
-    dids: cabildeo.liveSession?.participantPreviewDids ?? [],
-    viewer,
-    labelers,
-  })
-
-  return {
-    cabildeo: {
-      ...cabildeo,
-      liveSession: cabildeo.liveSession
-        ? {
-            ...cabildeo.liveSession,
-            participantPreviewDids:
-              cabildeo.liveSession.participantPreviewDids.filter((did) =>
-                visiblePreviewDids.has(did),
-              ),
-          }
-        : undefined,
-    },
-  }
+  return { cabildeo: mapCabildeoView(cabildeoView) }
 }
 
 const mapCabildeoView = (view: {
@@ -151,13 +128,6 @@ const mapCabildeoView = (view: {
     gracePeriodEndsAt: string
     delegateVoteDismissed: boolean
   }
-  liveSession?: {
-    isLive: boolean
-    hostDid: DidString
-    activeParticipantCount: number
-    startedAt: DatetimeString
-    participantPreviewDids: DidString[]
-  }
 }): CabildeoView => ({
   uri: view.uri,
   cid: parseCidOrThrow(view.cid),
@@ -222,15 +192,6 @@ const mapCabildeoView = (view: {
         delegatedVotedAt: parseString(view.viewerContext.delegatedVotedAt),
         gracePeriodEndsAt: parseString(view.viewerContext.gracePeriodEndsAt),
         delegateVoteDismissed: view.viewerContext.delegateVoteDismissed,
-      }
-    : undefined,
-  liveSession: view.liveSession
-    ? {
-        isLive: view.liveSession.isLive,
-        hostDid: view.liveSession.hostDid,
-        activeParticipantCount: view.liveSession.activeParticipantCount,
-        startedAt: view.liveSession.startedAt,
-        participantPreviewDids: view.liveSession.participantPreviewDids,
       }
     : undefined,
 })

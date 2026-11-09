@@ -371,7 +371,6 @@
     "com.para.civic.openQuestion",
     "com.para.civic.openQuestionVote",
     "com.para.civic.position",
-    "com.para.civic.putLivePresence",
     "com.para.civic.vote",
     "com.para.collection.applyOps",
     "com.para.collection.createCollection",
@@ -1962,7 +1961,7 @@
     },
     "com.para.civic.defs": {
       "uri": "file://../../lexicons/com/para/civic/defs.json",
-      "cid": "bafyreigtrxse6y2amzil32w4idwmsy4d2mz4sfajiszmkkpfb6eye62tf4"
+      "cid": "bafyreiez6qjhhbqrq454qx2nocq3en54m5etuiyaxpy2sncymncqo4dk2e"
     },
     "com.para.civic.delegation": {
       "uri": "file://../../lexicons/com/para/civic/delegation.json",
@@ -2023,10 +2022,6 @@
     "com.para.civic.position": {
       "uri": "file://../../lexicons/com/para/civic/position.json",
       "cid": "bafyreiahxzzjykx7tp5qevasoqu4jhxef3bhjvkbsgxrhuuxww3y6hxmvm"
-    },
-    "com.para.civic.putLivePresence": {
-      "uri": "file://../../lexicons/com/para/civic/putLivePresence.json",
-      "cid": "bafyreiferxoquu2fxxfxivo7lowchiedk6k4vomrxi5oym76v2d7n66ihy"
     },
     "com.para.civic.vote": {
       "uri": "file://../../lexicons/com/para/civic/vote.json",

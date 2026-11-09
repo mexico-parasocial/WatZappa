@@ -543,7 +543,7 @@ message ActorInfo {
   reserved 20; // DO NOT REMOVE - see dataplane repo
   Record germ_record = 21;
   string allow_group_chat_invites_from = 22;
-  string cabildeo_live_json = 23;
+  reserved 23; // was cabildeo_live_json
 }
 
 message AgeAssuranceStatus {
@@ -2167,18 +2167,6 @@ message GetParaDelegationCandidatesResponse {
   string candidates_json = 1;
   string cursor = 2;
 }
-message PutParaCabildeoLivePresenceRequest {
-  string actor_did = 1;
-  string cabildeo_uri = 2;
-  string session_id = 3;
-  bool present = 4;
-  string host_live_uri = 5;
-}
-message PutParaCabildeoLivePresenceResponse {
-  string cabildeo_uri = 1;
-  bool present = 2;
-  string expires_at = 3;
-}
 
 message ParaActorStatus {
   string status = 1;
@@ -2964,7 +2952,6 @@ service Service {
   rpc GetParaCabildeo(GetParaCabildeoRequest) returns (GetParaCabildeoResponse);
   rpc GetParaCabildeoPositions(GetParaCabildeoPositionsRequest) returns (GetParaCabildeoPositionsResponse);
   rpc GetParaDelegationCandidates(GetParaDelegationCandidatesRequest) returns (GetParaDelegationCandidatesResponse);
-  rpc PutParaCabildeoLivePresence(PutParaCabildeoLivePresenceRequest) returns (PutParaCabildeoLivePresenceResponse);
   rpc GetParaProfileStats(GetParaProfileStatsRequest) returns (GetParaProfileStatsResponse);
   rpc GetParaHighlights(GetParaHighlightsRequest) returns (GetParaHighlightsResponse);
   rpc GetParaHighlight(GetParaHighlightRequest) returns (GetParaHighlightResponse);

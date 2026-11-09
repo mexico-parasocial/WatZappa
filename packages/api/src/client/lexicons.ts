@@ -23313,69 +23313,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
           },
         },
       },
-      liveSessionView: {
-        type: 'object',
-        required: [
-          'isLive',
-          'hostDid',
-          'activeParticipantCount',
-          'startedAt',
-          'participantPreviewDids',
-        ],
-        properties: {
-          isLive: {
-            type: 'boolean',
-          },
-          hostDid: {
-            type: 'string',
-            format: 'did',
-          },
-          activeParticipantCount: {
-            type: 'integer',
-            minimum: 0,
-          },
-          startedAt: {
-            type: 'string',
-            format: 'datetime',
-          },
-          participantPreviewDids: {
-            type: 'array',
-            maxLength: 5,
-            items: {
-              type: 'string',
-              format: 'did',
-            },
-          },
-        },
-      },
-      cabildeoLive: {
-        type: 'object',
-        required: ['cabildeoUri', 'community', 'phase', 'expiresAt'],
-        properties: {
-          cabildeoUri: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          community: {
-            type: 'string',
-            maxLength: 100,
-          },
-          phase: {
-            type: 'string',
-            knownValues: [
-              'draft',
-              'open',
-              'deliberating',
-              'voting',
-              'resolved',
-            ],
-          },
-          expiresAt: {
-            type: 'string',
-            format: 'datetime',
-          },
-        },
-      },
       cabildeoView: {
         type: 'object',
         required: [
@@ -23511,10 +23448,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
           viewerContext: {
             type: 'ref',
             ref: 'lex:com.para.civic.defs#viewerContext',
-          },
-          liveSession: {
-            type: 'ref',
-            ref: 'lex:com.para.civic.defs#liveSessionView',
           },
         },
       },
@@ -24918,75 +24851,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
             },
           },
         },
-      },
-    },
-  },
-  ComParaCivicPutLivePresence: {
-    lexicon: 1,
-    id: 'com.para.civic.putLivePresence',
-    defs: {
-      main: {
-        type: 'procedure',
-        description:
-          "Create, refresh, or clear the caller's live cabildeo presence. Requires auth.",
-        input: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['cabildeo', 'sessionId'],
-            properties: {
-              cabildeo: {
-                type: 'string',
-                format: 'at-uri',
-              },
-              sessionId: {
-                type: 'string',
-                maxLength: 128,
-                maxGraphemes: 128,
-              },
-              present: {
-                type: 'boolean',
-                default: true,
-              },
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            required: ['cabildeo', 'present'],
-            properties: {
-              cabildeo: {
-                type: 'string',
-                format: 'at-uri',
-              },
-              present: {
-                type: 'boolean',
-              },
-              expiresAt: {
-                type: 'string',
-                format: 'datetime',
-              },
-            },
-          },
-        },
-        errors: [
-          {
-            name: 'NotFound',
-            description: 'The target cabildeo does not exist.',
-          },
-          {
-            name: 'InvalidPhase',
-            description:
-              'The target cabildeo is not currently eligible for live participation.',
-          },
-          {
-            name: 'LiveStatusRequired',
-            description:
-              'A host must already have an active live status with an external destination.',
-          },
-        ],
       },
     },
   },
@@ -44587,7 +44451,6 @@ export const ids = {
   ComParaCivicOpenQuestion: 'com.para.civic.openQuestion',
   ComParaCivicOpenQuestionVote: 'com.para.civic.openQuestionVote',
   ComParaCivicPosition: 'com.para.civic.position',
-  ComParaCivicPutLivePresence: 'com.para.civic.putLivePresence',
   ComParaCivicVote: 'com.para.civic.vote',
   ComParaCollectionApplyOps: 'com.para.collection.applyOps',
   ComParaCollectionCreateCollection: 'com.para.collection.createCollection',
