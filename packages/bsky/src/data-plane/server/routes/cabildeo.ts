@@ -1,20 +1,7 @@
 import { Code, ConnectError, type ServiceImpl } from '@connectrpc/connect'
 import { sql } from 'kysely'
 import type { Service } from '../../../proto/bsky_connect.js'
-import {
-  LIVE_CABILDEO_ALLOWED_PHASES,
-  activeHostPresenceExistsSql,
-  getActiveLiveSession,
-  getLiveSessionSummary,
-  isLiveCabildeoPhase,
-  presenceExpiry,
-} from '../cabildeo-live.js'
-import {
-  getAssemblyDecisionView,
-  getAuthoritySnapshot,
-  getAuthoritySnapshots,
-} from '../community-authority.js'
-import { getTrustedGovernanceRecordJson } from '../community-governance.js'
+import { getAuthoritySnapshot } from '../community-authority.js'
 import {
   accountOfficeHolders,
   communityAccountDid,
@@ -30,34 +17,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     const { ref } = db.db.dynamic
     const normalizedCommunity = normalizeCommunity(req.community)
     const phase = req.phase?.trim()
-    const now = new Date()
-
-    const activeLiveSql = sql<boolean>`(
-      "cabildeo_cabildeo"."phase" in (${sql.join(
-        LIVE_CABILDEO_ALLOWED_PHASES.map((item) => sql`${item}`),
-        sql`, `,
-      )})
-      and exists (
-        select 1
-        from cabildeo_live_session as live_session
-        where live_session.cabildeo = "cabildeo_cabildeo"."uri"
-          and live_session."endedAt" is null
-          and ${activeHostPresenceExistsSql('live_session', now)}
-      )
-    )`
-    const sortRankSql = sql<string>`case
-      when ${activeLiveSql}
-        then to_char(
-          "cabildeo_cabildeo"."sortAt"::timestamptz + interval '100 years',
-          'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
-        )
-      else "cabildeo_cabildeo"."sortAt"
-    end`
-
-    let builder = db.db
-      .selectFrom('cabildeo_cabildeo')
-      .selectAll()
-      .select(sortRankSql.as('sortRank'))
+    let builder = db.db.selectFrom('cabildeo_cabildeo').selectAll()
 
     if (normalizedCommunity) {
       builder = builder.where(
@@ -78,8 +38,8 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       )
     }
 
-    const keyset = new RankedTimeCidKeyset(
-      sortRankSql,
+    const keyset = new TimeCidKeyset(
+      ref('cabildeo_cabildeo.sortAt'),
       ref('cabildeo_cabildeo.cid'),
     )
 
@@ -92,9 +52,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
 
     const rows = await builder.execute()
     const views = await Promise.all(
-      rows.map((row) =>
-        mapCabildeoRow(db, row, req.viewerDid || undefined, now),
-      ),
+      rows.map((row) => mapCabildeoRow(db, row, req.viewerDid || undefined)),
     )
 
     return {
@@ -104,7 +62,6 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   },
 
   async getParaCabildeo(req) {
-    const now = new Date()
     const row = await db.db
       .selectFrom('cabildeo_cabildeo')
       .where('uri', '=', req.cabildeoUri)
@@ -117,7 +74,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
 
     return {
       cabildeoJson: JSON.stringify(
-        await mapCabildeoRow(db, row, req.viewerDid || undefined, now, true),
+        await mapCabildeoRow(db, row, req.viewerDid || undefined, true),
       ),
     }
   },
@@ -197,20 +154,12 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         viewerDid: req.viewerDid,
         viewerIsAdmin: req.viewerIsAdmin,
       })
-      const [governance, moderators, nominees] = await Promise.all([
-        getTrustedGovernanceRecordJson(db, board).then((json) =>
-          json ? parseCandidateGovernance(json) : null,
-        ),
-        selectVerifiedModerators(db, board.uri),
-        selectSelfNominatedDelegates(db, board.uri),
-      ])
-
-      addGovernanceCandidates(rolesByDid, governance)
-      for (const did of moderators) {
+      for (const did of await accountOfficeHolders(
+        db,
+        communityAccountDid(board.uri) ?? '',
+        'moderator',
+      )) {
         ensureRoleSet(rolesByDid, did).add('moderator')
-      }
-      for (const did of nominees) {
-        ensureRoleSet(rolesByDid, did).add(SELF_NOMINATED_ROLE)
       }
     }
 
@@ -279,185 +228,13 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
           : '',
     }
   },
-
-  async putParaCabildeoLivePresence(req) {
-    const now = new Date()
-    const nowIso = now.toISOString()
-    const cabildeo = await db.db
-      .selectFrom('cabildeo_cabildeo')
-      .where('uri', '=', req.cabildeoUri)
-      .select(['uri', 'phase'])
-      .executeTakeFirst()
-
-    if (!cabildeo || !isLiveCabildeoPhase(cabildeo.phase)) {
-      return {
-        cabildeoUri: req.cabildeoUri,
-        present: false,
-      }
-    }
-
-    if (!req.present) {
-      await db.db
-        .deleteFrom('cabildeo_live_presence')
-        .where('cabildeo', '=', req.cabildeoUri)
-        .where('actorDid', '=', req.actorDid)
-        .where('sessionId', '=', req.sessionId)
-        .execute()
-
-      const session = await db.db
-        .selectFrom('cabildeo_live_session')
-        .where('cabildeo', '=', req.cabildeoUri)
-        .select(['hostDid'])
-        .executeTakeFirst()
-
-      if (session?.hostDid === req.actorDid) {
-        await db.db
-          .updateTable('cabildeo_live_session')
-          .set({
-            endedAt: nowIso,
-            updatedAt: nowIso,
-          })
-          .where('cabildeo', '=', req.cabildeoUri)
-          .execute()
-      }
-
-      return {
-        cabildeoUri: req.cabildeoUri,
-        present: false,
-      }
-    }
-
-    let session = await getActiveLiveSession(db, req.cabildeoUri, now)
-    if (!session) {
-      if (!req.hostLiveUri) {
-        return {
-          cabildeoUri: req.cabildeoUri,
-          present: false,
-        }
-      }
-
-      await db.db
-        .insertInto('cabildeo_live_session')
-        .values({
-          cabildeo: req.cabildeoUri,
-          hostDid: req.actorDid,
-          liveUri: req.hostLiveUri,
-          startedAt: nowIso,
-          endedAt: null,
-          createdAt: nowIso,
-          updatedAt: nowIso,
-        })
-        .onConflict((oc) =>
-          oc.column('cabildeo').doUpdateSet({
-            hostDid: req.actorDid,
-            liveUri: req.hostLiveUri,
-            startedAt: nowIso,
-            endedAt: null,
-            updatedAt: nowIso,
-          }),
-        )
-        .execute()
-
-      session = await getActiveLiveSession(db, req.cabildeoUri, now)
-    } else if (
-      session.hostDid === req.actorDid &&
-      req.hostLiveUri &&
-      req.hostLiveUri !== session.liveUri
-    ) {
-      await db.db
-        .updateTable('cabildeo_live_session')
-        .set({
-          liveUri: req.hostLiveUri,
-          updatedAt: nowIso,
-        })
-        .where('cabildeo', '=', req.cabildeoUri)
-        .execute()
-    }
-
-    const expiresAt = presenceExpiry()
-    const existing = await db.db
-      .selectFrom('cabildeo_live_presence')
-      .where('cabildeo', '=', req.cabildeoUri)
-      .where('actorDid', '=', req.actorDid)
-      .where('sessionId', '=', req.sessionId)
-      .select(['joinedAt'])
-      .executeTakeFirst()
-
-    if (existing) {
-      await db.db
-        .updateTable('cabildeo_live_presence')
-        .set({
-          lastHeartbeatAt: nowIso,
-          expiresAt,
-        })
-        .where('cabildeo', '=', req.cabildeoUri)
-        .where('actorDid', '=', req.actorDid)
-        .where('sessionId', '=', req.sessionId)
-        .execute()
-    } else {
-      await db.db
-        .insertInto('cabildeo_live_presence')
-        .values({
-          cabildeo: req.cabildeoUri,
-          actorDid: req.actorDid,
-          sessionId: req.sessionId,
-          joinedAt: nowIso,
-          lastHeartbeatAt: nowIso,
-          expiresAt,
-        })
-        .execute()
-    }
-
-    return {
-      cabildeoUri: req.cabildeoUri,
-      present: true,
-      expiresAt,
-    }
-  },
 })
 
-type CandidateGovernancePerson = {
-  did?: string
-  handle?: string
-  displayName?: string
-}
-
-type CandidateGovernanceRecord = {
-  moderators?: Array<CandidateGovernancePerson & { role?: string }>
-  officials?: Array<CandidateGovernancePerson & { office?: string }>
-  deputies?: Array<{
-    role?: string
-    activeHolder?: CandidateGovernancePerson
-  }>
-}
-
+/** The community account a request names, by URI, DID, handle or slug. */
 export const selectCandidateCommunityBoard = async (
   db: Database,
   communityId: string,
 ) => {
-  const normalizedSlug = normalizeCommunitySlug(communityId)
-
-  if (communityId.startsWith('at://')) {
-    const byUri = await db.db
-      .selectFrom('para_community_board')
-      .where('uri', '=', communityId)
-      .select(['uri', 'creator', 'name', 'slug'])
-      .executeTakeFirst()
-    if (byUri) return byUri
-  }
-
-  const board = await db.db
-    .selectFrom('para_community_board')
-    .where(
-      sql<boolean>`(
-        "slug" = ${normalizedSlug}
-        or regexp_replace(lower(coalesce("name", '')), '[^a-z0-9]+', '-', 'g') = ${normalizedSlug}
-      )`,
-    )
-    .select(['uri', 'creator', 'name', 'slug'])
-    .executeTakeFirst()
-  if (board) return board
-  // An OD-9 community account, by URI, DID, handle or slug.
   const [uri] = await resolveCommunityAccountUris(db, communityId)
   const did = uri ? communityAccountDid(uri) : null
   if (!uri || !did) return undefined
@@ -470,76 +247,11 @@ export const selectCandidateCommunityBoard = async (
 }
 
 /*
- * Delegation candidates and the roles reported for them.
- *
- * A member may nominate themselves as a delegate candidate: the membership
- * record they write themselves can say so, and is reported only as
- * `delegate`. Offices cannot be self-declared. Moderators come from verified
- * authority events, and moderators, officials and deputies from the trusted
- * governance record (`getTrustedGovernanceRecordJson`). Any other role in a
- * membership record (`moderator`, `official`, `deputy`, `representative`, ...)
- * is ignored.
- *
- * Being listed, by nomination or office, is not proof of electoral weight.
+ * Delegation candidates and the roles reported for them: the community's
+ * moderators, by its chain. Offices are never self-declared. Being listed is
+ * not proof of electoral weight. Self-nomination as a delegate has no chain
+ * action yet.
  */
-const SELF_NOMINATED_ROLE = 'delegate'
-
-// Membership-record roles that opt a member in as a delegate candidate.
-const SELF_NOMINATION_ROLES = ['delegate', 'delegado', 'subdelegate', 'agent']
-
-/** Members holding the moderator role by verified authority events. */
-const selectVerifiedModerators = async (db: Database, communityUri: string) => {
-  const accountDid = communityAccountDid(communityUri)
-  if (accountDid) return accountOfficeHolders(db, accountDid, 'moderator')
-  const rows = await db.db
-    .selectFrom('para_community_authority_event')
-    .where('communityUri', '=', communityUri)
-    .where('action', '=', 'moderator.grant')
-    .select('subject')
-    .distinct()
-    .execute()
-  const snapshots = await getAuthoritySnapshots(
-    db,
-    communityUri,
-    rows.map((row) => row.subject),
-  )
-  return [...snapshots]
-    .filter(([, snapshot]) => snapshot.roles.includes('moderator'))
-    .map(([did]) => did)
-}
-
-/**
- * Members whose own membership record nominates them as a delegate, and who
- * are active members by `getAuthoritySnapshot`.
- */
-const selectSelfNominatedDelegates = async (
-  db: Database,
-  communityUri: string,
-) => {
-  // @NOTE an OD-9 account has no self-written membership records to
-  // nominate from; self-nomination returns as a chain action in phase 4.
-  if (communityAccountDid(communityUri)) return []
-  const rows = await db.db
-    .selectFrom('para_community_membership')
-    .where('communityUri', '=', communityUri)
-    .where('membershipState', '=', 'active')
-    .where(
-      // `roles` is a jsonb array: `?|` is true when it holds any listed role.
-      sql<boolean>`coalesce("roles", '[]'::jsonb) ?| array[${sql.join(
-        SELF_NOMINATION_ROLES.map((role) => sql`${role}`),
-      )}]::text[]`,
-    )
-    .select('creator')
-    .execute()
-  const snapshots = await getAuthoritySnapshots(
-    db,
-    communityUri,
-    rows.map((row) => row.creator),
-  )
-  return [...snapshots]
-    .filter(([, snapshot]) => snapshot.membershipState === 'active')
-    .map(([did]) => did)
-}
 
 const assertActiveCommunityViewer = async (
   db: Database,
@@ -566,42 +278,6 @@ const assertActiveCommunityViewer = async (
       'Active community membership is required',
       Code.PermissionDenied,
     )
-  }
-}
-
-const parseCandidateGovernance = (
-  json: string,
-): CandidateGovernanceRecord | null => {
-  try {
-    const parsed = JSON.parse(json)
-    if (!parsed || typeof parsed !== 'object') return null
-    return parsed as CandidateGovernanceRecord
-  } catch {
-    return null
-  }
-}
-
-const addGovernanceCandidates = (
-  rolesByDid: Map<string, Set<string>>,
-  governance: CandidateGovernanceRecord | null,
-) => {
-  for (const moderator of governance?.moderators ?? []) {
-    if (!moderator.did) continue
-    const roles = ensureRoleSet(rolesByDid, moderator.did)
-    roles.add(moderator.role || 'moderator')
-  }
-
-  for (const official of governance?.officials ?? []) {
-    if (!official.did) continue
-    const roles = ensureRoleSet(rolesByDid, official.did)
-    roles.add(official.office || 'official')
-  }
-
-  for (const deputy of governance?.deputies ?? []) {
-    const holder = deputy.activeHolder
-    if (!holder?.did) continue
-    const roles = ensureRoleSet(rolesByDid, holder.did)
-    roles.add(deputy.role || 'deputy')
   }
 }
 
@@ -670,15 +346,6 @@ const getCandidateVotes = async (
   return votes
 }
 
-class RankedTimeCidKeyset extends TimeCidKeyset<{
-  sortRank: string
-  cid: string
-}> {
-  labelResult(result: { sortRank: string; cid: string }) {
-    return { primary: result.sortRank, secondary: result.cid }
-  }
-}
-
 const mapCabildeoRow = async (
   db: Database,
   row: {
@@ -715,10 +382,8 @@ const mapCabildeoRow = async (
     optionPositionCounts: unknown
     winningOption: number | null
     isTie: 0 | 1
-    sortRank?: string
   },
   viewerDid?: string,
-  now?: Date,
   includeVotingDetails = false,
 ) => {
   const options = asOptions(row.options)
@@ -803,14 +468,6 @@ const mapCabildeoRow = async (
       })
     : undefined
   const protectedAction = readProtectedAction(access?.protectedAction)
-  // What the assembly decided, and the authority event that makes it count.
-  const assemblyDecision =
-    row.phase === 'resolved' && protectedAction
-      ? await getAssemblyDecisionView(db, row.uri, row.community)
-      : undefined
-  const liveSession = isLiveCabildeoPhase(row.phase)
-    ? await getLiveSessionSummary(db, row.uri, now ?? new Date())
-    : undefined
   const partyVoteSummary =
     voteVisibility === 'party_only'
       ? await getPartyVoteSummary(db, row.uri, options.length)
@@ -849,7 +506,6 @@ const mapCabildeoRow = async (
         ? access.minimumParticipationTier
         : undefined,
     protectedAction,
-    assemblyDecision,
     votingOpenedAt: closePolicy?.openedAt,
     votingClosedAt: finalTally?.closedAt,
     phaseDeadline: row.phaseDeadline ?? '',
@@ -860,7 +516,6 @@ const mapCabildeoRow = async (
     partyVoteSummary,
     outcomeSummary,
     viewerContext,
-    liveSession,
   }
 }
 
@@ -1132,16 +787,6 @@ const asNumberArray = (value: unknown, length: number): number[] => {
 const normalizeCommunity = (value: string | undefined) => {
   return value?.trim().toLowerCase().replace(/^p\//, '') || ''
 }
-
-const normalizeCommunitySlug = (value: string) =>
-  value
-    .trim()
-    .replace(/^p\//i, '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
 
 const normalizeLimit = (limit: number) => {
   if (!limit || Number.isNaN(limit)) return 50

@@ -119,7 +119,6 @@ import listParaCabildeoPositions from './com/para/civic/listCabildeoPositions.js
 import listParaCabildeos from './com/para/civic/listCabildeos.js'
 import listParaDelegationCandidates from './com/para/civic/listDelegationCandidates.js'
 import listParaFollowThrough from './com/para/civic/listFollowThrough.js'
-import putParaLivePresence from './com/para/civic/putLivePresence.js'
 import applyParaCollectionOps from './com/para/collection/applyOps.js'
 import createParaCollection from './com/para/collection/createCollection.js'
 import deleteParaCollection from './com/para/collection/deleteCollection.js'
@@ -150,6 +149,7 @@ import listParaCommunityRelations from './com/para/community/listCommunityRelati
 import listParaDelegations from './com/para/community/listDelegations.js'
 import listParaIntensities from './com/para/community/listIntensities.js'
 import listParaCommunityMembers from './com/para/community/listMembers.js'
+import listParaCommunityOpenOffers from './com/para/community/listOpenOffers.js'
 import listParaParentCommunities from './com/para/community/listParentCommunities.js'
 import listParaCommunityPosts from './com/para/community/listPosts.js'
 import listParaCommunitySharedContent from './com/para/community/listSharedContent.js'
@@ -301,7 +301,6 @@ export default function (server: Server, ctx: AppContext) {
   listParaFollowThrough(server, ctx)
   listParaCabildeoPositions(server, ctx)
   listParaDelegationCandidates(server, ctx)
-  putParaLivePresence(server, ctx)
   getParaCommunityAuthorization(server, ctx)
   getParaCommunityBoard(server, ctx)
   getParaCommunityGovernance(server, ctx)
@@ -324,6 +323,7 @@ export default function (server: Server, ctx: AppContext) {
   listParaCivicTrees(server, ctx)
   listParaCivicTreeVotes(server, ctx)
   listParaCommunityMembers(server, ctx)
+  listParaCommunityOpenOffers(server, ctx)
   listParaCommunityPosts(server, ctx)
   listParaCommunitySharedContent(server, ctx)
   listParaCommunityRelations(server, ctx)

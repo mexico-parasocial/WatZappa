@@ -4,8 +4,6 @@ export const cabildeoTableName = 'cabildeo_cabildeo'
 export const positionTableName = 'cabildeo_position'
 export const delegationTableName = 'cabildeo_delegation'
 export const voteTableName = 'cabildeo_vote'
-export const liveSessionTableName = 'cabildeo_live_session'
-export const livePresenceTableName = 'cabildeo_live_presence'
 
 export interface CabildeoCabildeo {
   uri: string
@@ -93,25 +91,6 @@ export interface CabildeoVote {
   sortAt: GeneratedAlways<string>
 }
 
-export interface CabildeoLiveSession {
-  cabildeo: string
-  hostDid: string
-  liveUri: string
-  startedAt: string
-  endedAt: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-export interface CabildeoLivePresence {
-  cabildeo: string
-  actorDid: string
-  sessionId: string
-  joinedAt: string
-  lastHeartbeatAt: string
-  expiresAt: string
-}
-
 export interface CabildeoFinalTally {
   cabildeo: string
   closedAt: string
@@ -133,8 +112,6 @@ export type PartialDB = {
   [positionTableName]: CabildeoPosition
   [delegationTableName]: CabildeoDelegation
   [voteTableName]: CabildeoVote
-  [liveSessionTableName]: CabildeoLiveSession
-  [livePresenceTableName]: CabildeoLivePresence
   cabildeo_final_tally: CabildeoFinalTally
   cabildeo_close_policy: CabildeoClosePolicy
 }

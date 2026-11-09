@@ -13,7 +13,7 @@ missing=0
 required_paths=(
   packages/pds/src/api/com/para/index.ts
   packages/pds/src/api/com/para/alpha/index.ts
-  packages/pds/src/api/com/para/community/createBoard.ts
+  packages/pds/src/api/com/para/community/create.ts
   packages/pds/src/account-manager/helpers/im8-token.ts
   packages/pds/src/para/auth-factor.ts
   packages/pds/src/para/read-after-write.ts

@@ -88,9 +88,8 @@ export const recomputeCabildeoAggregates = async (
   ])
 
   // Only members count. Eligibility is judged when the tally is computed, by
-  // authority events, so a voter removed since casting a ballot no longer
-  // counts and one whose membership record claims more than the events grant
-  // never did. Without a resolvable board there is nobody to judge by, so the
+  // the community's chain, so a voter removed since casting a ballot no longer
+  // counts. Without a resolvable board there is nobody to judge by, so the
   // ballots stand as the indexer admitted them.
   const board = await resolveCabildeoBoard(db, cabildeo.community)
   const tallyAt = closedAt ? Date.parse(closedAt) : Date.now()

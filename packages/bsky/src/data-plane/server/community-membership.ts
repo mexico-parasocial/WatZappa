@@ -15,8 +15,7 @@ import type { Database } from './db/index.js'
  * and with which offices". A community is named by its URI everywhere: a
  * community account's is its profile, `at://<did>/com.para.community.profile/self`,
  * and its answers come only from `para_community_member_state`, the fold of
- * its chain. Any other URI is a legacy board, answered from the old tables
- * until phase 5 deletes them.
+ * its chain. Any other URI names no community.
  */
 
 const PROFILE_COLLECTION = 'com.para.community.profile'
@@ -25,7 +24,7 @@ export function communityAccountUri(did: string): string {
   return `at://${did}/${PROFILE_COLLECTION}/self`
 }
 
-/** The community account's DID, if `uri` names one; `null` for a board. */
+/** The community account's DID, if `uri` names one; `null` otherwise. */
 export function communityAccountDid(uri: string): string | null {
   const match =
     /^at:\/\/(did:[^/]+)\/com\.para\.community\.profile\/self$/.exec(uri)
@@ -81,10 +80,7 @@ function accountSnapshot(
         ? effective.status
         : 'none',
     roles,
-    evidence: {},
     capabilities: resolveCapabilities(roles),
-    events: [],
-    usedLegacyFallback: false,
   }
 }
 
@@ -93,19 +89,11 @@ function accountSnapshot(
  * Compose it with `where(column, 'in', ...)` or a join.
  */
 export function activeMemberDids(db: Database, communityUri: string) {
-  const accountDid = communityAccountDid(communityUri)
-  if (accountDid) {
-    return db.db
-      .selectFrom('para_community_member_state as member')
-      .where('member.community', '=', accountDid)
-      .where(effectivelyActiveSql('member'))
-      .select('member.did as did')
-  }
   return db.db
-    .selectFrom('para_community_membership as member')
-    .where('member.communityUri', '=', communityUri)
-    .where('member.membershipState', '=', 'active')
-    .select('member.creator as did')
+    .selectFrom('para_community_member_state as member')
+    .where('member.community', '=', communityAccountDid(communityUri) ?? '')
+    .where(effectivelyActiveSql('member'))
+    .select('member.did as did')
 }
 
 /** Active memberships across several communities, as `[communityUri, did]`. */
@@ -160,29 +148,17 @@ export async function activeCommunityUrisOf(
   db: Database,
   did: string,
 ): Promise<string[]> {
-  const [accounts, boards] = await Promise.all([
-    db.db
-      .selectFrom('para_community_member_state as member')
-      .where('member.did', '=', did)
-      .where(effectivelyActiveSql('member'))
-      .select('member.community')
-      .execute(),
-    db.db
-      .selectFrom('para_community_membership')
-      .where('creator', '=', did)
-      .where('membershipState', '=', 'active')
-      .select('communityUri')
-      .execute(),
-  ])
-  return [
-    ...accounts.map((row) => communityAccountUri(row.community)),
-    ...boards.map((row) => row.communityUri),
-  ]
+  const accounts = await db.db
+    .selectFrom('para_community_member_state as member')
+    .where('member.did', '=', did)
+    .where(effectivelyActiveSql('member'))
+    .select('member.community')
+    .execute()
+  return accounts.map((row) => communityAccountUri(row.community))
 }
 
 /**
- * Members of a community account holding `office` now. Boards answer from
- * their authority events; see `getAuthoritySnapshots`.
+ * Members of a community account holding `office` now.
  */
 export async function accountOfficeHolders(
   db: Database,

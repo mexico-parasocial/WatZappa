@@ -1,11 +1,13 @@
 import { sql } from 'kysely'
-import type {
-  CommunityMember,
-  CommunityOffer,
-  CommunityOffice,
-  CommunityPatch,
-  CommunitySettings,
-  CommunityStateView,
+import {
+  type CommunityMember,
+  type CommunityOffer,
+  type CommunityOfferKind,
+  type CommunityOffice,
+  type CommunityPatch,
+  type CommunitySettings,
+  type CommunityStateView,
+  effectiveCommunityMember,
 } from '@atproto/common'
 import type { ActorDb } from '../../actor-store/db/index.js'
 
@@ -62,6 +64,7 @@ export class CommunityStore {
    * count.
    */
   async view(
+    community: string,
     head: CommunityHead | null,
     event: { actor: string; subject: string; offer?: number },
   ): Promise<CommunityStateView> {
@@ -90,12 +93,25 @@ export class CommunityStore {
       )
       .executeTakeFirstOrThrow()
     return {
+      community,
       settings: head?.settings ?? null,
       lastSeq: head?.seq ?? 0,
       member: (did) => members.get(did),
       openOffer: (seq) => (offer && offer.seq === seq ? offer : undefined),
       ownerCount: () => Number(owners.count),
     }
+  }
+
+  /** Whether `did` is an active member of this community as of `at`. */
+  async isActiveMember(did: string, at = Date.now()): Promise<boolean> {
+    const row = await this.db.db
+      .selectFrom('community_member')
+      .selectAll()
+      .where('did', '=', did)
+      .executeTakeFirst()
+    return (
+      effectiveCommunityMember(row && toMember(row), at)?.status === 'active'
+    )
   }
 
   async apply(
@@ -172,7 +188,9 @@ export class CommunityStore {
       .selectAll()
       .where('seq', '=', seq)
       .executeTakeFirst()
-    return row ? { ...row, office: row.office as CommunityOffice } : undefined
+    return row
+      ? { ...row, office: row.office as CommunityOfferKind }
+      : undefined
   }
 }
 

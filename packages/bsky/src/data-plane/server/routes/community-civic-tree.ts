@@ -1,7 +1,8 @@
-import { Code, ConnectError, ServiceImpl } from '@connectrpc/connect'
-import { Service } from '../../../proto/bsky_connect.js'
-import { Database } from '../db/index.js'
+import { Code, ConnectError, type ServiceImpl } from '@connectrpc/connect'
+import type { Service } from '../../../proto/bsky_connect.js'
 import { getAuthoritySnapshot } from '../community-authority.js'
+import { communityAccountDid } from '../community-membership.js'
+import type { Database } from '../db/index.js'
 import { tableName as cardTableName } from '../db/tables/para-community-civic-tree-card.js'
 import { tableName as voteTableName } from '../db/tables/para-community-civic-tree-contribution-vote.js'
 import { tableName as contributionTableName } from '../db/tables/para-community-civic-tree-contribution.js'
@@ -138,12 +139,15 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   },
 
   async submitParaCommunityCivicTreeContribution(req) {
-    const board = await db.db
-      .selectFrom('para_community_board')
-      .select(['uri'])
-      .where('uri', '=', req.communityUri)
-      .executeTakeFirst()
-    if (!board) {
+    const accountDid = communityAccountDid(req.communityUri)
+    const account = accountDid
+      ? await db.db
+          .selectFrom('para_community_account')
+          .select(['did'])
+          .where('did', '=', accountDid)
+          .executeTakeFirst()
+      : undefined
+    if (!account) {
       throw new ConnectError('CommunityNotFound', Code.NotFound)
     }
 

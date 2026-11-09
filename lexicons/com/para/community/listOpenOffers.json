@@ -1,0 +1,83 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.listOpenOffers",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Lists the offers and proposals still open in a community account (OD-9): a moderator or owner offer, or a moderator's proposal to remove or block a member. An owner or moderator sees all of them; anyone else sees only those addressed to them. Answer one by passing its seq as the offer of the matching act.",
+      "auth": {
+        "type": "access"
+      },
+      "parameters": {
+        "type": "params",
+        "required": ["community"],
+        "properties": {
+          "community": {
+            "type": "string",
+            "format": "did"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          },
+          "cursor": {
+            "type": "string"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "#output"
+        }
+      }
+    },
+    "offerView": {
+      "type": "object",
+      "required": ["seq", "office", "subject", "issuer", "expiresAt"],
+      "properties": {
+        "seq": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The event that opened it; the offer to pass when answering."
+        },
+        "office": {
+          "type": "string",
+          "knownValues": ["moderator", "owner", "remove", "block"],
+          "description": "What it grants: an office, or the sanction a proposal asks the owner to impose."
+        },
+        "subject": {
+          "type": "string",
+          "format": "did"
+        },
+        "issuer": {
+          "type": "string",
+          "format": "did"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["offers"],
+      "properties": {
+        "offers": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "#offerView"
+          }
+        },
+        "cursor": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,8 @@
 import * as plc from '@did-plc/lib'
 import {
   type CommunityAction,
+  type CommunityProfile,
+  type CommunitySanction,
   type CommunitySettings,
   TID,
   applyCommunityEvent,
@@ -10,6 +12,7 @@ import {
 import { P256Keypair, Secp256k1Keypair } from '@atproto/crypto'
 import type { AtUriString, DidString, HandleString } from '@atproto/syntax'
 import { InvalidRequestError } from '@atproto/xrpc-server'
+import type { ActorStoreTransactor } from '../../actor-store/actor-store-transactor.js'
 import {
   commitWrites,
   stripUndefined,
@@ -18,7 +21,7 @@ import {
 import type { AppContext } from '../../context.js'
 import { com } from '../../lexicons/index.js'
 import { dbLogger } from '../../logger.js'
-import { type PreparedCreate, prepareCreate } from '../../repo/index.js'
+import { type PreparedWrite, prepareCreate } from '../../repo/index.js'
 import type { ProvenRequest } from './requests.js'
 
 /** DID document service id that members' PDSes proxy `act` to. */
@@ -31,6 +34,10 @@ export interface AppendInput {
   request: ProvenRequest
   offer?: number
   suspensionDays?: number
+  sanction?: CommunitySanction
+  target?: string
+  targetCid?: string
+  profile?: CommunityProfile
   settings?: CommunitySettings
 }
 
@@ -69,7 +76,10 @@ export function appendCommunityEvent(
   ctx: AppContext,
   community: DidString,
   input: AppendInput,
-  extraWrites: (seq: number) => Promise<PreparedCreate[]> = async () => [],
+  extraWrites: (
+    seq: number,
+    txn: ActorStoreTransactor,
+  ) => Promise<PreparedWrite[]> = async () => [],
 ): Promise<AppendResult> {
   return serialized(community, async () => {
     const { commit, result } = await ctx.actorStore.transact(
@@ -97,6 +107,10 @@ export function appendCommunityEvent(
           createdAt: new Date().toISOString(),
           offer: input.offer,
           suspensionDays: input.suspensionDays,
+          sanction: input.sanction,
+          target: input.target,
+          targetCid: input.targetCid,
+          profile: input.profile,
           settings: input.settings,
         })
         const mismatch = communityRequestMismatch(
@@ -106,7 +120,7 @@ export function appendCommunityEvent(
         )
         if (mismatch) throw new InvalidRequestError(mismatch, 'InvalidRequest')
         const decision = applyCommunityEvent(
-          await txn.community.view(head, event),
+          await txn.community.view(community, head, event),
           event,
         )
         if (!decision.ok) {
@@ -127,6 +141,10 @@ export function appendCommunityEvent(
             requestProof: input.request.proof,
             offer: event.offer,
             expiresAt: event.expiresAt,
+            sanction: event.sanction,
+            target: event.target,
+            targetCid: event.targetCid,
+            profile: event.profile,
             governanceMode: event.settings?.governanceMode,
             admissionMode: event.settings?.admissionMode,
             createdAt: event.createdAt,
@@ -134,7 +152,7 @@ export function appendCommunityEvent(
         })
         const commit = await commitWrites(ctx, txn, community, [
           write,
-          ...(await extraWrites(seq)),
+          ...(await extraWrites(seq, txn)),
         ])
         await txn.community.apply(decision.patch, {
           seq,

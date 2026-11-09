@@ -29,17 +29,11 @@ import type * as notificationPushToken from './tables/notification-push-token.js
 import type * as notification from './tables/notification.js'
 import type * as paraCommunityAccount from './tables/para-community-account.js'
 import type * as paraCommunityActivity from './tables/para-community-activity.js'
-import type * as paraCommunityAuthorityEvent from './tables/para-community-authority-event.js'
-import type * as paraCommunityBoard from './tables/para-community-board.js'
 import type * as paraCommunityBriefingPack from './tables/para-community-briefing-pack.js'
 import type * as paraCommunityCivicTreeCard from './tables/para-community-civic-tree-card.js'
 import type * as paraCommunityCivicTreeContributionVote from './tables/para-community-civic-tree-contribution-vote.js'
 import type * as paraCommunityCivicTreeContribution from './tables/para-community-civic-tree-contribution.js'
 import type * as paraCommunityCivicTreeRelationship from './tables/para-community-civic-tree-relationship.js'
-import type * as paraCommunityGovernance from './tables/para-community-governance.js'
-import type * as paraCommunityMembership from './tables/para-community-membership.js'
-import type * as paraCommunityRelation from './tables/para-community-relation.js'
-import type * as paraCommunitySharedContentAction from './tables/para-community-shared-content-action.js'
 import type * as paraCommunitySharedContent from './tables/para-community-shared-content.js'
 import type * as paraConclusion from './tables/para-conclusion.js'
 import type * as paraDeliberationStatement from './tables/para-deliberation-statement.js'
@@ -130,14 +124,9 @@ export type DatabaseSchemaType = duplicateRecord.PartialDB &
   activitySubscription.PartialDB &
   bookmark.PartialDB &
   draft.PartialDB &
-  paraCommunityBoard.PartialDB &
   paraCommunityAccount.PartialDB &
   paraConclusion.PartialDB &
-  paraCommunityAuthorityEvent.PartialDB &
   paraCommunityBriefingPack.PartialDB &
-  paraCommunityMembership.PartialDB &
-  paraCommunityGovernance.PartialDB &
-  paraCommunityRelation.PartialDB &
   paraCommunityActivity.PartialDB &
   paraFollowThrough.PartialDB &
   paraCommunityCivicTreeCard.PartialDB &
@@ -145,7 +134,6 @@ export type DatabaseSchemaType = duplicateRecord.PartialDB &
   paraCommunityCivicTreeContributionVote.PartialDB &
   paraCommunityCivicTreeRelationship.PartialDB &
   paraCommunitySharedContent.PartialDB &
-  paraCommunitySharedContentAction.PartialDB &
   paraQvlCivicTreeStatement.PartialDB &
   paraQvlCivicTreeVote.PartialDB &
   paraQvlEigenstateSnapshot.PartialDB &

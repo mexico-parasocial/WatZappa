@@ -122,39 +122,6 @@ description: Reference for the com.para.civic.defs lexicon
 
 ---
 
-<a name="livesessionview"></a>
-### `liveSessionView`
-
-**Type:** `object`
-
-**Properties:**
-
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `isLive` | `boolean` | ✅  |  |  |
-| `hostDid` | `string` | ✅  |  | Format: `did` |
-| `activeParticipantCount` | `integer` | ✅  |  | Min: 0 |
-| `startedAt` | `string` | ✅  |  | Format: `datetime` |
-| `participantPreviewDids` | Array of `string` | ✅  |  | Max Items: 5 |
-
----
-
-<a name="cabildeolive"></a>
-### `cabildeoLive`
-
-**Type:** `object`
-
-**Properties:**
-
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cabildeoUri` | `string` | ✅  |  | Format: `at-uri` |
-| `community` | `string` | ✅  |  | Max Length: 100 |
-| `phase` | `string` | ✅  |  | Known Values: `draft`, `open`, `deliberating`, `voting`, `resolved` |
-| `expiresAt` | `string` | ✅  |  | Format: `datetime` |
-
----
-
 <a name="cabildeoview"></a>
 ### `cabildeoView`
 
@@ -188,7 +155,6 @@ description: Reference for the com.para.civic.defs lexicon
 | `partyVoteSummary` | Array of [`#partyVoteSummary`](#partyvotesummary) | ❌  |  |  |
 | `outcomeSummary` | [`#outcomeSummary`](#outcomesummary) | ❌  |  |  |
 | `viewerContext` | [`#viewerContext`](#viewercontext) | ❌  |  |  |
-| `liveSession` | [`#liveSessionView`](#livesessionview) | ❌  |  |  |
 
 ---
 
@@ -478,74 +444,6 @@ Geographic coordinates in E7 (degrees × 10⁷) for map placement.
         }
       }
     },
-    "liveSessionView": {
-      "type": "object",
-      "required": [
-        "isLive",
-        "hostDid",
-        "activeParticipantCount",
-        "startedAt",
-        "participantPreviewDids"
-      ],
-      "properties": {
-        "isLive": {
-          "type": "boolean"
-        },
-        "hostDid": {
-          "type": "string",
-          "format": "did"
-        },
-        "activeParticipantCount": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "startedAt": {
-          "type": "string",
-          "format": "datetime"
-        },
-        "participantPreviewDids": {
-          "type": "array",
-          "maxLength": 5,
-          "items": {
-            "type": "string",
-            "format": "did"
-          }
-        }
-      }
-    },
-    "cabildeoLive": {
-      "type": "object",
-      "required": [
-        "cabildeoUri",
-        "community",
-        "phase",
-        "expiresAt"
-      ],
-      "properties": {
-        "cabildeoUri": {
-          "type": "string",
-          "format": "at-uri"
-        },
-        "community": {
-          "type": "string",
-          "maxLength": 100
-        },
-        "phase": {
-          "type": "string",
-          "knownValues": [
-            "draft",
-            "open",
-            "deliberating",
-            "voting",
-            "resolved"
-          ]
-        },
-        "expiresAt": {
-          "type": "string",
-          "format": "datetime"
-        }
-      }
-    },
     "cabildeoView": {
       "type": "object",
       "required": [
@@ -685,10 +583,6 @@ Geographic coordinates in E7 (degrees × 10⁷) for map placement.
         "viewerContext": {
           "type": "ref",
           "ref": "#viewerContext"
-        },
-        "liveSession": {
-          "type": "ref",
-          "ref": "#liveSessionView"
         }
       }
     },

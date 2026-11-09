@@ -7,12 +7,7 @@ import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 import { prepareCreate } from '../../../../repo/index.js'
 import { commitWrites, stripUndefined, updateRepoRoot } from '../util.js'
-import {
-  SHARED_CONTENT_COLLECTION,
-  assertCommunityBoardUri,
-  getLocalMembership,
-  isActiveMembership,
-} from './util.js'
+import { SHARED_CONTENT_COLLECTION, assertCommunityUri } from './util.js'
 
 const CONTENT_TYPES = new Set([
   'post',
@@ -35,7 +30,7 @@ export default function (server: Server, ctx: AppContext) {
     handler: async ({ input, auth }) => {
       const did = auth.credentials.did
       const { body } = input
-      const communityUri = assertCommunityBoardUri(body.communityUri)
+      const communityUri = assertCommunityUri(body.communityUri)
       const subject = assertStrongRef(body.subject)
       const contentType = String(body.contentType || '')
 
@@ -43,19 +38,23 @@ export default function (server: Server, ctx: AppContext) {
         throw new InvalidRequestError('Unsupported shared content type.')
       }
 
-      const result = await ctx.actorStore.transact(did, async (actorTxn) => {
-        const membership = await getLocalMembership({
-          store: actorTxn,
-          viewerDid: did,
-          boardUri: communityUri.toString(),
-        })
-        if (!isActiveMembership(membership)) {
+      // A community hosted here can refuse a non-member at once. One hosted
+      // elsewhere is left to the AppView, which counts a share only while its
+      // author is an active member (OD-9 §3.9).
+      const communityDid = communityUri.hostname as DidString
+      if (await ctx.accountManager.getAccount(communityDid)) {
+        const member = await ctx.actorStore.read(communityDid, (store) =>
+          store.community.isActiveMember(did),
+        )
+        if (!member) {
           throw new InvalidRequestError(
             'Only active community members can share content into this community.',
             'CommunityMembershipRequired',
           )
         }
+      }
 
+      const result = await ctx.actorStore.transact(did, async (actorTxn) => {
         if (
           await hasLocalShare(actorTxn, communityUri.toString(), subject.uri)
         ) {

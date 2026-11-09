@@ -575,8 +575,6 @@ doctor_indexes() {
     "para_post_replyparent_idx"
     "collection_creator_updatedat_idx"
     "cabildeo_position_cabildeo_stance_sortat_idx"
-    "cabildeo_live_session_cabildeo_idx"
-    "cabildeo_live_presence_cabildeo_actordid_idx"
   )
 
   local all_present=true

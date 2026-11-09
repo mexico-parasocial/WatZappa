@@ -1,9 +1,7 @@
-import type { AuthorityAction } from './community-authority.js'
-
 /*
- * How an assembly decision is counted, and which decisions may become
- * authority events. Pure rules, no I/O: the AppView gathers the electorate and
- * the ballots (`verifyAuthorityEvent`) and this decides.
+ * How an assembly decision is counted, and which decisions an assembly may
+ * make. Pure rules, no I/O: the caller gathers the electorate and the ballots
+ * and this decides.
  *
  * The rules are fixed here on purpose. A community's governance record is
  * published by its owner, so letting it set the quorum would let an owner veto
@@ -39,14 +37,20 @@ const APPROVAL_SHARE: Record<
   assembly_supermajority: { numerator: 2, denominator: 3, strict: false },
 }
 
+/** The community events an assembly decision may stand behind. */
+export type AssemblyEventAction =
+  'member.activate' | 'owner.grant' | 'owner.revoke'
+
 /**
- * The protected actions an assembly can turn into an authority event, with the
- * policy that decides each and the events it may produce. Every other protected
- * action is carried out by an officeholder (`resolveAvailableAction`), or by no
- * one yet, and never becomes an authority event through the assembly.
+ * The protected actions an assembly can decide, with the policy that decides
+ * each and the events it may produce. Every other protected action is carried
+ * out by an officeholder (`resolveAvailableAction`), or by no one yet.
  */
 export const ASSEMBLY_DECISIONS: Readonly<
-  Record<string, { policy: AssemblyPolicy; events: readonly AuthorityAction[] }>
+  Record<
+    string,
+    { policy: AssemblyPolicy; events: readonly AssemblyEventAction[] }
+  >
 > = Object.freeze({
   'membership.approve': {
     policy: 'assembly_majority',

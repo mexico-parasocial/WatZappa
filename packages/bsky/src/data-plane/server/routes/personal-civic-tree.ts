@@ -13,14 +13,8 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
 
     const maxItems = limit || 500
 
-    // Gather communities: legacy board memberships, then OD-9 accounts
-    // from their folded chains, in the legacy rows' shape.
-    const legacyCommunities = await db.db
-      .selectFrom('para_community_membership')
-      .where('creator', '=', actorDid)
-      .selectAll()
-      .limit(maxItems)
-      .execute()
+    // Gather communities from the folded chains of the accounts `actorDid`
+    // belongs to, in the shape the tree reads.
     const accountCommunities = await db.db
       .selectFrom('para_community_member_state')
       .where('did', '=', actorDid)
@@ -29,7 +23,6 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       .execute()
     const now = Date.now()
     const communities = [
-      ...legacyCommunities,
       ...accountCommunities.map((row) => {
         const suspended =
           row.status === 'suspended' &&
