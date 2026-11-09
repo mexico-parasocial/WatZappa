@@ -1,13 +1,5 @@
 import { randomUUID } from 'node:crypto'
 import { decideContribution } from '../../contributions.js'
-import type {
-  AiConsentRecord,
-  CommunityRoomKind,
-  CommunityRoomSummary,
-  CommunitySpaceMap,
-  SyncLogEntry,
-  UserPushToken,
-} from '../interface.js'
 import { MatrixEventsArea } from './matrix-events.js'
 
 export class DeliberationArea extends MatrixEventsArea {

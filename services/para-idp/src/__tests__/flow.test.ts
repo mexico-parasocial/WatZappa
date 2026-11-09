@@ -2,19 +2,19 @@ import { createHash, randomBytes } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { beforeAll, describe, expect, it } from 'vitest'
-import { createLocalJWKSet, jwtVerify } from 'jose'
-import { sign } from '@scure/sr25519'
-import { sha512 } from '@noble/hashes/sha2'
 import {
-  numberToBytesLE,
   bytesToHex,
   hexToBytes,
+  numberToBytesLE,
 } from '@noble/curves/abstract/utils'
-import { Signer, type IdpConfig } from '../oidc.js'
-import { LoginStore } from '../store.js'
-import { createHandler } from '../server.js'
+import { sha512 } from '@noble/hashes/sha2'
+import { sign } from '@scure/sr25519'
+import { createLocalJWKSet, jwtVerify } from 'jose'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { matrixLocalpart } from '../identity.js'
+import { type IdpConfig, Signer } from '../oidc.js'
+import { createHandler } from '../server.js'
+import { LoginStore } from '../store.js'
 
 /*
  * End-to-end authorization-code flow, exercised through the HTTP handler with
@@ -46,7 +46,6 @@ const CONFIG: IdpConfig = {
 }
 
 // ── client-side signing, mirroring iM8 ──────────────────────────────────────
-const CURVE_ORDER = 2n ** 252n + 27742317777372353535851937790883648493n
 const identity = derivation.identities.find((i) => i.label === 'public')!
 const scalar = BigInt(
   '0x' + bytesToHex(hexToBytes(identity.priv).slice().reverse()),

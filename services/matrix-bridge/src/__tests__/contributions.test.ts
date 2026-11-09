@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-
 import {
   CONTRIBUTION_DECISION_MARGIN,
   CONTRIBUTION_DECISION_THRESHOLD,

@@ -1,4 +1,4 @@
-import { Kysely } from 'kysely'
+import type { Kysely } from 'kysely'
 
 /**
  * Adds missing production indexes identified by code audit of hot queries

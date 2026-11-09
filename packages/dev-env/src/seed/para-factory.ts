@@ -1,12 +1,12 @@
 import { request } from 'undici'
+import type { AppBskyEmbedExternal } from '@atproto/api'
 import type { DidString } from '@atproto/syntax'
-import { AppBskyEmbedExternal } from '@atproto/api'
 import {
   type DevDelegationClaim,
   devCabildeoVoteProof,
   devDelegationProof,
 } from '../civic-verifier.js'
-import { SeedClient } from './client.js'
+import type { SeedClient } from './client.js'
 
 export type ParaStrongRef = {
   uri: string

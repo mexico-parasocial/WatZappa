@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { WebSocketServer } from 'ws'
-import { HandlerOpts } from '../src/channel.js'
-import { IdentityEvent, RecordEvent } from '../src/types.js'
+import type { HandlerOpts } from '../src/channel.js'
+import type { IdentityEvent, RecordEvent } from '../src/types.js'
 
 export type MockOpts = HandlerOpts & { acked: boolean }
 

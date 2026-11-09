@@ -1,19 +1,19 @@
 import { Code, ConnectError } from '@connectrpc/connect'
-import { FixedServiceImpl } from '../types/connect-fix.js'
 import { sql } from 'kysely'
 import { ensureValidRecordKey } from '@atproto/syntax'
-import { AppContext } from '../context.js'
-import { Database } from '../db/index.js'
+import type { AppContext } from '../context.js'
+import type { Database } from '../db/index.js'
 import {
-  OperationMethod,
+  type OperationMethod,
   createOperationChannel,
 } from '../db/schema/operation.js'
-import { Service } from '../proto/bsync_connect.js'
+import type { Service } from '../proto/bsync_connect.js'
 import {
   Method,
-  PutOperationRequest,
+  type PutOperationRequest,
   PutOperationResponse,
 } from '../proto/bsync_pb.js'
+import type { FixedServiceImpl } from '../types/connect-fix.js'
 import { authWithApiKey } from './auth.js'
 import { isValidDid, validateNamespace } from './util.js'
 

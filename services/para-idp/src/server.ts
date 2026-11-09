@@ -1,22 +1,22 @@
 import {
-  createServer,
   type IncomingMessage,
   type ServerResponse,
+  createServer,
 } from 'node:http'
 import {
+  type SignedAssertion,
+  subjectFor,
+  verifyIdentityAssertion,
+} from './identity.js'
+import {
+  type IdpConfig,
+  type Signer,
   authenticateClient,
   discoveryDocument,
   resolveRedirectUri,
   verifyPkce,
-  Signer,
-  type IdpConfig,
 } from './oidc.js'
-import { LoginStore } from './store.js'
-import {
-  subjectFor,
-  verifyIdentityAssertion,
-  type SignedAssertion,
-} from './identity.js'
+import type { LoginStore } from './store.js'
 
 /*
  * para-idp — the OIDC shim between a PARA identity and Matrix Authentication

@@ -1,8 +1,8 @@
-import { TestBsky } from '../bsky.js'
+import type { TestBsky } from '../bsky.js'
 import { EXAMPLE_LABELER } from '../const.js'
+import type { TestNetworkNoAppView } from '../network-no-appview.js'
 import { TestNetwork } from '../network.js'
-import { TestNetworkNoAppView } from '../network-no-appview.js'
-import { SeedClient } from './client.js'
+import type { SeedClient } from './client.js'
 import usersSeed from './users.js'
 
 export default async (

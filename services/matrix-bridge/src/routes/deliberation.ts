@@ -1,16 +1,11 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { randomUUID } from 'node:crypto'
-import { AI_CONSENT_POLICY_VERSION } from '../ai-consent.js'
-import { authenticateM8 } from '../m8-auth.js'
 import { authorizeOrRespond, authorizeUserReadOrRespond } from '../authz.js'
-import { fetchBeacon, fetchLatestBeacon } from '../drand.js'
 import { extractFromText, persistExtractedCard } from '../extraction.js'
+import { authenticateM8 } from '../m8-auth.js'
 import { OpenAIClient } from '../openai-client.js'
 import { summarizeCommunityDeliberation } from '../summarize.js'
-import type { SortitionRunRow } from '../sortition-runs.js'
-import { sendExpoNotifications } from '../push.js'
 import type { RouteContext } from './context.js'
-import { readBody, writeJson } from './http.js'
+import { readBody } from './http.js'
 
 /** POST /api/cards */
 export async function apiCardsPOSTHandler(

@@ -208,7 +208,7 @@ describe('appservice transaction endpoint', () => {
     expect(retry.status).toBe(400)
   })
   it('rolls back metadata, participation, outbox and txn ID on failure, then retries', async () => {
-    using broken = vi
+    using _broken = vi
       .spyOn(wrapped, 'appendEvent')
       .mockRejectedValueOnce(new Error('disk full'))
     await expect(

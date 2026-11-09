@@ -1,5 +1,4 @@
 // @ts-nocheck
-import assert from 'node:assert'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type AtpAgent from '@atproto/api'
 import {

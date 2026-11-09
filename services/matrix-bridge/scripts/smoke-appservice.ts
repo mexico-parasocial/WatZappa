@@ -135,7 +135,9 @@ try {
   for (let n = 0; n < 100; n++) {
     try {
       ready = (await fetch(`${base}/_matrix/client/versions`)).ok
-    } catch {}
+    } catch {
+      // not ready yet
+    }
     if (ready) break
     await delay(300)
   }
@@ -180,7 +182,9 @@ try {
         if (done) break
         sse += new TextDecoder().decode(value)
       }
-    } catch {}
+    } catch {
+      // best effort
+    }
   })()
   const { event_id: eventId } = await matrix(
     `/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/send/m.room.message/smoke`,

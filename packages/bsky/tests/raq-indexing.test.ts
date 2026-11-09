@@ -1,8 +1,7 @@
 // @ts-nocheck
-import AtpAgent from '@atproto/api'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
-  SeedClient,
+  type SeedClient,
   TestNetwork,
   createRaqAssessmentRecord,
   createRaqAxisVoteRecord,
@@ -19,7 +18,6 @@ const runId = Date.now().toString(36)
 
 maybeDescribe('RAQ indexing and queries', () => {
   let network: TestNetwork
-  let agent: AtpAgent
   let sc: SeedClient
   let db: any
 
@@ -27,7 +25,6 @@ maybeDescribe('RAQ indexing and queries', () => {
     network = await TestNetwork.create({
       dbPostgresSchema: 'raq_indexing_test',
     })
-    agent = network.bsky.getClient()
     sc = network.getSeedClient()
     db = network.bsky.db
     await usersSeed(sc)
@@ -574,7 +571,7 @@ maybeDescribe('RAQ indexing and queries', () => {
         targetCommunity: 'sonora',
       })
     })
-    const answerRes = await writeParaFixture(network, async () => {
+    await writeParaFixture(network, async () => {
       return sc.agent.com.atproto.repo.createRecord(
         {
           repo: sc.dids.bob,

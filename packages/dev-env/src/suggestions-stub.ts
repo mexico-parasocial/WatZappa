@@ -1,5 +1,5 @@
 import http from 'node:http'
-import { type AddressInfo } from 'node:net'
+import type { AddressInfo } from 'node:net'
 
 /**
  * Local stand-in for Bluesky's internal suggestions / topics / IRIS agents.

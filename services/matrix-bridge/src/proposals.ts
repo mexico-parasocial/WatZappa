@@ -11,7 +11,11 @@
 import type { Logger } from 'pino'
 import { isProvisionedSpace } from './chat-mode.js'
 import type { ChatModerationEngine } from './chat-moderation.js'
-import { getEffectiveRules, isApproved } from './constitution.js'
+import {
+  type GovernanceRules,
+  getEffectiveRules,
+  isApproved,
+} from './constitution.js'
 import type { IBridgeDatabase } from './db/index.js'
 import type { EventBus } from './events/bus.js'
 import type { MatrixAdminClient } from './matrix.js'
@@ -113,9 +117,7 @@ export class ProposalEngine {
       ? {
           community: constitution.communityUri,
           version: constitution.version,
-          rules: JSON.parse(
-            constitution.rulesJson,
-          ) as import('./constitution.js').GovernanceRules,
+          rules: JSON.parse(constitution.rulesJson) as GovernanceRules,
           createdAt: constitution.createdAt,
         }
       : undefined
@@ -198,9 +200,7 @@ export class ProposalEngine {
         ? {
             community: constitution.communityUri,
             version: constitution.version,
-            rules: JSON.parse(
-              constitution.rulesJson,
-            ) as import('./constitution.js').GovernanceRules,
+            rules: JSON.parse(constitution.rulesJson) as GovernanceRules,
             createdAt: constitution.createdAt,
           }
         : undefined
@@ -251,9 +251,7 @@ export class ProposalEngine {
         ? {
             community: constitution.communityUri,
             version: constitution.version,
-            rules: JSON.parse(
-              constitution.rulesJson,
-            ) as import('./constitution.js').GovernanceRules,
+            rules: JSON.parse(constitution.rulesJson) as GovernanceRules,
             createdAt: constitution.createdAt,
           }
         : undefined

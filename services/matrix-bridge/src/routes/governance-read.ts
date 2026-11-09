@@ -1,16 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { randomUUID } from 'node:crypto'
-import { AI_CONSENT_POLICY_VERSION } from '../ai-consent.js'
-import { authenticateM8, HttpError } from '../m8-auth.js'
 import { authorize } from '../authz.js'
-import { fetchBeacon, fetchLatestBeacon } from '../drand.js'
-import { extractFromText, persistExtractedCard } from '../extraction.js'
-import { OpenAIClient } from '../openai-client.js'
-import { summarizeCommunityDeliberation } from '../summarize.js'
-import type { SortitionRunRow } from '../sortition-runs.js'
-import { sendExpoNotifications } from '../push.js'
+import { HttpError, authenticateM8 } from '../m8-auth.js'
 import type { RouteContext } from './context.js'
-import { readBody, writeJson } from './http.js'
+import { writeJson } from './http.js'
 
 /** GET /api/constitution (prefix) */
 export async function apiConstitutionHandler(

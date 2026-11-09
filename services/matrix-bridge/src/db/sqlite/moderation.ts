@@ -1,12 +1,3 @@
-import { randomUUID } from 'node:crypto'
-import type {
-  AiConsentRecord,
-  CommunityRoomKind,
-  CommunityRoomSummary,
-  CommunitySpaceMap,
-  SyncLogEntry,
-  UserPushToken,
-} from '../interface.js'
 import { SortitionArea } from './sortition.js'
 
 export class ModerationArea extends SortitionArea {

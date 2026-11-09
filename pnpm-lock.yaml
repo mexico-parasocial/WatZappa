@@ -2556,9 +2556,15 @@ importers:
         specifier: ^8.19.0
         version: 8.21.1
     devDependencies:
+      '@atproto/common':
+        specifier: workspace:^
+        version: link:../common
       '@types/ws':
         specifier: ^8.5.4
         version: 8.5.4
+      get-port:
+        specifier: ^6.1.2
+        version: 6.1.2
       http-terminator:
         specifier: ^3.2.0
         version: 3.2.0

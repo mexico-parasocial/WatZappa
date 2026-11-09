@@ -1,12 +1,4 @@
-import { randomUUID } from 'node:crypto'
-import type {
-  AiConsentRecord,
-  CommunityRoomKind,
-  CommunityRoomSummary,
-  CommunitySpaceMap,
-  SyncLogEntry,
-  UserPushToken,
-} from '../interface.js'
+import type { CommunityRoomSummary } from '../interface.js'
 import { ConsentPrefsArea } from './consent-prefs.js'
 
 export class MatrixEventsArea extends ConsentPrefsArea {

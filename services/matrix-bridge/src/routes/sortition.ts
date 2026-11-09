@@ -1,22 +1,17 @@
-import type { IncomingMessage, ServerResponse } from 'node:http'
 import { randomUUID } from 'node:crypto'
-import { AI_CONSENT_POLICY_VERSION } from '../ai-consent.js'
-import { authenticateM8, HttpError } from '../m8-auth.js'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 import {
   authorize,
   authorizeOrRespond,
   authorizeUserReadOrRespond,
 } from '../authz.js'
-import { fetchBeacon, fetchLatestBeacon } from '../drand.js'
-import { extractFromText, persistExtractedCard } from '../extraction.js'
-import { OpenAIClient } from '../openai-client.js'
-import { summarizeCommunityDeliberation } from '../summarize.js'
+import { fetchLatestBeacon } from '../drand.js'
+import { HttpError, authenticateM8 } from '../m8-auth.js'
 import {
+  type SortitionRunRow,
   formatSortitionCandidate,
   formatSortitionRun,
-  type SortitionRunRow,
 } from '../sortition-runs.js'
-import { sendExpoNotifications } from '../push.js'
 import type { RouteContext } from './context.js'
 import { readBody, writeJson } from './http.js'
 
@@ -262,7 +257,7 @@ export async function apiVerifySortitionHandler(
   res: ServerResponse,
   ctx: RouteContext,
 ): Promise<void> {
-  const auth = await authenticateM8(req, ctx.config)
+  await authenticateM8(req, ctx.config)
   const body = await readBody(req)
   const { did, communityUri, round, randomness } = JSON.parse(body)
   if (!did || !communityUri || !round || !randomness) {

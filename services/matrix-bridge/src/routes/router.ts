@@ -45,8 +45,8 @@ import {
   apiMarkReadHandler,
   apiMatrixAttestHandler,
   apiMatrixChallengeHandler,
-  apiMatrixIdentityHandler,
   apiMatrixIdentityGoneHandler,
+  apiMatrixIdentityHandler,
   apiMatrixTokenHandler,
   apiPushTokenHandler,
   apiRevokeDeviceHandler,
@@ -60,9 +60,9 @@ import {
   apiModerationDashboardHandler,
   apiModerationDismissHandler,
   apiModerationLiftHandler,
-  apiModerationReportsHandler,
   apiModerationRecomputeHandler,
   apiModerationReportHandler,
+  apiModerationReportsHandler,
   apiModerationSanctionHandler,
   apiUserChatPreferencesGETHandler,
   apiUserChatPreferencesPOSTHandler,
@@ -526,9 +526,7 @@ export async function routeRequest(
   return false
 }
 
-export function writeJsonFallback(
-  res: import('node:http').ServerResponse,
-): void {
+export function writeJsonFallback(res: ServerResponse): void {
   res.writeHead(404)
   res.end('Not found')
 }

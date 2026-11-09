@@ -342,13 +342,17 @@ import * as ComParaCivicCabildeo from './types/com/para/civic/cabildeo.js'
 import * as ComParaCivicCastVote from './types/com/para/civic/castVote.js'
 import * as ComParaCivicDefs from './types/com/para/civic/defs.js'
 import * as ComParaCivicDelegation from './types/com/para/civic/delegation.js'
+import * as ComParaCivicFollowThrough from './types/com/para/civic/followThrough.js'
+import * as ComParaCivicFollowThroughUpdate from './types/com/para/civic/followThroughUpdate.js'
 import * as ComParaCivicGetCabildeo from './types/com/para/civic/getCabildeo.js'
+import * as ComParaCivicGetFollowThrough from './types/com/para/civic/getFollowThrough.js'
 import * as ComParaCivicGetOpenQuestionThread from './types/com/para/civic/getOpenQuestionThread.js'
 import * as ComParaCivicGetPolicyCommunityVotes from './types/com/para/civic/getPolicyCommunityVotes.js'
 import * as ComParaCivicGetPolicyTally from './types/com/para/civic/getPolicyTally.js'
 import * as ComParaCivicListCabildeoPositions from './types/com/para/civic/listCabildeoPositions.js'
 import * as ComParaCivicListCabildeos from './types/com/para/civic/listCabildeos.js'
 import * as ComParaCivicListDelegationCandidates from './types/com/para/civic/listDelegationCandidates.js'
+import * as ComParaCivicListFollowThrough from './types/com/para/civic/listFollowThrough.js'
 import * as ComParaCivicOpenQuestion from './types/com/para/civic/openQuestion.js'
 import * as ComParaCivicOpenQuestionVote from './types/com/para/civic/openQuestionVote.js'
 import * as ComParaCivicPosition from './types/com/para/civic/position.js'
@@ -901,13 +905,17 @@ export * as ComParaCivicCabildeo from './types/com/para/civic/cabildeo.js'
 export * as ComParaCivicCastVote from './types/com/para/civic/castVote.js'
 export * as ComParaCivicDefs from './types/com/para/civic/defs.js'
 export * as ComParaCivicDelegation from './types/com/para/civic/delegation.js'
+export * as ComParaCivicFollowThrough from './types/com/para/civic/followThrough.js'
+export * as ComParaCivicFollowThroughUpdate from './types/com/para/civic/followThroughUpdate.js'
 export * as ComParaCivicGetCabildeo from './types/com/para/civic/getCabildeo.js'
+export * as ComParaCivicGetFollowThrough from './types/com/para/civic/getFollowThrough.js'
 export * as ComParaCivicGetOpenQuestionThread from './types/com/para/civic/getOpenQuestionThread.js'
 export * as ComParaCivicGetPolicyCommunityVotes from './types/com/para/civic/getPolicyCommunityVotes.js'
 export * as ComParaCivicGetPolicyTally from './types/com/para/civic/getPolicyTally.js'
 export * as ComParaCivicListCabildeoPositions from './types/com/para/civic/listCabildeoPositions.js'
 export * as ComParaCivicListCabildeos from './types/com/para/civic/listCabildeos.js'
 export * as ComParaCivicListDelegationCandidates from './types/com/para/civic/listDelegationCandidates.js'
+export * as ComParaCivicListFollowThrough from './types/com/para/civic/listFollowThrough.js'
 export * as ComParaCivicOpenQuestion from './types/com/para/civic/openQuestion.js'
 export * as ComParaCivicOpenQuestionVote from './types/com/para/civic/openQuestionVote.js'
 export * as ComParaCivicPosition from './types/com/para/civic/position.js'
@@ -6668,6 +6676,8 @@ export class ComParaCivicNS {
   amendment: ComParaCivicAmendmentRecord
   cabildeo: ComParaCivicCabildeoRecord
   delegation: ComParaCivicDelegationRecord
+  followThrough: ComParaCivicFollowThroughRecord
+  followThroughUpdate: ComParaCivicFollowThroughUpdateRecord
   openQuestion: ComParaCivicOpenQuestionRecord
   openQuestionVote: ComParaCivicOpenQuestionVoteRecord
   position: ComParaCivicPositionRecord
@@ -6678,6 +6688,8 @@ export class ComParaCivicNS {
     this.amendment = new ComParaCivicAmendmentRecord(client)
     this.cabildeo = new ComParaCivicCabildeoRecord(client)
     this.delegation = new ComParaCivicDelegationRecord(client)
+    this.followThrough = new ComParaCivicFollowThroughRecord(client)
+    this.followThroughUpdate = new ComParaCivicFollowThroughUpdateRecord(client)
     this.openQuestion = new ComParaCivicOpenQuestionRecord(client)
     this.openQuestionVote = new ComParaCivicOpenQuestionVoteRecord(client)
     this.position = new ComParaCivicPositionRecord(client)
@@ -6705,6 +6717,17 @@ export class ComParaCivicNS {
       undefined,
       opts,
     )
+  }
+
+  getFollowThrough(
+    params?: ComParaCivicGetFollowThrough.QueryParams,
+    opts?: ComParaCivicGetFollowThrough.CallOptions,
+  ): Promise<ComParaCivicGetFollowThrough.Response> {
+    return this._client
+      .call('com.para.civic.getFollowThrough', params, undefined, opts)
+      .catch((e) => {
+        throw ComParaCivicGetFollowThrough.toKnownErr(e)
+      })
   }
 
   getOpenQuestionThread(
@@ -6770,6 +6793,18 @@ export class ComParaCivicNS {
   ): Promise<ComParaCivicListDelegationCandidates.Response> {
     return this._client.call(
       'com.para.civic.listDelegationCandidates',
+      params,
+      undefined,
+      opts,
+    )
+  }
+
+  listFollowThrough(
+    params?: ComParaCivicListFollowThrough.QueryParams,
+    opts?: ComParaCivicListFollowThrough.CallOptions,
+  ): Promise<ComParaCivicListFollowThrough.Response> {
+    return this._client.call(
+      'com.para.civic.listFollowThrough',
       params,
       undefined,
       opts,
@@ -7028,6 +7063,172 @@ export class ComParaCivicDelegationRecord {
       'com.atproto.repo.deleteRecord',
       undefined,
       { collection: 'com.para.civic.delegation', ...params },
+      { headers },
+    )
+  }
+}
+
+export class ComParaCivicFollowThroughRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: ComParaCivicFollowThrough.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'com.para.civic.followThrough',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: ComParaCivicFollowThrough.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'com.para.civic.followThrough',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCivicFollowThrough.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.civic.followThrough'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCivicFollowThrough.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.civic.followThrough'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'com.para.civic.followThrough', ...params },
+      { headers },
+    )
+  }
+}
+
+export class ComParaCivicFollowThroughUpdateRecord {
+  _client: XrpcClient
+
+  constructor(client: XrpcClient) {
+    this._client = client
+  }
+
+  async list(
+    params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>,
+  ): Promise<{
+    cursor?: string
+    records: { uri: string; value: ComParaCivicFollowThroughUpdate.Record }[]
+  }> {
+    const res = await this._client.call('com.atproto.repo.listRecords', {
+      collection: 'com.para.civic.followThroughUpdate',
+      ...params,
+    })
+    return res.data
+  }
+
+  async get(
+    params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>,
+  ): Promise<{
+    uri: string
+    cid: string
+    value: ComParaCivicFollowThroughUpdate.Record
+  }> {
+    const res = await this._client.call('com.atproto.repo.getRecord', {
+      collection: 'com.para.civic.followThroughUpdate',
+      ...params,
+    })
+    return res.data
+  }
+
+  async create(
+    params: OmitKey<
+      ComAtprotoRepoCreateRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCivicFollowThroughUpdate.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.civic.followThroughUpdate'
+    const res = await this._client.call(
+      'com.atproto.repo.createRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async put(
+    params: OmitKey<
+      ComAtprotoRepoPutRecord.InputSchema,
+      'collection' | 'record'
+    >,
+    record: Un$Typed<ComParaCivicFollowThroughUpdate.Record>,
+    headers?: Record<string, string>,
+  ): Promise<{ uri: string; cid: string }> {
+    const collection = 'com.para.civic.followThroughUpdate'
+    const res = await this._client.call(
+      'com.atproto.repo.putRecord',
+      undefined,
+      { collection, ...params, record: { ...record, $type: collection } },
+      { encoding: 'application/json', headers },
+    )
+    return res.data
+  }
+
+  async delete(
+    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    await this._client.call(
+      'com.atproto.repo.deleteRecord',
+      undefined,
+      { collection: 'com.para.civic.followThroughUpdate', ...params },
       { headers },
     )
   }

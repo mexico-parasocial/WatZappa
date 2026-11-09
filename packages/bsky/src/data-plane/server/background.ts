@@ -1,6 +1,6 @@
 import PQueue from 'p-queue'
 import { dbLogger } from '../../logger.js'
-import { Database } from './db/index.js'
+import type { Database } from './db/index.js'
 
 // A simple queue for in-process, out-of-band/backgrounded work
 type Queue = InstanceType<typeof PQueue>

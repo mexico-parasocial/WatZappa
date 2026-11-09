@@ -22926,6 +22926,17 @@ export const schemaDict: Record<string, LexiconDoc> = {
               },
               maxLength: 10,
             },
+            kind: {
+              type: 'string',
+              knownValues: ['activity', 'persuasion', 'forum'],
+              description:
+                'activity: the community decides to do something, and the winning option can be followed (com.para.civic.followThrough). persuasion: make the case to change positions on the policy named in `subject`. forum: a public conversation for the place given by region, geoScope and geo, with no decision to follow. Existing records default to activity.',
+            },
+            subject: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'The policy post a persuasion cabildeo is about.',
+            },
             minQuorum: {
               type: 'integer',
               minimum: 1,
@@ -23769,6 +23780,153 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
+  ComParaCivicFollowThrough: {
+    lexicon: 1,
+    id: 'com.para.civic.followThrough',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "One compromiso: something that must happen because a cabildeo resolved, written by a steward of the cabildeo's community into their own repo. Title, responsible party and first due date are committed when first indexed; later edits are flagged, not served. Everything that changes afterwards is a com.para.civic.followThroughUpdate.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: [
+            'cabildeo',
+            'communityUri',
+            'optionIndex',
+            'title',
+            'createdAt',
+          ],
+          properties: {
+            cabildeo: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'The resolved com.para.civic.cabildeo this follows.',
+            },
+            communityUri: {
+              type: 'string',
+              format: 'at-uri',
+              description:
+                "Board URI. Must be the board the cabildeo's community resolves to.",
+            },
+            optionIndex: {
+              type: 'integer',
+              minimum: 0,
+              description:
+                "The option this follows. Served only when it is the cabildeo's winning option.",
+            },
+            parent: {
+              type: 'string',
+              format: 'at-uri',
+              description:
+                'Another followThrough on the same cabildeo that has no parent itself. Only one level of nesting is served.',
+            },
+            title: {
+              type: 'string',
+              maxLength: 300,
+            },
+            summary: {
+              type: 'string',
+              maxLength: 2000,
+            },
+            responsibleDid: {
+              type: 'string',
+              format: 'did',
+              description: 'The account responsible, when it has one.',
+            },
+            responsibleLabel: {
+              type: 'string',
+              maxLength: 200,
+              description:
+                'An office or body responsible, for example an ayuntamiento.',
+            },
+            dueAt: {
+              type: 'string',
+              format: 'datetime',
+              description:
+                'First due date. A later one is an update with a note.',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  ComParaCivicFollowThroughUpdate: {
+    lexicon: 1,
+    id: 'com.para.civic.followThroughUpdate',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          'A dated note on a com.para.civic.followThrough: status, progress and evidence. Append-only: the first indexed version is the one served, and a later edit only marks it as edited.',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['subject', 'status', 'occurredAt', 'createdAt'],
+          properties: {
+            subject: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'The com.para.civic.followThrough this updates.',
+            },
+            status: {
+              type: 'string',
+              maxLength: 32,
+              knownValues: [
+                'planned',
+                'in_progress',
+                'completed',
+                'blocked',
+                'abandoned',
+              ],
+            },
+            progress: {
+              type: 'integer',
+              minimum: 0,
+              maximum: 100,
+              description:
+                'Leaf compromisos only. Ignored on one that has children; completed always shows as 100.',
+            },
+            note: {
+              type: 'string',
+              maxLength: 2000,
+              description:
+                'Required when dueAt changes or status is blocked or abandoned.',
+            },
+            evidenceUris: {
+              type: 'array',
+              maxLength: 5,
+              items: {
+                type: 'string',
+                format: 'uri',
+                maxLength: 1000,
+              },
+              description: 'An oficio, an acta, a public portal link.',
+            },
+            dueAt: {
+              type: 'string',
+              format: 'datetime',
+              description: 'A new due date. Shown as a reschedule.',
+            },
+            occurredAt: {
+              type: 'string',
+              format: 'datetime',
+              description: 'When it happened, not when it was written.',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
   ComParaCivicGetCabildeo: {
     lexicon: 1,
     id: 'com.para.civic.getCabildeo',
@@ -23800,6 +23958,45 @@ export const schemaDict: Record<string, LexiconDoc> = {
             },
           },
         },
+      },
+    },
+  },
+  ComParaCivicGetFollowThrough: {
+    lexicon: 1,
+    id: 'com.para.civic.getFollowThrough',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'One compromiso with its children and its full timeline. Not found when it is not served under the rules of com.para.civic.listFollowThrough.',
+        parameters: {
+          type: 'params',
+          required: ['uri'],
+          properties: {
+            uri: {
+              type: 'string',
+              format: 'at-uri',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['item'],
+            properties: {
+              item: {
+                type: 'ref',
+                ref: 'lex:com.para.civic.listFollowThrough#followThroughView',
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'NotFound',
+          },
+        ],
       },
     },
   },
@@ -24301,6 +24498,295 @@ export const schemaDict: Record<string, LexiconDoc> = {
           },
           cursor: {
             type: 'string',
+          },
+        },
+      },
+    },
+  },
+  ComParaCivicListFollowThrough: {
+    lexicon: 1,
+    id: 'com.para.civic.listFollowThrough',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          "Lists the compromisos of resolved cabildeos. Only records by a steward of the cabildeo's community are served, and only for a cabildeo of kind activity that resolved with a single winning option and met its quorum. Anything else yields nothing, so an empty list does not mean the cabildeo was ignored.",
+        parameters: {
+          type: 'params',
+          properties: {
+            cabildeo: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            community: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'Board URI. Omit to list across all communities.',
+            },
+            status: {
+              type: 'string',
+              knownValues: [
+                'planned',
+                'in_progress',
+                'completed',
+                'blocked',
+                'abandoned',
+              ],
+            },
+            overdue: {
+              type: 'boolean',
+              description:
+                'Only compromisos past their due date and not completed or abandoned.',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 25,
+              description:
+                'Cabildeos per page. The compromisos of one cabildeo are never split across pages.',
+            },
+            cursor: {
+              type: 'string',
+              maxLength: 512,
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['items', 'summaries'],
+            properties: {
+              items: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.civic.listFollowThrough#followThroughView',
+                },
+              },
+              summaries: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.civic.listFollowThrough#summaryView',
+                },
+                description: 'One per cabildeo that appears in items.',
+              },
+              cursor: {
+                type: 'string',
+              },
+            },
+          },
+        },
+      },
+      followThroughView: {
+        type: 'object',
+        required: [
+          'uri',
+          'cid',
+          'author',
+          'cabildeo',
+          'communityUri',
+          'optionIndex',
+          'title',
+          'status',
+          'overdue',
+          'rescheduledCount',
+          'edited',
+          'createdAt',
+        ],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+          },
+          author: {
+            type: 'string',
+            format: 'did',
+          },
+          cabildeo: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          communityUri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          optionIndex: {
+            type: 'integer',
+          },
+          parent: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          title: {
+            type: 'string',
+          },
+          summary: {
+            type: 'string',
+          },
+          responsibleDid: {
+            type: 'string',
+            format: 'did',
+          },
+          responsibleLabel: {
+            type: 'string',
+          },
+          dueAt: {
+            type: 'string',
+            format: 'datetime',
+            description: 'The committed first due date.',
+          },
+          currentDueAt: {
+            type: 'string',
+            format: 'datetime',
+            description: 'The latest due date, after any reschedules.',
+          },
+          rescheduledCount: {
+            type: 'integer',
+          },
+          status: {
+            type: 'string',
+            knownValues: [
+              'planned',
+              'in_progress',
+              'completed',
+              'blocked',
+              'abandoned',
+            ],
+            description: 'For an item with children, derived from them.',
+          },
+          progress: {
+            type: 'integer',
+            description:
+              'Absent when it cannot be determined from what was written.',
+          },
+          overdue: {
+            type: 'boolean',
+          },
+          lastUpdateAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          edited: {
+            type: 'boolean',
+            description:
+              'The record was changed after it was first indexed. The committed version is what is shown.',
+          },
+          withdrawnUpdates: {
+            type: 'integer',
+            description: 'Updates that were written and later deleted.',
+          },
+          children: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.civic.listFollowThrough#followThroughView',
+            },
+          },
+          updates: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.civic.listFollowThrough#updateView',
+            },
+            description: 'Oldest first. Present on getFollowThrough only.',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      updateView: {
+        type: 'object',
+        required: [
+          'uri',
+          'author',
+          'status',
+          'evidenceUris',
+          'edited',
+          'occurredAt',
+          'createdAt',
+        ],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          author: {
+            type: 'string',
+            format: 'did',
+          },
+          status: {
+            type: 'string',
+          },
+          progress: {
+            type: 'integer',
+          },
+          note: {
+            type: 'string',
+          },
+          evidenceUris: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+          dueAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          edited: {
+            type: 'boolean',
+          },
+          occurredAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      summaryView: {
+        type: 'object',
+        required: ['cabildeo', 'total', 'completed', 'overdue', 'abandoned'],
+        properties: {
+          cabildeo: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          total: {
+            type: 'integer',
+            description: 'Top-level compromisos.',
+          },
+          completed: {
+            type: 'integer',
+          },
+          overdue: {
+            type: 'integer',
+          },
+          abandoned: {
+            type: 'integer',
+          },
+          progress: {
+            type: 'integer',
+            description:
+              'Absent unless every active compromiso has a determinable progress.',
+          },
+          nextDueAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          lastUpdateAt: {
+            type: 'string',
+            format: 'datetime',
           },
         },
       },
@@ -44990,7 +45476,10 @@ export const ids = {
   ComParaCivicCastVote: 'com.para.civic.castVote',
   ComParaCivicDefs: 'com.para.civic.defs',
   ComParaCivicDelegation: 'com.para.civic.delegation',
+  ComParaCivicFollowThrough: 'com.para.civic.followThrough',
+  ComParaCivicFollowThroughUpdate: 'com.para.civic.followThroughUpdate',
   ComParaCivicGetCabildeo: 'com.para.civic.getCabildeo',
+  ComParaCivicGetFollowThrough: 'com.para.civic.getFollowThrough',
   ComParaCivicGetOpenQuestionThread: 'com.para.civic.getOpenQuestionThread',
   ComParaCivicGetPolicyCommunityVotes: 'com.para.civic.getPolicyCommunityVotes',
   ComParaCivicGetPolicyTally: 'com.para.civic.getPolicyTally',
@@ -44998,6 +45487,7 @@ export const ids = {
   ComParaCivicListCabildeos: 'com.para.civic.listCabildeos',
   ComParaCivicListDelegationCandidates:
     'com.para.civic.listDelegationCandidates',
+  ComParaCivicListFollowThrough: 'com.para.civic.listFollowThrough',
   ComParaCivicOpenQuestion: 'com.para.civic.openQuestion',
   ComParaCivicOpenQuestionVote: 'com.para.civic.openQuestionVote',
   ComParaCivicPosition: 'com.para.civic.position',

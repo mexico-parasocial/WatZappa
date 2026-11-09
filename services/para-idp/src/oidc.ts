@@ -1,10 +1,10 @@
 import { createHash, timingSafeEqual } from 'node:crypto'
 import {
+  type JWK,
   SignJWT,
   exportJWK,
   generateKeyPair,
   importPKCS8,
-  type JWK,
 } from 'jose'
 
 /*

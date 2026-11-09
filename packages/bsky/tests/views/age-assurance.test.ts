@@ -1,13 +1,13 @@
 // @ts-nocheck
-import { vi } from 'vitest'
 import crypto from 'node:crypto'
 import { once } from 'node:events'
-import { Server, createServer } from 'node:http'
+import { type Server, createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import express, { Application } from 'express'
-import { AtpAgent, ids } from '@atproto/api'
-import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
-import {
+import express, { type Application } from 'express'
+import { vi } from 'vitest'
+import { type AtpAgent, ids } from '@atproto/api'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import type {
   KwsExternalPayload,
   KwsVerificationQuery,
   KwsWebhookBody,

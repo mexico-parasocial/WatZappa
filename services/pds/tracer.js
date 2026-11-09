@@ -3,8 +3,8 @@
 import 'dd-trace/register.js'
 import path from 'node:path'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
-import { BetterSqlite3Instrumentation } from 'opentelemetry-plugin-better-sqlite3'
 import ddTrace from 'dd-trace'
+import { BetterSqlite3Instrumentation } from 'opentelemetry-plugin-better-sqlite3'
 
 const { TracerProvider } = ddTrace.init({ logInjection: true }).use('express', {
   hooks: { request: maintainXrpcResource },

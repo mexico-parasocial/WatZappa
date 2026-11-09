@@ -1,11 +1,11 @@
 import type { AddressInfo } from 'node:net'
 import pino from 'pino'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { WebSocketServer } from 'ws'
 import { ChatModerationEngine } from '../chat-moderation.js'
 import type { TrustedMembership } from '../community-authority.js'
 import type { Config } from '../config.js'
 import { SqliteBridgeDatabase } from '../db/index.js'
-import { WebSocketServer } from 'ws'
 import {
   FirehoseConsumer,
   UnsafeFirehoseSeqError,

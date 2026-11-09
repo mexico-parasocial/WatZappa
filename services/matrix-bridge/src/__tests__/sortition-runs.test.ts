@@ -3,10 +3,11 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SqliteBridgeDatabase } from '../db/index.js'
+import type * as Drand from '../drand.js'
 
 // The engine is deterministic given a beacon; only the network is faked.
 vi.mock('../drand.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../drand.js')>()
+  const actual = await importOriginal<typeof Drand>()
   return {
     ...actual,
     fetchBeacon: vi.fn(async () => ({

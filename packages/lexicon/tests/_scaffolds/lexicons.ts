@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { LexiconDoc } from '../../src/index.js'
+import type { LexiconDoc } from '../../src/index.js'
 
 const lexicons: LexiconDoc[] = [
   {

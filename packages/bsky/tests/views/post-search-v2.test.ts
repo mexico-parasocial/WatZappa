@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
 import type { DidString } from '@atproto/syntax'
 
 const V2_OVERRIDE_HEADER = 'x-bsky-search-v2-override'

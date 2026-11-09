@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { TestNetworkNoAppView } from '@atproto/dev-env'
-import { DEFAULT_LABEL_SETTINGS } from '../src/index.js'
 import { isContentLabelPref } from '../src/client/types/app/bsky/actor/defs.js'
+import { DEFAULT_LABEL_SETTINGS } from '../src/index.js'
 import './util/moderation-behavior.js'
 
 describe('agent', () => {

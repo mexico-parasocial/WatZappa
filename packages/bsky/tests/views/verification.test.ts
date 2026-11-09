@@ -1,8 +1,12 @@
 // @ts-nocheck
 import assert from 'node:assert'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { AppBskyActorDefs, AtpAgent, ids } from '@atproto/api'
-import { SeedClient, TestNetwork, verificationsSeed } from '@atproto/dev-env'
+import { type AppBskyActorDefs, type AtpAgent, ids } from '@atproto/api'
+import {
+  type SeedClient,
+  TestNetwork,
+  verificationsSeed,
+} from '@atproto/dev-env'
 
 interface ProfileViewTestCase {
   description: string

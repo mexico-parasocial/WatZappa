@@ -1,4 +1,4 @@
-import { ColumnType } from 'kysely'
+import type { ColumnType } from 'kysely'
 
 export const tableName = 'para_community_membership'
 

@@ -1,5 +1,3 @@
-/* eslint-env node */
-
 import BsyncService, { envToCfg, httpLogger, readEnv } from '@atproto/bsync'
 
 const main = async () => {

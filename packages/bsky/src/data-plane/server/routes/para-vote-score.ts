@@ -1,5 +1,5 @@
 import { sql } from 'kysely'
-import { Database } from '../db/index.js'
+import type { Database } from '../db/index.js'
 
 /**
  * Net public reactions per subject: each voter counts once, with their signed

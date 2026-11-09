@@ -1,7 +1,7 @@
 import { sql } from 'kysely'
-import { GateRecord, PostRecord, PostReplyRef } from '../../views/types.js'
+import type { GateRecord, PostRecord, PostReplyRef } from '../../views/types.js'
 import { parseThreadGate } from '../../views/util.js'
-import { DatabaseSchema } from './db/database-schema.js'
+import type { DatabaseSchema } from './db/database-schema.js'
 import { valuesList } from './db/util.js'
 
 export const getDescendentsQb = (
@@ -171,7 +171,7 @@ export const parsePostSearchQuery = (
   let quoted = false
   for (const c of qParam) {
     if (c === ' ' && !quoted) {
-      curr.trim() && parts.push(curr)
+      if (curr.trim()) parts.push(curr)
       curr = ''
       continue
     }
@@ -181,7 +181,7 @@ export const parsePostSearchQuery = (
     }
     curr += c
   }
-  curr.trim() && parts.push(curr)
+  if (curr.trim()) parts.push(curr)
 
   const qParts: string[] = []
   for (const p of parts) {

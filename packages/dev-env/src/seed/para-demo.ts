@@ -3,13 +3,13 @@ import { RecordRef, type SeedClient } from './client.js'
 import { ParaSeedCheckpointRunner } from './para-checkpoints.js'
 import { seedCommunityActivities } from './para-community-activities.js'
 import { seedDemoMemes } from './para-memes.js'
-import { seedTid } from './seed-tid.js'
 import {
   EXTRA_POLICIES,
   LEGACY_POLICY_STANCE,
   castPolicyVotes,
   planPolicyVotes,
 } from './para-policies.js'
+import { seedTid } from './seed-tid.js'
 
 export default async (sc: SeedClient) => {
   const checkpoints = new ParaSeedCheckpointRunner(sc.network)

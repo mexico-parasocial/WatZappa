@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { type AtpAgent, ids } from '@atproto/api'
 import { type SeedClient, TestNetwork, quotesSeed } from '@atproto/dev-env'
-import type { DidString, HandleString } from '@atproto/syntax'
+import type { DidString } from '@atproto/syntax'
 import { forSnapshot } from '../_util.js'
 
 describe('pds quote views', () => {

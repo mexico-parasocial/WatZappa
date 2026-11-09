@@ -1,9 +1,8 @@
 import type pino from 'pino'
-
-import { type IBridgeDatabase } from './db/index.js'
+import type { IBridgeDatabase } from './db/index.js'
 import { computeAssemblySortitionHash, fetchBeacon } from './drand.js'
-import { sendExpoNotifications } from './push.js'
 import type { EventBus } from './events/bus.js'
+import { sendExpoNotifications } from './push.js'
 
 /**
  * Cabildeo assembly sortition engine. Extracted verbatim from the HTTP layer:

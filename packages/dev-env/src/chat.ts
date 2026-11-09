@@ -7,16 +7,16 @@ import getPort from 'get-port'
 import {
   type $Typed,
   AtpAgent,
-  ChatBskyActorDefs,
-  ChatBskyConvoDefs,
+  type ChatBskyActorDefs,
+  type ChatBskyConvoDefs,
 } from '@atproto/api'
 import { Secp256k1Keypair } from '@atproto/crypto'
 import { IdResolver } from '@atproto/identity'
 import {
   AuthRequiredError,
   InvalidRequestError,
-  parseReqNsid,
   createServer,
+  parseReqNsid,
   verifyJwt,
 } from '@atproto/xrpc-server'
 

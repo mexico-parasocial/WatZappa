@@ -1,6 +1,6 @@
 import type { DatetimeString } from '@atproto/syntax'
-import { AppBskyActorDefs } from './client/index.js'
-import { ModerationPrefs } from './moderation/types.js'
+import type { AppBskyActorDefs } from './client/index.js'
+import type { ModerationPrefs } from './moderation/types.js'
 
 export type UnknownServiceType = string & NonNullable<unknown>
 export type AtprotoServiceType = 'atproto_labeler' | UnknownServiceType

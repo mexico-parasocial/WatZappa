@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { bench, describe } from 'vitest'
 import {
-  JsonToLexOptions,
+  type JsonToLexOptions,
   jsonToLex,
   lexParse,
   lexParseJsonBytes,

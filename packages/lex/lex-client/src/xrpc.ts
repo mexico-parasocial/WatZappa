@@ -7,15 +7,13 @@ import type {
   Main,
   NsidString,
   Params,
-  Restricted,
-} from '@atproto/lex-schema'
-import {
   Payload,
   Procedure,
   Query,
+  Restricted,
   Subscription,
-  getMain,
 } from '@atproto/lex-schema'
+import { getMain } from '@atproto/lex-schema'
 import type { Agent, AgentOptions } from './agent.js'
 import { buildAgent } from './agent.js'
 import type { XrpcFailure } from './errors.js'

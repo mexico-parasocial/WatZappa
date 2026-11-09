@@ -1,6 +1,5 @@
 // @ts-nocheck
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import type AtpAgent from '@atproto/api'
 import { TID, cidForCbor } from '@atproto/common'
 import {
   type SeedClient,
@@ -20,7 +19,6 @@ const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
 
 maybeDescribe('QV-LD indexing', () => {
   let network: TestNetwork
-  let agent: AtpAgent
   let sc: SeedClient
   let db: any
 
@@ -28,7 +26,6 @@ maybeDescribe('QV-LD indexing', () => {
     network = await TestNetwork.create({
       dbPostgresSchema: 'qvl_indexing_test',
     })
-    agent = network.bsky.getClient()
     sc = network.getSeedClient()
     db = network.bsky.db
     await usersSeed(sc)

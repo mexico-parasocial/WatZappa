@@ -1,10 +1,10 @@
-import { HttpError } from '../m8-auth.js'
+import type { IBridgeDatabase } from '../db/index.js'
 import {
-  authorize,
   type InstitutionCapability,
   type InstitutionMembership,
+  authorize,
 } from '../institutions.js'
-import type { IBridgeDatabase } from '../db/index.js'
+import { HttpError } from '../m8-auth.js'
 
 export interface InstitutionAccess {
   institutionId: string

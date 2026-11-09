@@ -1,12 +1,3 @@
-import { randomUUID } from 'node:crypto'
-import type {
-  AiConsentRecord,
-  CommunityRoomKind,
-  CommunityRoomSummary,
-  CommunitySpaceMap,
-  SyncLogEntry,
-  UserPushToken,
-} from '../interface.js'
 import { ConstitutionProposalsArea } from './constitution-proposals.js'
 
 export class SortitionArea extends ConstitutionProposalsArea {

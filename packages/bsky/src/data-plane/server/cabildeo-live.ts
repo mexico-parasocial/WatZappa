@@ -1,6 +1,6 @@
-import { Selectable, sql } from 'kysely'
-import { Database } from './db/index.js'
-import {
+import { type Selectable, sql } from 'kysely'
+import type { Database } from './db/index.js'
+import type {
   CabildeoLivePresence,
   CabildeoLiveSession,
 } from './db/tables/cabildeo.js'

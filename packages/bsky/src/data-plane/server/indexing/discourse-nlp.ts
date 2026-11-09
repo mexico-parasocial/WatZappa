@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module'
-import { removeStopwords, spa } from 'stopword'
 import keywordExtractorModule from 'keyword-extractor'
+import type * as Natural from 'natural'
+import { removeStopwords, spa } from 'stopword'
 
 const keywordExtractor = ((m) => m.default ?? m)(keywordExtractorModule)
 
@@ -20,7 +21,7 @@ const keywordExtractor = ((m) => m.default ?? m)(keywordExtractorModule)
  */
 const require = createRequire(import.meta.url)
 
-type NaturalModule = typeof import('natural')
+type NaturalModule = typeof Natural
 
 let tools:
   | {

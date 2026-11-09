@@ -1,9 +1,9 @@
 // @ts-nocheck
-import { CID } from 'multiformats/cid'
+import type { CID } from 'multiformats/cid'
 import { AtUri } from '@atproto/syntax'
-import { BackgroundQueue } from '../../background.js'
-import { Database } from '../../db/index.js'
-import { DatabaseSchema } from '../../db/database-schema.js'
+import type { BackgroundQueue } from '../../background.js'
+import type { DatabaseSchema } from '../../db/database-schema.js'
+import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
 
 type GovernanceRecord = Record<string, unknown>

@@ -1,0 +1,46 @@
+---
+'@atproto-labs/did-resolver': patch
+'@atproto-labs/handle-resolver': patch
+'@atproto-labs/identity-resolver': patch
+'@atproto-labs/pipe': patch
+'@atproto-labs/rollup-plugin-bundle-manifest': patch
+'@atproto-labs/simple-store': patch
+'@atproto-labs/simple-store-memory': patch
+'@atproto-labs/simple-store-redis': patch
+'@atproto-labs/xrpc-utils': patch
+'@atproto/api': patch
+'@atproto/bsky': patch
+'@atproto/bsync': patch
+'@atproto/common': patch
+'@atproto/common-web': patch
+'@atproto/crypto': patch
+'@atproto/dev-env': patch
+'@atproto/did': patch
+'@atproto/identity': patch
+'@atproto/lex-builder': patch
+'@atproto/lex-cbor': patch
+'@atproto/lex-cli': patch
+'@atproto/lex-client': patch
+'@atproto/lex-data': patch
+'@atproto/lex-document': patch
+'@atproto/lex-installer': patch
+'@atproto/lex-json': patch
+'@atproto/lex-password-session': patch
+'@atproto/lex-resolver': patch
+'@atproto/lex-schema': patch
+'@atproto/lex-server': patch
+'@atproto/lexicon': patch
+'@atproto/lexicon-resolver': patch
+'@atproto/ozone': patch
+'@atproto/pds': patch
+'@atproto/repo': patch
+'@atproto/space': patch
+'@atproto/sync': patch
+'@atproto/syntax': patch
+'@atproto/tap': patch
+'@atproto/ws-client': patch
+'@atproto/xrpc': patch
+'@atproto/xrpc-server': patch
+---
+
+Format and lint the repository so `verify:style` and `verify:lint` pass: prettier output, unused imports removed, type-only imports, stale eslint directives and a few unused variables. No behaviour change.
