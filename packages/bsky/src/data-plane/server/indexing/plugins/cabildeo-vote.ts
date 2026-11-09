@@ -4,8 +4,8 @@ import type { CID } from 'multiformats/cid'
 import { type AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
 import type { ParaCacheService } from '../../../cache/para-cache.js'
 import type { BackgroundQueue } from '../../background.js'
-import { resolveCabildeoBoard } from '../../cabildeo-community.js'
 import { getAuthoritySnapshot } from '../../community-authority.js'
+import { resolveCommunityAccountUris } from '../../community-membership.js'
 import type {
   DatabaseSchema,
   DatabaseSchemaType,
@@ -243,16 +243,20 @@ export const getCabildeoVoteEligibility = async (
     return null
   }
 
-  const board = await resolveCabildeoBoard(db, cabildeo.community)
-  if (!board) {
+  const database = { db } as Database
+  const [communityUri] = await resolveCommunityAccountUris(
+    database,
+    cabildeo.community,
+  )
+  if (!communityUri) {
     return null
   }
 
-  // The same rule as every other read of membership: authority events decide,
-  // and a record the member wrote themselves counts only for a member with none.
+  // The same rule as every other read of membership: the community's chain
+  // decides.
   const authority = await getAuthoritySnapshot(
     { db } as Database,
-    board.uri,
+    communityUri,
     opts.actorDid,
   )
   return authority.membershipState === 'active' ? { cabildeo } : null

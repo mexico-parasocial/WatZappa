@@ -4,10 +4,12 @@ import { TID, cidForCbor } from '@atproto/common'
 import {
   type SeedClient,
   TestNetwork,
+  actInCommunity,
   createCommunityBoardRecord,
   createCommunityMembershipRecord,
   createParaPost,
   createParaPostMeta,
+  paraCall,
   usersSeed,
 } from '@atproto/dev-env'
 import { WriteOpAction } from '@atproto/repo'
@@ -17,14 +19,14 @@ const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
 
 // A community policy counts only ballots from the community's active members
 // (OD-10 §7.7), judged per identity when the tally is read and by the same
-// rule as a cabildeo's (`filterActiveMembers`). These pin that an outsider's
+// rule as a cabildeo's (`filterActiveMembers`): the community account's chain. These pin that an outsider's
 // ballot never counts, that a member who leaves stops counting, and that the
 // quorum's denominator is judged the same way as its numerator.
 maybeDescribe('policy tally membership', () => {
   let network: TestNetwork
   let sc: SeedClient
-  let alice: DidString // member by authority events
-  let bob: DidString // member by his own membership record (legacy)
+  let alice: DidString // the founding owner
+  let bob: DidString // joined the community
   let dan: DidString // outsider
   let boardUri: string
   let boardSlug: string
@@ -93,40 +95,14 @@ maybeDescribe('policy tally membership', () => {
     await usersSeed(sc)
     ;({ alice, bob, dan } = sc.dids)
 
-    boardUri = (
-      await createCommunityBoardRecord(sc, alice, {
-        name: 'Policy Tally Board',
-        quadrant: 'center',
-      })
-    ).uri
-    await network.processAll()
-    await sc.agent.com.atproto.repo.createRecord(
-      {
-        repo: alice,
-        collection: 'com.para.community.authorityEvent',
-        record: {
-          $type: 'com.para.community.authorityEvent',
-          community: boardUri,
-          subject: alice,
-          issuer: alice,
-          action: 'member.activate',
-          basis: 'foundingTransition',
-          version: 1,
-          effectiveAt: new Date(Date.now() - 1000).toISOString(),
-          createdAt: new Date().toISOString(),
-        },
-      },
-      { encoding: 'application/json', headers: sc.getHeaders(alice) },
-    )
+    const board = await createCommunityBoardRecord(sc, alice, {
+      name: 'Policy Tally Board',
+      quadrant: 'center',
+    })
+    boardUri = board.uri
+    boardSlug = board.slug
     await createCommunityMembershipRecord(sc, bob, boardUri, 'active')
     await network.processAll()
-
-    const row = await network.bsky.db.db
-      .selectFrom('para_community_board')
-      .where('uri', '=', boardUri)
-      .select('slug')
-      .executeTakeFirstOrThrow()
-    boardSlug = row.slug as string
   })
 
   afterAll(async () => {
@@ -245,26 +221,9 @@ maybeDescribe('policy tally membership', () => {
     await vote(bob, subject, 2)
     expect(await tally(subject)).toMatchObject({ voteCount: 2 })
 
-    const membership = await network.bsky.db.db
-      .selectFrom('para_community_membership')
-      .where('creator', '=', bob)
-      .where('communityUri', '=', boardUri)
-      .select('uri')
-      .executeTakeFirstOrThrow()
-    await sc.agent.com.atproto.repo.putRecord(
-      {
-        repo: bob,
-        collection: 'com.para.community.membership',
-        rkey: new AtUri(membership.uri).rkey,
-        record: {
-          $type: 'com.para.community.membership',
-          community: boardUri,
-          membershipState: 'left',
-          joinedAt: new Date().toISOString(),
-        },
-      },
-      { encoding: 'application/json', headers: sc.getHeaders(bob) },
-    )
+    await actInCommunity(paraCall(sc.agent, sc.getHeaders(bob)), boardUri, {
+      action: 'member.leave',
+    })
     await network.processAll()
 
     expect(await tally(subject)).toMatchObject({

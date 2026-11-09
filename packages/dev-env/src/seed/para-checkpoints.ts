@@ -13,7 +13,6 @@ export type ParaSeedCheckpointName =
   | 'policyVotes'
   | 'engagement'
   | 'highlights'
-  | 'liveSessions'
   | 'lists'
   | 'postMeta'
   | 'raq'

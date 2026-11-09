@@ -103,7 +103,8 @@ describe('firehose seq beyond 2^53', () => {
 })
 
 describe('firehose trusted role projection', () => {
-  const community = 'at://did:plc:owner/com.para.community.board/one'
+  const communityDid = 'did:plc:owner'
+  const community = `at://${communityDid}/com.para.community.profile/self`
   const member = 'did:plc:member'
   let db: SqliteBridgeDatabase
   let consumer: FirehoseConsumer
@@ -145,31 +146,22 @@ describe('firehose trusted role projection', () => {
   afterEach(async () => {
     await db.close()
   })
-  const ingest = async (
-    record: Record<string, unknown>,
-    did = member,
-    collection = 'com.para.community.membership',
-    event = 'update',
-  ) => {
+  /** A chain event in the community's repo: all the bridge learns from it is whom to re-check. */
+  const ingest = async (record: Record<string, unknown>) => {
     await (
       consumer as unknown as { handleCommit(evt: unknown): Promise<void> }
-    ).handleCommit({ collection, did, event, record })
+    ).handleCommit({
+      collection: 'com.para.community.event',
+      did: communityDid,
+      event: 'create',
+      record: { seq: 2, actor: member, subject: member, ...record },
+    })
   }
 
   it.each(['owner', 'moderator', 'delegate', 'observer'])(
-    'ignores self-declared %s on create and update',
+    'ignores a self-declared %s on a join event',
     async (role) => {
-      await ingest(
-        { community, membershipState: 'active', roles: [role] },
-        member,
-        'com.para.community.membership',
-        'create',
-      )
-      await ingest({
-        community,
-        membershipState: 'active',
-        roles: [role, 'owner'],
-      })
+      await ingest({ action: 'member.join', roles: [role, 'owner'] })
       expect(await db.getCommunityMembership(member, community)).toEqual(
         verified,
       )
@@ -179,38 +171,95 @@ describe('firehose trusted role projection', () => {
       })
     },
   )
-  it('does not infer owner authority from the board creator DID', async () => {
-    await ingest(
-      { community, membershipState: 'active', roles: ['owner'] },
-      'did:plc:owner',
-    )
+  it('does not infer owner authority from the community DID', async () => {
+    await ingest({
+      action: 'member.join',
+      actor: communityDid,
+      subject: communityDid,
+    })
     expect(
-      (await db.getCommunityMembership('did:plc:owner', community))?.roles,
+      (await db.getCommunityMembership(communityDid, community))?.roles,
     ).toEqual(['member'])
   })
-  it('projects a verified moderator and then revokes the grant without a membership rewrite', async () => {
+  it('projects a verified moderator and then revokes the grant', async () => {
     verified = { state: 'active', roles: ['member', 'moderator'] }
-    await ingest(
-      { community, subject: member, action: 'moderator.grant' },
-      'did:plc:owner',
-      'com.para.community.authorityEvent',
-    )
+    await ingest({ action: 'moderator.accept', actor: member })
     expect(apply.mock.calls.at(-1)?.[2].roles).toContain('moderator')
     verified = { state: 'active', roles: ['member'] }
-    await ingest(
-      { community, subject: member, action: 'moderator.revoke' },
-      'did:plc:owner',
-      'com.para.community.authorityEvent',
-    )
+    await ingest({
+      action: 'moderator.revoke',
+      actor: communityDid,
+      subject: member,
+    })
     expect(apply.mock.calls.at(-1)?.[2].roles).toEqual(['member'])
   })
-  it('removes access despite an active self-authored membership record', async () => {
+  it('removes access when the authority service says the member was removed', async () => {
     verified = { state: 'removed', roles: [] }
-    await ingest({ community, membershipState: 'active', roles: ['owner'] })
+    await ingest({ action: 'member.remove', actor: communityDid })
     expect((await db.getCommunityMembership(member, community))?.state).toBe(
       'removed',
     )
     expect(revoke).toHaveBeenCalledWith(expect.anything(), member, 'removed')
+  })
+  it.each([
+    'content.hide',
+    'relation.link',
+    'briefing.publish',
+    'profile.update',
+  ])('does not re-check anyone for a %s event', async (action) => {
+    await ingest({ action })
+    expect(await db.getCommunityMembership(member, community)).toBeUndefined()
+    expect(apply).not.toHaveBeenCalled()
+  })
+  it('names the founder of a community, and ignores a profile it did not found', async () => {
+    const provision = vi
+      .spyOn(
+        consumer as unknown as {
+          handleCommunityCreate(...args: unknown[]): Promise<void>
+        },
+        'handleCommunityCreate',
+      )
+      .mockResolvedValue()
+    const profile = async (did: string, rkey = 'self') =>
+      (
+        consumer as unknown as { handleCommit(evt: unknown): Promise<void> }
+      ).handleCommit({
+        collection: 'com.para.community.profile',
+        did,
+        event: 'create',
+        rkey,
+        uri: `at://${did}/com.para.community.profile/${rkey}`,
+        record: { name: 'Norte' },
+      })
+    verified = { state: 'active', roles: ['member', 'owner'] }
+    await ingest({ action: 'community.found', actor: member })
+    await profile(communityDid)
+    expect(provision).toHaveBeenCalledWith(
+      member,
+      { name: 'Norte' },
+      community,
+      'owner',
+    )
+    await profile('did:plc:other', 'not-self')
+    expect(provision).toHaveBeenCalledTimes(1)
+    await profile('did:plc:stranger')
+    expect(provision).toHaveBeenLastCalledWith(
+      'did:plc:stranger',
+      { name: 'Norte' },
+      'at://did:plc:stranger/com.para.community.profile/self',
+      'stranger',
+    )
+  })
+  it('refuses to retry provisioning for anything but a community profile', async () => {
+    for (const uri of [
+      'at://did:plc:owner/com.para.community.board/one',
+      'at://did:plc:owner/com.para.community.profile/other',
+      'not a uri',
+    ]) {
+      await expect(
+        consumer.retryCommunityProvision(uri, member),
+      ).rejects.toThrow('Invalid community provisioning job')
+    }
   })
   it('repairs persisted forged grants before serving and catches expiration/indexing lag', async () => {
     await db.setCommunityMembership(member, community, 'active', [

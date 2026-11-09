@@ -21,7 +21,7 @@
 
 | #    | Test               | Step                                      | Expected Result                                 | ✅  |
 | ---- | ------------------ | ----------------------------------------- | ----------------------------------------------- | --- |
-| 2.1  | Community creation | Create `com.para.community.board` record  | Matrix space created, logged in `sync_log`      | ☐   |
+| 2.1  | Community creation | Found a community (`community.create`)    | Matrix space created, logged in `sync_log`      | ☐   |
 | 2.1a | E2EE state         | Inspect new room state                    | `m.room.encryption` uses `m.megolm.v1.aes-sha2` | ☐   |
 | 2.2  | Creator admin      | Check power level of creator in new space | PL = 100                                        | ☐   |
 | 2.3  | Member invite      | Join community → membership `active`      | User invited to space, PL = 0                   | ☐   |

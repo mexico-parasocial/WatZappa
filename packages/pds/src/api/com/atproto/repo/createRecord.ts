@@ -106,7 +106,7 @@ export default function (server: Server, ctx: AppContext) {
           }),
         )
         const writes = [...backlinkDeletions, write]
-        await assertCommunityRepoWrites(actorTxn, did, writes)
+        await assertCommunityRepoWrites(actorTxn, writes)
         const commit = await actorTxn.repo
           .processWrites(writes, swapCommitCid)
           .catch((err) => {

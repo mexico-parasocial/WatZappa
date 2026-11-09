@@ -70,28 +70,28 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
 
 ## Architecture notes
 
-- Community authority comes from verified authority-event chains; self-authored
-  membership roles never grant offices. An active membership record opens a
-  subject's chain at version 0 (`community.join` writes no activation event);
-  `isCommunityOwnerSql` mirrors that, and a `left` record ends membership
-  unless an activation follows it. A record that changes what a community
-  shows (moderation actions, relations, briefing packs) counts only if its
-  author held office at its `indexedAt` (`filterByOfficeWhenIndexed`); its
-  duplicate and conflict checks are per author, or the first writer squats.
-  PDS routes ask the AppView's `getAuthorization` for offices, never the
-  local record. `PARA_AUTHORITY_SERVICE_TOKEN` is a
-  dedicated read credential for the bridge's specified-subject authorization
-  query; redact its header, disable caching, and never reuse admin/M8 credentials.
-  An `assemblyDecision` event is indexed only if the AppView recomputes the
-  decision from the evidence cabildeo's final tally (`verifyAssemblyDecision`
-  in `community-authority.ts`), and only for `membership.approve` and
-  `owner.recover` (`ASSEMBLY_DECISIONS`), never moderator election or
-  sanctions. Quorum and threshold are fixed in `@atproto/common`
-  (`evaluateAssemblyVote`), not read from a governance record its owner
-  publishes. The electorate is active members by authority events alone, and
-  voter eligibility everywhere else goes through `filterActiveMembers`, so a
-  self-written membership record never counts as a vote. Every community stays
-  hierarchical (owner appoints moderators): there is no governance-mode field.
+- **A community is an account; its old records are retired.**
+  `assertCommunityRepoWrites` refuses new `board`, `membership`, `governance`,
+  `roleAcceptance`, `authorityEvent`, `relation` and `sharedContentAction`
+  records in every repo (deletes pass). Found a community with
+  `com.para.community.create`, change it with `com.para.community.act`; fixtures
+  use `packages/dev-env/src/seed/community-account.ts`, never raw records.
+
+- A community's authority is its chain's alone: a member's own record never
+  grants an office, and a record that changes what a community shows is
+  replaced by a chain event (`CommunityEffect`). PDS routes ask the AppView's
+  `getAuthorization` for offices, never a local record.
+  `PARA_AUTHORITY_SERVICE_TOKEN` is a dedicated read credential for the
+  bridge's specified-subject authorization query; redact its header, disable
+  caching, and never reuse admin/M8 credentials. Voter eligibility everywhere
+  (ballot indexing, tallies, delegations) goes through `filterActiveMembers`,
+  which is the chain's active members, so no self-written record is a vote.
+  Every community stays hierarchical (the owner appoints moderators). Assembly
+  decisions ground no chain event yet: a cabildeo's `protectedAction` is a claim
+  only, and the fixed quorum and threshold rules (`evaluateAssemblyVote`,
+  `ASSEMBLY_DECISIONS` in `@atproto/common`) wait for a chain action that
+  verifies a cabildeo's final tally, as `verifyAssemblyDecision` once did for
+  authority events. Do not read quorum from a record the owner publishes.
 
 - **`com.para.civic.cabildeo` is the only proposal, deliberation and decision
   pipeline.** Reactions to arguments are `deliberationVote` on a
@@ -100,13 +100,14 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
   `com.para.community.proposal`, `deliberation` and `decision` have no
   lexicon, route or indexer any more (their old `para_deliberation_statement`
   rows stay, read only by Influence): do not bring them back or add a second
-  tally anywhere (the Matrix bridge decides nothing). A cabildeo grounds an authority event only if it
-  names its community by board URI, has exactly two options (the first
-  approves), and is still the record version voting opened in
+  tally anywhere (the Matrix bridge decides nothing). A cabildeo that is to
+  ground a chain event must name its community account, have exactly two
+  options (the first approves), and still be the record version voting opened in
   (`cabildeo_close_policy.recordCid`).
 
 - **OD-9 community accounts** ([docs/OD-9-COMMUNITY-ACCOUNTS.md](docs/OD-9-COMMUNITY-ACCOUNTS.md))
-  replace board records and authority events, which stay until its phase 5.
+  replaced board records and authority events (phase 5); the AppView keeps
+  neither their indexers nor their tables.
   A community repo is written only by its host's `com.para.community.act`;
   generic writes to it are refused. `act` and the AppView fold both decide
   with `applyCommunityEvent` (`@atproto/common`): never re-implement its rules.
@@ -114,9 +115,16 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
   pure function of the community repo: no `indexedAt`, no other repo's
   arrival. A fork, broken `prev` or rewritten event re-folds and freezes it.
   Read membership and offices only through `community-membership.ts` or
-  `getAuthoritySnapshots`, which dispatch on the community URI (an account's
-  is its `com.para.community.profile/self`); never query the member tables
-  directly. Resolve accounts by URI, DID, handle or slug, never display name.
+  `getAuthoritySnapshots`; a community is named by its URI (an account's is its
+  `com.para.community.profile/self`), and any other URI has no members. Never
+  query the member tables directly. Resolve accounts by URI, DID, handle or slug, never display name.
+  An action that touches state outside membership (content, relations,
+  briefing packs) returns it as a `CommunityEffect` in the policy's patch: the
+  host ignores it and the AppView stores it. Serve those views for an account
+  from `community-content.ts`, never from member-authored records. No chain
+  sees a relation cycle across communities, so `accountRelationRows` sets
+  aside every relation on one at read time; `listOpenOffers` shows a
+  non-steward only the offers that name them.
 
 - Pilot planning: read [docs/QUARTER_PLAN_2026Q4.md](docs/QUARTER_PLAN_2026Q4.md)
   and its evidence before auditing or scheduling work. It is the canonical

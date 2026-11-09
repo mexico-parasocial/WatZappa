@@ -136,16 +136,18 @@ describe('para dataplane queries', () => {
       .where('uri', '=', post.uri)
       .execute()
     const indexedBoard = await network.bsky.db.db
-      .selectFrom('para_community_board')
-      .select(['name', 'slug'])
-      .where('slug', '=', board.slug)
+      .selectFrom('para_community_account')
+      .innerJoin('actor', 'actor.did', 'para_community_account.did')
+      .select(['para_community_account.name', 'actor.handle'])
+      .where('para_community_account.did', '=', board.did)
       .executeTakeFirst()
     const indexedMeta = await network.bsky.db.db
       .selectFrom('para_post_meta')
       .select(['postUri', 'community'])
       .where('postUri', '=', post.uri)
       .executeTakeFirst()
-    expect(indexedBoard).toMatchObject({ name: 'Morena', slug: board.slug })
+    expect(indexedBoard?.name).toBe('Morena')
+    expect(indexedBoard?.handle.split('.')[0]).toBe(board.slug)
     expect(indexedMeta).toMatchObject({
       postUri: post.uri,
       community: board.slug,
@@ -248,7 +250,8 @@ describe('para dataplane queries', () => {
       postUri: post.uri,
     })
     expect(explicit.post?.postType).toEqual('policy')
-    expect(explicit.post?.voteScore).toEqual(9)
+    // The author's metadata never awards points: only public reactions do.
+    expect(explicit.post?.voteScore).toEqual(0)
     expect(explicit.post?.official).toBe(true)
     expect(explicit.post?.party).toEqual('Independent')
     expect(explicit.post?.community).toEqual('mx-federal')
@@ -256,6 +259,14 @@ describe('para dataplane queries', () => {
     expect(explicit.post?.tags).toEqual(['meta-tag'])
     expect(explicit.post?.flairs).toEqual(['meta-flair'])
     expect(explicit.post?.interactionMode).toEqual('policy_ballot')
+
+    await writeParaFixture(network, async () => {
+      await sc.like(bob, { raw: { uri: post.uri, cid: post.cid } })
+    })
+    const reacted = await network.bsky.ctx.dataplane.getParaPostMeta({
+      postUri: post.uri,
+    })
+    expect(reacted.post?.voteScore).toEqual(1)
   })
 
   it('queries para profile stats and status', async () => {

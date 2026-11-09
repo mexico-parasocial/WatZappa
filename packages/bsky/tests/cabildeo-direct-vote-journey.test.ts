@@ -4,9 +4,11 @@ import type { AddressInfo } from 'node:net'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   TestNetwork,
+  actInCommunity,
   createCommunityBoardRecord,
   createCommunityMembershipRecord,
   createParaStatus,
+  paraCall,
   usersSeed,
 } from '@atproto/dev-env'
 import { finalizeDueCabildeos } from '../src/data-plane/server/indexing/plugins/finalize-cabildeos.js'
@@ -96,9 +98,10 @@ maybeDescribe('cabildeo direct vote from PDS to AppView', () => {
       quadrant: 'civic',
     })
     boardUri = board.uri
-    community = `vote-journey-${board.uri.split('/').pop()}`
+    community = board.slug
     await createCommunityMembershipRecord(sc, bob, board.uri, 'active')
     await createCommunityMembershipRecord(sc, alice, board.uri, 'active')
+    await network.processAll()
     await createParaStatus(sc, bob, {
       status: 'Available',
       party: 'Example',
@@ -291,12 +294,7 @@ maybeDescribe('cabildeo direct vote from PDS to AppView', () => {
     )
     expect(view.voteTotals.total).toBe(1)
     expect(view.optionSummary[1].effectivePowerMicros).toBe(1_000_000)
-    const membership = await createCommunityMembershipRecord(
-      sc,
-      carol,
-      boardUri,
-      'active',
-    )
+    await createCommunityMembershipRecord(sc, carol, boardUri, 'active')
     await network.processAll()
     const joined = JSON.parse(
       (
@@ -306,14 +304,9 @@ maybeDescribe('cabildeo direct vote from PDS to AppView', () => {
       ).cabildeoJson,
     )
     expect(joined.voteTotals.total).toBe(2)
-    await sc.agent.com.atproto.repo.deleteRecord(
-      {
-        repo: carol,
-        collection: 'com.para.community.membership',
-        rkey: membership.uri.split('/').pop(),
-      },
-      { headers: sc.getHeaders(carol) },
-    )
+    await actInCommunity(paraCall(sc.agent, sc.getHeaders(carol)), boardUri, {
+      action: 'member.leave',
+    })
     await network.processAll()
     const left = JSON.parse(
       (

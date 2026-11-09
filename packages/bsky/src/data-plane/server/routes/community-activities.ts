@@ -20,6 +20,9 @@ const DEFAULT_LIMIT = 25
 /** How many extra pages to scan when non-organizer records are filtered out. */
 const MAX_SCAN_ROUNDS = 5
 
+/** Joins an activity to the community account it names, by profile URI. */
+const accountMatches = sql<boolean>`'at://' || account.did || '/com.para.community.profile/self' = activity."communityUri"`
+
 type StewardCheck = (communityUri: string, did: string) => Promise<boolean>
 
 /** Memoized per request: one board and authority lookup per (community, author). */
@@ -41,17 +44,8 @@ const isCommunitySteward = async (
   communityUri: string,
   did: string,
 ): Promise<boolean> => {
-  const board = await db.db
-    .selectFrom('para_community_board')
-    .where('uri', '=', communityUri)
-    .select('creator')
-    .executeTakeFirst()
-  if (!board) return false
-  if (board.creator === did) return true
+  // A community's offices are its chain's (OD-9).
   const authority = await getAuthoritySnapshot(db, communityUri, did)
-  // The legacy fallback reads roles from the member's own membership record,
-  // which they can write themselves; only verified authority events count.
-  if (authority.usedLegacyFallback) return false
   return authority.roles.some(
     (role) => role === 'owner' || role === 'moderator',
   )
@@ -115,13 +109,11 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     for (let round = 0; round < MAX_SCAN_ROUNDS; round++) {
       let builder = db.db
         .selectFrom('para_community_activity as activity')
-        .leftJoin(
-          'para_community_board as board',
-          'board.uri',
-          'activity.communityUri',
+        .leftJoin('para_community_account as account', (join) =>
+          join.on(accountMatches),
         )
         .selectAll('activity')
-        .select('board.name as communityName')
+        .select(sql<string | null>`account.name`.as('communityName'))
       if (req.communityUri) {
         builder = builder.where('activity.communityUri', '=', req.communityUri)
       }
@@ -196,14 +188,12 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   async getParaCommunityActivity(req) {
     const row = await db.db
       .selectFrom('para_community_activity as activity')
-      .leftJoin(
-        'para_community_board as board',
-        'board.uri',
-        'activity.communityUri',
+      .leftJoin('para_community_account as account', (join) =>
+        join.on(accountMatches),
       )
       .where('activity.uri', '=', req.uri)
       .selectAll('activity')
-      .select('board.name as communityName')
+      .select(sql<string | null>`account.name`.as('communityName'))
       .executeTakeFirst()
     const isSteward = makeStewardCheck(db)
     if (!row || !(await isSteward(row.communityUri, row.creator))) {

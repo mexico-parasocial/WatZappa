@@ -18,8 +18,8 @@ function normalizeCommunityId(input: string): string {
 }
 
 /**
- * Resolve a community board from any identifier a client might send: its uri,
- * slug, slug-normalized form, or slug-normalized name. Shared by the
+ * Resolve a community account from any identifier a client might send: its
+ * profile URI, DID, handle or slug. Shared by the
  * community-alignment and proposals endpoints so both accept the same inputs.
  */
 async function findCommunityBoard(
@@ -28,20 +28,6 @@ async function findCommunityBoard(
 ): Promise<
   { uri: string; slug: string | null; name: string | null } | undefined
 > {
-  const normalized = normalizeCommunityId(communityId)
-  const board = await db.db
-    .selectFrom('para_community_board as board')
-    .where(
-      sql<boolean>`(
-        "board"."uri" = ${communityId}
-        or "board"."slug" = ${communityId}
-        or "board"."slug" = ${normalized}
-        or regexp_replace(lower(coalesce("board"."name", '')), '[^a-z0-9]+', '-', 'g') = ${normalized}
-      )`,
-    )
-    .select(['board.uri', 'board.slug', 'board.name'])
-    .executeTakeFirst()
-  if (board) return board
   // An OD-9 community account, by URI, DID, handle or slug.
   const [uri] = await resolveCommunityAccountUris(db, communityId)
   const did = uri ? communityAccountDid(uri) : null

@@ -48,14 +48,14 @@ describe('verified authority client', () => {
     )
     expect(
       await resolver(
-        'at://did:plc:owner/com.para.community.board/one',
+        'at://did:plc:owner/com.para.community.profile/self',
         'did:plc:member',
       ),
     ).toEqual({ state: 'active', roles: ['member', 'moderator'] })
     const url = new URL(requests[0].url, 'http://localhost')
     expect(url.searchParams.get('subject')).toBe('did:plc:member')
     expect(url.searchParams.get('community')).toBe(
-      'at://did:plc:owner/com.para.community.board/one',
+      'at://did:plc:owner/com.para.community.profile/self',
     )
     expect(requests[0].token).toBe(token)
   })

@@ -149,123 +149,6 @@ export function validateViewerContext<V>(v: V) {
   return validate<ViewerContext & V>(v, id, hashViewerContext)
 }
 
-export interface LiveSessionView {
-  $type?: 'com.para.civic.defs#liveSessionView'
-  isLive: boolean
-  hostDid: string
-  activeParticipantCount: number
-  startedAt: string
-  participantPreviewDids: string[]
-}
-
-const hashLiveSessionView = 'liveSessionView'
-
-export function isLiveSessionView<V>(v: V) {
-  return is$typed(v, id, hashLiveSessionView)
-}
-
-export function validateLiveSessionView<V>(v: V) {
-  return validate<LiveSessionView & V>(v, id, hashLiveSessionView)
-}
-
-export interface CabildeoLive {
-  $type?: 'com.para.civic.defs#cabildeoLive'
-  cabildeoUri: string
-  community: string
-  phase:
-    'draft' | 'open' | 'deliberating' | 'voting' | 'resolved' | (string & {})
-  expiresAt: string
-}
-
-const hashCabildeoLive = 'cabildeoLive'
-
-export function isCabildeoLive<V>(v: V) {
-  return is$typed(v, id, hashCabildeoLive)
-}
-
-export function validateCabildeoLive<V>(v: V) {
-  return validate<CabildeoLive & V>(v, id, hashCabildeoLive)
-}
-
-/** The assembly's count for a resolved cabildeo and the next authority event it may ground. The AppView recomputes all of it from the final tally. */
-export interface AssemblyDecisionView {
-  $type?: 'com.para.civic.defs#assemblyDecisionView'
-  /** Why this cabildeo cannot ground an authority event, when it cannot. */
-  problem?:
-    | 'unknown-cabildeo'
-    | 'not-resolved'
-    | 'wrong-community'
-    | 'record-changed'
-    | 'too-short'
-    | 'not-decidable'
-    | 'options'
-    | 'not-admissible'
-    | (string & {})
-  action?: string
-  subject?: string
-  policy?: 'assembly_majority' | 'assembly_supermajority' | (string & {})
-  outcome?: AssemblyOutcome
-  event?: AssemblyEvent
-  /** The authority event this cabildeo already grounds. */
-  appliedEvent?: string
-}
-
-const hashAssemblyDecisionView = 'assemblyDecisionView'
-
-export function isAssemblyDecisionView<V>(v: V) {
-  return is$typed(v, id, hashAssemblyDecisionView)
-}
-
-export function validateAssemblyDecisionView<V>(v: V) {
-  return validate<AssemblyDecisionView & V>(v, id, hashAssemblyDecisionView)
-}
-
-export interface AssemblyOutcome {
-  $type?: 'com.para.civic.defs#assemblyOutcome'
-  approved: boolean
-  reason:
-    | 'approved'
-    | 'no-ballots'
-    | 'quorum-not-met'
-    | 'threshold-not-met'
-    | (string & {})
-  electorate: number
-  quorumTarget: number
-  participants: number
-  approvals: number
-  rejections: number
-}
-
-const hashAssemblyOutcome = 'assemblyOutcome'
-
-export function isAssemblyOutcome<V>(v: V) {
-  return is$typed(v, id, hashAssemblyOutcome)
-}
-
-export function validateAssemblyOutcome<V>(v: V) {
-  return validate<AssemblyOutcome & V>(v, id, hashAssemblyOutcome)
-}
-
-/** The com.para.community.authorityEvent to publish, with basis assemblyDecision. Issuer is whoever publishes it; effectiveAt must not precede the cabildeo's close. */
-export interface AssemblyEvent {
-  $type?: 'com.para.civic.defs#assemblyEvent'
-  action: string
-  subject: string
-  version: number
-  predecessor?: string
-  evidence: string
-}
-
-const hashAssemblyEvent = 'assemblyEvent'
-
-export function isAssemblyEvent<V>(v: V) {
-  return is$typed(v, id, hashAssemblyEvent)
-}
-
-export function validateAssemblyEvent<V>(v: V) {
-  return validate<AssemblyEvent & V>(v, id, hashAssemblyEvent)
-}
-
 export interface CabildeoView {
   $type?: 'com.para.civic.defs#cabildeoView'
   uri: string
@@ -290,7 +173,6 @@ export interface CabildeoView {
   minimumViewTier?: string
   minimumParticipationTier?: string
   protectedAction?: ComParaCommunityDefs.ProtectedAction
-  assemblyDecision?: AssemblyDecisionView
   votingOpenedAt?: string
   votingClosedAt?: string
   phaseDeadline?: string
@@ -301,7 +183,6 @@ export interface CabildeoView {
   partyVoteSummary?: PartyVoteSummary[]
   outcomeSummary?: OutcomeSummary
   viewerContext?: ViewerContext
-  liveSession?: LiveSessionView
 }
 
 const hashCabildeoView = 'cabildeoView'

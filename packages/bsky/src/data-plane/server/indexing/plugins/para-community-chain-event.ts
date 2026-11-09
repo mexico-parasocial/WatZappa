@@ -5,8 +5,8 @@ import { com } from '../../../../lexicons/index.js'
 import type { BackgroundQueue } from '../../background.js'
 import {
   type ChainDeps,
-  advanceCommunityChain,
-  refoldCommunityChain,
+  advanceCommunityChain as advanceChain,
+  refoldCommunityChain as refoldChain,
 } from '../../community-chain.js'
 import type {
   DatabaseSchema,
@@ -14,6 +14,31 @@ import type {
 } from '../../db/database-schema.js'
 import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
+import { recomputeCabildeoAggregates } from './recompute-cabildeo-aggregates.js'
+
+/**
+ * Membership decides who may vote and whose delegations count, so a chain
+ * that moved re-tallies every cabildeo still taking votes, as a membership
+ * record did before OD-9.
+ */
+async function retallyOpenCabildeos(db: Database) {
+  const open = await db.db
+    .selectFrom('cabildeo_cabildeo')
+    .where('phase', '=', 'voting')
+    .select('uri')
+    .execute()
+  for (const row of open) await recomputeCabildeoAggregates(db.db, row.uri)
+}
+
+const advanceCommunityChain: typeof advanceChain = async (db, ...rest) => {
+  await advanceChain(db, ...rest)
+  await retallyOpenCabildeos(db)
+}
+
+const refoldCommunityChain: typeof refoldChain = async (db, ...rest) => {
+  await refoldChain(db, ...rest)
+  await retallyOpenCabildeos(db)
+}
 
 const schema = com.para.community.event.main
 type EventSchema = typeof schema
@@ -62,6 +87,10 @@ function makeFns(deps: ChainDeps) {
         subject: event.subject,
         offer: event.offer ?? null,
         expiresAt: event.expiresAt ?? null,
+        sanction: event.sanction ?? null,
+        target: event.target ?? null,
+        targetCid: event.targetCid ?? null,
+        profile: event.profile ? JSON.stringify(event.profile) : null,
         governanceMode: event.governanceMode ?? null,
         admissionMode: event.admissionMode ?? null,
         requestUri: event.request.uri,
