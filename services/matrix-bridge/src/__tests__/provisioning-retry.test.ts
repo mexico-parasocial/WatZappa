@@ -2,7 +2,6 @@ import pino from 'pino'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Config } from '../config.js'
 import { SqliteBridgeDatabase } from '../db/index.js'
-import type { MatrixProjectionPort } from '../matrix-projection.js'
 import { BridgeMetrics } from '../metrics.js'
 import { RetryWorker } from '../retry.js'
 
@@ -29,7 +28,6 @@ describe('durable provisioning retries', () => {
       .mockResolvedValue(undefined)
     const worker = new RetryWorker(
       db,
-      {} as MatrixProjectionPort,
       new BridgeMetrics(),
       log,
       async () => {},
@@ -66,7 +64,6 @@ describe('durable provisioning retries', () => {
     const provision = vi.fn().mockResolvedValue(undefined)
     const worker = new RetryWorker(
       db,
-      {} as MatrixProjectionPort,
       new BridgeMetrics(),
       log,
       async () => {},
@@ -94,18 +91,44 @@ describe('durable provisioning retries', () => {
       false,
       'outage',
     )
-    const worker = new RetryWorker(
-      db,
-      {} as MatrixProjectionPort,
-      new BridgeMetrics(),
-      log,
-      async () => {},
-    )
+    const worker = new RetryWorker(db, new BridgeMetrics(), log, async () => {})
     try {
       worker.start()
       await vi.advanceTimersByTimeAsync(1)
       const [job] = await db.getFailedSyncs(50)
       expect(await db.getRetryCount(job.id)).toBe(1)
+    } finally {
+      worker.stop()
+      await db.close()
+    }
+  })
+  it('revalidates access after more than five failures and keeps failed removal queued', async () => {
+    vi.useFakeTimers()
+    const db = new SqliteBridgeDatabase({ dbPath: ':memory:' } as Config)
+    await db.logSync(
+      'revoke',
+      community,
+      'did:plc:member',
+      '!main:para',
+      false,
+      'offline',
+    )
+    const [job] = await db.getAccessRetryJobs()
+    for (let attempt = 0; attempt < 6; attempt++)
+      await db.incrementRetryCount(job.id)
+    const refresh = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('still offline'))
+      .mockResolvedValue(undefined)
+    const worker = new RetryWorker(db, new BridgeMetrics(), log, refresh)
+    try {
+      worker.start()
+      await vi.advanceTimersByTimeAsync(1)
+      expect(refresh).toHaveBeenCalledWith(community, 'did:plc:member', true)
+      expect((await db.getAccessRetryJobs())[0].retryCount).toBe(7)
+      await vi.advanceTimersByTimeAsync(60_000)
+      expect(refresh).toHaveBeenCalledTimes(2)
+      expect(await db.getAccessRetryJobs()).toEqual([])
     } finally {
       worker.stop()
       await db.close()

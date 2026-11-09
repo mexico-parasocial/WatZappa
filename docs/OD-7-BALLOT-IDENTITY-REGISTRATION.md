@@ -554,8 +554,12 @@ theirs, since who else took which side is not part of the view. `listDeliberatio
 used to return. Both indexers drop a record whose `author`/`voter` does not
 match the repo it arrived from, since a remote repository may name anyone.
 
-`ProposalDetailScreen`'s deliberation tab now reads that query instead of
-`MOCK_DELIBERATIONS`, and its three pills write through it.
+`ProposalDetailScreen`'s deliberation tab read that query instead of
+`MOCK_DELIBERATIONS`, and its three pills wrote through it. **Superseded
+2026-11-05:** the cabildeo is the one deliberation pipeline. The same three
+reactions now sit on each `com.para.civic.position` of `CabildeoDetailScreen`
+(`listCabildeoPositions` serves the counts and the viewer's own side), carry no
+m8 proof (§5h), and the `community.proposal` branch of the screen is gone.
 
 **So the -3..+3 control still has nowhere to write.** Both ballot lexicons are
 frozen, `com.para.civic.vote` refuses `signal`, and deliberation is unweighted

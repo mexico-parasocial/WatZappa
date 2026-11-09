@@ -24,6 +24,8 @@
 #                          base only — the consumer appends /xrpc/... itself.
 #   PLC_URL                default http://localhost:2582 — the dev-env mints
 #                          DIDs on its own PLC; the public directory 404s them.
+#   BRIDGE_CORS_ORIGINS    default the local web clients (Expo web :19006,
+#                          bskyweb :8100) so the browser app can call the API.
 
 set -euo pipefail
 
@@ -187,6 +189,7 @@ start_bridge() {
     export MATRIX_ENABLE_ENCRYPTION
     export MATRIX_PUBLIC_HOMESERVER_URL
     export M8_BASE_URL
+    export BRIDGE_CORS_ORIGINS="${BRIDGE_CORS_ORIGINS:-http://localhost:19006,http://localhost:8100}"
     export BRIDGE_DB_PATH
     export BRIDGE_PDS_SOURCE_ID
     export BRIDGE_BACKFILL_FROM_START

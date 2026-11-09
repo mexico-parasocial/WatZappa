@@ -16,6 +16,7 @@ import {
 import { up as dropSelfDeclaredRoles } from '../src/data-plane/server/db/migrations/20261004T120000000Z-drop-self-declared-community-roles.js'
 import { up as reindexGovernance } from '../src/data-plane/server/db/migrations/20261005T120000000Z-reindex-para-community-governance.js'
 import { up as revalidateAuthority } from '../src/data-plane/server/db/migrations/20261005T130000000Z-revalidate-community-authority.js'
+import { up as dropGovernanceMode } from '../src/data-plane/server/db/migrations/20261107T130000000Z-drop-board-governance-mode.js'
 
 const maybeDescribe = process.env.DB_POSTGRES_URL ? describe : describe.skip
 
@@ -721,6 +722,93 @@ maybeDescribe('community role forgery (AppView)', () => {
         .select('id')
         .execute()
       expect(remaining).toHaveLength(1)
+    })
+  })
+
+  // Runs after the rest: it drops a column the other tests never read.
+  describe('communities founded under the retired horizontal model', () => {
+    it('lose the expiring founding grant when the governance column is dropped', async () => {
+      const db = network.bsky.db.db
+      const horizontal = await write(dan, 'com.para.community.board', {
+        name: 'Horizontal Board',
+        quadrant: 'center',
+        delegatesChatId: 'horizontal-delegates',
+        subdelegatesChatId: 'horizontal-subdelegates',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+      })
+      await network.processAll()
+      const member = await authorityEvent(
+        dan,
+        {
+          subject: dan,
+          action: 'member.activate',
+          basis: 'foundingTransition',
+          version: 1,
+        },
+        horizontal,
+      )
+      await network.processAll()
+      // What a horizontal community was founded with: a moderator grant that
+      // expires, in place of the owner grant. The AppView no longer accepts it,
+      // so it is written as the old migration would have left it.
+      const now = new Date()
+      await db
+        .insertInto('para_community_authority_event')
+        .values({
+          id: 'horizontal-founding-grant',
+          uri: `at://${dan}/com.para.community.authorityEvent/horizontalgrant`,
+          cid: 'bafyreidummy',
+          creator: dan,
+          communityUri: horizontal,
+          subject: dan,
+          action: 'moderator.grant',
+          issuer: dan,
+          effectiveAt: new Date(now.getTime() - 1000).toISOString(),
+          expiresAt: new Date(now.getTime() + 30 * 86400000).toISOString(),
+          predecessor: member,
+          version: 2,
+          basis: 'foundingTransition',
+          evidence: null,
+          createdAt: now.toISOString(),
+          indexedAt: now.toISOString(),
+        })
+        .execute()
+      // The column is already gone: put it back, as it was before this change.
+      await sql`alter table para_community_board add column "governanceMode" varchar default 'hierarchical'`.execute(
+        db,
+      )
+      await sql`update para_community_board set "governanceMode" = 'horizontal' where uri = ${horizontal}`.execute(
+        db,
+      )
+      expect(await rolesOf(dan, horizontal)).toEqual(['member', 'moderator'])
+      const boardEvents = () =>
+        db
+          .selectFrom('para_community_authority_event')
+          .where('communityUri', '=', board)
+          .select('id')
+          .orderBy('id')
+          .execute()
+      const before = await boardEvents()
+
+      await dropGovernanceMode(db as unknown as Kysely<unknown>)
+
+      expect(await rolesOf(dan, horizontal)).toEqual(['member'])
+      const left = await db
+        .selectFrom('para_community_authority_event')
+        .where('communityUri', '=', horizontal)
+        .select(['action', 'version'])
+        .execute()
+      expect(left).toEqual([{ action: 'member.activate', version: 1 }])
+      // Other communities keep their authority.
+      expect(await boardEvents()).toEqual(before)
+      const columns = await sql<{ column_name: string }>`
+        select column_name from information_schema.columns
+        where table_name = 'para_community_board' and table_schema = current_schema()
+      `.execute(db)
+      expect(columns.rows.map((row) => row.column_name)).not.toContain(
+        'governanceMode',
+      )
     })
   })
 })

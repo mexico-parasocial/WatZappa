@@ -1,6 +1,6 @@
-import { ConsentPrefsArea } from './consent-prefs.js'
+import { ChatPreferencesArea } from './chat-preferences.js'
 
-export class MatrixEventsArea extends ConsentPrefsArea {
+export class MatrixEventsArea extends ChatPreferencesArea {
   // Matrix event ingestion
   async insertMatrixEvent(event: {
     roomId: string
@@ -110,48 +110,11 @@ export class MatrixEventsArea extends ConsentPrefsArea {
   ): Promise<
     { roomId: string; communityUri: string; slug: string; unread: number }[]
   > {
-    const rooms = await this.queryAll<{
-      room_id: string
-      community_uri: string
-      slug: string
-    }>(
-      `SELECT csm.space_id as room_id, csm.community_uri, csm.slug
-       FROM community_space_map csm
-       INNER JOIN community_membership_state cms ON cms.community_uri = csm.community_uri
-       WHERE cms.did = $1 AND cms.membership_state = 'active' AND csm.space_id IS NOT NULL`,
-      [did],
-    )
-
-    const chamberRooms = await this.queryAll<{
-      room_id: string
-      community_uri: string
-      slug: string
-      kind: string
-    }>(
-      `SELECT
-        CASE ca.chamber
-          WHEN 'A' THEN csm.chamber_a_room_id
-          WHEN 'B' THEN csm.chamber_b_room_id
-        END as room_id,
-        csm.community_uri, csm.slug,
-        'chamber-' || ca.chamber as kind
-       FROM community_space_map csm
-       INNER JOIN community_membership_state cms ON cms.community_uri = csm.community_uri AND cms.did = $1 AND cms.membership_state = 'active'
-       INNER JOIN chamber_assignment ca ON ca.community_uri = csm.community_uri AND ca.did = $1
-       WHERE csm.chamber_mode = 'bicameral'
-         AND ((ca.chamber = 'A' AND csm.chamber_a_room_id IS NOT NULL)
-           OR (ca.chamber = 'B' AND csm.chamber_b_room_id IS NOT NULL))`,
-      [did],
-    )
-
-    const allRooms = [...rooms, ...chamberRooms]
-
+    const rooms = await this.getActiveCommunityRoomsForDid(did)
     return Promise.all(
-      allRooms.map(async (r) => ({
-        roomId: r.room_id,
-        communityUri: r.community_uri,
-        slug: r.slug,
-        unread: await this.getUnreadCount(did, r.room_id),
+      rooms.map(async (room) => ({
+        ...room,
+        unread: await this.getUnreadCount(did, room.roomId),
       })),
     )
   }

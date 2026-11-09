@@ -19,19 +19,18 @@ A published governance record for a PARA community. This is the canonical contra
 
 **Record Properties:**
 
-| Name                | Type                                                                                            | Req'd                                                    | Description | Constraints                            |
-| ------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ----------- | -------------------------------------- |
-| `community`         | `string`                                                                                        | ✅                                                       |             | Max Length: 256<br/>Max Graphemes: 128 |
-| `communityId`       | `string`                                                                                        | ❌                                                       |             | Max Length: 256<br/>Max Graphemes: 128 |
-| `slug`              | `string`                                                                                        | ✅                                                       |             | Max Length: 128<br/>Max Graphemes: 128 |
-| `createdAt`         | `string`                                                                                        | ✅                                                       |             | Format: `datetime`                     |
-| `updatedAt`         | `string`                                                                                        | ✅                                                       |             | Format: `datetime`                     |
-| `moderators`        | Array of [`com.para.community.defs#moderatorView`]([[com-para-community-defs                    | com.para.community.defs#moderatorView]])                 | ✅          |                                        |     |
-| `officials`         | Array of [`com.para.community.defs#officialView`]([[com-para-community-defs                     | com.para.community.defs#officialView]])                  | ✅          |                                        |     |
-| `deputies`          | Array of [`com.para.community.defs#deputyRoleView`]([[com-para-community-defs                   | com.para.community.defs#deputyRoleView]])                | ✅          |                                        |     |
-| `metadata`          | [`com.para.community.defs#metadata`]([[com-para-community-defs                                  | com.para.community.defs#metadata]])                      | ❌          |                                        |     |
-| `roleRotationRules` | [`com.para.community.governanceConfig#roleRotationRules`]([[com-para-community-governanceconfig | com.para.community.governanceConfig#roleRotationRules]]) | ❌          |                                        |     |
-| `editHistory`       | Array of [`com.para.community.defs#historyEntry`]([[com-para-community-defs                     | com.para.community.defs#historyEntry]])                  | ❌          |                                        |     |
+| Name          | Type                                                                          | Req'd                                     | Description | Constraints                            |
+| ------------- | ----------------------------------------------------------------------------- | ----------------------------------------- | ----------- | -------------------------------------- |
+| `community`   | `string`                                                                      | ✅                                        |             | Max Length: 256<br/>Max Graphemes: 128 |
+| `communityId` | `string`                                                                      | ❌                                        |             | Max Length: 256<br/>Max Graphemes: 128 |
+| `slug`        | `string`                                                                      | ✅                                        |             | Max Length: 128<br/>Max Graphemes: 128 |
+| `createdAt`   | `string`                                                                      | ✅                                        |             | Format: `datetime`                     |
+| `updatedAt`   | `string`                                                                      | ✅                                        |             | Format: `datetime`                     |
+| `moderators`  | Array of [`com.para.community.defs#moderatorView`]([[com-para-community-defs  | com.para.community.defs#moderatorView]])  | ✅          |                                        |     |
+| `officials`   | Array of [`com.para.community.defs#officialView`]([[com-para-community-defs   | com.para.community.defs#officialView]])   | ✅          |                                        |     |
+| `deputies`    | Array of [`com.para.community.defs#deputyRoleView`]([[com-para-community-defs | com.para.community.defs#deputyRoleView]]) | ✅          |                                        |     |
+| `metadata`    | [`com.para.community.defs#metadata`]([[com-para-community-defs                | com.para.community.defs#metadata]])       | ❌          |                                        |     |
+| `editHistory` | Array of [`com.para.community.defs#historyEntry`]([[com-para-community-defs   | com.para.community.defs#historyEntry]])   | ❌          |                                        |     |
 
 ---
 
@@ -105,10 +104,6 @@ A published governance record for a PARA community. This is the canonical contra
           "metadata": {
             "type": "ref",
             "ref": "com.para.community.defs#metadata"
-          },
-          "roleRotationRules": {
-            "type": "ref",
-            "ref": "com.para.community.governanceConfig#roleRotationRules"
           },
           "editHistory": {
             "type": "array",

@@ -38,7 +38,7 @@ export default function (server: Server, ctx: AppContext) {
             official: res.tally.official,
             certified: res.tally.certified,
             outcome: parseString(res.tally.outcome) || 'insufficient_quorum',
-            state: parseString(res.tally.state) || 'draft',
+            state: parseString(res.tally.state) || 'noQuorum',
             breakdown: res.tally.breakdown.map((bucket) => ({
               signal: bucket.signal,
               count: bucket.count,

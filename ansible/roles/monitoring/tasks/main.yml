@@ -12,6 +12,29 @@
     state: directory
     mode: '0750'
 
+- name: Create the node-exporter textfile directory
+  ansible.builtin.file:
+    path: '{{ monitoring_textfile_dir }}'
+    state: directory
+    mode: '0755'
+
+- name: Deploy the blackbox exporter modules
+  ansible.builtin.template:
+    src: blackbox.yml.j2
+    dest: '{{ para_deploy_dir }}/monitoring/blackbox.yml'
+    mode: '0644'
+  register: monitoring_blackbox_config
+
+- name: Deploy the Alertmanager config
+  ansible.builtin.template:
+    src: alertmanager.yml.j2
+    dest: '{{ para_deploy_dir }}/monitoring/alertmanager.yml'
+    # Holds receiver credentials (SMTP password, bot token, webhook URL).
+    mode: '0600'
+    owner: '65534'
+    group: '65534'
+  register: monitoring_am_config
+
 - name: Deploy the Prometheus scrape config
   ansible.builtin.template:
     src: prometheus.yml.j2
@@ -30,11 +53,13 @@
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /:/rootfs:ro
+      - '{{ monitoring_textfile_dir }}:/textfile:ro'
     command:
       - '--path.procfs=/host/proc'
       - '--path.rootfs=/rootfs'
       - '--path.sysfs=/host/sys'
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--collector.textfile.directory=/textfile'
     # No published ports: Prometheus reaches it over the shared network.
     # Exposing node-exporter publicly hands out a detailed inventory of the
     # host to anyone who asks.
@@ -52,6 +77,36 @@
       - /sys:/sys:ro
       - /var/lib/docker:/var/lib/docker:ro
 
+- name: Run the blackbox exporter
+  community.docker.docker_container:
+    name: blackbox-exporter
+    image: 'prom/blackbox-exporter:{{ blackbox_exporter_version }}'
+    restart_policy: unless-stopped
+    networks:
+      - name: '{{ edge_network_name }}'
+    volumes:
+      - '{{ para_deploy_dir }}/monitoring/blackbox.yml:/etc/blackbox_exporter/config.yml:ro'
+    restart: '{{ monitoring_blackbox_config is changed | bool }}'
+    # No published ports: it would let anyone make this host probe arbitrary
+    # URLs.
+
+- name: Run Alertmanager
+  community.docker.docker_container:
+    name: alertmanager
+    image: 'prom/alertmanager:{{ alertmanager_version }}'
+    restart_policy: unless-stopped
+    networks:
+      - name: '{{ edge_network_name }}'
+    volumes:
+      - '{{ para_deploy_dir }}/monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro'
+      - 'alertmanager_data:/alertmanager'
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    ports:
+      - '127.0.0.1:9093:9093'
+    restart: '{{ monitoring_am_config is changed | bool }}'
+
 - name: Run Prometheus
   community.docker.docker_container:
     name: prometheus
@@ -61,11 +116,15 @@
       - name: '{{ edge_network_name }}'
     volumes:
       - '{{ para_deploy_dir }}/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro'
+      - '{{ para_deploy_dir }}/deploy/matrix/alerts.yml:/etc/prometheus/rules/matrix.yml:ro'
       - 'prometheus_data:/prometheus'
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time={{ prometheus_retention }}'
+      # Lets the role reload rules after deploy/matrix/alerts.yml changes. The
+      # API is only on the loopback port below.
+      - '--web.enable-lifecycle'
     ports:
       - '127.0.0.1:9090:9090'
     # Bound to loopback. Reach it over an SSH tunnel:
@@ -83,6 +142,26 @@
   delay: 5
   until: monitoring_prom_ready is succeeded
 
+- name: Reload Prometheus so updated alert rules apply
+  ansible.builtin.uri:
+    url: 'http://127.0.0.1:9090/-/reload'
+    method: POST
+    status_code: 200
+  changed_when: false
+  # alerts.yml arrives with the repository sync, which this role cannot see
+  # change; a reload is cheap and idempotent.
+
+- name: Warn when no alert receiver is configured
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: Alertmanager has no receiver. Alerts show at 127.0.0.1:9093 but
+      nobody is notified. Set alertmanager_email_to + alertmanager_smtp_*,
+      alertmanager_telegram_*, or alertmanager_slack_webhook_url.
+  when:
+    - not (alertmanager_email_to and alertmanager_smtp_smarthost)
+    - not (alertmanager_telegram_bot_token and alertmanager_telegram_chat_id | int != 0)
+    - not alertmanager_slack_webhook_url
+
 - name: Report scrape target health
   ansible.builtin.uri:
     url: 'http://127.0.0.1:9090/api/v1/targets?state=active'
@@ -97,5 +176,7 @@
          | map(attribute='labels.job') | zip(
            monitoring_prom_targets.json.data.activeTargets | map(attribute='health'))
          | map('join', '=') | list }}
-  # Expect matrix-bridge=down when the bridge is not running. Synapse is not
-  # a target at all; see the comment in prometheus.yml.j2 for why.
+  # Expect matrix-bridge=down / synapse=down when the Matrix stack is not
+  # running; both are reached over the edge network. Probe results are in
+  # probe_success, not target health: a blackbox target is "up" even when the
+  # service it probes is down.

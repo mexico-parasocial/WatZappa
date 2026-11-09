@@ -31,7 +31,7 @@
           "roleAssignments": {
             "type": "array",
             "maxLength": 16,
-            "description": "Structured role assignments with expiration and ratification for horizontal governance.",
+            "description": "Structured role assignments, optionally bounded in time.",
             "items": {
               "type": "ref",
               "ref": "#roleAssignment"
@@ -75,12 +75,12 @@
         "validUntil": {
           "type": "string",
           "format": "datetime",
-          "description": "When this role assignment expires. Required for horizontal governance rotations."
+          "description": "When this role assignment expires. Absent means it does not expire."
         },
         "ratifiedBy": {
           "type": "string",
           "format": "at-uri",
-          "description": "Reference to an approved com.para.community.decision or com.para.civic.cabildeo record that ratified this role."
+          "description": "Reference to the com.para.civic.cabildeo record that ratified this role."
         }
       }
     }

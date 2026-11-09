@@ -132,7 +132,76 @@
   #
   # This passes only through the public edge, which is why it lives here and
   # not in the sprint's protocol-level verification. On failure, check the
-  # compat routes in deploy/matrix/Caddyfile.matrix.
+  # compat routes in services/caddy/Caddyfile.prod (deploy/matrix/Caddyfile.matrix
+  # for a host-run Caddy).
+
+# ─── Nightly encrypted off-host backup (deploy/matrix/nightly-backup.sh) ─────
+- name: Decide whether the Matrix backup can be scheduled
+  ansible.builtin.set_fact:
+    matrix_backup_enabled: >-
+      {{ (matrix_backup_age_recipients | length > 0) and (s3_endpoint | length > 0) }}
+
+- name: Install age and the AWS CLI for the Matrix backup
+  ansible.builtin.apt:
+    name: [age, awscli]
+    state: present
+  when: matrix_backup_enabled | bool
+
+- name: Create /etc/para
+  ansible.builtin.file:
+    path: /etc/para
+    state: directory
+    mode: '0700'
+  when: matrix_backup_enabled | bool
+
+- name: Install the age recipients (public keys only)
+  ansible.builtin.copy:
+    dest: /etc/para/matrix-backup-recipients.txt
+    content: "{{ matrix_backup_age_recipients | join('\n') }}\n"
+    mode: '0644'
+  when: matrix_backup_enabled | bool
+
+- name: Install the Matrix backup environment
+  ansible.builtin.template:
+    src: matrix-backup.env.j2
+    dest: /etc/para/matrix-backup.env
+    mode: '0600'
+  when: matrix_backup_enabled | bool
+
+- name: Install the Matrix backup service and timer
+  ansible.builtin.template:
+    src: '{{ item }}.j2'
+    dest: '/etc/systemd/system/{{ item }}'
+    mode: '0644'
+  loop:
+    - para-matrix-backup.service
+    - para-matrix-backup.timer
+  when: matrix_backup_enabled | bool
+
+- name: Enable the Matrix backup timer
+  ansible.builtin.systemd:
+    name: para-matrix-backup.timer
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: matrix_backup_enabled | bool
+
+- name: Run the Matrix backup once to prove the path works
+  ansible.builtin.systemd:
+    name: para-matrix-backup.service
+    state: started
+  when: matrix_backup_enabled | bool
+  # Type=oneshot: this waits for the run and fails the play if the backup,
+  # encryption or upload fails.
+
+- name: Warn when the Matrix backup is not scheduled
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: no nightly Matrix backup. Set matrix_backup_age_recipients (age
+      public keys whose identities are kept off this host) and s3_endpoint with
+      the vault_s3_* secrets. Until then a host loss loses the signing key, MAS
+      secrets and all chat history.
+  when: not (matrix_backup_enabled | bool)
 
 - name: Report Matrix stack state
   ansible.builtin.debug:

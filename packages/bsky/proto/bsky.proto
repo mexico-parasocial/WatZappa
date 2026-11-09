@@ -1956,14 +1956,6 @@ message GetParaIntensitiesRequest {
   int32 limit = 2;
   string cursor = 3;
 }
-message GetParaDeliberationsRequest {
-  string proposal = 1;
-  // Whose own weighting to include on each statement, so the client can show
-  // the control already set. Empty for a logged-out viewer.
-  string viewer = 2;
-  int32 limit = 3;
-  string cursor = 4;
-}
 message GetParaDelegationsRequest {
   string delegator = 1;
   string delegate = 2;
@@ -2150,6 +2142,8 @@ message GetParaCabildeoPositionsRequest {
   string stance = 2;
   int32 limit = 3;
   string cursor = 4;
+  // Whose own reaction to include on each position. Empty for a logged-out viewer.
+  string viewer = 5;
 }
 message GetParaCabildeoPositionsResponse {
   string positions_json = 1;
@@ -2360,6 +2354,18 @@ message GetParaFollowThroughResponse {
   string cursor = 3;
 }
 
+// Conclusions: a steward's summary of a forum or persuasion cabildeo. Returns
+// the newest conclusion by a current steward (conclusion_json, empty when none)
+// and the earlier ones, newest first.
+message GetParaConclusionRequest {
+  string cabildeo_uri = 1;
+}
+message GetParaConclusionResponse {
+  string conclusion_json = 1;
+  string earlier_json = 2;
+  string community_uri = 3;
+}
+
 message ParaDiscourseSnapshot {
   string community = 1;
   string bucket = 2;
@@ -2470,7 +2476,7 @@ message ParaCommunityBoardView {
   repeated string parent_community_uris = 20;
   int32 child_community_count = 21;
   int32 shared_content_count = 22;
-  string governance_mode = 23;
+  reserved 23; // was "governance_mode"
   string admission_mode = 24;
   string region = 25;
 }
@@ -2641,7 +2647,7 @@ message GetParaCommunityGovernanceResponse {
   string computed_at = 6;
   ParaCommunityGovernanceMetadata metadata = 7;
   repeated ParaCommunityGovernanceHistoryEntry edit_history = 8;
-  string organization_standard = 9;
+  reserved 9; // was "organization_standard"
   string admission_mode = 10;
   int32 authority_event_version = 11;
   repeated ParaRoleDefinition role_definitions = 12;
@@ -2939,7 +2945,6 @@ service Service {
   rpc GetParaPolicyTally(GetParaPolicyTallyRequest) returns (GetParaPolicyTallyResponse);
   rpc GetParaPolicyCommunityVotes(GetParaPolicyCommunityVotesRequest) returns (GetParaPolicyCommunityVotesResponse);
   rpc GetParaVotes(GetParaVotesRequest) returns (ParaJsonPageResponse);
-  rpc GetParaDeliberations(GetParaDeliberationsRequest) returns (ParaJsonPageResponse);
   rpc GetParaIntensities(GetParaIntensitiesRequest) returns (ParaJsonPageResponse);
   rpc GetParaDelegations(GetParaDelegationsRequest) returns (ParaJsonPageResponse);
   rpc GetParaTallySimulation(GetParaTallySimulationRequest) returns (GetParaTallySimulationResponse);
@@ -2973,6 +2978,7 @@ service Service {
   rpc GetParaCommunityActivity(GetParaCommunityActivityRequest) returns (GetParaCommunityActivityResponse);
   rpc GetParaCommunityWikiPages(GetParaCommunityWikiPagesRequest) returns (ParaJsonPageResponse);
   rpc GetParaFollowThrough(GetParaFollowThroughRequest) returns (GetParaFollowThroughResponse);
+  rpc GetParaConclusion(GetParaConclusionRequest) returns (GetParaConclusionResponse);
   rpc GetParaDiscourseSnapshot(GetParaDiscourseSnapshotRequest) returns (GetParaDiscourseSnapshotResponse);
   rpc GetParaDiscourseTopics(GetParaDiscourseTopicsRequest) returns (GetParaDiscourseTopicsResponse);
   rpc GetParaDiscourseSentiment(GetParaDiscourseSentimentRequest) returns (GetParaDiscourseSentimentResponse);

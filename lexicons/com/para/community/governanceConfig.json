@@ -18,10 +18,6 @@
             "type": "string",
             "description": "Semver of this config. Changes only by direct flat vote (no delegation)."
           },
-          "organizationStandard": {
-            "type": "string",
-            "knownValues": ["hierarchical", "horizontal"]
-          },
           "admissionMode": {
             "type": "string",
             "knownValues": ["open", "assembly_approval"]
@@ -166,23 +162,6 @@
         "delegationGraphPublic": {
           "type": "boolean",
           "description": "Whether delegation chains are publicly observable"
-        }
-      }
-    },
-    "roleRotationRules": {
-      "type": "object",
-      "description": "Term limits and rotation constraints for horizontal governance.",
-      "properties": {
-        "facilitatorMaxDays": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 90
-        },
-        "moderatorMaxDays": { "type": "integer", "minimum": 1, "maximum": 180 },
-        "stewardMaxDays": { "type": "integer", "minimum": 1, "maximum": 365 },
-        "requiresAssemblyRatification": {
-          "type": "boolean",
-          "description": "Whether role changes require an approved assembly decision record."
         }
       }
     }

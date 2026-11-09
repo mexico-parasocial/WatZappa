@@ -2,7 +2,6 @@ import type { AddressInfo } from 'node:net'
 import pino from 'pino'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { WebSocketServer } from 'ws'
-import { ChatModerationEngine } from '../chat-moderation.js'
 import type { TrustedMembership } from '../community-authority.js'
 import type { Config } from '../config.js'
 import { SqliteBridgeDatabase } from '../db/index.js'
@@ -10,31 +9,9 @@ import {
   FirehoseConsumer,
   UnsafeFirehoseSeqError,
   prepareFirehoseCursor,
-  signalToChoice,
 } from '../firehose.js'
 import type { MatrixProjectionPort } from '../matrix-projection.js'
 import { BridgeMetrics } from '../metrics.js'
-import type { ProposalEngine } from '../proposals.js'
-
-describe(signalToChoice, () => {
-  for (const { signal, expected } of [
-    { signal: 3, expected: 'for' },
-    { signal: 2, expected: 'for' },
-    { signal: 1, expected: 'for' },
-    { signal: 0, expected: 'abstain' },
-    { signal: -1, expected: 'against' },
-    { signal: -2, expected: 'against' },
-    { signal: -3, expected: 'against' },
-  ]) {
-    it(`maps signal ${signal} to ${expected}`, () => {
-      expect(signalToChoice(signal)).toBe(expected)
-    })
-  }
-
-  it('returns null for out-of-range signals', () => {
-    expect(signalToChoice(Number.NaN)).toBeNull()
-  })
-})
 
 describe(prepareFirehoseCursor, () => {
   it('binds an empty database to the requested PDS source', async () => {
@@ -109,8 +86,6 @@ describe('firehose seq beyond 2^53', () => {
       config,
       db,
       {} as MatrixProjectionPort,
-      {} as ProposalEngine,
-      new ChatModerationEngine(db, log),
       new BridgeMetrics(),
       log,
     )
@@ -159,8 +134,6 @@ describe('firehose trusted role projection', () => {
         applyMemberRoles: apply,
         revokeMemberAccess: revoke,
       } as unknown as MatrixProjectionPort,
-      {} as ProposalEngine,
-      new ChatModerationEngine(db, log),
       new BridgeMetrics(),
       log,
       async () => {
@@ -204,12 +177,6 @@ describe('firehose trusted role projection', () => {
         roles: ['member'],
         isObserver: false,
       })
-      expect(
-        (await db.getParticipationStats(member, community)).is_moderator,
-      ).toBe(0)
-      expect(
-        (await db.getParticipationStats(member, community)).is_delegate,
-      ).toBe(0)
     },
   )
   it('does not infer owner authority from the board creator DID', async () => {
@@ -229,9 +196,6 @@ describe('firehose trusted role projection', () => {
       'com.para.community.authorityEvent',
     )
     expect(apply.mock.calls.at(-1)?.[2].roles).toContain('moderator')
-    expect(
-      (await db.getParticipationStats(member, community)).is_moderator,
-    ).toBe(1)
     verified = { state: 'active', roles: ['member'] }
     await ingest(
       { community, subject: member, action: 'moderator.revoke' },
@@ -239,9 +203,6 @@ describe('firehose trusted role projection', () => {
       'com.para.community.authorityEvent',
     )
     expect(apply.mock.calls.at(-1)?.[2].roles).toEqual(['member'])
-    expect(
-      (await db.getParticipationStats(member, community)).is_moderator,
-    ).toBe(0)
   })
   it('removes access despite an active self-authored membership record', async () => {
     verified = { state: 'removed', roles: [] }

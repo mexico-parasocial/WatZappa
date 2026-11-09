@@ -24,6 +24,7 @@ export interface Main {
   body: string
   /** For megathreads: the post that hosts the discussion. */
   threadUri?: string
+  pollUri?: string
   pinned?: boolean
   sortOrder?: number
   createdBy: string

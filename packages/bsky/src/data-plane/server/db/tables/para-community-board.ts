@@ -12,7 +12,6 @@ export interface ParaCommunityBoard {
   slug: string
   delegatesChatId: string
   subdelegatesChatId: string
-  governanceMode: string | null
   admissionMode: string
   createdAt: string
   indexedAt: string

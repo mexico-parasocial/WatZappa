@@ -47,6 +47,7 @@ import * as OpenQuestionVote from './plugins/open-question-vote.js'
 import * as OpenQuestion from './plugins/open-question.js'
 import * as ParaCommunityAccountProfile from './plugins/para-community-account-profile.js'
 import * as ParaCommunityActivity from './plugins/para-community-activity.js'
+import * as ParaConclusion from './plugins/para-conclusion.js'
 import * as ParaCommunityAuthorityEvent from './plugins/para-community-authority-event.js'
 import * as ParaCommunityBoard from './plugins/para-community-board.js'
 import * as ParaCommunityBriefingPack from './plugins/para-community-briefing-pack.js'
@@ -56,7 +57,6 @@ import * as ParaCommunityMembership from './plugins/para-community-membership.js
 import * as ParaCommunityRelation from './plugins/para-community-relation.js'
 import * as ParaCommunitySharedContentAction from './plugins/para-community-shared-content-action.js'
 import * as ParaCommunitySharedContent from './plugins/para-community-shared-content.js'
-import * as ParaDeliberationStatement from './plugins/para-deliberation-statement.js'
 import * as ParaDeliberationVote from './plugins/para-deliberation-vote.js'
 import * as ParaFollowThrough from './plugins/para-follow-through.js'
 import * as ParaPostMeta from './plugins/para-post-meta.js'
@@ -121,6 +121,7 @@ export class IndexingService {
     paraCommunityEconomicActivity: ParaCommunityActivity.ActivityPluginType
     paraCommunityLedgerEntry: ParaCommunityActivity.LedgerEntryPluginType
     paraCommunityWikiPage: ParaCommunityActivity.WikiPagePluginType
+    paraConclusion: ParaConclusion.ConclusionPluginType
     paraFollowThrough: ParaFollowThrough.FollowThroughPluginType
     paraFollowThroughUpdate: ParaFollowThrough.FollowThroughUpdatePluginType
     paraCommunitySharedContent: ParaCommunitySharedContent.PluginType
@@ -131,7 +132,6 @@ export class IndexingService {
     paraQvlDelegation: ParaQvlDelegation.PluginType
     paraQvlIntensity: ParaQvlIntensity.PluginType
     paraQvlVote: ParaQvlVote.PluginType
-    paraDeliberationStatement: ParaDeliberationStatement.PluginType
     paraDeliberationVote: ParaDeliberationVote.PluginType
     paraStatus: ParaStatus.PluginType
     cabildeo: Cabildeo.PluginType
@@ -235,6 +235,7 @@ export class IndexingService {
         this.db,
         this.background,
       ),
+      paraConclusion: ParaConclusion.makePlugin(this.db, this.background),
       paraFollowThrough: ParaFollowThrough.makeItemPlugin(
         this.db,
         this.background,
@@ -262,10 +263,6 @@ export class IndexingService {
       paraQvlDelegation: ParaQvlDelegation.makePlugin(this.db, this.background),
       paraQvlIntensity: ParaQvlIntensity.makePlugin(this.db, this.background),
       paraQvlVote: ParaQvlVote.makePlugin(this.db, this.background),
-      paraDeliberationStatement: ParaDeliberationStatement.makePlugin(
-        this.db,
-        this.background,
-      ),
       paraDeliberationVote: ParaDeliberationVote.makePlugin(
         this.db,
         this.background,

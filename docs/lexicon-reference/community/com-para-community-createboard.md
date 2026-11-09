@@ -24,13 +24,12 @@ Creates a PARA community board. Automatically instantiates the underlying genera
 
 **Schema Type:** `object`
 
-| Name                     | Type     | Req'd | Description                                                                                                                                                       | Constraints                                               |
-| ------------------------ | -------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| `name`                   | `string` | ✅    |                                                                                                                                                                   | Min Length: 1<br/>Max Length: 1280<br/>Max Graphemes: 128 |
-| `quadrant`               | `string` | ✅    |                                                                                                                                                                   | Max Length: 64                                            |
-| `description`            | `string` | ❌    |                                                                                                                                                                   | Max Length: 3000                                          |
-| `founderStarterPackName` | `string` | ❌    | User-provided name for the internal starter pack tracking founding members. If absent, a default name will be generated.                                          | Max Length: 3000                                          |
-| `governanceMode`         | `string` | ❌    | Governance model for this community. Hierarchical uses owner/moderator roles. Horizontal uses rotating facilitators and assembly votes. Defaults to hierarchical. | Known Values: `hierarchical`, `horizontal`                |
+| Name                     | Type     | Req'd | Description                                                                                                              | Constraints                                               |
+| ------------------------ | -------- | ----- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| `name`                   | `string` | ✅    |                                                                                                                          | Min Length: 1<br/>Max Length: 1280<br/>Max Graphemes: 128 |
+| `quadrant`               | `string` | ✅    |                                                                                                                          | Max Length: 64                                            |
+| `description`            | `string` | ❌    |                                                                                                                          | Max Length: 3000                                          |
+| `founderStarterPackName` | `string` | ❌    | User-provided name for the internal starter pack tracking founding members. If absent, a default name will be generated. | Max Length: 3000                                          |
 | **Output:**              |
 
 - **Encoding:** `application/json`
@@ -82,11 +81,6 @@ Creates a PARA community board. Automatically instantiates the underlying genera
               "type": "string",
               "maxLength": 3000,
               "description": "User-provided name for the internal starter pack tracking founding members. If absent, a default name will be generated."
-            },
-            "governanceMode": {
-              "type": "string",
-              "knownValues": ["hierarchical", "horizontal"],
-              "description": "Governance model for this community. Hierarchical uses owner/moderator roles. Horizontal uses rotating facilitators and assembly votes. Defaults to hierarchical."
             }
           }
         }

@@ -40,15 +40,15 @@ const MAX_EVIDENCE = 5
 
 type Json = Record<string, unknown>
 
-const isObject = (value: unknown): value is Json =>
+export const isObject = (value: unknown): value is Json =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
-const str = (value: unknown, max: number): string | undefined =>
+export const str = (value: unknown, max: number): string | undefined =>
   typeof value === 'string' && value.length > 0 && value.length <= max
     ? value
     : undefined
-const isAtUri = (value: unknown): value is string =>
+export const isAtUri = (value: unknown): value is string =>
   typeof value === 'string' && value.startsWith('at://')
-const datetime = (value: unknown): string | undefined => {
+export const datetime = (value: unknown): string | undefined => {
   const raw = str(value, 64)
   return raw && Number.isFinite(Date.parse(raw))
     ? normalizeDatetimeAlways(raw)
@@ -62,10 +62,10 @@ const digestOf = (committed: Json) =>
  * The first version wins. Returns the committed fields to serve, whether the
  * incoming record differs from them, and when the first version was indexed.
  */
-const commit = async <T extends Json>(
+export const commit = async <T extends Json>(
   db: DatabaseSchema,
   uri: AtUri,
-  kind: 'item' | 'update',
+  kind: 'item' | 'update' | 'conclusion',
   subject: string,
   incoming: T,
   timestamp: string,
@@ -107,7 +107,7 @@ const commit = async <T extends Json>(
  * The digest covers the claim as written, not the clamped value, so
  * re-indexing an unchanged record later does not read as an edit.
  */
-const sortableCreatedAt = (
+export const sortableCreatedAt = (
   claimed: string | null | undefined,
   firstIndexedAt: string,
 ) =>

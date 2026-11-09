@@ -38,9 +38,9 @@ describe('EventBus — SSE backing store', () => {
     const unsubscribe = bus.subscribe((e) => received.push(e.seq))
 
     const a = await bus.publish({
-      type: 'proposal.state',
+      type: 'constitution.updated',
       communityUri: community,
-      payload: { to: 'voting' },
+      payload: { version: 2 },
     })
     const b = await bus.publish({
       type: 'membership.changed',
@@ -63,7 +63,7 @@ describe('EventBus — SSE backing store', () => {
       payload: {},
     })
     const e2 = await bus.publish({
-      type: 'proposal.state',
+      type: 'constitution.updated',
       communityUri: community,
       payload: {},
     })
@@ -90,7 +90,7 @@ describe('EventBus — SSE backing store', () => {
 
   it('filters community-wide events by the caller’s communities', async () => {
     await bus.publish({
-      type: 'proposal.state',
+      type: 'constitution.updated',
       communityUri: 'at://x/com.para.community.board/other',
       payload: {},
     })
@@ -103,7 +103,7 @@ describe('EventBus — SSE backing store', () => {
 
   it('prunes past retention and then flags old cursors as un-replayable', async () => {
     const e1 = await bus.publish({
-      type: 'proposal.state',
+      type: 'constitution.updated',
       communityUri: community,
       payload: {},
     })

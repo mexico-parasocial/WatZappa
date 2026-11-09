@@ -111,25 +111,6 @@ description: Reference for the com.para.community.governanceConfig lexicon
 
 ---
 
-<a name="rolerotationrules"></a>
-
-### `roleRotationRules`
-
-**Type:** `object`
-
-Term limits and rotation constraints for horizontal governance.
-
-**Properties:**
-
-| Name                           | Type      | Req'd | Description                                                        | Constraints         |
-| ------------------------------ | --------- | ----- | ------------------------------------------------------------------ | ------------------- |
-| `facilitatorMaxDays`           | `integer` | ❌    |                                                                    | Min: 1<br/>Max: 90  |
-| `moderatorMaxDays`             | `integer` | ❌    |                                                                    | Min: 1<br/>Max: 180 |
-| `stewardMaxDays`               | `integer` | ❌    |                                                                    | Min: 1<br/>Max: 365 |
-| `requiresAssemblyRatification` | `boolean` | ❌    | Whether role changes require an approved assembly decision record. |                     |
-
----
-
 ## Lexicon Source
 
 ```json
@@ -287,31 +268,6 @@ Term limits and rotation constraints for horizontal governance.
         "delegationGraphPublic": {
           "type": "boolean",
           "description": "Whether delegation chains are publicly observable"
-        }
-      }
-    },
-    "roleRotationRules": {
-      "type": "object",
-      "description": "Term limits and rotation constraints for horizontal governance.",
-      "properties": {
-        "facilitatorMaxDays": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 90
-        },
-        "moderatorMaxDays": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 180
-        },
-        "stewardMaxDays": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 365
-        },
-        "requiresAssemblyRatification": {
-          "type": "boolean",
-          "description": "Whether role changes require an approved assembly decision record."
         }
       }
     }

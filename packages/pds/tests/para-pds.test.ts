@@ -186,6 +186,7 @@ describe('PARA PDS methods', () => {
         status: 'draft',
         region: 'Jalisco',
       })
+      expect(board?.value).not.toHaveProperty('governanceMode')
 
       const membership = await xrpc('com.atproto.repo.getRecord', {
         params: {
@@ -206,6 +207,16 @@ describe('PARA PDS methods', () => {
         },
       })
       expect(events.body.records).toHaveLength(2)
+      const founding = events.body.records
+        .map((r: { value: { version: number } }) => r.value)
+        .sort((a: { version: number }, b: { version: number }) => {
+          return a.version - b.version
+        })
+      expect(founding).toEqual([
+        expect.objectContaining({ action: 'member.activate', version: 1 }),
+        expect.objectContaining({ action: 'owner.grant', version: 2 }),
+      ])
+      expect(founding[1].expiresAt).toBeUndefined()
     })
 
     it('replays an identical request without demoting the board', async () => {

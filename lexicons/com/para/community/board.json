@@ -69,12 +69,6 @@
             "knownValues": ["unicameral", "bicameral"],
             "default": "unicameral"
           },
-          "governanceMode": {
-            "type": "string",
-            "description": "Governance model for this community.",
-            "knownValues": ["hierarchical", "horizontal"],
-            "default": "hierarchical"
-          },
           "admissionMode": {
             "type": "string",
             "description": "How an account becomes an active member.",

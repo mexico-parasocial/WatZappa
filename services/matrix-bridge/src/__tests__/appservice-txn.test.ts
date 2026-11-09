@@ -27,8 +27,6 @@ function fakeCtx(db: SqliteBridgeDatabase, events: EventBus): RouteContext {
     events,
     metrics: undefined as never,
     log: silentLog as never,
-    // recordMessage path: avoid chat-moderation engine; handler tolerates it
-    chatMod: { recordMessage: async () => {} } as never,
   } as unknown as RouteContext
 }
 
@@ -207,7 +205,7 @@ describe('appservice transaction endpoint', () => {
     const retry = await call(ctx, 'PUT', '3.txn', 'not-json-at-all')
     expect(retry.status).toBe(400)
   })
-  it('rolls back metadata, participation, outbox and txn ID on failure, then retries', async () => {
+  it('rolls back metadata, outbox and txn ID on failure, then retries', async () => {
     using _broken = vi
       .spyOn(wrapped, 'appendEvent')
       .mockRejectedValueOnce(new Error('disk full'))
@@ -215,25 +213,12 @@ describe('appservice transaction endpoint', () => {
       call(ctx, 'PUT', 'retry', txn('!r:para', '$retry')),
     ).rejects.toThrow('disk full')
     expect(await wrapped.eventExists('$retry')).toBe(false)
-    expect(
-      await wrapped.getParticipationStats(
-        'did:plc:a',
-        'at://test/community/one',
-      ),
-    ).toBeUndefined()
     expect(await wrapped.getMaxEventSeq()).toBe(0)
     expect(received).toHaveLength(0)
     expect(
       (await call(ctx, 'PUT', 'retry', txn('!r:para', '$retry'))).status,
     ).toBe(200)
-    expect(
-      (
-        await wrapped.getParticipationStats(
-          'did:plc:a',
-          'at://test/community/one',
-        )
-      ).message_count,
-    ).toBe(1)
+    expect(await wrapped.getRecentEvents('!r:para')).toHaveLength(1)
   })
 
   it('deduplicates concurrent appservice and poller ingestion, including effects', async () => {
@@ -253,14 +238,7 @@ describe('appservice transaction endpoint', () => {
         bus,
       ),
     ])
-    expect(
-      (
-        await wrapped.getParticipationStats(
-          'did:plc:a',
-          'at://test/community/one',
-        )
-      ).message_count,
-    ).toBe(1)
+    expect(await wrapped.getRecentEvents('!r:para')).toHaveLength(1)
     expect(await wrapped.listEventsAfter(0, 10)).toHaveLength(1)
   })
 

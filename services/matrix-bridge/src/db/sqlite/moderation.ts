@@ -1,6 +1,6 @@
-import { SortitionArea } from './sortition.js'
+import { ConstitutionArea } from './constitution.js'
 
-export class ModerationArea extends SortitionArea {
+export class ModerationArea extends ConstitutionArea {
   // Chat moderation events
   insertModerationEvent(event: {
     did: string

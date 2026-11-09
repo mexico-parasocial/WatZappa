@@ -1,5 +1,4 @@
 import type { Logger } from 'pino'
-import type { ChatModerationEngine } from './chat-moderation.js'
 import type { Config } from './config.js'
 import type { IBridgeDatabase } from './db/index.js'
 import type { EventBus } from './events/bus.js'
@@ -13,7 +12,6 @@ export class MatrixSyncPoller {
   private events?: EventBus
   private db: IBridgeDatabase
   private matrix: MatrixAdminClient
-  private chatMod: ChatModerationEngine
   private log: Logger
   private pollIntervalMs: number
   private timer: NodeJS.Timeout | null = null
@@ -24,12 +22,10 @@ export class MatrixSyncPoller {
     config: Config,
     db: IBridgeDatabase,
     matrix: MatrixAdminClient,
-    chatMod: ChatModerationEngine,
     log: Logger,
   ) {
     this.db = db
     this.matrix = matrix
-    this.chatMod = chatMod
     this.log = log
     // Reconciliation fallback only: primary ingestion is appservice
     // transaction push (routes/appservice-txn.ts).

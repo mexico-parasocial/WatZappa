@@ -66,10 +66,6 @@
             "type": "ref",
             "ref": "com.para.community.defs#metadata"
           },
-          "roleRotationRules": {
-            "type": "ref",
-            "ref": "com.para.community.governanceConfig#roleRotationRules"
-          },
           "editHistory": {
             "type": "array",
             "items": {

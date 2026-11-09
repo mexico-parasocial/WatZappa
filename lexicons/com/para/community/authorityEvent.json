@@ -54,7 +54,11 @@
               "migration"
             ]
           },
-          "evidence": { "type": "string", "format": "at-uri" },
+          "evidence": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Required by assemblyDecision, ownerAppointment and ownerTransfer. For assemblyDecision it is the com.para.civic.cabildeo whose final tally approved this event: the AppView recomputes quorum and threshold from it and indexes the event only if they hold. One cabildeo grounds one event."
+          },
           "createdAt": { "type": "string", "format": "datetime" }
         }
       }

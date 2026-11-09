@@ -391,6 +391,8 @@ export const planPolicyVotes = (
           Math.round((policy.stance * lean + personal * 0.5) * 4) + nudge,
         ),
       )
+      // No neutral ballot (OD-10 §7.5): a voter who lands on 0 abstains.
+      if (signal === 0) continue
       plan.push({ voter: voter.short, policy: index, signal })
     }
   })

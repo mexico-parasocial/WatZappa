@@ -11,7 +11,6 @@ import {
   type OmitKey,
 } from '../../../../util.js'
 import type * as ComParaCommunityDefs from './defs.js'
-import type * as ComParaCommunityGovernanceConfig from './governanceConfig.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -28,7 +27,6 @@ export interface Main {
   officials: ComParaCommunityDefs.OfficialView[]
   deputies: ComParaCommunityDefs.DeputyRoleView[]
   metadata?: ComParaCommunityDefs.Metadata
-  roleRotationRules?: ComParaCommunityGovernanceConfig.RoleRotationRules
   editHistory?: ComParaCommunityDefs.HistoryEntry[]
   [k: string]: unknown
 }

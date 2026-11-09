@@ -453,7 +453,7 @@ maybeDescribe('community moderation authority', () => {
 
   describe('community relations', () => {
     let danBoard: string
-    let horizontalBoard: string
+    let frankBoard: string
 
     const relate = (by: DidString, parent: string, child: string) =>
       write(by, 'com.para.community.relation', {
@@ -480,19 +480,15 @@ maybeDescribe('community moderation authority', () => {
           quadrant: 'norte',
         })
       ).uri
-      horizontalBoard = (
-        await write(frank, 'com.para.community.board', {
-          name: 'Horizontal Board',
+      frankBoard = (
+        await createCommunityBoardRecord(sc, frank, {
+          name: 'Frank Board',
           quadrant: 'oriente',
-          delegatesChatId: 'oriente-delegates',
-          subdelegatesChatId: 'oriente-subdelegates',
-          status: 'active',
-          governanceMode: 'horizontal',
-          createdAt: new Date().toISOString(),
         })
       ).uri
       await network.processAll()
       await found(dan, danBoard)
+      await found(frank, frankBoard)
       await network.processAll()
     })
 
@@ -519,14 +515,15 @@ maybeDescribe('community moderation authority', () => {
       expect(await childrenOf(board)).toEqual([danBoard])
     })
 
-    it("count a link by a horizontal parent's founder", async () => {
-      await relate(carol, horizontalBoard, otherBoard)
+    it("count a founding owner's link, not a non-owner's", async () => {
+      // Every community is hierarchical: its founder links as its owner.
+      await relate(carol, frankBoard, otherBoard)
       await network.processAll()
-      expect(await childrenOf(horizontalBoard)).toEqual([])
+      expect(await childrenOf(frankBoard)).toEqual([])
 
-      await relate(frank, horizontalBoard, danBoard)
+      await relate(frank, frankBoard, danBoard)
       await network.processAll()
-      expect(await childrenOf(horizontalBoard)).toEqual([danBoard])
+      expect(await childrenOf(frankBoard)).toEqual([danBoard])
     })
 
     it("are not blocked by someone else's reverse link", async () => {
@@ -541,18 +538,17 @@ maybeDescribe('community moderation authority', () => {
     it('are re-indexed by the migration when an earlier index turned them away', async () => {
       // As the old per-pair index left it: only carol's row for the pair.
       const db = network.bsky.db.db
-      const link = await relate(alice, horizontalBoard, otherBoard)
+      const link = await relate(alice, frankBoard, otherBoard)
       await network.processAll()
       await db
         .deleteFrom('para_community_relation')
         .where('uri', '=', link.uri)
         .execute()
-      expect(await childrenOf(horizontalBoard)).toEqual([danBoard])
+      expect(await childrenOf(frankBoard)).toEqual([danBoard])
 
-      // Migrations are written against an untyped database.
-      await relationsPerAuthorDown(db as unknown as Kysely<unknown>)
-      await relationsPerAuthor(db as unknown as Kysely<unknown>)
-      // alice is no owner of the horizontal board, so the restored row is
+      await relationsPerAuthorDown(db as Kysely<unknown>)
+      await relationsPerAuthor(db as Kysely<unknown>)
+      // alice is no owner of frank's board, so the restored row is
       // indexed but still not trusted; frank's link stays.
       const restored = await db
         .selectFrom('para_community_relation')
@@ -560,7 +556,7 @@ maybeDescribe('community moderation authority', () => {
         .select('creator')
         .executeTakeFirst()
       expect(restored?.creator).toBe(alice)
-      expect(await childrenOf(horizontalBoard)).toEqual([danBoard])
+      expect(await childrenOf(frankBoard)).toEqual([danBoard])
     })
   })
 

@@ -1,163 +1,89 @@
 # PARA Matrix Homeserver
 
-Self-hosted Matrix for community deliberation. Runs alongside the atproto stack on the same 5950X bare-metal box.
-
-## Is a homeserver sufficient?
-
-**Yes. Absolutely.** "Enterprise grade" from Element just means a support contract and managed hosting. The software is identical. Your 5950X + 128GB RAM is massive overkill for any homeserver software.
-
-| Server       | RAM    | Users   | Your Hardware    |
-| ------------ | ------ | ------- | ---------------- |
-| Continuwuity | < 1 GB | ~500    | 0.8% of your RAM |
-| Synapse      | 4–8 GB | ~5,000+ | 6% of your RAM   |
-
-Capabilities **are** hardware-related, but only at extreme scale (tens of thousands of concurrent federated users). For civic communities in the hundreds-to-low-thousands range, even a Raspberry Pi could run Continuwuity. Your machine can run **both simultaneously** without stress.
-
-## Which server to choose?
-
-### Synapse (Python) — Recommended
-
-- **Maturity:** 7+ years in production, used by matrix.org
-- **Features:** Full Matrix spec coverage, best bridge support, E2EE, spaces, threads
-- **Resource use:** 4–8 GB RAM, grows with federation
-- **Best for:** You want zero surprises and full compatibility
-
-### Continuwuity (Rust) — Lightweight alternative
-
-- **Maturity:** Younger but stable for small-to-medium instances
-- **Features:** Core Matrix + E2EE + federation. Missing some edge-case federation features
-- **Resource use:** < 1 GB RAM, tiny disk footprint
-- **Best for:** You want the absolute minimum resource overhead
-
-**Our recommendation:** Start with **Synapse**. Your hardware has 128 GB RAM. The difference between 1 GB and 8 GB is meaningless to you, but the difference in maturity and ecosystem support is meaningful.
-
-## Quick start
-
-### 1. Add environment variables
-
-In your `WhatZatppa/.env`:
-
-```bash
-# Matrix
-MATRIX_SERVER_NAME=matrix.para.social
-MATRIX_DOMAIN=chat.para.social
-MATRIX_DB_NAME=matrix
-```
-
-### 2. Run setup
-
-```bash
-./WhatZatppa/deploy/matrix/setup.sh
-```
-
-This generates:
-
-- `synapse/homeserver.yaml` — Synapse configuration
-- `element-config.json` — Element Web client config
-- Federation well-known snippets
-
-### 3. Add Caddy config
-
-Append `WhatZatppa/deploy/matrix/Caddyfile.matrix` to your `/etc/caddy/Caddyfile`, then reload Caddy:
-
-```bash
-systemctl reload caddy
-```
-
-### 4. Start the stack
-
-```bash
-docker compose -f WhatZatppa/docker-compose.matrix.yaml up -d
-```
-
-### 5. Create the first admin user
-
-```bash
-docker exec -it para-matrix-synapse \
-  register_new_matrix_user \
-  -c /data/homeserver.yaml \
-  -a \
-  http://localhost:8008
-```
-
-### 6. Open Element Web
-
-Navigate to `https://chat.para.social` and log in with the admin user.
-
-## Security Model (PARA-Only)
-
-**Federation is disabled.** This is a closed, non-federated homeserver:
-
-- `federation_domain_whitelist: []` — No external servers can connect
-- `enable_registration: false` — Only the bridge can create users via Admin API
-- `allow_public_rooms_over_federation: false` — Rooms are not discoverable
-- `allow_public_rooms_without_auth: false` — Authentication required
-
-This keeps community deliberation within PARA's trust boundary. See `GUIA_ADMIN_ES.md` for operational details.
-
-## Integration with PARA Communities
-
-The **matrix-bridge** service (`WhatZatppa/services/matrix-bridge/`) automatically syncs PARA community membership to Matrix spaces:
+Self-hosted, non-federated Matrix for community chat: Synapse, the Matrix
+Authentication Service (MAS), para-idp, Element Web and the PARA bridge, all in
+[`docker-compose.matrix.yaml`](../../docker-compose.matrix.yaml).
 
 ```
-PARA community "Comunidad XYZ"
-    └── Matrix Space #comunidad-xyz:matrix.para.social
+phone / browser ──► auth.<domain>  MAS ──► idp.<domain>/authorize  para-idp (proves the PARA key)
+                ──► matrix.<domain> Synapse (client API only; auth delegated to MAS)
+                ──► bridge.<domain> matrix-bridge (verified joins, roles, moderation)
+moderators      ──► chat.<domain>   Element Web
 ```
 
-The bridge:
+Synapse is the homeserver. Alternative homeservers are outside pilot scope
+(`docs/QUARTER_PLAN_2026Q4.md`).
 
-1. Consumes `com.atproto.sync.subscribeRepos` firehose
-2. Creates Matrix spaces for new `com.para.community.board` records
-3. Invites/kicks users based on `com.para.community.membership` state
-4. Sets power levels: owners=100, moderators=50, members=0
+## Deploy
 
-See `../../services/matrix-bridge/README.md` for bridge documentation.
+1. In the repo-root `.env`:
+
+   ```bash
+   MATRIX_SERVER_NAME=matrix.para.social      # immutable: baked into every MXID
+   MATRIX_MAS_PUBLIC_URL=https://auth.para.social
+   MATRIX_IDP_PUBLIC_URL=https://idp.para.social
+   MATRIX_MAS_CLIENT_SECRET=<openssl rand -hex 32>
+   POSTGRES_PASSWORD=<strong secret>          # required; there is no default
+   PDS_FIREHOSE_URL=wss://pds.para.social
+   BRIDGE_AUTHORITY_APPVIEW_URL=https://appview.para.social
+   PARA_AUTHORITY_SERVICE_TOKEN=<same value as the AppView>
+   ```
+
+2. Run `deploy/matrix/deploy-prod.sh` on the server. It generates the Synapse
+   and MAS configuration (once; never regenerate against a live server — the
+   signing and encryption keys live there), migrates MAS, starts the stack and
+   stops to tell you how to issue the bridge's admin token from MAS. Re-run it
+   after putting `MATRIX_ADMIN_TOKEN` in `.env`. On an Ansible-managed host,
+   `ansible/roles/matrix_stack` does the same.
+
+3. Edge routes are in [`services/caddy/Caddyfile.prod`](../../services/caddy/Caddyfile.prod)
+   (containerised Caddy on the `para-edge` network). For a host-run Caddy use
+   [`Caddyfile.matrix`](./Caddyfile.matrix). Both refuse `/_synapse/admin`,
+   `/_synapse/mas`, `/_synapse/metrics`, federation and key paths, and the
+   bridge's `/metrics`.
+
+## Security model
+
+- Federation is closed: empty `federation_domain_whitelist`, and Synapse's
+  only HTTP listener serves the `client` resource ([`hardening.yaml`](./hardening.yaml)).
+- No password login anywhere: MAS owns authentication and para-idp proves
+  possession of the PARA identity key. Account names are derived from that key.
+- The bridge never creates accounts or maps DIDs to MXIDs; joins are pull-based
+  and proof-bearing. See [`services/matrix-bridge/AGENTS.md`](../../services/matrix-bridge/AGENTS.md).
+
+## Monitoring
+
+Prometheus (`ansible/roles/monitoring`) scrapes the bridge and Synapse's
+metrics listener over `para-edge`, probes MAS, para-idp, Element and the public
+routes through a blackbox exporter, checks that the edge still answers 404 for
+admin, federation and metrics paths, and loads [`alerts.yml`](./alerts.yml).
+Alertmanager delivers to the receivers set in `group_vars` (`alertmanager_*`:
+email, Telegram or Slack); with none set, the role warns and nobody is paged.
 
 ## Backups
 
-Synapse data lives in Docker volumes:
+`para-matrix-backup.timer` (scheduled by `ansible/roles/matrix_stack` once
+`matrix_backup_age_recipients` and `s3_endpoint` are set) runs
+[`nightly-backup.sh`](./nightly-backup.sh): [`backup.sh`](./backup.sh), age
+encryption to public keys whose identities stay off the host, upload to S3 and
+a freshness metric that `ParaMatrixBackupStale` watches. Restore with
+[`restore.sh`](./restore.sh); see [`docs/MATRIX_BACKUP.md`](../../docs/MATRIX_BACKUP.md).
+`scripts/matrix-restore-drill.sh` rehearses the whole path on a disposable copy.
 
-- `synapse_data` — config, media, keys
-- `matrix_postgres_data` — message history
+## Changing the public URLs
 
-Add to your backup script:
+[`set-public-urls.sh`](./set-public-urls.sh) moves an existing MAS + para-idp
+configuration to new auth./idp. hosts (dry run first, then `--apply`).
 
-```bash
-docker run --rm -v para-matrix-synapse:/data -v $(pwd):/backup alpine \
-  tar czf /backup/matrix-synapse-backup.tar.gz -C /data .
+## Local development and smoke
 
-docker exec para-matrix-db pg_dump -U pg matrix > matrix-db-backup.sql
-```
-
-## Resource Monitoring
-
-On your 5950X, the entire Matrix stack will use approximately:
-
-| Component            | RAM         | CPU               |
-| -------------------- | ----------- | ----------------- |
-| Synapse              | 2–4 GB      | 1–2 cores at peak |
-| Postgres             | 512 MB–1 GB | minimal           |
-| Element Web (static) | ~0          | ~0                |
-| Bridge               | ~100 MB     | minimal           |
-| **Total**            | **~3–5 GB** | **negligible**    |
+`make matrix-up` starts the stack locally (`scripts/matrix-stack.sh`; never a
+bare `docker compose` from another directory). `make matrix-smoke` proves the
+appservice registration, transaction push/dedup, SSE delivery and device
+session minting against a real Synapse.
 
 ## Guides
 
-- 🇪🇸 **Guía de Usuario** (Clientes): [`GUIA_USUARIO_ES.md`](./GUIA_USUARIO_ES.md)
-- 🇪🇸 **Guía de Administración** (DevOps): [`GUIA_ADMIN_ES.md`](./GUIA_ADMIN_ES.md)
-
-## Shared edge network
-
-Production Caddy (`docker-compose.prod.yaml`) reaches the bridge over the
-external Docker network `para-edge`:
-
-    docker network create para-edge   # once per host
-
-Both `caddy` (prod compose) and `matrix-bridge` (this stack) attach to it;
-`bridge.para-g0v.app` is served from `services/caddy/Caddyfile.prod`.
-
-## Smoke
-
-`make matrix-smoke` (repo root) boots Synapse + bridge and proves the
-appservice registration, transaction push/dedup, SSE delivery, and device
-session minting against a real Synapse.
+- 🇪🇸 Guía de Usuario: [`GUIA_USUARIO_ES.md`](./GUIA_USUARIO_ES.md)
+- 🇪🇸 Guía de Administración: [`GUIA_ADMIN_ES.md`](./GUIA_ADMIN_ES.md)
+- 🇪🇸 Runbook de seguridad: [`RUNBOOK_SECURITY_ES.md`](./RUNBOOK_SECURITY_ES.md)

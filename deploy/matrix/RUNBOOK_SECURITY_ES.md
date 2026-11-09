@@ -8,7 +8,7 @@
 
 ## Rotación
 
-- `MATRIX_ADMIN_TOKEN`: crear nuevo admin/token, actualizar `.env`, reiniciar `matrix-bridge`, revocar el token anterior.
+- `MATRIX_ADMIN_TOKEN`: es un token de compatibilidad de MAS (no hay login con contraseña). Emitir uno nuevo con `mas-cli manage issue-compatibility-token -c /config/config.yaml admin PARABRIDGE --yes-i-want-to-grant-synapse-admin-privileges`, actualizar `.env`, reiniciar `matrix-bridge` y terminar la sesión anterior en MAS. Conservar el usuario `admin`: es el creador de las salas.
 - `MATRIX_APPSERVICE_TOKEN` (si está en uso): rotar también el `as_token`/`hs_token` en `deploy/matrix/synapse/para-bridge-registration.yaml` y reiniciar Synapse y el bridge juntos (el login de usuarios falla mientras estén desincronizados).
 - `MATRIX_HS_TOKEN`: mismo par de tokens; el bridge rechaza transacciones con 401 si no coincide (Synapse reintenta hasta recibir 200).
 - Sesiones Matrix de usuario: regenerar token con `/api/matrix-token`; si hay sospecha de compromiso, invalidar dispositivos desde Synapse.

@@ -6,7 +6,9 @@ import { ChatModerationEngine } from './chat-moderation.js'
 import { createAuthorityResolver } from './community-authority.js'
 import type { Config } from './config.js'
 import { ControlStore } from './control-store.js'
+import { applyCors } from './cors.js'
 import { createDatabase } from './db/index.js'
+import { DeviceRevocationWorker } from './device-revocation.js'
 import { EventBus } from './events/bus.js'
 import { FirehoseConsumer } from './firehose.js'
 import { HttpError } from './m8-auth.js'
@@ -24,14 +26,12 @@ import {
   loadOpsConfig,
   syncLogProvisioningQueue,
 } from './ops.js'
-import { ProposalEngine } from './proposals.js'
 import { PushReceiptWorker } from './push-receipts.js'
 import { RetryWorker } from './retry.js'
 import type { RouteContext } from './routes/context.js'
 import { writeJson } from './routes/http.js'
 import { routeRequest, writeJsonFallback } from './routes/router.js'
 import { createSanctionEnforcer } from './sanction-enforcement.js'
-import { createSortitionEngine } from './sortition-runs.js'
 
 export interface Bridge {
   ctx: RouteContext
@@ -57,7 +57,7 @@ export async function createBridge(
   const authority = createAuthorityResolver(config)
   const chatEnabled = config.matrixChatEnabled
   if (!chatEnabled) {
-    log.warn('Matrix chat disabled: serving governance only')
+    log.warn('Matrix chat disabled: serving community context only')
   }
 
   const db = createDatabase(config)
@@ -87,22 +87,17 @@ export async function createBridge(
   const challenges = new ChallengeStore()
   const chatMod = new ChatModerationEngine(db, log)
   const events = new EventBus(db, log)
-  const proposals = new ProposalEngine(db, matrix, log, chatMod)
   const firehose = new FirehoseConsumer(
     config,
     db,
     projection,
-    proposals,
-    chatMod,
     metrics,
     log,
     authority,
   )
   firehose.setEventBus(events)
-  proposals.setEventBus(events)
   const retryWorker = new RetryWorker(
     db,
-    projection,
     metrics,
     log,
     (community, did, force) =>
@@ -111,7 +106,10 @@ export async function createBridge(
     chatEnabled,
   )
   const syncPoller = matrix
-    ? new MatrixSyncPoller(config, db, matrix, chatMod, log)
+    ? new MatrixSyncPoller(config, db, matrix, log)
+    : null
+  const deviceRevocations = matrix
+    ? new DeviceRevocationWorker(db, matrix, log)
     : null
   const pushReceipts = new PushReceiptWorker(db, log, metrics)
 
@@ -140,7 +138,6 @@ export async function createBridge(
 
   chatMod.setEventBus(events)
   syncPoller?.setEventBus(events)
-  const sortition = createSortitionEngine(db, log, events)
 
   const ctx: RouteContext = {
     config,
@@ -152,13 +149,12 @@ export async function createBridge(
     metrics,
     log,
     chatMod,
-    proposals,
-    sortition,
     events,
   }
 
   const server = createServer(async (req, res) => {
     try {
+      if (applyCors(req, res, config.corsAllowedOrigins)) return
       const matched = await routeRequest(req, res, ctx)
       if (!matched) writeJsonFallback(res)
     } catch (err: any) {
@@ -205,21 +201,6 @@ export async function createBridge(
           metrics.activeSpaces.set(spaceCount)
         })()
       }, 60_000),
-    )
-
-    timers.push(
-      setInterval(() => {
-        void sortition.processScheduled()
-      }, 30_000),
-    )
-
-    // Proposal state machine — runs every 10 minutes to enforce constitution
-    timers.push(
-      setInterval(() => {
-        proposals.processStateTransitions().catch((err: any) => {
-          log.error({ err }, 'Proposal state transition error')
-        })
-      }, 600_000),
     )
 
     // SSE event_log retention pruning — hourly
@@ -311,6 +292,7 @@ export async function createBridge(
 
     // Start workers. The firehose goes last: its start() only returns once
     // the consumer is stopped, so nothing may be scheduled after it.
+    deviceRevocations?.start()
     retryWorker.start()
     pushReceipts.start()
     syncPoller?.start()
@@ -320,6 +302,7 @@ export async function createBridge(
   const stop = async (): Promise<void> => {
     retryWorker.stop()
     syncPoller?.stop()
+    await deviceRevocations?.stop()
     await pushReceipts.stop()
     await firehose.stop()
     for (const timer of timers) clearTimeout(timer)

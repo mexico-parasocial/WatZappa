@@ -108,10 +108,6 @@
               "type": "string",
               "format": "datetime"
             },
-            "organizationStandard": {
-              "type": "string",
-              "knownValues": ["hierarchical", "horizontal"]
-            },
             "admissionMode": {
               "type": "string",
               "knownValues": ["open", "assembly_approval"]

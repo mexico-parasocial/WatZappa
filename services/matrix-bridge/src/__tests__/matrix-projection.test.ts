@@ -1,5 +1,5 @@
 import type { Logger } from 'pino'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { IBridgeDatabase } from '../db/index.js'
 import type { DeviceSession } from '../db/interface.js'
 import {
@@ -60,6 +60,7 @@ function makeStubDeps() {
     setPowerLevel: async (roomId: string, mxid: string, level: number) => {
       calls.push({ op: 'power', args: [roomId, mxid, level] })
     },
+    unbanUser: async () => {},
     banUser: async (roomId: string, mxid: string) => {
       calls.push({ op: 'ban', args: [roomId, mxid] })
     },
@@ -505,7 +506,7 @@ describe('reconcileMemberAccess (interaction-time settlement)', () => {
 })
 
 describe('revokeMemberAccess', () => {
-  it('deactivates devices and bans the mxids from every community room', async () => {
+  it('bans only this community without revoking devices', async () => {
     const { calls, sessions, revoked, matrix, db } = makeStubDeps()
     sessions.push(session('did:plc:gone', expectedMxid, 's1'))
     const projection = createMatrixProjection(config, db, matrix, log)
@@ -515,14 +516,67 @@ describe('revokeMemberAccess', () => {
       'removed',
     )
     expect(count).toBe(1)
-    expect(calls).toContainEqual({
-      op: 'deactivate',
-      args: [expectedMxid, 'DEV-s1'],
-    })
+    expect(calls.some((c) => c.op === 'deactivate')).toBe(false)
     for (const roomId of ['!main:para', '!a:para', '!b:para', '!obs:para']) {
       expect(calls).toContainEqual({ op: 'ban', args: [roomId, expectedMxid] })
     }
-    expect(revoked).toEqual(['s1'])
+    expect(revoked).toEqual([])
+  })
+
+  it('propagates room failures after attempting every room and retries revoked rows', async () => {
+    const { calls, sessions, revoked, matrix, db } = makeStubDeps()
+    sessions.push(
+      session('did:plc:gone', expectedMxid, 's1', '2026-01-01T00:00:00Z'),
+    )
+    using _failure = vi
+      .spyOn(matrix, 'banUser')
+      .mockImplementation(async (room, mxid) => {
+        calls.push({ op: 'ban', args: [room, mxid] })
+        if (room === '!a:para') throw new Error('offline')
+      })
+    const projection = createMatrixProjection(config, db, matrix, log)
+    await expect(
+      projection.revokeMemberAccess(space, 'did:plc:gone', 'removed'),
+    ).rejects.toThrow('Community access removal incomplete')
+    expect(calls.filter((c) => c.op === 'ban')).toHaveLength(4)
+    expect(revoked).toEqual([])
+    _failure.mockRestore()
+    await expect(
+      projection.revokeMemberAccess(space, 'did:plc:gone', 'retry'),
+    ).resolves.toBe(1)
+    expect(calls.filter((c) => c.op === 'ban')).toHaveLength(8)
+  })
+
+  it('lets a reactivated member rejoin without replacing their device session', async () => {
+    const { matrix, db, sessions, revoked } = makeStubDeps()
+    sessions.push(session('did:plc:back', expectedMxid, 's1'))
+    const bans = new Set<string>()
+    using _ban = vi
+      .spyOn(matrix, 'banUser')
+      .mockImplementation(async (room) => {
+        bans.add(room)
+      })
+    using _unban = vi
+      .spyOn(matrix, 'unbanUser')
+      .mockImplementation(async (room) => {
+        bans.delete(room)
+      })
+    using _join = vi
+      .spyOn(matrix, 'joinUser')
+      .mockImplementation(async (room) => {
+        if (bans.has(room)) throw new Error('banned')
+        return room
+      })
+    const projection = createMatrixProjection(config, db, matrix, log)
+    await projection.revokeMemberAccess(space, 'did:plc:back', 'removed')
+    await expect(
+      projection.verifiedJoin(space, 'did:plc:back', identity.pub, {
+        roles: ['member'],
+        chamber: null,
+        isObserver: false,
+      }),
+    ).resolves.toMatchObject({ joinedRoomIds: ['!main:para'] })
+    expect(revoked).toEqual([])
   })
 
   it('returns zero for a DID with no sessions and touches nothing', async () => {

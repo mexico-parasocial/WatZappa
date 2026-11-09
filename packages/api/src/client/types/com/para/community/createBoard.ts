@@ -26,8 +26,6 @@ export interface InputSchema {
   description?: string
   /** User-provided name for the internal starter pack tracking founding members. If absent, a default name will be generated. */
   founderStarterPackName?: string
-  /** Governance model for this community. Hierarchical uses owner/moderator roles. Horizontal uses rotating facilitators and assembly votes. Defaults to hierarchical. */
-  governanceMode?: 'hierarchical' | 'horizontal' | (string & {})
   /** Open communities admit immediately; assembly approval communities create a pending membership request. */
   admissionMode?: 'open' | 'assembly_approval' | (string & {})
 }

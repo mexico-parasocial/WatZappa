@@ -219,3 +219,27 @@ encrypted exchange/media/history recovery, Element features and authorized
 moderator revocation, signed notification/DM navigation, full deployment
 restore, alerts and rollback. Existing room mappings remain unchanged, native
 chat stays opt-in, and VLPDS remains deferred.
+
+## 2026-11-07 — isolated deploy, token and restore drill
+
+`scripts/matrix-restore-drill.sh` ran on a disposable copy (own Compose
+project, no published ports) with Synapse v1.161.0, MAS 1.24.0 and Postgres;
+para-idp and the bridge were stubs. From base `4ab31b4c2` plus the uncommitted
+`deploy/matrix` changes, every step passed: generated configuration, MAS
+migration, no federation or key endpoints, a Synapse admin token from
+`mas-cli manage register-user` + `issue-compatibility-token`, room history and
+media, `nightly-backup.sh` (age encryption, upload to an S3 gateway, no
+plaintext left, freshness metric), host loss (volumes, config, `.env`, bridge
+data and local backups deleted), download and decryption with the off-host
+identity, `restore.sh --verify` and a fresh-host `restore.sh --yes`, identical
+signing key, history, media and bridge source binding, a still-valid token,
+and `set-public-urls.sh --apply`. The drill found and fixed two fresh-host
+restore failures (no `.env` before the first Compose call; no Synapse container
+for the media volume) and Docker Desktop's refusal to create the overlay
+mountpoint (`setup.sh` now creates it).
+
+Not covered: para-idp browser sign-in, the real bridge, an existing-deployment
+restore, the real S3 provider and age identity custody, Alertmanager delivery
+to a real receiver, and any deployed host. Prometheus, Alertmanager and
+blackbox configurations passed `promtool`, `amtool` and `--config.check`;
+the Ansible roles themselves were not run.

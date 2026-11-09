@@ -10,6 +10,7 @@ import {
   is$typed as _is$typed,
   type OmitKey,
 } from '../../../../util.js'
+import type * as ComParaCommunityDefs from '../community/defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -59,6 +60,7 @@ export interface Main {
     'draft' | 'open' | 'deliberating' | 'voting' | 'resolved' | (string & {})
   phaseDeadline?: string
   createdAt?: string
+  protectedAction?: ComParaCommunityDefs.ProtectedAction
   [k: string]: unknown
 }
 

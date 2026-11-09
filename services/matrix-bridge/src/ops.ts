@@ -3,6 +3,7 @@ import { type Server, createServer } from 'node:http'
 import type { ControlStore } from './control-store.js'
 import type { IBridgeDatabase } from './db/index.js'
 import type { SyncLogEntry } from './db/interface.js'
+import { requestDeviceRevocation } from './device-revocation.js'
 import { HttpError } from './m8-auth.js'
 import type { MatrixAdminClient } from './matrix.js'
 import type { RouteContext } from './routes/context.js'
@@ -279,8 +280,7 @@ export function createOpsServer(
         } else {
           const device = await ctx.db.getDeviceSession(entry.target)
           if (!device) throw new HttpError(404, 'DEVICE_NOT_FOUND')
-          await ctx.matrix.adminDeactivateDevice(device.mxid, device.deviceId)
-          await ctx.db.revokeDeviceSession(device.did, device.id)
+          await requestDeviceRevocation(ctx.db, ctx.matrix, device)
         }
         await store.finishAudit(entry.requestId, 'success')
         writeJson(res, 200, { requestId: entry.requestId, result: 'success' })

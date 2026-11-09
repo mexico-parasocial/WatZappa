@@ -22993,6 +22993,12 @@ export const schemaDict: Record<string, LexiconDoc> = {
               type: 'string',
               format: 'datetime',
             },
+            protectedAction: {
+              type: 'ref',
+              ref: 'lex:com.para.community.defs#protectedAction',
+              description:
+                'The community action this cabildeo asks its assembly to decide (approve a membership, recover ownership, amend governance, …). A claim only: it carries no authority by itself. The AppView grounds an authority event on this cabildeo only for membership.approve (member.activate) and owner.recover (owner.grant or owner.revoke), and only when the cabildeo names its community by board URI, has exactly two options (the first approves, the second rejects), is still the record version in which voting opened, and closed with a quorum and threshold met by members known from authority events. See com.para.community.authorityEvent evidence.',
+            },
           },
         },
       },
@@ -23118,6 +23124,66 @@ export const schemaDict: Record<string, LexiconDoc> = {
           },
           rev: {
             type: 'string',
+          },
+        },
+      },
+    },
+  },
+  ComParaCivicConclusion: {
+    lexicon: 1,
+    id: 'com.para.civic.conclusion',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "A steward's written summary of where a deliberation without a vote landed. It is the steward's reading, not the community's verdict. Served only for a cabildeo of kind forum or persuasion, and only when written by a current steward of the cabildeo's community.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['cabildeo', 'communityUri', 'text', 'createdAt'],
+          properties: {
+            cabildeo: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            officialThreadSlug: {
+              type: 'string',
+              maxLength: 80,
+            },
+            reviewDate: {
+              type: 'string',
+              maxLength: 10,
+            },
+            communityUri: {
+              type: 'string',
+              format: 'at-uri',
+              description: "The board the cabildeo's community resolves to.",
+            },
+            text: {
+              type: 'string',
+              maxLength: 3000,
+              maxGraphemes: 1500,
+            },
+            cited: {
+              type: 'array',
+              maxLength: 10,
+              items: {
+                type: 'string',
+                format: 'at-uri',
+              },
+              description:
+                'Positions of the same cabildeo that the conclusion summarizes. Shown beneath it so readers can see what it rests on.',
+            },
+            followUp: {
+              type: 'string',
+              format: 'at-uri',
+              description:
+                'A cabildeo opened because of this conclusion. Never created automatically.',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
           },
         },
       },
@@ -23278,6 +23344,9 @@ export const schemaDict: Record<string, LexiconDoc> = {
       viewerContext: {
         type: 'object',
         properties: {
+          canCastCabildeoVote: {
+            type: 'boolean',
+          },
           currentVoteOption: {
             type: 'integer',
             minimum: 0,
@@ -23376,6 +23445,125 @@ export const schemaDict: Record<string, LexiconDoc> = {
           },
         },
       },
+      assemblyDecisionView: {
+        type: 'object',
+        description:
+          "The assembly's count for a resolved cabildeo and the next authority event it may ground. The AppView recomputes all of it from the final tally.",
+        properties: {
+          problem: {
+            type: 'string',
+            knownValues: [
+              'unknown-cabildeo',
+              'not-resolved',
+              'wrong-community',
+              'record-changed',
+              'too-short',
+              'not-decidable',
+              'options',
+              'not-admissible',
+            ],
+            description:
+              'Why this cabildeo cannot ground an authority event, when it cannot.',
+          },
+          action: {
+            type: 'string',
+          },
+          subject: {
+            type: 'string',
+            format: 'did',
+          },
+          policy: {
+            type: 'string',
+            knownValues: ['assembly_majority', 'assembly_supermajority'],
+          },
+          outcome: {
+            type: 'ref',
+            ref: 'lex:com.para.civic.defs#assemblyOutcome',
+          },
+          event: {
+            type: 'ref',
+            ref: 'lex:com.para.civic.defs#assemblyEvent',
+          },
+          appliedEvent: {
+            type: 'string',
+            format: 'at-uri',
+            description: 'The authority event this cabildeo already grounds.',
+          },
+        },
+      },
+      assemblyOutcome: {
+        type: 'object',
+        required: [
+          'approved',
+          'reason',
+          'electorate',
+          'quorumTarget',
+          'participants',
+          'approvals',
+          'rejections',
+        ],
+        properties: {
+          approved: {
+            type: 'boolean',
+          },
+          reason: {
+            type: 'string',
+            knownValues: [
+              'approved',
+              'no-ballots',
+              'quorum-not-met',
+              'threshold-not-met',
+            ],
+          },
+          electorate: {
+            type: 'integer',
+            minimum: 0,
+          },
+          quorumTarget: {
+            type: 'integer',
+            minimum: 0,
+          },
+          participants: {
+            type: 'integer',
+            minimum: 0,
+          },
+          approvals: {
+            type: 'integer',
+            minimum: 0,
+          },
+          rejections: {
+            type: 'integer',
+            minimum: 0,
+          },
+        },
+      },
+      assemblyEvent: {
+        type: 'object',
+        description:
+          "The com.para.community.authorityEvent to publish, with basis assemblyDecision. Issuer is whoever publishes it; effectiveAt must not precede the cabildeo's close.",
+        required: ['action', 'subject', 'version', 'evidence'],
+        properties: {
+          action: {
+            type: 'string',
+          },
+          subject: {
+            type: 'string',
+            format: 'did',
+          },
+          version: {
+            type: 'integer',
+            minimum: 1,
+          },
+          predecessor: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          evidence: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
       cabildeoView: {
         type: 'object',
         required: [
@@ -23460,6 +23648,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'integer',
             minimum: 1,
           },
+          kind: {
+            type: 'string',
+            knownValues: ['activity', 'persuasion', 'forum'],
+            description: 'A missing kind on the record is served as activity.',
+          },
           voteVisibility: {
             type: 'string',
             knownValues: ['public', 'party_only', 'anonymous'],
@@ -23473,6 +23666,32 @@ export const schemaDict: Record<string, LexiconDoc> = {
               'voting',
               'resolved',
             ],
+          },
+          minimumViewTier: {
+            type: 'string',
+          },
+          minimumParticipationTier: {
+            type: 'string',
+          },
+          protectedAction: {
+            type: 'ref',
+            ref: 'lex:com.para.community.defs#protectedAction',
+            description:
+              'The community action this cabildeo asks its assembly to decide. A claim only; see the record.',
+          },
+          assemblyDecision: {
+            type: 'ref',
+            ref: 'lex:com.para.civic.defs#assemblyDecisionView',
+            description:
+              'Present once a cabildeo with a protectedAction has resolved: how the assembly counted and the authority event to publish. A convenience for clients; the AppView decides again when the event arrives.',
+          },
+          votingOpenedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          votingClosedAt: {
+            type: 'string',
+            format: 'datetime',
           },
           phaseDeadline: {
             type: 'string',
@@ -23552,7 +23771,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
           },
           stance: {
             type: 'string',
-            knownValues: ['for', 'against', 'amendment'],
+            knownValues: ['for', 'against', 'amendment', 'question'],
           },
           optionIndex: {
             type: 'integer',
@@ -23569,6 +23788,26 @@ export const schemaDict: Record<string, LexiconDoc> = {
           createdAt: {
             type: 'string',
             format: 'datetime',
+          },
+          agreeCount: {
+            type: 'integer',
+            minimum: 0,
+            description:
+              'Reactions of agree on this position (com.para.community.deliberationVote).',
+          },
+          disagreeCount: {
+            type: 'integer',
+            minimum: 0,
+          },
+          passCount: {
+            type: 'integer',
+            minimum: 0,
+          },
+          viewerDirection: {
+            type: 'string',
+            knownValues: ['agree', 'disagree', 'pass'],
+            description:
+              "Only ever the requesting viewer's own reaction; who else took which side is not part of this view.",
           },
         },
       },
@@ -23653,9 +23892,13 @@ export const schemaDict: Record<string, LexiconDoc> = {
           },
           official: {
             type: 'boolean',
+            description:
+              "DEPRECATED 2026-11-06 (OD-10 §7.6), always false; to be removed. It came from the author's own post metadata, so it never established that an official account published the policy, and a policy result no longer depends on who published it.",
           },
           certified: {
             type: 'boolean',
+            description:
+              'DEPRECATED 2026-11-06 (OD-10 §7.6); to be removed. True when `outcome` is `passed` or `strong_passed`. A policy never closes, so nothing certifies it: read `outcome` instead.',
           },
           outcome: {
             type: 'string',
@@ -23666,10 +23909,18 @@ export const schemaDict: Record<string, LexiconDoc> = {
               'strong_passed',
               'failed',
             ],
+            description:
+              "A live reading of what the community's current ballots say, which changes as people change their votes. It binds no one: a binding decision goes through a cabildeo (OD-10 §7.6).",
           },
           state: {
             type: 'string',
+            description:
+              'The live reading as a state: `passing`, `failing`, `split` (votes without a majority either way) or `noQuorum`. The other known values are DEPRECATED 2026-11-06 (OD-10 §7.6), never returned, and will be removed.',
             knownValues: [
+              'passing',
+              'failing',
+              'split',
+              'noQuorum',
               'draft',
               'deliberation',
               'voting',
@@ -23956,6 +24207,146 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 ref: 'lex:com.para.civic.defs#cabildeoView',
               },
             },
+          },
+        },
+      },
+    },
+  },
+  ComParaCivicGetConclusion: {
+    lexicon: 1,
+    id: 'com.para.civic.getConclusion',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'The conclusion of a cabildeo of kind forum or persuasion: the newest one by a current steward of its community, and the earlier ones in the order written. Empty when none is served, which does not mean the conversation was ignored.',
+        parameters: {
+          type: 'params',
+          required: ['cabildeo'],
+          properties: {
+            cabildeo: {
+              type: 'string',
+              format: 'at-uri',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['earlier'],
+            properties: {
+              conclusion: {
+                type: 'ref',
+                ref: 'lex:com.para.civic.getConclusion#conclusionView',
+              },
+              communityUri: {
+                type: 'string',
+                format: 'at-uri',
+                description:
+                  'The board this cabildeo resolves to. Present whenever conclusions can be served for it, even if there is none yet. A conclusion record must name it.',
+              },
+              earlier: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:com.para.civic.getConclusion#conclusionView',
+                },
+                description:
+                  'Superseded conclusions, newest first. History is append-only.',
+              },
+            },
+          },
+        },
+      },
+      conclusionView: {
+        type: 'object',
+        required: [
+          'uri',
+          'cid',
+          'author',
+          'cabildeo',
+          'communityUri',
+          'text',
+          'cited',
+          'edited',
+          'createdAt',
+        ],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+          },
+          author: {
+            type: 'string',
+            format: 'did',
+          },
+          cabildeo: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          officialThreadSlug: {
+            type: 'string',
+            maxLength: 80,
+          },
+          reviewDate: {
+            type: 'string',
+            maxLength: 10,
+          },
+          communityUri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          text: {
+            type: 'string',
+          },
+          cited: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.para.civic.getConclusion#citedPosition',
+            },
+            description:
+              'Cited positions that belong to this cabildeo, in the order cited. A cited position that does not is dropped.',
+          },
+          followUp: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          edited: {
+            type: 'boolean',
+            description:
+              'The record was changed after it was first indexed. The committed version is what is shown.',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      citedPosition: {
+        type: 'object',
+        required: ['uri', 'author', 'stance', 'text'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          author: {
+            type: 'string',
+            format: 'did',
+          },
+          stance: {
+            type: 'string',
+          },
+          optionIndex: {
+            type: 'integer',
+          },
+          text: {
+            type: 'string',
           },
         },
       },
@@ -24293,7 +24684,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
             },
             stance: {
               type: 'string',
-              knownValues: ['for', 'against', 'amendment'],
+              knownValues: ['for', 'against', 'amendment', 'question'],
             },
             limit: {
               type: 'integer',
@@ -24898,7 +25289,9 @@ export const schemaDict: Record<string, LexiconDoc> = {
             },
             stance: {
               type: 'string',
-              knownValues: ['for', 'against', 'amendment'],
+              knownValues: ['for', 'against', 'amendment', 'question'],
+              description:
+                '`question` asks the community something instead of taking a side; it is not counted for, against or per option.',
             },
             optionIndex: {
               type: 'integer',
@@ -25028,7 +25421,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
               minimum: -3,
               maximum: 3,
               description:
-                "NOT ACCEPTED ON WRITE (OD-7 §5c). Weighted consensus signal for policy-style votes: -3 strong opposition, 0 neutral/abstain, +3 strong support. Publishing it here would put the voter's -3..+3 position in their own public repo, which §5b rules out until the replacement ballot exists.",
+                "NOT ACCEPTED ON WRITE (OD-7 §5c). Weighted consensus signal for policy-style votes: -3 strong opposition to +3 strong support. A policy ballot never carries 0: there is no neutral ballot, and taking no stance means casting none (OD-10 §7.5). Publishing it here would put the voter's -3..+3 position in their own public repo, which §5b rules out until the replacement ballot exists.",
             },
             reason: {
               type: 'string',
@@ -25901,6 +26294,8 @@ export const schemaDict: Record<string, LexiconDoc> = {
             evidence: {
               type: 'string',
               format: 'at-uri',
+              description:
+                'Required by assemblyDecision, ownerAppointment and ownerTransfer. For assemblyDecision it is the com.para.civic.cabildeo whose final tally approved this event: the AppView recomputes quorum and threshold from it and indexes the event only if they hold. One cabildeo grounds one event.',
             },
             createdAt: {
               type: 'string',
@@ -25990,12 +26385,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
               description: 'Deliberation structure.',
               knownValues: ['unicameral', 'bicameral'],
               default: 'unicameral',
-            },
-            governanceMode: {
-              type: 'string',
-              description: 'Governance model for this community.',
-              knownValues: ['hierarchical', 'horizontal'],
-              default: 'hierarchical',
             },
             admissionMode: {
               type: 'string',
@@ -27751,12 +28140,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 description:
                   'User-provided name for the internal starter pack tracking founding members. If absent, a default name will be generated.',
               },
-              governanceMode: {
-                type: 'string',
-                knownValues: ['hierarchical', 'horizontal'],
-                description:
-                  'Governance model for this community. Hierarchical uses owner/moderator roles. Horizontal uses rotating facilitators and assembly votes. Defaults to hierarchical.',
-              },
               admissionMode: {
                 type: 'string',
                 knownValues: ['open', 'assembly_approval'],
@@ -27879,93 +28262,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 type: 'ref',
                 ref: 'lex:com.para.community.defs#briefingPackView',
               },
-            },
-          },
-        },
-      },
-    },
-  },
-  ComParaCommunityDecision: {
-    lexicon: 1,
-    id: 'com.para.community.decision',
-    defs: {
-      main: {
-        type: 'record',
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: [
-            'proposal',
-            'community',
-            'result',
-            'votesFor',
-            'votesAgainst',
-            'votesAbstain',
-          ],
-          properties: {
-            proposal: {
-              type: 'string',
-              format: 'at-uri',
-            },
-            community: {
-              type: 'string',
-              format: 'at-uri',
-            },
-            result: {
-              type: 'string',
-              enum: ['approved', 'rejected', 'tied', 'quorum_not_met'],
-            },
-            votesFor: {
-              type: 'integer',
-            },
-            votesAgainst: {
-              type: 'integer',
-            },
-            votesAbstain: {
-              type: 'integer',
-            },
-            totalMembers: {
-              type: 'integer',
-              description: 'Total eligible voters at time of decision',
-            },
-            quorumRequired: {
-              type: 'string',
-            },
-            thresholdRequired: {
-              type: 'string',
-            },
-            constitutionVersion: {
-              type: 'integer',
-            },
-            budgetAllocated: {
-              type: 'string',
-              description: 'If budget proposal, amount approved',
-            },
-            protectedAction: {
-              type: 'ref',
-              ref: 'lex:com.para.community.defs#protectedAction',
-            },
-            proposalCid: {
-              type: 'string',
-              format: 'cid',
-              description:
-                'CID of the proposal whose exact protected action was tallied.',
-            },
-            eligibleVoters: {
-              type: 'integer',
-              minimum: 0,
-            },
-            verifiedAt: {
-              type: 'string',
-              format: 'datetime',
-            },
-            authorityEventVersion: {
-              type: 'integer',
-              minimum: 1,
-            },
-            createdAt: {
-              type: 'string',
-              format: 'datetime',
             },
           },
         },
@@ -28832,54 +29128,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
-  ComParaCommunityDeliberation: {
-    lexicon: 1,
-    id: 'com.para.community.deliberation',
-    defs: {
-      main: {
-        type: 'record',
-        description:
-          "An argument made about a proposal, under the author's own name. Deliberation is deliberately attributable — debate is meant to be owned by whoever makes it — which is why it is not covered by the ballot freeze of OD-7 §5c.",
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: ['proposal', 'author', 'body', 'createdAt'],
-          properties: {
-            proposal: {
-              type: 'string',
-              format: 'at-uri',
-              description: 'The proposal this argument is about.',
-            },
-            community: {
-              type: 'string',
-              format: 'at-uri',
-            },
-            author: {
-              type: 'string',
-              format: 'did',
-              description:
-                'DID of whoever makes the argument. The record lives in their own repo, so it is attributable to them regardless.',
-            },
-            body: {
-              type: 'string',
-              maxLength: 3000,
-              maxGraphemes: 300,
-              description: 'The argument itself.',
-            },
-            stance: {
-              type: 'string',
-              knownValues: ['for', 'against', 'amendment', 'question'],
-              description: 'What the argument does to the proposal.',
-            },
-            createdAt: {
-              type: 'string',
-              format: 'datetime',
-            },
-          },
-        },
-      },
-    },
-  },
   ComParaCommunityDeliberationVote: {
     lexicon: 1,
     id: 'com.para.community.deliberationVote',
@@ -28896,7 +29144,8 @@ export const schemaDict: Record<string, LexiconDoc> = {
             deliberation: {
               type: 'string',
               format: 'at-uri',
-              description: 'The argument being weighed.',
+              description:
+                'The argument being weighed: a `com.para.civic.position` on a cabildeo, or a legacy `com.para.community.deliberation`.',
             },
             voter: {
               type: 'string',
@@ -29914,10 +30163,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
             format: 'at-uri',
           },
-          governanceMode: {
-            type: 'string',
-            knownValues: ['hierarchical', 'horizontal'],
-          },
           admissionMode: {
             type: 'string',
             knownValues: ['open', 'assembly_approval'],
@@ -30150,10 +30395,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
                 type: 'string',
                 format: 'datetime',
               },
-              organizationStandard: {
-                type: 'string',
-                knownValues: ['hierarchical', 'horizontal'],
-              },
               admissionMode: {
                 type: 'string',
                 knownValues: ['open', 'assembly_approval'],
@@ -30372,10 +30613,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
               type: 'ref',
               ref: 'lex:com.para.community.defs#metadata',
             },
-            roleRotationRules: {
-              type: 'ref',
-              ref: 'lex:com.para.community.governanceConfig#roleRotationRules',
-            },
             editHistory: {
               type: 'array',
               items: {
@@ -30408,10 +30645,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
               type: 'string',
               description:
                 'Semver of this config. Changes only by direct flat vote (no delegation).',
-            },
-            organizationStandard: {
-              type: 'string',
-              knownValues: ['hierarchical', 'horizontal'],
             },
             admissionMode: {
               type: 'string',
@@ -30565,33 +30798,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
           delegationGraphPublic: {
             type: 'boolean',
             description: 'Whether delegation chains are publicly observable',
-          },
-        },
-      },
-      roleRotationRules: {
-        type: 'object',
-        description:
-          'Term limits and rotation constraints for horizontal governance.',
-        properties: {
-          facilitatorMaxDays: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 90,
-          },
-          moderatorMaxDays: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 180,
-          },
-          stewardMaxDays: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 365,
-          },
-          requiresAssemblyRatification: {
-            type: 'boolean',
-            description:
-              'Whether role changes require an approved assembly decision record.',
           },
         },
       },
@@ -31602,115 +31808,6 @@ export const schemaDict: Record<string, LexiconDoc> = {
       },
     },
   },
-  ComParaCommunityListDeliberations: {
-    lexicon: 1,
-    id: 'com.para.community.listDeliberations',
-    defs: {
-      main: {
-        type: 'query',
-        description: 'List deliberation statements for a proposal.',
-        parameters: {
-          type: 'params',
-          required: ['proposal'],
-          properties: {
-            proposal: {
-              type: 'string',
-              format: 'at-uri',
-            },
-            limit: {
-              type: 'integer',
-              minimum: 1,
-              maximum: 100,
-            },
-            cursor: {
-              type: 'string',
-            },
-          },
-        },
-        output: {
-          encoding: 'application/json',
-          schema: {
-            type: 'object',
-            properties: {
-              cursor: {
-                type: 'string',
-              },
-              statements: {
-                type: 'array',
-                items: {
-                  type: 'ref',
-                  ref: 'lex:com.para.community.listDeliberations#deliberationStatement',
-                },
-              },
-            },
-          },
-        },
-      },
-      deliberationStatement: {
-        type: 'object',
-        required: [
-          'uri',
-          'cid',
-          'creator',
-          'proposal',
-          'body',
-          'stance',
-          'agreeCount',
-          'disagreeCount',
-          'passCount',
-          'createdAt',
-        ],
-        properties: {
-          uri: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          cid: {
-            type: 'string',
-            format: 'cid',
-          },
-          creator: {
-            type: 'string',
-            format: 'did',
-          },
-          proposal: {
-            type: 'string',
-            format: 'at-uri',
-          },
-          body: {
-            type: 'string',
-            maxLength: 10000,
-          },
-          stance: {
-            type: 'string',
-            maxLength: 100,
-          },
-          agreeCount: {
-            type: 'integer',
-            minimum: 0,
-          },
-          disagreeCount: {
-            type: 'integer',
-            minimum: 0,
-          },
-          passCount: {
-            type: 'integer',
-            minimum: 0,
-          },
-          viewerDirection: {
-            type: 'string',
-            knownValues: ['agree', 'disagree', 'pass'],
-            description:
-              'How the requesting viewer already weighed this argument, if they did. Absent for a logged-out viewer.',
-          },
-          createdAt: {
-            type: 'string',
-            format: 'datetime',
-          },
-        },
-      },
-    },
-  },
   ComParaCommunityListIntensities: {
     lexicon: 1,
     id: 'com.para.community.listIntensities',
@@ -32302,7 +32399,7 @@ export const schemaDict: Record<string, LexiconDoc> = {
               type: 'array',
               maxLength: 16,
               description:
-                'Structured role assignments with expiration and ratification for horizontal governance.',
+                'Structured role assignments, optionally bounded in time.',
               items: {
                 type: 'ref',
                 ref: 'lex:com.para.community.membership#roleAssignment',
@@ -32349,62 +32446,13 @@ export const schemaDict: Record<string, LexiconDoc> = {
             type: 'string',
             format: 'datetime',
             description:
-              'When this role assignment expires. Required for horizontal governance rotations.',
+              'When this role assignment expires. Absent means it does not expire.',
           },
           ratifiedBy: {
             type: 'string',
             format: 'at-uri',
             description:
-              'Reference to an approved com.para.community.decision or com.para.civic.cabildeo record that ratified this role.',
-          },
-        },
-      },
-    },
-  },
-  ComParaCommunityProposal: {
-    lexicon: 1,
-    id: 'com.para.community.proposal',
-    defs: {
-      main: {
-        type: 'record',
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: ['community', 'title', 'body', 'author'],
-          properties: {
-            community: {
-              type: 'string',
-              format: 'at-uri',
-            },
-            title: {
-              type: 'string',
-              maxLength: 200,
-            },
-            body: {
-              type: 'string',
-              maxLength: 10000,
-            },
-            author: {
-              type: 'string',
-              format: 'did',
-            },
-            type: {
-              type: 'string',
-              enum: ['general', 'budget', 'amendment', 'moderation'],
-              default: 'general',
-            },
-            budgetRequest: {
-              type: 'string',
-              description: 'If type=budget, amount requested',
-            },
-            protectedAction: {
-              type: 'ref',
-              ref: 'lex:com.para.community.defs#protectedAction',
-            },
-            createdAt: {
-              type: 'string',
-              format: 'datetime',
-            },
+              'Reference to the com.para.civic.cabildeo record that ratified this role.',
           },
         },
       },
@@ -33261,6 +33309,10 @@ export const schemaDict: Record<string, LexiconDoc> = {
               format: 'at-uri',
               description:
                 'For megathreads: the post that hosts the discussion.',
+            },
+            pollUri: {
+              type: 'string',
+              format: 'at-uri',
             },
             pinned: {
               type: 'boolean',
@@ -45474,11 +45526,13 @@ export const ids = {
   ComParaCivicAmendment: 'com.para.civic.amendment',
   ComParaCivicCabildeo: 'com.para.civic.cabildeo',
   ComParaCivicCastVote: 'com.para.civic.castVote',
+  ComParaCivicConclusion: 'com.para.civic.conclusion',
   ComParaCivicDefs: 'com.para.civic.defs',
   ComParaCivicDelegation: 'com.para.civic.delegation',
   ComParaCivicFollowThrough: 'com.para.civic.followThrough',
   ComParaCivicFollowThroughUpdate: 'com.para.civic.followThroughUpdate',
   ComParaCivicGetCabildeo: 'com.para.civic.getCabildeo',
+  ComParaCivicGetConclusion: 'com.para.civic.getConclusion',
   ComParaCivicGetFollowThrough: 'com.para.civic.getFollowThrough',
   ComParaCivicGetOpenQuestionThread: 'com.para.civic.getOpenQuestionThread',
   ComParaCivicGetPolicyCommunityVotes: 'com.para.civic.getPolicyCommunityVotes',
@@ -45544,10 +45598,8 @@ export const ids = {
   ComParaCommunityConstitution: 'com.para.community.constitution',
   ComParaCommunityCreateBoard: 'com.para.community.createBoard',
   ComParaCommunityCreateBriefingPack: 'com.para.community.createBriefingPack',
-  ComParaCommunityDecision: 'com.para.community.decision',
   ComParaCommunityDefs: 'com.para.community.defs',
   ComParaCommunityDelegation: 'com.para.community.delegation',
-  ComParaCommunityDeliberation: 'com.para.community.deliberation',
   ComParaCommunityDeliberationVote: 'com.para.community.deliberationVote',
   ComParaCommunityEconomicActivity: 'com.para.community.economicActivity',
   ComParaCommunityEigenstate: 'com.para.community.eigenstate',
@@ -45575,7 +45627,6 @@ export const ids = {
   ComParaCommunityListCommunityRelations:
     'com.para.community.listCommunityRelations',
   ComParaCommunityListDelegations: 'com.para.community.listDelegations',
-  ComParaCommunityListDeliberations: 'com.para.community.listDeliberations',
   ComParaCommunityListIntensities: 'com.para.community.listIntensities',
   ComParaCommunityListMembers: 'com.para.community.listMembers',
   ComParaCommunityListParentCommunities:
@@ -45585,7 +45636,6 @@ export const ids = {
   ComParaCommunityListVotes: 'com.para.community.listVotes',
   ComParaCommunityListWikiPages: 'com.para.community.listWikiPages',
   ComParaCommunityMembership: 'com.para.community.membership',
-  ComParaCommunityProposal: 'com.para.community.proposal',
   ComParaCommunityRelation: 'com.para.community.relation',
   ComParaCommunityRemoveSharedContent: 'com.para.community.removeSharedContent',
   ComParaCommunityRestoreSharedContent:

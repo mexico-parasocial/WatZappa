@@ -2,7 +2,7 @@
 
 This is the spec the PARA app implements against. It documents the current,
 shipped behavior of the bridge (`services/matrix-bridge`) — event payloads and
-endpoints here describe the bridge implementation. Updated 2026-10-05.
+endpoints here describe the bridge implementation. Updated 2026-11-05.
 
 **Trusted authority upgrade:** deploy the paired AppView change and its authority
 revalidation migration first. Set `BRIDGE_AUTHORITY_APPVIEW_URL` to that AppView
@@ -23,9 +23,10 @@ Before opening the API, the bridge revalidates/projects every persisted
 membership. Authority events and a 60-second sweep catch changes and expirations;
 joins, resource authorization, SSE room delivery, native interactions and retries
 refresh authority. An unavailable/invalid authority source fails closed: the
-cached membership is suspended, role flags are cleared, minted devices are
-revoked and tracked accounts are banned from community rooms. Recovery reprojects
-verified membership; revoked devices require a fresh login/attestation. Verify
+cached membership is suspended and tracked accounts are banned from the affected
+community rooms. Device sessions and other communities stay independent. Recovery
+reprojects verified membership; an active member can rejoin without replacing
+their device. Verify
 this outage/recovery behavior against the staging homeserver before rollout.
 
 **Deployment gate:** the Synapse v1.161.0 + MAS 1.24.0 deployment does not
@@ -46,8 +47,8 @@ the client:
    derived from the presented identity public key — the same derivation iM8
    computes locally (`getMatrixIdentity`), so this call is the cross-check
    plus the point where the Synapse account is ensured to exist. It mints no
-   session, no device and no token. There is no mapping behind it: a DID has
-   no stored MXID anywhere in the bridge.
+   session, no device and no token. The identifier is derived from the key;
+   device attestations retain operational attribution for moderation and revocation.
 3. The client asks the Matrix SDK for an authorization URL (`urlForOidc`),
    opens it in a browser session, and completes with
    `loginWithOidcCallback(redirectUrl)`. PARA's implementation is
@@ -68,11 +69,11 @@ the client:
 `POST /api/community-join` (M8 bearer) with `{communityUri, assertion}` — a
 fresh challenge signed for audience `para-matrix-bridge/join.v1`. The bridge
 checks active membership + the proof, then joins the derived MXID into the
-community's rooms (main + assigned chamber, or the observer layout) with the
+community's authorized rooms with the
 power levels the governance roles imply. Response:
 `{userId, spaceId, joinedRoomIds, chamber}`. Leaving/removal arrives as
-`membership.changed` with a non-active state: the bridge deactivates the
-device sessions it minted and bans those accounts from the rooms; drop local
+`membership.changed` with a non-active state: the bridge bans known accounts
+from that community only; drop local
 caches and treat the rooms as closed.
 
 `loginFlow` is `'oidc'` for this deployment. Treat any other value as
@@ -83,7 +84,7 @@ unsupported rather than falling back to something weaker.
 The model is two-tier, on purpose:
 
 - **The bridge** (`BRIDGE_URL`, e.g. `https://bridge.para.social`) owns
-  identity mapping, governance, sortition, moderation, read state, push
+  identity proofs, verified access projection, moderation, read state, push
   registration, and the real-time event stream. Clients talk to it with an
   **M8 bearer token** — the same token the app already holds for PDS login.
 - **The homeserver** (Synapse, e.g. `https://matrix.para.social`) owns chat
@@ -150,21 +151,25 @@ fields:
 
 Lifecycle endpoints (M8 bearer):
 
-- `GET /api/devices` → `{ devices: [{ sessionId, deviceId, friendlyName, userAgent, createdAt, lastSeenAt, revoked }] }`
+- `GET /api/devices` → `{ devices: [{ sessionId, deviceId, friendlyName, userAgent, createdAt, lastSeenAt, revoked, revocationPending }] }`
 - `POST /api/devices/revoke` body `{ sessionId }` → deactivates the device on
-  the homeserver (its access token dies) and marks the session revoked.
+  the homeserver and marks completion only after MAS/Synapse confirms it. A
+  durable request returns `202 { revoked: false, pending: true }` during an
+  upstream outage and retries after restart, without a five-attempt cutoff.
+  `200 { revoked: true, pending: false }` means completion. Pending devices
+  cannot be re-attested or reused for legacy login.
   Revoking the device the app is currently using requires a fresh
   `/api/matrix-token` call before the next chat open.
 
 Three distinct "logouts" the app should model separately:
 (i) PARA/M8 session sign-out (identity — clears the bearer),
 (ii) Matrix session revocation (one device — above),
-(iii) community/institutional access removal (governance — arrives as an SSE
+(iii) community access removal (governance — arrives as an SSE
 `membership.changed` event; it implies neither of the first two).
 
 Every verified interaction also settles access (`reconcileMemberAccess`):
 communities where the caller's membership turned non-active get the presented
-account banned and its sessions revoked; active communities get current roles
+account banned only in the removed community; active communities get current roles
 re-projected as power levels. Treat a 403 from a room the app still holds
 locally as authoritative and drop local caches — the SSE `membership.changed`
 event is the push signal, reconciliation is the enforcement.
@@ -222,16 +227,13 @@ Wire protocol:
 
 ### Event catalog (exact payloads)
 
-| Event (`event:`)        | Audience                                                                   | Payload                                                                                                                                                                                                                                                               |
-| ----------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `membership.changed`    | the affected DID (direct)                                                  | `{ did, state, roles }` — your own membership/roles changed; `state` ∈ `active \| left \| removed \| blocked \| …`; on `left/removed/blocked` drop local community caches                                                                                             |
-| `proposal.state`        | community-wide                                                             | `{ proposalUri, from, to, votingEnds }` — today `from:"deliberation"`, `to:"voting"`; render the "voting open" surface                                                                                                                                                |
-| `sortition.selected`    | selected DIDs (direct)                                                     | `{ runId, cabildeoUri }` — you were selected for an assembly; mirror of the Expo push (`type: "sortition_selected"`)                                                                                                                                                  |
-| `sortition.run.updated` | community-wide                                                             | `{ runId, status, selectedCount, eligibleCount }` — aggregate only, **no member identities**                                                                                                                                                                          |
-| `chat.unread`           | currently authorized room members, further restricted by DID on read-clear | `{ roomId, invalidated: true }` on activity; `{ roomId, clearedFor, upTo }` on mark-read. Refetch `/api/unread`; never add a message delta. Bridge counts reflect message/encrypted-event metadata; the native SDK is authoritative for decrypted timeline semantics. |
-| `badge.updated`         | the affected DID (direct)                                                  | `{ communityUri, badges }` — the caller's visible badge types changed                                                                                                                                                                                                 |
-| `constitution.updated`  | community-wide                                                             | `{ version }` — refetch `GET /api/constitution` for the rules                                                                                                                                                                                                         |
-| `resync_required`       | caller                                                                     | `{ oldestRetainedSeq, maxSeq }`                                                                                                                                                                                                                                       |
+| Event (`event:`)       | Audience                                                                   | Payload                                                                                                                                                                                                                                                               |
+| ---------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `membership.changed`   | the affected DID (direct)                                                  | `{ did, state, roles }` — your own membership/roles changed; `state` ∈ `active \| left \| removed \| blocked \| …`; on `left/removed/blocked` drop local community caches                                                                                             |
+| `chat.unread`          | currently authorized room members, further restricted by DID on read-clear | `{ roomId, invalidated: true }` on activity; `{ roomId, clearedFor, upTo }` on mark-read. Refetch `/api/unread`; never add a message delta. Bridge counts reflect message/encrypted-event metadata; the native SDK is authoritative for decrypted timeline semantics. |
+| `badge.updated`        | the affected DID (direct)                                                  | `{ communityUri, badges }` — the caller's visible badge types changed                                                                                                                                                                                                 |
+| `constitution.updated` | community-wide                                                             | `{ version }` — refetch `GET /api/constitution` for the rules                                                                                                                                                                                                         |
+| `resync_required`      | caller                                                                     | `{ oldestRetainedSeq, maxSeq }`                                                                                                                                                                                                                                       |
 
 `badge.updated`, `constitution.updated`.
 
@@ -241,9 +243,9 @@ The bridge enforces `authorize(actor, action, resource)` (F9, closed):
 
 - Moderator powers (sanctions, dashboard, recompute) require the
   `moderator`/`owner` role.
-- Processing a sortition run requires `moderator`/`owner`/`delegate`.
-- Room-scoped writes (`mark-read`) require chamber assignment matching the
-  room's chamber; `observer`-role members reach only main/observers rooms.
+- Room-scoped operations require current verified access. Members reach the main
+  room; moderators and owners can review every tracked room. Chamber seats need
+  an external verified assignment contract before they grant access.
 
 Clients should treat `403` as authoritative and refresh entitlements on the
 next `membership.changed` for the caller's DID.
@@ -260,7 +262,6 @@ next `membership.changed` for the caller's DID.
   `{ reason, roomId, communityUri, communityName, senderName }` — deep-link to
   `communityUri` → `/api/space-for-community?uri=` for room resolution, then
   open the room via the Matrix client.
-- Sortition push data payload: `{ type: "sortition_selected", runId, cabildeoUri, communityUri }`.
 
 ## 4.1 Direct messages by consent
 
@@ -292,17 +293,31 @@ createdAt, expiresAt }] }`. No MXIDs. Incoming lists pending requests only;
 
 Requests expire after 14 days.
 
-## 5. Institutions and identity links
+## 5. Identity links
 
-- `POST /api/institutions` authenticates M8 and returns 201 `{ institutionId }`
-  with a server-generated UUID URN and an initial, non-expiring owner.
-- Generic membership routes operate only on existing institutions. They cannot
-  create, replace, expire or revoke owner memberships. Ownership handover is
-  unavailable until its dedicated acceptance/approval protocol and Matrix
-  authority changes are implemented.
 - Public `com.para.identity.linkedChat` records are unverified claims.
   `verifyChatLink` fails closed with `matrix-proof-required` and performs no
   remote reads. Do not use records to authorize memberships or correlate
   private/work/voting identities automatically.
 - External providers are outside the current delivery; do not relay M8 tokens
   to them. Solidarity integration is not a dependency of the native pilot.
+
+## 6. Chat API scope
+
+Civic cards, graphs, contributions, valuations, community pulse, AI processing,
+assembly selection and institutional administration are outside this API. Their
+URLs return 404 and there are no assembly-selection SSE events or push messages.
+Clients must obtain those features from the responsible civic/institutional service.
+
+Chat badge responses and member lists include explicit verified `roles`. Clients
+use these roles for moderation controls, never badges or activity counters.
+Chat member lists return `did`, `roles`, moderation `badges` and, for authorized moderators,
+sanction details. They contain no participation summary, message/vote/proposal
+counters, engagement tiers or last-activity ranking. The moderation dashboard
+counts verified members, reports and sanctions; it has no `activeToday` field.
+Role context is derived from verified member/moderator/owner authority.
+
+The bridge does not assign chambers. Historical allocation tables grant no access;
+ordinary members join only the main room until an external verified room-assignment
+contract exists. Existing chamber rooms remain available to verified moderators
+and owners for report review and access revocation.

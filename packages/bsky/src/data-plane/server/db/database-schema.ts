@@ -41,6 +41,7 @@ import type * as paraCommunityMembership from './tables/para-community-membershi
 import type * as paraCommunityRelation from './tables/para-community-relation.js'
 import type * as paraCommunitySharedContentAction from './tables/para-community-shared-content-action.js'
 import type * as paraCommunitySharedContent from './tables/para-community-shared-content.js'
+import type * as paraConclusion from './tables/para-conclusion.js'
 import type * as paraDeliberationStatement from './tables/para-deliberation-statement.js'
 import type * as paraDeliberationVote from './tables/para-deliberation-vote.js'
 import type * as paraFollowThrough from './tables/para-follow-through.js'
@@ -131,6 +132,7 @@ export type DatabaseSchemaType = duplicateRecord.PartialDB &
   draft.PartialDB &
   paraCommunityBoard.PartialDB &
   paraCommunityAccount.PartialDB &
+  paraConclusion.PartialDB &
   paraCommunityAuthorityEvent.PartialDB &
   paraCommunityBriefingPack.PartialDB &
   paraCommunityMembership.PartialDB &
