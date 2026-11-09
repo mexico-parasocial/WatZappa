@@ -14,7 +14,6 @@ interface ParaCommunityBoardRecord {
   region?: string
   delegatesChatId: string
   subdelegatesChatId: string
-  governanceMode?: string
   admissionMode?: string
   createdAt: string
 }
@@ -46,7 +45,6 @@ const insertFn = async (
       slug: deriveBoardSlug(uri, obj.name),
       delegatesChatId: obj.delegatesChatId,
       subdelegatesChatId: obj.subdelegatesChatId,
-      governanceMode: obj.governanceMode ?? 'hierarchical',
       admissionMode: obj.admissionMode ?? 'open',
       createdAt: normalizeDatetimeAlways(obj.createdAt),
       indexedAt: timestamp,

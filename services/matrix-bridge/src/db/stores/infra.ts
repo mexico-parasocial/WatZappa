@@ -36,6 +36,8 @@ export interface InfraStore {
 
   getFailedSyncs(limit?: number): Promise<SyncLogEntry[]>
 
+  getAccessRetryJobs(limit?: number): Promise<SyncLogEntry[]>
+
   getProvisioningRetryJobs(limit?: number): Promise<SyncLogEntry[]>
 
   getRetryCount(entryId: number): Promise<number>

@@ -17,7 +17,6 @@ import { FirehoseConsumer } from '../src/firehose.js'
 import type * as M8Auth from '../src/m8-auth.js'
 import type { MatrixProjectionPort } from '../src/matrix-projection.js'
 import { BridgeMetrics } from '../src/metrics.js'
-import { ProposalEngine } from '../src/proposals.js'
 import { RetryWorker } from '../src/retry.js'
 
 const owner = 'did:plc:owner'
@@ -198,8 +197,6 @@ describe('chat off (MATRIX_CHAT_ENABLED=false)', () => {
     for (const path of [
       '/healthz',
       `/api/constitution?uri=${enc}`,
-      `/api/proposals?community=${enc}`,
-      `/api/decisions?community=${enc}`,
       `/api/moderation-dashboard?community=${enc}&modDid=${owner}`,
       `/api/moderation-reports?community=${enc}&modDid=${owner}`,
       `/api/chat-member-list?community=${enc}`,
@@ -209,7 +206,13 @@ describe('chat off (MATRIX_CHAT_ENABLED=false)', () => {
       expect({ path, status: res.status }).toEqual({ path, status: 200 })
     }
 
-    // The Expo token still registers: sortition notices are sent with it.
+    // Proposals and decisions are cabildeos, tallied by the AppView.
+    for (const path of ['/api/proposals', '/api/decisions']) {
+      const res = await fetch(`${base}${path}?community=${enc}`)
+      expect({ path, status: res.status }).toEqual({ path, status: 404 })
+    }
+
+    // Push registration remains available independently of room provisioning.
     const push = await fetch(`${base}/api/push-token`, {
       method: 'POST',
       body: JSON.stringify({ expoPushToken: 'ExponentPushToken[x]' }),
@@ -267,7 +270,6 @@ describe('scheduled jobs', () => {
       toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'],
     })
     const jobs = {
-      proposals: vi.spyOn(ProposalEngine.prototype, 'processStateTransitions'),
       sanctions: vi.spyOn(
         ChatModerationEngine.prototype,
         'liftExpiredSanctions',
@@ -283,7 +285,6 @@ describe('scheduled jobs', () => {
   it('runs the governance jobs with chat off while the firehose is connected', async () => {
     process.env.MATRIX_CHAT_ENABLED = 'false'
     const jobs = await startWithJobClock()
-    expect(jobs.proposals).toHaveBeenCalledTimes(6) // every 10 min
     expect(jobs.sanctions).toHaveBeenCalledTimes(60) // every minute
     expect(jobs.badges).toHaveBeenCalledTimes(12) // every 5 min
     expect(jobs.prune).toHaveBeenCalledTimes(1) // hourly
@@ -292,8 +293,7 @@ describe('scheduled jobs', () => {
 
   it('runs the membership-lease sweep only with chat on', async () => {
     process.env.MATRIX_ADMIN_TOKEN = 'fixture-only'
-    const jobs = await startWithJobClock()
-    expect(jobs.proposals).toHaveBeenCalledTimes(6)
+    await startWithJobClock()
     // Once a minute after start, then hourly.
     expect(matrixUse.sweeps).toBe(2)
   })
@@ -321,7 +321,6 @@ describe('turning chat on later', () => {
     const worker = (chatEnabled: boolean) =>
       new RetryWorker(
         db,
-        {} as MatrixProjectionPort,
         new BridgeMetrics(),
         log,
         async () => {},
@@ -375,8 +374,6 @@ describe('turning chat on later', () => {
         applyMemberRoles: async () => {},
         revokeMemberAccess: async () => 0,
       } as unknown as MatrixProjectionPort,
-      {} as ProposalEngine,
-      new ChatModerationEngine(db, log),
       new BridgeMetrics(),
       log,
       async () => ({ state: 'active', roles: ['member', 'owner'] }),

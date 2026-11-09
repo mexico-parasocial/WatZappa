@@ -20,9 +20,6 @@ import type { BridgeEvent } from '../db/records.js'
 
 export const EVENT_TYPES = [
   'membership.changed',
-  'proposal.state',
-  'sortition.selected',
-  'sortition.run.updated',
   'chat.unread',
   'badge.updated',
   'constitution.updated',

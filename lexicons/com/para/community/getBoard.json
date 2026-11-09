@@ -124,10 +124,6 @@
           "type": "string",
           "format": "at-uri"
         },
-        "governanceMode": {
-          "type": "string",
-          "knownValues": ["hierarchical", "horizontal"]
-        },
         "admissionMode": {
           "type": "string",
           "knownValues": ["open", "assembly_approval"]
@@ -157,7 +153,10 @@
         },
         "availableActions": {
           "type": "array",
-          "items": { "type": "ref", "ref": "com.para.community.defs#availableAction" }
+          "items": {
+            "type": "ref",
+            "ref": "com.para.community.defs#availableAction"
+          }
         }
       }
     }

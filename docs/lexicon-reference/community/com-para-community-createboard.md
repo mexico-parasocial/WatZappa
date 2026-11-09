@@ -2,11 +2,13 @@
 title: com.para.community.createBoard
 description: Reference for the com.para.community.createBoard lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `procedure`
@@ -22,31 +24,31 @@ Creates a PARA community board. Automatically instantiates the underlying genera
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `name` | `string` | ✅  |  | Min Length: 1<br/>Max Length: 1280<br/>Max Graphemes: 128 |
-| `quadrant` | `string` | ✅  |  | Max Length: 64 |
-| `description` | `string` | ❌  |  | Max Length: 3000 |
-| `founderStarterPackName` | `string` | ❌  | User-provided name for the internal starter pack tracking founding members. If absent, a default name will be generated. | Max Length: 3000 |
-| `governanceMode` | `string` | ❌  | Governance model for this community. Hierarchical uses owner/moderator roles. Horizontal uses rotating facilitators and assembly votes. Defaults to hierarchical. | Known Values: `hierarchical`, `horizontal` |
-**Output:**
+| Name                     | Type     | Req'd | Description                                                                                                              | Constraints                                               |
+| ------------------------ | -------- | ----- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| `name`                   | `string` | ✅    |                                                                                                                          | Min Length: 1<br/>Max Length: 1280<br/>Max Graphemes: 128 |
+| `quadrant`               | `string` | ✅    |                                                                                                                          | Max Length: 64                                            |
+| `description`            | `string` | ❌    |                                                                                                                          | Max Length: 3000                                          |
+| `founderStarterPackName` | `string` | ❌    | User-provided name for the internal starter pack tracking founding members. If absent, a default name will be generated. | Max Length: 3000                                          |
+| **Output:**              |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `cid` | `string` | ✅  |  | Format: `cid` |
-| `delegatesChatId` | `string` | ✅  |  |  |
-| `subdelegatesChatId` | `string` | ✅  |  |  |
-| `founderStarterPackUri` | `string` | ❌  | Reference to the newly created founder starter pack. Present if status is draft. | Format: `at-uri` |
+| Name                    | Type     | Req'd | Description                                                                      | Constraints      |
+| ----------------------- | -------- | ----- | -------------------------------------------------------------------------------- | ---------------- |
+| `uri`                   | `string` | ✅    |                                                                                  | Format: `at-uri` |
+| `cid`                   | `string` | ✅    |                                                                                  | Format: `cid`    |
+| `delegatesChatId`       | `string` | ✅    |                                                                                  |                  |
+| `subdelegatesChatId`    | `string` | ✅    |                                                                                  |                  |
+| `founderStarterPackUri` | `string` | ❌    | Reference to the newly created founder starter pack. Present if status is draft. | Format: `at-uri` |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -59,10 +61,7 @@ Creates a PARA community board. Automatically instantiates the underlying genera
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "name",
-            "quadrant"
-          ],
+          "required": ["name", "quadrant"],
           "properties": {
             "name": {
               "type": "string",
@@ -82,14 +81,6 @@ Creates a PARA community board. Automatically instantiates the underlying genera
               "type": "string",
               "maxLength": 3000,
               "description": "User-provided name for the internal starter pack tracking founding members. If absent, a default name will be generated."
-            },
-            "governanceMode": {
-              "type": "string",
-              "knownValues": [
-                "hierarchical",
-                "horizontal"
-              ],
-              "description": "Governance model for this community. Hierarchical uses owner/moderator roles. Horizontal uses rotating facilitators and assembly votes. Defaults to hierarchical."
             }
           }
         }
@@ -98,12 +89,7 @@ Creates a PARA community board. Automatically instantiates the underlying genera
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "uri",
-            "cid",
-            "delegatesChatId",
-            "subdelegatesChatId"
-          ],
+          "required": ["uri", "cid", "delegatesChatId", "subdelegatesChatId"],
           "properties": {
             "uri": {
               "type": "string",

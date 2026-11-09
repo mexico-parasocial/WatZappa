@@ -1,3 +1,4 @@
+import { isPolicySignal } from './para-ballot-freeze.js'
 export class VoteVerifierUnavailableError extends Error {
   name = 'VoteVerifierUnavailableError'
 }
@@ -107,9 +108,7 @@ function publicBallotClaim(record: unknown): PublicBallotClaim | null {
     if (
       vote.cabildeo !== undefined ||
       vote.selectedOption !== undefined ||
-      !Number.isInteger(vote.signal) ||
-      (vote.signal as number) < -3 ||
-      (vote.signal as number) > 3 ||
+      !isPolicySignal(vote.signal) ||
       !/^m8:policy:v1:[A-Za-z0-9_-]{43}$/.test(vote.eligibilityProofRef)
     ) {
       return null

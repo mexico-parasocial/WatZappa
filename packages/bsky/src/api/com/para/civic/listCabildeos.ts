@@ -106,6 +106,7 @@ const mapCabildeoView = (view: {
   geo?: { latE7: number; lngE7: number }
   options: Array<{ label: string; description: string; isConsensus: boolean }>
   minQuorum?: number
+  kind?: string
   voteVisibility?: string
   phase: string
   phaseDeadline: string
@@ -192,6 +193,7 @@ const mapCabildeoView = (view: {
     isConsensus: option.isConsensus,
   })),
   minQuorum: view.minQuorum,
+  kind: view.kind || 'activity',
   voteVisibility: view.voteVisibility || 'public',
   phase: view.phase,
   phaseDeadline: parseString(view.phaseDeadline),

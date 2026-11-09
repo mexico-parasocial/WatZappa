@@ -97,6 +97,9 @@ const insertFn = async (
         cabildeo: uri.toString(),
         deadline: suppliedDeadline ?? defaultDeadline,
         openedAt: timestamp,
+        // The first row wins (`doNothing` below), so an edit after voting
+        // opened never moves this to the edited version.
+        recordCid: cid.toString(),
       })
       .onConflict((oc) => oc.doNothing())
       .execute()

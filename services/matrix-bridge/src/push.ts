@@ -1,5 +1,4 @@
-/** Expo push delivery. Used by the Matrix push gateway route and by the
- * sortition engine when it notifies selected members. */
+/** Expo push delivery for chat notifications. */
 import { readBoundedJson } from './http-response.js'
 
 export type ExpoPushTicket = {

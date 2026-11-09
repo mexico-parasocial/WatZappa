@@ -1,52 +1,65 @@
-# PARA Matrix Homeserver — Caddy additions
-# Append these blocks to /etc/caddy/Caddyfile (or your main Caddyfile)
-# and replace matrix.para.social / chat.para.social with your real domains.
+# PARA Matrix — Caddy blocks for a host-run Caddy (deploy/bare-metal)
+#
+# The containerised edge (docker-compose.prod.yaml) uses the same routes in
+# services/caddy/Caddyfile.prod, addressed by container name. Keep the two in
+# step. Append these blocks to /etc/caddy/Caddyfile and replace para.social
+# with your domain. MATRIX_MAS_PUBLIC_URL / MATRIX_IDP_PUBLIC_URL in .env must
+# name the auth. and idp. hosts below before running setup-mas.sh.
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Synapse / Continuwuity homeserver
+# Synapse — client API only. Federation is closed (hardening.yaml), so there is
+# no /.well-known/matrix/server and no federation or key path. Admin,
+# MAS-internal and metrics APIs never leave the host.
 # ─────────────────────────────────────────────────────────────────────────────
 matrix.para.social {
-	# Serve well-known files for federation discovery
-	handle /.well-known/matrix/server {
-		header Content-Type application/json
-		respond `{ "m.server": "matrix.para.social:443" }`
-	}
+	encode gzip
 
 	handle /.well-known/matrix/client {
 		header Content-Type application/json
 		header Access-Control-Allow-Origin *
-		respond `{ "m.homeserver": { "base_url": "https://matrix.para.social" } }`
+		respond `{"m.homeserver":{"base_url":"https://matrix.para.social"}}`
 	}
 
-	# MAS compatibility layer: legacy login/logout/refresh endpoints must be
-	# handled by MAS, not Synapse, when auth is delegated
-	# (docs/setup/homeserver.md in matrix-authentication-service).
-	handle /_matrix/client/v1/login {
-		reverse_proxy 127.0.0.1:8080
+	@private path /_synapse/admin /_synapse/admin/* /_synapse/mas /_synapse/mas/* /_synapse/metrics /_synapse/metrics/* /_matrix/federation/* /_matrix/key/*
+	handle @private {
+		respond 404
 	}
-	handle /_matrix/client/v3/login {
-		reverse_proxy 127.0.0.1:8080
-	}
-	handle /_matrix/client/v1/logout* {
-		reverse_proxy 127.0.0.1:8080
-	}
-	handle /_matrix/client/v3/logout* {
-		reverse_proxy 127.0.0.1:8080
-	}
-	handle /_matrix/client/v1/refresh {
+
+	# MAS compatibility layer: legacy login/logout/refresh belong to MAS when
+	# authentication is delegated.
+	@mas_compat path_regexp ^/_matrix/client/[^/]+/(login|logout|refresh)(/.*)?$
+	handle @mas_compat {
 		reverse_proxy 127.0.0.1:8080
 	}
 
-	# Reverse proxy to Synapse (port 8008)
-	reverse_proxy 127.0.0.1:8008
-
-	# PARA-only mode: no public federation listener is exposed.
+	handle {
+		reverse_proxy 127.0.0.1:8008
+	}
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Element Web client
+# MAS — issuer clients open to sign in. Its admin listener (8081) is not proxied.
+# ─────────────────────────────────────────────────────────────────────────────
+auth.para.social {
+	reverse_proxy 127.0.0.1:8080
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# para-idp — browser-facing authorization only; MAS reaches /token and
+# /jwks.json over the Compose network.
+# ─────────────────────────────────────────────────────────────────────────────
+idp.para.social {
+	handle /authorize* {
+		reverse_proxy 127.0.0.1:8090
+	}
+	handle {
+		respond 404
+	}
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Element Web — moderators' Matrix client (8080 belongs to MAS)
 # ─────────────────────────────────────────────────────────────────────────────
 chat.para.social {
-	# Element Web listens on 8082; 8080 belongs to MAS.
 	reverse_proxy 127.0.0.1:8082
 }

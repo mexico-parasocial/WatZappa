@@ -1,0 +1,14 @@
+[Unit]
+Description=PARA Matrix restore unit, encrypted and uploaded off-host
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/para/matrix-backup.env
+ExecStart=/bin/bash {{ para_deploy_dir }}/deploy/matrix/nightly-backup.sh
+StandardOutput=journal
+StandardError=journal
+# Media can be large; a killed run leaves no upload and no fresh metric, which
+# the ParaMatrixBackupStale alert reports.
+TimeoutStartSec=7200

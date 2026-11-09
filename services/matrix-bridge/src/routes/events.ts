@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { CHAT_BADGE_TYPES } from '../chat-moderation.js'
 import type { BridgeEvent } from '../db/records.js'
-import { REPLAY_BATCH } from '../events/bus.js'
+import { EVENT_TYPES, REPLAY_BATCH } from '../events/bus.js'
 import { HttpError, authenticateM8 } from '../m8-auth.js'
 import type { RouteContext } from './context.js'
 import { writeJson } from './http.js'
@@ -11,6 +12,17 @@ export async function mayReceiveEvent(
   did: string,
   event: BridgeEvent,
 ): Promise<boolean> {
+  if (!(EVENT_TYPES as readonly string[]).includes(event.type)) return false
+  if (event.type === 'badge.updated') {
+    const badges = (event.payload as { badges?: unknown } | null)?.badges
+    if (
+      !Array.isArray(badges) ||
+      badges.some(
+        (badge) => !(CHAT_BADGE_TYPES as readonly unknown[]).includes(badge),
+      )
+    )
+      return false
+  }
   if (event.audienceDids && !event.audienceDids.includes(did)) return false
   // @NOTE lifecycle notices may explain removal; room data requires fresh authority.
   const roomScoped =

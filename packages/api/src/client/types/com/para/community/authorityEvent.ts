@@ -46,6 +46,7 @@ export interface Main {
     | 'expiry'
     | 'migration'
     | (string & {})
+  /** Required by assemblyDecision, ownerAppointment and ownerTransfer. For assemblyDecision it is the com.para.civic.cabildeo whose final tally approved this event: the AppView recomputes quorum and threshold from it and indexes the event only if they hold. One cabildeo grounds one event. */
   evidence?: string
   createdAt: string
   [k: string]: unknown

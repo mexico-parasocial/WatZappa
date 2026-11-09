@@ -60,7 +60,6 @@ export type BoardRecord = LexMap & {
   subdelegatesChatId: string
   status: string
   founderStarterPackUri?: string
-  governanceMode?: string
   admissionMode?: string
   createdAt: string
 }
@@ -160,19 +159,12 @@ export const buildSeedGovernanceRecord = ({
   name,
   slug,
   createdAt,
-  governanceMode,
 }: {
   did: string
   name: string
   slug: string
   createdAt: string
-  governanceMode?: string
 }): LexMap => {
-  const isHorizontal = governanceMode === 'horizontal'
-  const validUntil = isHorizontal
-    ? new Date(Date.now() + 30 * 86400000).toISOString()
-    : undefined
-
   return {
     $type: GOVERNANCE_COLLECTION,
     community: `p/${name}`,
@@ -183,24 +175,14 @@ export const buildSeedGovernanceRecord = ({
     moderators: [
       {
         did,
-        role: isHorizontal ? 'Founding facilitator' : 'Founding moderator',
+        role: 'Founding moderator',
         badge: 'Community Creator',
         capabilities: DEFAULT_MODERATOR_CAPABILITIES,
         validFrom: createdAt,
-        validUntil,
       },
     ],
     officials: [],
     deputies: [],
-    roleRotationRules: isHorizontal
-      ? {
-          $type: 'com.para.community.governanceConfig#roleRotationRules',
-          facilitatorMaxDays: 30,
-          moderatorMaxDays: 90,
-          stewardMaxDays: 180,
-          requiresAssemblyRatification: true,
-        }
-      : undefined,
     metadata: {
       state: 'seeded',
       reviewCadence: 'Initial setup',
@@ -212,9 +194,7 @@ export const buildSeedGovernanceRecord = ({
         action: 'publish_governance_updates',
         actorDid: did,
         createdAt,
-        summary: isHorizontal
-          ? 'Initial horizontal governance charter seeded during community creation.'
-          : 'Initial governance charter seeded during community creation.',
+        summary: 'Initial governance charter seeded during community creation.',
       },
     ],
   }
@@ -538,7 +518,6 @@ const buildBoardViewShape = ({
     status: board.record.status,
     founderStarterPackUri: board.record.founderStarterPackUri as
       AtUriString | undefined,
-    governanceMode: board.record.governanceMode,
     admissionMode: board.record.admissionMode,
     createdAt: board.record.createdAt as DatetimeString,
   }
@@ -551,155 +530,6 @@ export const toGetBoardView = (
 export const toListBoardView = (
   args: BoardViewArgs,
 ): com.para.community.listBoards.BoardView => buildBoardViewShape(args)
-
-const isRoleValid = (entry: Record<string, unknown>, now: number): boolean => {
-  const validFrom = entry.validFrom ? Date.parse(entry.validFrom as string) : 0
-  const validUntil = entry.validUntil
-    ? Date.parse(entry.validUntil as string)
-    : Infinity
-  if (validFrom > now) return false
-  if (validUntil <= now) return false
-  return true
-}
-
-/**
- * Governance of a horizontal community may only be changed by a facilitator
- * with a valid, unexpired term, and every role entry must carry a bounded,
- * ratified term. Applied to every governance write that reaches this PDS
- * (createRecord, putRecord, applyWrites).
- */
-export const assertHorizontalGovernanceWrite = async ({
-  actorTxn,
-  did,
-  record,
-}: {
-  actorTxn: ActorStoreTransactor
-  did: DidString
-  record: Record<string, unknown>
-}): Promise<void> => {
-  const communityId = (record.slug || record.communityId) as string | undefined
-  if (!communityId) return
-
-  const boards = await listBoardRecords(actorTxn)
-  let matchingBoard: BoardRecord | undefined
-  for (const b of boards) {
-    const board = asBoardRecord(b.value)
-    if (!board) continue
-    if (deriveBoardSlug(board.name, new AtUri(b.uri).rkey) === communityId) {
-      matchingBoard = board
-      break
-    }
-  }
-
-  if (!matchingBoard) return
-  if (matchingBoard.governanceMode !== 'horizontal') return
-
-  // Horizontal community: check facilitator authorization
-  const governanceUri = AtUri.make(did, GOVERNANCE_COLLECTION, communityId)
-  const existingGovernance = await actorTxn.record.getRecord(
-    governanceUri,
-    null,
-    true,
-  )
-
-  if (!existingGovernance) {
-    throw new InvalidRequestError(
-      'Horizontal community governance must be created through the community creation flow.',
-    )
-  }
-
-  const gov = existingGovernance.value as Record<string, unknown>
-  const now = Date.now()
-
-  // Check actor's own moderator role is still valid
-  const moderators = (gov.moderators || []) as Array<Record<string, unknown>>
-  const actorModerator = moderators.find(
-    (m) => m.did === did && isRoleValid(m, now),
-  )
-
-  if (!actorModerator) {
-    throw new InvalidRequestError(
-      'Only elected facilitators with valid, unexpired terms can modify governance for horizontal communities.',
-    )
-  }
-
-  const capabilities = (actorModerator.capabilities || []) as string[]
-  if (!capabilities.includes('publish_governance_updates')) {
-    throw new InvalidRequestError(
-      'Only facilitators with publish_governance_updates capability can modify horizontal community governance.',
-    )
-  }
-
-  // Validate proposed record role entries have expiration bounds
-  const rotationRules = (gov.roleRotationRules || {}) as Record<string, unknown>
-  const proposedModerators = (record.moderators || []) as Array<
-    Record<string, unknown>
-  >
-  const proposedOfficials = (record.officials || []) as Array<
-    Record<string, unknown>
-  >
-  const proposedDeputies = (record.deputies || []) as Array<
-    Record<string, unknown>
-  >
-
-  const maxDaysMap: Record<string, number | undefined> = {
-    facilitator: (rotationRules.facilitatorMaxDays as number) || 30,
-    moderator: (rotationRules.moderatorMaxDays as number) || 90,
-    steward: (rotationRules.stewardMaxDays as number) || 180,
-    official: (rotationRules.stewardMaxDays as number) || 180,
-    deputy: (rotationRules.moderatorMaxDays as number) || 90,
-  }
-
-  const allRoleEntries = [
-    ...proposedModerators.map((entry) => ({ entry, roleKey: 'moderator' })),
-    ...proposedOfficials.map((entry) => ({ entry, roleKey: 'official' })),
-    ...proposedDeputies.map((entry) => ({ entry, roleKey: 'deputy' })),
-  ]
-
-  // First pass: structural validation (validUntil presence, expiration, term limits)
-  for (const { entry, roleKey } of allRoleEntries) {
-    const validUntil = entry.validUntil
-      ? Date.parse(entry.validUntil as string)
-      : undefined
-    const validFrom = entry.validFrom
-      ? Date.parse(entry.validFrom as string)
-      : now
-
-    if (!validUntil || Number.isNaN(validUntil)) {
-      throw new InvalidRequestError(
-        `Horizontal governance requires ${roleKey} entries to specify a validUntil date.`,
-      )
-    }
-
-    if (validUntil <= now) {
-      throw new InvalidRequestError(
-        `Horizontal governance ${roleKey} entries must have a validUntil date in the future.`,
-      )
-    }
-
-    const role = (entry.role as string) || (entry.office as string) || roleKey
-    const maxDays =
-      maxDaysMap[role.toLowerCase()] || maxDaysMap[roleKey.toLowerCase()] || 365
-    const maxMs = maxDays * 86400000
-
-    if (validUntil - validFrom > maxMs) {
-      throw new InvalidRequestError(
-        `${roleKey} term exceeds maximum allowed duration of ${maxDays} days for horizontal governance.`,
-      )
-    }
-  }
-
-  // Second pass: policy validation (assembly ratification)
-  if (rotationRules.requiresAssemblyRatification) {
-    for (const { entry, roleKey } of allRoleEntries) {
-      if (!entry.ratifiedBy) {
-        throw new InvalidRequestError(
-          `Horizontal governance requires assembly ratification (ratifiedBy) for ${roleKey} changes.`,
-        )
-      }
-    }
-  }
-}
 
 export const toGovernanceSummary = (
   governance: GovernanceRecord | null,
@@ -717,9 +547,9 @@ export const toGovernanceSummary = (
 
 /**
  * PARA's community write rules for generic repo writes (createRecord,
- * putRecord, applyWrites, deleteRecord): authority events are append-only and
- * self-issued, and horizontal-community governance goes through
- * {@link assertHorizontalGovernanceWrite}. Call inside the write transaction.
+ * putRecord, applyWrites, deleteRecord): a community account's repo is written
+ * only by its policy, and authority events are append-only and self-issued.
+ * Call inside the write transaction.
  */
 export const assertCommunityRepoWrites = async (
   actorTxn: ActorStoreTransactor,
@@ -734,21 +564,10 @@ export const assertCommunityRepoWrites = async (
     )
   }
   for (const write of writes) {
-    const { collection } = write.uri
-    if (collection === AUTHORITY_EVENT_COLLECTION) {
-      if (write.action !== WriteOpAction.Create) {
-        throw new InvalidRequestError('Authority events are immutable.')
-      }
-      assertAuthorityEventWrite({ did, record: write.record })
-    } else if (
-      collection === GOVERNANCE_COLLECTION &&
-      write.action !== WriteOpAction.Delete
-    ) {
-      await assertHorizontalGovernanceWrite({
-        actorTxn,
-        did,
-        record: write.record,
-      })
+    if (write.uri.collection !== AUTHORITY_EVENT_COLLECTION) continue
+    if (write.action !== WriteOpAction.Create) {
+      throw new InvalidRequestError('Authority events are immutable.')
     }
+    assertAuthorityEventWrite({ did, record: write.record })
   }
 }

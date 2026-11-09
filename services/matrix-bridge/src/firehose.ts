@@ -3,7 +3,6 @@ import { IdResolver } from '@atproto/identity'
 import { Firehose } from '@atproto/sync'
 import type { CommitEvt, Event } from '@atproto/sync'
 import { CHAT_DISABLED, isProvisionedSpace } from './chat-mode.js'
-import type { ChatModerationEngine } from './chat-moderation.js'
 import type { AuthorityResolver } from './community-authority.js'
 import type { Config } from './config.js'
 import { parseConstitution } from './constitution.js'
@@ -13,25 +12,18 @@ import { readBoundedJson } from './http-response.js'
 import { HttpError } from './m8-auth.js'
 import type { MatrixProjectionPort } from './matrix-projection.js'
 import type { BridgeMetrics } from './metrics.js'
-import type { ProposalEngine } from './proposals.js'
-import { assignChamberBalanced, assignChamberVerifiable } from './sortition.js'
 
 const CURSOR_SAVE_INTERVAL_MS = 30000
 
 /**
- * ATProto firehose consumer — the governance half of the bridge (CD-M2).
- * Consumes PARA community records, decides governance state (membership,
- * chambers via verifiable sortition, constitutions, proposals, votes) and
- * expresses room effects through MatrixProjectionPort. All MXID handling
- * lives behind that port; this file speaks DIDs only.
+ * Projects community records and externally verified membership/roles onto chat.
+ * Identity handling belongs to MatrixProjectionPort.
  */
 export class FirehoseConsumer {
   private firehose: Firehose
   private db: IBridgeDatabase
   private projection: MatrixProjectionPort
   private metrics: BridgeMetrics
-  private proposals: ProposalEngine
-  private chatMod: ChatModerationEngine
   private log: Logger
   private lastSeq: number | undefined
   private lastEventTime: string | undefined
@@ -47,16 +39,12 @@ export class FirehoseConsumer {
     private config: Config,
     db: IBridgeDatabase,
     projection: MatrixProjectionPort,
-    proposals: ProposalEngine,
-    chatMod: ChatModerationEngine,
     metrics: BridgeMetrics,
     log: Logger,
     private authority?: AuthorityResolver,
   ) {
     this.db = db
     this.projection = projection
-    this.proposals = proposals
-    this.chatMod = chatMod
     this.metrics = metrics
     this.log = log
     this.pdsSourceId = config.pdsSourceId
@@ -77,8 +65,6 @@ export class FirehoseConsumer {
         'com.para.community.membership',
         'com.para.community.authorityEvent',
         'com.para.community.constitution',
-        'com.para.community.proposal',
-        'com.para.community.vote',
       ],
       unauthenticatedCommits: true,
       handleEvent: (evt) => this.handleEvent(evt),
@@ -209,16 +195,6 @@ export class FirehoseConsumer {
         await this.refreshMembership(evt.record.community, evt.record.subject)
     } else if (collection === 'com.para.community.constitution') {
       await this.handleConstitutionUpdate(did, evt.record)
-    } else if (
-      collection === 'com.para.community.proposal' &&
-      evt.event === 'create'
-    ) {
-      await this.handleProposalCreate(did, evt.record)
-    } else if (
-      collection === 'com.para.community.vote' &&
-      evt.event === 'create'
-    ) {
-      await this.handleVoteCast(did, evt.record)
     }
   }
 
@@ -416,11 +392,6 @@ export class FirehoseConsumer {
             'suspended',
             [],
           )
-          await this.db.setParticipationRoles(did, communityUri, {
-            isModerator: false,
-            isDelegate: false,
-            chamber: null,
-          })
           const space = await this.db.getSpaceForCommunity(communityUri)
           if (space)
             await this.projection.revokeMemberAccess(
@@ -478,7 +449,6 @@ export class FirehoseConsumer {
         JSON.stringify([...roles].sort())
     )
       return
-    const isObserver = roles.includes('observer')
     await this.db.setCommunityMembership(userDid, communityUri, state, roles)
     if (this.events) {
       // Community-visible; no direct audience — members see joins/leaves.
@@ -512,40 +482,16 @@ export class FirehoseConsumer {
         // records the governance decision and the member joins by presenting
         // a verified proof of possession (CD-M6, /api/community-join). The
         // membership.changed SSE event above is the client's signal.
-        let chamberRoomId: string | null = null
-        let chamber: 'A' | 'B' | null = null
-
-        if (space.chamberMode === 'bicameral' && !isObserver) {
-          chamber = await this.decideChamber(communityUri, userDid)
-        }
-
-        chamberRoomId = chamber
-          ? chamber === 'A'
-            ? space.chamberA_RoomId
-            : space.chamberB_RoomId
-          : null
-
-        await this.chatMod.recordMembership(
-          userDid,
-          communityUri,
-          chamberRoomId ?? space.spaceId,
-          {
-            isModerator: roles.includes('moderator') || roles.includes('owner'),
-            isDelegate: roles.includes('delegate'),
-            chamber: chamber ?? null,
-          },
-        )
-
         if (action === 'update') {
           // The handover protocol: a membership *update* while active is a
-          // role change (moderation rotation, sortition replacing a delegate,
+          // role change (moderation rotation,
           // owner handover). Project the new roles onto the rooms the member
           // already occupies — through the chat accounts this bridge minted
           // sessions for, the only ones it can name.
           await this.projection.applyMemberRoles(space, userDid, {
             roles,
-            chamber,
-            isObserver,
+            chamber: null,
+            isObserver: false,
           })
           await this.db.logSync(
             'apply_roles',
@@ -564,14 +510,8 @@ export class FirehoseConsumer {
           )
         }
       } else if (isRemoval) {
-        await this.db.setParticipationRoles(userDid, communityUri, {
-          isModerator: false,
-          isDelegate: false,
-          chamber: null,
-        })
         // The bridge cannot kick a DID it cannot name; it revokes what it
-        // holds: every device session minted for that DID is deactivated and
-        // banned from the community's rooms. Re-entry fails at the next
+        // holds: known chat accounts are banned from this community's rooms. Re-entry fails at the next
         // verified join's active-membership check.
         await this.projection.revokeMemberAccess(space, userDid, state)
         await this.db.logSync(
@@ -614,63 +554,6 @@ export class FirehoseConsumer {
     }
   }
 
-  /**
-   * Governance decision: which chamber does this member belong to? Verifiable
-   * sortition via drand, deterministic fallback if the beacon is unreachable.
-   *
-   * Public because the verified-join route asks the same question at join
-   * time — the firehose may not have seen a membership record yet (or missed
-   * one), and the join is the moment the decision has to exist.
-   */
-  async decideChamber(
-    communityUri: string,
-    userDid: string,
-  ): Promise<'A' | 'B'> {
-    const existing = await this.db.getChamberAssignment(communityUri, userDid)
-    if (existing === 'A' || existing === 'B') return existing
-
-    const countA = await this.db.getChamberMemberCount(communityUri, 'A')
-    const countB = await this.db.getChamberMemberCount(communityUri, 'B')
-
-    let chamber: 'A' | 'B'
-    try {
-      const proof = await assignChamberVerifiable(
-        userDid,
-        communityUri,
-        countA,
-        countB,
-      )
-      chamber = proof.chamber
-      await this.db.saveSortitionProof({
-        did: proof.did,
-        communityUri: proof.communityUri,
-        chamber: proof.chamber,
-        drandRound: proof.round,
-        drandRandomness: proof.randomness,
-        hashInput: proof.hashInput,
-        hashOutput: proof.hashOutput,
-        threshold: proof.threshold,
-        timestamp: proof.timestamp,
-      })
-      this.metrics.sortitionDrandTotal.inc()
-      this.log.info(
-        { communityUri, userDid, chamber, drandRound: proof.round },
-        'Assigned user to chamber via verifiable sortition (drand)',
-      )
-    } catch (err: any) {
-      // Fallback to deterministic djb2Hash if drand is unreachable
-      chamber = assignChamberBalanced(userDid, communityUri, countA, countB)
-      this.metrics.sortitionFallbackTotal.inc()
-      this.log.warn(
-        { err: err.message, communityUri, userDid, chamber },
-        'drand failed, using fallback sortition',
-      )
-    }
-
-    await this.db.setChamberAssignment(communityUri, userDid, chamber)
-    return chamber
-  }
-
   private async handleConstitutionUpdate(
     did: string,
     record: any,
@@ -698,56 +581,6 @@ export class FirehoseConsumer {
     } catch (err: any) {
       this.log.error({ err, did, record }, 'Failed to parse constitution')
     }
-  }
-
-  private async handleProposalCreate(did: string, record: any): Promise<void> {
-    if (!record) return
-    const communityUri = record.community as string
-    const title = (record.title ?? 'Untitled') as string
-    const body = (record.body ?? '') as string
-    const proposalType = (record.type ?? 'general') as string
-    const budgetRequest =
-      typeof record.budgetRequest === 'number' ? record.budgetRequest : null
-    const createdAt = (record.createdAt ?? new Date().toISOString()) as string
-    const uri = `at://${did}/com.para.community.proposal/${Date.now()}`
-
-    await this.proposals.onProposalCreated(
-      uri,
-      communityUri,
-      did,
-      title,
-      body,
-      proposalType,
-      budgetRequest,
-      createdAt,
-    )
-  }
-
-  private async handleVoteCast(did: string, record: any): Promise<void> {
-    if (!record) return
-    const proposalUri = record.proposal as string
-    const communityUri = record.community as string
-    // The lexicon uses `signal` (integer -3..3) rather than a string `choice`.
-    const signal = Number(record.signal)
-    const choice = signalToChoice(signal)
-    if (!choice) {
-      this.log.warn(
-        { did, proposalUri, signal },
-        'Ignoring vote with unrecognized signal',
-      )
-      return
-    }
-    const createdAt = (record.createdAt ?? new Date().toISOString()) as string
-    const uri = `at://${did}/com.para.community.vote/${Date.now()}`
-
-    await this.proposals.onVoteCast(
-      uri,
-      proposalUri,
-      communityUri,
-      did,
-      choice,
-      createdAt,
-    )
   }
 }
 
@@ -793,13 +626,4 @@ export async function prepareFirehoseCursor(
   }
   if (!storedSource) await db.setSyncSource(sourceId)
   return cursor
-}
-
-export function signalToChoice(
-  signal: number,
-): 'for' | 'against' | 'abstain' | null {
-  if (signal > 0) return 'for'
-  if (signal < 0) return 'against'
-  if (signal === 0) return 'abstain'
-  return null
 }

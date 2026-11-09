@@ -18,7 +18,8 @@ const id = 'com.para.civic.position'
 export interface Main {
   $type: 'com.para.civic.position'
   cabildeo: string
-  stance: 'for' | 'against' | 'amendment' | (string & {})
+  /** `question` asks the community something instead of taking a side; it is not counted for, against or per option. */
+  stance: 'for' | 'against' | 'amendment' | 'question' | (string & {})
   optionIndex?: number
   text: string
   compassQuadrant?: string

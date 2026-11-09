@@ -5,7 +5,7 @@ set -euo pipefail
 # Run once to generate Synapse config and prepare the stack.
 #
 # Usage:
-#   ./WhatZatppa/deploy/matrix/setup.sh
+#   deploy/matrix/setup.sh   (normally run by deploy-prod.sh)
 #
 # Prerequisites:
 #   - Docker and docker compose installed
@@ -34,7 +34,7 @@ MATRIX_SERVER_NAME="${MATRIX_SERVER_NAME:-matrix.para.social}"
 MATRIX_DOMAIN="${MATRIX_DOMAIN:-chat.para.social}"
 MATRIX_DB_NAME="${MATRIX_DB_NAME:-matrix}"
 POSTGRES_USER="${POSTGRES_USER:-pg}"
-POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-changeme}"
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}"
 
 echo ""
 echo "📋 Configuration:"
@@ -125,6 +125,13 @@ else
     echo "   Delete ${SCRIPT_DIR}/synapse/ to regenerate."
 fi
 
+# The compose file mounts hardening.yaml at /config/zz-para-hardening.yaml,
+# inside this bind-mounted directory. Linux Docker creates that mountpoint
+# itself; Docker Desktop (virtiofs) refuses to, and Synapse then never starts.
+# Synapse ignores an empty file, so a missing overlay mount would boot it
+# unhardened; the edge-closed probes (alerts.yml) would then fire.
+touch "${SCRIPT_DIR}/synapse/zz-para-hardening.yaml"
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 2. Generate Element Web config
 # ─────────────────────────────────────────────────────────────────────────────
@@ -176,42 +183,16 @@ EOF
 echo "✅ Element config generated at $ELEMENT_CFG"
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 3. Print federation well-known snippets
+# 3. Next steps
 # ─────────────────────────────────────────────────────────────────────────────
-echo ""
-echo "📡 Federation Setup Required"
-echo "───────────────────────────────────────────────────────────────"
-echo ""
-echo "Create these files on your web server at the DOMAIN root"
-echo "(e.g., served by Caddy/nginx at https://$MATRIX_SERVER_NAME):"
-echo ""
-echo "--- .well-known/matrix/server ---"
-cat <<FED
-{ "m.server": "${MATRIX_SERVER_NAME}:443" }
-FED
-echo ""
-echo "--- .well-known/matrix/client ---"
-cat <<FED
-{ "m.homeserver": { "base_url": "https://${MATRIX_SERVER_NAME}" } }
-FED
-echo ""
-echo "If $MATRIX_SERVER_NAME is the SAME host as the Synapse container,"
-echo "Caddy/nginx can serve these as static files."
-echo "See deploy/matrix/Caddyfile.matrix for the reverse-proxy block."
-echo ""
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 4. Print next steps
-# ─────────────────────────────────────────────────────────────────────────────
+# Federation is closed (hardening.yaml), so there is no
+# /.well-known/matrix/server to publish. The edge serves only
+# /.well-known/matrix/client (services/caddy/Caddyfile.prod).
 echo ""
 echo "🚀 Next steps:"
 echo ""
-echo "   1. Add Caddy/nginx config from deploy/matrix/Caddyfile.matrix"
-echo "   2. Start the stack:"
-echo "      docker compose -f WhatZatppa/docker-compose.matrix.yaml up -d"
-echo "   3. Create an admin user:"
-echo "      docker exec -it para-matrix-synapse register_new_matrix_user"
-echo "         -c /data/homeserver.yaml http://localhost:8008"
-echo "   4. Open https://$MATRIX_DOMAIN in a browser"
+echo "   1. Set MATRIX_MAS_PUBLIC_URL / MATRIX_IDP_PUBLIC_URL in .env (auth. and idp. hosts)"
+echo "   2. Run deploy/matrix/deploy-prod.sh — it runs setup-mas.sh, migrates MAS,"
+echo "      starts the stack and explains how to issue the bridge admin token from MAS"
 echo ""
 echo "✅ Setup complete."

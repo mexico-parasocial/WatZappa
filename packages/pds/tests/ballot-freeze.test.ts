@@ -308,8 +308,8 @@ describe('PARA ballot policy', () => {
       await expect(attempt).rejects.toThrow(/valid civic vote proof/)
     })
 
-    it.each([4, -4])(
-      'refuses a policy signal outside -3..+3: %s',
+    it.each([4, -4, 0])(
+      'refuses a policy signal that is 0 or outside -3..+3: %s',
       async (signal) => {
         const attempt = agent.com.atproto.repo.createRecord({
           repo: did,

@@ -1,13 +1,4 @@
-/**
- * Chat Moderation Engine
- *
- * Computes moderation badges (risk + participation) for community chat members.
- * Risk badges are visible by default in chat context.
- * Participation badges are visible in member profile / member list.
- *
- * No public profile scores. No gamification. Contextual moderation only.
- */
-
+/** Reports, sanctions and moderation context for community chat. */
 import type { Logger } from 'pino'
 import type { IBridgeDatabase } from './db/index.js'
 import type { EventBus } from './events/bus.js'
@@ -101,6 +92,8 @@ export const RISK_BADGE_TYPES = [
   'high_risk',
   'sanctioned',
 ] as const
+
+export const CHAT_BADGE_TYPES = [...RISK_BADGE_TYPES, 'moderator'] as const
 
 export type SanctionKind = 'mute' | 'ban'
 
@@ -228,19 +221,6 @@ export interface ChatBadge {
   expiresAt?: string | null
 }
 
-export interface ParticipationSummary {
-  did: string
-  communityUri: string
-  tier: string
-  messageCount: number
-  votesCast: number
-  proposalsCreated: number
-  daysInCommunity: number
-  chamber?: string | null
-  isDelegate: boolean
-  isModerator: boolean
-}
-
 const BADGE_DEFS: Record<
   string,
   { label: string; icon: string; severity: BadgeSeverity }
@@ -249,19 +229,7 @@ const BADGE_DEFS: Record<
   contentious: { label: 'Conflictivo', icon: '🔥', severity: 'warning' },
   high_risk: { label: 'Alto riesgo', icon: '⛔', severity: 'critical' },
   sanctioned: { label: 'Sancionado', icon: '🚫', severity: 'critical' },
-  newcomer: { label: 'Nuevo', icon: '🆕', severity: 'info' },
-  lurker: { label: 'Lurker', icon: '👻', severity: 'info' },
-  seed: { label: 'Semilla', icon: '🌱', severity: 'info' },
-  voice: { label: 'Voz', icon: '🗣️', severity: 'info' },
-  voter: { label: 'Votante', icon: '🗳️', severity: 'info' },
-  proposer: { label: 'Propone', icon: '📢', severity: 'info' },
-  delegate: { label: 'Delegado', icon: '🏛️', severity: 'info' },
   moderator: { label: 'Moderador', icon: '🛡️', severity: 'info' },
-  chamber_a: { label: 'Cámara A', icon: '⚖️', severity: 'info' },
-  chamber_b: { label: 'Cámara B', icon: '⚖️', severity: 'info' },
-  active_citizen: { label: 'Ciudadano Activo', icon: '⭐', severity: 'info' },
-  trusted_voice: { label: 'Voz Confiable', icon: '🎙️', severity: 'info' },
-  founder: { label: 'Fundador', icon: '🔥', severity: 'info' },
 }
 
 export class ChatModerationEngine {
@@ -447,55 +415,9 @@ export class ChatModerationEngine {
   }
 
   /**
-   * Record a message sent by a user in a community room.
-   */
-  async recordMessage(
-    did: string,
-    communityUri: string,
-    matrixRoomId?: string,
-  ): Promise<void> {
-    await this.db.ensureParticipationStats(did, communityUri, matrixRoomId)
-    await this.db.incrementMessageCount(did, communityUri)
-  }
-
-  /**
-   * Record a vote cast by a user.
-   */
-  async recordVote(did: string, communityUri: string): Promise<void> {
-    await this.db.ensureParticipationStats(did, communityUri)
-    await this.db.incrementVoteCount(did, communityUri)
-  }
-
-  /**
-   * Record a proposal created by a user.
-   */
-  async recordProposal(did: string, communityUri: string): Promise<void> {
-    await this.db.ensureParticipationStats(did, communityUri)
-    await this.db.incrementProposalCount(did, communityUri)
-  }
-
-  /**
-   * Record membership / role changes.
-   */
-  async recordMembership(
-    did: string,
-    communityUri: string,
-    matrixRoomId: string,
-    roles: {
-      isDelegate?: boolean
-      isModerator?: boolean
-      chamber?: string | null
-    },
-  ): Promise<void> {
-    await this.db.ensureParticipationStats(did, communityUri, matrixRoomId)
-    await this.db.setParticipationRoles(did, communityUri, roles)
-  }
-
-  /**
    * Compute all badges for a user in a community.
    */
   async computeBadges(did: string, communityUri: string): Promise<ChatBadge[]> {
-    const stats = await this.db.getParticipationStats(did, communityUri)
     const events = await this.db.getModerationEvents(did, communityUri, 90)
     const now = new Date()
 
@@ -538,62 +460,13 @@ export class ChatModerationEngine {
       badges.push(this.makeBadge('reported', true))
     }
 
-    // --- CONTEXT BADGES (visible in chat by default) ---
-    if (stats) {
-      const daysSinceJoin = Math.floor(
-        (now.getTime() - new Date(stats.joined_at).getTime()) /
-          (1000 * 60 * 60 * 24),
-      )
-      if (daysSinceJoin < 7 && stats.message_count < 10) {
-        badges.push(this.makeBadge('newcomer', true))
-      } else if (daysSinceJoin > 30 && stats.message_count < 5) {
-        badges.push(this.makeBadge('lurker', true))
-      }
+    const membership = await this.db.getCommunityMembership(did, communityUri)
+    if (
+      membership?.state === 'active' &&
+      membership.roles.some((role) => role === 'moderator' || role === 'owner')
+    ) {
+      badges.push(this.makeBadge('moderator', false))
     }
-
-    // --- PARTICIPATION BADGES (NOT visible in chat by default) ---
-    if (stats) {
-      if (stats.message_count >= 1) badges.push(this.makeBadge('seed', false))
-      if (stats.message_count >= 10) badges.push(this.makeBadge('voice', false))
-      if (stats.votes_cast >= 1) badges.push(this.makeBadge('voter', false))
-      if (stats.proposals_created >= 1)
-        badges.push(this.makeBadge('proposer', false))
-      if (stats.chamber === 'A') badges.push(this.makeBadge('chamber_a', false))
-      if (stats.chamber === 'B') badges.push(this.makeBadge('chamber_b', false))
-      if (stats.is_delegate) badges.push(this.makeBadge('delegate', false))
-      if (stats.is_moderator) badges.push(this.makeBadge('moderator', false))
-
-      // Composite badges
-      const daysSinceJoin = Math.floor(
-        (now.getTime() - new Date(stats.joined_at).getTime()) /
-          (1000 * 60 * 60 * 24),
-      )
-      if (
-        stats.votes_cast >= 3 &&
-        stats.proposals_created >= 1 &&
-        stats.message_count >= 50
-      ) {
-        badges.push(this.makeBadge('active_citizen', false))
-      }
-      if (
-        daysSinceJoin >= 180 &&
-        stats.message_count >= 100 &&
-        stats.votes_cast >= 5 &&
-        reports30d === 0
-      ) {
-        badges.push(this.makeBadge('trusted_voice', false))
-      }
-      if (
-        daysSinceJoin >= 90 &&
-        stats.message_count >= 200 &&
-        stats.proposals_created >= 3 &&
-        !activeSanction &&
-        reports30d === 0
-      ) {
-        badges.push(this.makeBadge('founder', false))
-      }
-    }
-
     return badges
   }
 
@@ -652,7 +525,7 @@ export class ChatModerationEngine {
    * Batch recompute for all members of a community.
    */
   async recomputeCommunity(communityUri: string): Promise<number> {
-    const members = await this.db.getParticipationStatsByCommunity(communityUri)
+    const members = await this.db.getCommunityMembers(communityUri)
     let count = 0
     for (const m of members) {
       await this.recomputeUser(m.did, communityUri)
@@ -663,34 +536,6 @@ export class ChatModerationEngine {
       'Recomputed badges for community',
     )
     return count
-  }
-
-  /**
-   * Get participation summary for a user.
-   */
-  async getParticipationSummary(
-    did: string,
-    communityUri: string,
-  ): Promise<ParticipationSummary | null> {
-    const stats = await this.db.getParticipationStats(did, communityUri)
-    if (!stats) return null
-    const now = new Date()
-    const daysInCommunity = Math.floor(
-      (now.getTime() - new Date(stats.joined_at).getTime()) /
-        (1000 * 60 * 60 * 24),
-    )
-    return {
-      did,
-      communityUri,
-      tier: this.computeTier(stats),
-      messageCount: stats.message_count,
-      votesCast: stats.votes_cast,
-      proposalsCreated: stats.proposals_created,
-      daysInCommunity,
-      chamber: stats.chamber,
-      isDelegate: !!stats.is_delegate,
-      isModerator: !!stats.is_moderator,
-    }
   }
 
   /**
@@ -707,9 +552,8 @@ export class ChatModerationEngine {
   ): Promise<
     Array<{
       did: string
+      roles: string[]
       badges: ChatBadge[]
-      participation: ParticipationSummary | null
-      lastActiveAt?: string
       sanction?: Pick<EffectiveSanction, 'type' | 'until'>
     }>
   > {
@@ -720,24 +564,23 @@ export class ChatModerationEngine {
       rows.map(async (row: any) => {
         const canSeeRisk = viewer.isModerator || row.did === viewer.did
         const badges = (await this.db.getUserBadges(row.did, communityUri))
-          .filter((b: any) => canSeeRisk || !isRisk(b.badge_type))
+          .filter(
+            (b: any) =>
+              (CHAT_BADGE_TYPES as readonly string[]).includes(b.badge_type) &&
+              (canSeeRisk || !isRisk(b.badge_type)),
+          )
           .map((b: any) =>
             this.makeBadge(b.badge_type, b.visible_in_chat === 1),
           )
         const entry: {
           did: string
+          roles: string[]
           badges: ChatBadge[]
-          participation: ParticipationSummary | null
-          lastActiveAt?: string
           sanction?: Pick<EffectiveSanction, 'type' | 'until'>
         } = {
           did: row.did,
+          roles: row.roles,
           badges,
-          participation: await this.getParticipationSummary(
-            row.did,
-            communityUri,
-          ),
-          lastActiveAt: row.last_message_at,
         }
         if (viewer.isModerator && badges.some((b) => b.type === 'sanctioned')) {
           const sanction = await this.getSanction(row.did, communityUri)
@@ -755,25 +598,16 @@ export class ChatModerationEngine {
    */
   async getDashboard(communityUri: string): Promise<{
     totalMembers: number
-    activeToday: number
     reportedThisWeek: number
     sanctionedNow: number
     riskDistribution: { low: number; warning: number; critical: number }
   }> {
-    const stats = await this.db.getParticipationStatsByCommunity(communityUri)
+    const stats = await this.db.getCommunityMembers(communityUri)
     const summary = await this.db.getCommunityBadgeSummary(communityUri)
     const recentReports = await this.db.getRecentReportsForCommunity(
       communityUri,
       7,
     )
-
-    const now = new Date()
-    const activeToday = stats.filter(
-      (s: any) =>
-        s.last_message_at &&
-        new Date(s.last_message_at) >
-          new Date(now.getTime() - 24 * 60 * 60 * 1000),
-    ).length
 
     let sanctionedNow = 0
     for (const s of stats) {
@@ -789,7 +623,6 @@ export class ChatModerationEngine {
 
     return {
       totalMembers: stats.length,
-      activeToday,
       reportedThisWeek: recentReports.length,
       sanctionedNow,
       riskDistribution: {
@@ -940,18 +773,5 @@ export class ChatModerationEngine {
       severity: def.severity,
       visibleInChat,
     }
-  }
-
-  private computeTier(stats: any): string {
-    if (
-      stats.proposals_created >= 3 &&
-      stats.message_count >= 200 &&
-      stats.votes_cast >= 10
-    )
-      return 'founder'
-    if (stats.votes_cast >= 5 && stats.message_count >= 100) return 'gold'
-    if (stats.votes_cast >= 1 && stats.proposals_created >= 1) return 'silver'
-    if (stats.message_count >= 10 || stats.votes_cast >= 1) return 'bronze'
-    return 'base'
   }
 }

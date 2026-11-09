@@ -13,7 +13,8 @@
           "cabildeo": { "type": "string", "format": "at-uri" },
           "stance": {
             "type": "string",
-            "knownValues": ["for", "against", "amendment"]
+            "knownValues": ["for", "against", "amendment", "question"],
+            "description": "`question` asks the community something instead of taking a side; it is not counted for, against or per option."
           },
           "optionIndex": { "type": "integer", "minimum": 0 },
           "text": { "type": "string", "maxLength": 3000 },

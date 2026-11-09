@@ -82,7 +82,28 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
   local record. `PARA_AUTHORITY_SERVICE_TOKEN` is a
   dedicated read credential for the bridge's specified-subject authorization
   query; redact its header, disable caching, and never reuse admin/M8 credentials.
-  Assembly-decision grants stay closed until a trusted tally verifier exists.
+  An `assemblyDecision` event is indexed only if the AppView recomputes the
+  decision from the evidence cabildeo's final tally (`verifyAssemblyDecision`
+  in `community-authority.ts`), and only for `membership.approve` and
+  `owner.recover` (`ASSEMBLY_DECISIONS`), never moderator election or
+  sanctions. Quorum and threshold are fixed in `@atproto/common`
+  (`evaluateAssemblyVote`), not read from a governance record its owner
+  publishes. The electorate is active members by authority events alone, and
+  voter eligibility everywhere else goes through `filterActiveMembers`, so a
+  self-written membership record never counts as a vote. Every community stays
+  hierarchical (owner appoints moderators): there is no governance-mode field.
+
+- **`com.para.civic.cabildeo` is the only proposal, deliberation and decision
+  pipeline.** Reactions to arguments are `deliberationVote` on a
+  `civic.position` (no m8 proof, OD-7 §5h); a decision is a cabildeo's
+  server-computed final tally, and its `protectedAction` is a claim only.
+  `com.para.community.proposal`, `deliberation` and `decision` have no
+  lexicon, route or indexer any more (their old `para_deliberation_statement`
+  rows stay, read only by Influence): do not bring them back or add a second
+  tally anywhere (the Matrix bridge decides nothing). A cabildeo grounds an authority event only if it
+  names its community by board URI, has exactly two options (the first
+  approves), and is still the record version voting opened in
+  (`cabildeo_close_policy.recordCid`).
 
 - **OD-9 community accounts** ([docs/OD-9-COMMUNITY-ACCOUNTS.md](docs/OD-9-COMMUNITY-ACCOUNTS.md))
   replace board records and authority events, which stay until its phase 5.
@@ -119,9 +140,10 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
   filed under each of the six official matter groups and casts public policy
   ballots from the demo accounts, leaning by party. The proofs come from the
   dev-env verifier (`devPolicyVoteProof`), signed with a key that exists only
-  there. `com.para.civic.getPolicyCommunityVotes` reads `para_policy_vote`
-  joined to active `para_community_membership`; it is gated to members of that
-  community.
+  there. A policy tally and `com.para.civic.getPolicyCommunityVotes` count only
+  ballots from identities `filterActiveMembers` holds active in the policy's
+  community when read (OD-10 §7.7), never a 0 signal (`isPolicySignal`, §7.5);
+  the community view is gated to members of that community.
 
 - `packages/bsky/src/governance-lab` is a synthetic reference only. Its
   `g1-follow-signal-v1` policy is provisional; never import it into production

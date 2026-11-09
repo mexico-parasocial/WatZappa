@@ -108,10 +108,6 @@
               "type": "string",
               "format": "datetime"
             },
-            "organizationStandard": {
-              "type": "string",
-              "knownValues": ["hierarchical", "horizontal"]
-            },
             "admissionMode": {
               "type": "string",
               "knownValues": ["open", "assembly_approval"]
@@ -119,11 +115,17 @@
             "authorityEventVersion": { "type": "integer", "minimum": 1 },
             "roleDefinitions": {
               "type": "array",
-              "items": { "type": "ref", "ref": "com.para.community.defs#roleDefinition" }
+              "items": {
+                "type": "ref",
+                "ref": "com.para.community.defs#roleDefinition"
+              }
             },
             "roleHolders": {
               "type": "array",
-              "items": { "type": "ref", "ref": "com.para.community.defs#roleHolder" }
+              "items": {
+                "type": "ref",
+                "ref": "com.para.community.defs#roleHolder"
+              }
             }
           }
         }
