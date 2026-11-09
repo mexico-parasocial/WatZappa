@@ -20,7 +20,8 @@ fi
 for file in "$REPO_ROOT/.env" "$SCRIPT_DIR/mas/config.yaml" "$SCRIPT_DIR/mas/para-idp.env"; do
   [[ -f "$file" ]] || { echo 'Required operator/MAS/IdP configuration is missing' >&2; exit 2; }
 done
-find "$SCRIPT_DIR/synapse" -name '*.signing.key' -type f | rg -q . || { echo 'Synapse signing key is missing' >&2; exit 2; }
+# No pipe: under pipefail an early-exiting reader can fail the check with SIGPIPE.
+[[ -n "$(find "$SCRIPT_DIR/synapse" -name '*.signing.key' -type f -print -quit)" ]] || { echo 'Synapse signing key is missing' >&2; exit 2; }
 echo 'Taking private Matrix database and configuration snapshots...'
 dc exec -T synapse-db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > "$WORK/postgres.dump"
 dc exec -T mas-db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > "$WORK/mas.dump"

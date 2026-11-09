@@ -28,7 +28,10 @@ export default function (server: Server, ctx: AppContext) {
       return {
         encoding: 'application/json' as const,
         body: result,
-        headers: resHeaders({ repoRev, labelers }),
+        headers: {
+          ...resHeaders({ repoRev, labelers }),
+          ...(viewer ? { 'Cache-Control': 'private, no-store' } : {}),
+        },
       }
     },
   })
@@ -71,9 +74,19 @@ const mapCabildeoView = (view: {
   geo?: { latE7: number; lngE7: number }
   options: Array<{ label: string; description: string; isConsensus: boolean }>
   minQuorum?: number
+  kind?: string
   voteVisibility?: string
   phase: string
   phaseDeadline: string
+  votingOpenedAt?: DatetimeString
+  votingClosedAt?: DatetimeString
+  minimumViewTier?: string
+  minimumParticipationTier?: string
+  protectedAction?: {
+    action: string
+    subject: DidString
+    payloadHash?: string
+  }
   createdAt: DatetimeString
   optionSummary: Array<{
     optionIndex: number
@@ -118,6 +131,7 @@ const mapCabildeoView = (view: {
     }>
   }
   viewerContext?: {
+    canCastCabildeoVote?: boolean
     currentVoteOption?: number
     currentVoteIsDirect: boolean
     currentVoteCreatedAt?: string
@@ -150,9 +164,15 @@ const mapCabildeoView = (view: {
     isConsensus: option.isConsensus,
   })),
   minQuorum: view.minQuorum,
+  kind: view.kind || 'activity',
   voteVisibility: view.voteVisibility || 'public',
   phase: view.phase,
   phaseDeadline: parseString(view.phaseDeadline),
+  votingOpenedAt: view.votingOpenedAt,
+  votingClosedAt: view.votingClosedAt,
+  minimumViewTier: view.minimumViewTier,
+  minimumParticipationTier: view.minimumParticipationTier,
+  protectedAction: view.protectedAction,
   createdAt: view.createdAt,
   optionSummary: view.optionSummary,
   positionCounts: {
@@ -181,6 +201,7 @@ const mapCabildeoView = (view: {
     : undefined,
   viewerContext: view.viewerContext
     ? {
+        canCastCabildeoVote: view.viewerContext.canCastCabildeoVote,
         currentVoteOption: view.viewerContext.currentVoteOption,
         currentVoteIsDirect: view.viewerContext.currentVoteIsDirect,
         currentVoteCreatedAt: parseString(

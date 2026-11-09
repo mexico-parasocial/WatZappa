@@ -35,6 +35,7 @@ import type * as paraCommunityCivicTreeContributionVote from './tables/para-comm
 import type * as paraCommunityCivicTreeContribution from './tables/para-community-civic-tree-contribution.js'
 import type * as paraCommunityCivicTreeRelationship from './tables/para-community-civic-tree-relationship.js'
 import type * as paraCommunitySharedContent from './tables/para-community-shared-content.js'
+import type * as paraConclusion from './tables/para-conclusion.js'
 import type * as paraDeliberationStatement from './tables/para-deliberation-statement.js'
 import type * as paraDeliberationVote from './tables/para-deliberation-vote.js'
 import type * as paraFollowThrough from './tables/para-follow-through.js'
@@ -124,6 +125,7 @@ export type DatabaseSchemaType = duplicateRecord.PartialDB &
   bookmark.PartialDB &
   draft.PartialDB &
   paraCommunityAccount.PartialDB &
+  paraConclusion.PartialDB &
   paraCommunityBriefingPack.PartialDB &
   paraCommunityActivity.PartialDB &
   paraFollowThrough.PartialDB &

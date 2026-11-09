@@ -4,34 +4,25 @@
  * IBridgeDatabase from here; implementations (sqlite, postgres) and the async
  * sqlite wrapper all satisfy it.
  */
-
 import type {
-  ConsentPrefsStore,
-  ConstitutionProposalsStore,
-  DeliberationStore,
+  ChatPreferencesStore,
+  ConstitutionStore,
   DmRequestsStore,
   EventLogStore,
   IdentityMatrixStore,
   InfraStore,
-  InstitutionStore,
   MatrixEventsStore,
   ModerationStore,
-  ParticipationStore,
-  SortitionStore,
 } from './stores/index.js'
 
 export interface IBridgeDatabase
   extends
     IdentityMatrixStore,
     InfraStore,
-    ConstitutionProposalsStore,
-    SortitionStore,
+    ConstitutionStore,
     ModerationStore,
-    ParticipationStore,
-    ConsentPrefsStore,
+    ChatPreferencesStore,
     MatrixEventsStore,
-    DeliberationStore,
-    InstitutionStore,
     EventLogStore,
     DmRequestsStore {
   /** Database-only work: never perform network calls inside this transaction. */
@@ -40,20 +31,15 @@ export interface IBridgeDatabase
 }
 
 export type {
-  ConsentPrefsStore,
-  ConstitutionProposalsStore,
-  DeliberationStore,
+  ChatPreferencesStore,
+  ConstitutionStore,
   DmRequestsStore,
   IdentityMatrixStore,
   InfraStore,
-  InstitutionStore,
   MatrixEventsStore,
   ModerationStore,
-  ParticipationStore,
-  SortitionStore,
 } from './stores/index.js'
 export type {
-  AiConsentRecord,
   BridgeEvent,
   CommunityRoomKind,
   CommunityRoomSummary,

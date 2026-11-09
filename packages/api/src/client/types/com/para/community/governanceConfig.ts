@@ -21,7 +21,6 @@ export interface Main {
   community: string
   /** Semver of this config. Changes only by direct flat vote (no delegation). */
   version: string
-  organizationStandard?: 'hierarchical' | 'horizontal' | (string & {})
   admissionMode?: 'open' | 'assembly_approval' | (string & {})
   authorityEventVersion?: number
   foundingTransitionEndsAt?: string
@@ -150,24 +149,4 @@ export function isVisibilityRules<V>(v: V) {
 
 export function validateVisibilityRules<V>(v: V) {
   return validate<VisibilityRules & V>(v, id, hashVisibilityRules)
-}
-
-/** Term limits and rotation constraints for horizontal governance. */
-export interface RoleRotationRules {
-  $type?: 'com.para.community.governanceConfig#roleRotationRules'
-  facilitatorMaxDays?: number
-  moderatorMaxDays?: number
-  stewardMaxDays?: number
-  /** Whether role changes require an approved assembly decision record. */
-  requiresAssemblyRatification?: boolean
-}
-
-const hashRoleRotationRules = 'roleRotationRules'
-
-export function isRoleRotationRules<V>(v: V) {
-  return is$typed(v, id, hashRoleRotationRules)
-}
-
-export function validateRoleRotationRules<V>(v: V) {
-  return validate<RoleRotationRules & V>(v, id, hashRoleRotationRules)
 }

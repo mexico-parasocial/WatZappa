@@ -41,13 +41,13 @@ export interface ParaFollowThroughUpdate {
 }
 
 /**
- * The first version of every item and update, kept even after the record is
+ * The first version of every item, update and conclusion, kept even after the record is
  * deleted or edited. Edits are served as the committed version flagged
  * `edited`; a commit row with no live record is a withdrawn update.
  */
 export interface ParaFollowThroughCommit {
   uri: string
-  kind: 'item' | 'update'
+  kind: 'item' | 'update' | 'conclusion'
   /** The cabildeo for an item, the item for an update. */
   subject: string
   creator: string

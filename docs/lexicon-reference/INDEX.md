@@ -100,10 +100,8 @@ Generated from [`lexicons/com/para`](https://github.com/mexico-parasocial/WatZap
 | [[com-para-community-civictreevote|com.para.community.civicTreeVote]] | `record` |  |
 | [[com-para-community-constitution|com.para.community.constitution]] | `record` |  |
 | [[com-para-community-createbriefingpack|com.para.community.createBriefingPack]] | `procedure` |  |
-| [[com-para-community-decision|com.para.community.decision]] | `record` |  |
 | [[com-para-community-defs|com.para.community.defs]] | `unknown` |  |
 | [[com-para-community-delegation|com.para.community.delegation]] | `record` |  |
-| [[com-para-community-deliberation|com.para.community.deliberation]] | `record` |  |
 | [[com-para-community-deliberationvote|com.para.community.deliberationVote]] | `record` |  |
 | [[com-para-community-eigenstate|com.para.community.eigenstate]] | `record` |  |
 | [[com-para-community-exportobsidianvault|com.para.community.exportObsidianVault]] | `query` |  |
@@ -122,14 +120,12 @@ Generated from [`lexicons/com/para`](https://github.com/mexico-parasocial/WatZap
 | [[com-para-community-listcivictreevotes|com.para.community.listCivicTreeVotes]] | `query` |  |
 | [[com-para-community-listcommunityrelations|com.para.community.listCommunityRelations]] | `query` |  |
 | [[com-para-community-listdelegations|com.para.community.listDelegations]] | `query` |  |
-| [[com-para-community-listdeliberations|com.para.community.listDeliberations]] | `query` |  |
 | [[com-para-community-listintensities|com.para.community.listIntensities]] | `query` |  |
 | [[com-para-community-listmembers|com.para.community.listMembers]] | `query` |  |
 | [[com-para-community-listparentcommunities|com.para.community.listParentCommunities]] | `query` |  |
 | [[com-para-community-listposts|com.para.community.listPosts]] | `query` |  |
 | [[com-para-community-listsharedcontent|com.para.community.listSharedContent]] | `query` |  |
 | [[com-para-community-listvotes|com.para.community.listVotes]] | `query` |  |
-| [[com-para-community-proposal|com.para.community.proposal]] | `record` |  |
 | [[com-para-community-sharecontent|com.para.community.shareContent]] | `procedure` |  |
 | [[com-para-community-sharedcontent|com.para.community.sharedContent]] | `record` |  |
 | [[com-para-community-updatebriefingpack|com.para.community.updateBriefingPack]] | `procedure` |  |

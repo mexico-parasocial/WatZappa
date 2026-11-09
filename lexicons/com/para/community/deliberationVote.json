@@ -13,7 +13,7 @@
           "deliberation": {
             "type": "string",
             "format": "at-uri",
-            "description": "The argument being weighed."
+            "description": "The argument being weighed: a `com.para.civic.position` on a cabildeo, or a legacy `com.para.community.deliberation`."
           },
           "voter": { "type": "string", "format": "did" },
           "direction": {

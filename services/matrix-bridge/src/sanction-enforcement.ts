@@ -143,14 +143,14 @@ export function createSanctionEnforcer(deps: {
       const membership = await db.getCommunityMembership(did, communityUri)
       if (membership?.state === 'active') {
         const roles = membership.roles ?? []
-        const assigned = await db.getChamberAssignment(communityUri, did)
+
         try {
           // Not counted as `applied`: a restored role does not make up for a
           // ban that is still in force. It can only add a failure.
           await projection.applyMemberRoles(space, did, {
             roles,
-            chamber: assigned === 'A' || assigned === 'B' ? assigned : null,
-            isObserver: roles.includes('observer'),
+            chamber: null,
+            isObserver: false,
           })
         } catch (err) {
           failed++

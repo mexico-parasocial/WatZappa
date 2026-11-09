@@ -72,4 +72,22 @@ describe.each([
       'apply_roles',
     ])
   })
+  it('keeps old access jobs eligible beyond the general retry limit', async () => {
+    await db.logSync(
+      'revoke',
+      'community',
+      'did:plc:member',
+      '!main:para',
+      false,
+      'offline',
+    )
+    const [job] = await db.getAccessRetryJobs()
+    for (let attempt = 0; attempt < 7; attempt++)
+      await db.incrementRetryCount(job.id)
+    for (let i = 0; i < 60; i++)
+      await db.logSync('noop', 'other', null, null, false, 'noise')
+    expect((await db.getAccessRetryJobs()).map((row) => row.id)).toContain(
+      job.id,
+    )
+  })
 })

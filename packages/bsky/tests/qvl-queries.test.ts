@@ -6,7 +6,6 @@ import {
   type SeedClient,
   TestNetwork,
   createQvlDelegationRecord,
-  createQvlDeliberationRecord,
   createQvlIntensityRecord,
   createQvlVoteRecord,
   usersSeed,
@@ -262,73 +261,6 @@ maybeDescribe('QV-LD queries', () => {
       // listDelegations doesn't filter by scopeCommunity in current impl
       // Just verify both exist
       expect(result.data.delegations.length).toBeGreaterThanOrEqual(2)
-    })
-  })
-
-  describe('listDeliberations', () => {
-    it('returns deliberations (statements) for a proposal', async () => {
-      const proposal = proposalUri('delibs')
-      const community = communityUri('delibs')
-
-      await writeParaFixture(network, async () => {
-        return createQvlDeliberationRecord(sc, sc.dids.alice, {
-          proposal,
-          community,
-          body: 'First argument',
-          stance: 'for',
-        })
-      })
-      await writeParaFixture(network, async () => {
-        return createQvlDeliberationRecord(sc, sc.dids.bob, {
-          proposal,
-          community,
-          body: 'Counter argument',
-          stance: 'against',
-        })
-      })
-
-      const result = await agent.com.para.community.listDeliberations({
-        proposal,
-        community,
-      })
-
-      expect(result.success).toBe(true)
-      // listDeliberations returns 'statements', not 'deliberations'
-      expect(result.data.statements).toBeDefined()
-      expect(result.data.statements).toHaveLength(2)
-      const stances = result.data.statements.map((d: any) => d.stance).sort()
-      expect(stances).toEqual(['against', 'for'])
-    })
-
-    it('filters by stance', async () => {
-      const proposal = proposalUri('delibstance')
-      const community = communityUri('delibstance')
-
-      await writeParaFixture(network, async () => {
-        return createQvlDeliberationRecord(sc, sc.dids.alice, {
-          proposal,
-          community,
-          body: 'My take',
-          stance: 'for',
-        })
-      })
-      await writeParaFixture(network, async () => {
-        return createQvlDeliberationRecord(sc, sc.dids.bob, {
-          proposal,
-          community,
-          body: 'Against',
-          stance: 'against',
-        })
-      })
-
-      const result = await agent.com.para.community.listDeliberations({
-        proposal,
-        community,
-        stance: 'for',
-      })
-
-      expect(result.data.statements).toHaveLength(1)
-      expect(result.data.statements[0].stance).toBe('for')
     })
   })
 

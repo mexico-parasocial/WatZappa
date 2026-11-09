@@ -11,20 +11,16 @@ import { writeJson } from './routes/http.js'
  * must call it (or a wrapper below) instead of re-deriving permission from
  * raw membership checks — the review's requirement is that community
  * membership alone must not grant moderator powers, cross-chamber reads, or
- * sortition execution.
+ * privileged room access.
  */
 
 export type AuthzAction =
-  /** Read governance surface: constitution, proposals, decisions, boards. */
+  /** Read community chat context and constitution. */
   | 'community.read'
-  /** Submit moderation reports and deliberation contributions. */
+  /** Submit moderation reports. */
   | 'community.contribute'
   /** Apply sanctions, read full report queues, recompute badges. */
   | 'community.moderate'
-  /** Create a sortition (assembly selection) run. */
-  | 'sortition.run'
-  /** Process/execute a sortition run (selects members). */
-  | 'sortition.process'
   /** Read and write read-markers inside a specific room. */
   | 'chamber.read'
 
@@ -34,7 +30,6 @@ export type AuthzResource =
 export type Membership = { state: string; roles: string[] }
 
 const MODERATOR_ROLES = ['moderator', 'owner']
-const PROCESS_SORTITION_ROLES = ['moderator', 'owner', 'delegate']
 
 export class AuthzError extends HttpError {
   constructor(message: string) {
@@ -54,20 +49,12 @@ export function decideCommunity(
   switch (action) {
     case 'community.read':
     case 'community.contribute':
-    case 'sortition.run':
     case 'chamber.read': // room-level refinement happens in decideRoom
       return { allowed: true }
     case 'community.moderate':
       return membership.roles.some((r) => MODERATOR_ROLES.includes(r))
         ? { allowed: true }
         : { allowed: false, reason: 'moderator or owner role required' }
-    case 'sortition.process':
-      return membership.roles.some((r) => PROCESS_SORTITION_ROLES.includes(r))
-        ? { allowed: true }
-        : {
-            allowed: false,
-            reason: 'moderator, owner or delegate role required',
-          }
     default:
       return {
         allowed: false,
@@ -172,10 +159,7 @@ export async function authorize(
     actor,
     room.communityUri,
   )
-  const assignedChamber =
-    action === 'chamber.read'
-      ? await ctx.db.getChamberAssignment(room.communityUri, actor)
-      : undefined
+  const assignedChamber = undefined
   const verdict = decideRoom(membership, room.roomKind, assignedChamber)
   if (!verdict.allowed) {
     throw new AuthzError(
@@ -228,7 +212,7 @@ export async function authorizeUserReadOrRespond(
 }
 
 /**
- * Reading data *about* another user (their badges, votes, viewer-scoped
+ * Reading data *about* another user (their moderation badges and viewer-scoped
  * views): allowed for the user themselves, or for a moderator/owner of the
  * community the data belongs to. Strangers get 403 even when they can read
  * the community itself.

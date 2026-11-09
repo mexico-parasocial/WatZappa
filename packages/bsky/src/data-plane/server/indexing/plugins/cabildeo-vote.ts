@@ -4,14 +4,12 @@ import type { CID } from 'multiformats/cid'
 import { type AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
 import type { ParaCacheService } from '../../../cache/para-cache.js'
 import type { BackgroundQueue } from '../../background.js'
+import { getAuthoritySnapshot } from '../../community-authority.js'
+import { resolveCommunityAccountUris } from '../../community-membership.js'
 import type {
   DatabaseSchema,
   DatabaseSchemaType,
 } from '../../db/database-schema.js'
-import {
-  isActiveMember,
-  resolveCommunityAccountUris,
-} from '../../community-membership.js'
 import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
 import { finalizeDueCabildeos } from './finalize-cabildeos.js'
@@ -198,7 +196,7 @@ const findDuplicate = async (): Promise<AtUri | null> => {
   return null
 }
 
-const getCabildeoVoteEligibility = async (
+export const getCabildeoVoteEligibility = async (
   db: DatabaseSchema,
   opts: {
     actorDid: string
@@ -254,9 +252,14 @@ const getCabildeoVoteEligibility = async (
     return null
   }
 
-  return (await isActiveMember(database, communityUri, opts.actorDid))
-    ? { cabildeo }
-    : null
+  // The same rule as every other read of membership: the community's chain
+  // decides.
+  const authority = await getAuthoritySnapshot(
+    { db } as Database,
+    communityUri,
+    opts.actorDid,
+  )
+  return authority.membershipState === 'active' ? { cabildeo } : null
 }
 
 const normalizeOpaqueProofField = (value: unknown, maxLength: number) => {

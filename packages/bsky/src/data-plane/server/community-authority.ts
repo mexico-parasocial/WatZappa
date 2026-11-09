@@ -48,3 +48,55 @@ export async function getAuthoritySnapshots(
     ]),
   )
 }
+
+/** Rows per `in (...)` list, well under the 65535 bind parameters Postgres allows. */
+const SNAPSHOT_CHUNK = 5000
+
+/**
+ * Which of `dids` are active members of the community, as of `now`. The one
+ * rule for "may this account vote here", shared by ballot indexing, tallies
+ * and delegations: a community's members are its folded chain's, so what an
+ * account says about itself never counts.
+ */
+export async function filterActiveMembers(
+  db: Database,
+  communityUri: string,
+  dids: readonly string[],
+  now = Date.now(),
+): Promise<Set<string>> {
+  const unique = [...new Set(dids)]
+  const active = new Set<string>()
+  for (let i = 0; i < unique.length; i += SNAPSHOT_CHUNK) {
+    const snapshots = await getAuthoritySnapshots(
+      db,
+      communityUri,
+      unique.slice(i, i + SNAPSHOT_CHUNK),
+      now,
+    )
+    for (const [did, snapshot] of snapshots) {
+      if (snapshot.membershipState === 'active') active.add(did)
+    }
+  }
+  return active
+}
+
+/** Every active member of the community, by `filterActiveMembers`. */
+export async function listActiveMembers(
+  db: Database,
+  communityUri: string,
+  now = Date.now(),
+): Promise<Set<string>> {
+  const accountDid = communityAccountDid(communityUri)
+  if (!accountDid) return new Set()
+  const rows = await db.db
+    .selectFrom('para_community_member_state')
+    .where('community', '=', accountDid)
+    .select('did')
+    .execute()
+  return filterActiveMembers(
+    db,
+    communityUri,
+    rows.map((row) => row.did),
+    now,
+  )
+}

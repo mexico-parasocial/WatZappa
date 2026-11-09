@@ -10,6 +10,7 @@ import {
   is$typed as _is$typed,
   type OmitKey,
 } from '../../../../util.js'
+import type * as ComParaCommunityDefs from '../community/defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -126,6 +127,7 @@ export function validateOutcomeSummary<V>(v: V) {
 
 export interface ViewerContext {
   $type?: 'com.para.civic.defs#viewerContext'
+  canCastCabildeoVote?: boolean
   currentVoteOption?: number
   currentVoteIsDirect?: boolean
   currentVoteCreatedAt?: string
@@ -163,9 +165,16 @@ export interface CabildeoView {
   geo?: GeoPoint
   options: CabildeoOption[]
   minQuorum?: number
+  /** A missing kind on the record is served as activity. */
+  kind?: 'activity' | 'persuasion' | 'forum' | (string & {})
   voteVisibility?: 'public' | 'party_only' | 'anonymous' | (string & {})
   phase:
     'draft' | 'open' | 'deliberating' | 'voting' | 'resolved' | (string & {})
+  minimumViewTier?: string
+  minimumParticipationTier?: string
+  protectedAction?: ComParaCommunityDefs.ProtectedAction
+  votingOpenedAt?: string
+  votingClosedAt?: string
   phaseDeadline?: string
   createdAt: string
   optionSummary: OptionSummary[]
@@ -193,11 +202,17 @@ export interface PositionView {
   creator: string
   indexedAt: string
   cabildeo: string
-  stance: 'for' | 'against' | 'amendment' | (string & {})
+  stance: 'for' | 'against' | 'amendment' | 'question' | (string & {})
   optionIndex?: number
   text: string
   compassQuadrant?: string
   createdAt: string
+  /** Reactions of agree on this position (com.para.community.deliberationVote). */
+  agreeCount?: number
+  disagreeCount?: number
+  passCount?: number
+  /** Only ever the requesting viewer's own reaction; who else took which side is not part of this view. */
+  viewerDirection?: 'agree' | 'disagree' | 'pass' | (string & {})
 }
 
 const hashPositionView = 'positionView'
@@ -239,8 +254,11 @@ export interface PolicyTally {
   eligibleVoterCount: number
   quorumTarget: number
   quorumMet: boolean
+  /** DEPRECATED 2026-11-06 (OD-10 §7.6), always false; to be removed. It came from the author's own post metadata, so it never established that an official account published the policy, and a policy result no longer depends on who published it. */
   official: boolean
+  /** DEPRECATED 2026-11-06 (OD-10 §7.6); to be removed. True when `outcome` is `passed` or `strong_passed`. A policy never closes, so nothing certifies it: read `outcome` instead. */
   certified: boolean
+  /** A live reading of what the community's current ballots say, which changes as people change their votes. It binds no one: a binding decision goes through a cabildeo (OD-10 §7.6). */
   outcome:
     | 'insufficient_quorum'
     | 'contested'
@@ -248,7 +266,12 @@ export interface PolicyTally {
     | 'strong_passed'
     | 'failed'
     | (string & {})
+  /** The live reading as a state: `passing`, `failing`, `split` (votes without a majority either way) or `noQuorum`. The other known values are DEPRECATED 2026-11-06 (OD-10 §7.6), never returned, and will be removed. */
   state:
+    | 'passing'
+    | 'failing'
+    | 'split'
+    | 'noQuorum'
     | 'draft'
     | 'deliberation'
     | 'voting'

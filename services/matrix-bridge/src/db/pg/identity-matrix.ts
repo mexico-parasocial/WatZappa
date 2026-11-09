@@ -62,41 +62,6 @@ export class IdentityMatrixArea extends PgBase {
     )
   }
 
-  // Chamber assignments
-  async getChamberAssignment(
-    communityUri: string,
-    did: string,
-  ): Promise<string | undefined> {
-    const row = await this.queryOne<{ chamber: string }>(
-      'SELECT chamber FROM chamber_assignment WHERE community_uri = $1 AND did = $2',
-      [communityUri, did],
-    )
-    return row?.chamber
-  }
-
-  async setChamberAssignment(
-    communityUri: string,
-    did: string,
-    chamber: string,
-  ): Promise<void> {
-    await this.run(
-      `INSERT INTO chamber_assignment (community_uri, did, chamber) VALUES ($1, $2, $3)
-       ON CONFLICT (community_uri, did) DO UPDATE SET chamber = EXCLUDED.chamber`,
-      [communityUri, did, chamber],
-    )
-  }
-
-  async getChamberMemberCount(
-    communityUri: string,
-    chamber: string,
-  ): Promise<number> {
-    const row = await this.queryOne<{ count: string }>(
-      'SELECT COUNT(*) as count FROM chamber_assignment WHERE community_uri = $1 AND chamber = $2',
-      [communityUri, chamber],
-    )
-    return this.safeInteger(row?.count ?? 0)
-  }
-
   async getActiveMemberCount(communityUri: string): Promise<number> {
     const row = await this.queryOne<{ count: string }>(
       "SELECT COUNT(*) as count FROM community_membership_state WHERE community_uri = $1 AND membership_state = 'active'",
@@ -270,15 +235,13 @@ export class IdentityMatrixArea extends PgBase {
       chamber_b_room_id: string | null
       observer_room_id: string | null
       roles_json: string
-      chamber: string | null
     }>(
       `SELECT
         csm.space_id, csm.community_uri, csm.slug, csm.chamber_mode,
         csm.chamber_a_room_id, csm.chamber_b_room_id, csm.observer_room_id,
-        cms.roles_json, ca.chamber
+        cms.roles_json
        FROM community_space_map csm
        INNER JOIN community_membership_state cms ON cms.community_uri = csm.community_uri
-       LEFT JOIN chamber_assignment ca ON ca.community_uri = csm.community_uri AND ca.did = cms.did
        WHERE cms.did = $1 AND cms.membership_state = 'active'`,
       [did],
     )
@@ -318,32 +281,6 @@ export class IdentityMatrixArea extends PgBase {
         }
         continue
       }
-      const isObserver = roles.includes('observer')
-      if (isObserver && row.observer_room_id) {
-        result.push({
-          roomId: row.observer_room_id,
-          communityUri: row.community_uri,
-          slug: row.slug,
-          kind: 'observers',
-        })
-        continue
-      }
-
-      if (row.chamber === 'A' && row.chamber_a_room_id) {
-        result.push({
-          roomId: row.chamber_a_room_id,
-          communityUri: row.community_uri,
-          slug: row.slug,
-          kind: 'chamber-a',
-        })
-      } else if (row.chamber === 'B' && row.chamber_b_room_id) {
-        result.push({
-          roomId: row.chamber_b_room_id,
-          communityUri: row.community_uri,
-          slug: row.slug,
-          kind: 'chamber-b',
-        })
-      }
     }
 
     return result
@@ -362,6 +299,7 @@ export class IdentityMatrixArea extends PgBase {
       createdAt: row.created_at,
       lastSeenAt: row.last_seen_at,
       revokedAt: row.revoked_at ?? null,
+      revocationPending: Boolean(row.revocation_pending),
     }
   }
 
@@ -385,7 +323,7 @@ export class IdentityMatrixArea extends PgBase {
 
   async listDeviceSessions(did: string): Promise<DeviceSession[]> {
     const res = await this.query(
-      'SELECT * FROM device_sessions WHERE did = $1 ORDER BY created_at DESC',
+      `SELECT ds.*, EXISTS (SELECT 1 FROM device_revocations dr JOIN device_sessions pending ON pending.id = dr.session_id WHERE pending.mxid = ds.mxid AND pending.device_id = ds.device_id) AS revocation_pending FROM device_sessions ds WHERE ds.did = $1 ORDER BY ds.created_at DESC`,
       [did],
     )
     return res.rows.map((r) => this.mapDeviceSession(r))
@@ -393,7 +331,7 @@ export class IdentityMatrixArea extends PgBase {
 
   async getDeviceSession(id: string): Promise<DeviceSession | undefined> {
     const row = await this.queryOne(
-      'SELECT * FROM device_sessions WHERE id = $1',
+      `SELECT ds.*, EXISTS (SELECT 1 FROM device_revocations dr JOIN device_sessions pending ON pending.id = dr.session_id WHERE pending.mxid = ds.mxid AND pending.device_id = ds.device_id) AS revocation_pending FROM device_sessions ds WHERE ds.id = $1`,
       [id],
     )
     return row ? this.mapDeviceSession(row) : undefined
@@ -408,9 +346,68 @@ export class IdentityMatrixArea extends PgBase {
 
   async revokeDeviceSession(did: string, id: string): Promise<boolean> {
     const res = await this.query(
-      'UPDATE device_sessions SET revoked_at = now() WHERE id = $1 AND did = $2 AND revoked_at IS NULL',
+      'UPDATE device_sessions SET revoked_at = now() WHERE id IN (SELECT ds.id FROM device_sessions ds JOIN device_sessions target ON target.mxid = ds.mxid AND target.device_id = ds.device_id WHERE target.id = $1 AND target.did = $2 AND ds.did = target.did) AND revoked_at IS NULL',
       [id, did],
     )
     return res.rowCount !== null && res.rowCount > 0
+  }
+
+  async getMemberList(
+    communityUri: string,
+    limit = 100,
+    offset = 0,
+  ): Promise<{ did: string; roles: string[] }[]> {
+    const rows = await this.queryAll<{ did: string; roles_json: string }>(
+      "SELECT did, roles_json FROM community_membership_state WHERE community_uri = $1 AND membership_state = 'active' ORDER BY did LIMIT $2 OFFSET $3",
+      [communityUri, limit, offset],
+    )
+    return rows.map((row) => ({
+      did: row.did,
+      roles: JSON.parse(row.roles_json) as string[],
+    }))
+  }
+  async getCommunityMembers(
+    communityUri: string,
+  ): Promise<{ did: string; roles: string[] }[]> {
+    const rows = await this.queryAll<{ did: string; roles_json: string }>(
+      "SELECT did, roles_json FROM community_membership_state WHERE community_uri = $1 AND membership_state = 'active' ORDER BY did",
+      [communityUri],
+    )
+    return rows.map((row) => ({
+      did: row.did,
+      roles: JSON.parse(row.roles_json) as string[],
+    }))
+  }
+  async getActiveCommunityUris(): Promise<string[]> {
+    return (
+      await this.queryAll<{ community_uri: string }>(
+        "SELECT DISTINCT community_uri FROM community_membership_state WHERE membership_state = 'active'",
+      )
+    ).map((row) => row.community_uri)
+  }
+
+  async queueDeviceRevocation(did: string, id: string): Promise<void> {
+    await this.query(
+      'INSERT INTO device_revocations (session_id, requested_at) SELECT id, now()::text FROM device_sessions WHERE id = $1 AND did = $2 ON CONFLICT DO NOTHING',
+      [id, did],
+    )
+  }
+  async getPendingDeviceRevocations(limit = 50): Promise<DeviceSession[]> {
+    const rows = await this.queryAll(
+      'SELECT ds.*, true AS revocation_pending FROM device_revocations dr JOIN device_sessions ds ON ds.id = dr.session_id ORDER BY dr.attempts, dr.requested_at, dr.session_id LIMIT $1',
+      [limit],
+    )
+    return rows.map((row) => this.mapDeviceSession(row))
+  }
+  async incrementDeviceRevocationAttempts(id: string): Promise<void> {
+    await this.query(
+      'UPDATE device_revocations SET attempts = attempts + 1 WHERE session_id = $1',
+      [id],
+    )
+  }
+  async deleteDeviceRevocation(id: string): Promise<void> {
+    await this.query('DELETE FROM device_revocations WHERE session_id = $1', [
+      id,
+    ])
   }
 }

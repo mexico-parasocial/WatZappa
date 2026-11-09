@@ -1,9 +1,7 @@
 export const AUTHORITY_EVENT_VERSION = 1
-export const HORIZONTAL_MODERATOR_TERM_DAYS = 90
 export const TEMPORARY_SUSPENSION_DAYS = 7
 
 export type CommunityRole = 'member' | 'moderator' | 'owner'
-export type OrganizationStandard = 'hierarchical' | 'horizontal'
 export type AdmissionMode = 'open' | 'assembly_approval'
 export type AuthorizationStatus = 'allowed' | 'requires_approval' | 'denied'
 
@@ -53,18 +51,13 @@ export const OWNER_CAPABILITIES = [
 ] as const
 
 export function getRoleDefinitions(
-  standard: OrganizationStandard,
   admissionMode: AdmissionMode,
 ): RoleDefinition[] {
   const admission =
     admissionMode === 'open'
       ? 'Join the community directly.'
       : 'Request membership and receive approval from an ordinary assembly decision.'
-  const moderator =
-    standard === 'horizontal'
-      ? 'Win an assembly election, accept the role, and serve a 90-day term.'
-      : 'Receive an appointment from the owner and accept the role.'
-  const definitions: RoleDefinition[] = [
+  return [
     {
       role: 'visitor',
       howToObtain: 'No membership is required.',
@@ -92,7 +85,7 @@ export function getRoleDefinitions(
     },
     {
       role: 'moderator',
-      howToObtain: moderator,
+      howToObtain: 'Receive an appointment from the owner and accept the role.',
       responsibilities: [
         'Enforce community rules',
         'Manage reports',
@@ -109,23 +102,6 @@ export function getRoleDefinitions(
       permissions: [...MEMBER_CAPABILITIES, ...MODERATOR_CAPABILITIES],
     },
     {
-      role: 'assembly',
-      howToObtain: 'Every active member belongs to the assembly.',
-      responsibilities: [
-        'Decide protected actions',
-        'Hold officeholders accountable',
-      ],
-      actions: [
-        'Approve gated admission',
-        'Elect and recall moderators',
-        'Decide permanent sanctions and appeals',
-        'Approve budgets and constitutional changes',
-      ],
-      permissions: [],
-    },
-  ]
-  if (standard === 'hierarchical') {
-    definitions.splice(3, 0, {
       role: 'owner',
       howToObtain:
         'Found the community or accept a transfer from the current owner.',
@@ -146,9 +122,22 @@ export function getRoleDefinitions(
         ...MODERATOR_CAPABILITIES,
         ...OWNER_CAPABILITIES,
       ],
-    })
-  }
-  return definitions
+    },
+    {
+      role: 'assembly',
+      howToObtain: 'Every active member belongs to the assembly.',
+      responsibilities: [
+        'Decide protected actions',
+        'Hold officeholders accountable',
+      ],
+      actions: [
+        'Approve gated admission',
+        'Decide permanent sanctions and appeals',
+        'Approve budgets and constitutional changes',
+      ],
+      permissions: [],
+    },
+  ]
 }
 
 export function resolveCapabilities(roles: readonly CommunityRole[]): string[] {
@@ -171,7 +160,6 @@ export function resolveCapabilities(roles: readonly CommunityRole[]): string[] {
 export function resolveAvailableAction(
   action: string,
   roles: readonly CommunityRole[],
-  standard: OrganizationStandard,
 ): AvailableAction {
   const capabilities = resolveCapabilities(roles)
   if (capabilities.includes(action)) {
@@ -179,20 +167,11 @@ export function resolveAvailableAction(
   }
   const protectedActions: Record<string, string> = {
     'membership.approve': 'assembly_majority',
-    'member.remove':
-      standard === 'horizontal'
-        ? 'assembly_majority'
-        : 'owner_after_moderator_proposal',
-    'member.block':
-      standard === 'horizontal'
-        ? 'assembly_majority'
-        : 'owner_after_moderator_proposal',
-    'moderator.elect':
-      standard === 'horizontal' ? 'assembly_majority' : 'owner_appointment',
-    'moderator.recall':
-      standard === 'horizontal' ? 'assembly_majority' : 'owner_action',
-    'moderation.appeal':
-      standard === 'horizontal' ? 'assembly_majority' : 'owner_review',
+    'member.remove': 'owner_after_moderator_proposal',
+    'member.block': 'owner_after_moderator_proposal',
+    'moderator.elect': 'owner_appointment',
+    'moderator.recall': 'owner_action',
+    'moderation.appeal': 'owner_review',
     'budget.approve': 'assembly_majority',
     'governance.amend': 'assembly_supermajority',
     'organization.change': 'assembly_supermajority',

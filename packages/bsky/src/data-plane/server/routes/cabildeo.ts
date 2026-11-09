@@ -9,6 +9,8 @@ import {
 } from '../community-membership.js'
 import type { Database } from '../db/index.js'
 import { TimeCidKeyset, paginate } from '../db/pagination.js'
+import { getCabildeoVoteEligibility } from '../indexing/plugins/cabildeo-vote.js'
+import { readProtectedAction } from '../protected-action.js'
 
 export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
   async getParaCabildeos(req) {
@@ -72,7 +74,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
 
     return {
       cabildeoJson: JSON.stringify(
-        await mapCabildeoRow(db, row, req.viewerDid || undefined),
+        await mapCabildeoRow(db, row, req.viewerDid || undefined, true),
       ),
     }
   },
@@ -101,6 +103,11 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     })
 
     const positions = await builder.execute()
+    const reactions = await getPositionReactions(
+      db,
+      positions.map((position) => position.uri),
+      req.viewer,
+    )
     return {
       positionsJson: JSON.stringify(
         positions.map((position) => ({
@@ -117,6 +124,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
           text: position.text,
           compassQuadrant: position.compassQuadrant ?? '',
           createdAt: position.createdAt,
+          ...reactions.get(position.uri),
         })),
       ),
       cursor: keyset.packFromResult(positions),
@@ -355,6 +363,7 @@ const mapCabildeoRow = async (
     lngE7: number | null
     options: unknown
     minQuorum: number | null
+    kind?: string | null
     voteVisibility?: string | null
     phase: string
     phaseDeadline: string | null
@@ -375,6 +384,7 @@ const mapCabildeoRow = async (
     isTie: 0 | 1
   },
   viewerDid?: string,
+  includeVotingDetails = false,
 ) => {
   const options = asOptions(row.options)
   const voteCounts = asNumberArray(row.optionVoteCounts, options.length)
@@ -423,9 +433,41 @@ const mapCabildeoRow = async (
         }
       : undefined
 
-  const viewerContext = viewerDid
-    ? await getViewerContext(db, row.uri, viewerDid)
+  const [viewerContext, closePolicy, finalTally, sourceRecord] =
+    await Promise.all([
+      viewerDid
+        ? getViewerContext(db, row.uri, viewerDid, includeVotingDetails)
+        : undefined,
+      includeVotingDetails
+        ? db.db
+            .selectFrom('cabildeo_close_policy')
+            .select('openedAt')
+            .where('cabildeo', '=', row.uri)
+            .executeTakeFirst()
+        : undefined,
+      includeVotingDetails && row.phase === 'resolved'
+        ? db.db
+            .selectFrom('cabildeo_final_tally')
+            .select('closedAt')
+            .where('cabildeo', '=', row.uri)
+            .executeTakeFirst()
+        : undefined,
+      includeVotingDetails
+        ? db.db
+            .selectFrom('record')
+            .select('json')
+            .where('uri', '=', row.uri)
+            .executeTakeFirst()
+        : undefined,
+    ])
+  const access = sourceRecord
+    ? (JSON.parse(sourceRecord.json) as {
+        minimumViewTier?: unknown
+        minimumParticipationTier?: unknown
+        protectedAction?: unknown
+      })
     : undefined
+  const protectedAction = readProtectedAction(access?.protectedAction)
   const partyVoteSummary =
     voteVisibility === 'party_only'
       ? await getPartyVoteSummary(db, row.uri, options.length)
@@ -452,8 +494,20 @@ const mapCabildeoRow = async (
       typeof row.minQuorum === 'number' && row.minQuorum > 0
         ? row.minQuorum
         : undefined,
+    kind: row.kind ?? 'activity',
     voteVisibility,
     phase: row.phase,
+    minimumViewTier:
+      typeof access?.minimumViewTier === 'string'
+        ? access.minimumViewTier
+        : undefined,
+    minimumParticipationTier:
+      typeof access?.minimumParticipationTier === 'string'
+        ? access.minimumParticipationTier
+        : undefined,
+    protectedAction,
+    votingOpenedAt: closePolicy?.openedAt,
+    votingClosedAt: finalTally?.closedAt,
     phaseDeadline: row.phaseDeadline ?? '',
     createdAt: row.createdAt,
     optionSummary,
@@ -465,10 +519,54 @@ const mapCabildeoRow = async (
   }
 }
 
+type PositionReactions = {
+  agreeCount: number
+  disagreeCount: number
+  passCount: number
+  viewerDirection?: string
+}
+
+/**
+ * Agree / disagree / pass counts per position, from the unweighted reactions
+ * (`com.para.community.deliberationVote`), and the requesting viewer's own
+ * direction only: who else took which side is not part of the view.
+ */
+const getPositionReactions = async (
+  db: Database,
+  uris: string[],
+  viewer: string,
+): Promise<Map<string, PositionReactions>> => {
+  const reactions = new Map<string, PositionReactions>(
+    uris.map((uri) => [uri, { agreeCount: 0, disagreeCount: 0, passCount: 0 }]),
+  )
+  if (uris.length === 0) return reactions
+  const votes = await db.db
+    .selectFrom('para_deliberation_vote')
+    .select(['statement', 'creator', 'direction'])
+    .where('statement', 'in', uris)
+    .execute()
+  for (const vote of votes) {
+    const reaction = reactions.get(vote.statement)
+    if (!reaction) continue
+    if (vote.direction === 'agree') reaction.agreeCount += 1
+    else if (vote.direction === 'disagree') reaction.disagreeCount += 1
+    else reaction.passCount += 1
+    if (viewer && vote.creator === viewer)
+      reaction.viewerDirection = vote.direction
+  }
+  return reactions
+}
+
+/**
+ * The action a cabildeo asks its assembly to decide, as the record states it.
+ * A claim only: nothing here is authority until a verifier acts on the final
+ * tally. Anything that is not a well-formed `{ action, subject }` is dropped.
+ */
 const getViewerContext = async (
   db: Database,
   cabildeoUri: string,
   viewerDid: string,
+  includeVotingDetails: boolean,
 ) => {
   const [currentVote, grants, subject] = await Promise.all([
     db.db
@@ -556,8 +654,19 @@ const getViewerContext = async (
           .executeTakeFirst()
       : null
 
+  const canCastCabildeoVote = includeVotingDetails
+    ? Boolean(
+        await getCabildeoVoteEligibility(db.db, {
+          actorDid: viewerDid,
+          cabildeoUri,
+          selectedOption: 0,
+          indexedAt: new Date().toISOString(),
+        }),
+      )
+    : undefined
   const delegatedVotedAt = delegateVote?.createdAt ?? ''
   return {
+    canCastCabildeoVote,
     currentVoteOption:
       typeof currentVote?.selectedOption === 'number'
         ? currentVote.selectedOption

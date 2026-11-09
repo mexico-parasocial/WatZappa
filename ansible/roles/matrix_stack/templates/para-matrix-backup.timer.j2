@@ -1,0 +1,12 @@
+[Unit]
+Description=PARA Matrix backup timer
+
+[Timer]
+# After the 03:00 database dumps (para-postgres-backup.timer), so both do not
+# compete for the same disks.
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

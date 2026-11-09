@@ -127,8 +127,6 @@ const mapBoardView = (
     founderStarterPackUri: parseString(
       (board as { founderStarterPackUri?: string }).founderStarterPackUri,
     ),
-    governanceMode: (parseString(board.governanceMode) || 'hierarchical') as
-      'hierarchical' | 'horizontal',
     admissionMode: (parseString(board.admissionMode) || 'open') as
       'open' | 'assembly_approval',
     createdAt: board.createdAt,

@@ -80,6 +80,7 @@
     "viewerContext": {
       "type": "object",
       "properties": {
+        "canCastCabildeoVote": { "type": "boolean" },
         "currentVoteOption": { "type": "integer", "minimum": 0 },
         "currentVoteIsDirect": { "type": "boolean" },
         "currentVoteCreatedAt": { "type": "string", "format": "datetime" },
@@ -135,6 +136,11 @@
           "maxLength": 10
         },
         "minQuorum": { "type": "integer", "minimum": 1 },
+        "kind": {
+          "type": "string",
+          "knownValues": ["activity", "persuasion", "forum"],
+          "description": "A missing kind on the record is served as activity."
+        },
         "voteVisibility": {
           "type": "string",
           "knownValues": ["public", "party_only", "anonymous"]
@@ -143,6 +149,15 @@
           "type": "string",
           "knownValues": ["draft", "open", "deliberating", "voting", "resolved"]
         },
+        "minimumViewTier": { "type": "string" },
+        "minimumParticipationTier": { "type": "string" },
+        "protectedAction": {
+          "type": "ref",
+          "ref": "com.para.community.defs#protectedAction",
+          "description": "The community action this cabildeo asks its assembly to decide. A claim only; see the record."
+        },
+        "votingOpenedAt": { "type": "string", "format": "datetime" },
+        "votingClosedAt": { "type": "string", "format": "datetime" },
         "phaseDeadline": { "type": "string", "format": "datetime" },
         "createdAt": { "type": "string", "format": "datetime" },
         "optionSummary": {
@@ -179,12 +194,24 @@
         "cabildeo": { "type": "string", "format": "at-uri" },
         "stance": {
           "type": "string",
-          "knownValues": ["for", "against", "amendment"]
+          "knownValues": ["for", "against", "amendment", "question"]
         },
         "optionIndex": { "type": "integer", "minimum": 0 },
         "text": { "type": "string", "maxLength": 3000 },
         "compassQuadrant": { "type": "string", "maxLength": 100 },
-        "createdAt": { "type": "string", "format": "datetime" }
+        "createdAt": { "type": "string", "format": "datetime" },
+        "agreeCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Reactions of agree on this position (com.para.community.deliberationVote)."
+        },
+        "disagreeCount": { "type": "integer", "minimum": 0 },
+        "passCount": { "type": "integer", "minimum": 0 },
+        "viewerDirection": {
+          "type": "string",
+          "knownValues": ["agree", "disagree", "pass"],
+          "description": "Only ever the requesting viewer's own reaction; who else took which side is not part of this view."
+        }
       }
     },
     "policySignalBucket": {
@@ -228,8 +255,14 @@
         "eligibleVoterCount": { "type": "integer", "minimum": 0 },
         "quorumTarget": { "type": "integer", "minimum": 1 },
         "quorumMet": { "type": "boolean" },
-        "official": { "type": "boolean" },
-        "certified": { "type": "boolean" },
+        "official": {
+          "type": "boolean",
+          "description": "DEPRECATED 2026-11-06 (OD-10 §7.6), always false; to be removed. It came from the author's own post metadata, so it never established that an official account published the policy, and a policy result no longer depends on who published it."
+        },
+        "certified": {
+          "type": "boolean",
+          "description": "DEPRECATED 2026-11-06 (OD-10 §7.6); to be removed. True when `outcome` is `passed` or `strong_passed`. A policy never closes, so nothing certifies it: read `outcome` instead."
+        },
         "outcome": {
           "type": "string",
           "knownValues": [
@@ -238,11 +271,17 @@
             "passed",
             "strong_passed",
             "failed"
-          ]
+          ],
+          "description": "A live reading of what the community's current ballots say, which changes as people change their votes. It binds no one: a binding decision goes through a cabildeo (OD-10 §7.6)."
         },
         "state": {
           "type": "string",
+          "description": "The live reading as a state: `passing`, `failing`, `split` (votes without a majority either way) or `noQuorum`. The other known values are DEPRECATED 2026-11-06 (OD-10 §7.6), never returned, and will be removed.",
           "knownValues": [
+            "passing",
+            "failing",
+            "split",
+            "noQuorum",
             "draft",
             "deliberation",
             "voting",

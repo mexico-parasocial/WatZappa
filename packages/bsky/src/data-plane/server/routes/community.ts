@@ -1,4 +1,4 @@
-import { Code, ConnectError, ServiceImpl } from '@connectrpc/connect'
+import { Code, ConnectError, type ServiceImpl } from '@connectrpc/connect'
 import { sql } from 'kysely'
 import {
   AUTHORITY_EVENT_VERSION,
@@ -8,17 +8,17 @@ import {
   getRoleDefinitions,
   resolveAvailableAction,
 } from '@atproto/common'
-import { Service } from '../../../proto/bsky_connect.js'
+import type { Service } from '../../../proto/bsky_connect.js'
 import {
+  GetParaCommunityAuthorizationResponse,
   GetParaCommunityBoardResponse,
   GetParaCommunityBoardsResponse,
-  GetParaCommunityAuthorizationResponse,
   GetParaCommunityGovernanceResponse,
   GetParaCommunityMembersResponse,
   GetParaCommunityPostsResponse,
-  GetParaPolicyCommunityVotesResponse,
   GetParaCommunityRelationsResponse,
   GetParaCommunitySharedContentResponse,
+  GetParaPolicyCommunityVotesResponse,
   ParaAuthorFeedItem,
   ParaAvailableAction,
   ParaCommunityBoardView,
@@ -37,6 +37,10 @@ import {
   ParaStrongRef,
 } from '../../../proto/bsky_pb.js'
 import {
+  getAuthoritySnapshot,
+  getAuthoritySnapshots,
+} from '../community-authority.js'
+import {
   type AccountShareOverlay,
   accountOpenOffers,
   accountRelationRows,
@@ -51,11 +55,7 @@ import {
   effectivelyActiveSql,
   resolveCommunityAccountUris,
 } from '../community-membership.js'
-import {
-  getAuthoritySnapshot,
-  getAuthoritySnapshots,
-} from '../community-authority.js'
-import { Database } from '../db/index.js'
+import type { Database } from '../db/index.js'
 import {
   CreatedAtCidKeyset,
   IndexedAtCidKeyset,
@@ -87,7 +87,6 @@ type BoardRow = {
   officialCount: number | null
   deputyRoleCount: number | null
   lastPublishedAt: string | null
-  governanceMode: string | null
   admissionMode: string
 }
 
@@ -135,11 +134,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       })
     }
     const snapshot = await getAuthoritySnapshot(db, board.uri, req.viewerDid)
-    const authorization = resolveAvailableAction(
-      req.action,
-      snapshot.roles,
-      (board.governanceMode || 'hierarchical') as 'hierarchical' | 'horizontal',
-    )
+    const authorization = resolveAvailableAction(req.action, snapshot.roles)
     return new GetParaCommunityAuthorizationResponse({
       roles: snapshot.roles,
       capabilities: snapshot.capabilities,
@@ -177,8 +172,6 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       const snapshot = req.viewerDid
         ? await getAuthoritySnapshot(db, board.uri, req.viewerDid)
         : undefined
-      const standard = (board.governanceMode || 'hierarchical') as
-        'hierarchical' | 'horizontal'
 
       return new GetParaCommunityBoardResponse({
         board: toBoardView(board, memberCount, viewerMembership, {
@@ -192,7 +185,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
           ? AUTHORIZATION_ACTIONS.map(
               (action) =>
                 new ParaAvailableAction(
-                  resolveAvailableAction(action, snapshot.roles, standard),
+                  resolveAvailableAction(action, snapshot.roles),
                 ),
             )
           : [],
@@ -299,6 +292,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       .innerJoin('para_policy_vote as vote', 'vote.creator', 'membership.did')
       .where('vote.subject', '=', req.postUri)
       .where('vote.subjectType', '=', 'policy')
+      .where('vote.signal', '!=', 0) // OD-10 §7.5: neutral is not a ballot
 
     const [memberCount, breakdown, rows] = await Promise.all([
       members.select(sql<number>`count(*)`.as('count')).executeTakeFirst(),
@@ -366,8 +360,6 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     const counters = await getCommunityCounters(db, community)
 
     const computedAt = new Date().toISOString()
-    const standard = (board?.governanceMode || 'hierarchical') as
-      'hierarchical' | 'horizontal'
     const admissionMode = (board?.admissionMode || 'open') as
       'open' | 'assembly_approval'
     const roleHolders: ParaRoleHolder[] = []
@@ -393,10 +385,9 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       deputies: [],
       computedAt,
       editHistory: [],
-      organizationStandard: standard,
       admissionMode,
       authorityEventVersion: AUTHORITY_EVENT_VERSION,
-      roleDefinitions: getRoleDefinitions(standard, admissionMode).map(
+      roleDefinitions: getRoleDefinitions(admissionMode).map(
         (definition) => new ParaRoleDefinition(definition),
       ),
       roleHolders,
@@ -670,7 +661,6 @@ const selectCommunityAccount = async (
     officialCount: 0,
     deputyRoleCount: 0,
     lastPublishedAt: null,
-    governanceMode: row.governanceMode,
     admissionMode: row.admissionMode ?? 'open',
   }
 }
@@ -833,7 +823,6 @@ const listedBoardsQuery = (db: Database) => {
       'account.region',
       sql<string>`''`.as('delegatesChatId'),
       sql<string>`''`.as('subdelegatesChatId'),
-      'account.governanceMode',
       sql<string>`coalesce(account."admissionMode", 'open')`.as(
         'admissionMode',
       ),
@@ -1125,7 +1114,6 @@ const toBoardView = (
     parentCommunityUris: summary?.parentCommunityUris ?? [],
     childCommunityCount: summary?.childCommunityCount ?? 0,
     sharedContentCount: summary?.sharedContentCount ?? 0,
-    governanceMode: board.governanceMode ?? 'hierarchical',
     admissionMode: board.admissionMode,
     region: board.region ?? '',
   })

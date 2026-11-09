@@ -1,21 +1,19 @@
-import { Code, ConnectError, ServiceImpl } from '@connectrpc/connect'
-import { Service } from '../../../proto/bsky_connect.js'
-import { Database } from '../db/index.js'
+import { Code, ConnectError, type ServiceImpl } from '@connectrpc/connect'
+import type { Service } from '../../../proto/bsky_connect.js'
 import { getAuthoritySnapshot } from '../community-authority.js'
 import { communityAccountDid } from '../community-membership.js'
+import type { Database } from '../db/index.js'
 import { tableName as cardTableName } from '../db/tables/para-community-civic-tree-card.js'
 import { tableName as voteTableName } from '../db/tables/para-community-civic-tree-contribution-vote.js'
 import { tableName as contributionTableName } from '../db/tables/para-community-civic-tree-contribution.js'
 import { tableName as relationshipTableName } from '../db/tables/para-community-civic-tree-relationship.js'
 
 /*
- * Votes needed to settle a contribution under `votes_sortition`. Small on
- * purpose: a community civic tree is worthless while empty, and a review queue
- * that never clears is the failure mode that keeps it empty.
+ * Votes needed to settle a contribution. Small on purpose: a community civic
+ * tree is worthless while empty, and a review queue that never clears is the
+ * failure mode that keeps it empty.
  */
 const APPROVAL_THRESHOLD = 3
-
-/** Roles that may settle a contribution on their own under `moderator_gate`. */
 
 type MembershipRow = {
   membershipState: string
@@ -291,12 +289,13 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       const approveCount = tallies.filter((t) => t.vote === 'approve').length
       const rejectCount = tallies.filter((t) => t.vote === 'reject').length
 
-      const threshold = APPROVAL_THRESHOLD
-
       let status = 'pending'
-      if (approveCount >= threshold && approveCount > rejectCount) {
+      if (approveCount >= APPROVAL_THRESHOLD && approveCount > rejectCount) {
         status = 'approved'
-      } else if (rejectCount >= threshold && rejectCount >= approveCount) {
+      } else if (
+        rejectCount >= APPROVAL_THRESHOLD &&
+        rejectCount >= approveCount
+      ) {
         status = 'rejected'
       }
 

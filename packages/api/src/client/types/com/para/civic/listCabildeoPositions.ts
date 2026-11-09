@@ -19,7 +19,7 @@ const id = 'com.para.civic.listCabildeoPositions'
 
 export type QueryParams = {
   cabildeo: string
-  stance?: 'for' | 'against' | 'amendment' | (string & {})
+  stance?: 'for' | 'against' | 'amendment' | 'question' | (string & {})
   limit?: number
   cursor?: string
 }

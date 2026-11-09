@@ -63,13 +63,27 @@ const FROZEN_REASONS: Record<FrozenBallotCollection, string> = {
 /**
  * Not frozen, but narrowed to the two shapes whose publicness has been
  * accepted: a cabildeo ballot (one option, OD-7 §5d) and a policy ballot (a
- * -3..+3 signal, decided 2026-09-29 in PARA revocable-mandates-spec §4.0: the
+ * nonzero -3..+3 signal, decided 2026-09-29 in PARA revocable-mandates-spec §4.0: the
  * casting identity is anonymous by default and m8 holds no legal identity).
  * `delegatedFrom` stays refused on both: it would publish the delegation graph
  * (§5b names it as more re-identifying than the ballots themselves). A lent
  * vote is cast as the lender's own ballot instead.
  */
 export const CABILDEO_BALLOT_COLLECTION = 'com.para.civic.vote'
+
+/**
+ * A policy ballot's `signal`: -3..-1 or +1..+3. There is no neutral ballot
+ * (OD-10 §7.5): whoever takes no stance casts none, and so counts towards
+ * neither the quorum nor the average. Withdrawing a vote deletes the ballot.
+ */
+export function isPolicySignal(signal: unknown): signal is number {
+  return (
+    Number.isInteger(signal) &&
+    signal !== 0 &&
+    (signal as number) >= -3 &&
+    (signal as number) <= 3
+  )
+}
 
 const DOCS = 'WatZappa/docs/OD-7-BALLOT-IDENTITY-REGISTRATION.md'
 
@@ -139,12 +153,8 @@ function publicBallotRefusal(record: unknown): string | undefined {
     return undefined
   }
   if (subjectType === 'policy') {
-    if (
-      !Number.isInteger(signal) ||
-      (signal as number) < -3 ||
-      (signal as number) > 3
-    ) {
-      return '`signal` is missing or outside -3..+3'
+    if (!isPolicySignal(signal)) {
+      return '`signal` is missing, 0, or outside -3..+3'
     }
     if (selectedOption !== undefined) {
       return 'a policy ballot takes a `signal`, not an option'
