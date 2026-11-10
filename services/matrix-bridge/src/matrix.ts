@@ -1,5 +1,6 @@
 import { AdminApis, MatrixClient } from 'matrix-bot-sdk'
 import type { Config } from './config.js'
+import { MasAdminClient } from './mas-admin.js'
 import { MatrixLoginUnavailableError } from './matrix-login-error.js'
 
 export interface MatrixRoomMember {
@@ -13,6 +14,9 @@ export class MatrixAdminClient {
   private adminToken: string
   private appServiceToken: string | undefined
   private enableEncryption: boolean
+  private serverName: string
+  private masAdmin?: MasAdminClient
+  private allowAppServiceLogin: boolean
   readonly botUserId: string | undefined
   private client: MatrixClient
   private admin: AdminApis
@@ -23,6 +27,22 @@ export class MatrixAdminClient {
     this.appServiceToken = config.matrixAppServiceToken
     this.botUserId = config.matrixBotUserId
     this.enableEncryption = config.matrixEnableEncryption
+    this.serverName = config.matrixServerName
+    this.allowAppServiceLogin = config.matrixAllowAppServiceLogin === true
+    if (
+      config.matrixMasAdminUrl &&
+      config.matrixMasTokenUrl &&
+      config.matrixMasClientId &&
+      config.matrixMasClientSecret
+    ) {
+      this.masAdmin = new MasAdminClient({
+        adminUrl: config.matrixMasAdminUrl,
+        tokenUrl: config.matrixMasTokenUrl,
+        clientId: config.matrixMasClientId,
+        clientSecret: config.matrixMasClientSecret,
+        serverName: config.matrixServerName,
+      })
+    }
     this.client = new MatrixClient(this.baseUrl, this.adminToken)
     this.admin = new AdminApis(this.client)
   }
@@ -64,31 +84,96 @@ export class MatrixAdminClient {
     ]
   }
 
-  async createSpace(name: string, slug: string): Promise<string> {
-    return this.client.createRoom({
-      room_alias_name: slug,
-      name,
-      preset: 'private_chat',
-      creation_content: {
-        type: 'm.space',
+  /** Resume a partial provision only with matching governance and creator. */
+  private async createGovernanceRoom(
+    alias: string,
+    options: NonNullable<Parameters<MatrixClient['createRoom']>[0]>,
+    communityUri?: string,
+    parentSpaceId?: string,
+  ): Promise<string> {
+    if (communityUri) {
+      options.initial_state = [
+        ...(options.initial_state ?? []),
+        {
+          type: 'com.para.community',
+          state_key: '',
+          content: {
+            uri: communityUri,
+            kind: parentSpaceId ? 'room' : 'space',
+            ...(parentSpaceId ? { parentSpaceId } : {}),
+          },
+        },
+      ]
+    }
+    try {
+      return await this.client.createRoom(options)
+    } catch (error) {
+      if (
+        !communityUri ||
+        (error as { errcode?: string }).errcode !== 'M_ROOM_IN_USE'
+      )
+        throw error
+      const roomId = await this.client.resolveRoom(
+        `#${alias}:${this.serverName}`,
+      )
+      const state = await this.client.getRoomState(roomId)
+      const content = (type: string) =>
+        state.find((event) => event.type === type && event.state_key === '')
+          ?.content
+      const metadata = content('com.para.community')
+      const creation = state.find((event) => event.type === 'm.room.create')
+      if (
+        !metadata ||
+        metadata.uri !== communityUri ||
+        metadata.kind !== (parentSpaceId ? 'room' : 'space') ||
+        metadata.parentSpaceId !== parentSpaceId ||
+        creation?.sender !== (await this.client.getUserId()) ||
+        (!parentSpaceId && creation?.content.type !== 'm.space') ||
+        (this.enableEncryption &&
+          content('m.room.encryption')?.algorithm !== 'm.megolm.v1.aes-sha2')
+      ) {
+        throw new Error(
+          'ROOM_ALIAS_REQUIRES_REVIEW: governance, creator or encryption does not match',
+        )
+      }
+      return roomId
+    }
+  }
+
+  async createSpace(
+    name: string,
+    slug: string,
+    communityUri?: string,
+  ): Promise<string> {
+    return this.createGovernanceRoom(
+      slug,
+      {
+        room_alias_name: slug,
+        name,
+        preset: 'private_chat',
+        creation_content: {
+          type: 'm.space',
+        },
+        initial_state: this.encryptedInitialState(),
+        power_level_content_override: {
+          users_default: 0,
+          events_default: 50,
+          state_default: 50,
+          ban: 50,
+          kick: 50,
+          redact: 50,
+          invite: 50,
+        },
       },
-      initial_state: this.encryptedInitialState(),
-      power_level_content_override: {
-        users_default: 0,
-        events_default: 50,
-        state_default: 50,
-        ban: 50,
-        kick: 50,
-        redact: 50,
-        invite: 50,
-      },
-    })
+      communityUri,
+    )
   }
 
   async createRoom(
     name: string,
     alias: string,
     parentSpaceId?: string,
+    communityUri?: string,
   ): Promise<string> {
     const initialState: Array<{
       type: string
@@ -99,24 +184,29 @@ export class MatrixAdminClient {
       initialState.push({
         type: 'm.space.parent',
         state_key: parentSpaceId,
-        content: { via: [extractServerName(this.baseUrl)] },
+        content: { via: [this.serverName] },
       })
     }
-    return this.client.createRoom({
-      room_alias_name: alias,
-      name,
-      preset: 'private_chat',
-      initial_state: initialState,
-      power_level_content_override: {
-        users_default: 0,
-        events_default: 50,
-        state_default: 50,
-        ban: 50,
-        kick: 50,
-        redact: 50,
-        invite: 50,
+    return this.createGovernanceRoom(
+      alias,
+      {
+        room_alias_name: alias,
+        name,
+        preset: 'private_chat',
+        initial_state: initialState,
+        power_level_content_override: {
+          users_default: 0,
+          events_default: 50,
+          state_default: 50,
+          ban: 50,
+          kick: 50,
+          redact: 50,
+          invite: 50,
+        },
       },
-    })
+      communityUri,
+      parentSpaceId,
+    )
   }
 
   async addChildSpace(
@@ -141,14 +231,32 @@ export class MatrixAdminClient {
    * joins members it has just verified. Returns the resolved room ID.
    */
   async joinUser(roomIdOrAlias: string, mxid: string): Promise<string> {
-    const res = await this.request(
-      `/_synapse/admin/v1/join/${encodeURIComponent(roomIdOrAlias)}`,
-      {
-        method: 'POST',
-        body: JSON.stringify({ user_id: mxid }),
-      },
-    )
-    return (res?.room_id as string) ?? roomIdOrAlias
+    const roomId = await this.client.resolveRoom(roomIdOrAlias)
+    const alreadyJoined = async () => {
+      try {
+        const state = await this.client.getRoomStateEvent(
+          roomId,
+          'm.room.member',
+          mxid,
+        )
+        return state.membership === 'join'
+      } catch {
+        return false
+      }
+    }
+    if (await alreadyJoined()) return roomId
+    try {
+      const res = await this.request(
+        `/_synapse/admin/v1/join/${encodeURIComponent(roomId)}`,
+        { method: 'POST', body: JSON.stringify({ user_id: mxid }) },
+      )
+      return (res?.room_id as string) ?? roomId
+    } catch (error) {
+      // A competing verified request may have joined the member before
+      // Synapse's invitation step. Only actual membership proves success.
+      if (await alreadyJoined()) return roomId
+      throw error
+    }
   }
 
   async inviteUser(roomId: string, userId: string): Promise<void> {
@@ -213,17 +321,26 @@ export class MatrixAdminClient {
     }
   }
 
+  async deviceExists(userId: string, deviceId: string): Promise<boolean> {
+    const response = await fetch(
+      `${this.baseUrl}/_synapse/admin/v2/users/${encodeURIComponent(userId)}/devices/${encodeURIComponent(deviceId)}`,
+      {
+        headers: { authorization: `Bearer ${this.adminToken}` },
+        redirect: 'error',
+        signal: AbortSignal.timeout(10000),
+      },
+    )
+    await response.body?.cancel()
+    if (response.status === 404) return false
+    if (response.status !== 200)
+      throw new Error(`Matrix device lookup failed: HTTP ${response.status}`)
+    return true
+  }
+
   /**
-   * Create a bridge-managed user.
-   *
-   * The appservice registration claims the derived localparts
-   * (`@[a-z2-7]{32}`) as an EXCLUSIVE namespace, which means the admin API is
-   * not allowed to create those users — Synapse answers `M_EXCLUSIVE: This
-   * user ID is reserved by an application service`. Only the appservice
-   * itself may register them, with its as_token. Registering as the
-   * appservice is therefore the primary path; the admin upsert stays as a
-   * fallback for deployments with no appservice registered, where the
-   * namespace is not reserved and the admin API is allowed.
+   * Legacy standalone homeservers only: register through the appservice,
+   * or the admin API if no appservice is configured. Native MAS paths must
+   * never call this: MAS creates its own account during authorization.
    *
    * No display name is ever set from a DID or any identifying value: the
    * account must not be linkable to an atproto identity through homeserver
@@ -241,11 +358,7 @@ export class MatrixAdminClient {
         body: JSON.stringify({
           type: 'm.login.application_service',
           username: localpart,
-          // Required when authentication is delegated to MAS: the homeserver
-          // cannot mint a session for a user it does not own the logins of, and
-          // rejects the registration outright without this
-          // (M_APPSERVICE_LOGIN_UNSUPPORTED). We only want the user to exist —
-          // sessions come from the client's own authorization-code flow.
+          // Provision the legacy account without accidentally minting a token.
           inhibit_login: true,
         }),
         signal: AbortSignal.timeout(10_000),
@@ -354,10 +467,23 @@ export class MatrixAdminClient {
 
   /** Deactivate one of the user's devices via the Synapse admin API. */
   async adminDeactivateDevice(mxid: string, deviceId: string): Promise<void> {
-    await this.request(
-      `/_synapse/admin/v2/users/${encodeURIComponent(mxid)}/devices/${encodeURIComponent(deviceId)}`,
-      { method: 'DELETE' },
+    if (!this.allowAppServiceLogin) {
+      if (!this.masAdmin) throw new Error('MATRIX_MAS_ADMIN_NOT_CONFIGURED')
+      await this.masAdmin.revokeDevice(mxid, deviceId)
+    }
+    const response = await fetch(
+      `${this.baseUrl}/_synapse/admin/v2/users/${encodeURIComponent(mxid)}/devices/${encodeURIComponent(deviceId)}`,
+      {
+        method: 'DELETE',
+        headers: { authorization: `Bearer ${this.adminToken}` },
+        signal: AbortSignal.timeout(10000),
+      },
     )
+    // MAS may already have removed its shadow device. Its sessions were
+    // finished first, so no refresh token can recreate it after this step.
+    await response.body?.cancel()
+    if (!response.ok && response.status !== 404)
+      throw new Error(`Matrix device deletion failed: HTTP ${response.status}`)
   }
 
   async setPusherWithUserToken(

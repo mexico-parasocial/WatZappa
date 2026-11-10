@@ -82,13 +82,20 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
     const viewerDid = req.viewerDid || ''
     const limit = Math.min(Math.max(req.limit || 25, 1), 100)
 
+    // Interests are matter flairs as written on posts (`|#DemandaPorSalud`,
+    // matched case-insensitively against `para_post_meta.flairs`) or legacy
+    // free tags (`healthcare`, matched against `tags`). A pillar `category`
+    // expands to its legacy tags.
+    const flairKeys: string[] = []
     const subTags: string[] = []
     if (req.category && PARA_CIVIC_SUBTAGS[req.category]) {
       subTags.push(...PARA_CIVIC_SUBTAGS[req.category])
     }
-    if (req.interests?.length) {
-      subTags.push(...req.interests)
+    for (const interest of req.interests ?? []) {
+      if (interest.startsWith('|#')) flairKeys.push(interest.toLowerCase())
+      else subTags.push(interest)
     }
+    const hasTopic = flairKeys.length > 0 || subTags.length > 0
 
     // 1. Viewer's compass
     let viewerCompass: Compass = null
@@ -128,15 +135,27 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
 
     // 4. Topical candidate set
     const topicalCandidates: { did: string; postCount: number }[] = []
-    if (subTags.length > 0) {
+    if (hasTopic) {
       const thirtyDaysAgo = new Date(
         Date.now() - 30 * 24 * 60 * 60 * 1000,
       ).toISOString()
+      // A post counts when it carries ANY of the requested matters or tags
+      // (`?|`, not `?&`: requiring all of them matched almost nothing).
+      const onFlair = flairKeys.length
+        ? sql<boolean>`exists (
+            select 1
+            from jsonb_array_elements_text(
+              coalesce("para_post_meta"."flairs", '[]'::jsonb)
+            ) as f(v)
+            where lower(f.v) = any(array[${sql.join(flairKeys)}]::text[])
+          )`
+        : sql<boolean>`false`
+      const onTag = subTags.length
+        ? sql<boolean>`"para_post_meta"."tags" ?| array[${sql.join(subTags)}]`
+        : sql<boolean>`false`
       const rows = await db.db
         .selectFrom('para_post_meta')
-        .where(
-          sql<boolean>`"para_post_meta"."tags" ?& array[${sql.join(subTags)}]`,
-        )
+        .where(sql<boolean>`(${onFlair} or ${onTag})`)
         .where('createdAt', '>=', thirtyDaysAgo)
         .select(['creator as did', sql<number>`count(*)::int`.as('postCount')])
         .groupBy('creator')
@@ -150,7 +169,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
 
     // 5. Discover-by-compass candidates
     const compassCandidates: { did: string; compassJson: unknown }[] = []
-    if (subTags.length === 0 || topicalCandidates.length < limit) {
+    if (!hasTopic || topicalCandidates.length < limit) {
       const rows = await db.db
         .selectFrom('raq_assessment as a')
         .where('a.isPublic', '=', true)
@@ -229,7 +248,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         2 * overlap +
         1 * compassTerm +
         0.5 * Math.log1p(followers)
-      if (score <= 0 && subTags.length > 0) continue
+      if (score <= 0 && hasTopic) continue
       scored.push({ did, postCount, overlap, followers, compassTerm, score })
     }
 

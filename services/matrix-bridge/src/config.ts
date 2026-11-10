@@ -27,6 +27,12 @@ export interface Config {
   matrixPublicHomeserverUrl: string
   matrixAdminToken: string
   matrixAppServiceToken?: string
+  /** Legacy standalone homeservers only. MAS accounts belong to client OIDC. */
+  matrixAllowAppServiceLogin?: boolean
+  matrixMasAdminUrl?: string
+  matrixMasTokenUrl?: string
+  matrixMasClientId?: string
+  matrixMasClientSecret?: string
   matrixHsToken?: string
   syncFallbackMs: number
   /**
@@ -81,6 +87,12 @@ export function loadConfig(): Config {
     // Appservice token for m.login.application_service device-bound logins.
     // Never substitute an administrator credential for an appservice credential.
     matrixAppServiceToken: process.env.MATRIX_APPSERVICE_TOKEN || undefined,
+    matrixAllowAppServiceLogin:
+      process.env.MATRIX_ALLOW_APPSERVICE_LOGIN === 'true',
+    matrixMasAdminUrl: process.env.MATRIX_MAS_ADMIN_URL,
+    matrixMasTokenUrl: process.env.MATRIX_MAS_TOKEN_URL,
+    matrixMasClientId: process.env.MATRIX_MAS_CLIENT_ID,
+    matrixMasClientSecret: process.env.MATRIX_MAS_CLIENT_SECRET,
     // hs_token from the appservice registration; required to accept
     // transaction pushes from Synapse.
     matrixHsToken: process.env.MATRIX_HS_TOKEN || undefined,

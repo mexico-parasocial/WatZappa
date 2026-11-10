@@ -1,4 +1,6 @@
-FROM node:22-alpine AS build
+FROM node:22-bookworm-slim AS dependencies
+
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ ca-certificates && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g pnpm@11.11.0
 
@@ -57,7 +59,8 @@ COPY ./packages/bsync ./packages/bsync
 COPY ./services/bsky ./services/bsky
 
 # install all deps
-RUN PUPPETEER_SKIP_DOWNLOAD=true pnpm install --frozen-lockfile
+RUN PUPPETEER_SKIP_DOWNLOAD=true pnpm install --frozen-lockfile --force
+FROM dependencies AS build
 # build all packages with external node_modules
 RUN pnpm run --recursive --stream --filter '@atproto/crypto...' build
 RUN pnpm run --recursive --stream --filter '@atproto/bsky...' build
@@ -65,11 +68,11 @@ RUN pnpm run --recursive --stream --filter '@atproto/bsky...' build
 RUN pnpm install --prod --shamefully-hoist --frozen-lockfile --prefer-offline --config.confirmModulesPurge=false
 
 # Uses assets from build stage to reduce build size
-FROM node:22-alpine
+FROM node:22-bookworm-slim
 
 # dumb-init is used to handle signals properly.
 # runit is installed so it can be (optionally) used for logging via svlogd.
-RUN apk add --update dumb-init runit
+RUN apt-get update && apt-get install -y --no-install-recommends dumb-init runit ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Avoid zombie processes, handle signal forwarding
 ENTRYPOINT ["dumb-init", "--"]

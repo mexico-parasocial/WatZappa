@@ -11,7 +11,8 @@ export interface Config extends IdpConfig {
 
 function env(key: string, fallback?: string): string {
   const value = process.env[key] ?? fallback
-  if (value === undefined) throw new Error(`Missing required environment variable: ${key}`)
+  if (value === undefined)
+    throw new Error(`Missing required environment variable: ${key}`)
   return value
 }
 
@@ -29,26 +30,37 @@ function parseClients(raw: string): OidcClient[] {
     throw new Error('PARA_IDP_CLIENTS must be a non-empty JSON array')
   }
   for (const client of parsed) {
-    if (!client.clientId || !client.clientSecret || !Array.isArray(client.redirectUris)) {
-      throw new Error('each client needs clientId, clientSecret and redirectUris')
+    if (
+      !client.clientId ||
+      !client.clientSecret ||
+      !Array.isArray(client.redirectUris)
+    ) {
+      throw new Error(
+        'each client needs clientId, clientSecret and redirectUris',
+      )
     }
     if (client.redirectUris.length === 0) {
       throw new Error(`client ${client.clientId} has no redirectUris`)
     }
     if (client.clientSecret.length < 32) {
-      throw new Error(`client ${client.clientId} secret is too short (min 32 chars)`)
+      throw new Error(
+        `client ${client.clientId} secret is too short (min 32 chars)`,
+      )
     }
   }
   return parsed
 }
 
 export function loadConfig(): Config {
-  const issuer = env('PARA_IDP_ISSUER', 'http://localhost:8090').replace(/\/$/, '')
+  const issuer = env('PARA_IDP_ISSUER', 'http://localhost:8090').replace(
+    /\/$/,
+    '',
+  )
   return {
     issuer,
     clients: parseClients(env('PARA_IDP_CLIENTS')),
     port: Number.parseInt(env('PORT', '8090'), 10),
-    appScheme: env('PARA_IDP_APP_SCHEME', 'para'),
+    appScheme: env('PARA_IDP_APP_SCHEME', 'social.para.app'),
     alg: (process.env.PARA_IDP_ALG as 'RS256' | 'EdDSA') || 'RS256',
     privateKeyPem: process.env.PARA_IDP_PRIVATE_KEY,
     logLevel: env('PARA_IDP_LOG_LEVEL', 'info'),

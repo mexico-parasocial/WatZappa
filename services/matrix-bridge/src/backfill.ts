@@ -119,7 +119,7 @@ async function main() {
       )
     } else {
       try {
-        const spaceId = await matrix.createSpace(comm.name, comm.slug)
+        const spaceId = await matrix.createSpace(comm.name, comm.slug, comm.uri)
         await db.setSpaceForCommunity(
           comm.uri,
           spaceId,
@@ -134,16 +134,19 @@ async function main() {
               `${comm.name} — Cámara A`,
               `${comm.slug}-chamber-a`,
               spaceId,
+              comm.uri,
             ),
             matrix.createRoom(
               `${comm.name} — Cámara B`,
               `${comm.slug}-chamber-b`,
               spaceId,
+              comm.uri,
             ),
             matrix.createRoom(
               `${comm.name} — Consejo Observador`,
               `${comm.slug}-observers`,
               spaceId,
+              comm.uri,
             ),
           ])
           await db.setChamberRooms(comm.uri, chamberA, chamberB, observerRoom)

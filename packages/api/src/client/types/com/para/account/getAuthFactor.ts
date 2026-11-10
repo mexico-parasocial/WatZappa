@@ -20,6 +20,8 @@ export type QueryParams = {}
 export type InputSchema = undefined
 
 export interface OutputSchema {
+  /** Independent wallet challenge protocol, when supported, including before enrollment. */
+  authFactorMode?: 'wallet-v1' | (string & {})
   /** The 2FA method required at login. Absent when 2FA is off. */
   authFactorType?: 'im8' | (string & {})
 }

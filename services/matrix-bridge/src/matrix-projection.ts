@@ -28,6 +28,7 @@ export interface MatrixProjectionPort {
   /** Provision a space (and, for bicameral, its chamber rooms) for a new
    *  community. Returns the room map to persist. Creates no user accounts. */
   createCommunitySpace(input: {
+    communityUri: string
     name: string
     slug: string
     chamberMode: string
@@ -122,6 +123,9 @@ export function createMatrixProjection(
   const ensureUserExists = async (mxid: string): Promise<void> => {
     const exists = await matrix.userExists(mxid)
     if (!exists) {
+      if (!config.matrixAllowAppServiceLogin) {
+        throw new Error('MATRIX_CLIENT_LOGIN_REQUIRED')
+      }
       await matrix.createUser(mxid)
       log.info({ mxid }, 'Created Matrix user from verified identity key')
     }
@@ -273,8 +277,8 @@ export function createMatrixProjection(
   }
 
   return {
-    async createCommunitySpace({ name, slug, chamberMode }) {
-      const spaceId = await matrix.createSpace(name, slug)
+    async createCommunitySpace({ name, slug, chamberMode, communityUri }) {
+      const spaceId = await matrix.createSpace(name, slug, communityUri)
       if (chamberMode !== 'bicameral') {
         return {
           spaceId,
@@ -284,12 +288,23 @@ export function createMatrixProjection(
         }
       }
       const [chamberA, chamberB, observerRoom] = await Promise.all([
-        matrix.createRoom(`${name} — Cámara A`, `${slug}-chamber-a`, spaceId),
-        matrix.createRoom(`${name} — Cámara B`, `${slug}-chamber-b`, spaceId),
+        matrix.createRoom(
+          `${name} — Cámara A`,
+          `${slug}-chamber-a`,
+          spaceId,
+          communityUri,
+        ),
+        matrix.createRoom(
+          `${name} — Cámara B`,
+          `${slug}-chamber-b`,
+          spaceId,
+          communityUri,
+        ),
         matrix.createRoom(
           `${name} — Consejo Observador`,
           `${slug}-observers`,
           spaceId,
+          communityUri,
         ),
       ])
       await Promise.all([

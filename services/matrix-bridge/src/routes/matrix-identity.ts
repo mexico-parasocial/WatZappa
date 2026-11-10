@@ -1,19 +1,12 @@
 import { randomUUID } from 'node:crypto'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { AI_CONSENT_POLICY_VERSION } from '../ai-consent.js'
 import { authorize, resolveRoom } from '../authz.js'
-import { fetchBeacon, fetchLatestBeacon } from '../drand.js'
-import { extractFromText, persistExtractedCard } from '../extraction.js'
 import {
   BRIDGE_AUDIENCES,
   mxidFromVerifiedAssertion,
 } from '../identity-proof.js'
 import { HttpError, authenticateM8 } from '../m8-auth.js'
 import { MatrixLoginUnavailableError } from '../matrix-login-error.js'
-import { OpenAIClient } from '../openai-client.js'
-import { sendExpoNotifications } from '../push.js'
-import type { SortitionRunRow } from '../sortition-runs.js'
-import { summarizeCommunityDeliberation } from '../summarize.js'
 import type { RouteContext } from './context.js'
 import { readBody, writeJson } from './http.js'
 
@@ -148,8 +141,8 @@ async function readAssertionBody(
  * identity_pub))[0..20]` — a pure function of the presented public key. There
  * is no mapping to read: the client can (and does, via iM8) derive its own
  * MXID locally, and this endpoint is the cross-check that both sides agree on
- * the derivation plus the point at which the Synapse account is ensured to
- * exist. It mints no session, no device and no token.
+ * the derivation. MAS creates the account during native login; this probe
+ * creates no account, session, device or token in OIDC deployments.
  */
 export async function apiMatrixIdentityHandler(
   req: IncomingMessage,
@@ -175,16 +168,21 @@ export async function apiMatrixIdentityHandler(
     writeJson(res, 401, { error: 'Invalid identity proof' })
     return
   }
-  try {
-    if (!(await ctx.matrix.userExists(mxid))) {
-      await ctx.matrix.createUser(mxid)
+  if (ctx.config.matrixAllowAppServiceLogin) {
+    try {
+      if (!(await ctx.matrix.userExists(mxid)))
+        await ctx.matrix.createUser(mxid)
+    } catch (err: any) {
+      ctx.log.warn(
+        { err, mxid },
+        'Could not ensure legacy Matrix account exists',
+      )
     }
-  } catch (err: any) {
-    ctx.log.warn({ err, mxid }, 'Could not ensure Matrix account exists')
-    // The account is also ensured at verified join / session mint; report
-    // identity even if provisioning is temporarily unavailable.
   }
-  await reconcileAccess(ctx, auth.did, mxid)
+  // MAS must create a first-login account. Pre-provisioning it through the
+  // appservice makes its localpart unavailable to MAS and strands the user.
+  if (await ctx.matrix.userExists(mxid))
+    await reconcileAccess(ctx, auth.did, mxid)
   writeJson(res, 200, {
     userId: mxid,
     homeServer: ctx.config.matrixPublicHomeserverUrl,
@@ -220,6 +218,14 @@ export async function apiMatrixTokenHandler(
   )
   if (!mxid) {
     writeJson(res, 401, { error: 'Invalid identity proof' })
+    return
+  }
+
+  if (!ctx.config.matrixAllowAppServiceLogin) {
+    writeJson(res, 503, {
+      error: 'MATRIX_CLIENT_LOGIN_REQUIRED',
+      message: 'Authorize this device through the Matrix homeserver login flow',
+    })
     return
   }
 
@@ -339,7 +345,13 @@ export async function apiMatrixAttestHandler(
   const userAgent = req.headers['user-agent']?.slice(0, 200)
 
   if (!(await ctx.matrix.userExists(mxid))) {
-    await ctx.matrix.createUser(mxid)
+    writeJson(res, 409, { error: 'MATRIX_CLIENT_LOGIN_REQUIRED' })
+    return
+  }
+
+  if (!(await ctx.matrix.deviceExists(mxid, deviceId))) {
+    writeJson(res, 409, { error: 'MATRIX_DEVICE_NOT_FOUND' })
+    return
   }
 
   // Idempotent: re-attesting the same device reuses the row instead of
@@ -501,7 +513,8 @@ export async function apiPushTokenHandler(
           ctx.config.matrixServerName,
         )
       : null
-  if (mxid) {
+  // Native MAS clients register pushers using their own device token.
+  if (mxid && ctx.config.matrixAllowAppServiceLogin) {
     try {
       const tokenData = await ctx.matrix.generateUserToken(mxid)
       await ctx.matrix.setPusherWithUserToken(
@@ -640,12 +653,13 @@ export async function apiRevokeDeviceHandler(
     writeJson(res, 404, { error: 'Device session not found' })
     return
   }
-  if (session.revokedAt) {
-    writeJson(res, 200, { revoked: true, alreadyRevoked: true })
-    return
-  }
-
+  // A legacy row may record only a Synapse deletion, while MAS refresh tokens
+  // remain active. Repeating the explicit device revocation must enforce its
+  // real authority too, rather than trusting that historical flag.
   await ctx.matrix.adminDeactivateDevice(session.mxid, session.deviceId)
   await ctx.db.revokeDeviceSession(auth.did, sessionId)
-  writeJson(res, 200, { revoked: true })
+  writeJson(res, 200, {
+    revoked: true,
+    alreadyRevoked: Boolean(session.revokedAt),
+  })
 }

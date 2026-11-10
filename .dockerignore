@@ -10,9 +10,6 @@
 
 .git
 
-# services dev
-services/*/tsconfig.json
-
 # buf
 packages/bsky/src/proto
 packages/bsync/src/proto

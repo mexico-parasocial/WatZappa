@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "procedure",
-      "description": "Accepts an invitation to a draft community, adding the caller to the community's founder starter pack and tracking the quorum. The PDS proxies the listitem creation for the starter pack.",
+      "description": "Accept a creator-authorized invitation to a draft community. Native implementations sign only the caller's membership; the creator signs the founder list and final activation.",
       "input": {
         "encoding": "application/json",
         "schema": {
@@ -29,6 +29,10 @@
             },
             "memberCount": {
               "type": "integer"
+            },
+            "requiresCreatorFinalization": {
+              "type": "boolean",
+              "description": "The accepted quorum is complete and the creator must sign activation."
             }
           }
         }

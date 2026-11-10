@@ -5,6 +5,11 @@ packages:
   - 'packages/oauth/*'
   - 'packages/internal/*'
 
+# pnpm 11 reads workspace behavior here; .npmrc is registry/auth only.
+nodeLinker: hoisted
+enablePrePostScripts: true
+includeWorkspaceRoot: true
+
 allowBuilds:
   '@bufbuild/buf': true
   '@swc/core': true

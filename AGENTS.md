@@ -67,6 +67,14 @@ For working with that SDK, invoke the focused skills under [.agents/skills/](.ag
 
 ## Architecture notes
 
+- Start with [docs/README.md](docs/README.md) for documentation ownership. WatZappa
+  owns the TypeScript PDS/shared services; native Rust PDS operations belong to
+  the sibling VLPDS repository. Keep accepted identity decisions traceable.
+- [docs/LEXICONS.md](docs/LEXICONS.md) is the single generated PARA catalog.
+  After `com.para.*` schema changes, also run
+  `node scripts/generate-lexicon-reference.mjs`; `--check` verifies it.
+  Do not restore per-schema Markdown copies or duplicate VLPDS runbooks here.
+
 - Public cabildeo and policy votes require `verifyPublicBallotProof` before PDS
   preparation and AppView indexing, including foreign repositories. A policy
   ballot's `signal` is bound by its `m8:policy:v1` authorization. `PARA_CIVIC_VOTE_VERIFIER_URL`

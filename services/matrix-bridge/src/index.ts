@@ -3,16 +3,19 @@ import pino from 'pino'
 import { ChallengeStore } from './challenge.js'
 import { ChatModerationEngine } from './chat-moderation.js'
 import { loadConfig } from './config.js'
+import { ControlStore } from './control-store.js'
 import { createDatabase } from './db/index.js'
 import { EventBus } from './events/bus.js'
 import { FirehoseConsumer } from './firehose.js'
 import { HttpError } from './m8-auth.js'
 import { createMatrixProjection } from './matrix-projection.js'
 import { MatrixSyncPoller } from './matrix-sync.js'
-import { sweepExpiredMembershipLeases } from './membership-lease.js'
 import { MatrixAdminClient } from './matrix.js'
+import { sweepExpiredMembershipLeases } from './membership-lease.js'
 import { BridgeMetrics } from './metrics.js'
+import { createOpsServer, loadOpsConfig } from './ops.js'
 import { ProposalEngine } from './proposals.js'
+import { CommunityProvisioner } from './provisioning.js'
 import { RetryWorker } from './retry.js'
 import type { RouteContext } from './routes/context.js'
 import { writeJson } from './routes/http.js'
@@ -47,6 +50,15 @@ async function main() {
   const matrix = new MatrixAdminClient(config)
   const metrics = new BridgeMetrics()
   const projection = createMatrixProjection(config, db, matrix, log)
+  const controlStore = new ControlStore(config)
+  const provisioner = new CommunityProvisioner(
+    controlStore,
+    db,
+    projection,
+    log,
+    metrics,
+  )
+  const opsConfig = loadOpsConfig()
   const challenges = new ChallengeStore()
   const chatMod = new ChatModerationEngine(db, log)
   const events = new EventBus(db, log)
@@ -59,6 +71,7 @@ async function main() {
     chatMod,
     metrics,
     log,
+    provisioner,
   )
   firehose.setEventBus(events)
   proposals.setEventBus(events)
@@ -118,7 +131,16 @@ async function main() {
     log.info({ port: config.port }, 'Bridge server listening')
   })
 
+  const opsServer = opsConfig
+    ? createOpsServer(opsConfig, ctx, controlStore, provisioner)
+    : undefined
+  if (opsConfig)
+    opsServer!.listen(opsConfig.port, opsConfig.host, () =>
+      log.info({ port: opsConfig.port }, 'Private chat operations listening'),
+    )
+
   // Start workers
+  provisioner.start()
   retryWorker.start()
   syncPoller.start()
   await firehose.start()
@@ -177,6 +199,8 @@ async function main() {
   // Graceful shutdown
   const shutdown = async (signal: string) => {
     log.info({ signal }, 'Shutting down...')
+    provisioner.stop()
+    opsServer?.close()
     retryWorker.stop()
     syncPoller.stop()
     await firehose.stop()
@@ -185,6 +209,7 @@ async function main() {
     clearInterval(eventPruneCron)
     clearInterval(leaseSweepCron)
     server.close()
+    await controlStore.close()
     await db.close()
     process.exit(0)
   }

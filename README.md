@@ -1,6 +1,6 @@
 # WatZappa
 
-WatZappa is the backend for PARA social app, it's an AT Protocol fork. This repository includes the PDS, AppView, sync, moderation, and Matrix bridge components needed to run the service stack.
+WatZappa is the TypeScript backend for PARA, built as an AT Protocol fork. It contains the TypeScript PDS plus the AppView, sync, moderation, Matrix bridge and IdP services. Those shared services also run with the native Rust PDS in the sibling VLPDS repository.
 
 ## Repository Structure
 
@@ -50,7 +50,11 @@ pnpm codegen
 
 ## Deployment
 
-Production deployment files live under `deploy/` and the Docker Compose manifests at the repository root. Environment-specific secrets should be supplied outside git through `.env` files or the deployment platform's secret manager.
+The TypeScript deployment track uses `deploy/`, `ansible/` and the root Docker Compose manifests. The Rust PDS platform is operated from the sibling `vlpds/para` directory; see [VLPDS integration](docs/VLPDS.md). Environment-specific secrets should be supplied outside git through `.env` files or the deployment platform's secret manager.
+
+## Documentation
+
+Start with the [documentation index](docs/README.md) for implementation scope and the current guides. The [delivery roadmap](docs/QUARTER_PLAN_2026Q4.md) owns release gates; the [lexicon catalog](docs/LEXICONS.md) links every shared PARA contract to its canonical JSON. Native Rust operations and migration procedures are maintained in the VLPDS repository rather than duplicated here.
 
 ## Security
 

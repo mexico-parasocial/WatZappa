@@ -22012,6 +22012,12 @@ export const schemaDict = {
           schema: {
             type: 'object',
             properties: {
+              authFactorMode: {
+                type: 'string',
+                knownValues: ['wallet-v1'],
+                description:
+                  'Independent wallet challenge protocol, when supported, including before enrollment.',
+              },
               authFactorType: {
                 type: 'string',
                 knownValues: ['im8'],
@@ -22037,6 +22043,18 @@ export const schemaDict = {
           schema: {
             type: 'object',
             properties: {
+              password: {
+                type: 'string',
+                maxLength: 256,
+                description:
+                  'Fresh account-password confirmation, required by native wallet-factor implementations. Never an app password.',
+              },
+              authFactorToken: {
+                type: 'string',
+                maxLength: 4096,
+                description:
+                  'Purpose-bound wallet approval for enrollment or removal, required by native wallet-factor implementations.',
+              },
               authFactorType: {
                 type: 'string',
                 knownValues: ['im8'],
@@ -22051,6 +22069,12 @@ export const schemaDict = {
           schema: {
             type: 'object',
             properties: {
+              authFactorMode: {
+                type: 'string',
+                knownValues: ['wallet-v1'],
+                description:
+                  'Independent wallet challenge protocol, when supported.',
+              },
               authFactorType: {
                 type: 'string',
                 knownValues: ['im8'],
@@ -25014,7 +25038,7 @@ export const schemaDict = {
       main: {
         type: 'procedure',
         description:
-          "Accepts an invitation to a draft community, adding the caller to the community's founder starter pack and tracking the quorum. The PDS proxies the listitem creation for the starter pack.",
+          "Accept a creator-authorized invitation to a draft community. Native implementations sign only the caller's membership; the creator signs the founder list and final activation.",
         input: {
           encoding: 'application/json',
           schema: {
@@ -25039,6 +25063,11 @@ export const schemaDict = {
               },
               memberCount: {
                 type: 'integer',
+              },
+              requiresCreatorFinalization: {
+                type: 'boolean',
+                description:
+                  'The accepted quorum is complete and the creator must sign activation.',
               },
             },
           },

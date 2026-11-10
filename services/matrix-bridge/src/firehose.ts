@@ -10,6 +10,7 @@ import type { EventBus } from './events/bus.js'
 import type { MatrixProjectionPort } from './matrix-projection.js'
 import type { BridgeMetrics } from './metrics.js'
 import type { ProposalEngine } from './proposals.js'
+import type { CommunityProvisioner } from './provisioning.js'
 import { assignChamberBalanced, assignChamberVerifiable } from './sortition.js'
 
 const CURSOR_SAVE_INTERVAL_MS = 30000
@@ -29,6 +30,24 @@ export class FirehoseConsumer {
   private proposals: ProposalEngine
   private chatMod: ChatModerationEngine
   private log: Logger
+  private lastEventTime: string | undefined
+  private lastReceivedAt: string | undefined
+  ingestionStatus() {
+    return {
+      lastEventTime: this.lastEventTime ?? null,
+      lastReceivedAt: this.lastReceivedAt ?? null,
+      lastEventLagSeconds:
+        this.lastEventTime && this.lastReceivedAt
+          ? Math.max(
+              0,
+              (Date.parse(this.lastReceivedAt) -
+                Date.parse(this.lastEventTime)) /
+                1000,
+            )
+          : null,
+    }
+  }
+
   private lastSeq: number | undefined
   private initialCursor: number | undefined
   private pdsSourceId: string | undefined
@@ -44,6 +63,7 @@ export class FirehoseConsumer {
     chatMod: ChatModerationEngine,
     metrics: BridgeMetrics,
     log: Logger,
+    private provisioner: CommunityProvisioner,
   ) {
     this.db = db
     this.projection = projection
@@ -147,6 +167,8 @@ export class FirehoseConsumer {
       this.lastSeq = evt.seq
     }
 
+    this.lastEventTime = evt.time
+    this.lastReceivedAt = new Date().toISOString()
     const lag = Date.now() - new Date(evt.time).getTime()
     this.metrics.firehoseLag.set(lag / 1000)
 
@@ -208,83 +230,14 @@ export class FirehoseConsumer {
     const name = (record.name ?? 'Unnamed Community') as string
     const chamberMode = (record.chamberMode ?? 'unicameral') as string
 
-    const existing = await this.db.getSpaceForCommunity(communityUri)
-    if (existing) {
-      this.log.debug({ communityUri }, 'Community space already exists')
-      return
-    }
-
-    const end = this.metrics.syncLatency.startTimer({
-      event_type: 'create_space',
-    })
-    try {
-      const provisioned = await this.projection.createCommunitySpace({
-        name,
-        slug,
-        chamberMode,
-      })
-      await this.db.setSpaceForCommunity(
-        communityUri,
-        provisioned.spaceId,
-        slug,
-        chamberMode,
-      )
-      if (chamberMode === 'bicameral') {
-        await this.db.setChamberRooms(
-          communityUri,
-          provisioned.chamberA_RoomId,
-          provisioned.chamberB_RoomId,
-          provisioned.observerRoomId,
-        )
-      }
-      this.metrics.spacesCreatedTotal.inc({ status: 'success' })
-      this.log.info(
-        { communityUri, spaceId: provisioned.spaceId, name, chamberMode },
-        'Created Matrix space for community',
-      )
-      if (chamberMode === 'bicameral') {
-        this.log.info(
-          {
-            communityUri,
-            chamberA: provisioned.chamberA_RoomId,
-            chamberB: provisioned.chamberB_RoomId,
-            observerRoom: provisioned.observerRoomId,
-          },
-          'Created bicameral chamber rooms',
-        )
-      }
-
-      // Post-CD-M1 the creator is not pushed into anything: membership is
-      // recorded here (governance) and the owner joins by presenting a
-      // verified proof of possession (CD-M6 verified join), like every other
-      // member.
+    // Persist governance independently of network provisioning, so a homeserver
+    // outage cannot lose the creator's membership or the room job.
+    if (!(await this.db.getCommunityMembership(creatorDid, communityUri))) {
       await this.db.setCommunityMembership(creatorDid, communityUri, 'active', [
         'owner',
       ])
-      await this.db.logSync(
-        'create_space',
-        communityUri,
-        creatorDid,
-        provisioned.spaceId,
-        true,
-      )
-    } catch (err: any) {
-      this.metrics.spacesCreatedTotal.inc({ status: 'failure' })
-      this.log.error(
-        { err, communityUri },
-        'Failed to create Matrix space for community',
-      )
-      await this.db.logSync(
-        'create_space',
-        communityUri,
-        creatorDid,
-        null,
-        false,
-        err.message,
-      )
-    } finally {
-      end()
     }
+    await this.provisioner.enqueue({ communityUri, name, slug, chamberMode })
   }
 
   private async handleMembershipChange(

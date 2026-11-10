@@ -132,7 +132,7 @@ services:
       - ./deploy/matrix/mas/para-idp.env
     environment:
       PORT: 8090
-      PARA_IDP_APP_SCHEME: ${PARA_APP_SCHEME:-para}
+      PARA_IDP_APP_SCHEME: ${PARA_APP_SCHEME:-social.para.app}
       PARA_IDP_LOG_LEVEL: ${BRIDGE_LOG_LEVEL:-info}
     ports:
       - '127.0.0.1:8090:8090'
@@ -160,6 +160,8 @@ services:
       - ./deploy/matrix/mas:/config
     ports:
       - '127.0.0.1:8080:8080'
+      # Private admin API for a host-run bridge; never publish this listener.
+      - '127.0.0.1:8081:8081'
     healthcheck:
       # The image is distroless: no shell/curl/wget, so the HTTP listener
       # cannot be probed from inside. mas-cli --version proves the binary and

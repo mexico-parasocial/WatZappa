@@ -96,14 +96,14 @@ export class MatrixEventsArea extends ConsentPrefsArea {
     )
 
     if (!marker?.last_read_event_id) {
-      const row = await this.queryOne<{ count: number }>(
+      const row = await this.queryOne<{ count: string }>(
         "SELECT COUNT(*) as count FROM matrix_events WHERE room_id = $1 AND origin_server_ts > $2 AND type IN ('m.room.message', 'm.room.encrypted')",
         [roomId, Date.now() - 7 * 24 * 60 * 60 * 1000],
       )
-      return Math.min(row?.count ?? 0, 99)
+      return Math.min(this.safeInteger(row?.count ?? 0), 99)
     }
 
-    const row = await this.queryOne<{ count: number }>(
+    const row = await this.queryOne<{ count: string }>(
       `SELECT COUNT(*) as count FROM matrix_events me
         WHERE me.room_id = $1 AND me.type IN ('m.room.message', 'm.room.encrypted')
         AND me.origin_server_ts > (
@@ -111,7 +111,7 @@ export class MatrixEventsArea extends ConsentPrefsArea {
         )`,
       [roomId, marker.last_read_event_id],
     )
-    return row?.count ?? 0
+    return this.safeInteger(row?.count ?? 0)
   }
 
   async getUnreadCountsForDid(
