@@ -1,13 +1,19 @@
 # OD-7 — May the ballot identity sign its own registration?
 
-Two specs disagree, an implementation picked a side without recording that it
-was choosing, and the identity work is blocked behind the disagreement. This
-document states both readings and what each costs. It does not decide.
+**Scope: shared identity and ballot policy for both PDS variants.**
+Reviewed 2026-10-14. Accepted decision: **Reading A**, the ballot identity never
+signs. Public cabildeo and policy ballots are allowed with content-bound M8
+authorization; frozen legacy collections and QV read APIs remain closed.
+Current enforcement and the synthetic/private-election backlog are summarized
+in [GOVERNANCE.md](GOVERNANCE.md).
 
-**Status:** decided — **Reading A**. The ballot identity never signs. §5 is
-answered in §5a from the vote path, and the answer imposes a hard requirement
-on the vote proof that does not exist today. Still blocks the
-`anonymous_identities` linkage fix (§6) until §5a lands.
+The sections below retain the decision sequence and rationale. Statements about
+code or data in early entries are dated design/inspection history; later
+entries supersede them. They are not proof of current deployment or of anonymous
+voting. The accepted pseudonymous public-voting scope (§5g and the §5d extension)
+differs from the future private protocol discussed in §5a/§5b. Native Rust import
+review now has a separate implementation; the TypeScript import gap is still
+listed explicitly below.
 
 ---
 
@@ -19,8 +25,9 @@ on the vote proof that does not exist today. Still blocks the
 > signature over the registration challenge with `identity_priv_i` (proof of
 > possession).
 
-`OD-2-PROOF-OF-POSSESSION.md` §6.5, listed as *"the single most important review
-point"*:
+The accepted Matrix/identity boundary, retained in
+[MATRIX_V2.md](MATRIX_V2.md#cd-m4--proof-of-possession-is-sr25519-with-the-scalar-injected)
+and this decision:
 
 > **The ballot identity must never sign.** `getMatrixIdentity` already refuses to
 > return anything signable for `civic`; the signing API must inherit the same
@@ -56,8 +63,8 @@ Three details make this worth reading closely rather than accepting:
 2. **The refusal is enforced by a Matrix allowlist.** `isMatrixIdentityLabel` is
    named, defined, and documented in terms of Matrix accounts.
 3. **The error says so out loud.** A caller refused while signing a mubEZ
-   registration challenge is told: *"identity `civic` must not have a Matrix
-   account: only public and anonymous may authenticate to Matrix."* That message
+   registration challenge is told: _"identity `civic` must not have a Matrix
+   account: only public and anonymous may authenticate to Matrix."_ That message
    is true and irrelevant, which is the signature of a rule applied outside the
    scope it was written for.
 
@@ -66,8 +73,8 @@ rather than made.
 
 ## 3. Reading A — the prohibition is total
 
-*The ballot identity never signs anything. `IDENTITY_DERIVATION.md`'s "each
-identity" is overbroad and should be narrowed to exclude `civic`.*
+_The ballot identity never signs anything. `IDENTITY_DERIVATION.md`'s "each
+identity" is overbroad and should be narrowed to exclude `civic`._
 
 **What follows.** The ballot identity either registers with no proof of
 possession, or does not register at all.
@@ -75,7 +82,7 @@ possession, or does not register at all.
 If it registers without proof, the server accepts a public key from whoever
 sends it. Anyone who learns `identity_pub_civic` can register it first, and the
 server cannot tell the holder from a bystander. Whether that matters depends
-entirely on what registration is *for* — see §5.
+entirely on what registration is _for_ — see §5.
 
 If it does not register, then a ballot is authorised by something else
 end-to-end: the eligibility proof and nullifier already present on
@@ -89,7 +96,7 @@ something linkable. There is no purpose-confusion surface, no allowlist to get
 wrong, no future endpoint that quietly accepts a ballot-key signature. The
 boundary is structural rather than conditional, and conditional boundaries are
 the ones that fail. This is also the Monero-shaped instinct the whole derivation
-scheme is borrowed from: capability is separated by what a key *can do*, not by
+scheme is borrowed from: capability is separated by what a key _can do_, not by
 what callers remember to check.
 
 **The cost.** The registration contract in `IDENTITY_DERIVATION.md` has to be
@@ -98,8 +105,8 @@ registers without proof" is a hole, not a decision.
 
 ## 4. Reading B — the prohibition is Matrix-scoped
 
-*`civic` may sign a `mubez-registration` challenge and must never sign a
-`matrix-login` one. The allowlist becomes purpose-aware.*
+_`civic` may sign a `mubez-registration` challenge and must never sign a
+`matrix-login` one. The allowlist becomes purpose-aware._
 
 **What follows.** `signIdentityChallenge` takes the purpose into account:
 `matrix-login` keeps the `['public', 'anonymous']` allowlist; `mubez-registration`
@@ -112,7 +119,7 @@ admits all three. The registration contract holds exactly as written.
 
 Under the current implementation the scheme serves both for two identities and
 neither for the third. §6.5's justification is also Matrix-shaped — its worry is
-that the signing API sits *below* `getMatrixIdentity` and could bypass the Matrix
+that the signing API sits _below_ `getMatrixIdentity` and could bypass the Matrix
 boundary. A purpose-aware allowlist that still refuses `matrix-login` for `civic`
 satisfies that worry exactly.
 
@@ -127,7 +134,7 @@ risk Reading B introduces is bounded by a mitigation the scheme was already
 designed to carry.
 
 **The cost.** The boundary stops being "this key cannot sign" and becomes "this
-key cannot sign *for that purpose*". That is a weaker invariant, held by a
+key cannot sign _for that purpose_". That is a weaker invariant, held by a
 conditional that a future purpose could get wrong — a third `SigPurpose` added
 without thinking about `civic` inherits the permissive branch unless the
 allowlist is written as an explicit per-purpose map with no default.
@@ -141,7 +148,7 @@ registration does any work for `civic`. That depends on a fact neither document
 states:
 
 - If a ballot is authorised solely by an eligibility proof and a nullifier, then
-  the server never needs to know that anyone *holds* `identity_priv_civic`. The
+  the server never needs to know that anyone _holds_ `identity_priv_civic`. The
   signature secures nothing, and Reading A is right by default — unnecessary
   signing is pure downside.
 - If the server ever gates anything on "this ballot key is registered and its
@@ -160,9 +167,10 @@ Answering §5 from the vote path settles it: nothing in the vote flow gates on
 "the holder of this ballot key proved possession". A signature at registration
 would secure nothing, so under §5's own test Reading A wins by default.
 
-**What the vote path actually does today.** One person, one vote *is* enforced,
-and it is worth being exact about how, because the mechanism is not the one the
-lexicon description implies:
+**Initial vote-path inspection.** The issuance table enforced uniqueness for
+a stored person/subject pair. That alone did not prove one-person uniqueness
+across sessions; the later person-root correction is recorded in §7. The
+mechanism inspected was:
 
 ```ts
 computeVoteNullifier(personId, subjectType, subjectUri)
@@ -171,9 +179,9 @@ computeVoteNullifier(personId, subjectType, subjectUri)
 
 The nullifier is anchored to a stable `person.id`, and
 `UNIQUE (person_id, subject_type, subject_uri)` makes a second vote on the same
-subject return the first nullifier instead of minting a new one. That is a
-genuine one-person-one-vote guarantee, and it is the property this whole
-three-identity scheme exists to protect.
+subject return the first nullifier instead of minting a new one. This describes issuance-row deduplication. Database constraints, person-root
+anchoring, authorized content and downstream replacement all require their own
+checks before claiming one-person-one-vote for the deployed system.
 
 It is not, however, private. The nullifier is computed **by the server, from an
 identifier the server already holds**, and `civic_vote_nullifiers` stores
@@ -200,21 +208,25 @@ uniqueness.
 
 So registration's job is **binding exactly one ballot identity per credential**.
 And - this is what keeps Reading A intact - that binding does not require the
-ballot key to sign. It requires a proof that *this ballot public key was derived
+ballot key to sign. It requires a proof that _this ballot public key was derived
 from a seed held by the holder of credential C, and no other ballot key is bound
-to C*. A zero-knowledge binding proof discharges that; a signature is merely one
+to C_. A zero-knowledge binding proof discharges that; a signature is merely one
 way to do it, and the more linkable one. Reading A survives its own critical
 requirement.
 
-**But the vote path as built cannot carry Reading A**, and the reason is
-intensity. `M8CivicVoteProof` commits to:
+**The initial vote format could not carry the proposed private protocol**,
+because it did not bind hidden intensity. This is the historical motivation for
+the requirements below; public policy ballots now bind their visible signal
+under the separately accepted §5d extension. `M8CivicVoteProof` commits to:
 
 ```ts
-{ subjectUri, subjectType, aliasDid, voteNullifier, eligibilityProofRef }
+{
+  ;(subjectUri, subjectType, aliasDid, voteNullifier, eligibilityProofRef)
+}
 ```
 
-It binds *that* an eligible person voted on a subject. It binds nothing about
-*how*. `issueParaVoteProof` is called with `{subjectUri, subjectType}` only - the
+It binds _that_ an eligible person voted on a subject. It binds nothing about
+_how_. `issueParaVoteProof` is called with `{subjectUri, subjectType}` only - the
 signal is never an input.
 
 With a signature, content integrity comes free: the signed bytes cover the
@@ -254,7 +266,7 @@ subject. Three ways out, in preference order:
   here**, which is worth stating because it looks like it should not be: the
   ballot identity is deliberately stable across an election, since that is what
   makes one-person-one-vote enforceable. Accumulating spend against it therefore
-  reveals nothing that the nullifier set does not already reveal - *provided*
+  reveals nothing that the nullifier set does not already reveal - _provided_
   the ballot identity is unlinked from the account, which is exactly what §6
   is about.
 
@@ -275,14 +287,14 @@ carries `isDirect` and `delegatedFrom`; `com.para.community.intensity` adds
 Once weight can move between people, a vote stops behaving like a signed
 statement and starts behaving like a coin:
 
-| Monero | PARA ballot |
-|---|---|
-| key image | vote nullifier - stops the same weight being spent twice |
-| ring signature (CLSAG) | hides *which* delegation a delegate is exercising |
-| stealth address | delegator and delegate unlinkable to observers |
-| Pedersen commitment + range proof | hides intensity while proving -3..+3 |
-| balance proof (Σ in = Σ out) | delegated weight neither created nor destroyed |
-| fungibility | every unit of weight indistinguishable from every other |
+| Monero                            | PARA ballot                                              |
+| --------------------------------- | -------------------------------------------------------- |
+| key image                         | vote nullifier - stops the same weight being spent twice |
+| ring signature (CLSAG)            | hides _which_ delegation a delegate is exercising        |
+| stealth address                   | delegator and delegate unlinkable to observers           |
+| Pedersen commitment + range proof | hides intensity while proving -3..+3                     |
+| balance proof (Σ in = Σ out)      | delegated weight neither created nor destroyed           |
+| fungibility                       | every unit of weight indistinguishable from every other  |
 
 This is not an analogy reached for after the fact. **CD-2 already committed to
 it**, and gave it as the reason for the curve:
@@ -321,7 +333,7 @@ single-ballot privacy problem:
   `effectiveWeight` is the correct sum of the commitments they hold, without
   revealing which they are or what each contains.
 - **Quadratic voting is the hard case, and should be scheduled as such.** Cost is
-  `signal²`. Under commitments that is a *multiplication* constraint, not a
+  `signal²`. Under commitments that is a _multiplication_ constraint, not a
   range constraint - materially harder than the rest, and it interacts with
   delegation because the budget spans an election while each nullifier covers
   one subject (§5a.3). If something has to ship in stages, this is the piece to
@@ -329,9 +341,9 @@ single-ballot privacy problem:
   before a quadratic one.
 
 **Honest scope.** CLSAG, one-time addressing, range proofs and a multiplication
-proof is a large amount of cryptographic engineering, and OD-2 §6.1 already
-records that we own transpositions of this kind even where we do not own the
-design. Nothing above argues for building it all before anything ships. It
+proof is a large amount of cryptographic engineering, and the Matrix CD-M4 decision records why a novel signature transposition was
+rejected. A private protocol still needs independent review of its complete
+construction, even when it uses existing cryptographic primitives. Nothing above argues for building it all before anything ships. It
 argues that the ballot format must not be frozen in a shape that forecloses it -
 and publishing `signal` as a public input would do exactly that, which is why
 §5a.1 has been corrected.
@@ -372,13 +384,16 @@ rename cannot silently thaw one.
    set only by `scripts/sequencer-recovery`, which re-emits commits that were
    already made. Dropping one there would diverge the recovered repo from its
    commit. The flag is not reachable over XRPC.
-3. **`com.atproto.repo.importRepo`.** The imported CAR _is_ the MST, so a frozen
-   record inside it is already part of the repo being imported; refusing at the
-   record level would not remove it, and refusing the whole import would make an
-   account holding a pre-freeze ballot permanently unmigratable. This is a
-   known hole: a crafted CAR can place a new frozen record in a repo. Closing it
-   means deciding what import should do with pre-freeze history, which is a
-   separate decision from this one.
+3. **`com.atproto.repo.importRepo` differs by PDS.** The TypeScript handler
+   applies incoming CAR history without the before-write ballot-policy gate;
+   imports can therefore retain old frozen records or introduce crafted ones.
+   It still needs a reviewed historical-import policy. In the native PARA Rust
+   fork, unreviewed imports are refused. Operator review pins the CAR hash,
+   original signing key, source commit and target head; historical exceptions
+   name exact record CIDs and do not reopen writes. See
+   [VLPDS imports](VLPDS.md#native-writes-and-release-status) and the owning
+   [native guide](../../vlpds/para/docs/NATIVE-PARA-WRITES.md#migration-and-client-compatibility).
+   Raw CARs do not migrate private authentication, alpha or Matrix obligations.
 4. **The Matrix bridge's own vote store.** `services/matrix-bridge` subscribes
    to `com.para.community.vote` on the firehose and writes `(proposalUri,
 voterDid, choice)` rows through `ProposalService.onVoteCast`, in the service
@@ -399,7 +414,7 @@ voterDid, choice)` rows through `ProposalService.onVoteCast`, in the service
    rewritable by `putRecord` on the same terms. **Decided 2026-09-20: for a
    cabildeo vote, that is accepted.** See §5d.
 
-## 5d. Decision: cabildeo ballots are public, and only cabildeo ballots
+## 5d. Decision: cabildeo and policy ballots are public
 
 **Decided 2026-09-20.** A cabildeo ballot may stay public and attributable. The
 subject is a named local assembly with a fixed option list, the ballot is closer
@@ -521,7 +536,7 @@ built and then taken back out: **a position on an argument is for or against,
 with no magnitude, so nobody can press harder on an argument than anybody else.**
 
 The reversal is worth recording rather than quietly undoing, because the
-reasoning that argued *for* weighting was sound as far as it went — it stayed
+reasoning that argued _for_ weighting was sound as far as it went — it stayed
 inside the freeze, published nothing extra, and gave the control a home. What it
 did not weigh is that intensity in a debate is not the same instrument as
 intensity in a ballot: on a ballot a quadratic price rations it, while on an
@@ -555,10 +570,10 @@ match the repo it arrived from, since a remote repository may name anyone.
 `ProposalDetailScreen`'s deliberation tab now reads that query instead of
 `MOCK_DELIBERATIONS`, and its three pills write through it.
 
-**So the -3..+3 control still has nowhere to write.** Both ballot lexicons are
-frozen, `com.para.civic.vote` refuses `signal`, and deliberation is unweighted
-by the decision above. `VotingButton` remains wired into the feed and RAQ, where
-neither call site persists what it produces. That is the state, not a plan.
+**State at this entry's date:** the legacy ballot lexicons were frozen and
+deliberation was unweighted. The later 2026-09-29 decision in §5d permits a
+public policy signal with M8 authorization; it does not reopen QV. Verify the
+paired client write flow before declaring UI adoption complete.
 
 ## 5g. Decision: the civic identity is pseudonymous, and m8 holds no legal identity
 
@@ -629,8 +644,7 @@ rotate. Nothing to do; recorded because this decision rests on it.
 
 The intent behind "the civic identity should be anonymous by default" is granted
 in full, but not by collapsing the two derived keys into one.
-`OD-2-PROOF-OF-POSSESSION.md` §6.5 calls *"the ballot identity must never sign"*
-the single most important review point, and `isMatrixIdentityLabel` enforces it
+The accepted Reading A (§5a) states that the ballot identity never signs, and `isMatrixIdentityLabel` enforces it
 by allowing only `public` and `anonymous`. Merging would make the key that votes
 the same key that authenticates to Matrix, and the chat server would then hold
 it. That is a different leak, to a different party, and it is one the layer
@@ -664,8 +678,8 @@ right trade for a pilot.
 
 **It also softens §5d.** A cabildeo ballot being "public and attributable" means
 attributable to the civic pseudonym, not to a legal name. The notice the client
-shows before casting already says *your public identity* rather than *your
-name*; once this lands, that wording should be checked again deliberately rather
+shows before casting already says _your public identity_ rather than _your
+name_; once this lands, that wording should be checked again deliberately rather
 than by luck.
 
 **Recorded as a decision in mubEZ.** This section states the reasoning; the
@@ -684,8 +698,8 @@ is stated once and every ballot-shaped record goes into exactly one box:
 1. **It publishes a magnitude or the delegation graph: frozen.** This is the
    §5b/§5c rule, unchanged. Refused on write and on index.
 2. **Its count decides something: redemption required.** A valid m8
-   authorization, checked fail-closed on write and on index. Only the cabildeo
-   ballot (§5d) is here today.
+   authorization, checked fail-closed on write and on index. Cabildeo and, after the
+   2026-09-29 extension, policy ballots (§5d) are in this class.
 3. **Its count decides nothing: a public reaction, per account, with no m8
    proof.** Asking m8 for a nullifier makes the issuer store a durable
    `(person, subject)` row. For a vote that passes, promotes or ranks nothing,
@@ -749,9 +763,9 @@ session_id TEXT NOT NULL,
 FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE
 ```
 
-`IDENTITY_DERIVATION.md` forbids exactly this, naming the case: *"No table may
+`IDENTITY_DERIVATION.md` forbids exactly this, naming the case: _"No table may
 relate two identity public keys, or an identity key to a seed, view key, or
-another identity's session."* Removing it means replacing session scoping with
+another identity's session."_ Removing it means replacing session scoping with
 per-request proof of possession — 28 call sites in
 `mubEZ/app/controllers/anonymous_controller.ts`.
 
@@ -813,8 +827,10 @@ participates in it. Hence: this decision first.
 - [ ] The civic identity given the pseudonymous profile, without merging its key
       into `anonymous` (§5g.2).
 - [ ] Rule chosen for which profile attributes may be shown together (§5g.3).
-- [ ] `com.atproto.repo.importRepo` decided: what an import should do with a
-      frozen record in incoming history (§5c.3).
+- [ ] TypeScript `com.atproto.repo.importRepo`: decide and implement review of
+      frozen incoming history (§5c.3). Native VLPDS has an implemented reviewed
+      path with exact historical CID exceptions; live migration acceptance remains
+      open in its own guide.
 - [ ] `IDENTITY_DERIVATION.md` registration contract rewritten: the ballot
       identity registers **without** proof of possession, and the ballot proof -
       not a signature - is what authorises a vote.

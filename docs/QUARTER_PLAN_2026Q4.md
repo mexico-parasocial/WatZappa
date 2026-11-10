@@ -1,106 +1,99 @@
-# Quarter Plan — Pilot Community Launch (Sep 1 – Nov 27, 2026)
+# Delivery roadmap and release gates
 
-Consolidated plan for the next quarter across WatZappa (backend) and PARA
-(app), scoped to one protected outcome. The backend critical path is defined
-in detail in [MATRIX_V2_QUARTER_PLAN.md](./MATRIX_V2_QUARTER_PLAN.md); this
-document adopts it as the backbone and integrates the PARA work that the
-pilot depends on. Capacity: solo 1 FTE, serial critical path.
+**Scope: the shared PARA platform and its clients, with explicit PDS variants.**
+Re-baselined against the local checkouts on **2026-10-14**. This is the canonical
+pilot queue; the filename remains stable for existing links. The September
+sprint calendars and competing Matrix/frontend schedules are superseded.
+Implementation, directed tests and production acceptance are separate states.
 
-## North star
+The outcome remains one community using real civic data, governed chat access
+and moderation, with accurate encryption/privacy disclosure and a demonstrated
+recovery path. Assume one engineer and a serial critical path. Keep the first
+pilot to one community until authorization/revocation is proven in the deployed
+configuration. Do not infer dates or capacity from closed implementation work.
 
-**One real community running the full civic loop end-to-end**: hardened chat
-with derived-MXID login, real governance data (no mocks), moderation that
-works. Single community (R10). Explicitly *not* app-store polish.
+## What is implemented, and what remains
 
-## Sprints
+| Area                      | Groundwork in the checkouts                                                                                                      | Required next evidence                                                                                                                                             |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Matrix identity and joins | CD-M1/CD-M4/CD-M6, bridge authorization, IdP/MAS and proof-bearing client helpers exist.                                         | Full approved login → actual MAS-device attestation → room join → role change/removal, on supported clients.                                                       |
+| PARA chat                 | Native encrypted-chat adapter/OIDC/recovery code now exists in the current client; web has its own OIDC path.                    | Multi-device verification/recovery, encrypted web policy, unread/reconnect and moderation acceptance. The old claim that the native feature is absent is obsolete. |
+| M8 client login           | Explicit DID-bound login candidate and broker handoff are documented in the client.                                              | Paired broker migration/configuration and real-provider/staging acceptance; see [M8 login](../../PARA/docs/M8_LOGIN.md).                                           |
+| Governance                | Public ballot verification, frozen legacy ballots/read APIs and a synthetic G1 engine.                                           | Remaining G1 product rules/UI evidence, then atomic synthetic G2; private voting has separate protocol/publication gates.                                          |
+| Native VLPDS writes       | Founder invitations/finalization, independent iM8 factors, alpha quotas/invites and reviewed public/private imports implemented. | Client adoption, physical-wallet/protocol review, real AppView/Matrix/M8 behavior and recovery/cutover rehearsal. Existing-user migration remains NO-GO.           |
+| VLPDS firehose            | Patched, pinned rsky relay replaces Indigo and adapts exact 64-bit sequences.                                                    | Coherent relay/database restore and reviewed checkpoint/source migration for a real deployment.                                                                    |
+| Operations                | Compose/Ansible, diagnostics and backup tooling exist.                                                                           | Verify the running topology, complete backup coverage, monitoring/alerts, TLS and restore/rollback. Tool availability is not deployment evidence.                  |
 
-### S1 (Sep 1–12) — Production prerequisites + decisions
-- Stand up monitoring: nothing scrapes the bridge's Prometheus metrics and
-  Synapse metrics are disabled today.
-- Media decision #6: SeaweedFS with encryption, or amend the doc.
-- TLS / .well-known verification pass.
-- Draft **OD-3** (LLM policy) and **OD-4** (identity label mapping) as
-  founding-community ballot proposals — these are decided democratically by
-  the community, not unilaterally. S1 produces the proposal texts (disclosure
-  wording, retention/training commitment, self-hosted-model question; the
-  `civic`/`anonymous` mapping); the votes run in S6 once the pilot community
-  exists. Until each vote closes, the coded fail-safes stand: no
-  `OPENAI_API_KEY`, default identity mapping.
-- PARA hygiene: restore the missing `lint-rules/` directory (the pre-commit
-  gate is broken on every commit) and replace the hardcoded PDS LAN IP in
-  `src/lib/constants.ts` with env config.
-- Upstream sync (≤1 day, per R5): 20-commit backlog; prioritize #5076/#5083
-  (ozone moderation queues — prerequisite work for ModerationInbox in S5).
+Architecture and security detail belong in [Matrix](MATRIX_V2.md),
+[governance](GOVERNANCE.md), [personal civic data](PERSONAL_CIVIC_TREE.md) and
+[VLPDS](VLPDS.md). The detailed client rollout and its device ledger stay in
+[PARA's Matrix plan](../../PARA/docs/MATRIX-COMMUNITY-CHAT-IMPLEMENTATION.md) and
+[device acceptance record](../../PARA/docs/MATRIX-CHAT-DEVICE-ACCEPTANCE-2026-09-26.md).
 
-### S2 (Sep 15–26) — Hardened v1 cutover + Gate D
-- Production cutover of the hardened Synapse stack (stage 1).
-- **Gate D** (merge blocker): in-app "messages are not end-to-end encrypted"
-  disclosure in PARA chat.
-- PARA: make the matrix-js-sdk WebView bundle regeneration a documented,
-  repeatable pipeline (today it is a hand-committed artifact with a staleness
-  warning).
-- Release train: consume the ~20 pending changesets and cut package releases.
+## Active execution queue
 
-### S3 (Sep 29–Oct 10) — MAS staging + real M8 auth
-- MAS on staging with MSC3861 enabled (the flag exists, currently `false`).
-- Continue `para-idp`.
-- PARA: complete the M8 OAuth grant flow — today only the dev-bootstrap path
-  issues tokens; every identity feature fails without a real grant.
-- Test debt #1: QVL/QVLD regression suite (voting correctness is
-  pilot-critical and currently untested).
+1. **Choose and identify the target configuration.** Record source revisions,
+   image digests, PDS variant and real public URLs. Existing users stay on the
+   TypeScript PDS until the Rust migration gates below pass. Rust staging must
+   use the native PARA image, compatible nodes and the pinned rsky patch.
+2. **Complete authentication and client acceptance.** Exercise M8 login and
+   Matrix IdP return, attest the actual MAS device, approve wallet proofs on a
+   device and complete creator-authorized founder flows. Never substitute an
+   install UUID for a MAS device or an M8 session token for a native PDS wallet
+   approval. Keep those two authentication protocols distinct.
+3. **Complete Matrix lifecycle and recovery.** Prove current member/moderator
+   entitlements, demotion/removal, replay/reconnect, unread state, cross-device
+   decryption and wrong/lost-key handling. Check the supported web experience
+   before enabling encryption for shared rooms. Retest the dated acceptance
+   blockers rather than assuming the old process/fixture still exists.
+4. **Rehearse operations and migration.** Restore an isolated copy of the real
+   topology; validate data and consumer checkpoints, not just health endpoints.
+   Use the matching PDS runbook. For Rust, separately migrate private alpha,
+   authentication/identity and Matrix obligations after reviewing the public CAR.
+5. **Issue a scoped pilot release decision.** Record full builds, service/device
+   evidence, runtime limits, rollback and remaining exclusions. Keep private
+   elections closed; public reactions and ballots must disclose attribution.
 
-### S4 (Oct 13–24) — OD-6 join seam
-- Design and implement **OD-6** (unblocked by the OD-2 closure): capability
-  token vs Synapse module vs MAS-mediated joins — the last open structural
-  decision in Matrix v2.
-- Delete `user_matrix_map`; set `password_config.enabled: false`; identity
-  boundary CI green.
-- PARA: chat integration QA against staging MAS; make unread polling degrade
-  visibly instead of silently reporting zero when the bridge is down.
+Governance laboratory work can continue with synthetic identities, but shares
+this capacity. Its G1–G5 work and contract live in [GOVERNANCE.md](GOVERNANCE.md).
+G2 was estimated at 8–12 engineering days after rules are fixed, with low
+confidence; this is sizing context, not a production commitment. Do not add
+parallel work or a new calendar merely because earlier dates passed.
 
-### S5 (Oct 27–Nov 7) — F9 + pilot data paths
-- **F9 authorization**: bridge `/api` endpoints must check community
-  membership (everything except `/api/space-for-community` currently
-  authenticates but does not authorize). Gates multi-community.
-- PARA: implement the real ModerationInbox (today a header-only stub) on top
-  of F9 + the ozone queues from S1.
-- PARA: replace mock civic services (`raq.ts`, `policies.ts`,
-  `representatives.ts`) with real backend calls for pilot flows — the RAQ
-  pipeline repair (commit `4cf1caefd`) is the backend side of this.
-- Migration rehearsal on a production backup (R9 quarterly drill).
-- E2EE spike: 3 days, hard stop, no rollout.
+## Release gates
 
-### S6 (Nov 10–21) — Stage-2 cutover + pilot
-- Derived-MXID login live in production (stage 2).
-- Onboard the pilot community (single community per R10).
-- Run the **OD-3 and OD-4 founding-community ballots** drafted in S1, through
-  the platform's own proposal/vote flow — the community decides these
-  democratically. Fail-safe defaults remain in force until each vote closes.
-- Soak-and-fix week. Run PARA's `docs/civic-read-smoke-checklist.md` against
-  every release candidate — mitigates regression risk from the app's
-  mid-flight SDK migration and auto-merge recovery.
+| Gate                  | Evidence required before release                                                                                                                                                                                                       |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Privacy disclosure    | Each client explains its actual room encryption state. Unencrypted rooms expose content to the operator; an encryption event alone does not prove working client decryption. Public civic ballots remain attributable.                 |
+| Matrix access         | Member/moderator authorization, actual-device attestation, session revocation, lease re-entry and role projection pass against real services. Revocation cannot erase content/keys already copied.                                     |
+| Recovery              | Synapse signing key, Synapse/MAS/bridge/identity data, media, credentials and client key recovery are included and independently restored. The legacy Matrix archive alone does not cover this topology.                               |
+| Rust migration        | Original source signing key pinned from DID history; exact CAR and destination head reviewed; private alpha/auth state validated; required iM8 re-enrollment and client flows completed; larger-than-64-MiB CARs have a reviewed path. |
+| Relay change          | Consumer checkpoint namespaces reviewed, retained history/replay verified, relay and database recovery coordinated. Indigo checkpoints cannot be reused as rsky checkpoints.                                                           |
+| Governance            | Public proof verification fails closed in PDS and AppView, including foreign repos; private/QV APIs remain closed until their own complete protocol and publication review.                                                            |
+| Production operations | Real TLS/.well-known, backup shipping/retention, monitoring/alerts, load limits, immutable images and a compatible rollback are demonstrated.                                                                                          |
 
-### S7 (Nov 24–27) — Buffer only
-No new scope.
+For native wallet factors, an upstream or mixed-version PDS rollback is unsafe:
+those binaries do not enforce the private factor state. A CAR is a public
+repository snapshot, not a backup of the whole account or platform.
 
-## Explicitly deferred (with reasons)
+## Standing decisions and deferred scope
 
-| Item | Reason |
-| --- | --- |
-| E2EE rollout | Blocked upstream (matrix-js-sdk#4150); spike only in S5 |
-| Tuwunel homeserver spike / OD-1 | Deferred out of quarter by MATRIX_V2 |
-| Multi-community | Needs F9 validated in production first (R10) |
-| OD-P1/P2 personal spaces for civic-tree collections | Awaiting space-host decision |
-| OD-7 §5a vote-proof requirement | Blocks the `anonymous_identities` linkage fix; not pilot-critical |
-| Cabildeo-live test suite | Unless the pilot uses cabildeo-live — then pull into S5 |
-| INE institutional approval | External dependency; keep preview mode and disclose in-app |
-| App polish (emoji picker native fix, stale i18n catalogs, Storybook) | Not pilot-critical; emoji picker is small — slot opportunistically |
+- **OD-3 and OD-4:** founding-community decisions on third-party LLM policy and
+  identity labels remain open. Keep `OPENAI_API_KEY` unset until policy is
+  approved; per-author consent machinery does not approve provider use. The
+  `civic` key remains excluded from Matrix/signing flows.
+- **Media:** decide and verify storage/encryption for the actual topology.
+  WatZappa's standalone Matrix media is a local volume; a SeaweedFS design in
+  another profile does not encrypt that volume. See [Matrix operations](MATRIX_BACKUP.md).
+- **Personal spaces:** resolve hosting, OAuth client readiness and source
+  migration; public visibility fields cannot provide access control.
+- **Deferred:** a different homeserver, broad multi-community rollout,
+  app-store polish, map expansion and new private-voting cryptography are
+  outside this pilot's release scope. Encryption rollout requires the client
+  acceptance above rather than an expired timeboxed-spike schedule.
+- **INE:** real institutional integration is an external dependency; keep
+  preview behavior and data-minimization rules explicit.
 
-## Standing risks
-
-- **R5** upstream-sync capacity — capped at 1 day/sprint.
-- **R8** E2EE misread as private — Gate D disclosure is the merge blocker.
-- **R10** single-community constraint until F9 proves out in production.
-- **Accepted (new)**: PARA regression surface from the recent auto-merge
-  recovery — mitigated by the civic-read smoke checklist on every release
-  candidate.
+Record new evidence in the owning guide and remove a queue item only when its
+acceptance is met. No production deployment or migration was performed by this
+documentation consolidation.
