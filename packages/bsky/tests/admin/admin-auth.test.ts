@@ -1,8 +1,13 @@
 // @ts-nocheck
 import assert from 'node:assert'
-import { $Typed, AtpAgent, ComAtprotoAdminDefs, ids } from '@atproto/api'
+import {
+  type $Typed,
+  type AtpAgent,
+  ComAtprotoAdminDefs,
+  ids,
+} from '@atproto/api'
 import { Secp256k1Keypair } from '@atproto/crypto'
-import { SeedClient, TestNetwork, usersSeed } from '@atproto/dev-env'
+import { type SeedClient, TestNetwork, usersSeed } from '@atproto/dev-env'
 import { createServiceAuthHeaders } from '@atproto/xrpc-server'
 
 describe('admin auth', () => {

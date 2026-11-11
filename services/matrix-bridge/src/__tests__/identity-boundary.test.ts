@@ -136,12 +136,6 @@ describe('identity boundary (CD-M1, server side)', () => {
   it('the member list carries no chat account identifier', () => {
     const uri = 'at://c/com.para.community.board/one'
     db.setCommunityMembership('did:plc:member', uri, 'active', [])
-    ;(db as any)
-      .db!.prepare(
-        `INSERT INTO chat_participation_stats (did, community_uri, message_count, first_message_at, last_message_at, joined_at)
-         VALUES ('did:plc:member', ?, 1, datetime('now'), datetime('now'), datetime('now'))`,
-      )
-      .run(uri)
     const now = new Date().toISOString()
     db.createDeviceSession({
       id: randomUUID(),

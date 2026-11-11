@@ -2,11 +2,13 @@
 title: com.para.actor.getProfileStats
 description: Reference for the com.para.actor.getProfileStats lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,22 +17,22 @@ Get Para profile stats and current Para status for an actor.
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `actor` | `string` | ✅  | Handle or DID of the actor. | Format: `at-identifier` |
-**Output:**
+| Name        | Type     | Req'd | Description                 | Constraints             |
+| ----------- | -------- | ----- | --------------------------- | ----------------------- |
+| `actor`     | `string` | ✅    | Handle or DID of the actor. | Format: `at-identifier` |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `actor` | `string` | ✅  |  | Format: `did` |
-| `stats` | [`com.para.actor.defs#profileStats`]([[com-para-actor-defs|com.para.actor.defs#profileStats]]) | ✅  |  |  |
-| `status` | [`com.para.actor.defs#statusView`]([[com-para-actor-defs|com.para.actor.defs#statusView]]) | ❌  |  |  |
-**Possible Errors:**
+| Name                 | Type                                                       | Req'd                               | Description | Constraints   |
+| -------------------- | ---------------------------------------------------------- | ----------------------------------- | ----------- | ------------- |
+| `actor`              | `string`                                                   | ✅                                  |             | Format: `did` |
+| `stats`              | [`com.para.actor.defs#profileStats`]([[com-para-actor-defs | com.para.actor.defs#profileStats]]) | ✅          |               |     |
+| `status`             | [`com.para.actor.defs#statusView`]([[com-para-actor-defs   | com.para.actor.defs#statusView]])   | ❌          |               |     |
+| **Possible Errors:** |
 
 - `NotFound`
 - `BlockedActor`
@@ -39,6 +41,7 @@ Get Para profile stats and current Para status for an actor.
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -49,9 +52,7 @@ Get Para profile stats and current Para status for an actor.
       "description": "Get Para profile stats and current Para status for an actor.",
       "parameters": {
         "type": "params",
-        "required": [
-          "actor"
-        ],
+        "required": ["actor"],
         "properties": {
           "actor": {
             "type": "string",
@@ -64,10 +65,7 @@ Get Para profile stats and current Para status for an actor.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "actor",
-            "stats"
-          ],
+          "required": ["actor", "stats"],
           "properties": {
             "actor": {
               "type": "string",

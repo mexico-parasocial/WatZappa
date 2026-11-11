@@ -2,11 +2,13 @@
 title: com.para.civic.delegation
 description: Reference for the com.para.civic.delegation lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -17,22 +19,23 @@ Standing liquid-democracy cession of civic voting power.
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cabildeo` | `string` | ❌  |  | Format: `at-uri` |
-| `mode` | `string` | ❌  |  | Known Values: `active`, `passive` |
-| `delegateTo` | `string` | ❌  |  | Format: `did` |
-| `party` | `string` | ❌  |  | Max Length: 100 |
-| `community` | `string` | ❌  |  | Max Length: 100 |
-| `scopeFlairs` | Array of `string` | ❌  |  | Max Items: 10 |
-| `preferredOption` | `integer` | ❌  |  | Min: 0 |
-| `signal` | `integer` | ❌  |  | Min: -3<br/>Max: 3 |
-| `reason` | `string` | ❌  |  | Max Length: 1000 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name              | Type              | Req'd | Description | Constraints                       |
+| ----------------- | ----------------- | ----- | ----------- | --------------------------------- |
+| `cabildeo`        | `string`          | ❌    |             | Format: `at-uri`                  |
+| `mode`            | `string`          | ❌    |             | Known Values: `active`, `passive` |
+| `delegateTo`      | `string`          | ❌    |             | Format: `did`                     |
+| `party`           | `string`          | ❌    |             | Max Length: 100                   |
+| `community`       | `string`          | ❌    |             | Max Length: 100                   |
+| `scopeFlairs`     | Array of `string` | ❌    |             | Max Items: 10                     |
+| `preferredOption` | `integer`         | ❌    |             | Min: 0                            |
+| `signal`          | `integer`         | ❌    |             | Min: -3<br/>Max: 3                |
+| `reason`          | `string`          | ❌    |             | Max Length: 1000                  |
+| `createdAt`       | `string`          | ✅    |             | Format: `datetime`                |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -44,9 +47,7 @@ Standing liquid-democracy cession of civic voting power.
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "createdAt"
-        ],
+        "required": ["createdAt"],
         "properties": {
           "cabildeo": {
             "type": "string",
@@ -54,10 +55,7 @@ Standing liquid-democracy cession of civic voting power.
           },
           "mode": {
             "type": "string",
-            "knownValues": [
-              "active",
-              "passive"
-            ]
+            "knownValues": ["active", "passive"]
           },
           "delegateTo": {
             "type": "string",

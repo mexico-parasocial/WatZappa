@@ -1,5 +1,6 @@
 import { AdminApis, MatrixClient } from 'matrix-bot-sdk'
 import type { Config } from './config.js'
+import { MasAdminClient } from './mas-admin.js'
 import { MatrixLoginUnavailableError } from './matrix-login-error.js'
 
 export interface MatrixRoomMember {
@@ -14,17 +15,37 @@ export class MatrixAdminClient {
   private appServiceToken: string | undefined
   private serverName: string
   private enableEncryption: boolean
+  private masAdmin?: MasAdminClient
+  private allowAppServiceLogin: boolean
   readonly botUserId: string | undefined
   private client: MatrixClient
   private admin: AdminApis
 
   constructor(config: Config) {
+    if (!config.matrixAdminToken) {
+      throw new Error('MATRIX_ADMIN_TOKEN is required when chat is enabled')
+    }
     this.baseUrl = config.matrixHomeserverUrl.replace(/\/$/, '')
     this.adminToken = config.matrixAdminToken
     this.appServiceToken = config.matrixAppServiceToken
     this.botUserId = config.matrixBotUserId
     this.serverName = config.matrixServerName
     this.enableEncryption = config.matrixEnableEncryption
+    this.allowAppServiceLogin = config.matrixAllowAppServiceLogin === true
+    if (
+      config.matrixMasAdminUrl &&
+      config.matrixMasTokenUrl &&
+      config.matrixMasClientId &&
+      config.matrixMasClientSecret
+    ) {
+      this.masAdmin = new MasAdminClient({
+        adminUrl: config.matrixMasAdminUrl,
+        tokenUrl: config.matrixMasTokenUrl,
+        clientId: config.matrixMasClientId,
+        clientSecret: config.matrixMasClientSecret,
+        serverName: config.matrixServerName,
+      })
+    }
     this.client = new MatrixClient(this.baseUrl, this.adminToken)
     this.admin = new AdminApis(this.client)
   }
@@ -204,14 +225,32 @@ export class MatrixAdminClient {
    * joins members it has just verified. Returns the resolved room ID.
    */
   async joinUser(roomIdOrAlias: string, mxid: string): Promise<string> {
-    const res = await this.request(
-      `/_synapse/admin/v1/join/${encodeURIComponent(roomIdOrAlias)}`,
-      {
-        method: 'POST',
-        body: JSON.stringify({ user_id: mxid }),
-      },
-    )
-    return (res?.room_id as string) ?? roomIdOrAlias
+    const roomId = await this.client.resolveRoom(roomIdOrAlias)
+    const alreadyJoined = async () => {
+      try {
+        const state = await this.client.getRoomStateEvent(
+          roomId,
+          'm.room.member',
+          mxid,
+        )
+        return state.membership === 'join'
+      } catch {
+        return false
+      }
+    }
+    if (await alreadyJoined()) return roomId
+    try {
+      const res = await this.request(
+        `/_synapse/admin/v1/join/${encodeURIComponent(roomId)}`,
+        { method: 'POST', body: JSON.stringify({ user_id: mxid }) },
+      )
+      return (res?.room_id as string) ?? roomId
+    } catch (error) {
+      // A competing verified request may have joined the member before
+      // Synapse's invitation step. Only actual membership proves success.
+      if (await alreadyJoined()) return roomId
+      throw error
+    }
   }
 
   async inviteUser(roomId: string, userId: string): Promise<void> {
@@ -415,12 +454,50 @@ export class MatrixAdminClient {
     }))
   }
 
-  /** Deactivate one of the user's devices via the Synapse admin API. */
-  async adminDeactivateDevice(mxid: string, deviceId: string): Promise<void> {
-    await this.request(
-      `/_synapse/admin/v2/users/${encodeURIComponent(mxid)}/devices/${encodeURIComponent(deviceId)}`,
-      { method: 'DELETE' },
+  /** Whether device revocation can reach MAS (or is a legacy deployment). */
+  get canRevokeDevices(): boolean {
+    return this.allowAppServiceLogin || this.masAdmin !== undefined
+  }
+
+  async deviceExists(userId: string, deviceId: string): Promise<boolean> {
+    const response = await fetch(
+      `${this.baseUrl}/_synapse/admin/v2/users/${encodeURIComponent(userId)}/devices/${encodeURIComponent(deviceId)}`,
+      {
+        headers: { authorization: `Bearer ${this.adminToken}` },
+        redirect: 'error',
+        signal: AbortSignal.timeout(10000),
+      },
     )
+    await response.body?.cancel()
+    if (response.status === 404) return false
+    if (response.status !== 200)
+      throw new Error(`Matrix device lookup failed: HTTP ${response.status}`)
+    return true
+  }
+
+  /**
+   * Revoke one of the user's devices. With MAS, every matching OAuth and
+   * compatibility session is finished first: deleting only the Synapse
+   * device leaves the refresh token able to mint new access tokens.
+   */
+  async adminDeactivateDevice(mxid: string, deviceId: string): Promise<void> {
+    if (!this.allowAppServiceLogin) {
+      if (!this.masAdmin) throw new Error('MATRIX_MAS_ADMIN_NOT_CONFIGURED')
+      await this.masAdmin.revokeDevice(mxid, deviceId)
+    }
+    const response = await fetch(
+      `${this.baseUrl}/_synapse/admin/v2/users/${encodeURIComponent(mxid)}/devices/${encodeURIComponent(deviceId)}`,
+      {
+        method: 'DELETE',
+        headers: { authorization: `Bearer ${this.adminToken}` },
+        signal: AbortSignal.timeout(10000),
+      },
+    )
+    // MAS may already have removed its shadow device. Its sessions were
+    // finished first, so no refresh token can recreate it after this step.
+    await response.body?.cancel()
+    if (!response.ok && response.status !== 404)
+      throw new Error(`Matrix device deletion failed: HTTP ${response.status}`)
   }
 
   async setPusherWithUserToken(

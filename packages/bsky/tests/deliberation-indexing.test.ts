@@ -12,27 +12,6 @@ maybeDescribe('deliberation indexing', () => {
   let network: TestNetwork
   let sc: SeedClient
   let db: any
-  let proposal: string
-
-  const writeStatement = async (by: string, body: string, stance: string) => {
-    const { data } = await sc.agent.com.atproto.repo.createRecord(
-      {
-        repo: by,
-        collection: 'com.para.community.deliberation',
-        record: {
-          $type: 'com.para.community.deliberation',
-          proposal,
-          author: by,
-          body,
-          stance,
-          createdAt: new Date().toISOString(),
-        },
-      },
-      { encoding: 'application/json', headers: sc.getHeaders(by) },
-    )
-    await network.processAll()
-    return data
-  }
 
   const weigh = async (by: string, deliberation: string, direction: string) => {
     const { data } = await sc.agent.com.atproto.repo.createRecord(
@@ -53,20 +32,6 @@ maybeDescribe('deliberation indexing', () => {
     return data
   }
 
-  const NSID = 'com.para.community.listDeliberations'
-
-  const listDeliberations = async (viewer: string) => {
-    const url = new URL(`/xrpc/${NSID}`, network.bsky.url)
-    url.searchParams.set('proposal', proposal)
-    const res = await request(url, {
-      headers: await network.serviceHeaders(viewer, NSID),
-    })
-    if (res.statusCode !== 200) {
-      throw new Error(`Expected 200 from ${NSID}, got ${res.statusCode}`)
-    }
-    return (await res.body.json()) as any
-  }
-
   beforeAll(async () => {
     network = await TestNetwork.create({
       dbPostgresSchema: 'deliberation_indexing_test',
@@ -75,75 +40,140 @@ maybeDescribe('deliberation indexing', () => {
     db = network.bsky.db
     await usersSeed(sc)
     await network.processAll()
-    proposal = `at://${sc.dids.alice}/com.para.community.proposal/3lprop0sal001`
   })
 
   afterAll(async () => {
     await network.close()
   })
 
-  it('indexes an argument', async () => {
-    const ref = await writeStatement(sc.dids.dan, 'La banqueta primero.', 'for')
+  describe('reactions to a position on a cabildeo', () => {
+    const POSITIONS = 'com.para.civic.listCabildeoPositions'
+    let cabildeo: string
 
-    const row = await db.db
-      .selectFrom('para_deliberation_statement')
-      .selectAll()
-      .where('uri', '=', ref.uri)
-      .executeTakeFirst()
+    const writePosition = async (by: string, stance: string, text: string) => {
+      const { data } = await sc.agent.com.atproto.repo.createRecord(
+        {
+          repo: by,
+          collection: 'com.para.civic.position',
+          record: {
+            $type: 'com.para.civic.position',
+            cabildeo,
+            stance,
+            text,
+            createdAt: new Date().toISOString(),
+          },
+        },
+        { encoding: 'application/json', headers: sc.getHeaders(by) },
+      )
+      await network.processAll()
+      return data
+    }
 
-    expect(row).toBeDefined()
-    expect(row?.creator).toBe(sc.dids.dan)
-    expect(row?.proposal).toBe(proposal)
-    expect(row?.body).toBe('La banqueta primero.')
-    expect(row?.stance).toBe('for')
-  })
+    const listPositions = async (viewer: string, stance?: string) => {
+      const url = new URL(`/xrpc/${POSITIONS}`, network.bsky.url)
+      url.searchParams.set('cabildeo', cabildeo)
+      if (stance) url.searchParams.set('stance', stance)
+      const res = await request(url, {
+        headers: await network.serviceHeaders(viewer, POSITIONS),
+      })
+      if (res.statusCode !== 200) {
+        throw new Error(`Expected 200 from ${POSITIONS}, got ${res.statusCode}`)
+      }
+      return (await res.body.json()) as any
+    }
 
-  it('records which side someone took', async () => {
-    const statement = await writeStatement(
-      sc.dids.dan,
-      'Con presupuesto.',
-      'for',
-    )
-    const ref = await weigh(sc.dids.alice, statement.uri, 'disagree')
+    beforeAll(() => {
+      cabildeo = `at://${sc.dids.alice}/com.para.civic.cabildeo/3lcab0000001`
+    })
 
-    const row = await db.db
-      .selectFrom('para_deliberation_vote')
-      .selectAll()
-      .where('uri', '=', ref.uri)
-      .executeTakeFirst()
+    it('keeps a question apart from the sides', async () => {
+      const ref = await writePosition(
+        sc.dids.dan,
+        'question',
+        '¿Quién paga el mantenimiento?',
+      )
+      const asked = await listPositions(sc.dids.alice, 'question')
+      expect(asked.positions.map((p: any) => p.uri)).toEqual([ref.uri])
+      expect(asked.positions[0].stance).toBe('question')
+    })
 
-    expect(row?.creator).toBe(sc.dids.alice)
-    expect(row?.statement).toBe(statement.uri)
-    expect(row?.direction).toBe('disagree')
-  })
+    it('serves the counts, and only the viewer own reaction', async () => {
+      const position = await writePosition(sc.dids.dan, 'for', 'Hagámoslo.')
+      await weigh(sc.dids.alice, position.uri, 'agree')
+      await weigh(sc.dids.bob, position.uri, 'agree')
+      await weigh(sc.dids.carol, position.uri, 'pass')
 
-  it('serves the counts, and only the viewer own position', async () => {
-    const statement = await writeStatement(sc.dids.dan, 'Súmense.', 'for')
-    await weigh(sc.dids.alice, statement.uri, 'agree')
-    await weigh(sc.dids.bob, statement.uri, 'agree')
-    await weigh(sc.dids.carol, statement.uri, 'disagree')
+      const data = await listPositions(sc.dids.alice, 'for')
+      const row = data.positions.find((p: any) => p.uri === position.uri)
+      expect(row).toBeDefined()
+      expect(row.agreeCount).toBe(2)
+      expect(row.disagreeCount).toBe(0)
+      expect(row.passCount).toBe(1)
+      expect(row.viewerDirection).toBe('agree')
+      expect(JSON.stringify(row)).not.toContain(sc.dids.bob)
+    })
 
-    const data = await listDeliberations(sc.dids.alice)
-    const row = data.statements.find((s: any) => s.uri === statement.uri)
-    expect(row).toBeDefined()
-    expect(row.agreeCount).toBe(2)
-    expect(row.disagreeCount).toBe(1)
-    expect(row.viewerDirection).toBe('agree')
-  })
+    it('records which side someone took', async () => {
+      const position = await writePosition(
+        sc.dids.dan,
+        'for',
+        'Con presupuesto.',
+      )
+      const ref = await weigh(sc.dids.alice, position.uri, 'disagree')
 
-  it('replaces a position rather than accumulating it', async () => {
-    const statement = await writeStatement(sc.dids.dan, 'Reconsidérame.', 'for')
-    await weigh(sc.dids.alice, statement.uri, 'agree')
-    await weigh(sc.dids.alice, statement.uri, 'disagree')
+      const row = await db.db
+        .selectFrom('para_deliberation_vote')
+        .selectAll()
+        .where('uri', '=', ref.uri)
+        .executeTakeFirst()
 
-    const rows = await db.db
-      .selectFrom('para_deliberation_vote')
-      .selectAll()
-      .where('statement', '=', statement.uri)
-      .where('creator', '=', sc.dids.alice)
-      .execute()
+      expect(row?.creator).toBe(sc.dids.alice)
+      expect(row?.statement).toBe(position.uri)
+      expect(row?.direction).toBe('disagree')
+    })
 
-    expect(rows).toHaveLength(1)
-    expect(rows[0].direction).toBe('disagree')
+    it('replaces a reaction rather than accumulating it', async () => {
+      const position = await writePosition(sc.dids.dan, 'for', 'Reconsidérame.')
+      await weigh(sc.dids.alice, position.uri, 'agree')
+      await weigh(sc.dids.alice, position.uri, 'disagree')
+
+      const rows = await db.db
+        .selectFrom('para_deliberation_vote')
+        .selectAll()
+        .where('statement', '=', position.uri)
+        .where('creator', '=', sc.dids.alice)
+        .execute()
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0].direction).toBe('disagree')
+    })
+
+    it('no longer indexes a reaction to a retired argument record', async () => {
+      const ref = await weigh(
+        sc.dids.alice,
+        `at://${sc.dids.dan}/com.para.community.deliberation/3lold00000001`,
+        'agree',
+      )
+      const row = await db.db
+        .selectFrom('para_deliberation_vote')
+        .selectAll()
+        .where('uri', '=', ref.uri)
+        .executeTakeFirst()
+      expect(row).toBeUndefined()
+    })
+
+    it('does not index a reaction to anything but an argument', async () => {
+      const ref = await weigh(
+        sc.dids.alice,
+        `at://${sc.dids.dan}/app.bsky.feed.post/3lpost0000001`,
+        'agree',
+      )
+      const row = await db.db
+        .selectFrom('para_deliberation_vote')
+        .selectAll()
+        .where('uri', '=', ref.uri)
+        .executeTakeFirst()
+      expect(row).toBeUndefined()
+    })
   })
 })

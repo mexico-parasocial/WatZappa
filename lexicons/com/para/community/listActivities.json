@@ -15,18 +15,11 @@
           },
           "category": {
             "type": "string",
-            "knownValues": [
-              "social",
-              "economic"
-            ]
+            "knownValues": ["social", "economic"]
           },
           "time": {
             "type": "string",
-            "knownValues": [
-              "upcoming",
-              "past",
-              "any"
-            ],
+            "knownValues": ["upcoming", "past", "any"],
             "default": "any",
             "description": "upcoming: not completed or cancelled, and in progress or not yet ended. past: everything else."
           },
@@ -46,9 +39,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "activities"
-          ],
+          "required": ["activities"],
           "properties": {
             "activities": {
               "type": "array",
@@ -91,10 +82,7 @@
         },
         "category": {
           "type": "string",
-          "knownValues": [
-            "social",
-            "economic"
-          ]
+          "knownValues": ["social", "economic"]
         },
         "communityUri": {
           "type": "string",

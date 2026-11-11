@@ -1,22 +1,20 @@
 import { IdResolver, parseToAtprotoDocument } from '@atproto/identity'
 import {
-  AgentConfig,
-  Cid,
+  type AgentConfig,
   Client,
-  DidString,
-  FetchHandler,
-  LexMap,
-  l,
-} from '@atproto/lex'
+  type FetchHandler,
+} from '@atproto/lex-client'
+import type { Cid, LexMap } from '@atproto/lex-data'
+import { type DidString, l } from '@atproto/lex-schema'
 import {
-  Commit,
+  type Commit,
   MST,
   MemoryBlockstore,
   def as repoDef,
   readCarWithRoot,
   verifyCommitSig,
 } from '@atproto/repo'
-import { AtUri, AtUriString } from '@atproto/syntax'
+import { AtUri, type AtUriString } from '@atproto/syntax'
 import { safeFetchWrap } from '@atproto-labs/fetch-node'
 import { com } from './lexicons/index.js'
 

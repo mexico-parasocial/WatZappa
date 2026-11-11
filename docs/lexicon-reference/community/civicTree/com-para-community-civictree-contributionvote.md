@@ -2,11 +2,13 @@
 title: com.para.community.civicTree.contributionVote
 description: Reference for the com.para.community.civicTree.contributionVote lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -15,16 +17,17 @@ description: Reference for the com.para.community.civicTree.contributionVote lex
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `contribution` | `string` | ✅  |  | Format: `at-uri` |
-| `voterDid` | `string` | ✅  |  | Format: `did` |
-| `vote` | `string` | ✅  |  | Known Values: `approve`, `reject` |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name           | Type     | Req'd | Description | Constraints                       |
+| -------------- | -------- | ----- | ----------- | --------------------------------- |
+| `contribution` | `string` | ✅    |             | Format: `at-uri`                  |
+| `voterDid`     | `string` | ✅    |             | Format: `did`                     |
+| `vote`         | `string` | ✅    |             | Known Values: `approve`, `reject` |
+| `createdAt`    | `string` | ✅    |             | Format: `datetime`                |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -35,12 +38,7 @@ description: Reference for the com.para.community.civicTree.contributionVote lex
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "contribution",
-          "voterDid",
-          "vote",
-          "createdAt"
-        ],
+        "required": ["contribution", "voterDid", "vote", "createdAt"],
         "properties": {
           "contribution": {
             "type": "string",
@@ -52,10 +50,7 @@ description: Reference for the com.para.community.civicTree.contributionVote lex
           },
           "vote": {
             "type": "string",
-            "knownValues": [
-              "approve",
-              "reject"
-            ]
+            "knownValues": ["approve", "reject"]
           },
           "createdAt": {
             "type": "string",

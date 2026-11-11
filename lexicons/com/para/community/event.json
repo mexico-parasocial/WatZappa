@@ -1,0 +1,129 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.event",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "One link of a community's authority chain, in the community account's repo (OD-9). Written only by the hosting PDS through com.para.community.act. Events apply in seq order; prev is the CID of the event with seq - 1. Each carries proof of the actor's request, so it verifies on its own.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "seq",
+          "action",
+          "actor",
+          "subject",
+          "request",
+          "requestProof",
+          "createdAt"
+        ],
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "prev": {
+            "type": "string",
+            "format": "cid",
+            "description": "CID of the event with seq - 1. Absent only on seq 1."
+          },
+          "action": {
+            "type": "string",
+            "knownValues": [
+              "community.found",
+              "member.join",
+              "member.leave",
+              "moderator.offer",
+              "moderator.accept",
+              "moderator.revoke",
+              "moderator.resign",
+              "member.suspend",
+              "member.reinstate",
+              "member.remove",
+              "member.block",
+              "member.unblock",
+              "sanction.propose",
+              "owner.offer",
+              "owner.accept",
+              "owner.resign",
+              "content.hide",
+              "content.restore",
+              "content.pin",
+              "content.unpin",
+              "relation.link",
+              "relation.accept",
+              "relation.unlink",
+              "briefing.publish",
+              "briefing.archive",
+              "profile.update"
+            ]
+          },
+          "actor": {
+            "type": "string",
+            "format": "did",
+            "description": "The account that took the action."
+          },
+          "subject": {
+            "type": "string",
+            "format": "did"
+          },
+          "request": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The actor's com.para.community.request for this action, in the actor's own repo."
+          },
+          "requestProof": {
+            "type": "bytes",
+            "maxLength": 32768,
+            "description": "A CAR with the actor's signed repo commit and the path to the request record, as com.atproto.sync.getRecord returns it. Lets anyone verify the request without fetching the actor's repo."
+          },
+          "offer": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "The seq of the offer or proposal this event answers: moderator.accept and owner.accept (required), member.remove and member.block (optional, when acting on a moderator's sanction.propose)."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "moderator.offer, owner.offer and sanction.propose: when it lapses. member.suspend: when the suspension ends. Computed by the host from createdAt."
+          },
+          "governanceMode": {
+            "type": "string",
+            "knownValues": ["hierarchical", "horizontal"],
+            "description": "community.found only."
+          },
+          "admissionMode": {
+            "type": "string",
+            "knownValues": ["open", "assembly_approval"],
+            "description": "community.found only."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Set by the host's clock. The event's effects are judged at this time."
+          },
+          "sanction": {
+            "type": "string",
+            "knownValues": ["remove", "block"],
+            "description": "sanction.propose: what the moderator asks the owner to do."
+          },
+          "target": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "content.*: the shared item acted on. briefing.*: the draft. The subject is the DID that holds the record."
+          },
+          "targetCid": {
+            "type": "string",
+            "format": "cid",
+            "description": "briefing.*: the CID of the draft version published or archived."
+          },
+          "profile": {
+            "type": "ref",
+            "ref": "com.para.community.profile#update",
+            "description": "profile.update: the presentation the profile record was set to in the same commit."
+          }
+        }
+      }
+    }
+  }
+}

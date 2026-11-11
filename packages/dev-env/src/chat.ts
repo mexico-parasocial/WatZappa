@@ -7,16 +7,16 @@ import getPort from 'get-port'
 import {
   type $Typed,
   AtpAgent,
-  ChatBskyActorDefs,
-  ChatBskyConvoDefs,
+  type ChatBskyActorDefs,
+  type ChatBskyConvoDefs,
 } from '@atproto/api'
 import { Secp256k1Keypair } from '@atproto/crypto'
 import { IdResolver } from '@atproto/identity'
 import {
   AuthRequiredError,
   InvalidRequestError,
-  parseReqNsid,
   createServer,
+  parseReqNsid,
   verifyJwt,
 } from '@atproto/xrpc-server'
 
@@ -734,27 +734,6 @@ export class TestChat {
         body: { convo: await chat.toConvoView(convo, auth.did) },
       }
     })
-
-    if (lexServer.com.para.community) {
-      lexServer.com.para.community.createBoard(async (args) => {
-        const auth = await chat.requireAuth(args.req)
-
-        // MOCK: Generate the two specific groups required for PARA communities
-        const delConvo = chat.createGroupConvo(auth.did, 'Delegates', [], 270)
-        const subConvo = chat.createGroupConvo(auth.did, 'Subdelegates', [], 30)
-
-        // Normally would insert com.para.community.board to repo, just returning mock for now
-        return {
-          encoding: 'application/json',
-          body: {
-            uri: `at://${auth.did}/com.para.community.board/mocktest`,
-            cid: 'bafyreimocktest',
-            delegatesChatId: delConvo.id,
-            subdelegatesChatId: subConvo.id,
-          },
-        }
-      })
-    }
 
     if (lexServer.chat.bsky.group) {
       lexServer.chat.bsky.group.createGroup(async (args) => {

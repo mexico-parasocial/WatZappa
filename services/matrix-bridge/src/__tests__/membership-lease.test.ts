@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest'
 import type { Logger } from 'pino'
+import { describe, expect, it } from 'vitest'
 import type { IBridgeDatabase } from '../db/index.js'
-import { sweepExpiredMembershipLeases } from '../membership-lease.js'
 import type { MatrixAdminClient } from '../matrix.js'
+import { sweepExpiredMembershipLeases } from '../membership-lease.js'
 
 const log = { info() {}, warn() {}, debug() {} } as unknown as Logger
 

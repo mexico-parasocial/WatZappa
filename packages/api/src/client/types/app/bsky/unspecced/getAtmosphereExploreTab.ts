@@ -12,6 +12,7 @@ import {
   type OmitKey,
 } from '../../../../util.js'
 import type * as AppBskyEmbedExternal from '../embed/external.js'
+import type * as AppBskyActorDefs from '../actor/defs.js'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -121,6 +122,7 @@ export function validateLivestreamList<V>(v: V) {
 
 export interface ArticleItem {
   $type?: 'app.bsky.unspecced.getAtmosphereExploreTab#articleItem'
+  /** Deprecated. Retained for compatibility; always false. */
   featured: boolean
   view: AppBskyEmbedExternal.ViewArticle
 }
@@ -137,6 +139,7 @@ export function validateArticleItem<V>(v: V) {
 
 export interface PublicationItem {
   $type?: 'app.bsky.unspecced.getAtmosphereExploreTab#publicationItem'
+  /** Deprecated. Retained for compatibility; always false. */
   featured: boolean
   view: AppBskyEmbedExternal.ViewArticlePublication
 }
@@ -153,6 +156,7 @@ export function validatePublicationItem<V>(v: V) {
 
 export interface GalleryItem {
   $type?: 'app.bsky.unspecced.getAtmosphereExploreTab#galleryItem'
+  /** Deprecated. Retained for compatibility; always false. */
   featured: boolean
   view: AppBskyEmbedExternal.ViewGallery
 }
@@ -169,6 +173,7 @@ export function validateGalleryItem<V>(v: V) {
 
 export interface LivestreamItem {
   $type?: 'app.bsky.unspecced.getAtmosphereExploreTab#livestreamItem'
+  /** Deprecated. Retained for compatibility; always false. */
   featured: boolean
   view: AppBskyEmbedExternal.ViewLivestream
 }
@@ -209,12 +214,17 @@ export interface AppCard {
   id?: string
   title?: string
   description?: string
+  /** Compatibility field. The profile avatar when available, otherwise the editorial logo. */
   logo?: string
+  /** Compatibility field. The profile banner when available, otherwise the editorial background image. */
   backgroundImage?: string
+  /** Deprecated. Retained for compatibility. */
   overlayColor?: string
+  /** Deprecated. Retained for compatibility. */
   textColor?: string
   url?: string
   category?: string
+  profile?: AppBskyActorDefs.ProfileViewDetailed
 }
 
 const hashAppCard = 'appCard'

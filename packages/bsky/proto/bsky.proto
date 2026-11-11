@@ -543,7 +543,7 @@ message ActorInfo {
   reserved 20; // DO NOT REMOVE - see dataplane repo
   Record germ_record = 21;
   string allow_group_chat_invites_from = 22;
-  string cabildeo_live_json = 23;
+  reserved 23; // was cabildeo_live_json
 }
 
 message AgeAssuranceStatus {
@@ -1956,14 +1956,6 @@ message GetParaIntensitiesRequest {
   int32 limit = 2;
   string cursor = 3;
 }
-message GetParaDeliberationsRequest {
-  string proposal = 1;
-  // Whose own weighting to include on each statement, so the client can show
-  // the control already set. Empty for a logged-out viewer.
-  string viewer = 2;
-  int32 limit = 3;
-  string cursor = 4;
-}
 message GetParaDelegationsRequest {
   string delegator = 1;
   string delegate = 2;
@@ -2150,6 +2142,8 @@ message GetParaCabildeoPositionsRequest {
   string stance = 2;
   int32 limit = 3;
   string cursor = 4;
+  // Whose own reaction to include on each position. Empty for a logged-out viewer.
+  string viewer = 5;
 }
 message GetParaCabildeoPositionsResponse {
   string positions_json = 1;
@@ -2166,18 +2160,6 @@ message GetParaDelegationCandidatesRequest {
 message GetParaDelegationCandidatesResponse {
   string candidates_json = 1;
   string cursor = 2;
-}
-message PutParaCabildeoLivePresenceRequest {
-  string actor_did = 1;
-  string cabildeo_uri = 2;
-  string session_id = 3;
-  bool present = 4;
-  string host_live_uri = 5;
-}
-message PutParaCabildeoLivePresenceResponse {
-  string cabildeo_uri = 1;
-  bool present = 2;
-  string expires_at = 3;
 }
 
 message ParaActorStatus {
@@ -2337,9 +2319,47 @@ message GetParaCommunityActivityResponse {
   string activity_json = 1;
   string ledger_json = 2;
 }
+// Offers and proposals still open in a community account. An owner or
+// moderator sees all of them; anyone else sees only those addressed to them.
+message GetParaCommunityOpenOffersRequest {
+  string community = 1;
+  string viewer_did = 2;
+  int32 limit = 3;
+  string cursor = 4;
+}
 message GetParaCommunityWikiPagesRequest {
   string community_uri = 1;
   string kind = 2;
+}
+
+// Seguimiento: compromisos of resolved cabildeos. Only records by the
+// community's current stewards are returned. A set item_uri returns that one
+// item with its timeline; otherwise the list is paged by cabildeo.
+message GetParaFollowThroughRequest {
+  string cabildeo_uri = 1;
+  string community_uri = 2;
+  string item_uri = 3;
+  string status = 4;
+  bool overdue = 5;
+  int32 limit = 6;
+  string cursor = 7;
+}
+message GetParaFollowThroughResponse {
+  string items_json = 1;
+  string summaries_json = 2;
+  string cursor = 3;
+}
+
+// Conclusions: a steward's summary of a forum or persuasion cabildeo. Returns
+// the newest conclusion by a current steward (conclusion_json, empty when none)
+// and the earlier ones, newest first.
+message GetParaConclusionRequest {
+  string cabildeo_uri = 1;
+}
+message GetParaConclusionResponse {
+  string conclusion_json = 1;
+  string earlier_json = 2;
+  string community_uri = 3;
 }
 
 message ParaDiscourseSnapshot {
@@ -2452,7 +2472,7 @@ message ParaCommunityBoardView {
   repeated string parent_community_uris = 20;
   int32 child_community_count = 21;
   int32 shared_content_count = 22;
-  string governance_mode = 23;
+  reserved 23; // was "governance_mode"
   string admission_mode = 24;
   string region = 25;
 }
@@ -2623,7 +2643,7 @@ message GetParaCommunityGovernanceResponse {
   string computed_at = 6;
   ParaCommunityGovernanceMetadata metadata = 7;
   repeated ParaCommunityGovernanceHistoryEntry edit_history = 8;
-  string organization_standard = 9;
+  reserved 9; // was "organization_standard"
   string admission_mode = 10;
   int32 authority_event_version = 11;
   repeated ParaRoleDefinition role_definitions = 12;
@@ -2921,7 +2941,6 @@ service Service {
   rpc GetParaPolicyTally(GetParaPolicyTallyRequest) returns (GetParaPolicyTallyResponse);
   rpc GetParaPolicyCommunityVotes(GetParaPolicyCommunityVotesRequest) returns (GetParaPolicyCommunityVotesResponse);
   rpc GetParaVotes(GetParaVotesRequest) returns (ParaJsonPageResponse);
-  rpc GetParaDeliberations(GetParaDeliberationsRequest) returns (ParaJsonPageResponse);
   rpc GetParaIntensities(GetParaIntensitiesRequest) returns (ParaJsonPageResponse);
   rpc GetParaDelegations(GetParaDelegationsRequest) returns (ParaJsonPageResponse);
   rpc GetParaTallySimulation(GetParaTallySimulationRequest) returns (GetParaTallySimulationResponse);
@@ -2938,7 +2957,6 @@ service Service {
   rpc GetParaCabildeo(GetParaCabildeoRequest) returns (GetParaCabildeoResponse);
   rpc GetParaCabildeoPositions(GetParaCabildeoPositionsRequest) returns (GetParaCabildeoPositionsResponse);
   rpc GetParaDelegationCandidates(GetParaDelegationCandidatesRequest) returns (GetParaDelegationCandidatesResponse);
-  rpc PutParaCabildeoLivePresence(PutParaCabildeoLivePresenceRequest) returns (PutParaCabildeoLivePresenceResponse);
   rpc GetParaProfileStats(GetParaProfileStatsRequest) returns (GetParaProfileStatsResponse);
   rpc GetParaHighlights(GetParaHighlightsRequest) returns (GetParaHighlightsResponse);
   rpc GetParaHighlight(GetParaHighlightRequest) returns (GetParaHighlightResponse);
@@ -2954,6 +2972,9 @@ service Service {
   rpc GetParaCommunityActivities(GetParaCommunityActivitiesRequest) returns (ParaJsonPageResponse);
   rpc GetParaCommunityActivity(GetParaCommunityActivityRequest) returns (GetParaCommunityActivityResponse);
   rpc GetParaCommunityWikiPages(GetParaCommunityWikiPagesRequest) returns (ParaJsonPageResponse);
+  rpc GetParaCommunityOpenOffers(GetParaCommunityOpenOffersRequest) returns (ParaJsonPageResponse);
+  rpc GetParaFollowThrough(GetParaFollowThroughRequest) returns (GetParaFollowThroughResponse);
+  rpc GetParaConclusion(GetParaConclusionRequest) returns (GetParaConclusionResponse);
   rpc GetParaDiscourseSnapshot(GetParaDiscourseSnapshotRequest) returns (GetParaDiscourseSnapshotResponse);
   rpc GetParaDiscourseTopics(GetParaDiscourseTopicsRequest) returns (GetParaDiscourseTopicsResponse);
   rpc GetParaDiscourseSentiment(GetParaDiscourseSentimentRequest) returns (GetParaDiscourseSentimentResponse);

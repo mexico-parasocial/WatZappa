@@ -9,8 +9,6 @@ import type { FirehoseConsumer } from '../firehose.js'
 import type { MatrixProjectionPort } from '../matrix-projection.js'
 import type { MatrixAdminClient } from '../matrix.js'
 import type { BridgeMetrics } from '../metrics.js'
-import type { ProposalEngine } from '../proposals.js'
-import type { SortitionEngine } from '../sortition-runs.js'
 
 /**
  * Everything a route handler may touch, injected by main(). No module-level
@@ -19,15 +17,14 @@ import type { SortitionEngine } from '../sortition-runs.js'
 export interface RouteContext {
   config: Config
   db: IBridgeDatabase
-  matrix: MatrixAdminClient
+  /** Null when chat is off (`MATRIX_CHAT_ENABLED=false`). */
+  matrix: MatrixAdminClient | null
   projection: MatrixProjectionPort
   challenges: ChallengeStore
   firehose: FirehoseConsumer
   metrics: BridgeMetrics
   log: pino.Logger
   chatMod: ChatModerationEngine
-  proposals: ProposalEngine
-  sortition: SortitionEngine
   events: EventBus
 }
 

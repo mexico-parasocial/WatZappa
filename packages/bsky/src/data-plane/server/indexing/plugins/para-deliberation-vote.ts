@@ -1,10 +1,13 @@
 // @ts-nocheck
-import { Selectable } from 'kysely'
-import { CID } from 'multiformats/cid'
+import type { Selectable } from 'kysely'
+import type { CID } from 'multiformats/cid'
 import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
-import { BackgroundQueue } from '../../background.js'
-import { Database } from '../../db/index.js'
-import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
+import type { BackgroundQueue } from '../../background.js'
+import type {
+  DatabaseSchema,
+  DatabaseSchemaType,
+} from '../../db/database-schema.js'
+import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
 
 interface DeliberationVoteRecord {
@@ -22,6 +25,20 @@ type ParaDeliberationVote = Selectable<
 
 const lexId = 'com.para.community.deliberationVote'
 
+// What a reaction may be about: an argument in a cabildeo, which is a position.
+const REACTION_SUBJECTS: ReadonlySet<string> = new Set([
+  'com.para.civic.position',
+])
+
+const isReactionSubject = (subject: unknown): boolean => {
+  if (typeof subject !== 'string') return false
+  try {
+    return REACTION_SUBJECTS.has(new AtUri(subject).collection)
+  } catch {
+    return false
+  }
+}
+
 const normalizeOpaqueProofField = (value: unknown, maxLength: number) => {
   if (typeof value !== 'string') return null
   const trimmed = value.trim()
@@ -38,6 +55,7 @@ const insertFn = async (
 ): Promise<ParaDeliberationVote | null> => {
   // @NOTE a remote repository may name any voter in its payload.
   if (obj.voter !== uri.host) return null
+  if (!isReactionSubject(obj.deliberation)) return null
 
   const record = {
     uri: uri.toString(),

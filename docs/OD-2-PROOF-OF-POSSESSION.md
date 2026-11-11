@@ -20,16 +20,16 @@ could claim the corresponding MXID. The client must prove it holds
 signature scheme over PARA identity keys exists anywhere in the codebase.
 
 This is not a Matrix-specific gap. `mubEZ/docs/IDENTITY_DERIVATION.md` already
-promises it in the registration contract — *"a signature over the registration
-challenge with `identity_priv_i` (proof of possession)"* — and that promise is
+promises it in the registration contract — _"a signature over the registration
+challenge with `identity_priv_i` (proof of possession)"_ — and that promise is
 also unimplemented. **One scheme should serve both.**
 
 ## 2. Why the two existing schemes do not answer it
 
-| Existing scheme | Key | Why it cannot be reused |
-|---|---|---|
+| Existing scheme                                                              | Key                                                         | Why it cannot be reused                                                                                                                                                    |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Governance vote signatures (`mubEZ/docs/community-governance-signatures.md`) | atproto DID key, Ed25519, verified against the DID document | Signing with the DID key **is** the linkage. It proves "the person behind `did:plc:…` wants this MXID" — precisely the relation v2 deletes. Unusable here at any strength. |
-| Issuer credential signatures (CD-6) | server-held issuer key | Wrong direction entirely: the server attests to a claim; here the *client* must attest to key possession. |
+| Issuer credential signatures (CD-6)                                          | server-held issuer key                                      | Wrong direction entirely: the server attests to a claim; here the _client_ must attest to key possession.                                                                  |
 
 ristretto255 identity keys also cannot borrow Ed25519 verification: ristretto255
 is a prime-order quotient group over edwards25519, and a ristretto point is not
@@ -40,7 +40,7 @@ one.
 
 ### Option 0 — sr25519 via `@scure/sr25519` (preferred, gated on a spike)
 
-`sr25519` *is* Schnorr over ristretto255. `@scure/sr25519` implements it in
+`sr25519` _is_ Schnorr over ristretto255. `@scure/sr25519` implements it in
 JavaScript, audited by Oak Security (Aug 2025), from the same author as
 `@noble/curves` and `@scure/bip39` — both already in iM8's dependency tree. No
 WASM, so Hermes is not a problem. It uses merlin transcripts for domain
@@ -119,9 +119,9 @@ revealing who holds it.
 **Verdict: read it, do not import it.** Signal validates the approach and sets
 the bar for domain-separation rigour; Option 0 is how we actually get there.
 
-*(An earlier revision of this memo claimed no audited JS ristretto255 signature
+_(An earlier revision of this memo claimed no audited JS ristretto255 signature
 library existed. That was wrong — `@scure/sr25519` does, and it is now
-Option 0.)*
+Option 0.)_
 
 ### Option D — Blind signature / anonymous credential
 
@@ -145,14 +145,14 @@ of two. CD-4's claim of lineage is accurate.
 **The signature.** `generate_signature` (`src/crypto/crypto.cpp`) is Schnorr in
 the CryptoNote encoding:
 
-| Property | Monero | Bearing on OD-2 |
-|---|---|---|
-| Challenge input | `s_comm { prefix_hash, key, comm }` — hashed in that order | **Key-prefixed**: the public key is inside the hash. Adopt as-is. |
-| Signature form | `(c, r)` — challenge and response, not `(R, s)` | Adopt. The verifier *recomputes* `R' = c·P + r·G` and never parses an attacker-supplied point. |
-| Response | `sc_mulsub` → `r = k − c·x` | Adopt (note the sign: subtraction, not `k + c·x`). |
-| Nonce | `random_scalar(k)` — **purely random** | **The one place we should diverge.** See §5. |
-| Degenerate values | retries while `c == 0` or `r == 0` | Adopt. |
-| Cleanup | `memwipe(&k, …)` after signing | Adopt in spirit; JS cannot guarantee it, so record the limitation. |
+| Property          | Monero                                                     | Bearing on OD-2                                                                                |
+| ----------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Challenge input   | `s_comm { prefix_hash, key, comm }` — hashed in that order | **Key-prefixed**: the public key is inside the hash. Adopt as-is.                              |
+| Signature form    | `(c, r)` — challenge and response, not `(R, s)`            | Adopt. The verifier _recomputes_ `R' = c·P + r·G` and never parses an attacker-supplied point. |
+| Response          | `sc_mulsub` → `r = k − c·x`                                | Adopt (note the sign: subtraction, not `k + c·x`).                                             |
+| Nonce             | `random_scalar(k)` — **purely random**                     | **The one place we should diverge.** See §5.                                                   |
+| Degenerate values | retries while `c == 0` or `r == 0`                         | Adopt.                                                                                         |
+| Cleanup           | `memwipe(&k, …)` after signing                             | Adopt in spirit; JS cannot guarantee it, so record the limitation.                             |
 
 **The domain-separation lesson.** The plain `generate_signature` contains **no
 domain separator at all** — `prefix_hash` is entirely the caller's
@@ -193,7 +193,7 @@ would not copy Monero, and the reason is the platform, not the cryptography.
 Monero signs inside a daemon or CLI wallet on a desktop OS with a vetted
 CSPRNG. PARA signs inside React Native on Hermes, where the RNG provenance is
 whatever the host and the polyfill chain provide — and nonce reuse in Schnorr
-does not degrade security, it *publishes the private key*: two signatures
+does not degrade security, it _publishes the private key_: two signatures
 sharing `k` give `x = (r₁ − r₂) / (c₂ − c₁)`. Bitcoin's BIP-340 made exactly
 this move for exactly this reason.
 

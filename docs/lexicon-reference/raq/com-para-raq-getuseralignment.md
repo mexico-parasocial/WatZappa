@@ -2,11 +2,13 @@
 title: com.para.raq.getUserAlignment
 description: Reference for the com.para.raq.getUserAlignment lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,44 +17,46 @@ Get a user's public RAQ alignment.
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `did` | `string` | ✅  |  | Format: `did` |
-**Output:**
+| Name        | Type     | Req'd | Description | Constraints   |
+| ----------- | -------- | ----- | ----------- | ------------- |
+| `did`       | `string` | ✅    |             | Format: `did` |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `assessment` | [`#assessmentView`](#assessmentview) | ✅  |  |  |
-**Possible Errors:**
+| Name                 | Type                                 | Req'd | Description | Constraints |
+| -------------------- | ------------------------------------ | ----- | ----------- | ----------- |
+| `assessment`         | [`#assessmentView`](#assessmentview) | ✅    |             |             |
+| **Possible Errors:** |
 
 - `NotFound`
 
 ---
 
 <a name="assessmentview"></a>
+
 ### `assessmentView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `results` | Array of [`com.para.raq.defs#axisResult`]([[com-para-raq-defs|com.para.raq.defs#axisResult]]) | ✅  |  |  |
-| `compass` | [`com.para.raq.defs#compassPosition`]([[com-para-raq-defs|com.para.raq.defs#compassPosition]]) | ✅  |  |  |
-| `ideology` | [`com.para.raq.defs#ideologyMatch`]([[com-para-raq-defs|com.para.raq.defs#ideologyMatch]]) | ✅  |  |  |
-| `secondaryIdeology` | [`com.para.raq.defs#ideologyMatch`]([[com-para-raq-defs|com.para.raq.defs#ideologyMatch]]) | ❌  |  |  |
-| `partyMatches` | Array of [`com.para.raq.defs#partyMatch`]([[com-para-raq-defs|com.para.raq.defs#partyMatch]]) | ❌  |  |  |
-| `completedAt` | `string` | ❌  |  | Format: `datetime` |
+| Name                | Type                                                          | Req'd                                | Description | Constraints        |
+| ------------------- | ------------------------------------------------------------- | ------------------------------------ | ----------- | ------------------ |
+| `results`           | Array of [`com.para.raq.defs#axisResult`]([[com-para-raq-defs | com.para.raq.defs#axisResult]])      | ✅          |                    |     |
+| `compass`           | [`com.para.raq.defs#compassPosition`]([[com-para-raq-defs     | com.para.raq.defs#compassPosition]]) | ✅          |                    |     |
+| `ideology`          | [`com.para.raq.defs#ideologyMatch`]([[com-para-raq-defs       | com.para.raq.defs#ideologyMatch]])   | ✅          |                    |     |
+| `secondaryIdeology` | [`com.para.raq.defs#ideologyMatch`]([[com-para-raq-defs       | com.para.raq.defs#ideologyMatch]])   | ❌          |                    |     |
+| `partyMatches`      | Array of [`com.para.raq.defs#partyMatch`]([[com-para-raq-defs | com.para.raq.defs#partyMatch]])      | ❌          |                    |     |
+| `completedAt`       | `string`                                                      | ❌                                   |             | Format: `datetime` |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -63,9 +67,7 @@ Get a user's public RAQ alignment.
       "description": "Get a user's public RAQ alignment.",
       "parameters": {
         "type": "params",
-        "required": [
-          "did"
-        ],
+        "required": ["did"],
         "properties": {
           "did": {
             "type": "string",
@@ -77,9 +79,7 @@ Get a user's public RAQ alignment.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "assessment"
-          ],
+          "required": ["assessment"],
           "properties": {
             "assessment": {
               "type": "ref",
@@ -96,11 +96,7 @@ Get a user's public RAQ alignment.
     },
     "assessmentView": {
       "type": "object",
-      "required": [
-        "results",
-        "compass",
-        "ideology"
-      ],
+      "required": ["results", "compass", "ideology"],
       "properties": {
         "results": {
           "type": "array",

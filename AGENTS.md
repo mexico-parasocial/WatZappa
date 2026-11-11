@@ -66,24 +66,73 @@ The repo-root [lexicons/](lexicons/) holds the canonical `com.atproto.*` / `tool
 - **Add/refresh an external lexicon in a package:** `cd packages/<pkg> && pnpm lex:install <nsid>` (adds it plus transitive deps); `pnpm lex:update` refreshes installed ones.
 - **Edit a canonical lexicon:** change it under [lexicons/](lexicons/), then run `pnpm lex:update-local` from the repo root to propagate the new CID into every dependent package's `lexicons.json`. (After editing a `.proto` file instead, run `pnpm codegen` from the root.)
 
-For working with the generated SDK, invoke the focused skills under [.agents/skills/](.agents/skills/): `lex-setup` (lexicons.json / resolvers / codegen wiring), `lex-schema` and `lex-data` (schemas and values), `lex-client` (calls out), `xrpc-server` (defining server routes), and `lexification-client` / `lexification-server` (migrating off the legacy stack). To sync `chat.bsky.*` schemas from the chat repo, use `update-chat-lexicons`.
+For working with the generated SDK, invoke the focused skills under [.agents/skills/](.agents/skills/): `lex-setup` (lexicons.json / resolvers / codegen wiring), `lex-schema` and `lex-data` (schemas and values), `lex-client` (calls out), `xrpc-server` (defining server routes), and `lexification-client` / `lexification-server` (migrating off the legacy stack).
 
 ## Architecture notes
 
-- Community authority comes from verified authority-event chains; self-authored
-  membership roles never grant offices. `PARA_AUTHORITY_SERVICE_TOKEN` is a
-  dedicated read credential for the bridge's specified-subject authorization
-  query; redact its header, disable caching, and never reuse admin/M8 credentials.
-  Assembly-decision grants stay closed until a trusted tally verifier exists.
+- **A community is an account; its old records are retired.**
+  `assertCommunityRepoWrites` refuses new `board`, `membership`, `governance`,
+  `roleAcceptance`, `authorityEvent`, `relation` and `sharedContentAction`
+  records in every repo (deletes pass). Found a community with
+  `com.para.community.create`, change it with `com.para.community.act`; fixtures
+  use `packages/dev-env/src/seed/community-account.ts`, never raw records.
+
+- A community's authority is its chain's alone: a member's own record never
+  grants an office, and a record that changes what a community shows is
+  replaced by a chain event (`CommunityEffect`). PDS routes ask the AppView's
+  `getAuthorization` for offices, never a local record.
+  `PARA_AUTHORITY_SERVICE_TOKEN` is a dedicated read credential for the
+  bridge's specified-subject authorization query; redact its header, disable
+  caching, and never reuse admin/M8 credentials. Voter eligibility everywhere
+  (ballot indexing, tallies, delegations) goes through `filterActiveMembers`,
+  which is the chain's active members, so no self-written record is a vote.
+  Every community stays hierarchical (the owner appoints moderators). Assembly
+  decisions ground no chain event yet: a cabildeo's `protectedAction` is a claim
+  only, and the fixed quorum and threshold rules (`evaluateAssemblyVote`,
+  `ASSEMBLY_DECISIONS` in `@atproto/common`) wait for a chain action that
+  verifies a cabildeo's final tally, as `verifyAssemblyDecision` once did for
+  authority events. Do not read quorum from a record the owner publishes.
+
+- **`com.para.civic.cabildeo` is the only proposal, deliberation and decision
+  pipeline.** Reactions to arguments are `deliberationVote` on a
+  `civic.position` (no m8 proof, OD-7 §5h); a decision is a cabildeo's
+  server-computed final tally, and its `protectedAction` is a claim only.
+  `com.para.community.proposal`, `deliberation` and `decision` have no
+  lexicon, route or indexer any more (their old `para_deliberation_statement`
+  rows stay, read only by Influence): do not bring them back or add a second
+  tally anywhere (the Matrix bridge decides nothing). A cabildeo that is to
+  ground a chain event must name its community account, have exactly two
+  options (the first approves), and still be the record version voting opened in
+  (`cabildeo_close_policy.recordCid`).
+
+- **OD-9 community accounts** ([docs/OD-9-COMMUNITY-ACCOUNTS.md](docs/OD-9-COMMUNITY-ACCOUNTS.md))
+  replaced board records and authority events (phase 5); the AppView keeps
+  neither their indexers nor their tables.
+  A community repo is written only by its host's `com.para.community.act`;
+  generic writes to it are refused. `act` and the AppView fold both decide
+  with `applyCommunityEvent` (`@atproto/common`): never re-implement its rules.
+  Each event carries its request proof and verifies alone, so the fold stays a
+  pure function of the community repo: no `indexedAt`, no other repo's
+  arrival. A fork, broken `prev` or rewritten event re-folds and freezes it.
+  Read membership and offices only through `community-membership.ts` or
+  `getAuthoritySnapshots`; a community is named by its URI (an account's is its
+  `com.para.community.profile/self`), and any other URI has no members. Never
+  query the member tables directly. Resolve accounts by URI, DID, handle or slug, never display name.
+  An action that touches state outside membership (content, relations,
+  briefing packs) returns it as a `CommunityEffect` in the policy's patch: the
+  host ignores it and the AppView stores it. Serve those views for an account
+  from `community-content.ts`, never from member-authored records. No chain
+  sees a relation cycle across communities, so `accountRelationRows` sets
+  aside every relation on one at read time; `listOpenOffers` shows a
+  non-steward only the offers that name them.
 
 - Pilot planning: read [docs/QUARTER_PLAN_2026Q4.md](docs/QUARTER_PLAN_2026Q4.md)
   and its evidence before auditing or scheduling work. It is the canonical
   remaining-work queue, re-baselined 2026-10-05; the old sprint calendars are
   superseded. Inspect only relevant changes, distinguish implemented/tested/
   merged/deployed, and remove closed actions from active roadmaps while retaining
-  linked evidence. Trusted-role fixes are integrated locally in the active branch
-  at `d11fa24f1` (2026-10-06); release selection and homeserver acceptance remain
-  open. Do not re-integrate the old worktrees or repeat the completed source audit.
+  linked evidence. Status belongs in that plan, not here. Do not re-integrate the
+  old worktrees or repeat the completed source audit.
 
 - Public cabildeo and policy votes require `verifyPublicBallotProof` before PDS
   preparation and AppView indexing, including foreign repositories. A policy
@@ -91,14 +140,18 @@ For working with the generated SDK, invoke the focused skills under [.agents/ski
   is operator configuration; absent/unavailable verification must never fall
   back to account-only deduplication. This MAC authorization is not anonymous
   voting. `civic.delegation` carrying `signal` is also refused by the shared policy.
+  Every path that writes a ballot-shaped record must go through
+  `ballotWritePolicyRefusal` (`@atproto/common`); do not re-compose its checks
+  inline.
 
 - The dev-env seed (`packages/dev-env/src/seed/para-policies.ts`) adds policies
   filed under each of the six official matter groups and casts public policy
   ballots from the demo accounts, leaning by party. The proofs come from the
   dev-env verifier (`devPolicyVoteProof`), signed with a key that exists only
-  there. `com.para.civic.getPolicyCommunityVotes` reads `para_policy_vote`
-  joined to active `para_community_membership`; it is gated to members of that
-  community.
+  there. A policy tally and `com.para.civic.getPolicyCommunityVotes` count only
+  ballots from identities `filterActiveMembers` holds active in the policy's
+  community when read (OD-10 §7.7), never a 0 signal (`isPolicySignal`, §7.5);
+  the community view is gated to members of that community.
 
 - `packages/bsky/src/governance-lab` is a synthetic reference only. Its
   `g1-follow-signal-v1` policy is provisional; never import it into production

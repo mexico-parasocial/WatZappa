@@ -2,6 +2,11 @@
   "name": "bsky-app-view-service",
   "private": true,
   "packageManager": "pnpm@11.11.0",
+  "type": "module",
+  "files": [
+    "api.ts",
+    "tracer.ts"
+  ],
   "dependencies": {
     "@atproto/bsky": "workspace:^",
     "@atproto/crypto": "workspace:^",

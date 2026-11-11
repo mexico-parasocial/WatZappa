@@ -1,10 +1,14 @@
-import type { AtUriString, DatetimeString, DidString } from '@atproto/lex'
+import type {
+  AtUriString,
+  DatetimeString,
+  DidString,
+} from '@atproto/lex-schema'
 import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import { parseCid, parseString } from '../../../../hydration/util.js'
 import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
-import { getVisibleParticipantDids, parseDataplaneJson } from './util.js'
+import { parseDataplaneJson } from './util.js'
 
 type CabildeoView = com.para.civic.defs.CabildeoView
 
@@ -18,14 +22,16 @@ export default function (server: Server, ctx: AppContext) {
         ctx,
         params,
         viewer: viewer ?? undefined,
-        labelers,
       })
       const repoRev = await ctx.hydrator.actor.getRepoRevSafe(viewer)
 
       return {
         encoding: 'application/json' as const,
         body: result,
-        headers: resHeaders({ repoRev, labelers }),
+        headers: {
+          ...resHeaders({ repoRev, labelers }),
+          ...(viewer ? { 'Cache-Control': 'private, no-store' } : {}),
+        },
       }
     },
   })
@@ -35,9 +41,8 @@ const getCabildeo = async (inputs: {
   ctx: AppContext
   params: com.para.civic.getCabildeo.$Params
   viewer?: string
-  labelers: ReturnType<AppContext['reqLabelers']>
 }) => {
-  const { ctx, params, viewer, labelers } = inputs
+  const { ctx, params, viewer } = inputs
   const res = await ctx.dataplane.getParaCabildeo({
     cabildeoUri: params.cabildeo,
     viewerDid: viewer ?? '',
@@ -51,28 +56,7 @@ const getCabildeo = async (inputs: {
     throw new InvalidRequestError('Cabildeo not found', 'NotFound')
   }
 
-  const cabildeo = mapCabildeoView(cabildeoView)
-  const visiblePreviewDids = await getVisibleParticipantDids({
-    ctx,
-    dids: cabildeo.liveSession?.participantPreviewDids ?? [],
-    viewer,
-    labelers,
-  })
-
-  return {
-    cabildeo: {
-      ...cabildeo,
-      liveSession: cabildeo.liveSession
-        ? {
-            ...cabildeo.liveSession,
-            participantPreviewDids:
-              cabildeo.liveSession.participantPreviewDids.filter((did) =>
-                visiblePreviewDids.has(did),
-              ),
-          }
-        : undefined,
-    },
-  }
+  return { cabildeo: mapCabildeoView(cabildeoView) }
 }
 
 const mapCabildeoView = (view: {
@@ -90,9 +74,19 @@ const mapCabildeoView = (view: {
   geo?: { latE7: number; lngE7: number }
   options: Array<{ label: string; description: string; isConsensus: boolean }>
   minQuorum?: number
+  kind?: string
   voteVisibility?: string
   phase: string
   phaseDeadline: string
+  votingOpenedAt?: DatetimeString
+  votingClosedAt?: DatetimeString
+  minimumViewTier?: string
+  minimumParticipationTier?: string
+  protectedAction?: {
+    action: string
+    subject: DidString
+    payloadHash?: string
+  }
   createdAt: DatetimeString
   optionSummary: Array<{
     optionIndex: number
@@ -137,6 +131,7 @@ const mapCabildeoView = (view: {
     }>
   }
   viewerContext?: {
+    canCastCabildeoVote?: boolean
     currentVoteOption?: number
     currentVoteIsDirect: boolean
     currentVoteCreatedAt?: string
@@ -146,13 +141,6 @@ const mapCabildeoView = (view: {
     delegatedVotedAt: string
     gracePeriodEndsAt: string
     delegateVoteDismissed: boolean
-  }
-  liveSession?: {
-    isLive: boolean
-    hostDid: DidString
-    activeParticipantCount: number
-    startedAt: DatetimeString
-    participantPreviewDids: DidString[]
   }
 }): CabildeoView => ({
   uri: view.uri,
@@ -176,9 +164,15 @@ const mapCabildeoView = (view: {
     isConsensus: option.isConsensus,
   })),
   minQuorum: view.minQuorum,
+  kind: view.kind || 'activity',
   voteVisibility: view.voteVisibility || 'public',
   phase: view.phase,
   phaseDeadline: parseString(view.phaseDeadline),
+  votingOpenedAt: view.votingOpenedAt,
+  votingClosedAt: view.votingClosedAt,
+  minimumViewTier: view.minimumViewTier,
+  minimumParticipationTier: view.minimumParticipationTier,
+  protectedAction: view.protectedAction,
   createdAt: view.createdAt,
   optionSummary: view.optionSummary,
   positionCounts: {
@@ -207,6 +201,7 @@ const mapCabildeoView = (view: {
     : undefined,
   viewerContext: view.viewerContext
     ? {
+        canCastCabildeoVote: view.viewerContext.canCastCabildeoVote,
         currentVoteOption: view.viewerContext.currentVoteOption,
         currentVoteIsDirect: view.viewerContext.currentVoteIsDirect,
         currentVoteCreatedAt: parseString(
@@ -218,15 +213,6 @@ const mapCabildeoView = (view: {
         delegatedVotedAt: parseString(view.viewerContext.delegatedVotedAt),
         gracePeriodEndsAt: parseString(view.viewerContext.gracePeriodEndsAt),
         delegateVoteDismissed: view.viewerContext.delegateVoteDismissed,
-      }
-    : undefined,
-  liveSession: view.liveSession
-    ? {
-        isLive: view.liveSession.isLive,
-        hostDid: view.liveSession.hostDid,
-        activeParticipantCount: view.liveSession.activeParticipantCount,
-        startedAt: view.liveSession.startedAt,
-        participantPreviewDids: view.liveSession.participantPreviewDids,
       }
     : undefined,
 })

@@ -1,5 +1,5 @@
-import { AtpAgent } from '@atproto/api'
-import { TestNetwork } from '../index.js'
+import type { AtpAgent } from '@atproto/api'
+import type { TestNetwork } from '../index.js'
 
 const MOCK_USER_PASSWORD = process.env.MOCK_USER_PASSWORD || 'hunter2'
 const MOCK_MOD_PASSWORD = process.env.MOCK_MOD_PASSWORD || 'mod-pass'

@@ -6,7 +6,6 @@
  *   DATABASE_URL=postgresql://user:pass@localhost/para_bridge \
  *     npx tsx src/db/migrate-to-postgres.ts --source /data/bridge.db
  */
-
 import { readFileSync } from 'node:fs'
 import Database from 'better-sqlite3'
 import { Pool } from 'pg'
@@ -44,6 +43,16 @@ async function migrate() {
     columns: string[],
     opts: { batchSize?: number; transform?: (row: any) => any } = {},
   ) {
+    // @NOTE older sources have no pending-device queue until their first upgrade.
+    if (
+      tableName === 'device_revocations' &&
+      !sqlite
+        .prepare(
+          "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+        )
+        .get(tableName)
+    )
+      return
     const { batchSize = 500, transform } = opts
     const rows = sqlite
       .prepare(`SELECT ${columns.join(', ')} FROM ${tableName}`)
@@ -97,7 +106,22 @@ async function migrate() {
     'roles_json',
     'updated_at',
   ])
-  await migrateTable('chamber_assignment', ['community_uri', 'did', 'chamber'])
+  await migrateTable('device_sessions', [
+    'id',
+    'did',
+    'mxid',
+    'device_id',
+    'friendly_name',
+    'user_agent',
+    'created_at',
+    'last_seen_at',
+    'revoked_at',
+  ])
+  await migrateTable('device_revocations', [
+    'session_id',
+    'requested_at',
+    'attempts',
+  ])
   await migrateTable('sync_log', [
     'id',
     'event_type',
@@ -121,88 +145,6 @@ async function migrate() {
     'rules_json',
     'created_at',
   ])
-  await migrateTable('proposals', [
-    'uri',
-    'community_uri',
-    'author_did',
-    'title',
-    'body',
-    'proposal_type',
-    'budget_request',
-    'state',
-    'votes_for',
-    'votes_against',
-    'votes_abstain',
-    'created_at',
-    'voting_starts_at',
-    'voting_ends_at',
-    'decided_at',
-  ])
-  await migrateTable('votes', [
-    'uri',
-    'proposal_uri',
-    'community_uri',
-    'voter_did',
-    'choice',
-    'weight',
-    'created_at',
-  ])
-  await migrateTable('sortition_proofs', [
-    'id',
-    'did',
-    'community_uri',
-    'chamber',
-    'drand_round',
-    'drand_randomness',
-    'hash_input',
-    'hash_output',
-    'threshold',
-    'verified',
-    'timestamp',
-  ])
-  await migrateTable('sortition_runs', [
-    'id',
-    'cabildeo_uri',
-    'community_uri',
-    'created_by_did',
-    'assembly_size',
-    'eligibility_filter',
-    'drand_round',
-    'drand_randomness',
-    'threshold',
-    'eligible_count',
-    'selected_count',
-    'status',
-    'config_record_json',
-    'created_at',
-    'processed_at',
-  ])
-  await migrateTable('sortition_candidates', [
-    'run_id',
-    'did',
-    'community_uri',
-    'cabildeo_uri',
-    'hash_input',
-    'hash_output',
-    'hash_value',
-    'threshold',
-    'selected',
-    'created_at',
-  ])
-  await migrateTable('decisions', [
-    'proposal_uri',
-    'community_uri',
-    'result',
-    'votes_for',
-    'votes_against',
-    'votes_abstain',
-    'total_members',
-    'quorum_required',
-    'threshold_required',
-    'constitution_version',
-    'budget_allocated',
-    'created_at',
-  ])
   await migrateTable('chat_moderation_events', [
     'id',
     'did',
@@ -217,23 +159,6 @@ async function migrate() {
     'sanctioned_by_did',
     'matrix_room_id',
     'created_at',
-  ])
-  await migrateTable('chat_participation_stats', [
-    'did',
-    'community_uri',
-    'matrix_room_id',
-    'message_count',
-    'first_message_at',
-    'last_message_at',
-    'votes_cast',
-    'proposals_created',
-    'proposals_reached_quorum',
-    'chamber',
-    'sortition_proof_id',
-    'is_delegate',
-    'is_moderator',
-    'joined_at',
-    'updated_at',
   ])
   await migrateTable('chat_user_badges', [
     'did',
@@ -264,105 +189,12 @@ async function migrate() {
     'last_read_event_id',
     'last_read_at',
   ])
-  await migrateTable('deliberation_cards', [
-    'id',
-    'community_uri',
-    'author_did',
-    'title',
-    'content',
-    'card_type',
-    'source_room_id',
-    'source_event_id',
-    'source_url',
-    'extracted_at',
-    'is_public',
-    'passport_visible',
-    'metadata',
-    'llm_enriched_at',
-    'llm_model',
-  ])
-  await migrateTable('community_map_contributions', [
-    'id',
-    'community_uri',
-    'author_did',
-    'title',
-    'content',
-    'source_url',
-    'source_type',
-    'metadata',
-    'status',
-    'approved_card_id',
-    'created_at',
-    'decided_at',
-  ])
-  await migrateTable('community_map_contribution_votes', [
-    'contribution_id',
-    'voter_did',
-    'vote',
-    'created_at',
-  ])
-  await migrateTable('deliberation_relationships', [
-    'id',
-    'source_card_id',
-    'target_card_id',
-    'relationship_type',
-    'author_did',
-    'created_at',
-  ])
-  await migrateTable('suggested_relationships', [
-    'id',
-    'source_card_id',
-    'target_card_id',
-    'relationship_type',
-    'confidence',
-    'reason',
-    'status',
-    'created_at',
-  ])
-  await migrateTable('card_votes', [
-    'id',
-    'card_id',
-    'voter_did',
-    'influence',
-    'created_at',
-    'updated_at',
-  ])
-  await migrateTable('extracted_entities', [
-    'id',
-    'card_id',
-    'entity_type',
-    'entity_value',
-    'start_pos',
-    'end_pos',
-  ])
-  await migrateTable('policy_collections', [
-    'id',
-    'did',
-    'name',
-    'description',
-    'color',
-    'created_at',
-    'updated_at',
-  ])
-  await migrateTable('policy_collection_items', [
-    'id',
-    'collection_id',
-    'policy_uri',
-    'policy_data',
-    'note',
-    'position',
-    'created_at',
-  ])
 
   // Reset sequences for tables with SERIAL IDs
   const sequences = [
     'sync_log_id_seq',
-    'sortition_proofs_id_seq',
-    'decisions_id_seq',
     'chat_moderation_events_id_seq',
     'matrix_events_id_seq',
-    'card_votes_id_seq',
-    'extracted_entities_id_seq',
   ]
   for (const seq of sequences) {
     const tableName = seq.replace('_id_seq', '')

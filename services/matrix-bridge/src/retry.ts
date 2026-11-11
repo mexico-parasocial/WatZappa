@@ -1,6 +1,5 @@
 import type { Logger } from 'pino'
 import type { IBridgeDatabase } from './db/index.js'
-import type { MatrixProjectionPort } from './matrix-projection.js'
 import type { BridgeMetrics } from './metrics.js'
 
 const RETRY_INTERVAL_MS = 60_000
@@ -12,7 +11,6 @@ export class RetryWorker {
 
   constructor(
     private db: IBridgeDatabase,
-    private projection: MatrixProjectionPort,
     private metrics: BridgeMetrics,
     private log: Logger,
     private refreshAuthority: (
@@ -24,6 +22,11 @@ export class RetryWorker {
       community: string,
       did: string,
     ) => Promise<void>,
+    /**
+     * With chat off only role refreshes run. Room provisioning and
+     * revocations stay queued until chat is on.
+     */
+    private chatEnabled = true,
   ) {}
 
   start(): void {
@@ -58,11 +61,13 @@ export class RetryWorker {
       )
       const failed = [
         ...new Map(
-          [...(await this.db.getFailedSyncs(50)), ...provisioning].map(
-            (job) => [job.id, job],
-          ),
+          [
+            ...(await this.db.getFailedSyncs(50)),
+            ...provisioning,
+            ...(await this.db.getAccessRetryJobs(50)),
+          ].map((job) => [job.id, job]),
         ).values(),
-      ]
+      ].filter((job) => this.chatEnabled || job.eventType === 'apply_roles')
       if (failed.length === 0) return
 
       this.log.info({ count: failed.length }, 'Retrying failed syncs')
@@ -70,7 +75,10 @@ export class RetryWorker {
       for (const entry of failed) {
         // Skip entries that have been retried too many times
         const retryCount = await this.db.getRetryCount(entry.id)
-        if (retryCount >= MAX_RETRIES && entry.eventType !== 'create_space') {
+        if (
+          retryCount >= MAX_RETRIES &&
+          !['create_space', 'revoke', 'apply_roles'].includes(entry.eventType)
+        ) {
           this.log.warn(
             { entryId: entry.id, retries: retryCount },
             'Max retries exceeded, giving up',
@@ -113,12 +121,7 @@ export class RetryWorker {
             entry.communityUri &&
             entry.did
           ) {
-            const space = await this.db.getSpaceForCommunity(entry.communityUri)
-            await this.projection.revokeMemberAccess(
-              space ?? null,
-              entry.did,
-              'retry',
-            )
+            await this.refreshAuthority(entry.communityUri, entry.did, true)
             await this.db.markSyncSuccess(entry.id)
             this.metrics.retryAttemptsTotal.inc({
               event_type: entry.eventType,

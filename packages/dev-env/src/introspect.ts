@@ -1,5 +1,5 @@
 import events from 'node:events'
-import http from 'node:http'
+import type http from 'node:http'
 import express from 'express'
 import type { TestBsky } from './bsky.js'
 import type { TestChat } from './chat.js'

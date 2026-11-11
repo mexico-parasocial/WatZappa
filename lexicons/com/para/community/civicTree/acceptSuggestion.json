@@ -8,10 +8,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "id",
-            "authorDid"
-          ],
+          "required": ["id", "authorDid"],
           "properties": {
             "id": {
               "type": "string"

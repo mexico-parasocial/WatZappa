@@ -12,10 +12,13 @@
     "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
   },
-  "include": ["src/**/*",
-    "../../tsconfig/cjs-default-exports.d.ts"
+  "references": [
+    { "path": "../../packages/api/tsconfig.build.json" },
+    { "path": "../../packages/identity/tsconfig.build.json" },
+    { "path": "../../packages/sync/tsconfig.build.json" },
   ],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*", "../../tsconfig/cjs-default-exports.d.ts"],
+  "exclude": ["node_modules", "dist"],
 }

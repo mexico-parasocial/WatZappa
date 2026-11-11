@@ -3,7 +3,7 @@ import type {
   DatetimeString,
   DidString,
   UriString,
-} from '@atproto/lex'
+} from '@atproto/lex-schema'
 import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import { Code, isDataplaneError } from '../../../../data-plane/index.js'

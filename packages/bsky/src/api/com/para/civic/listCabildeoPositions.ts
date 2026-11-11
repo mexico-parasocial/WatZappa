@@ -1,4 +1,8 @@
-import type { AtUriString, DatetimeString, DidString } from '@atproto/lex'
+import type {
+  AtUriString,
+  DatetimeString,
+  DidString,
+} from '@atproto/lex-schema'
 import type { Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import type { DataPlaneClient } from '../../../../data-plane/index.js'
@@ -16,6 +20,7 @@ export default function (server: Server, ctx: AppContext) {
       const result = await listCabildeoPositions({
         ctx,
         params,
+        viewer,
       })
       const repoRev = await ctx.hydrator.actor.getRepoRevSafe(viewer)
 
@@ -31,8 +36,9 @@ export default function (server: Server, ctx: AppContext) {
 const listCabildeoPositions = async (inputs: {
   ctx: Context
   params: com.para.civic.listCabildeoPositions.$Params
+  viewer: string | null
 }): Promise<com.para.civic.listCabildeoPositions.$OutputBody> => {
-  const { ctx, params } = inputs
+  const { ctx, params, viewer } = inputs
   if (clearlyBadCursor(params.cursor)) {
     return { positions: [] }
   }
@@ -42,6 +48,7 @@ const listCabildeoPositions = async (inputs: {
     stance: params.stance ?? '',
     limit: params.limit,
     cursor: params.cursor ?? '',
+    viewer: viewer ?? '',
   })
 
   return {
@@ -57,6 +64,10 @@ const listCabildeoPositions = async (inputs: {
         text: string
         compassQuadrant?: string
         createdAt: DatetimeString
+        agreeCount?: number
+        disagreeCount?: number
+        passCount?: number
+        viewerDirection?: string
       }>
     >(res.positionsJson, []).map((position) => ({
       uri: position.uri,
@@ -69,6 +80,10 @@ const listCabildeoPositions = async (inputs: {
       text: position.text,
       compassQuadrant: parseString(position.compassQuadrant),
       createdAt: position.createdAt,
+      agreeCount: position.agreeCount ?? 0,
+      disagreeCount: position.disagreeCount ?? 0,
+      passCount: position.passCount ?? 0,
+      viewerDirection: position.viewerDirection,
     })),
     cursor: parseString(res.cursor),
   }

@@ -4,12 +4,12 @@
  *
  * Usage:
  *   npx tsx src/backfill.ts --communities-file ./communities.json
- *   npx tsx src/backfill.ts --appview https://api.para.social --community-uri at://did:plc:xxx/com.para.community.board/xxx
+ *   npx tsx src/backfill.ts --appview https://api.para.social --community-uri at://did:plc:xxx/com.para.community.profile/self
  *
  * The communities.json format:
  *   [
  *     {
- *       "uri": "at://did:plc:abc/com.para.community.board/my-community",
+ *       "uri": "at://did:plc:abc/com.para.community.profile/self",
  *       "name": "My Community",
  *       "slug": "my-community",
  *       "chamberMode": "bicameral",
@@ -20,8 +20,10 @@
 
 import pino from 'pino'
 import { AtpAgent } from '@atproto/api'
+import { isProvisionedSpace } from './chat-mode.js'
+import { communityAlias, communityDidOf } from './community-uri.js'
 import { loadConfig } from './config.js'
-import { type IBridgeDatabase, createDatabase } from './db/index.js'
+import { createDatabase } from './db/index.js'
 import { MatrixAdminClient, extractServerName } from './matrix.js'
 
 const log = pino({
@@ -73,7 +75,7 @@ async function main() {
         communities.push({
           uri: communityUri,
           name: board.name,
-          slug: board.slug ?? 'community',
+          slug: communityAlias(communityDidOf(communityUri) ?? communityUri),
           chamberMode: board.chamberMode ?? 'unicameral',
           creatorDid: board.creatorDid,
         })
@@ -93,7 +95,7 @@ async function main() {
       JSON.stringify(
         [
           {
-            uri: 'at://did:plc:abc123/com.para.community.board/denver-zoning',
+            uri: 'at://did:plc:abc123/com.para.community.profile/self',
             name: 'Denver Zoning Reform',
             slug: 'denver-zoning',
             chamberMode: 'bicameral',
@@ -112,7 +114,8 @@ async function main() {
     log.info({ uri: comm.uri, name: comm.name }, 'Processing community')
 
     const existing = await db.getSpaceForCommunity(comm.uri)
-    if (existing) {
+    // A row recorded while chat was off has no rooms yet: provision it.
+    if (existing && isProvisionedSpace(existing)) {
       log.info(
         { uri: comm.uri },
         'Community already has Matrix space, skipping creation',

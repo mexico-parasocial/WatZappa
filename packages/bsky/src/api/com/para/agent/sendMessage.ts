@@ -1,4 +1,4 @@
-import type { DatetimeString } from '@atproto/lex'
+import type { DatetimeString } from '@atproto/lex-schema'
 import {
   NotEnoughResourcesError,
   type Server,

@@ -1,9 +1,13 @@
 // @ts-nocheck
 import { describe, expect, it } from 'vitest'
-import { HandlerOpts } from '../src/channel.js'
+import type { HandlerOpts } from '../src/channel.js'
 import { SimpleIndexer } from '../src/simple-indexer.js'
-import { IdentityEvent, RecordEvent } from '../src/types.js'
-import { createIdentityEvent, createMockOpts, createRecordEvent } from './_util.js'
+import type { IdentityEvent, RecordEvent } from '../src/types.js'
+import {
+  createIdentityEvent,
+  createMockOpts,
+  createRecordEvent,
+} from './_util.js'
 
 describe('SimpleIndexer', () => {
   describe('event routing', () => {

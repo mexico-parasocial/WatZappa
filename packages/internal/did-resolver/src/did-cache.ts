@@ -1,4 +1,4 @@
-import { Did, DidDocument } from '@atproto/did'
+import type { Did, DidDocument } from '@atproto/did'
 import {
   CachedGetter,
   type SimpleStore,
@@ -6,8 +6,8 @@ import {
   swallowStoreErrors,
 } from '@atproto-labs/simple-store'
 import { DidCacheMemory } from './did-cache-memory.js'
-import { DidMethod, ResolveDidOptions } from './did-method.js'
-import { DidResolver, ResolvedDocument } from './did-resolver.js'
+import type { DidMethod, ResolveDidOptions } from './did-method.js'
+import type { DidResolver, ResolvedDocument } from './did-resolver.js'
 
 export type { DidMethod, ResolveDidOptions, ResolvedDocument }
 
@@ -25,9 +25,9 @@ export type DidResolverCachedOptions = {
   onDidCacheError?: DidCacheErrorHandler
 }
 
-export class DidResolverCached<M extends string = string>
-  implements DidResolver<M>
-{
+export class DidResolverCached<
+  M extends string = string,
+> implements DidResolver<M> {
   protected readonly getter: CachedGetter<Did, DidDocument>
   constructor(
     resolver: DidResolver<M>,

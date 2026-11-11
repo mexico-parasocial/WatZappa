@@ -1,7 +1,7 @@
 // @ts-nocheck
-import { AtpAgent, ids } from '@atproto/api'
-import type { DidString, HandleString } from '@atproto/syntax'
-import { SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import { type AtpAgent, ids } from '@atproto/api'
+import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
+import type { DidString } from '@atproto/syntax'
 
 describe('bsky account deactivation', () => {
   let network: TestNetwork

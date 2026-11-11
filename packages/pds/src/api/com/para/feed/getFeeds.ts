@@ -31,9 +31,11 @@ export function getTimeline(server: Server, ctx: AppContext) {
   })
 }
 
-const getTimelineMunge: MungeFn<
-  com.para.feed.getTimeline.$OutputBody
-> = async (_localViewer, original, local) => ({
+const getTimelineMunge: MungeFn<com.para.feed.getTimeline.$OutputBody> = async (
+  _localViewer,
+  original,
+  local,
+) => ({
   ...original,
   feed: insertLocalPostsInFeed([...original.feed], local.paraPosts),
 })

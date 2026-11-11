@@ -4,6 +4,8 @@ import type { CID } from 'multiformats/cid'
 import { type AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
 import type { ParaCacheService } from '../../../cache/para-cache.js'
 import type { BackgroundQueue } from '../../background.js'
+import { getAuthoritySnapshot } from '../../community-authority.js'
+import { resolveCommunityAccountUris } from '../../community-membership.js'
 import type {
   DatabaseSchema,
   DatabaseSchemaType,
@@ -194,7 +196,7 @@ const findDuplicate = async (): Promise<AtUri | null> => {
   return null
 }
 
-const getCabildeoVoteEligibility = async (
+export const getCabildeoVoteEligibility = async (
   db: DatabaseSchema,
   opts: {
     actorDid: string
@@ -241,44 +243,24 @@ const getCabildeoVoteEligibility = async (
     return null
   }
 
-  const community = normalizeCommunitySlug(cabildeo.community)
-  const board = await db
-    .selectFrom('para_community_board')
-    .where((eb) =>
-      eb.or([
-        eb('uri', '=', cabildeo.community),
-        eb('slug', '=', community),
-        eb(
-          sql`regexp_replace(lower(coalesce("name", '')), '[^a-z0-9]+', '-', 'g')`,
-          '=',
-          community,
-        ),
-      ]),
-    )
-    .select(['uri'])
-    .executeTakeFirst()
-
-  if (!board) {
+  const database = { db } as Database
+  const [communityUri] = await resolveCommunityAccountUris(
+    database,
+    cabildeo.community,
+  )
+  if (!communityUri) {
     return null
   }
 
-  const membership = await db
-    .selectFrom('para_community_membership')
-    .where('creator', '=', opts.actorDid)
-    .where('communityUri', '=', board.uri)
-    .where('membershipState', '=', 'active')
-    .select(['uri'])
-    .executeTakeFirst()
-
-  return membership ? { cabildeo } : null
+  // The same rule as every other read of membership: the community's chain
+  // decides.
+  const authority = await getAuthoritySnapshot(
+    { db } as Database,
+    communityUri,
+    opts.actorDid,
+  )
+  return authority.membershipState === 'active' ? { cabildeo } : null
 }
-
-const normalizeCommunitySlug = (value: string) =>
-  value
-    .replace(/^p\//, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
 
 const normalizeOpaqueProofField = (value: unknown, maxLength: number) => {
   if (typeof value !== 'string') return null

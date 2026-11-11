@@ -1,4 +1,9 @@
 import type { Logger } from 'pino'
+import {
+  ChatDisabledError,
+  isProvisionedSpace,
+  unprovisionedSpaceId,
+} from './chat-mode.js'
 import { type EffectiveSanction, effectiveSanction } from './chat-moderation.js'
 import type { Config } from './config.js'
 import type { IBridgeDatabase } from './db/index.js'
@@ -19,23 +24,9 @@ export class SanctionedMemberError extends Error {
 }
 
 /**
- * Matrix projection port (CD-M2). The governance side (firehose) decides
- * WHAT should happen — who belongs, which chamber a member sits in, who owns
- * a community — and expresses it through this interface in terms of DIDs and,
- * for the verified join, the identity public key the member presented. The
- * implementation owns everything MXID: deriving localparts from presented
- * keys, provisioning Synapse users, joining rooms and setting power levels.
- * Governance code never resolves, stores or derives an MXID itself.
- *
- * The one-way rule from MATRIX_V2 §7: governance → projection calls only.
- * Nothing here calls back into governance state.
- *
- * Post-CD-M1 (F7): the projection cannot name a user from a DID — the MXID
- * is a hash of client-held key material, and no table relates the two. Every
- * operation that used to push a DID into a room is gone. Membership is
- * pull-based (CD-M6): the member presents a CD-M4 proof of possession, the
- * route verifies it alongside M8 session + active community membership, and
- * calls verifiedJoin with the presented key.
+ * Applies externally verified community access to Matrix. Callers verify the
+ * member's identity proof and authority; this port owns room and device effects.
+ * Room assignments must come from a trusted source, never local selection.
  */
 export interface MatrixProjectionPort {
   /** Provision a space (and, for bicameral, its chamber rooms) for a new
@@ -75,7 +66,7 @@ export interface MatrixProjectionPort {
    * roles as power levels — in every room of the community — to every chat
    * account this bridge has minted a device session for under that DID. This
    * is the only mechanism by which a role change (moderation rotation,
-   * sortition replacing a delegate, owner handover) reaches rooms the member
+   * owner handover) reaches rooms the member
    * has already joined: the projection cannot name them from the DID, but it
    * can act on the accounts it provisioned sessions for. Idempotent; a DID
    * with no minted sessions (not yet joined) is a no-op.
@@ -90,14 +81,7 @@ export interface MatrixProjectionPort {
     },
   ): Promise<void>
 
-  /**
-   * Revocation. The bridge cannot kick a DID it cannot name, so removal is
-   * enforced on what it does hold: every device session it minted for the
-   * DID is deactivated on the homeserver (killing that account's access
-   * tokens) and banned from the community's rooms. Re-entry is already
-   * impossible — the next verified join would fail the active-membership
-   * check. Returns the number of sessions revoked.
-   */
+  /** Remove known chat accounts from this community without closing devices. */
   revokeMemberAccess(
     space: CommunitySpaceMap | null,
     did: string,
@@ -110,9 +94,8 @@ export interface MatrixProjectionPort {
    * community the DID has state for, active memberships get their current
    * roles projected (catching downgrades that arrived while the member was
    * offline), and non-active memberships get the presented account banned
-   * and any minted sessions revoked (catching removals that arrived while
-   * the member was offline — including MAS-native accounts the bridge never
-   * minted a session for, which revocation-at-event-time cannot reach).
+   * only in that community, including MAS-native accounts presented after
+   * the removal. Global device sessions remain independent.
    *
    * This is what makes removal and role drift self-healing without ever
    * persisting the DID↔MXID pairing: the presented proof supplies the
@@ -137,6 +120,11 @@ export function createMatrixProjection(
   const ensureUserExists = async (mxid: string): Promise<void> => {
     const exists = await matrix.userExists(mxid)
     if (!exists) {
+      // MAS creates native accounts at first login; creating one here would
+      // take the localpart MAS needs and strand the user.
+      if (!config.matrixAllowAppServiceLogin) {
+        throw new Error('MATRIX_CLIENT_LOGIN_REQUIRED')
+      }
       await matrix.createUser(mxid)
       log.info({ mxid }, 'Created Matrix user from verified identity key')
     }
@@ -156,13 +144,16 @@ export function createMatrixProjection(
     return [...new Set(active.map((s) => s.mxid))]
   }
 
+  // A space recorded while chat was off has no rooms until provisioned.
   const communityRoomIds = (space: CommunitySpaceMap): string[] =>
-    [
-      space.spaceId,
-      space.chamberA_RoomId,
-      space.chamberB_RoomId,
-      space.observerRoomId,
-    ].filter((roomId): roomId is string => Boolean(roomId))
+    !isProvisionedSpace(space)
+      ? []
+      : [
+          space.spaceId,
+          space.chamberA_RoomId,
+          space.chamberB_RoomId,
+          space.observerRoomId,
+        ].filter((roomId): roomId is string => Boolean(roomId))
 
   const powerLevelForRoles = (roles: string[]): number => {
     if (roles.includes('owner')) return 100
@@ -267,6 +258,7 @@ export function createMatrixProjection(
     await ensureUserExists(mxid)
     const joined: string[] = []
     for (const { roomId, powerLevel } of rooms) {
+      await matrix.unbanUser(roomId, mxid)
       joined.push(await matrix.joinUser(roomId, mxid))
       if (powerLevel !== undefined) {
         await matrix.setPowerLevel(roomId, mxid, powerLevel)
@@ -330,6 +322,25 @@ export function createMatrixProjection(
         }
       }
     }
+  }
+
+  const banAccounts = async (
+    space: CommunitySpaceMap,
+    accounts: string[],
+    reason: string,
+  ): Promise<void> => {
+    const failures: unknown[] = []
+    for (const mxid of accounts) {
+      for (const roomId of communityRoomIds(space)) {
+        try {
+          await matrix.banUser(roomId, mxid, `Membership state: ${reason}`)
+        } catch (err) {
+          failures.push(err)
+        }
+      }
+    }
+    if (failures.length)
+      throw new AggregateError(failures, 'Community access removal incomplete')
   }
 
   return {
@@ -396,6 +407,7 @@ export function createMatrixProjection(
     },
 
     async applyMemberRoles(space, did, opts) {
+      if (!isProvisionedSpace(space)) return
       const mxids = await sessionMxidsForDid(did)
       if (mxids.length === 0) {
         // Never joined (or all sessions revoked): nothing to project onto.
@@ -414,42 +426,11 @@ export function createMatrixProjection(
     },
 
     async revokeMemberAccess(space, did, reason) {
+      if (!space || !isProvisionedSpace(space)) return 0
       const sessions = await db.listDeviceSessions(did)
-      if (sessions.length === 0) return 0
-      const rooms = space ? communityRoomIds(space) : []
-      for (const session of sessions) {
-        if (!session.revokedAt) {
-          try {
-            await matrix.adminDeactivateDevice(session.mxid, session.deviceId)
-          } catch (err) {
-            // Device may already be gone on the homeserver; the local revocation
-            // below is still the source of truth for "this session is dead".
-            log.warn(
-              { err, mxid: session.mxid, deviceId: session.deviceId },
-              'Homeserver device deactivation failed during revocation',
-            )
-          }
-        }
-        for (const roomId of rooms) {
-          try {
-            await matrix.banUser(
-              roomId,
-              session.mxid,
-              `Membership state: ${reason}`,
-            )
-          } catch {
-            // Not in this room, or already banned.
-          }
-        }
-        if (!session.revokedAt) {
-          await db.revokeDeviceSession(did, session.id)
-        }
-      }
-      log.info(
-        { did, state: reason, sessions: sessions.length },
-        'Revoked Matrix access for all minted sessions',
-      )
-      return sessions.length
+      const accounts = [...new Set(sessions.map((session) => session.mxid))]
+      await banAccounts(space, accounts, reason)
+      return accounts.length
     },
 
     async reconcileMemberAccess(did, presentedMxid) {
@@ -463,19 +444,18 @@ export function createMatrixProjection(
         if (!membership) continue
         const communityUri = cached.communityUri
         const space = await db.getSpaceForCommunity(communityUri)
-        if (!space) continue
+        if (!space || !isProvisionedSpace(space)) continue
         if (membership.state === 'active') {
           // Catch-up for role changes that arrived while offline. The
           // presented account is included: it is entitled by membership,
           // even if this interaction is its first under this community.
           const roles = membership.roles ?? []
-          const assigned = await db.getChamberAssignment(communityUri, did)
-          const chamber: 'A' | 'B' | null =
-            assigned === 'A' || assigned === 'B' ? assigned : null
+
+          const chamber = null
           const opts = {
             roles,
             chamber,
-            isObserver: roles.includes('observer'),
+            isObserver: false,
           }
           const entitled = [
             ...new Set([...(await sessionMxidsForDid(did)), presentedMxid]),
@@ -491,21 +471,59 @@ export function createMatrixProjection(
           // Removal that arrived while offline. The presented account is
           // banned from the rooms even when the bridge never minted a
           // session for it (MAS-native logins); minted sessions are
-          // deactivated and banned as at event time.
-          for (const roomId of communityRoomIds(space)) {
-            try {
-              await matrix.banUser(
-                roomId,
-                presentedMxid,
-                `Membership state: ${membership.state}`,
-              )
-            } catch {
-              // Not in this room, or already banned.
-            }
+          // banned as at event time.
+          const sessions = await db.listDeviceSessions(did)
+          try {
+            await banAccounts(
+              space,
+              [
+                ...new Set([
+                  presentedMxid,
+                  ...sessions.map((session) => session.mxid),
+                ]),
+              ],
+              membership.state,
+            )
+          } catch (err) {
+            await db.logSync(
+              'revoke',
+              communityUri,
+              did,
+              space.spaceId,
+              false,
+              'Community access removal pending',
+            )
+            throw err
           }
-          await this.revokeMemberAccess(space, did, membership.state)
         }
       }
     },
+  }
+}
+
+/**
+ * The projection when chat is off (`MATRIX_CHAT_ENABLED=false`). Verified
+ * authority still refreshes, without homeserver effects. New communities keep
+ * an unprovisioned space-map row with their room configuration, and
+ * the firehose queues it for provisioning once chat is on.
+ */
+export function createChatDisabledProjection(): MatrixProjectionPort {
+  return {
+    async createCommunitySpace({ communityUri }) {
+      return {
+        spaceId: unprovisionedSpaceId(communityUri),
+        chamberA_RoomId: null,
+        chamberB_RoomId: null,
+        observerRoomId: null,
+      }
+    },
+    async verifiedJoin() {
+      throw new ChatDisabledError()
+    },
+    async applyMemberRoles() {},
+    async revokeMemberAccess() {
+      return 0
+    },
+    async reconcileMemberAccess() {},
   }
 }

@@ -1,8 +1,8 @@
 import type { BridgeEvent } from '../records.js'
-import { InstitutionsArea } from './institutions.js'
+import { MatrixEventsArea } from './matrix-events.js'
 
 /** event_log persistence for the SSE bus (see src/events/bus.ts). */
-export class EventLogArea extends InstitutionsArea {
+export class EventLogArea extends MatrixEventsArea {
   private mapEvent(row: any): BridgeEvent {
     let audience: string[] | null = null
     try {
@@ -19,7 +19,7 @@ export class EventLogArea extends InstitutionsArea {
       payload = null
     }
     return {
-      seq: Number(row.seq),
+      seq: this.safeInteger(row.seq),
       type: row.type,
       communityUri: row.community_uri ?? null,
       audienceDids: audience,
@@ -65,7 +65,7 @@ export class EventLogArea extends InstitutionsArea {
     const row = await this.queryOne<{ max: string }>(
       'SELECT COALESCE(MAX(seq), 0) AS max FROM event_log',
     )
-    return Number(row?.max ?? 0)
+    return this.safeInteger(row?.max ?? 0)
   }
 
   async pruneEventsBefore(cutoffIso: string): Promise<number> {

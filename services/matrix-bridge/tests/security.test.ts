@@ -20,15 +20,11 @@ import { MatrixLoginUnavailableError } from '../src/matrix-login-error.js'
 import type { RouteContext, RouteHandler } from '../src/routes/context.js'
 import { apiEventsSseHandler } from '../src/routes/events.js'
 import {
-  apiInstitutionMembersPOSTHandler,
-  apiInstitutionMembersRevokeHandler,
-  apiInstitutionsPOSTHandler,
-} from '../src/routes/institutions.js'
-import {
   apiMatrixAttestHandler,
   apiMatrixIdentityGoneHandler,
   apiMatrixIdentityHandler,
   apiMatrixTokenHandler,
+  apiPushTokenHandler,
 } from '../src/routes/matrix-identity.js'
 
 vi.mock('../src/m8-auth.js', async (importOriginal) => ({
@@ -98,13 +94,12 @@ describe.each([
       },
       events: new EventBus(db, log),
       challenges: new ChallengeStore(),
-      matrix: { userExists: async () => true },
+      matrix: { userExists: async () => true, deviceExists: async () => true },
       log,
     } as unknown as RouteContext
     await db.setSpaceForCommunity(community, '!main:para', 'one', 'bicameral')
     await db.setChamberRooms(community, '!a:para', '!b:para', '!observer:para')
     await db.setCommunityMembership(did, community, 'active', [])
-    await db.setChamberAssignment(community, did, 'A')
   })
   afterEach(async () => {
     for (const res of responses.splice(0)) res.emit('close')
@@ -132,7 +127,7 @@ describe.each([
         await db.setCommunityMembership(did, community, 'removed', [])
       },
     } as unknown as RouteContext['firehose']
-    await notice('!a:para', { marker: 'revoked-data' })
+    await notice('!main:para', { marker: 'revoked-data' })
     const res = await connect()
     expect(res.text).not.toContain('revoked-data')
   })
@@ -148,7 +143,7 @@ describe.each([
     await db.setCommunityMembership(did, community, 'active', ['member'])
     expect(
       (await db.getActiveCommunityRoomsForDid(did)).map((r) => r.roomId).sort(),
-    ).toEqual(['!a:para', '!main:para'])
+    ).toEqual(['!main:para'])
   })
 
   it('paginates all persisted membership states for authority reconciliation', async () => {
@@ -177,7 +172,7 @@ describe.each([
       revokedAt: null,
     })
     const event = {
-      roomId: '!a:para',
+      roomId: '!main:para',
       eventId: '$event',
       sender: '@alice:para',
       type: 'm.room.message',
@@ -190,23 +185,20 @@ describe.each([
       ingestMatrixEvents(db, [event], ctx.events, 'txn'),
     ).rejects.toThrow('storage failure')
     expect(await db.eventExists(event.eventId)).toBe(false)
-    expect(await db.getParticipationStats(did, community)).toBeUndefined()
     await Promise.all([
       ingestMatrixEvents(db, [event], ctx.events, 'txn'),
       ingestMatrixEvents(db, [event], ctx.events),
     ])
-    expect((await db.getParticipationStats(did, community)).message_count).toBe(
-      1,
-    )
+    expect(await db.getRecentEvents('!main:para')).toHaveLength(1)
     expect(await db.listEventsAfter(0, 100)).toHaveLength(1)
   })
   it('replays more than 200 entries including events published during replay', async () => {
-    for (let n = 0; n < 405; n++) await notice('!a:para', { n })
+    for (let n = 0; n < 405; n++) await notice('!main:para', { n })
     const read = db.listEventsAfter.bind(db)
     using _spy = vi
       .spyOn(db, 'listEventsAfter')
       .mockImplementationOnce(async (cursor, limit) => {
-        await notice('!a:para', { n: 405 })
+        await notice('!main:para', { n: 405 })
         return read(cursor, limit)
       })
     const res = await connect()
@@ -215,7 +207,7 @@ describe.each([
     )
   })
   it('checks room access during replay and after revocation on the same connection', async () => {
-    await notice('!a:para', { marker: 'allowed' })
+    await notice('!main:para', { marker: 'allowed' })
     await notice('!b:para', { marker: 'wrong-chamber' })
     await ctx.events.publish({
       type: 'chat.unread',
@@ -233,7 +225,7 @@ describe.each([
     expect(res.text).not.toContain('wrong-chamber')
     expect(res.text).not.toContain('!secret:para')
     await db.setCommunityMembership(did, community, 'revoked')
-    const event = await notice('!a:para', { marker: 'after-revoke' })
+    const event = await notice('!main:para', { marker: 'after-revoke' })
     await vi.waitFor(() =>
       expect(res.text).toContain(
         `event: checkpoint\ndata: {"seq":${event.seq}}`,
@@ -241,11 +233,33 @@ describe.each([
     )
     expect(res.text).not.toContain('after-revoke')
   })
+  it('does not replay archived civic events or activity badges', async () => {
+    for (const type of ['sortition.selected', 'sortition.run.updated']) {
+      await db.appendEvent({
+        type,
+        communityUri: community,
+        audienceDids: [did],
+        payload: { marker: 'retired-civic-event' },
+      })
+    }
+    await db.appendEvent({
+      type: 'badge.updated',
+      communityUri: community,
+      audienceDids: [did],
+      payload: { communityUri: community, badges: ['voter', 'voice'] },
+    })
+    await notice('!main:para', { marker: 'current-chat-event' })
+    const res = await connect()
+    expect(res.text).toContain('current-chat-event')
+    expect(res.text).not.toContain('retired-civic-event')
+    expect(res.text).not.toContain('event: badge.updated')
+  })
+
   it('requires resynchronization when retention removed the requested history', async () => {
-    const old = await notice('!a:para')
-    await notice('!a:para')
+    const old = await notice('!main:para')
+    await notice('!main:para')
     await db.pruneEventsBefore(new Date(Date.now() + 60_000).toISOString())
-    const latest = await notice('!a:para', { marker: 'after-retention' })
+    const latest = await notice('!main:para', { marker: 'after-retention' })
     const req = request()
     req.headers['last-event-id'] = String(old.seq)
     const res = new Response()
@@ -266,7 +280,7 @@ describe.each([
       type: 'chat.unread',
       communityUri: community,
       audienceDids: null,
-      payload: { roomId: '!a:para', marker: 'durable' },
+      payload: { roomId: '!main:para', marker: 'durable' },
     })
     const res = await connect()
     expect(res.text).toContain('durable')
@@ -295,6 +309,34 @@ describe.each([
     expect(JSON.parse(res.text).error).toBe('MATRIX_CLIENT_LOGIN_REQUIRED')
     expect(await db.listDeviceSessions(did)).toHaveLength(0)
   })
+  it('refuses to re-attest a device whose revocation is pending', async () => {
+    const now = new Date().toISOString()
+    await db.createDeviceSession({
+      id: 'pending-device',
+      did,
+      mxid: '@k4o2lmcmitomgymtdb7y3htsthoofobo:matrix.example',
+      deviceId: 'PENDING',
+      friendlyName: null,
+      userAgent: null,
+      createdAt: now,
+      lastSeenAt: now,
+      revokedAt: null,
+    })
+    await db.queueDeviceRevocation(did, 'pending-device')
+    const challenge = ctx.challenges.issue(did).challenge
+    const res = await invoke(apiMatrixAttestHandler, {
+      ...signAssertion(identity, {
+        purpose: 'matrix-login',
+        audience: BRIDGE_AUDIENCES.attest,
+        challenge,
+      }),
+      deviceId: 'PENDING',
+    })
+    expect(res.statusCode).toBe(409)
+    expect(JSON.parse(res.text).error).toBe('MATRIX_DEVICE_REVOCATION_PENDING')
+    expect(await db.listDeviceSessions(did)).toHaveLength(1)
+  })
+
   it('reports the Matrix identity and login flow without minting a session', async () => {
     ctx.matrix = {
       userExists: async () => true,
@@ -321,8 +363,104 @@ describe.each([
     expect(await db.listDeviceSessions(did)).toHaveLength(0)
     expect(body.accessToken).toBeUndefined()
   })
+  it('keeps native MAS pusher credentials client-owned', async () => {
+    let minted = false
+    ctx.matrix = {
+      generateUserToken: async () => {
+        minted = true
+        throw Error('must not mint')
+      },
+    } as never
+    const challenge = ctx.challenges.issue(did).challenge
+    const assertion = signAssertion(identity, {
+      purpose: 'matrix-login',
+      audience: BRIDGE_AUDIENCES.identity,
+      challenge,
+    })
+    const res = await invoke(apiPushTokenHandler, {
+      expoPushToken: 'synthetic-push-token',
+      platform: 'ios',
+      assertion,
+    })
+    expect(res.statusCode).toBe(200)
+    expect(minted).toBe(false)
+  })
+  it('does not reserve a new MAS account during an identity probe', async () => {
+    const createUser = vi.fn()
+    ctx.matrix = { userExists: async () => false, createUser } as never
+    const challenge = ctx.challenges.issue(did).challenge
+    const res = await invoke(
+      apiMatrixIdentityHandler,
+      signAssertion(identity, {
+        purpose: 'matrix-login',
+        audience: BRIDGE_AUDIENCES.identity,
+        challenge,
+      }),
+    )
+    expect(res.statusCode).toBe(200)
+    expect(createUser).not.toHaveBeenCalled()
+    expect(await db.listDeviceSessions(did)).toHaveLength(0)
+  })
+  it('refuses bridge-minted sessions before provisioning an OIDC user', async () => {
+    const createUser = vi.fn()
+    const appServiceLogin = vi.fn()
+    ctx.matrix = {
+      userExists: async () => false,
+      createUser,
+      appServiceLogin,
+    } as never
+    const challenge = ctx.challenges.issue(did).challenge
+    const res = await invoke(
+      apiMatrixTokenHandler,
+      signAssertion(identity, {
+        purpose: 'matrix-login',
+        audience: BRIDGE_AUDIENCES.session,
+        challenge,
+      }),
+    )
+    expect(res.statusCode).toBe(503)
+    expect(createUser).not.toHaveBeenCalled()
+    expect(appServiceLogin).not.toHaveBeenCalled()
+  })
+  it('refuses to attest a device before its MAS account exists', async () => {
+    const createUser = vi.fn()
+    ctx.matrix = { userExists: async () => false, createUser } as never
+    const challenge = ctx.challenges.issue(did).challenge
+    const res = await invoke(apiMatrixAttestHandler, {
+      ...signAssertion(identity, {
+        purpose: 'matrix-login',
+        audience: BRIDGE_AUDIENCES.attest,
+        challenge,
+      }),
+      deviceId: 'NOT_CREATED_BY_MAS',
+    })
+    expect(res.statusCode).toBe(409)
+    expect(createUser).not.toHaveBeenCalled()
+    expect(await db.listDeviceSessions(did)).toHaveLength(0)
+  })
+  it('refuses a fabricated device ID for an existing MAS account', async () => {
+    ctx.matrix = {
+      userExists: async () => true,
+      deviceExists: async () => false,
+    } as never
+    const challenge = ctx.challenges.issue(did).challenge
+    const res = await invoke(apiMatrixAttestHandler, {
+      ...signAssertion(identity, {
+        purpose: 'matrix-login',
+        audience: BRIDGE_AUDIENCES.attest,
+        challenge,
+      }),
+      deviceId: 'FABRICATED_DEVICE',
+    })
+    expect(res.statusCode).toBe(409)
+    expect(JSON.parse(res.text).error).toBe('MATRIX_DEVICE_NOT_FOUND')
+    expect(await db.listDeviceSessions(did)).toHaveLength(0)
+  })
   it('attests a client-managed MAS session and is idempotent per device', async () => {
-    ctx.matrix = { userExists: async () => true } as never
+    ctx.matrix = {
+      userExists: async () => true,
+      deviceExists: async () => true,
+    } as never
     const challenge = ctx.challenges.issue(did).challenge
     const signed = signAssertion(identity, {
       purpose: 'matrix-login',
@@ -396,67 +534,5 @@ describe.each([
     const res2 = await invoke(apiMatrixIdentityHandler, foreign)
     expect(res2.statusCode).toBe(401)
     expect(await db.listDeviceSessions(did)).toHaveLength(0)
-  })
-  it('creates a server-chosen institution and refuses arbitrary owner claims', async () => {
-    const res = await invoke(apiInstitutionsPOSTHandler, {})
-    const { institutionId } = JSON.parse(res.text)
-    expect(institutionId).toMatch(/^urn:uuid:/)
-    expect((await db.getInstitutionOwners(institutionId)).has(did)).toBe(true)
-    await expect(
-      invoke(apiInstitutionMembersPOSTHandler, {
-        institutionId: 'victim',
-        did,
-        role: 'owner',
-      }),
-    ).rejects.toMatchObject({ statusCode: 409 })
-    expect((await db.getInstitutionOwners('victim')).size).toBe(0)
-  })
-  it('cannot demote, expire, replace or revoke an owner through generic membership endpoints', async () => {
-    const { institutionId } = JSON.parse(
-      (await invoke(apiInstitutionsPOSTHandler, {})).text,
-    )
-    for (const role of ['member', 'auditor', 'owner']) {
-      await expect(
-        invoke(apiInstitutionMembersPOSTHandler, {
-          institutionId,
-          did,
-          role,
-          expiresAt: new Date(Date.now() + 1000).toISOString(),
-        }),
-      ).rejects.toMatchObject({ statusCode: 409 })
-    }
-    await expect(
-      invoke(apiInstitutionMembersRevokeHandler, { institutionId, did }),
-    ).rejects.toMatchObject({ statusCode: 409 })
-    expect(
-      (await db.getInstitutionOwners(institutionId)).get(did)?.revokedAt,
-    ).toBeNull()
-  })
-  it('serializes concurrent role mutations without removing the last owner', async () => {
-    const { institutionId } = JSON.parse(
-      (await invoke(apiInstitutionsPOSTHandler, {})).text,
-    )
-    const results = await Promise.allSettled([
-      invoke(apiInstitutionMembersPOSTHandler, {
-        institutionId,
-        did,
-        role: 'auditor',
-      }),
-      invoke(apiInstitutionMembersRevokeHandler, { institutionId, did }),
-      invoke(apiInstitutionMembersPOSTHandler, {
-        institutionId,
-        did: 'did:plc:bob',
-        role: 'member',
-        workspaceId: 'work',
-      }),
-    ])
-    expect(results.map((r) => r.status)).toEqual([
-      'rejected',
-      'rejected',
-      'fulfilled',
-    ])
-    expect((await db.getInstitutionOwners(institutionId)).get(did)?.role).toBe(
-      'owner',
-    )
   })
 })

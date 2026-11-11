@@ -2,94 +2,100 @@
 title: com.para.collection.defs
 description: Reference for the com.para.collection.defs lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="collection"></a>
+
 ### `collection`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `id` | `string` | ✅  |  |  |
-| `name` | `string` | ✅  |  | Max Length: 200 |
-| `description` | `string` | ❌  |  | Max Length: 2000 |
-| `color` | `string` | ❌  |  | Max Length: 7 |
-| `items` | Array of [`#civicTreeItem`](#civictreeitem) | ✅  |  |  |
-| `relations` | Array of [`#civicTreeRelation`](#civictreerelation) | ❌  |  |  |
+| Name          | Type                                                | Req'd | Description | Constraints      |
+| ------------- | --------------------------------------------------- | ----- | ----------- | ---------------- |
+| `id`          | `string`                                            | ✅    |             |                  |
+| `name`        | `string`                                            | ✅    |             | Max Length: 200  |
+| `description` | `string`                                            | ❌    |             | Max Length: 2000 |
+| `color`       | `string`                                            | ❌    |             | Max Length: 7    |
+| `items`       | Array of [`#civicTreeItem`](#civictreeitem)         | ✅    |             |                  |
+| `relations`   | Array of [`#civicTreeRelation`](#civictreerelation) | ❌    |             |                  |
 
 ---
 
 <a name="civictreeitem"></a>
+
 ### `civicTreeItem`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `itemId` | `string` | ❌  |  | Max Length: 200 |
-| `kind` | `string` | ❌  | What the item is. All kinds except `topic` reference an artifact with a URI or URL; a `topic` is a subject the artifacts are about, and carries no target of its own. | Known Values: `policy`, `post`, `link`, `note`, `evidence`, `topic` |
-| `title` | `string` | ❌  |  | Max Length: 500 |
-| `description` | `string` | ❌  |  | Max Length: 2000 |
-| `url` | `string` | ❌  |  | Format: `uri`<br/>Max Length: 2000 |
-| `sourceUri` | `string` | ❌  |  | Format: `at-uri` |
-| `sourceLabel` | `string` | ❌  |  | Max Length: 500 |
-| `policyUri` | `string` | ❌  |  | Format: `at-uri` |
-| `policyCid` | `string` | ❌  |  | Format: `cid` |
-| `policyTitle` | `string` | ❌  |  | Max Length: 500 |
-| `policyCategory` | `string` | ❌  |  | Max Length: 200 |
-| `policyColor` | `string` | ❌  |  | Max Length: 7 |
-| `note` | `string` | ❌  |  | Max Length: 1000 |
-| `addedAt` | `string` | ✅  |  | Format: `datetime` |
-| `flairId` | `string` | ❌  | For a topic drawn from PARA's shared flair vocabulary, the flair id. Absent on a free-text topic. |  |
+| Name             | Type     | Req'd | Description                                                                                                                                                           | Constraints                                                         |
+| ---------------- | -------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `itemId`         | `string` | ❌    |                                                                                                                                                                       | Max Length: 200                                                     |
+| `kind`           | `string` | ❌    | What the item is. All kinds except `topic` reference an artifact with a URI or URL; a `topic` is a subject the artifacts are about, and carries no target of its own. | Known Values: `policy`, `post`, `link`, `note`, `evidence`, `topic` |
+| `title`          | `string` | ❌    |                                                                                                                                                                       | Max Length: 500                                                     |
+| `description`    | `string` | ❌    |                                                                                                                                                                       | Max Length: 2000                                                    |
+| `url`            | `string` | ❌    |                                                                                                                                                                       | Format: `uri`<br/>Max Length: 2000                                  |
+| `sourceUri`      | `string` | ❌    |                                                                                                                                                                       | Format: `at-uri`                                                    |
+| `sourceLabel`    | `string` | ❌    |                                                                                                                                                                       | Max Length: 500                                                     |
+| `policyUri`      | `string` | ❌    |                                                                                                                                                                       | Format: `at-uri`                                                    |
+| `policyCid`      | `string` | ❌    |                                                                                                                                                                       | Format: `cid`                                                       |
+| `policyTitle`    | `string` | ❌    |                                                                                                                                                                       | Max Length: 500                                                     |
+| `policyCategory` | `string` | ❌    |                                                                                                                                                                       | Max Length: 200                                                     |
+| `policyColor`    | `string` | ❌    |                                                                                                                                                                       | Max Length: 7                                                       |
+| `note`           | `string` | ❌    |                                                                                                                                                                       | Max Length: 1000                                                    |
+| `addedAt`        | `string` | ✅    |                                                                                                                                                                       | Format: `datetime`                                                  |
+| `flairId`        | `string` | ❌    | For a topic drawn from PARA's shared flair vocabulary, the flair id. Absent on a free-text topic.                                                                     |                                                                     |
 
 ---
 
 <a name="civictreerelation"></a>
+
 ### `civicTreeRelation`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `id` | `string` | ✅  |  | Max Length: 200 |
-| `fromItemId` | `string` | ✅  |  | Max Length: 200 |
-| `toItemId` | `string` | ✅  |  | Max Length: 200 |
-| `kind` | `string` | ✅  |  | Known Values: `supports`, `opposes`, `evidence_for`, `context_for`, `duplicates`, `depends_on`, `related_to` |
-| `note` | `string` | ❌  |  | Max Length: 1000 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name         | Type     | Req'd | Description | Constraints                                                                                                  |
+| ------------ | -------- | ----- | ----------- | ------------------------------------------------------------------------------------------------------------ |
+| `id`         | `string` | ✅    |             | Max Length: 200                                                                                              |
+| `fromItemId` | `string` | ✅    |             | Max Length: 200                                                                                              |
+| `toItemId`   | `string` | ✅    |             | Max Length: 200                                                                                              |
+| `kind`       | `string` | ✅    |             | Known Values: `supports`, `opposes`, `evidence_for`, `context_for`, `duplicates`, `depends_on`, `related_to` |
+| `note`       | `string` | ❌    |             | Max Length: 1000                                                                                             |
+| `createdAt`  | `string` | ✅    |             | Format: `datetime`                                                                                           |
 
 ---
 
 <a name="collectionview"></a>
+
 ### `collectionView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `id` | `string` | ✅  |  |  |
-| `name` | `string` | ✅  |  |  |
-| `description` | `string` | ❌  |  |  |
-| `color` | `string` | ❌  |  |  |
-| `items` | Array of [`#civicTreeItem`](#civictreeitem) | ✅  |  |  |
-| `relations` | Array of [`#civicTreeRelation`](#civictreerelation) | ❌  |  |  |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
-| `updatedAt` | `string` | ✅  |  | Format: `datetime` |
+| Name          | Type                                                | Req'd | Description | Constraints        |
+| ------------- | --------------------------------------------------- | ----- | ----------- | ------------------ |
+| `id`          | `string`                                            | ✅    |             |                    |
+| `name`        | `string`                                            | ✅    |             |                    |
+| `description` | `string`                                            | ❌    |             |                    |
+| `color`       | `string`                                            | ❌    |             |                    |
+| `items`       | Array of [`#civicTreeItem`](#civictreeitem)         | ✅    |             |                    |
+| `relations`   | Array of [`#civicTreeRelation`](#civictreerelation) | ❌    |             |                    |
+| `createdAt`   | `string`                                            | ✅    |             | Format: `datetime` |
+| `updatedAt`   | `string`                                            | ✅    |             | Format: `datetime` |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -97,11 +103,7 @@ description: Reference for the com.para.collection.defs lexicon
   "defs": {
     "collection": {
       "type": "object",
-      "required": [
-        "id",
-        "name",
-        "items"
-      ],
+      "required": ["id", "name", "items"],
       "properties": {
         "id": {
           "type": "string"
@@ -136,9 +138,7 @@ description: Reference for the com.para.collection.defs lexicon
     },
     "civicTreeItem": {
       "type": "object",
-      "required": [
-        "addedAt"
-      ],
+      "required": ["addedAt"],
       "properties": {
         "itemId": {
           "type": "string",
@@ -213,13 +213,7 @@ description: Reference for the com.para.collection.defs lexicon
     },
     "civicTreeRelation": {
       "type": "object",
-      "required": [
-        "id",
-        "fromItemId",
-        "toItemId",
-        "kind",
-        "createdAt"
-      ],
+      "required": ["id", "fromItemId", "toItemId", "kind", "createdAt"],
       "properties": {
         "id": {
           "type": "string",
@@ -257,13 +251,7 @@ description: Reference for the com.para.collection.defs lexicon
     },
     "collectionView": {
       "type": "object",
-      "required": [
-        "id",
-        "name",
-        "items",
-        "createdAt",
-        "updatedAt"
-      ],
+      "required": ["id", "name", "items", "createdAt", "updatedAt"],
       "properties": {
         "id": {
           "type": "string"

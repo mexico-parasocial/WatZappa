@@ -1,4 +1,4 @@
-import { Kysely } from 'kysely'
+import type { Kysely } from 'kysely'
 
 export async function up(db: Kysely<unknown>): Promise<void> {
   await db.schema
@@ -9,7 +9,5 @@ export async function up(db: Kysely<unknown>): Promise<void> {
 }
 
 export async function down(db: Kysely<unknown>): Promise<void> {
-  await db.schema
-    .dropIndex('para_post_post_type_sort_at_idx')
-    .execute()
+  await db.schema.dropIndex('para_post_post_type_sort_at_idx').execute()
 }

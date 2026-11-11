@@ -1,5 +1,3 @@
-/* eslint-env node */
-
 // The AppView's data plane as its own process: the API (api.js) reads
 // through it, and it is what writes the database. It migrates the database,
 // serves the data plane over HTTP, and indexes the PDS firehose
@@ -37,7 +35,13 @@ const log = Object.fromEntries(
     (fields, msg) => {
       if (typeof fields === 'string') [fields, msg] = [{}, fields]
       console.log(
-        JSON.stringify({ level, time: Date.now(), name: 'dataplane', ...fields, msg }),
+        JSON.stringify({
+          level,
+          time: Date.now(),
+          name: 'dataplane',
+          ...fields,
+          msg,
+        }),
       )
     },
   ]),

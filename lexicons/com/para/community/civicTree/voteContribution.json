@@ -8,11 +8,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "contribution",
-            "voterDid",
-            "vote"
-          ],
+          "required": ["contribution", "voterDid", "vote"],
           "properties": {
             "contribution": {
               "type": "string"
@@ -23,10 +19,7 @@
             },
             "vote": {
               "type": "string",
-              "knownValues": [
-                "approve",
-                "reject"
-              ]
+              "knownValues": ["approve", "reject"]
             }
           }
         }
@@ -35,9 +28,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "contribution"
-          ],
+          "required": ["contribution"],
           "properties": {
             "contribution": {
               "type": "ref",

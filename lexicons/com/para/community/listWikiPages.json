@@ -7,9 +7,7 @@
       "description": "Lists a community's wiki pages and megathreads, as published by its current organizers. When several organizers publish the same slug, the most recently updated page wins.",
       "parameters": {
         "type": "params",
-        "required": [
-          "community"
-        ],
+        "required": ["community"],
         "properties": {
           "community": {
             "type": "string",
@@ -17,10 +15,7 @@
           },
           "kind": {
             "type": "string",
-            "knownValues": [
-              "page",
-              "megathread"
-            ]
+            "knownValues": ["page", "megathread"]
           }
         }
       },
@@ -28,9 +23,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "pages"
-          ],
+          "required": ["pages"],
           "properties": {
             "pages": {
               "type": "array",
@@ -45,13 +38,7 @@
     },
     "wikiPageView": {
       "type": "object",
-      "required": [
-        "uri",
-        "cid",
-        "author",
-        "record",
-        "indexedAt"
-      ],
+      "required": ["uri", "cid", "author", "record", "indexedAt"],
       "properties": {
         "uri": {
           "type": "string",

@@ -2,6 +2,9 @@
   "name": "@atproto/space",
   "version": "0.0.1",
   "license": "MIT",
+  "files": [
+    "./dist"
+  ],
   "description": "atproto permissioned data protocol",
   "keywords": [
     "atproto",

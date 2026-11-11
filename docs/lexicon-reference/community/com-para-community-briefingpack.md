@@ -2,11 +2,13 @@
 title: com.para.community.briefingPack
 description: Reference for the com.para.community.briefingPack lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -15,27 +17,28 @@ description: Reference for the com.para.community.briefingPack lexicon
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `packType` | `string` | ✅  |  | Enum: `party_lobbying` |
-| `communityUri` | `string` | ✅  |  | Format: `at-uri` |
-| `party` | `string` | ✅  |  | Max Length: 120 |
-| `title` | `string` | ✅  |  | Max Length: 300 |
-| `summary` | `string` | ✅  |  | Max Length: 5000 |
-| `cabildeoUris` | Array of `string` | ✅  |  | Max Items: 100 |
-| `civicTreeCardIds` | Array of `string` | ✅  |  | Max Items: 200 |
-| `evidenceUris` | Array of `string` | ✅  |  | Max Items: 300 |
-| `sembleCollectionUri` | `string` | ❌  |  | Format: `at-uri` |
-| `marginCollectionUri` | `string` | ❌  |  | Format: `at-uri` |
-| `obsidianExportUri` | `string` | ❌  |  | Max Length: 2000 |
-| `status` | `string` | ✅  |  | Enum: `draft`, `published`, `archived` |
-| `createdBy` | `string` | ✅  |  | Format: `did` |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
-| `updatedAt` | `string` | ✅  |  | Format: `datetime` |
+| Name                  | Type              | Req'd | Description | Constraints                            |
+| --------------------- | ----------------- | ----- | ----------- | -------------------------------------- |
+| `packType`            | `string`          | ✅    |             | Enum: `party_lobbying`                 |
+| `communityUri`        | `string`          | ✅    |             | Format: `at-uri`                       |
+| `party`               | `string`          | ✅    |             | Max Length: 120                        |
+| `title`               | `string`          | ✅    |             | Max Length: 300                        |
+| `summary`             | `string`          | ✅    |             | Max Length: 5000                       |
+| `cabildeoUris`        | Array of `string` | ✅    |             | Max Items: 100                         |
+| `civicTreeCardIds`    | Array of `string` | ✅    |             | Max Items: 200                         |
+| `evidenceUris`        | Array of `string` | ✅    |             | Max Items: 300                         |
+| `sembleCollectionUri` | `string`          | ❌    |             | Format: `at-uri`                       |
+| `marginCollectionUri` | `string`          | ❌    |             | Format: `at-uri`                       |
+| `obsidianExportUri`   | `string`          | ❌    |             | Max Length: 2000                       |
+| `status`              | `string`          | ✅    |             | Enum: `draft`, `published`, `archived` |
+| `createdBy`           | `string`          | ✅    |             | Format: `did`                          |
+| `createdAt`           | `string`          | ✅    |             | Format: `datetime`                     |
+| `updatedAt`           | `string`          | ✅    |             | Format: `datetime`                     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -63,9 +66,7 @@ description: Reference for the com.para.community.briefingPack lexicon
         "properties": {
           "packType": {
             "type": "string",
-            "enum": [
-              "party_lobbying"
-            ]
+            "enum": ["party_lobbying"]
           },
           "communityUri": {
             "type": "string",
@@ -121,11 +122,7 @@ description: Reference for the com.para.community.briefingPack lexicon
           },
           "status": {
             "type": "string",
-            "enum": [
-              "draft",
-              "published",
-              "archived"
-            ]
+            "enum": ["draft", "published", "archived"]
           },
           "createdBy": {
             "type": "string",

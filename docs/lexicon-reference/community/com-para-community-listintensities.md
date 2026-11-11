@@ -2,60 +2,64 @@
 title: com.para.community.listIntensities
 description: Reference for the com.para.community.listIntensities lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `proposal` | `string` | ✅  |  | Format: `at-uri` |
-| `limit` | `integer` | ❌  |  | Min: 1<br/>Max: 100<br/>Default: `50` |
-| `cursor` | `string` | ❌  |  |  |
-**Output:**
+| Name        | Type      | Req'd | Description | Constraints                           |
+| ----------- | --------- | ----- | ----------- | ------------------------------------- |
+| `proposal`  | `string`  | ✅    |             | Format: `at-uri`                      |
+| `limit`     | `integer` | ❌    |             | Min: 1<br/>Max: 100<br/>Default: `50` |
+| `cursor`    | `string`  | ❌    |             |                                       |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cursor` | `string` | ❌  |  |  |
-| `intensities` | Array of [`#intensityView`](#intensityview) | ✅  |  |  |
+| Name          | Type                                        | Req'd | Description | Constraints |
+| ------------- | ------------------------------------------- | ----- | ----------- | ----------- |
+| `cursor`      | `string`                                    | ❌    |             |             |
+| `intensities` | Array of [`#intensityView`](#intensityview) | ✅    |             |             |
 
 ---
 
 <a name="intensityview"></a>
+
 ### `intensityView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `cid` | `string` | ✅  |  | Format: `cid` |
-| `proposal` | `string` | ✅  |  | Format: `at-uri` |
-| `voter` | `string` | ✅  |  | Format: `did` |
-| `signal` | `integer` | ✅  |  | Min: -3<br/>Max: 3 |
-| `units` | `integer` | ✅  |  | Min: 1<br/>Max: 16 |
-| `creditsSpent` | `integer` | ❌  |  |  |
-| `delegatedFrom` | Array of `string` | ❌  |  |  |
-| `delegationDepth` | `integer` | ❌  |  |  |
-| `effectiveWeight` | `string` | ❌  |  |  |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name              | Type              | Req'd | Description | Constraints        |
+| ----------------- | ----------------- | ----- | ----------- | ------------------ |
+| `uri`             | `string`          | ✅    |             | Format: `at-uri`   |
+| `cid`             | `string`          | ✅    |             | Format: `cid`      |
+| `proposal`        | `string`          | ✅    |             | Format: `at-uri`   |
+| `voter`           | `string`          | ✅    |             | Format: `did`      |
+| `signal`          | `integer`         | ✅    |             | Min: -3<br/>Max: 3 |
+| `units`           | `integer`         | ✅    |             | Min: 1<br/>Max: 16 |
+| `creditsSpent`    | `integer`         | ❌    |             |                    |
+| `delegatedFrom`   | Array of `string` | ❌    |             |                    |
+| `delegationDepth` | `integer`         | ❌    |             |                    |
+| `effectiveWeight` | `string`          | ❌    |             |                    |
+| `createdAt`       | `string`          | ✅    |             | Format: `datetime` |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -65,9 +69,7 @@ description: Reference for the com.para.community.listIntensities lexicon
       "type": "query",
       "parameters": {
         "type": "params",
-        "required": [
-          "proposal"
-        ],
+        "required": ["proposal"],
         "properties": {
           "proposal": {
             "type": "string",
@@ -88,9 +90,7 @@ description: Reference for the com.para.community.listIntensities lexicon
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "intensities"
-          ],
+          "required": ["intensities"],
           "properties": {
             "cursor": {
               "type": "string"

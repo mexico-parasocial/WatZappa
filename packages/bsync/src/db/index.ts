@@ -3,25 +3,25 @@ import { EventEmitter } from 'node:events'
 import { createRequire } from 'node:module'
 import {
   Kysely,
-  KyselyPlugin,
-  PluginTransformQueryArgs,
-  PluginTransformResultArgs,
+  type KyselyPlugin,
+  type PluginTransformQueryArgs,
+  type PluginTransformResultArgs,
   PostgresDialect,
-  QueryResult,
-  RootOperationNode,
-  UnknownRow,
+  type QueryResult,
+  type RootOperationNode,
+  type UnknownRow,
 } from 'kysely'
 import { Migrator } from 'kysely/migration'
+import type * as Pg from 'pg'
 import type { Pool as PgPool } from 'pg'
-
 import { dbLogger } from '../logger.js'
 import * as migrations from './migrations/index.js'
 import { DbMigrationProvider } from './migrations/provider.js'
-import { DatabaseSchema, DatabaseSchemaType } from './schema/index.js'
-import { PgOptions } from './types.js'
+import type { DatabaseSchema, DatabaseSchemaType } from './schema/index.js'
+import type { PgOptions } from './types.js'
 
 const require = createRequire(import.meta.url)
-const { Pool: PgPoolClass, types: pgTypes } = require('pg') as typeof import('pg')
+const { Pool: PgPoolClass, types: pgTypes } = require('pg') as typeof Pg
 
 export class Database {
   pool: PgPool

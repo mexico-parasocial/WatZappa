@@ -78,6 +78,7 @@ import unregisterPush from './app/bsky/notification/unregisterPush.js'
 import updateSeen from './app/bsky/notification/updateSeen.js'
 import getAgeAssuranceState from './app/bsky/unspecced/getAgeAssuranceState.js'
 import getAtmosphereExploreTab from './app/bsky/unspecced/getAtmosphereExploreTab.js'
+import getAtmosphereTimeline from './app/bsky/unspecced/getAtmosphereTimeline.js'
 import getConfig from './app/bsky/unspecced/getConfig.js'
 import getOnboardingSuggestedStarterPacks from './app/bsky/unspecced/getOnboardingSuggestedStarterPacks.js'
 import getPopularFeedGenerators from './app/bsky/unspecced/getPopularFeedGenerators.js'
@@ -109,13 +110,15 @@ import getParaAlphaAccess from './com/para/alpha/getAccess.js'
 import getParaAlphaRolloutStatus from './com/para/alpha/getRolloutStatus.js'
 import searchParaBooks from './com/para/book/searchBooks.js'
 import getParaCabildeo from './com/para/civic/getCabildeo.js'
+import getParaConclusion from './com/para/civic/getConclusion.js'
+import getParaFollowThrough from './com/para/civic/getFollowThrough.js'
 import getParaOpenQuestionThread from './com/para/civic/getOpenQuestionThread.js'
 import getParaPolicyCommunityVotes from './com/para/civic/getPolicyCommunityVotes.js'
 import getParaPolicyTally from './com/para/civic/getPolicyTally.js'
 import listParaCabildeoPositions from './com/para/civic/listCabildeoPositions.js'
 import listParaCabildeos from './com/para/civic/listCabildeos.js'
 import listParaDelegationCandidates from './com/para/civic/listDelegationCandidates.js'
-import putParaLivePresence from './com/para/civic/putLivePresence.js'
+import listParaFollowThrough from './com/para/civic/listFollowThrough.js'
 import applyParaCollectionOps from './com/para/collection/applyOps.js'
 import createParaCollection from './com/para/collection/createCollection.js'
 import deleteParaCollection from './com/para/collection/deleteCollection.js'
@@ -144,9 +147,9 @@ import listParaCivicTreeVotes from './com/para/community/listCivicTreeVotes.js'
 import listParaCivicTrees from './com/para/community/listCivicTrees.js'
 import listParaCommunityRelations from './com/para/community/listCommunityRelations.js'
 import listParaDelegations from './com/para/community/listDelegations.js'
-import listParaDeliberations from './com/para/community/listDeliberations.js'
 import listParaIntensities from './com/para/community/listIntensities.js'
 import listParaCommunityMembers from './com/para/community/listMembers.js'
+import listParaCommunityOpenOffers from './com/para/community/listOpenOffers.js'
 import listParaParentCommunities from './com/para/community/listParentCommunities.js'
 import listParaCommunityPosts from './com/para/community/listPosts.js'
 import listParaCommunitySharedContent from './com/para/community/listSharedContent.js'
@@ -267,6 +270,7 @@ export default function (server: Server, ctx: AppContext) {
   registerPush(server, ctx)
   unregisterPush(server, ctx)
   getAtmosphereExploreTab(server, ctx)
+  getAtmosphereTimeline(server, ctx)
   getConfig(server, ctx)
   getPopularFeedGenerators(server, ctx)
   getTaggedSuggestions(server, ctx)
@@ -292,9 +296,11 @@ export default function (server: Server, ctx: AppContext) {
   getParaCabildeo(server, ctx)
   getParaOpenQuestionThread(server, ctx)
   getParaPolicyTally(server, ctx)
+  getParaConclusion(server, ctx)
+  getParaFollowThrough(server, ctx)
+  listParaFollowThrough(server, ctx)
   listParaCabildeoPositions(server, ctx)
   listParaDelegationCandidates(server, ctx)
-  putParaLivePresence(server, ctx)
   getParaCommunityAuthorization(server, ctx)
   getParaCommunityBoard(server, ctx)
   getParaCommunityGovernance(server, ctx)
@@ -317,6 +323,7 @@ export default function (server: Server, ctx: AppContext) {
   listParaCivicTrees(server, ctx)
   listParaCivicTreeVotes(server, ctx)
   listParaCommunityMembers(server, ctx)
+  listParaCommunityOpenOffers(server, ctx)
   listParaCommunityPosts(server, ctx)
   listParaCommunitySharedContent(server, ctx)
   listParaCommunityRelations(server, ctx)
@@ -324,7 +331,6 @@ export default function (server: Server, ctx: AppContext) {
   listParaParentCommunities(server, ctx)
   listParaBriefingPacks(server, ctx)
   getParaBriefingPack(server, ctx)
-  listParaDeliberations(server, ctx)
   getParaAlphaAccess(server, ctx)
   getParaAlphaRolloutStatus(server, ctx)
   getParaDiscourseTopology(server, ctx)

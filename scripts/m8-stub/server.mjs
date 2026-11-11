@@ -20,7 +20,8 @@ const server = createServer((req, res) => {
   }
   if (req.url?.endsWith('/sessions/me') && req.method === 'GET') {
     const auth = req.headers.authorization ?? ''
-    if (!auth.startsWith('Bearer ')) return json(401, { error: 'missing token' })
+    if (!auth.startsWith('Bearer '))
+      return json(401, { error: 'missing token' })
     return json(200, { session: { did: DID, sessionId: 'smoke-session' } })
   }
   return json(404, { error: 'not found' })

@@ -1,4 +1,4 @@
-import { Kysely, sql } from 'kysely'
+import { type Kysely, sql } from 'kysely'
 
 export async function up(db: Kysely<unknown>): Promise<void> {
   await db.schema
@@ -35,8 +35,20 @@ export async function up(db: Kysely<unknown>): Promise<void> {
 export async function down(db: Kysely<unknown>): Promise<void> {
   await sql`DROP INDEX IF EXISTS para_policy_vote_unique_nullifier`.execute(db)
   await sql`DROP INDEX IF EXISTS cabildeo_vote_unique_nullifier`.execute(db)
-  await db.schema.alterTable('para_policy_vote').dropColumn('eligibilityProofRef').execute()
-  await db.schema.alterTable('para_policy_vote').dropColumn('voteNullifier').execute()
-  await db.schema.alterTable('cabildeo_vote').dropColumn('eligibilityProofRef').execute()
-  await db.schema.alterTable('cabildeo_vote').dropColumn('voteNullifier').execute()
+  await db.schema
+    .alterTable('para_policy_vote')
+    .dropColumn('eligibilityProofRef')
+    .execute()
+  await db.schema
+    .alterTable('para_policy_vote')
+    .dropColumn('voteNullifier')
+    .execute()
+  await db.schema
+    .alterTable('cabildeo_vote')
+    .dropColumn('eligibilityProofRef')
+    .execute()
+  await db.schema
+    .alterTable('cabildeo_vote')
+    .dropColumn('voteNullifier')
+    .execute()
 }

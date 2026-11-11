@@ -1,0 +1,154 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.act",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Takes one action in a community hosted by this PDS (OD-9). The host checks the action against the community's policy and appends the event in the same transaction, or refuses with the policy's reason. Callers on other PDSes reach it through atproto-proxy with the service id para_community, and must reference their own com.para.community.request; for local callers the host writes it.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["community", "action"],
+          "properties": {
+            "community": {
+              "type": "string",
+              "format": "did"
+            },
+            "action": {
+              "type": "string",
+              "knownValues": [
+                "member.join",
+                "member.leave",
+                "moderator.offer",
+                "moderator.accept",
+                "moderator.revoke",
+                "moderator.resign",
+                "member.suspend",
+                "member.reinstate",
+                "member.remove",
+                "member.block",
+                "member.unblock",
+                "sanction.propose",
+                "owner.offer",
+                "owner.accept",
+                "owner.resign",
+                "content.hide",
+                "content.restore",
+                "content.pin",
+                "content.unpin",
+                "relation.link",
+                "relation.accept",
+                "relation.unlink",
+                "briefing.publish",
+                "briefing.archive",
+                "profile.update"
+              ]
+            },
+            "subject": {
+              "type": "string",
+              "format": "did",
+              "description": "Defaults to the caller. For content.* and briefing.*, the DID that holds the target. For relation.*, the other community."
+            },
+            "offer": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "The offer or proposal answered: required for moderator.accept and owner.accept, optional for member.remove and member.block."
+            },
+            "suspensionDays": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 7
+            },
+            "request": {
+              "type": "ref",
+              "ref": "com.atproto.repo.strongRef",
+              "description": "Required for callers on other PDSes."
+            },
+            "sanction": {
+              "type": "string",
+              "knownValues": ["remove", "block"],
+              "description": "sanction.propose only."
+            },
+            "target": {
+              "type": "string",
+              "format": "at-uri",
+              "description": "content.* and briefing.*. Its repo must be the subject."
+            },
+            "targetCid": {
+              "type": "string",
+              "format": "cid",
+              "description": "briefing.* only."
+            },
+            "profile": {
+              "type": "ref",
+              "ref": "com.para.community.profile#update",
+              "description": "profile.update only."
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["uri", "cid", "seq"],
+          "properties": {
+            "uri": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "cid": {
+              "type": "string",
+              "format": "cid"
+            },
+            "seq": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "CommunityNotFound"
+        },
+        {
+          "name": "OutOfSequence"
+        },
+        {
+          "name": "NotFounded"
+        },
+        {
+          "name": "AlreadyFounded"
+        },
+        {
+          "name": "ModeUnavailable"
+        },
+        {
+          "name": "NotPermitted"
+        },
+        {
+          "name": "InvalidSubject"
+        },
+        {
+          "name": "InvalidOffer"
+        },
+        {
+          "name": "InvalidExpiry"
+        },
+        {
+          "name": "InvalidTarget"
+        },
+        {
+          "name": "InvalidProfile"
+        },
+        {
+          "name": "LastOwner"
+        },
+        {
+          "name": "InvalidRequest"
+        }
+      ]
+    }
+  }
+}

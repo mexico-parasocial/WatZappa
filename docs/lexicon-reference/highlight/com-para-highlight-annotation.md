@@ -2,11 +2,13 @@
 title: com.para.highlight.annotation
 description: Reference for the com.para.highlight.annotation lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -17,24 +19,25 @@ A public or private highlight annotation over a post or record.
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `subjectUri` | `string` | ✅  |  | Format: `at-uri` |
-| `subjectCid` | `string` | ❌  | Optional CID of the highlighted record at creation time. |  |
-| `text` | `string` | ✅  |  | Max Length: 2000 |
-| `start` | `integer` | ✅  |  | Min: 0 |
-| `end` | `integer` | ✅  |  | Min: 0 |
-| `color` | `string` | ✅  |  | Max Length: 32 |
-| `tag` | `string` | ❌  |  | Max Length: 128 |
-| `community` | `string` | ❌  |  | Max Length: 100 |
-| `state` | `string` | ❌  |  | Max Length: 100 |
-| `party` | `string` | ❌  |  | Max Length: 100 |
-| `visibility` | `string` | ✅  |  | Known Values: `public`, `private` |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name         | Type      | Req'd | Description                                              | Constraints                       |
+| ------------ | --------- | ----- | -------------------------------------------------------- | --------------------------------- |
+| `subjectUri` | `string`  | ✅    |                                                          | Format: `at-uri`                  |
+| `subjectCid` | `string`  | ❌    | Optional CID of the highlighted record at creation time. |                                   |
+| `text`       | `string`  | ✅    |                                                          | Max Length: 2000                  |
+| `start`      | `integer` | ✅    |                                                          | Min: 0                            |
+| `end`        | `integer` | ✅    |                                                          | Min: 0                            |
+| `color`      | `string`  | ✅    |                                                          | Max Length: 32                    |
+| `tag`        | `string`  | ❌    |                                                          | Max Length: 128                   |
+| `community`  | `string`  | ❌    |                                                          | Max Length: 100                   |
+| `state`      | `string`  | ❌    |                                                          | Max Length: 100                   |
+| `party`      | `string`  | ❌    |                                                          | Max Length: 100                   |
+| `visibility` | `string`  | ✅    |                                                          | Known Values: `public`, `private` |
+| `createdAt`  | `string`  | ✅    |                                                          | Format: `datetime`                |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -98,10 +101,7 @@ A public or private highlight annotation over a post or record.
           },
           "visibility": {
             "type": "string",
-            "knownValues": [
-              "public",
-              "private"
-            ]
+            "knownValues": ["public", "private"]
           },
           "createdAt": {
             "type": "string",

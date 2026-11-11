@@ -2,11 +2,13 @@
 title: com.para.discourse.getAnalysis
 description: Reference for the com.para.discourse.getAnalysis lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,63 +17,66 @@ Perform state-of-the-art Aspect-Based Sentiment Analysis (ABSA) powered by model
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `subject` | `string` | ✅  | The Cabildeo or Community to analyze. | Format: `at-uri` |
-| `timeframe` | `string` | ❌  |  | Enum: `1h`, `24h`, `7d`, `30d`, `all`<br/>Default: `all` |
-**Output:**
+| Name        | Type     | Req'd | Description                           | Constraints                                              |
+| ----------- | -------- | ----- | ------------------------------------- | -------------------------------------------------------- |
+| `subject`   | `string` | ✅    | The Cabildeo or Community to analyze. | Format: `at-uri`                                         |
+| `timeframe` | `string` | ❌    |                                       | Enum: `1h`, `24h`, `7d`, `30d`, `all`<br/>Default: `all` |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `subject` | `string` | ✅  |  | Format: `at-uri` |
-| `aspects` | Array of [`#aspectAnalysis`](#aspectanalysis) | ✅  |  |  |
-| `summary` | `string` | ❌  |  | Max Length: 5000 |
-| `computedAt` | `string` | ✅  |  | Format: `datetime` |
+| Name         | Type                                          | Req'd | Description | Constraints        |
+| ------------ | --------------------------------------------- | ----- | ----------- | ------------------ |
+| `subject`    | `string`                                      | ✅    |             | Format: `at-uri`   |
+| `aspects`    | Array of [`#aspectAnalysis`](#aspectanalysis) | ✅    |             |                    |
+| `summary`    | `string`                                      | ❌    |             | Max Length: 5000   |
+| `computedAt` | `string`                                      | ✅    |             | Format: `datetime` |
 
 ---
 
 <a name="sentimentdistribution"></a>
+
 ### `sentimentDistribution`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `strongPositive` | `integer` | ✅  | Percentage (0-100) |  |
-| `positive` | `integer` | ✅  | Percentage (0-100) |  |
-| `neutral` | `integer` | ✅  | Percentage (0-100) |  |
-| `negative` | `integer` | ✅  | Percentage (0-100) |  |
-| `strongNegative` | `integer` | ✅  | Percentage (0-100) |  |
+| Name             | Type      | Req'd | Description        | Constraints |
+| ---------------- | --------- | ----- | ------------------ | ----------- |
+| `strongPositive` | `integer` | ✅    | Percentage (0-100) |             |
+| `positive`       | `integer` | ✅    | Percentage (0-100) |             |
+| `neutral`        | `integer` | ✅    | Percentage (0-100) |             |
+| `negative`       | `integer` | ✅    | Percentage (0-100) |             |
+| `strongNegative` | `integer` | ✅    | Percentage (0-100) |             |
 
 ---
 
 <a name="aspectanalysis"></a>
+
 ### `aspectAnalysis`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `label` | `string` | ✅  | The specific feature or topic extracted (e.g., 'Costo de Obra', 'Impacto Ambiental'). |  |
-| `count` | `integer` | ✅  | Total occurrences in the discourse. |  |
-| `sentiment` | [`#sentimentDistribution`](#sentimentdistribution) | ✅  |  |  |
-| `confidence` | `integer` | ✅  | Model confidence score for this aspect extraction. | Min: 0<br/>Max: 100 |
-| `consensusScore` | `integer` | ✅  | How unified the community is on this specific aspect. | Min: 0<br/>Max: 100 |
-| `summary` | `string` | ❌  |  | Max Length: 1000 |
-| `sampleQuotes` | Array of `string` | ❌  |  | Max Items: 5 |
+| Name             | Type                                               | Req'd | Description                                                                           | Constraints         |
+| ---------------- | -------------------------------------------------- | ----- | ------------------------------------------------------------------------------------- | ------------------- |
+| `label`          | `string`                                           | ✅    | The specific feature or topic extracted (e.g., 'Costo de Obra', 'Impacto Ambiental'). |                     |
+| `count`          | `integer`                                          | ✅    | Total occurrences in the discourse.                                                   |                     |
+| `sentiment`      | [`#sentimentDistribution`](#sentimentdistribution) | ✅    |                                                                                       |                     |
+| `confidence`     | `integer`                                          | ✅    | Model confidence score for this aspect extraction.                                    | Min: 0<br/>Max: 100 |
+| `consensusScore` | `integer`                                          | ✅    | How unified the community is on this specific aspect.                                 | Min: 0<br/>Max: 100 |
+| `summary`        | `string`                                           | ❌    |                                                                                       | Max Length: 1000    |
+| `sampleQuotes`   | Array of `string`                                  | ❌    |                                                                                       | Max Items: 5        |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -90,29 +95,17 @@ Perform state-of-the-art Aspect-Based Sentiment Analysis (ABSA) powered by model
           },
           "timeframe": {
             "type": "string",
-            "enum": [
-              "1h",
-              "24h",
-              "7d",
-              "30d",
-              "all"
-            ],
+            "enum": ["1h", "24h", "7d", "30d", "all"],
             "default": "all"
           }
         },
-        "required": [
-          "subject"
-        ]
+        "required": ["subject"]
       },
       "output": {
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "subject",
-            "aspects",
-            "computedAt"
-          ],
+          "required": ["subject", "aspects", "computedAt"],
           "properties": {
             "subject": {
               "type": "string",

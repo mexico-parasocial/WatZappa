@@ -1,13 +1,15 @@
 // @ts-nocheck
-import { Insertable, Selectable, sql } from 'kysely'
-import { CID } from 'multiformats/cid'
+import { type Insertable, type Selectable, sql } from 'kysely'
+import type { CID } from 'multiformats/cid'
 import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
-// eslint-disable-next-line import/no-unresolved
-import { ParaCacheService } from '../../../cache/para-cache.js'
-import { BackgroundQueue } from '../../background.js'
-import { Database } from '../../db/index.js'
-import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
-import { Notification } from '../../db/tables/notification.js'
+import type { ParaCacheService } from '../../../cache/para-cache.js'
+import type { BackgroundQueue } from '../../background.js'
+import type {
+  DatabaseSchema,
+  DatabaseSchemaType,
+} from '../../db/database-schema.js'
+import type { Database } from '../../db/index.js'
+import type { Notification } from '../../db/tables/notification.js'
 import { updatePostDiscourseCommunity } from '../discourse-indexing.js'
 import { RecordProcessor } from '../processor.js'
 import { recomputeParaProfileStats } from './para-profile-stats.js'

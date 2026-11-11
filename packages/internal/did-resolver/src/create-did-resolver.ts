@@ -1,4 +1,4 @@
-import { AtprotoIdentityDidMethods } from '@atproto/did'
+import type { AtprotoIdentityDidMethods } from '@atproto/did'
 import {
   type DidCache,
   type DidCacheErrorHandler,
@@ -6,9 +6,9 @@ import {
 } from './did-cache.js'
 import {
   DidResolverCommon,
-  DidResolverCommonOptions,
+  type DidResolverCommonOptions,
 } from './did-resolver-common.js'
-import { DidResolver } from './did-resolver.js'
+import type { DidResolver } from './did-resolver.js'
 
 export type { AtprotoIdentityDidMethods }
 

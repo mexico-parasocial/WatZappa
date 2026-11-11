@@ -4,10 +4,12 @@ import type {
   InferMethodOutputEncoding,
   InferOutput,
   LexValue,
+  Payload,
+  Procedure,
+  Query,
   ResultSuccess,
   Validator,
 } from '@atproto/lex-schema'
-import { Payload, Procedure, Query } from '@atproto/lex-schema'
 import {
   XrpcAuthenticationError,
   XrpcInvalidResponseError,
@@ -73,7 +75,7 @@ export type XrpcResponsePayload<M extends Procedure | Query> =
       : // If the schema does not specify an output encoding, anything could be
         // returned, including no payload at all (undefined).
         | undefined
-          | { body: LexValue | Uint8Array<ArrayBuffer>; encoding: string }
+        | { body: LexValue | Uint8Array<ArrayBuffer>; encoding: string }
     : never
 
 export type XrpcResponseOptions = {
@@ -135,9 +137,9 @@ export type XrpcResponseOptions = {
  * const { cursor, feed } = response.body
  * ```
  */
-export class XrpcResponse<M extends Procedure | Query>
-  implements ResultSuccess<XrpcResponse<M>>
-{
+export class XrpcResponse<M extends Procedure | Query> implements ResultSuccess<
+  XrpcResponse<M>
+> {
   /** @see {@link ResultSuccess.success} */
   readonly success = true as const
 

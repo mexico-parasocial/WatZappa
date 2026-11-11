@@ -1,8 +1,12 @@
 // @ts-nocheck
 import fs from 'node:fs'
-// eslint-disable-next-line import/no-unresolved
-import { CID } from 'multiformats'
-import { Fanout, MST, MemoryBlockstore, NodeEntry } from '../src/index.js'
+import type { CID } from 'multiformats'
+import {
+  type Fanout,
+  MST,
+  MemoryBlockstore,
+  type NodeEntry,
+} from '../src/index.js'
 import * as util from '../tests/_util.js'
 
 type BenchmarkData = {

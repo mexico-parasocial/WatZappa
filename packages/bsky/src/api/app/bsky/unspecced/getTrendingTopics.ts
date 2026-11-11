@@ -1,5 +1,5 @@
 import { noUndefinedVals } from '@atproto/common'
-import type { Client } from '@atproto/lex'
+import type { Client } from '@atproto/lex-client'
 import { MethodNotImplementedError, type Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import type { HydrateCtx, Hydrator } from '../../../../hydration/hydrator.js'
@@ -55,7 +55,7 @@ const skeleton: SkeletonFn<Context, Params, SkeletonState> = async (input) => {
 
   if (!ctx.irisClient) {
     // Use 501 instead of 500 as these are not considered retry-able by clients
-    throw new MethodNotImplementedError('Topics agent not available')
+    throw new MethodNotImplementedError('Iris agent not available')
   }
 
   return ctx.irisClient.call(

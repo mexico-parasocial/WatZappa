@@ -8,11 +8,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "card",
-            "voterDid",
-            "influence"
-          ],
+          "required": ["card", "voterDid", "influence"],
           "properties": {
             "card": {
               "type": "string"
@@ -33,9 +29,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "success"
-          ],
+          "required": ["success"],
           "properties": {
             "success": {
               "type": "boolean"

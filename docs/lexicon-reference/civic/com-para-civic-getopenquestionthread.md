@@ -2,11 +2,13 @@
 title: com.para.civic.getOpenQuestionThread
 description: Reference for the com.para.civic.getOpenQuestionThread lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,48 +17,50 @@ Get an open question thread with reply tree and vote tallies.
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  | AT-URI of the open question post. | Format: `at-uri` |
-| `depth` | `integer` | ❌  | How many levels of reply depth to include. | Min: 0<br/>Max: 1000<br/>Default: `6` |
-**Output:**
+| Name        | Type      | Req'd | Description                                | Constraints                           |
+| ----------- | --------- | ----- | ------------------------------------------ | ------------------------------------- |
+| `uri`       | `string`  | ✅    | AT-URI of the open question post.          | Format: `at-uri`                      |
+| `depth`     | `integer` | ❌    | How many levels of reply depth to include. | Min: 0<br/>Max: 1000<br/>Default: `6` |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `post` | [`com.para.feed.getAuthorFeed#postView`]([[com-para-feed-getauthorfeed|com.para.feed.getAuthorFeed#postView]]) | ✅  |  |  |
-| `replies` | Array of [`#replyView`](#replyview) | ✅  |  |  |
-**Possible Errors:**
+| Name                 | Type                                                                   | Req'd                                   | Description | Constraints |
+| -------------------- | ---------------------------------------------------------------------- | --------------------------------------- | ----------- | ----------- |
+| `post`               | [`com.para.feed.getAuthorFeed#postView`]([[com-para-feed-getauthorfeed | com.para.feed.getAuthorFeed#postView]]) | ✅          |             |     |
+| `replies`            | Array of [`#replyView`](#replyview)                                    | ✅                                      |             |             |
+| **Possible Errors:** |
 
 - `NotFound`
 
 ---
 
 <a name="replyview"></a>
+
 ### `replyView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `uri` | `string` | ✅  |  | Format: `at-uri` |
-| `cid` | `string` | ✅  |  | Format: `cid` |
-| `author` | `string` | ✅  |  | Format: `did` |
-| `text` | `string` | ✅  |  | Max Length: 3000<br/>Max Graphemes: 300 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
-| `voteScore` | `integer` | ✅  | Net vote score (upvotes - downvotes). |  |
-| `viewerVote` | `integer` | ❌  | Current viewer's vote: -1, 0, or 1. | Min: -1<br/>Max: 1 |
-| `replies` | Array of [`#replyView`](#replyview) | ❌  |  |  |
+| Name         | Type                                | Req'd | Description                           | Constraints                             |
+| ------------ | ----------------------------------- | ----- | ------------------------------------- | --------------------------------------- |
+| `uri`        | `string`                            | ✅    |                                       | Format: `at-uri`                        |
+| `cid`        | `string`                            | ✅    |                                       | Format: `cid`                           |
+| `author`     | `string`                            | ✅    |                                       | Format: `did`                           |
+| `text`       | `string`                            | ✅    |                                       | Max Length: 3000<br/>Max Graphemes: 300 |
+| `createdAt`  | `string`                            | ✅    |                                       | Format: `datetime`                      |
+| `voteScore`  | `integer`                           | ✅    | Net vote score (upvotes - downvotes). |                                         |
+| `viewerVote` | `integer`                           | ❌    | Current viewer's vote: -1, 0, or 1.   | Min: -1<br/>Max: 1                      |
+| `replies`    | Array of [`#replyView`](#replyview) | ❌    |                                       |                                         |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -67,9 +71,7 @@ Get an open question thread with reply tree and vote tallies.
       "description": "Get an open question thread with reply tree and vote tallies.",
       "parameters": {
         "type": "params",
-        "required": [
-          "uri"
-        ],
+        "required": ["uri"],
         "properties": {
           "uri": {
             "type": "string",
@@ -89,10 +91,7 @@ Get an open question thread with reply tree and vote tallies.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "post",
-            "replies"
-          ],
+          "required": ["post", "replies"],
           "properties": {
             "post": {
               "type": "ref",
@@ -116,14 +115,7 @@ Get an open question thread with reply tree and vote tallies.
     },
     "replyView": {
       "type": "object",
-      "required": [
-        "uri",
-        "cid",
-        "author",
-        "text",
-        "createdAt",
-        "voteScore"
-      ],
+      "required": ["uri", "cid", "author", "text", "createdAt", "voteScore"],
       "properties": {
         "uri": {
           "type": "string",

@@ -1,4 +1,4 @@
-import { AtUri } from '@atproto/syntax'
+import type { AtUri } from '@atproto/syntax'
 import type { Server } from '@atproto/xrpc-server'
 import type { ActorStoreReader } from '../../../../actor-store/actor-store-reader.js'
 import type { AppContext } from '../../../../context.js'

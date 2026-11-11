@@ -1,6 +1,7 @@
 import type { Keypair } from '@atproto/crypto'
-import type { DidString } from '@atproto/lex'
+import type { DidString } from '@atproto/lex-schema'
 import type { BlobStore } from '@atproto/repo'
+import { CommunityStore } from '../para/community/store.js'
 import type { ActorStoreResources } from './actor-store-resources.js'
 import { ActorStoreTransactor } from './actor-store-transactor.js'
 import type { ActorDb } from './db/index.js'
@@ -15,6 +16,7 @@ export class ActorStoreReader implements AsyncDisposable {
   public readonly record: RecordReader
   public readonly pref: PreferenceReader
   public readonly space: SpaceReader
+  public readonly community: CommunityStore
 
   constructor(
     public readonly did: DidString,
@@ -27,6 +29,7 @@ export class ActorStoreReader implements AsyncDisposable {
     this.record = new RecordReader(db, did)
     this.pref = new PreferenceReader(db)
     this.space = new SpaceReader(db)
+    this.community = new CommunityStore(db)
 
     // Invoke "keypair" once. Also avoids leaking "this" as keypair context.
     let keypairPromise: Promise<Keypair>

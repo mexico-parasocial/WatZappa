@@ -215,7 +215,12 @@ describe('applyCollectionOps', () => {
     })
     const { skipped } = applyCollectionOps(
       big,
-      [{ type: 'addItem', item: item('more', { description: 'y'.repeat(2000) }) }],
+      [
+        {
+          type: 'addItem',
+          item: item('more', { description: 'y'.repeat(2000) }),
+        },
+      ],
       'op',
     )
 
@@ -225,10 +230,7 @@ describe('applyCollectionOps', () => {
   it('does not let one bad op stop the batch', () => {
     const { collection, skipped } = applyCollectionOps(
       base(),
-      [
-        { type: 'nonsense' },
-        { type: 'addItem', item: item('a') },
-      ],
+      [{ type: 'nonsense' }, { type: 'addItem', item: item('a') }],
       'op',
     )
 
@@ -259,6 +261,8 @@ describe('validateOpShape', () => {
   })
 
   it('accepts a well-formed op', () => {
-    expect(validateOpShape({ type: 'removeItem', itemKey: 'a' })).toBeUndefined()
+    expect(
+      validateOpShape({ type: 'removeItem', itemKey: 'a' }),
+    ).toBeUndefined()
   })
 })

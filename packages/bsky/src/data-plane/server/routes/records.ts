@@ -2,8 +2,8 @@ import { Timestamp } from '@bufbuild/protobuf'
 import type { ServiceImpl } from '@connectrpc/connect'
 import { sql } from 'kysely'
 import * as ui8 from 'uint8arrays'
-import { keyBy } from '@atproto/common'
-import { l } from '@atproto/lex'
+import { assemblyQuorumTarget, keyBy } from '@atproto/common'
+import { l } from '@atproto/lex-schema'
 import { AtUri } from '@atproto/syntax'
 import { app, chat, com } from '../../../lexicons/index.js'
 import type { Service } from '../../../proto/bsky_connect.js'
@@ -14,6 +14,11 @@ import {
   PostRecordMeta,
   Record,
 } from '../../../proto/bsky_pb.js'
+import { resolveCabildeoBoard } from '../cabildeo-community.js'
+import {
+  filterActiveMembers,
+  listActiveMembers,
+} from '../community-authority.js'
 import type { Database } from '../db/index.js'
 import { getParaVoteScores } from './para-vote-score.js'
 
@@ -91,7 +96,6 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       .select([
         'post.uri as postUri',
         'post.postType as postType',
-        'meta.official as official',
         sql<string>`coalesce(meta.community, post.community)`.as('community'),
       ])
       .where('post.uri', '=', req.postUri)
@@ -101,43 +105,62 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       return {}
     }
 
-    const [aggregate, breakdown, eligibleVoterCount] = await Promise.all([
+    // Only members count (OD-10 §7.7), judged when the tally is computed and
+    // by the same rule as a cabildeo's: a voter who has left stops counting,
+    // and counts again on rejoining. Eligibility is per identity, so a ballot
+    // cast from an identity that is not a member does not count here. A
+    // policy with no resolvable board has nobody to judge by, so its ballots
+    // stand as the indexer admitted them.
+    const [board, castVotes] = await Promise.all([
+      resolveCabildeoBoard(db.db, post.community ?? ''),
       db.db
         .selectFrom('para_policy_vote')
         .where('subject', '=', req.postUri)
         .where('subjectType', '=', 'policy')
-        .select([
-          sql<number>`count(*)`.as('voteCount'),
-          sql<number>`coalesce(sum(case when "isDirect" = 1 then 1 else 0 end), 0)`.as(
-            'directVoteCount',
-          ),
-          sql<number>`coalesce(sum(case when "isDirect" = 0 then 1 else 0 end), 0)`.as(
-            'delegatedVoteCount',
-          ),
-          sql<number>`coalesce(sum("signal"), 0)`.as('signalSum'),
-        ])
-        .executeTakeFirst(),
-      db.db
-        .selectFrom('para_policy_vote')
-        .where('subject', '=', req.postUri)
-        .where('subjectType', '=', 'policy')
-        .select(['signal', sql<number>`count(*)`.as('count')])
-        .groupBy('signal')
-        .orderBy('signal', 'asc')
+        // No neutral ballot (OD-10 §7.5): one indexed before 0 was refused
+        // stays as history and counts towards neither quorum nor average.
+        .where('signal', '!=', 0)
+        .select(['creator', 'signal', 'isDirect'])
         .execute(),
-      getEligiblePolicyVoterCount(db, post.community ?? ''),
     ])
+    const now = Date.now()
+    const [members, voters] = board
+      ? await Promise.all([
+          listActiveMembers(db, board.uri, now),
+          filterActiveMembers(
+            db,
+            board.uri,
+            castVotes.map((vote) => vote.creator),
+            now,
+          ),
+        ])
+      : [new Set<string>(), null]
+    const votes = voters
+      ? castVotes.filter((vote) => voters.has(vote.creator))
+      : castVotes
 
-    const voteCount = Number(aggregate?.voteCount) || 0
-    const directVoteCount = Number(aggregate?.directVoteCount) || 0
-    const delegatedVoteCount = Number(aggregate?.delegatedVoteCount) || 0
-    const signalSum = Number(aggregate?.signalSum) || 0
+    const eligibleVoterCount = members.size
+    const voteCount = votes.length
+    const directVoteCount = votes.filter((vote) => vote.isDirect === 1).length
+    const delegatedVoteCount = voteCount - directVoteCount
+    const signalSum = votes.reduce((sum, vote) => sum + vote.signal, 0)
+    const signalCounts = new Map<number, number>()
+    for (const vote of votes) {
+      signalCounts.set(vote.signal, (signalCounts.get(vote.signal) ?? 0) + 1)
+    }
+    const breakdown = [...signalCounts].map(([signal, count]) => ({
+      signal,
+      count,
+    }))
     const signalAverage = voteCount > 0 ? signalSum / voteCount : 0
     const quorumTarget = getPolicyQuorumTarget(eligibleVoterCount)
     const quorumMet = voteCount >= quorumTarget
     const outcome = getPolicyOutcome({ quorumMet, signalAverage })
-    const certified = Boolean(post.official) && isPassedOutcome(outcome)
-    const official = certified
+    // A policy never closes, so its result is a live reading that binds no
+    // one (OD-10 §7.6). `official` came from the author's own post metadata
+    // and no longer feeds the result; both fields stay one version, deprecated.
+    const official = false
+    const certified = isPassedOutcome(outcome)
 
     return {
       tally: new ParaPolicyTally({
@@ -155,7 +178,7 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
         official,
         certified,
         outcome,
-        state: getPolicyState({ outcome, official, voteCount, quorumMet }),
+        state: getPolicyState(outcome),
         breakdown: buildSignalBreakdown(breakdown),
         computedAt: new Date().toISOString(),
       }),
@@ -260,58 +283,11 @@ const compositeTime = (
   return ts1.toDate() < ts2.toDate() ? ts1 : ts2
 }
 
-const getEligiblePolicyVoterCount = async (
-  db: Database,
-  community: string,
-): Promise<number> => {
-  const normalizedCommunity = normalizeCommunity(community)
-  if (!normalizedCommunity) {
-    return 0
-  }
-
-  const boardUris = await db.db
-    .selectFrom('para_community_board')
-    .select('uri')
-    .where((eb) =>
-      eb.or([
-        eb(
-          sql`lower(regexp_replace(coalesce("slug", ''), '^p/', ''))`,
-          '=',
-          normalizedCommunity,
-        ),
-        eb(
-          sql`lower(regexp_replace(coalesce("name", ''), '^p/', ''))`,
-          '=',
-          normalizedCommunity,
-        ),
-      ]),
-    )
-    .execute()
-
-  if (boardUris.length === 0) {
-    return 0
-  }
-
-  const count = await db.db
-    .selectFrom('para_community_membership')
-    .where(
-      'communityUri',
-      'in',
-      boardUris.map((row) => row.uri),
-    )
-    .where('membershipState', '=', 'active')
-    .select(sql<number>`count(*)`.as('memberCount'))
-    .executeTakeFirst()
-
-  return Number(count?.memberCount) || 0
-}
-
-const getPolicyQuorumTarget = (eligibleVoterCount: number) => {
-  if (eligibleVoterCount <= 0) {
-    return 10
-  }
-  return Math.max(10, Math.ceil(eligibleVoterCount * 0.2))
-}
+// A community's quorum is the cabildeo's, capped at its electorate so a
+// community smaller than the floor can still reach it. A policy with no
+// resolvable board has no electorate to cap by and keeps the floor.
+const getPolicyQuorumTarget = (eligibleVoterCount: number) =>
+  eligibleVoterCount > 0 ? assemblyQuorumTarget(eligibleVoterCount) : 10
 
 const getPolicyOutcome = ({
   quorumMet,
@@ -335,33 +311,18 @@ const getPolicyOutcome = ({
   return 'contested'
 }
 
-const getPolicyState = ({
-  outcome,
-  official,
-  voteCount,
-  quorumMet,
-}: {
-  outcome: string
-  official: boolean
-  voteCount: number
-  quorumMet: boolean
-}) => {
-  if (official) {
-    return 'official'
+const getPolicyState = (outcome: string) => {
+  switch (outcome) {
+    case 'passed':
+    case 'strong_passed':
+      return 'passing'
+    case 'failed':
+      return 'failing'
+    case 'contested':
+      return 'split'
+    default:
+      return 'noQuorum'
   }
-  if (outcome === 'failed') {
-    return 'failed'
-  }
-  if (outcome === 'passed' || outcome === 'strong_passed') {
-    return 'passed'
-  }
-  if (outcome === 'contested') {
-    return 'civicTree'
-  }
-  if (voteCount > 0 && !quorumMet) {
-    return 'voting'
-  }
-  return 'draft'
 }
 
 const isPassedOutcome = (outcome: string) =>
@@ -375,6 +336,7 @@ const buildSignalBreakdown = (
   )
   const buckets: ParaPolicySignalBucket[] = []
   for (let signal = -3; signal <= 3; signal++) {
+    if (signal === 0) continue
     buckets.push(
       new ParaPolicySignalBucket({
         signal,
@@ -384,9 +346,6 @@ const buildSignalBreakdown = (
   }
   return buckets
 }
-
-const normalizeCommunity = (value: string | undefined) =>
-  value?.trim().toLowerCase().replace(/^p\//, '') || ''
 
 async function getParaPostVoteScore(db: Database, postUri: string) {
   const scores = await getParaVoteScores(db, [postUri])

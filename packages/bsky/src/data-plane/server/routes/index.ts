@@ -14,10 +14,12 @@ import collections from './collections.js'
 import communityActivities from './community-activities.js'
 import communityCivicTree from './community-civic-tree.js'
 import community from './community.js'
+import conclusion from './conclusion.js'
 import discourse from './discourse.js'
 import drafts from './drafts.js'
 import feedGens from './feed-gens.js'
 import feeds from './feeds.js'
+import followThrough from './follow-through.js'
 import follows from './follows.js'
 import highlight from './highlight.js'
 import identity from './identity.js'
@@ -28,7 +30,6 @@ import lists from './lists.js'
 import moderation from './moderation.js'
 import mutes from './mutes.js'
 import notifs from './notifs.js'
-import paraDeliberation from './para-deliberation.js'
 import paraSuggestions from './para-suggestions.js'
 import personalCivicTree from './personal-civic-tree.js'
 import postSubscription from './post-subscription.js'
@@ -90,10 +91,11 @@ export default (db: Database, idResolver: IdResolver) =>
         ...collections(db),
         ...community(db),
         ...communityActivities(db),
+        ...conclusion(db),
+        ...followThrough(db),
         ...civicTree(db),
         ...communityCivicTree(db),
         ...discourse(db),
-        ...paraDeliberation(db),
         ...qvlAudit(db),
         ...qvlSimulation(db),
         ...qvlVoting(db),

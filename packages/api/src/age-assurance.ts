@@ -27,7 +27,7 @@ export const ageAssuranceRuleIDs: Record<string, AgeAssuranceRuleID> = {
  * filters. Region configurations that declare `platforms` only match when the
  * provided platform is included in that list. If no platform filter is
  * provided, platform restrictions are ignored.
-*/
+ */
 export function getAgeAssuranceRegionConfig(
   config: AppBskyAgeassuranceDefs.Config,
   filters: {

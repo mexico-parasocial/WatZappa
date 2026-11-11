@@ -2,11 +2,13 @@
 title: com.para.social.postMeta
 description: Reference for the com.para.social.postMeta lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -17,22 +19,23 @@ Metadata associated with a Para post.
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `post` | `string` | ✅  |  | Format: `at-uri` |
-| `postType` | `string` | ✅  |  | Enum: `policy`, `matter`, `meme` |
-| `official` | `boolean` | ❌  |  | Default: `false` |
-| `party` | `string` | ❌  |  | Max Length: 64<br/>Max Graphemes: 64 |
-| `community` | `string` | ❌  |  | Max Length: 64<br/>Max Graphemes: 64 |
-| `category` | `string` | ❌  |  | Max Length: 64<br/>Max Graphemes: 64 |
-| `tags` | Array of `string` | ❌  |  | Max Items: 16 |
-| `flairs` | Array of `string` | ❌  |  | Max Items: 16 |
-| `voteScore` | `integer` | ✅  |  |  |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name        | Type              | Req'd | Description | Constraints                          |
+| ----------- | ----------------- | ----- | ----------- | ------------------------------------ |
+| `post`      | `string`          | ✅    |             | Format: `at-uri`                     |
+| `postType`  | `string`          | ✅    |             | Enum: `policy`, `matter`, `meme`     |
+| `official`  | `boolean`         | ❌    |             | Default: `false`                     |
+| `party`     | `string`          | ❌    |             | Max Length: 64<br/>Max Graphemes: 64 |
+| `community` | `string`          | ❌    |             | Max Length: 64<br/>Max Graphemes: 64 |
+| `category`  | `string`          | ❌    |             | Max Length: 64<br/>Max Graphemes: 64 |
+| `tags`      | Array of `string` | ❌    |             | Max Items: 16                        |
+| `flairs`    | Array of `string` | ❌    |             | Max Items: 16                        |
+| `voteScore` | `integer`         | ✅    |             |                                      |
+| `createdAt` | `string`          | ✅    |             | Format: `datetime`                   |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -44,12 +47,7 @@ Metadata associated with a Para post.
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "post",
-          "postType",
-          "voteScore",
-          "createdAt"
-        ],
+        "required": ["post", "postType", "voteScore", "createdAt"],
         "properties": {
           "post": {
             "type": "string",
@@ -57,11 +55,7 @@ Metadata associated with a Para post.
           },
           "postType": {
             "type": "string",
-            "enum": [
-              "policy",
-              "matter",
-              "meme"
-            ]
+            "enum": ["policy", "matter", "meme"]
           },
           "official": {
             "type": "boolean",

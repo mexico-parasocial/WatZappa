@@ -1,4 +1,5 @@
 import type { Logger } from 'pino'
+import { isProvisionedSpace } from './chat-mode.js'
 import type { IBridgeDatabase } from './db/index.js'
 import type { MatrixAdminClient } from './matrix.js'
 
@@ -39,7 +40,7 @@ export async function sweepExpiredMembershipLeases(
   let evicted = 0
   for (const lease of expired) {
     const space = await db.getSpaceForCommunity(lease.communityUri)
-    if (space) {
+    if (space && isProvisionedSpace(space)) {
       const rooms = [
         space.spaceId,
         space.chamberA_RoomId,

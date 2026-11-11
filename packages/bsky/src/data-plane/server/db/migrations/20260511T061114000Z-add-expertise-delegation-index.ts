@@ -1,4 +1,4 @@
-import { Kysely } from 'kysely'
+import type { Kysely } from 'kysely'
 
 export async function up(db: Kysely<any>): Promise<void> {
   // Add a GIN index to scopeflairs for expertise-based delegation lookup performance.

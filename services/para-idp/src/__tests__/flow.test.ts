@@ -2,15 +2,19 @@ import { createHash, randomBytes } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { beforeAll, describe, expect, it } from 'vitest'
-import { createLocalJWKSet, jwtVerify } from 'jose'
-import { sign } from '@scure/sr25519'
+import {
+  bytesToHex,
+  hexToBytes,
+  numberToBytesLE,
+} from '@noble/curves/abstract/utils'
 import { sha512 } from '@noble/hashes/sha2'
-import { numberToBytesLE, bytesToHex, hexToBytes } from '@noble/curves/abstract/utils'
-import { Signer, type IdpConfig } from '../oidc.js'
-import { LoginStore } from '../store.js'
-import { createHandler } from '../server.js'
+import { sign } from '@scure/sr25519'
+import { createLocalJWKSet, jwtVerify } from 'jose'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { matrixLocalpart } from '../identity.js'
+import { type IdpConfig, Signer } from '../oidc.js'
+import { createHandler } from '../server.js'
+import { LoginStore } from '../store.js'
 
 /*
  * End-to-end authorization-code flow, exercised through the HTTP handler with
@@ -24,7 +28,10 @@ import { matrixLocalpart } from '../identity.js'
 const here = dirname(fileURLToPath(import.meta.url))
 const derivation = JSON.parse(
   readFileSync(join(here, 'identity-derivation-vectors.json'), 'utf8'),
-).vectors[0] as { seed: string; identities: Array<{ label: string; priv: string; pub: string }> }
+).vectors[0] as {
+  seed: string
+  identities: Array<{ label: string; priv: string; pub: string }>
+}
 
 const ISSUER = 'https://idp.test'
 const CLIENT: IdpConfig['clients'][number] = {
@@ -32,12 +39,17 @@ const CLIENT: IdpConfig['clients'][number] = {
   clientSecret: 'a'.repeat(48),
   redirectUris: ['https://mas.test/callback'],
 }
-const CONFIG: IdpConfig = { issuer: ISSUER, clients: [CLIENT], appScheme: 'para' }
+const CONFIG: IdpConfig = {
+  issuer: ISSUER,
+  clients: [CLIENT],
+  appScheme: 'para',
+}
 
 // ── client-side signing, mirroring iM8 ──────────────────────────────────────
-const CURVE_ORDER = 2n ** 252n + 27742317777372353535851937790883648493n
 const identity = derivation.identities.find((i) => i.label === 'public')!
-const scalar = BigInt('0x' + bytesToHex(hexToBytes(identity.priv).slice().reverse()))
+const scalar = BigInt(
+  '0x' + bytesToHex(hexToBytes(identity.priv).slice().reverse()),
+)
 
 function secretKey(): Uint8Array {
   const shifted = numberToBytesLE((scalar << 3n) & (2n ** 256n - 1n), 32)
@@ -111,7 +123,11 @@ function makeRes(): { res: never; done: Promise<Result> } {
 let handler: ReturnType<typeof createHandler>
 let signer: Signer
 
-async function call(method: string, url: string, body?: string): Promise<Result> {
+async function call(
+  method: string,
+  url: string,
+  body?: string,
+): Promise<Result> {
   const { res, done } = makeRes()
   await handler(makeReq(method, url, body), res)
   return done
@@ -124,7 +140,10 @@ beforeAll(async () => {
 
 function pkce() {
   const verifier = randomBytes(48).toString('base64url')
-  return { verifier, challenge: createHash('sha256').update(verifier).digest('base64url') }
+  return {
+    verifier,
+    challenge: createHash('sha256').update(verifier).digest('base64url'),
+  }
 }
 
 function authorizeUrl(p: Record<string, string>): string {
@@ -179,7 +198,9 @@ describe('full authorization-code flow', () => {
     expect(verified.status).toBe(200)
 
     const redirect = new URL(verified.body.redirect_uri)
-    expect(redirect.origin + redirect.pathname).toBe('https://mas.test/callback')
+    expect(redirect.origin + redirect.pathname).toBe(
+      'https://mas.test/callback',
+    )
     expect(redirect.searchParams.get('state')).toBe('st-123')
     const code = redirect.searchParams.get('code')!
 
@@ -235,7 +256,10 @@ describe('browser flow (how MAS actually arrives)', () => {
     expect(sessionId).toBeTruthy()
 
     // Nothing to report before the app signs.
-    const before = await call('GET', `/authorize/status?session=${encodeURIComponent(sessionId)}`)
+    const before = await call(
+      'GET',
+      `/authorize/status?session=${encodeURIComponent(sessionId)}`,
+    )
     expect(before.body).toEqual({ pending: true })
 
     const signed = signAssertion(authorize.body.challenge)
@@ -245,11 +269,17 @@ describe('browser flow (how MAS actually arrives)', () => {
       JSON.stringify({ challenge: authorize.body.challenge, ...signed }),
     )
 
-    const after = await call('GET', `/authorize/status?session=${encodeURIComponent(sessionId)}`)
+    const after = await call(
+      'GET',
+      `/authorize/status?session=${encodeURIComponent(sessionId)}`,
+    )
     expect(after.body.redirect_uri).toContain('https://mas.test/callback?code=')
 
     // Single-use: a second poll must not replay the redirect.
-    const again = await call('GET', `/authorize/status?session=${encodeURIComponent(sessionId)}`)
+    const again = await call(
+      'GET',
+      `/authorize/status?session=${encodeURIComponent(sessionId)}`,
+    )
     expect(again.body).toEqual({ pending: true })
   })
 
@@ -267,7 +297,10 @@ describe('security properties', () => {
     const { challenge } = pkce()
     const r = await call(
       'GET',
-      authorizeUrl({ ...baseParams(challenge), redirect_uri: 'https://evil.test/steal' }),
+      authorizeUrl({
+        ...baseParams(challenge),
+        redirect_uri: 'https://evil.test/steal',
+      }),
     )
     // Must fail in place — redirecting would hand the code to the attacker.
     expect(r.status).toBe(400)
@@ -278,7 +311,10 @@ describe('security properties', () => {
     const { challenge } = pkce()
     const r = await call(
       'GET',
-      authorizeUrl({ ...baseParams(challenge), code_challenge_method: 'plain' }),
+      authorizeUrl({
+        ...baseParams(challenge),
+        code_challenge_method: 'plain',
+      }),
     )
     expect(r.status).toBe(400)
   })
@@ -287,7 +323,10 @@ describe('security properties', () => {
     const { challenge } = pkce()
     const authorize = await call('GET', authorizeUrl(baseParams(challenge)))
     const signed = signAssertion(authorize.body.challenge)
-    const payload = JSON.stringify({ challenge: authorize.body.challenge, ...signed })
+    const payload = JSON.stringify({
+      challenge: authorize.body.challenge,
+      ...signed,
+    })
 
     expect((await call('POST', '/authorize/verify', payload)).status).toBe(200)
     const replay = await call('POST', '/authorize/verify', payload)

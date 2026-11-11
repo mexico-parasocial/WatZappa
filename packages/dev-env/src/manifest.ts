@@ -1,6 +1,6 @@
 import type { DevEnvRuntimeConfig } from './config.js'
 import {
-  DevIdentityProvider,
+  type DevIdentityProvider,
   type DevIdentitySeed,
   defaultDevIdentityProvider,
 } from './identity.js'

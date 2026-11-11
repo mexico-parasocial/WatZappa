@@ -2,11 +2,13 @@
 title: com.para.collection.createCollection
 description: Reference for the com.para.collection.createCollection lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `procedure`
@@ -22,25 +24,26 @@ Create a new policy collection.
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `name` | `string` | ✅  |  | Max Length: 200 |
-| `description` | `string` | ❌  |  | Max Length: 2000 |
-| `color` | `string` | ❌  |  | Max Length: 7 |
-**Output:**
+| Name          | Type     | Req'd | Description | Constraints      |
+| ------------- | -------- | ----- | ----------- | ---------------- |
+| `name`        | `string` | ✅    |             | Max Length: 200  |
+| `description` | `string` | ❌    |             | Max Length: 2000 |
+| `color`       | `string` | ❌    |             | Max Length: 7    |
+| **Output:**   |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `id` | `string` | ✅  |  |  |
+| Name | Type     | Req'd | Description | Constraints |
+| ---- | -------- | ----- | ----------- | ----------- |
+| `id` | `string` | ✅    |             |             |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -53,9 +56,7 @@ Create a new policy collection.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "name"
-          ],
+          "required": ["name"],
           "properties": {
             "name": {
               "type": "string",
@@ -76,9 +77,7 @@ Create a new policy collection.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "properties": {
             "id": {
               "type": "string"

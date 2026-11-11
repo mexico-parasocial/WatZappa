@@ -238,7 +238,6 @@ describe('hydration endpoint attribution', () => {
           parseUserContextFromHandler: () => ({}),
           scope: () => features,
         },
-        dataplane: { getSuggestedFeeds: async () => ({ uris: [] }) },
         hydrator: { createContext },
         rolodexClient: {},
         cfg: atmosphere

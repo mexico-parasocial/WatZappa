@@ -2,11 +2,13 @@
 title: com.para.highlight.listHighlights
 description: Reference for the com.para.highlight.listHighlights lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,29 +17,30 @@ List indexed public highlight annotations with optional filters.
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `community` | `string` | ❌  |  | Max Length: 100 |
-| `state` | `string` | ❌  |  | Max Length: 100 |
-| `subject` | `string` | ❌  |  | Format: `at-uri` |
-| `creator` | `string` | ❌  |  | Format: `did` |
-| `limit` | `integer` | ❌  |  | Min: 1<br/>Max: 100<br/>Default: `30` |
-| `cursor` | `string` | ❌  |  |  |
-**Output:**
+| Name        | Type      | Req'd | Description | Constraints                           |
+| ----------- | --------- | ----- | ----------- | ------------------------------------- |
+| `community` | `string`  | ❌    |             | Max Length: 100                       |
+| `state`     | `string`  | ❌    |             | Max Length: 100                       |
+| `subject`   | `string`  | ❌    |             | Format: `at-uri`                      |
+| `creator`   | `string`  | ❌    |             | Format: `did`                         |
+| `limit`     | `integer` | ❌    |             | Min: 1<br/>Max: 100<br/>Default: `30` |
+| `cursor`    | `string`  | ❌    |             |                                       |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cursor` | `string` | ❌  |  |  |
-| `highlights` | Array of [`com.para.highlight.defs#highlightView`]([[com-para-highlight-defs|com.para.highlight.defs#highlightView]]) | ✅  |  |  |
+| Name         | Type                                                                         | Req'd                                    | Description | Constraints |
+| ------------ | ---------------------------------------------------------------------------- | ---------------------------------------- | ----------- | ----------- |
+| `cursor`     | `string`                                                                     | ❌                                       |             |             |
+| `highlights` | Array of [`com.para.highlight.defs#highlightView`]([[com-para-highlight-defs | com.para.highlight.defs#highlightView]]) | ✅          |             |     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -80,9 +83,7 @@ List indexed public highlight annotations with optional filters.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "highlights"
-          ],
+          "required": ["highlights"],
           "properties": {
             "cursor": {
               "type": "string"

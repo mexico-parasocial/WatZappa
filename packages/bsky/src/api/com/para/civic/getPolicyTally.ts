@@ -1,4 +1,4 @@
-import type { AtUriString, DatetimeString } from '@atproto/lex'
+import type { AtUriString, DatetimeString } from '@atproto/lex-schema'
 import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import { parseString } from '../../../../hydration/util.js'
@@ -38,7 +38,7 @@ export default function (server: Server, ctx: AppContext) {
             official: res.tally.official,
             certified: res.tally.certified,
             outcome: parseString(res.tally.outcome) || 'insufficient_quorum',
-            state: parseString(res.tally.state) || 'draft',
+            state: parseString(res.tally.state) || 'noQuorum',
             breakdown: res.tally.breakdown.map((bucket) => ({
               signal: bucket.signal,
               count: bucket.count,

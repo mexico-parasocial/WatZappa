@@ -2,35 +2,38 @@
 title: com.para.community.civicTree.listSuggestions
 description: Reference for the com.para.community.civicTree.listSuggestions lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `community` | `string` | ✅  |  | Format: `at-uri` |
-| `status` | `string` | ❌  |  |  |
-**Output:**
+| Name        | Type     | Req'd | Description | Constraints      |
+| ----------- | -------- | ----- | ----------- | ---------------- |
+| `community` | `string` | ✅    |             | Format: `at-uri` |
+| `status`    | `string` | ❌    |             |                  |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `suggestions` | Array of `unknown` | ✅  |  |  |
+| Name          | Type               | Req'd | Description | Constraints |
+| ------------- | ------------------ | ----- | ----------- | ----------- |
+| `suggestions` | Array of `unknown` | ✅    |             |             |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -40,9 +43,7 @@ description: Reference for the com.para.community.civicTree.listSuggestions lexi
       "type": "query",
       "parameters": {
         "type": "params",
-        "required": [
-          "community"
-        ],
+        "required": ["community"],
         "properties": {
           "community": {
             "type": "string",
@@ -57,9 +58,7 @@ description: Reference for the com.para.community.civicTree.listSuggestions lexi
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "suggestions"
-          ],
+          "required": ["suggestions"],
           "properties": {
             "suggestions": {
               "type": "array",

@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { authorize, resolveRoom } from '../authz.js'
+import { isProvisionedSpace, requireMatrix } from '../chat-mode.js'
+import { requestDeviceRevocation } from '../device-revocation.js'
 import {
   BRIDGE_AUDIENCES,
   mxidFromVerifiedAssertion,
@@ -30,7 +32,7 @@ export async function apiSpaceForCommunityHandler(
     return
   }
   const mapping = await ctx.db.getSpaceForCommunity(communityUri)
-  if (!mapping) {
+  if (!mapping || !isProvisionedSpace(mapping)) {
     writeJson(res, 404, { error: 'Space not found for community' })
     return
   }
@@ -143,8 +145,8 @@ async function readAssertionBody(
  * identity_pub))[0..20]` — a pure function of the presented public key. There
  * is no mapping to read: the client can (and does, via iM8) derive its own
  * MXID locally, and this endpoint is the cross-check that both sides agree on
- * the derivation plus the point at which the Synapse account is ensured to
- * exist. It mints no session, no device and no token.
+ * the derivation. MAS creates the account during native login; this probe
+ * creates no account, session, device or token in OIDC deployments.
  */
 export async function apiMatrixIdentityHandler(
   req: IncomingMessage,
@@ -170,16 +172,20 @@ export async function apiMatrixIdentityHandler(
     writeJson(res, 401, { error: 'Invalid identity proof' })
     return
   }
-  try {
-    if (!(await ctx.matrix.userExists(mxid))) {
-      await ctx.matrix.createUser(mxid)
+  const matrix = requireMatrix(ctx.matrix)
+  if (ctx.config.matrixAllowAppServiceLogin) {
+    try {
+      if (!(await matrix.userExists(mxid))) await matrix.createUser(mxid)
+    } catch (err: any) {
+      ctx.log.warn(
+        { err, mxid },
+        'Could not ensure legacy Matrix account exists',
+      )
     }
-  } catch (err: any) {
-    ctx.log.warn({ err, mxid }, 'Could not ensure Matrix account exists')
-    // The account is also ensured at verified join / session mint; report
-    // identity even if provisioning is temporarily unavailable.
   }
-  await reconcileAccess(ctx, auth.did, mxid)
+  // MAS must create a first-login account. Pre-provisioning it through the
+  // appservice makes its localpart unavailable to MAS and strands the user.
+  if (await matrix.userExists(mxid)) await reconcileAccess(ctx, auth.did, mxid)
   writeJson(res, 200, {
     userId: mxid,
     homeServer: ctx.config.matrixPublicHomeserverUrl,
@@ -218,6 +224,16 @@ export async function apiMatrixTokenHandler(
     return
   }
 
+  // Bridge-minted sessions are for legacy appservice deployments only; with
+  // MAS the device authorizes through the homeserver's own login flow.
+  if (!ctx.config.matrixAllowAppServiceLogin) {
+    writeJson(res, 503, {
+      error: 'MATRIX_CLIENT_LOGIN_REQUIRED',
+      message: 'Authorize this device through the Matrix homeserver login flow',
+    })
+    return
+  }
+
   let friendlyName: string | undefined
   let requestedDeviceId: string | undefined
   if (typeof body.friendlyName === 'string')
@@ -230,15 +246,26 @@ export async function apiMatrixTokenHandler(
   }
   const userAgent = req.headers['user-agent']?.slice(0, 200)
 
-  if (!(await ctx.matrix.userExists(mxid))) {
-    await ctx.matrix.createUser(mxid)
+  if (!(await requireMatrix(ctx.matrix).userExists(mxid))) {
+    await requireMatrix(ctx.matrix).createUser(mxid)
   }
 
   const deviceId =
     requestedDeviceId ?? `PARA-${randomUUID().replace(/-/g, '').slice(0, 16)}`
+  if (
+    (await ctx.db.listDeviceSessions(did)).some(
+      (session) =>
+        session.mxid === mxid &&
+        session.deviceId === deviceId &&
+        session.revocationPending,
+    )
+  ) {
+    writeJson(res, 409, { error: 'MATRIX_DEVICE_REVOCATION_PENDING' })
+    return
+  }
   let session
   try {
-    session = await ctx.matrix.appServiceLogin(
+    session = await requireMatrix(ctx.matrix).appServiceLogin(
       mxid,
       deviceId,
       friendlyName ?? userAgent,
@@ -287,8 +314,8 @@ export async function apiMatrixTokenHandler(
  * and the bridge records a device-session row for the derived MXID — no
  * token is minted, the client's own MAS session remains the session.
  *
- * With that row: chat-message attribution counts the sender, moderation
- * sanctions resolve the target, removal deactivates the device, and role
+ * With that row: reported-message attribution resolves the sender, moderation
+ * sanctions resolve the target, removal reaches community rooms, and role
  * changes reach it — the same operational treatment bridge-minted sessions
  * get, by the member's own attestation instead of by bridge custody.
  */
@@ -333,13 +360,34 @@ export async function apiMatrixAttestHandler(
   }
   const userAgent = req.headers['user-agent']?.slice(0, 200)
 
-  if (!(await ctx.matrix.userExists(mxid))) {
-    await ctx.matrix.createUser(mxid)
+  // Attest only a device MAS really created for the proven account: a valid
+  // proof plus an arbitrary device string must not become a session row.
+  const matrix = requireMatrix(ctx.matrix)
+  if (!(await matrix.userExists(mxid))) {
+    writeJson(res, 409, { error: 'MATRIX_CLIENT_LOGIN_REQUIRED' })
+    return
+  }
+  if (!(await matrix.deviceExists(mxid, deviceId))) {
+    writeJson(res, 409, { error: 'MATRIX_DEVICE_NOT_FOUND' })
+    return
+  }
+
+  const sessions = await ctx.db.listDeviceSessions(auth.did)
+  if (
+    sessions.some(
+      (session) =>
+        session.mxid === mxid &&
+        session.deviceId === deviceId &&
+        session.revocationPending,
+    )
+  ) {
+    writeJson(res, 409, { error: 'MATRIX_DEVICE_REVOCATION_PENDING' })
+    return
   }
 
   // Idempotent: re-attesting the same device reuses the row instead of
   // piling up session records.
-  const existing = (await ctx.db.listDeviceSessions(auth.did)).find(
+  const existing = sessions.find(
     (s) => s.mxid === mxid && s.deviceId === deviceId && s.revokedAt == null,
   )
   const now = new Date().toISOString()
@@ -402,7 +450,7 @@ export async function apiCommunityJoinHandler(
   }
 
   const space = await ctx.db.getSpaceForCommunity(communityUri)
-  if (!space) {
+  if (!space || !isProvisionedSpace(space)) {
     writeJson(res, 404, { error: 'Space not found for community' })
     return
   }
@@ -424,11 +472,7 @@ export async function apiCommunityJoinHandler(
   }
 
   const roles = membership.roles ?? []
-  const isObserver = roles.includes('observer')
-  const chamber =
-    space.chamberMode === 'bicameral' && !isObserver
-      ? await ctx.firehose.decideChamber(communityUri, auth.did)
-      : null
+  const chamber = null
 
   const identityPubHex = signed.assertion.identityPub
   const identityPub = new Uint8Array(32)
@@ -441,7 +485,7 @@ export async function apiCommunityJoinHandler(
     joined = await ctx.projection.verifiedJoin(space, auth.did, identityPub, {
       roles,
       chamber,
-      isObserver,
+      isObserver: false,
     })
   } catch (err) {
     // A ban follows the member, not the chat key they present. They are told
@@ -492,6 +536,7 @@ export async function apiPushTokenHandler(
   // Expo delivery is keyed by DID and is the load-bearing path.
   await ctx.db.setPushToken(did, expoPushToken, platform || 'unknown')
 
+  // Chat-off deployments register the token without installing a Matrix pusher.
   // Synapse-side pusher registration needs the caller's MXID. Post-CD-M1
   // there is no mapping to read: the client states it by presenting the same
   // identity proof as everywhere else (audience: identity). Without a valid
@@ -501,7 +546,7 @@ export async function apiPushTokenHandler(
   const signed = parsed?.assertion
   const challenge = signed?.assertion?.challenge
   const mxid =
-    signed && typeof challenge === 'string'
+    ctx.matrix && signed && typeof challenge === 'string'
       ? mxidFromVerifiedAssertion(
           signed,
           {
@@ -512,7 +557,8 @@ export async function apiPushTokenHandler(
           ctx.config.matrixServerName,
         )
       : null
-  if (mxid) {
+  // Native MAS clients register pushers with their own device token.
+  if (mxid && ctx.matrix && ctx.config.matrixAllowAppServiceLogin) {
     try {
       const tokenData = await ctx.matrix.generateUserToken(mxid)
       await ctx.matrix.setPusherWithUserToken(
@@ -631,14 +677,15 @@ export async function apiListDevicesHandler(
       userAgent: d.userAgent,
       createdAt: d.createdAt,
       lastSeenAt: d.lastSeenAt,
-      revoked: d.revokedAt != null,
+      revoked: d.revokedAt != null && !d.revocationPending,
+      revocationPending: Boolean(d.revocationPending),
     })),
   })
 }
 
 /**
  * POST /api/devices/revoke — body: { sessionId }. Deactivates the device on
- * the homeserver (killing its access token) and marks the session revoked.
+ * the homeserver. Failed upstream work remains durably queued and returns 202.
  */
 export async function apiRevokeDeviceHandler(
   req: IncomingMessage,
@@ -663,12 +710,17 @@ export async function apiRevokeDeviceHandler(
     writeJson(res, 404, { error: 'Device session not found' })
     return
   }
-  if (session.revokedAt) {
-    writeJson(res, 200, { revoked: true, alreadyRevoked: true })
+  await ctx.db.queueDeviceRevocation(session.did, session.id)
+  try {
+    await requestDeviceRevocation(ctx.db, requireMatrix(ctx.matrix), session)
+  } catch (err) {
+    ctx.log.warn({ err, sessionId }, 'Device revocation queued for retry')
+    writeJson(res, 202, { revoked: false, pending: true })
     return
   }
-
-  await ctx.matrix.adminDeactivateDevice(session.mxid, session.deviceId)
-  await ctx.db.revokeDeviceSession(auth.did, sessionId)
-  writeJson(res, 200, { revoked: true })
+  writeJson(res, 200, {
+    revoked: true,
+    pending: false,
+    alreadyRevoked: Boolean(session.revokedAt),
+  })
 }

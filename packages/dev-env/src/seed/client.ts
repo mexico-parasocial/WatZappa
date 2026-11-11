@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { CID } from 'multiformats/cid'
-import {
+import type {
   AppBskyActorProfile,
   AppBskyFeedLike,
   AppBskyFeedPost,
@@ -14,10 +14,16 @@ import {
   AtpAgent,
   ComAtprotoModerationCreateReport,
 } from '@atproto/api'
-import { CidString, Client } from '@atproto/lex'
-import { BlobRef } from '@atproto/lexicon'
-import { AtUri, AtUriString, DidString, HandleString } from '@atproto/syntax'
-import { TestNetworkNoAppView } from '../network-no-appview.js'
+import type { Client } from '@atproto/lex-client'
+import type { CidString } from '@atproto/lex-schema'
+import type { BlobRef } from '@atproto/lexicon'
+import {
+  AtUri,
+  type AtUriString,
+  type DidString,
+  type HandleString,
+} from '@atproto/syntax'
+import type { TestNetworkNoAppView } from '../network-no-appview.js'
 
 // Makes it simple to create data via the XRPC client,
 // and keeps track of all created data in memory for convenience.

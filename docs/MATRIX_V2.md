@@ -6,9 +6,9 @@ the inspected branch/worktree baseline. This document retains historical v1
 findings and design decisions; they are not a current sprint backlog or proof
 of deployment. OD-6/table deletion and local MAS are implemented. F9's route
 checks do not close the separate self-declared-role ingestion defect. The
-recorded bridge/AppView fixes are now integrated into the active development
-branch at `d11fa24f1`; release selection and actual homeserver acceptance remain
-open before claiming deployed trusted authorization.
+recorded bridge/AppView fixes (`d11fa24f1`) are on `main`; release selection
+and actual homeserver acceptance remain open before claiming deployed trusted
+authorization.
 
 The paired PARA/M8 login candidate is now committed and locally tested; see
 [implementation and remaining acceptance](./M8-LOGIN-EXECUTION-2026-10-05.md).
@@ -29,16 +29,16 @@ never rewritten.
 
 ## 1. What v1 actually is
 
-The plan was written against the README and marked several points *(assumed)*.
+The plan was written against the README and marked several points _(assumed)_.
 Those assumptions have now been checked against the source. Corrections:
 
-| Plan assumed | Actually |
-|---|---|
-| Bridge puppets users and holds tokens | Confirmed. `user_matrix_map` stores `did`, `matrix_user_id` and a generated **password** per user (`services/matrix-bridge/src/db.ts`). `/api/matrix-token` mints login tokens via the Synapse admin API. |
-| A DID→MXID linkage table exists | Confirmed, and it is worse than a derivation table: it is queried in both directions (`getMxidForDid`, `getDidForMxid`) and the MXID is a reversible encoding of the DID — `did:plc:abc` → `@did-plc-abc:server` (`src/matrix.ts` `didToMxid`). No key material is involved. |
-| Encryption is inconsistent between rooms | Off entirely. `MATRIX_ENABLE_ENCRYPTION` defaults to `false`; when true it only sets `m.room.encryption` at room creation. The RN WebView client has no working crypto stack. |
-| Bridge stores no message content | True of the timeline sync path only (`src/matrix-sync.ts` inserts `content: ''`). Two other paths do store user text — see F4. |
-| Federation is closed | **False in a fresh deployment.** See F1. |
+| Plan assumed                             | Actually                                                                                                                                                                                                                                                                     |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bridge puppets users and holds tokens    | Confirmed. `user_matrix_map` stores `did`, `matrix_user_id` and a generated **password** per user (`services/matrix-bridge/src/db.ts`). `/api/matrix-token` mints login tokens via the Synapse admin API.                                                                    |
+| A DID→MXID linkage table exists          | Confirmed, and it is worse than a derivation table: it is queried in both directions (`getMxidForDid`, `getDidForMxid`) and the MXID is a reversible encoding of the DID — `did:plc:abc` → `@did-plc-abc:server` (`src/matrix.ts` `didToMxid`). No key material is involved. |
+| Encryption is inconsistent between rooms | Off entirely. `MATRIX_ENABLE_ENCRYPTION` defaults to `false`; when true it only sets `m.room.encryption` at room creation. The RN WebView client has no working crypto stack.                                                                                                |
+| Bridge stores no message content         | True of the timeline sync path only (`src/matrix-sync.ts` inserts `content: ''`). Two other paths do store user text — see F4.                                                                                                                                               |
+| Federation is closed                     | **False in a fresh deployment.** See F1.                                                                                                                                                                                                                                     |
 
 Governance logic (proposals, sortition, deliberation, moderation) also lives
 inside the bridge. The v2 plan's "thin provisioner" cannot be reached by
@@ -49,7 +49,7 @@ renaming the service; that logic needs somewhere to go first.
 Numbered so they can be closed individually. F1–F3 are the reason Phase 1
 starts here rather than with MAS.
 
-**F1 — the hardening in `setup.sh` never reached Synapse.** *(fixed)*
+**F1 — the hardening in `setup.sh` never reached Synapse.** _(fixed)_
 `setup.sh` generated `deploy/matrix/synapse/homeserver.yaml` and edited
 `federation_domain_whitelist: []` and the room-directory settings into it.
 `docker-compose.matrix.yaml` mounted that directory read-only at `/config` but
@@ -84,17 +84,17 @@ both consequences of moving the config path:
   an explicit `SYNAPSE_CONFIG_PATH` it assumes permissions are handled, and
   Synapse (uid 991) cannot create `/data/media_store` in a root-owned volume.
   A `synapse-init` service in the compose file now prepares the volume.
-- The overlay file cannot be mounted *inside* a read-only bind mount — Docker
+- The overlay file cannot be mounted _inside_ a read-only bind mount — Docker
   cannot create the mountpoint. The `/config` directory mount dropped `:ro`;
   the overlay itself stays read-only.
 
-**F2 — Synapse was generating a SQLite config.** *(fixed and verified)*
+**F2 — Synapse was generating a SQLite config.** _(fixed and verified)_
 The compose file passes `SYNAPSE_DB_HOST` / `SYNAPSE_DB_USER` / …, which the
 image's config template does not read; it reads `POSTGRES_*`. So the generated
 config used SQLite while the `synapse-db` Postgres container ran unused.
 Retention purge jobs (§5) are not viable on SQLite at any size.
 
-*Correction:* the first fix — passing `POSTGRES_*` to the generate step — **did
+_Correction:_ the first fix — passing `POSTGRES_*` to the generate step — **did
 not work**, and the claim that it did was wrong. The `generate` subcommand emits
 a stock default config and never consults `POSTGRES_*`; those are read only by
 the image's start-up template, on the path where it generates config for itself.
@@ -106,14 +106,14 @@ credentials, so it lives in the gitignored generated directory rather than the
 tracked overlay. Verified: the running server reports `database engine:
 psycopg2`.
 
-**F3 — the generated config directory was not gitignored.** *(fixed)*
+**F3 — the generated config directory was not gitignored.** _(fixed)_
 It holds the homeserver signing key, `macaroon_secret_key`, `form_secret`,
 `registration_shared_secret` and the database password. Added to `.gitignore`.
 If that directory was ever committed, those secrets are burned and the signing
 key must be rotated.
 
 **F4 — user text is stored in the bridge database on two paths.**
-*(moderation half fixed; deliberation cards open, deferred to CD-M5)*
+_(moderation half fixed; deliberation cards open, deferred to CD-M5)_
 The README's "never raw message content" holds for timeline sync but not for:
 `chat-moderation.ts` stores a 200-character preview of every reported message
 (`reported_message_preview`), and deliberation cards store user-submitted text
@@ -132,7 +132,7 @@ attached to the reported member's DID. Redacting the message propagated through
 Synapse in 7 days and never touched the excerpt. The reported member did not
 consent to that copy, was not told it existed, and could not see or contest it.
 
-*Fixed for the moderation path* by dropping the excerpt entirely rather than
+_Fixed for the moderation path_ by dropping the excerpt entirely rather than
 expiring it, which makes the evidence inherit Synapse's retention and redaction
 rules instead of racing them:
 
@@ -161,8 +161,8 @@ message is exactly what this finding is about.
 The deliberation-card half is untouched and stays open. CD-M5 names cards as the
 first candidate to move once Spaces stabilises.
 
-**F5 — deliberation text is sent to OpenAI.** *(consent surface implemented;
-disclosure text and OD-3 policy questions still open)*
+**F5 — deliberation text is sent to OpenAI.** _(consent surface implemented;
+disclosure text and OD-3 policy questions still open)_
 `/api/summarize` sends card titles and up to 150 characters of each card's
 content to OpenAI (`gpt-4o-mini` by default) for up to 100 cards. The path is
 gated on `OPENAI_API_KEY` being set, so it is off unless deployed with a key —
@@ -174,11 +174,11 @@ this needs an explicit decision, not a config default. Tracked as OD-3.
 The finding understated the surface. There are **three** provider-bound paths,
 not one:
 
-| Path | What it sends | Live? |
-|---|---|---|
-| `summarize.ts` | up to 100 cards, all authors, title + 150 chars | yes — `/api/summarize` |
-| `llm-extraction.ts` `enrichCardWithLLM` | one card's own text | no caller |
-| `llm-extraction.ts` `inferRelationshipsWithLLM` | the new card + up to **20 other members'** cards as context | no caller |
+| Path                                            | What it sends                                               | Live?                  |
+| ----------------------------------------------- | ----------------------------------------------------------- | ---------------------- |
+| `summarize.ts`                                  | up to 100 cards, all authors, title + 150 chars             | yes — `/api/summarize` |
+| `llm-extraction.ts` `enrichCardWithLLM`         | one card's own text                                         | no caller              |
+| `llm-extraction.ts` `inferRelationshipsWithLLM` | the new card + up to **20 other members'** cards as context | no caller              |
 
 `llm-extraction.ts` is currently unreferenced outside itself — dead code, but
 loaded: the relationship path exports other people's text as context, so wiring
@@ -189,7 +189,7 @@ all three paths including the dead ones. What remains open under OD-3 is policy,
 not mechanism — the disclosure wording, the retention commitment to demand from
 the processor, and whether a self-hosted model is required regardless.
 
-**F6 — three API endpoints are unauthenticated reads.** *(fixed)*
+**F6 — three API endpoints are unauthenticated reads.** _(fixed)_
 `/api/proposals`, `/api/constitution` and `/api/votes` performed no M8
 authentication, contradicting the README's "Client API endpoints require M8
 JWTs". `/api/votes?card=<id>` returns every vote on a card **including
@@ -204,8 +204,8 @@ the POST endpoints. This requires a valid M8 session, closing the gap with the
 README's claim; it does not add a community-membership check beyond that —
 same authorization level the POST endpoints on these resources already use.
 
-**F7 — push-based membership projection cannot survive CD-M1.** *(closed by
-CD-M1 + CD-M6, 2026-09-21 — the v1 mechanisms are deleted from the bridge)*
+**F7 — push-based membership projection cannot survive CD-M1.** _(closed by
+CD-M1 + CD-M6, 2026-09-21 — the v1 mechanisms are deleted from the bridge)_
 When the firehose sees a `com.para.community.membership` record it invites that
 member to the community's rooms. To do that it needs an MXID, and it gets one
 from `ensureMxid` (`firehose.ts`): read `user_matrix_map`, and on a miss derive
@@ -214,11 +214,11 @@ stores it via `setMxidForDid`.
 
 All three of those mechanisms are things v2 removes:
 
-| Mechanism | Removed by |
-|---|---|
-| `user_matrix_map` DID→MXID table | §3, "no server-held identity mapping" |
-| `didToMxid` reversible derivation | CD-M1 |
-| server-minted account passwords | §5, `password_config.enabled: false` |
+| Mechanism                         | Removed by                            |
+| --------------------------------- | ------------------------------------- |
+| `user_matrix_map` DID→MXID table  | §3, "no server-held identity mapping" |
+| `didToMxid` reversible derivation | CD-M1                                 |
+| server-minted account passwords   | §5, `password_config.enabled: false`  |
 
 After CD-M1 the MXID is `H(identity_pub_i)`. The server never sees
 `identity_pub_i` — the membership lexicon carries only the repo DID, no MXID and
@@ -228,10 +228,10 @@ porting difficulty; the operation is unimplementable as written.
 
 The consequence is that OD-5 is not only "move governance logic out of the
 bridge". The governance side is already portable (CD-M2). It is the
-*provisioner* that has to change shape: it can no longer push users into rooms,
+_provisioner_ that has to change shape: it can no longer push users into rooms,
 because it cannot name them.
 
-*Closed as designed:* `user_matrix_map` is dropped at startup on both backends
+_Closed as designed:_ `user_matrix_map` is dropped at startup on both backends
 (the PW-CLEANUP lesson — deployed rows are deleted, not merely stopped),
 `didToMxid` no longer exists, and membership inverted from push to pull via the
 CD-M6 verified join. The residual linkage surface is `device_sessions`, which
@@ -239,7 +239,7 @@ retains (did, mxid) per minted session as operational, revocable state — see
 CD-M6's consequences for why that is not the mapping table re-formed, and what
 still has to move at the CD-M2 physical split.
 
-**F8 — fifteen more GET endpoints are still unauthenticated.** *(fixed)*
+**F8 — fifteen more GET endpoints are still unauthenticated.** _(fixed)_
 F6 closed the three endpoints that had been spot-checked. A full pass over all
 41 `/api` branches shows the pattern is broader: every `POST` handler calls
 `authenticateM8`, and fifteen `GET` handlers still do not.
@@ -282,7 +282,7 @@ handlers. The port is published on `127.0.0.1` only, so this is a finding and
 not an incident — confirm the Caddy/nginx front end does not proxy `/api`
 before relying on that.
 
-**F9 — the bridge authenticates but does not authorize.** *(route checks implemented; trusted role candidate tested, release/staging acceptance open as of 2026-10-05)*
+**F9 — the bridge authenticates but does not authorize.** _(route checks implemented; trusted role candidate tested, release/staging acceptance open as of 2026-10-05)_
 
 The resolution below describes route/resource checks. The main feature checkout
 still accepts self-authored membership roles until the tested candidate is
@@ -292,7 +292,7 @@ restriction has been replaced. See the [execution record](./TRUSTED-AUTHORITY-EX
 and canonical P0 for validation and remaining real-homeserver acceptance.
 
 With F6 and F8 closed, every `/api` endpoint requires a valid M8 session. Almost
-none of them check that the caller is *entitled to the specific resource*: any
+none of them check that the caller is _entitled to the specific resource_: any
 authenticated user can read any community's member list, moderation dashboard,
 sortition proofs or another user's chat preferences by passing the right query
 parameter. `/api/space-for-community` is the exception — it checks active
@@ -302,7 +302,7 @@ Not urgent in the current single-community pilot; blocking before multiple
 communities share a homeserver, because it makes cross-community enumeration
 trivial for anyone with an account.
 
-*One instance fixed: `/api/moderation-dashboard`.* It called `authenticateM8`
+_One instance fixed: `/api/moderation-dashboard`._ It called `authenticateM8`
 and **discarded the result**, then authorised entirely against the
 client-supplied `modDid` query parameter — so any authenticated member could
 name someone else's moderator DID and read the dashboard. `is_moderator` is
@@ -311,7 +311,7 @@ took one call. Now `modDid` must equal the authenticated DID and the entitlement
 check runs against `auth.did`; `/api/moderation-recompute` twenty lines below
 already did it this way, so this was a slip rather than the general pattern.
 
-*Resolution (commit `9fc0714bf`):* a central policy module,
+_Resolution (commit `9fc0714bf`):_ a central policy module,
 `services/matrix-bridge/src/authz.ts`, implements
 `authorize(actor, action, resource)` with a unit-tested decision matrix:
 moderator powers require the `moderator`/`owner` role, sortition processing
@@ -323,7 +323,7 @@ The migration is complete: every community-scoped endpoint (governance
 reads, member lists, badges, sortition runs/listings, deliberation
 cards/votes/graph/suggestions/pulse/summarize, user-chat-preferences) now
 runs through `authorize()`/`authorizeUserRead()`. Deliberate exceptions:
-sortition *proof* verification stays open to any authenticated user
+sortition _proof_ verification stays open to any authenticated user
 (public-audit value); `user-chat-preferences` reads are self-only. The
 unbound `suggestions/reject` write is now bound to the source card's
 community. The SSE stream re-evaluates entitlements during replay, so
@@ -333,13 +333,13 @@ revocation is retroactive there too.
 Singled out because this endpoint is where F9 and F4 compounded, and there the
 "not urgent in a single-community pilot" reasoning did not hold: the dashboard
 returned `reported_message_preview` and `reporter_did` for every report in the
-community, so *within* one community any member could read the reported content
+community, so _within_ one community any member could read the reported content
 and learn who reported whom. With F4's excerpt now dropped the remaining
 disclosure is reporter identity — still real, since it means **reporting is not
 anonymous to anyone who can call the endpoint**, and worth checking against what
 the client UI implies. The rest of F9 stands as written.
 
-**F10 — `setup.sh` appended Redis config onto a comment line.** *(fixed)*
+**F10 — `setup.sh` appended Redis config onto a comment line.** _(fixed)_
 The generated `homeserver.yaml` ends with `# vim:ft=yaml` and **no trailing
 newline**, so `echo "redis:" >> "$SYNAPSE_CFG"` produced `# vim:ft=yamlredis:` —
 the `redis:` key swallowed into a comment, its children left as bogus top-level
@@ -352,7 +352,7 @@ this pointed Synapse at a host that does not exist in the stack. The append is
 removed and nothing is written into `homeserver.yaml` any more — generated
 settings go to the overlay, which cannot corrupt a hand-written file.
 
-**F11 — Postgres must be initialised with `C` collation.** *(fixed)*
+**F11 — Postgres must be initialised with `C` collation.** _(fixed)_
 Synapse refuses to start against any other collation:
 `IncorrectDatabaseSetup: Database has incorrect collation of 'en_US.utf8'`. The
 `synapse-db` service never set `POSTGRES_INITDB_ARGS`, so the volume was created
@@ -379,7 +379,7 @@ vague claim generously.
   refusal cannot be bypassed through the second entry point.
 - **The MXID is a pure function of the identity public key.** No server table
   is required to relate an account to a DID or to another identity (§4).
-- **No DID↔MXID mapping table exists.** *(since CD-M1/CD-M6, 2026-09-21)*
+- **No DID↔MXID mapping table exists.** _(since CD-M1/CD-M6, 2026-09-21)_
   `user_matrix_map` is dropped at startup on both backends, no store method
   resolves an MXID from a DID, and the boundary suite
   (`services/matrix-bridge/src/__tests__/identity-boundary.test.ts`) pins all
@@ -393,7 +393,7 @@ vague claim generously.
 ### Best-effort (real, but do not describe them as guarantees)
 
 - **Retention.** Synapse's retention support is experimental upstream. It stops
-  *this server* serving old events; it does not reliably purge media and cannot
+  _this server_ serving old events; it does not reliably purge media and cannot
   reach copies already synced to a device. Never tell users "messages are
   deleted after 90 days".
 - **Federation closure.** A configuration setting, not a network control. It is
@@ -402,7 +402,7 @@ vague claim generously.
 - **Rate limits.** Blunt scripted enumeration; not a defence against a
   distributed attacker.
 - **Read receipts and typing notifications.** There is no server-side switch for
-  these in Synapse. The plan's "receipts off by default" is a *client* setting
+  these in Synapse. The plan's "receipts off by default" is a _client_ setting
   and a server operator can still observe them.
 
 ### Not true yet (claimed by v1 docs, or aspired to by the plan)
@@ -424,23 +424,23 @@ mxid_i      = "@" ‖ localpart_i ‖ ":" ‖ server_name
 
 Example, for the all-zero seed vector on `matrix.para.social`:
 
-| identity | MXID |
-|---|---|
-| `public` (0) | `@k4o2lmcmitomgymtdb7y3htsthoofobo:matrix.para.social` |
+| identity        | MXID                                                   |
+| --------------- | ------------------------------------------------------ |
+| `public` (0)    | `@k4o2lmcmitomgymtdb7y3htsthoofobo:matrix.para.social` |
 | `anonymous` (2) | `@tksdt6ou5rbvxzeegiriy25u24pft5gz:matrix.para.social` |
-| `civic` (1) | *refused — has no Matrix account* |
+| `civic` (1)     | _refused — has no Matrix account_                      |
 
 ### Which identities may have an account
 
-The plan says Matrix accounts exist for the *public* and *community*
-identities and never for the *voting* identity. This codebase does not use
+The plan says Matrix accounts exist for the _public_ and _community_
+identities and never for the _voting_ identity. This codebase does not use
 those names, and the mismatch is a trap:
 
-| Plan | This codebase | Matrix account |
-|---|---|---|
-| public | `public`, index 0 | yes |
-| community | `anonymous`, index 2 — the pseudonymous posting surface | yes |
-| voting | `civic`, index 1 — *"Civic participation (ballots, delegation)"* | **never** |
+| Plan      | This codebase                                                    | Matrix account |
+| --------- | ---------------------------------------------------------------- | -------------- |
+| public    | `public`, index 0                                                | yes            |
+| community | `anonymous`, index 2 — the pseudonymous posting surface          | yes            |
+| voting    | `civic`, index 1 — _"Civic participation (ballots, delegation)"_ | **never**      |
 
 `civic` sounds like the community identity and is the ballot identity. Mapping
 it the other way would put the ballot key on a chat server. **This mapping is
@@ -456,26 +456,26 @@ public key, truncated to 160 bits, base32-encoded lowercase without padding,
 giving a fixed 32-character localpart.
 
 **Problem.** v1's MXID was a reversible encoding of the DID, so the homeserver's
-user list *was* the linkage table — no exfiltration of the bridge database
+user list _was_ the linkage table — no exfiltration of the bridge database
 needed, just a look at any room's member list. The MXID must instead be a
 function of client-held key material only.
 
 **Rejected alternatives.**
 
-- *Server-assigned random localparts.* Requires the server to store the mapping,
+- _Server-assigned random localparts._ Requires the server to store the mapping,
   which is the thing being removed.
-- *The public key encoded directly (base32 of the 32 bytes).* Works, but a
+- _The public key encoded directly (base32 of the 32 bytes)._ Works, but a
   53-character localpart, and it publishes the raw key in every member list and
   every event sender field. The hash keeps the key out of ambient logs while
   still being verifiable by anyone who is shown the key.
-- *No truncation (full 256-bit digest).* 52 characters for no gain. The digest
+- _No truncation (full 256-bit digest)._ 52 characters for no gain. The digest
   is not a secret — the full public key is presented at authentication — so it
   needs collision resistance, not preimage margin. 160 bits gives an ~2⁸⁰
   birthday bound against accidental collision.
-- *SHA-512 reduced, matching the scalar derivation.* The scalar derivation uses
+- _SHA-512 reduced, matching the scalar derivation._ The scalar derivation uses
   SHA-512-mod-l because it must land in the group; a localpart has no such
   constraint and SHA-256 is the plainer choice.
-- *Uppercase base32 / base64.* Invalid: the Matrix historical user-ID grammar
+- _Uppercase base32 / base64._ Invalid: the Matrix historical user-ID grammar
   allows only `[a-z0-9._=/+-]` in a localpart. base32 lowercase is a strict
   subset; base64 is not.
 
@@ -520,6 +520,7 @@ and new layouts keep state in the `synapse_data` volume; only config moves.
 
    Then edit `signing_key_path` in that `homeserver.yaml` to point at
    `/config/<server_name>.signing.key`. Keep every other path on `/data`.
+
 3. Start the stack and confirm the overlay is in effect (below).
 
 The signing key must survive: regenerating it changes the server's identity.
@@ -547,17 +548,17 @@ auto-generated config returns a room list.
 
 ### PW-CLEANUP — historical password material (reviewed 2026-09-20)
 
-Week 1 of the four-week chat plan asks to review the cleanup of *historical*
+Week 1 of the four-week chat plan asks to review the cleanup of _historical_
 passwords, "not only that new writes have stopped". They are different
 questions and they have different answers.
 
 **New writes: stopped.** Verified in three places.
 
-| Layer | State | Evidence |
-| --- | --- | --- |
-| Bridge | Scrubbed on every startup | `UPDATE user_matrix_map SET password = '' WHERE password <> ''` in both `src/db/sqlite/base.ts` and `src/db/pg/base.ts`; the column is marked vestigial in `src/db/stores/identity-matrix.ts` and read nowhere |
-| MAS | Disabled, and empty | `passwords.enabled: false` in `deploy/matrix/mas/config.yaml`; zero rows in `user_passwords` |
-| Synapse | Disabled as of 2026-09-20 | `password_config.enabled: false` now set in `deploy/matrix/hardening.yaml` — see below |
+| Layer   | State                     | Evidence                                                                                                                                                                                                       |
+| ------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bridge  | Scrubbed on every startup | `UPDATE user_matrix_map SET password = '' WHERE password <> ''` in both `src/db/sqlite/base.ts` and `src/db/pg/base.ts`; the column is marked vestigial in `src/db/stores/identity-matrix.ts` and read nowhere |
+| MAS     | Disabled, and empty       | `passwords.enabled: false` in `deploy/matrix/mas/config.yaml`; zero rows in `user_passwords`                                                                                                                   |
+| Synapse | Disabled as of 2026-09-20 | `password_config.enabled: false` now set in `deploy/matrix/hardening.yaml` — see below                                                                                                                         |
 
 **Historical material: still present, dormant.** Five of the seven accounts in
 Synapse's `users` table still carry a `password_hash` from before delegation:
@@ -614,8 +615,8 @@ application-service support; note that `docker-compose.matrix.yaml` still
 carries a commented Continuwuity block from v1, which should be deleted once
 OD-1 is closed so it cannot be mistaken for a supported option.
 
-**OD-2 — proof of possession for `para-idp`.** *(CLOSED 2026-08-20 — see
-CD-M4 below and [OD-2-PROOF-OF-POSSESSION.md](OD-2-PROOF-OF-POSSESSION.md))*
+**OD-2 — proof of possession for `para-idp`.** _(CLOSED 2026-08-20 — see
+CD-M4 below and [OD-2-PROOF-OF-POSSESSION.md](OD-2-PROOF-OF-POSSESSION.md))_
 Gate G0 passed: `@scure/sr25519` accepts a PARA identity scalar and reproduces
 `identity_pub_i` exactly. No novel cryptography is required, and the external
 audit that a hand-rolled scheme would have needed is no longer on the critical
@@ -626,7 +627,7 @@ may be sent to OpenAI at all; if yes, under what consent surface, with what
 retention commitment from the processor, and whether a self-hosted model is
 required instead. Until this is closed, deploy without `OPENAI_API_KEY`.
 
-*Partially addressed.* The consent surface is built and enforced — CD-M3, §7,
+_Partially addressed._ The consent surface is built and enforced — CD-M3, §7,
 per-author and fail-closed. **Decision authority: the founding community, by
 ballot — this is not a unilateral maintainer decision.** What remains is to
 draft the ballot proposal: (a) the disclosure wording members are agreeing to,
@@ -643,23 +644,23 @@ founding community, by ballot.** The fail-safe default mapping stands until
 the vote closes; if the community overturns it, the mapping change is code
 follow-up, not a re-architecture.
 
-**OD-5 — where governance logic goes.** *(closed by CD-M2, §7.)* Target is a
+**OD-5 — where governance logic goes.** _(closed by CD-M2, §7.)_ Target is a
 two-service split: `para-governance` owns the firehose and all governance state
 and speaks DIDs only; `para-matrix-provisioner` owns rooms and never names a
 user. Investigating this surfaced F7 — the current push-based membership
 projection is unimplementable after CD-M1 — which is why the residual question
 below is filed separately rather than treated as an implementation detail.
 
-**OD-6 — the join seam (from F7 / CD-M2).** *(CLOSED 2026-09-21 — CD-M6 below)*
+**OD-6 — the join seam (from F7 / CD-M2).** _(CLOSED 2026-09-21 — CD-M6 below)_
 If the server can no longer invite a member because it cannot compute their
 MXID, how does a member join a community room? The client can derive its own
 MXID and holds `identity_priv_i`, so the shape is a join authorized by proof
 rather than an invite. Undecided: whether the proof is a short-lived capability
 token issued by `para-governance`, a Synapse module validating it at join time,
 or MAS-mediated. **Blocked on OD-2** — all three need the same signature
-primitive. *Resolved by CD-M6: the proof is a CD-M4 assertion verified by the
+primitive. _Resolved by CD-M6: the proof is a CD-M4 assertion verified by the
 bridge, and the join is the Synapse admin force-join endpoint. Not a Synapse
-module, not MAS-mediated, not a separate token service.*
+module, not MAS-mediated, not a separate token service._
 
 ## 7. Service decomposition
 
@@ -683,7 +684,7 @@ call goes the other direction.
 Reading the source, that framing overstates the entanglement in one direction
 and understates it in another.
 
-*Overstated:* the governance core is already Matrix-free. `constitution.ts` has
+_Overstated:_ the governance core is already Matrix-free. `constitution.ts` has
 no imports at all; `drand.ts` imports only `node:crypto`; `sortition.ts` only
 `drand`; `chat-moderation.ts`, `extraction.ts`, `summarize.ts` and
 `llm-extraction.ts` reach only the database (and OpenAI, per OD-3). That is
@@ -693,13 +694,13 @@ no imports at all; `drand.ts` imports only `node:crypto`; `sortition.ts` only
   try/caught at both call sites and already a documented no-op when a community
   has no space. This is an outbound notification, not coupling.
 - `firehose.ts` — the real tangle: it consumes ATProto records and in the same
-  pass both decides governance outcomes *and* projects them onto Matrix
+  pass both decides governance outcomes _and_ projects them onto Matrix
   (`createSpace`, `createRoom`, `inviteUser`, `kickUser`, `setPowerLevel`).
 
 So the seam is not between "governance" and "the bridge". It is inside
 `firehose.ts`, which is doing two jobs.
 
-*Understated:* F7. The projection half of that job stops being implementable
+_Understated:_ F7. The projection half of that job stops being implementable
 once CD-M1 lands, because the server can no longer name a member.
 
 The table split falls out along the same line — 6 Matrix-plane tables
@@ -712,20 +713,20 @@ belongs.
 
 **Rejected alternatives.**
 
-- *Keep one service, split internally by module.* Cheapest, and the module
+- _Keep one service, split internally by module._ Cheapest, and the module
   boundaries are already good enough to make it look tidy. Rejected because it
   leaves governance state and Matrix credentials in one process and one
   database, so "the homeserver operator cannot link a DID to an MXID" stays a
   code-review claim rather than a deployment property. The point of the split is
-  that the provisioner should not be *able* to learn what it must not store.
-- *Provisioner owns the firehose and calls governance.* Inverts the dependency:
+  that the provisioner should not be _able_ to learn what it must not store.
+- _Provisioner owns the firehose and calls governance._ Inverts the dependency:
   the component that must know least would parse every governance record to
   decide what to forward. It also puts the cursor in the wrong service — replay
   is a governance concern.
-- *Governance calls the Matrix admin API directly, no provisioner.* This is v1
+- _Governance calls the Matrix admin API directly, no provisioner._ This is v1
   with extra steps, and it hands Synapse admin credentials to the service that
   holds voting records.
-- *Three services (governance / provisioner / deliberation-and-LLM).* Splitting
+- _Three services (governance / provisioner / deliberation-and-LLM)._ Splitting
   deliberation out is attractive while OD-3 is open, since it isolates the one
   component that talks to a third-party processor. Deferred, not rejected: it is
   a sub-split of `para-governance` and can be done later without disturbing this
@@ -738,7 +739,7 @@ The provisioner's port is small — the operations `firehose.ts` actually uses
 today are `createSpace`, `createRoom`, `addChildSpace`, `inviteUser`,
 `kickUser`, `setPowerLevel`, `getRoomMembers`, `sendEvent`, plus
 `userExists`/`createUser`. The last two disappear with §5's
-`password_config.enabled: false`, and per F7 every operation naming a *user*
+`password_config.enabled: false`, and per F7 every operation naming a _user_
 disappears with CD-M1. What remains is genuinely thin: create rooms, set rules,
 send bot messages.
 
@@ -776,28 +777,28 @@ required to call. Stored in `ai_processing_consent`, read and written through
 **Problem.** The obvious implementation — a per-user setting checked when the
 user calls `/api/summarize` — is wrong, and wrong in a way that looks correct.
 A summary spans up to 100 cards written by many different members, and
-relationship inference sends up to 20 *other* members' cards as context. Gating
+relationship inference sends up to 20 _other_ members' cards as context. Gating
 on the caller would mean one member's opt-in exports everyone else's words. The
 consenting user is rarely the person whose privacy is at stake.
 
 **Rejected alternatives.**
 
-- *Deploy-time flag only (the status quo, `OPENAI_API_KEY`).* All-or-nothing for
+- _Deploy-time flag only (the status quo, `OPENAI_API_KEY`)._ All-or-nothing for
   a whole instance, and the people whose text is sent never see the question.
-- *Consent checked against the requesting user.* The trap above. Rejected on the
+- _Consent checked against the requesting user._ The trap above. Rejected on the
   grounds that it silently exports non-consenting members' text.
-- *A boolean column on `user_chat_preferences`.* Cheapest, but consent needs an
+- _A boolean column on `user_chat_preferences`._ Cheapest, but consent needs an
   audit trail — when granted, under which disclosure, when revoked — and a
   cosmetic chat preference is the wrong neighbourhood for it. Decisive practical
   point: this codebase has no `ALTER TABLE` anywhere, so a new column on an
   existing table would silently not apply to deployed instances, while a new
   table is created by the existing `CREATE TABLE IF NOT EXISTS` path.
-- *Consent as a single timeless boolean.* Consent to one disclosure is not
+- _Consent as a single timeless boolean._ Consent to one disclosure is not
   consent to a later one. `policy_version` is stored alongside the grant, and
   `AI_CONSENT_POLICY_VERSION` is compared with `>=` at check time, so bumping it
   invalidates prior grants and re-prompts rather than silently broadening what
   people agreed to.
-- *Redaction/anonymisation instead of consent.* Deliberation cards are written in
+- _Redaction/anonymisation instead of consent._ Deliberation cards are written in
   the author's own words; stripping the DID does not stop the text identifying
   them. Would trade a real control for the appearance of one.
 
@@ -826,26 +827,26 @@ as closed would be the failure mode to avoid.
 ### CD-M4 — Proof of possession is sr25519, with the scalar injected
 
 **Decision.** PARA identity keys prove possession with `@scure/sr25519` —
-sr25519 *is* Schnorr over ristretto255 — by constructing the 64-byte secret as
+sr25519 _is_ Schnorr over ristretto255 — by constructing the 64-byte secret as
 `(encodeSecretScalar(identity_priv_i) ‖ nonceSeed)` and letting the library
 sign. `identity_pub_i` is then the sr25519 public key, verified against all
 three shared seed vectors for both signing identities.
 
-**Problem.** CD-M1 makes the MXID a function of a *public* value, so presenting
+**Problem.** CD-M1 makes the MXID a function of a _public_ value, so presenting
 the key proves nothing. A signature scheme over PARA identity keys did not
 exist: governance votes sign with the atproto DID key (which is the linkage v2
 removes) and mubEZ's registration contract promised a scheme it never shipped.
 
 **Rejected alternatives.**
 
-- *Transposing Monero's `generate_signature` to ristretto255.* Sound, and it was
+- _Transposing Monero's `generate_signature` to ristretto255._ Sound, and it was
   the recommendation until the spike. Rejected because it needs cryptographic
   review this project has nobody to perform — the "part-time security reviewer"
   in the v2 plan does not exist. Retained as the documented fallback.
-- *A separate Ed25519 signing key per identity.* Nothing would bind it to
+- _A separate Ed25519 signing key per identity._ Nothing would bind it to
   `identity_pub_i`; every fix leads back to signing with the identity key or to
   a server-side mapping table.
-- *Signal's poksho/zkgroup.* Right family — ristretto255 Schnorr with labelled
+- _Signal's poksho/zkgroup._ Right family — ristretto255 Schnorr with labelled
   domain separation — but Rust-only, no React Native binding, and it solves
   zero-knowledge proofs of arbitrary statements where we need one discrete log.
   Read for discipline, not imported.
@@ -854,7 +855,7 @@ removes) and mubEZ's registration contract promised a scheme it never shipped.
 
 - **The scalar must be cofactor-shifted.** sr25519 stores the key half as
   `scalar << 3` (schnorrkel's Ed25519-compatible format) and divides by 8 on
-  read. Injecting a raw scalar silently yields the *wrong* public key — no
+  read. Injecting a raw scalar silently yields the _wrong_ public key — no
   error, just a different account. This is the load-bearing detail of the
   module and is pinned by tests. Lossless for every scalar below the group
   order, verified over 20,000 random values.
@@ -898,7 +899,7 @@ design rather than by immaturity:
    space "is readable by any user or application with access to that space, it's
    not encrypted". §2 of this plan requires E2EE always, client-side only. A
    layer with no confidentiality cannot hold private conversation, and the fact
-   that it is *permissioned* is easy to mistake for *private*.
+   that it is _permissioned_ is easy to mistake for _private_.
 2. **Identity is the atproto DID.** Everything in a space is authored by a DID,
    in that DID's repo. CD-M1 exists to stop a DID being relatable to a chat
    account; routing community conversation through Spaces would reinstate the
@@ -910,7 +911,7 @@ design rather than by immaturity:
 
 - The layer-boundary table gains a real implementation for its third column:
   proposal drafts, amendments, evidence, and delegate ↔ delegator durable notes
-  — content whose authorship is *meant* to be attributable to a public identity.
+  — content whose authorship is _meant_ to be attributable to a public identity.
 - **Hard boundary: the `anonymous` (community) identity must never author into a
   Space**, because doing so binds its content to a DID. Only the public identity
   may. This belongs in the layer-boundary table as a merge-blocking rule
@@ -919,7 +920,7 @@ design rather than by immaturity:
   arrives after; adopting an alpha protocol whose schema is not final, during a
   quarter already committed to production, would be the wrong trade.
 
-**Rejected alternative.** *Replacing the Matrix homeserver with Spaces.*
+**Rejected alternative.** _Replacing the Matrix homeserver with Spaces._
 Tempting — it would delete a whole service and its operational burden. It fails
 on both properties above: PARA would lose encryption it has planned for, and
 regain the linkage it has spent this quarter removing.
@@ -952,23 +953,23 @@ mechanisms open.
 
 **Rejected alternatives.**
 
-- *A Synapse module validating join proofs at the homeserver.* Strongest
+- _A Synapse module validating join proofs at the homeserver._ Strongest
   end-state, but it is new homeserver-side code in a component we harden rather
   than extend, and it does not exist today. The admin force-join endpoint
   already does the one thing needed: join a local user regardless of join
   rules, as the admin. Revisit if the bridge is ever removed from the trust
   boundary.
-- *MAS-mediated join (the authorization-code flow carrying membership).* MAS
+- _MAS-mediated join (the authorization-code flow carrying membership)._ MAS
   knows users by MXID only; it cannot check PARA governance state (which is
   DID-keyed) without becoming a governance consumer. That couples the identity
   provider to the governance plane — exactly the layering CD-M2 exists to
   prevent.
-- *A separate capability-token service.* A third credential to issue, store,
+- _A separate capability-token service._ A third credential to issue, store,
   revoke and audit, for a decision that can be made from two credentials the
   caller already holds. The one-time challenge already gives the assertion
   replay protection; a capability token would add infrastructure, not
   properties.
-- *Keeping the v1 table "just for invites".* The linkage table serving its
+- _Keeping the v1 table "just for invites"._ The linkage table serving its
   original purpose is the vulnerability, not a mitigation for it.
 
 **Consequences.**
@@ -987,13 +988,13 @@ mechanisms open.
   not a directory. It is what makes revocation and role projection possible
   without the v1 table, and it moves to the provisioner side at the CD-M2
   physical split. Until that split, "the bridge database cannot answer who is
-  who" is enforced by absence of the *forward* lookup only.
+  who" is enforced by absence of the _forward_ lookup only.
 - **Revocation inverts too.** The bridge cannot kick a DID it cannot name, so
   removal deactivates every device session minted for that DID (killing those
   access tokens) and bans those MXIDs from the community's rooms. Re-entry is
   impossible anyway: the next verified join fails the active-membership check.
 - **Role changes (the handover protocol) project at two moments.** A
-  membership *update* while active — moderation rotation, sortition replacing
+  membership _update_ while active — moderation rotation, sortition replacing
   a delegate, owner handover — triggers `applyMemberRoles`: current roles are
   written as room power levels for every minted-session MXID, immediately and
   idempotently, retried by the retry worker. A member not yet joined picks the
@@ -1047,17 +1048,17 @@ mechanisms open.
 
 ## 8. Phase status
 
-| Plan item | Status |
-|---|---|
-| Confirm v1 assumptions; inventory what the bridge stores | Done — §1, §2 |
-| Metadata hardening applied and documented | Done — §5, **verified on a running server 2026-08-20** (F1) |
-| MXID derivation formula locked | Done — §4, CD-M1; **bridge-side implementation + v1 table deletion landed 2026-09-21** |
-| iM8 `getMatrixIdentity` with tests | Done — `matrixIdentity.ts`, 18 tests |
-| Identity-boundary CI suite (Matrix) | **Done — both halves.** Client half in iM8; server half in `services/matrix-bridge/src/__tests__/identity-boundary.test.ts` (table dropped at startup, no forward lookup, no chat identifier in member lists). |
-| `para-idp` + MAS prototype | **Done and verified 2026-08-20** — a PARA seed creates `@k4o2lmcmitomgymtdb7y3htsthoofobo:matrix.para.social`; zero DID columns in either database |
-| Tuwunel spike | Not started |
-| Homeserver decision recorded | Open — OD-1 (deferred out of this quarter) |
-| Proof of possession | Done — CD-M4, `identitySignature.ts`, 16 tests; **bridge-side verification in `identity-proof.ts`** |
-| Join seam (OD-6) | **Done — CD-M6** (verified join, pull-model membership, handover projection, session-based revocation) |
-| Target for governance logic | Done — §7, CD-M2. Migration blocked on OD-2/OD-6; **the `firehose.ts` interface extraction landed 2026-08-22** (`MatrixProjectionPort` in `matrix-projection.ts`; firehose is DID-only). Physical schema split still awaits OD-2/OD-6. |
-| LLM processing consent surface | Done — §7, CD-M3, 11 tests. Policy half of OD-3 still open; client-side prompt not built. |
+| Plan item                                                | Status                                                                                                                                                                                                                                 |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Confirm v1 assumptions; inventory what the bridge stores | Done — §1, §2                                                                                                                                                                                                                          |
+| Metadata hardening applied and documented                | Done — §5, **verified on a running server 2026-08-20** (F1)                                                                                                                                                                            |
+| MXID derivation formula locked                           | Done — §4, CD-M1; **bridge-side implementation + v1 table deletion landed 2026-09-21**                                                                                                                                                 |
+| iM8 `getMatrixIdentity` with tests                       | Done — `matrixIdentity.ts`, 18 tests                                                                                                                                                                                                   |
+| Identity-boundary CI suite (Matrix)                      | **Done — both halves.** Client half in iM8; server half in `services/matrix-bridge/src/__tests__/identity-boundary.test.ts` (table dropped at startup, no forward lookup, no chat identifier in member lists).                         |
+| `para-idp` + MAS prototype                               | **Done and verified 2026-08-20** — a PARA seed creates `@k4o2lmcmitomgymtdb7y3htsthoofobo:matrix.para.social`; zero DID columns in either database                                                                                     |
+| Tuwunel spike                                            | Not started                                                                                                                                                                                                                            |
+| Homeserver decision recorded                             | Open — OD-1 (deferred out of this quarter)                                                                                                                                                                                             |
+| Proof of possession                                      | Done — CD-M4, `identitySignature.ts`, 16 tests; **bridge-side verification in `identity-proof.ts`**                                                                                                                                    |
+| Join seam (OD-6)                                         | **Done — CD-M6** (verified join, pull-model membership, handover projection, session-based revocation)                                                                                                                                 |
+| Target for governance logic                              | Done — §7, CD-M2. Migration blocked on OD-2/OD-6; **the `firehose.ts` interface extraction landed 2026-08-22** (`MatrixProjectionPort` in `matrix-projection.ts`; firehose is DID-only). Physical schema split still awaits OD-2/OD-6. |
+| LLM processing consent surface                           | Done — §7, CD-M3, 11 tests. Policy half of OD-3 still open; client-side prompt not built.                                                                                                                                              |

@@ -21,7 +21,7 @@
 
 | #    | Test               | Step                                      | Expected Result                                 | ✅  |
 | ---- | ------------------ | ----------------------------------------- | ----------------------------------------------- | --- |
-| 2.1  | Community creation | Create `com.para.community.board` record  | Matrix space created, logged in `sync_log`      | ☐   |
+| 2.1  | Community creation | Found a community (`community.create`)    | Matrix space created, logged in `sync_log`      | ☐   |
 | 2.1a | E2EE state         | Inspect new room state                    | `m.room.encryption` uses `m.megolm.v1.aes-sha2` | ☐   |
 | 2.2  | Creator admin      | Check power level of creator in new space | PL = 100                                        | ☐   |
 | 2.3  | Member invite      | Join community → membership `active`      | User invited to space, PL = 0                   | ☐   |
@@ -36,23 +36,23 @@
 
 ## 3. PARA App → Matrix Integration
 
-| #   | Test                | Step                                    | Expected Result                             | ✅  |
-| --- | ------------------- | --------------------------------------- | ------------------------------------------- | --- |
-| 3.1 | Chat button visible | Open community profile as active member | 💬 Chat pill visible                        | ☐   |
-| 3.2 | Chat button hidden  | Open community profile as non-member    | No Chat pill                                | ☐   |
-| 3.3 | WebView opens       | Tap Chat button                         | Local `matrix-js-sdk` shell loads in WebView | ☐   |
-| 3.4 | Auto-authentication | First time opening chat                 | User is already logged in (no login screen) | ☐   |
-| 3.5 | Room loaded         | After auto-auth                         | Specific community room is displayed        | ☐   |
-| 3.6  | Send message        | Type and send in chat                   | Message appears in room                     | ☐   |
-| 3.7  | Receive message     | Send from another client                | Message appears in app WebView              | ☐   |
-| 3.8  | Rich media          | Send image / file / video / audio       | Media renders in WebView shell              | ☐   |
-| 3.9  | Reaction            | Long-press a message → react            | Reaction appears under message              | ☐   |
-| 3.10 | Edit message        | Edit a sent text message                | Message updates with edit marker            | ☐   |
-| 3.11 | Redaction           | Delete a sent message                   | Message removed with redaction notice       | ☐   |
-| 3.12 | Read receipt        | View a message                          | Other clients see read receipt              | ☐   |
-| 3.13 | Typing indicator    | Type in input                           | Other clients see typing indicator          | ☐   |
-| 3.14 | Back navigation     | Tap back from chat                      | Returns to community profile                | ☐   |
-| 3.15 | Unread badge        | Receive message while not in chat       | Red badge appears on Chat pill              | ☐   |
+| #    | Test                | Step                                    | Expected Result                              | ✅  |
+| ---- | ------------------- | --------------------------------------- | -------------------------------------------- | --- |
+| 3.1  | Chat button visible | Open community profile as active member | 💬 Chat pill visible                         | ☐   |
+| 3.2  | Chat button hidden  | Open community profile as non-member    | No Chat pill                                 | ☐   |
+| 3.3  | WebView opens       | Tap Chat button                         | Local `matrix-js-sdk` shell loads in WebView | ☐   |
+| 3.4  | Auto-authentication | First time opening chat                 | User is already logged in (no login screen)  | ☐   |
+| 3.5  | Room loaded         | After auto-auth                         | Specific community room is displayed         | ☐   |
+| 3.6  | Send message        | Type and send in chat                   | Message appears in room                      | ☐   |
+| 3.7  | Receive message     | Send from another client                | Message appears in app WebView               | ☐   |
+| 3.8  | Rich media          | Send image / file / video / audio       | Media renders in WebView shell               | ☐   |
+| 3.9  | Reaction            | Long-press a message → react            | Reaction appears under message               | ☐   |
+| 3.10 | Edit message        | Edit a sent text message                | Message updates with edit marker             | ☐   |
+| 3.11 | Redaction           | Delete a sent message                   | Message removed with redaction notice        | ☐   |
+| 3.12 | Read receipt        | View a message                          | Other clients see read receipt               | ☐   |
+| 3.13 | Typing indicator    | Type in input                           | Other clients see typing indicator           | ☐   |
+| 3.14 | Back navigation     | Tap back from chat                      | Returns to community profile                 | ☐   |
+| 3.15 | Unread badge        | Receive message while not in chat       | Red badge appears on Chat pill               | ☐   |
 
 ---
 

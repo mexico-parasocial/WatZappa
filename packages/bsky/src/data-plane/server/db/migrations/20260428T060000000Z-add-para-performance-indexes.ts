@@ -1,4 +1,4 @@
-import { Kysely } from 'kysely'
+import type { Kysely } from 'kysely'
 
 export async function up(db: Kysely<unknown>): Promise<void> {
   // Helps getCommunityPostCounts filter by community before regex normalization

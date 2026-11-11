@@ -1,5 +1,5 @@
 import {
-  RateLimiterAbstract,
+  type RateLimiterAbstract,
   RateLimiterMemory,
   RateLimiterRedis,
   RateLimiterRes,
@@ -238,7 +238,7 @@ export class CombinedRateLimiter<C = unknown> implements RateLimiterI<C> {
     }
 
     return lowest
-    }
+  }
 
   async reset(ctx: C, opts?: RateLimiterResetOptions<C>) {
     const promises: ReturnType<RateLimiterReset>[] = []

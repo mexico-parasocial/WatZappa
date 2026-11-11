@@ -1,7 +1,7 @@
 // @ts-nocheck
 import type { AtpAgent } from '@atproto/api'
 import { type SeedClient, TestNetwork, basicSeed } from '@atproto/dev-env'
-import type { DidString, HandleString } from '@atproto/syntax'
+import type { DidString } from '@atproto/syntax'
 
 describe('label hydration', () => {
   let network: TestNetwork

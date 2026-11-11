@@ -12,12 +12,7 @@ import {
 } from './const.js'
 
 export type DevIdentityName =
-  | 'bsky'
-  | 'chat'
-  | 'ozone'
-  | 'ozoneAdmin'
-  | 'ozoneModerator'
-  | 'ozoneTriage'
+  'bsky' | 'chat' | 'ozone' | 'ozoneAdmin' | 'ozoneModerator' | 'ozoneTriage'
 
 export type DevIdentityMode = 'stable' | 'ephemeral' | 'persistentFromDisk'
 

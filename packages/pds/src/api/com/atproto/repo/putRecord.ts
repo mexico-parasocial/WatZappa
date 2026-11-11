@@ -1,4 +1,3 @@
-import { atUri } from '@atproto/lex'
 import {
   type LegacyBlobRef,
   type LexMap,
@@ -6,6 +5,7 @@ import {
   isLegacyBlobRef,
   parseCid,
 } from '@atproto/lex-data'
+import { atUri } from '@atproto/lex-schema'
 import {
   AuthRequiredError,
   InvalidRequestError,
@@ -128,7 +128,7 @@ export default function (server: Server, ctx: AppContext) {
             throw err
           }
 
-          await assertCommunityRepoWrites(actorTxn, did, [write])
+          await assertCommunityRepoWrites(actorTxn, [write])
 
           // no-op
           if (current && current.cid === write.cid.toString()) {

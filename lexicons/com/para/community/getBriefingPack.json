@@ -8,7 +8,7 @@
         "type": "params",
         "required": ["uri"],
         "properties": {
-          "uri": {"type": "string", "format": "at-uri"}
+          "uri": { "type": "string", "format": "at-uri" }
         }
       },
       "output": {
@@ -17,7 +17,10 @@
           "type": "object",
           "required": ["pack"],
           "properties": {
-            "pack": { "type": "ref", "ref": "com.para.community.defs#briefingPackView" }
+            "pack": {
+              "type": "ref",
+              "ref": "com.para.community.defs#briefingPackView"
+            }
           }
         }
       }

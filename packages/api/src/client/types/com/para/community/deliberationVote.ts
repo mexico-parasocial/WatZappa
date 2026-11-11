@@ -17,7 +17,7 @@ const id = 'com.para.community.deliberationVote'
 
 export interface Main {
   $type: 'com.para.community.deliberationVote'
-  /** The argument being weighed. */
+  /** The argument being weighed: a `com.para.civic.position` on a cabildeo, or a legacy `com.para.community.deliberation`. */
   deliberation: string
   voter: string
   /** Which way the voter leans on this argument. `pass` records having read it without taking a side. */

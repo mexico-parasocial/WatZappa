@@ -2,11 +2,13 @@
 title: com.para.civic.listDelegationCandidates
 description: Reference for the com.para.civic.listDelegationCandidates lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,60 +17,61 @@ Lists real delegation candidates for a cabildeo/community.
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cabildeo` | `string` | ✅  |  | Format: `at-uri` |
-| `communityId` | `string` | ❌  |  | Max Length: 256 |
-| `limit` | `integer` | ❌  |  | Min: 1<br/>Max: 100<br/>Default: `50` |
-| `cursor` | `string` | ❌  |  |  |
-**Output:**
+| Name          | Type      | Req'd | Description | Constraints                           |
+| ------------- | --------- | ----- | ----------- | ------------------------------------- |
+| `cabildeo`    | `string`  | ✅    |             | Format: `at-uri`                      |
+| `communityId` | `string`  | ❌    |             | Max Length: 256                       |
+| `limit`       | `integer` | ❌    |             | Min: 1<br/>Max: 100<br/>Default: `50` |
+| `cursor`      | `string`  | ❌    |             |                                       |
+| **Output:**   |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** [`#output`](#output)
 
-
-
 ---
 
 <a name="candidateview"></a>
+
 ### `candidateView`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `did` | `string` | ✅  |  | Format: `did` |
-| `handle` | `string` | ❌  |  | Format: `handle` |
-| `displayName` | `string` | ❌  |  | Max Length: 640<br/>Max Graphemes: 64 |
-| `avatar` | `string` | ❌  |  | Format: `uri` |
-| `description` | `string` | ❌  |  | Max Length: 3000<br/>Max Graphemes: 300 |
-| `roles` | Array of `string` | ✅  |  |  |
-| `activeDelegationCount` | `integer` | ✅  |  | Min: 0 |
-| `hasVoted` | `boolean` | ✅  |  |  |
-| `votedAt` | `string` | ❌  |  | Format: `datetime` |
-| `selectedOption` | `integer` | ❌  |  | Min: 0 |
+| Name                    | Type              | Req'd | Description | Constraints                             |
+| ----------------------- | ----------------- | ----- | ----------- | --------------------------------------- |
+| `did`                   | `string`          | ✅    |             | Format: `did`                           |
+| `handle`                | `string`          | ❌    |             | Format: `handle`                        |
+| `displayName`           | `string`          | ❌    |             | Max Length: 640<br/>Max Graphemes: 64   |
+| `avatar`                | `string`          | ❌    |             | Format: `uri`                           |
+| `description`           | `string`          | ❌    |             | Max Length: 3000<br/>Max Graphemes: 300 |
+| `roles`                 | Array of `string` | ✅    |             |                                         |
+| `activeDelegationCount` | `integer`         | ✅    |             | Min: 0                                  |
+| `hasVoted`              | `boolean`         | ✅    |             |                                         |
+| `votedAt`               | `string`          | ❌    |             | Format: `datetime`                      |
+| `selectedOption`        | `integer`         | ❌    |             | Min: 0                                  |
 
 ---
 
 <a name="output"></a>
+
 ### `output`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `candidates` | Array of [`#candidateView`](#candidateview) | ✅  |  |  |
-| `cursor` | `string` | ❌  |  |  |
+| Name         | Type                                        | Req'd | Description | Constraints |
+| ------------ | ------------------------------------------- | ----- | ----------- | ----------- |
+| `candidates` | Array of [`#candidateView`](#candidateview) | ✅    |             |             |
+| `cursor`     | `string`                                    | ❌    |             |             |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -82,9 +85,7 @@ Lists real delegation candidates for a cabildeo/community.
       },
       "parameters": {
         "type": "params",
-        "required": [
-          "cabildeo"
-        ],
+        "required": ["cabildeo"],
         "properties": {
           "cabildeo": {
             "type": "string",
@@ -115,12 +116,7 @@ Lists real delegation candidates for a cabildeo/community.
     },
     "candidateView": {
       "type": "object",
-      "required": [
-        "did",
-        "roles",
-        "activeDelegationCount",
-        "hasVoted"
-      ],
+      "required": ["did", "roles", "activeDelegationCount", "hasVoted"],
       "properties": {
         "did": {
           "type": "string",
@@ -171,9 +167,7 @@ Lists real delegation candidates for a cabildeo/community.
     },
     "output": {
       "type": "object",
-      "required": [
-        "candidates"
-      ],
+      "required": ["candidates"],
       "properties": {
         "candidates": {
           "type": "array",

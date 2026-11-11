@@ -95,7 +95,106 @@ bridge.{$PARA_DOMAIN} {
 		}
 	}
 
+	# Prometheus scrapes matrix-bridge:3001/metrics over para-edge; the
+	# unauthenticated counters are not for the public.
+	handle /metrics {
+		respond 404
+	}
+
 	reverse_proxy matrix-bridge:3001
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Matrix homeserver — client API only (docker-compose.matrix.yaml)
+#
+# Federation is closed (deploy/matrix/hardening.yaml), so there is no
+# /.well-known/matrix/server and no federation or key path. Synapse's admin,
+# MAS-internal and metrics APIs are reached only over the Compose networks by
+# the bridge, MAS and Prometheus; they never leave the host.
+# ---------------------------------------------------------------------------
+matrix.{$PARA_DOMAIN} {
+	encode gzip
+
+	handle /.well-known/matrix/client {
+		header Content-Type application/json
+		header Access-Control-Allow-Origin *
+		respond `{"m.homeserver":{"base_url":"https://matrix.{$PARA_DOMAIN}"}}`
+	}
+
+	@private path /_synapse/admin /_synapse/admin/* /_synapse/mas /_synapse/mas/* /_synapse/metrics /_synapse/metrics/* /_matrix/federation/* /_matrix/key/*
+	handle @private {
+		respond 404
+	}
+
+	# Authentication is delegated to MAS: the legacy login, logout and refresh
+	# endpoints belong to its compatibility layer, not to Synapse.
+	@mas_compat path_regexp ^/_matrix/client/[^/]+/(login|logout|refresh)(/.*)?$
+	handle @mas_compat {
+		reverse_proxy mas:8080
+	}
+
+	handle {
+		reverse_proxy synapse:8008
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Matrix Authentication Service — the issuer clients open to sign in
+# (MATRIX_MAS_PUBLIC_URL). Its admin API is on a separate, unproxied listener.
+# ---------------------------------------------------------------------------
+auth.{$PARA_DOMAIN} {
+	encode gzip
+	reverse_proxy mas:8080
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}
+
+# ---------------------------------------------------------------------------
+# para-idp — browser-facing authorization only (MATRIX_IDP_PUBLIC_URL). MAS
+# fetches /token and /jwks.json over the Compose network.
+# ---------------------------------------------------------------------------
+idp.{$PARA_DOMAIN} {
+	encode gzip
+
+	handle /authorize* {
+		reverse_proxy para-idp:8090
+	}
+
+	handle {
+		respond 404
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Element Web — moderators' Matrix client
+# ---------------------------------------------------------------------------
+chat.{$PARA_DOMAIN} {
+	encode gzip
+	reverse_proxy element-web:80
 
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"

@@ -4344,11 +4344,6 @@ export class ActorInfo extends Message<ActorInfo> {
    */
   allowGroupChatInvitesFrom = "";
 
-  /**
-   * @generated from field: string cabildeo_live_json = 23;
-   */
-  cabildeoLiveJson = "";
-
   constructor(data?: PartialMessage<ActorInfo>) {
     super();
     proto3.util.initPartial(data, this);
@@ -4377,7 +4372,6 @@ export class ActorInfo extends Message<ActorInfo> {
     { no: 19, name: "age_assurance_status", kind: "message", T: AgeAssuranceStatus, opt: true },
     { no: 21, name: "germ_record", kind: "message", T: Record },
     { no: 22, name: "allow_group_chat_invites_from", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 23, name: "cabildeo_live_json", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ActorInfo {
@@ -13764,64 +13758,6 @@ export class GetParaIntensitiesRequest extends Message<GetParaIntensitiesRequest
 }
 
 /**
- * @generated from message bsky.GetParaDeliberationsRequest
- */
-export class GetParaDeliberationsRequest extends Message<GetParaDeliberationsRequest> {
-  /**
-   * @generated from field: string proposal = 1;
-   */
-  proposal = "";
-
-  /**
-   * Whose own weighting to include on each statement, so the client can show
-   * the control already set. Empty for a logged-out viewer.
-   *
-   * @generated from field: string viewer = 2;
-   */
-  viewer = "";
-
-  /**
-   * @generated from field: int32 limit = 3;
-   */
-  limit = 0;
-
-  /**
-   * @generated from field: string cursor = 4;
-   */
-  cursor = "";
-
-  constructor(data?: PartialMessage<GetParaDeliberationsRequest>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "bsky.GetParaDeliberationsRequest";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "proposal", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "viewer", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
-    { no: 4, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaDeliberationsRequest {
-    return new GetParaDeliberationsRequest().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaDeliberationsRequest {
-    return new GetParaDeliberationsRequest().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaDeliberationsRequest {
-    return new GetParaDeliberationsRequest().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: GetParaDeliberationsRequest | PlainMessage<GetParaDeliberationsRequest> | undefined, b: GetParaDeliberationsRequest | PlainMessage<GetParaDeliberationsRequest> | undefined): boolean {
-    return proto3.util.equals(GetParaDeliberationsRequest, a, b);
-  }
-}
-
-/**
  * @generated from message bsky.GetParaDelegationsRequest
  */
 export class GetParaDelegationsRequest extends Message<GetParaDelegationsRequest> {
@@ -15458,6 +15394,13 @@ export class GetParaCabildeoPositionsRequest extends Message<GetParaCabildeoPosi
    */
   cursor = "";
 
+  /**
+   * Whose own reaction to include on each position. Empty for a logged-out viewer.
+   *
+   * @generated from field: string viewer = 5;
+   */
+  viewer = "";
+
   constructor(data?: PartialMessage<GetParaCabildeoPositionsRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -15470,6 +15413,7 @@ export class GetParaCabildeoPositionsRequest extends Message<GetParaCabildeoPosi
     { no: 2, name: "stance", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
     { no: 4, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "viewer", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaCabildeoPositionsRequest {
@@ -15639,116 +15583,6 @@ export class GetParaDelegationCandidatesResponse extends Message<GetParaDelegati
 
   static equals(a: GetParaDelegationCandidatesResponse | PlainMessage<GetParaDelegationCandidatesResponse> | undefined, b: GetParaDelegationCandidatesResponse | PlainMessage<GetParaDelegationCandidatesResponse> | undefined): boolean {
     return proto3.util.equals(GetParaDelegationCandidatesResponse, a, b);
-  }
-}
-
-/**
- * @generated from message bsky.PutParaCabildeoLivePresenceRequest
- */
-export class PutParaCabildeoLivePresenceRequest extends Message<PutParaCabildeoLivePresenceRequest> {
-  /**
-   * @generated from field: string actor_did = 1;
-   */
-  actorDid = "";
-
-  /**
-   * @generated from field: string cabildeo_uri = 2;
-   */
-  cabildeoUri = "";
-
-  /**
-   * @generated from field: string session_id = 3;
-   */
-  sessionId = "";
-
-  /**
-   * @generated from field: bool present = 4;
-   */
-  present = false;
-
-  /**
-   * @generated from field: string host_live_uri = 5;
-   */
-  hostLiveUri = "";
-
-  constructor(data?: PartialMessage<PutParaCabildeoLivePresenceRequest>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "bsky.PutParaCabildeoLivePresenceRequest";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "actor_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "cabildeo_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "session_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "present", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-    { no: 5, name: "host_live_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PutParaCabildeoLivePresenceRequest {
-    return new PutParaCabildeoLivePresenceRequest().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): PutParaCabildeoLivePresenceRequest {
-    return new PutParaCabildeoLivePresenceRequest().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): PutParaCabildeoLivePresenceRequest {
-    return new PutParaCabildeoLivePresenceRequest().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: PutParaCabildeoLivePresenceRequest | PlainMessage<PutParaCabildeoLivePresenceRequest> | undefined, b: PutParaCabildeoLivePresenceRequest | PlainMessage<PutParaCabildeoLivePresenceRequest> | undefined): boolean {
-    return proto3.util.equals(PutParaCabildeoLivePresenceRequest, a, b);
-  }
-}
-
-/**
- * @generated from message bsky.PutParaCabildeoLivePresenceResponse
- */
-export class PutParaCabildeoLivePresenceResponse extends Message<PutParaCabildeoLivePresenceResponse> {
-  /**
-   * @generated from field: string cabildeo_uri = 1;
-   */
-  cabildeoUri = "";
-
-  /**
-   * @generated from field: bool present = 2;
-   */
-  present = false;
-
-  /**
-   * @generated from field: string expires_at = 3;
-   */
-  expiresAt = "";
-
-  constructor(data?: PartialMessage<PutParaCabildeoLivePresenceResponse>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "bsky.PutParaCabildeoLivePresenceResponse";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "cabildeo_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "present", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-    { no: 3, name: "expires_at", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PutParaCabildeoLivePresenceResponse {
-    return new PutParaCabildeoLivePresenceResponse().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): PutParaCabildeoLivePresenceResponse {
-    return new PutParaCabildeoLivePresenceResponse().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): PutParaCabildeoLivePresenceResponse {
-    return new PutParaCabildeoLivePresenceResponse().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: PutParaCabildeoLivePresenceResponse | PlainMessage<PutParaCabildeoLivePresenceResponse> | undefined, b: PutParaCabildeoLivePresenceResponse | PlainMessage<PutParaCabildeoLivePresenceResponse> | undefined): boolean {
-    return proto3.util.equals(PutParaCabildeoLivePresenceResponse, a, b);
   }
 }
 
@@ -17160,6 +16994,64 @@ export class GetParaCommunityActivityResponse extends Message<GetParaCommunityAc
 }
 
 /**
+ * Offers and proposals still open in a community account. An owner or
+ * moderator sees all of them; anyone else sees only those addressed to them.
+ *
+ * @generated from message bsky.GetParaCommunityOpenOffersRequest
+ */
+export class GetParaCommunityOpenOffersRequest extends Message<GetParaCommunityOpenOffersRequest> {
+  /**
+   * @generated from field: string community = 1;
+   */
+  community = "";
+
+  /**
+   * @generated from field: string viewer_did = 2;
+   */
+  viewerDid = "";
+
+  /**
+   * @generated from field: int32 limit = 3;
+   */
+  limit = 0;
+
+  /**
+   * @generated from field: string cursor = 4;
+   */
+  cursor = "";
+
+  constructor(data?: PartialMessage<GetParaCommunityOpenOffersRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaCommunityOpenOffersRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "community", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "viewer_did", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 4, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaCommunityOpenOffersRequest {
+    return new GetParaCommunityOpenOffersRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaCommunityOpenOffersRequest {
+    return new GetParaCommunityOpenOffersRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaCommunityOpenOffersRequest {
+    return new GetParaCommunityOpenOffersRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaCommunityOpenOffersRequest | PlainMessage<GetParaCommunityOpenOffersRequest> | undefined, b: GetParaCommunityOpenOffersRequest | PlainMessage<GetParaCommunityOpenOffersRequest> | undefined): boolean {
+    return proto3.util.equals(GetParaCommunityOpenOffersRequest, a, b);
+  }
+}
+
+/**
  * @generated from message bsky.GetParaCommunityWikiPagesRequest
  */
 export class GetParaCommunityWikiPagesRequest extends Message<GetParaCommunityWikiPagesRequest> {
@@ -17199,6 +17091,222 @@ export class GetParaCommunityWikiPagesRequest extends Message<GetParaCommunityWi
 
   static equals(a: GetParaCommunityWikiPagesRequest | PlainMessage<GetParaCommunityWikiPagesRequest> | undefined, b: GetParaCommunityWikiPagesRequest | PlainMessage<GetParaCommunityWikiPagesRequest> | undefined): boolean {
     return proto3.util.equals(GetParaCommunityWikiPagesRequest, a, b);
+  }
+}
+
+/**
+ * Seguimiento: compromisos of resolved cabildeos. Only records by the
+ * community's current stewards are returned. A set item_uri returns that one
+ * item with its timeline; otherwise the list is paged by cabildeo.
+ *
+ * @generated from message bsky.GetParaFollowThroughRequest
+ */
+export class GetParaFollowThroughRequest extends Message<GetParaFollowThroughRequest> {
+  /**
+   * @generated from field: string cabildeo_uri = 1;
+   */
+  cabildeoUri = "";
+
+  /**
+   * @generated from field: string community_uri = 2;
+   */
+  communityUri = "";
+
+  /**
+   * @generated from field: string item_uri = 3;
+   */
+  itemUri = "";
+
+  /**
+   * @generated from field: string status = 4;
+   */
+  status = "";
+
+  /**
+   * @generated from field: bool overdue = 5;
+   */
+  overdue = false;
+
+  /**
+   * @generated from field: int32 limit = 6;
+   */
+  limit = 0;
+
+  /**
+   * @generated from field: string cursor = 7;
+   */
+  cursor = "";
+
+  constructor(data?: PartialMessage<GetParaFollowThroughRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaFollowThroughRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "cabildeo_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "community_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "item_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "status", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "overdue", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 6, name: "limit", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 7, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaFollowThroughRequest {
+    return new GetParaFollowThroughRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaFollowThroughRequest {
+    return new GetParaFollowThroughRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaFollowThroughRequest {
+    return new GetParaFollowThroughRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaFollowThroughRequest | PlainMessage<GetParaFollowThroughRequest> | undefined, b: GetParaFollowThroughRequest | PlainMessage<GetParaFollowThroughRequest> | undefined): boolean {
+    return proto3.util.equals(GetParaFollowThroughRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetParaFollowThroughResponse
+ */
+export class GetParaFollowThroughResponse extends Message<GetParaFollowThroughResponse> {
+  /**
+   * @generated from field: string items_json = 1;
+   */
+  itemsJson = "";
+
+  /**
+   * @generated from field: string summaries_json = 2;
+   */
+  summariesJson = "";
+
+  /**
+   * @generated from field: string cursor = 3;
+   */
+  cursor = "";
+
+  constructor(data?: PartialMessage<GetParaFollowThroughResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaFollowThroughResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "items_json", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "summaries_json", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "cursor", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaFollowThroughResponse {
+    return new GetParaFollowThroughResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaFollowThroughResponse {
+    return new GetParaFollowThroughResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaFollowThroughResponse {
+    return new GetParaFollowThroughResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaFollowThroughResponse | PlainMessage<GetParaFollowThroughResponse> | undefined, b: GetParaFollowThroughResponse | PlainMessage<GetParaFollowThroughResponse> | undefined): boolean {
+    return proto3.util.equals(GetParaFollowThroughResponse, a, b);
+  }
+}
+
+/**
+ * Conclusions: a steward's summary of a forum or persuasion cabildeo. Returns
+ * the newest conclusion by a current steward (conclusion_json, empty when none)
+ * and the earlier ones, newest first.
+ *
+ * @generated from message bsky.GetParaConclusionRequest
+ */
+export class GetParaConclusionRequest extends Message<GetParaConclusionRequest> {
+  /**
+   * @generated from field: string cabildeo_uri = 1;
+   */
+  cabildeoUri = "";
+
+  constructor(data?: PartialMessage<GetParaConclusionRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaConclusionRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "cabildeo_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaConclusionRequest {
+    return new GetParaConclusionRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaConclusionRequest {
+    return new GetParaConclusionRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaConclusionRequest {
+    return new GetParaConclusionRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaConclusionRequest | PlainMessage<GetParaConclusionRequest> | undefined, b: GetParaConclusionRequest | PlainMessage<GetParaConclusionRequest> | undefined): boolean {
+    return proto3.util.equals(GetParaConclusionRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message bsky.GetParaConclusionResponse
+ */
+export class GetParaConclusionResponse extends Message<GetParaConclusionResponse> {
+  /**
+   * @generated from field: string conclusion_json = 1;
+   */
+  conclusionJson = "";
+
+  /**
+   * @generated from field: string earlier_json = 2;
+   */
+  earlierJson = "";
+
+  /**
+   * @generated from field: string community_uri = 3;
+   */
+  communityUri = "";
+
+  constructor(data?: PartialMessage<GetParaConclusionResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "bsky.GetParaConclusionResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "conclusion_json", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "earlier_json", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "community_uri", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetParaConclusionResponse {
+    return new GetParaConclusionResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetParaConclusionResponse {
+    return new GetParaConclusionResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetParaConclusionResponse {
+    return new GetParaConclusionResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetParaConclusionResponse | PlainMessage<GetParaConclusionResponse> | undefined, b: GetParaConclusionResponse | PlainMessage<GetParaConclusionResponse> | undefined): boolean {
+    return proto3.util.equals(GetParaConclusionResponse, a, b);
   }
 }
 
@@ -18137,11 +18245,6 @@ export class ParaCommunityBoardView extends Message<ParaCommunityBoardView> {
   sharedContentCount = 0;
 
   /**
-   * @generated from field: string governance_mode = 23;
-   */
-  governanceMode = "";
-
-  /**
    * @generated from field: string admission_mode = 24;
    */
   admissionMode = "";
@@ -18181,7 +18284,6 @@ export class ParaCommunityBoardView extends Message<ParaCommunityBoardView> {
     { no: 20, name: "parent_community_uris", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
     { no: 21, name: "child_community_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
     { no: 22, name: "shared_content_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
-    { no: 23, name: "governance_mode", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 24, name: "admission_mode", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 25, name: "region", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
@@ -19614,11 +19716,6 @@ export class GetParaCommunityGovernanceResponse extends Message<GetParaCommunity
   editHistory: ParaCommunityGovernanceHistoryEntry[] = [];
 
   /**
-   * @generated from field: string organization_standard = 9;
-   */
-  organizationStandard = "";
-
-  /**
    * @generated from field: string admission_mode = 10;
    */
   admissionMode = "";
@@ -19654,7 +19751,6 @@ export class GetParaCommunityGovernanceResponse extends Message<GetParaCommunity
     { no: 6, name: "computed_at", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 7, name: "metadata", kind: "message", T: ParaCommunityGovernanceMetadata },
     { no: 8, name: "edit_history", kind: "message", T: ParaCommunityGovernanceHistoryEntry, repeated: true },
-    { no: 9, name: "organization_standard", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 10, name: "admission_mode", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 11, name: "authority_event_version", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
     { no: 12, name: "role_definitions", kind: "message", T: ParaRoleDefinition, repeated: true },

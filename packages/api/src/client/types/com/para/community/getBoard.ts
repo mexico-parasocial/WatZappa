@@ -86,7 +86,6 @@ export interface BoardView {
   viewerRoles?: string[]
   status?: 'draft' | 'active' | (string & {})
   founderStarterPackUri?: string
-  governanceMode?: 'hierarchical' | 'horizontal' | (string & {})
   admissionMode?: 'open' | 'assembly_approval' | (string & {})
   createdAt: string
   governanceSummary?: GovernanceSummary
