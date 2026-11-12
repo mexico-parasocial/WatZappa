@@ -13,6 +13,8 @@ export interface ParaCommunityAccount {
   description: string | null
   quadrant: string | null
   region: string | null
+  /** CID of the profile's banner blob. */
+  banner: string | null
   profileCid: string | null
   createdAt: string | null
   indexedAt: string

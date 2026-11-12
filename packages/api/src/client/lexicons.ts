@@ -29533,6 +29533,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
             maxGraphemes: 64,
             maxLength: 128,
           },
+          banner: {
+            type: 'string',
+            format: 'uri',
+            description: "URL of the community's banner image, if it has one.",
+          },
           delegatesChatId: {
             type: 'string',
           },
@@ -30454,6 +30459,11 @@ export const schemaDict: Record<string, LexiconDoc> = {
               "Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state.",
             maxGraphemes: 64,
             maxLength: 128,
+          },
+          banner: {
+            type: 'string',
+            format: 'uri',
+            description: "URL of the community's banner image, if it has one.",
           },
           delegatesChatId: {
             type: 'string',

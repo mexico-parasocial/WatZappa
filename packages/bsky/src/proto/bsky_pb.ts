@@ -18254,6 +18254,13 @@ export class ParaCommunityBoardView extends Message<ParaCommunityBoardView> {
    */
   region = "";
 
+  /**
+   * CID of the community profile's banner blob; empty when it has none.
+   *
+   * @generated from field: string banner = 26;
+   */
+  banner = "";
+
   constructor(data?: PartialMessage<ParaCommunityBoardView>) {
     super();
     proto3.util.initPartial(data, this);
@@ -18286,6 +18293,7 @@ export class ParaCommunityBoardView extends Message<ParaCommunityBoardView> {
     { no: 22, name: "shared_content_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
     { no: 24, name: "admission_mode", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 25, name: "region", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 26, name: "banner", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ParaCommunityBoardView {

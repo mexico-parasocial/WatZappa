@@ -2475,6 +2475,8 @@ message ParaCommunityBoardView {
   reserved 23; // was "governance_mode"
   string admission_mode = 24;
   string region = 25;
+  // CID of the community profile's banner blob; empty when it has none.
+  string banner = 26;
 }
 message GetParaCommunityBoardRequest {
   string community_id = 1;

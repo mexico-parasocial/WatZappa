@@ -853,6 +853,44 @@ maybeDescribe('community governance actions (OD-9)', () => {
     })
   })
 
+  it('indexes the profile banner and serves its URL on the board', async () => {
+    // A 1x1 PNG.
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      'base64',
+    )
+    const url = new URL(
+      '/xrpc/com.para.community.uploadBanner',
+      network.pds.url,
+    )
+    url.searchParams.set('community', north)
+    const uploaded = await fetch(url, {
+      method: 'POST',
+      headers: { ...sc.getHeaders(alice), 'content-type': 'image/png' },
+      body: png,
+    })
+    const { cid } = (await uploaded.json()) as { cid: string }
+    expect(uploaded.status).toBe(200)
+
+    const profile = { name: 'Norte', quadrant: 'centro' }
+    await take(alice, {
+      action: 'profile.update',
+      profile: { ...profile, banner: cid },
+    })
+    const board = async () =>
+      (
+        await view<{ board: { banner?: string } }>(
+          'com.para.community.getBoard',
+          { uri: uriOf(north) },
+        )
+      ).body.board
+    expect((await board()).banner).toContain(`${north}/${cid}`)
+
+    // Leaving it out of the next update removes it.
+    await take(alice, { action: 'profile.update', profile })
+    expect((await board()).banner).toBeUndefined()
+  })
+
   it('proves a request held by a member’s own PDS, and refuses one that does not match', async () => {
     elsewhere = await TestPds.create({
       didPlcUrl: network.plc.url,

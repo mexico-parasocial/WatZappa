@@ -1,0 +1,53 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.uploadBanner",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Stores an image in a community account's repo for use as its profile banner (OD-9). Only an owner on the hosting PDS may call it. The image shows once a profile.update action names its CID.",
+      "parameters": {
+        "type": "params",
+        "required": ["community"],
+        "properties": {
+          "community": {
+            "type": "string",
+            "format": "did"
+          }
+        }
+      },
+      "input": {
+        "encoding": "*/*"
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["cid", "mimeType", "size"],
+          "properties": {
+            "cid": {
+              "type": "string",
+              "format": "cid"
+            },
+            "mimeType": {
+              "type": "string"
+            },
+            "size": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "CommunityNotFound"
+        },
+        {
+          "name": "NotPermitted"
+        },
+        {
+          "name": "InvalidBanner"
+        }
+      ]
+    }
+  }
+}

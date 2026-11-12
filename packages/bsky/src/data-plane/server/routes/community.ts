@@ -74,6 +74,7 @@ type BoardRow = {
   description: string | null
   quadrant: string
   region: string | null
+  banner: string | null
   delegatesChatId: string
   subdelegatesChatId: string
   createdAt: string
@@ -644,6 +645,7 @@ const selectCommunityAccount = async (
     description: row.description,
     quadrant: row.quadrant ?? '',
     region: row.region,
+    banner: row.banner,
     delegatesChatId: '',
     subdelegatesChatId: '',
     createdAt: row.createdAt ?? row.indexedAt,
@@ -817,6 +819,7 @@ const listedBoardsQuery = (db: Database) => {
       'account.description',
       sql<string>`coalesce(account.quadrant, '')`.as('quadrant'),
       'account.region',
+      'account.banner',
       sql<string>`''`.as('delegatesChatId'),
       sql<string>`''`.as('subdelegatesChatId'),
       sql<string>`coalesce(account."admissionMode", 'open')`.as(
@@ -1112,6 +1115,7 @@ const toBoardView = (
     sharedContentCount: summary?.sharedContentCount ?? 0,
     admissionMode: board.admissionMode,
     region: board.region ?? '',
+    banner: board.banner ?? '',
   })
 
 const selectMembers = async (

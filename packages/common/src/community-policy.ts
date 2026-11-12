@@ -111,6 +111,8 @@ export type CommunityProfile = {
   description?: string
   quadrant: string
   region?: string
+  /** CID of an image already stored in the community's repo. */
+  banner?: string
 }
 
 export interface CommunityEvent {
@@ -801,7 +803,8 @@ function sameProfile(a?: CommunityProfile, b?: CommunityProfile): boolean {
     a.name === b.name &&
     (a.description ?? undefined) === (b.description ?? undefined) &&
     a.quadrant === b.quadrant &&
-    (a.region ?? undefined) === (b.region ?? undefined)
+    (a.region ?? undefined) === (b.region ?? undefined) &&
+    (a.banner ?? undefined) === (b.banner ?? undefined)
   )
 }
 
