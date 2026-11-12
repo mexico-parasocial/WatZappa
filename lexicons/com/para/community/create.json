@@ -1,0 +1,51 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.create",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Creates a community account (OD-9) with the caller as its founding owner. Only hierarchical communities with open admission can be created until assembly decisions are verifiable.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["name", "slug", "quadrant"],
+          "properties": {
+            "name": { "type": "string", "maxGraphemes": 64, "maxLength": 640 },
+            "slug": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 40,
+              "description": "Lowercase letters, digits and hyphens. Becomes the first label of the community's handle."
+            },
+            "description": {
+              "type": "string",
+              "maxGraphemes": 300,
+              "maxLength": 3000
+            },
+            "quadrant": { "type": "string", "maxLength": 64 },
+            "region": { "type": "string", "maxLength": 128 }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["did", "handle", "uri", "cid"],
+          "properties": {
+            "did": { "type": "string", "format": "did" },
+            "handle": { "type": "string", "format": "handle" },
+            "uri": {
+              "type": "string",
+              "format": "at-uri",
+              "description": "The community's profile record."
+            },
+            "cid": { "type": "string", "format": "cid" }
+          }
+        }
+      },
+      "errors": [{ "name": "HandleNotAvailable" }, { "name": "InvalidSlug" }]
+    }
+  }
+}

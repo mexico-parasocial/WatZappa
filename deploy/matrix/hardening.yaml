@@ -34,6 +34,29 @@ allow_public_rooms_without_auth: false
 # usable side channel for "is this person active right now".
 allow_device_name_lookup_over_federation: false
 
+# Listeners replace the generated ones (`names: [client, federation]`): a
+# closed server has no reason to serve /_matrix/federation or /_matrix/key at
+# all. The client resource also carries /_synapse/admin and /_synapse/mas,
+# which the bridge and MAS reach over the Compose network; the edge proxy
+# (services/caddy/Caddyfile.prod) refuses those paths publicly.
+#
+# The metrics listener is reached only by Prometheus over para-edge
+# (ansible/roles/monitoring/templates/prometheus.yml.j2); it is never published.
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    bind_addresses: ['0.0.0.0']
+    resources:
+      - names: [client]
+        compress: false
+  - port: 9000
+    type: metrics
+    bind_addresses: ['0.0.0.0']
+
+enable_metrics: true
+
 # Synapse ships pointing at matrix.org's key server. With federation closed
 # there is nothing to verify, and leaving it set means the homeserver contacts
 # a third party we do not operate. Empty it, and silence the resulting warning.

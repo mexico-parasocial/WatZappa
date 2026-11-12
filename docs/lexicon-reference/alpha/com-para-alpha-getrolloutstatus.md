@@ -2,11 +2,13 @@
 title: com.para.alpha.getRolloutStatus
 description: Reference for the com.para.alpha.getRolloutStatus lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -22,30 +24,32 @@ Get alpha rollout status per state. Admin-only endpoint.
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `states` | Array of [`#stateStatus`](#statestatus) | ✅  |  |  |
+| Name     | Type                                    | Req'd | Description | Constraints |
+| -------- | --------------------------------------- | ----- | ----------- | ----------- |
+| `states` | Array of [`#stateStatus`](#statestatus) | ✅    |             |             |
 
 ---
 
 <a name="statestatus"></a>
+
 ### `stateStatus`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `state` | `string` | ✅  |  |  |
-| `totalSlots` | `integer` | ✅  |  |  |
-| `usedSlots` | `integer` | ✅  |  |  |
-| `isOpen` | `boolean` | ✅  |  |  |
-| `openedAt` | `string` | ❌  |  | Format: `datetime` |
+| Name         | Type      | Req'd | Description | Constraints        |
+| ------------ | --------- | ----- | ----------- | ------------------ |
+| `state`      | `string`  | ✅    |             |                    |
+| `totalSlots` | `integer` | ✅    |             |                    |
+| `usedSlots`  | `integer` | ✅    |             |                    |
+| `isOpen`     | `boolean` | ✅    |             |                    |
+| `openedAt`   | `string`  | ❌    |             | Format: `datetime` |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -62,9 +66,7 @@ Get alpha rollout status per state. Admin-only endpoint.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "states"
-          ],
+          "required": ["states"],
           "properties": {
             "states": {
               "type": "array",
@@ -79,12 +81,7 @@ Get alpha rollout status per state. Admin-only endpoint.
     },
     "stateStatus": {
       "type": "object",
-      "required": [
-        "state",
-        "totalSlots",
-        "usedSlots",
-        "isOpen"
-      ],
+      "required": ["state", "totalSlots", "usedSlots", "isOpen"],
       "properties": {
         "state": {
           "type": "string"

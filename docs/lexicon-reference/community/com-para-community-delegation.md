@@ -2,11 +2,13 @@
 title: com.para.community.delegation
 description: Reference for the com.para.community.delegation lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -15,36 +17,38 @@ description: Reference for the com.para.community.delegation lexicon
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `delegate` | `string` | ✅  | Who receives the delegated voting power | Format: `did` |
-| `delegator` | `string` | ✅  | Who is lending their voice | Format: `did` |
-| `delegateRole` | `string` | ❌  | Role under which the delegate receives power: representative, moderator, official, board_member, etc. |  |
-| `party` | `string` | ❌  | Party or flair context for this delegation |  |
-| `scope` | [`#delegationScope`](#delegationscope) | ✅  |  |  |
-| `expiresAt` | `string` | ❌  | Auto-expiration. If absent, delegation expires in 90 days by default. | Format: `datetime` |
-| `revokedAt` | `string` | ❌  | When the delegator explicitly revoked this delegation | Format: `datetime` |
-| `createdAt` | `string` | ❌  |  | Format: `datetime` |
+| Name           | Type                                   | Req'd | Description                                                                                           | Constraints        |
+| -------------- | -------------------------------------- | ----- | ----------------------------------------------------------------------------------------------------- | ------------------ |
+| `delegate`     | `string`                               | ✅    | Who receives the delegated voting power                                                               | Format: `did`      |
+| `delegator`    | `string`                               | ✅    | Who is lending their voice                                                                            | Format: `did`      |
+| `delegateRole` | `string`                               | ❌    | Role under which the delegate receives power: representative, moderator, official, board_member, etc. |                    |
+| `party`        | `string`                               | ❌    | Party or flair context for this delegation                                                            |                    |
+| `scope`        | [`#delegationScope`](#delegationscope) | ✅    |                                                                                                       |                    |
+| `expiresAt`    | `string`                               | ❌    | Auto-expiration. If absent, delegation expires in 90 days by default.                                 | Format: `datetime` |
+| `revokedAt`    | `string`                               | ❌    | When the delegator explicitly revoked this delegation                                                 | Format: `datetime` |
+| `createdAt`    | `string`                               | ❌    |                                                                                                       | Format: `datetime` |
 
 ---
 
 <a name="delegationscope"></a>
+
 ### `delegationScope`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `mode` | `string` | ✅  |  | Enum: `community`, `topic`, `proposal`, `topicCommunity` |
-| `community` | `string` | ❌  | Required for community, topicCommunity modes | Format: `at-uri` |
-| `topic` | `string` | ❌  | Required for topic, topicCommunity modes | Enum: `general`, `budget`, `amendment`, `moderation` |
-| `proposal` | `string` | ❌  | Required for proposal mode | Format: `at-uri` |
+| Name        | Type     | Req'd | Description                                  | Constraints                                              |
+| ----------- | -------- | ----- | -------------------------------------------- | -------------------------------------------------------- |
+| `mode`      | `string` | ✅    |                                              | Enum: `community`, `topic`, `proposal`, `topicCommunity` |
+| `community` | `string` | ❌    | Required for community, topicCommunity modes | Format: `at-uri`                                         |
+| `topic`     | `string` | ❌    | Required for topic, topicCommunity modes     | Enum: `general`, `budget`, `amendment`, `moderation`     |
+| `proposal`  | `string` | ❌    | Required for proposal mode                   | Format: `at-uri`                                         |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -55,11 +59,7 @@ description: Reference for the com.para.community.delegation lexicon
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "delegate",
-          "delegator",
-          "scope"
-        ],
+        "required": ["delegate", "delegator", "scope"],
         "properties": {
           "delegate": {
             "type": "string",
@@ -102,18 +102,11 @@ description: Reference for the com.para.community.delegation lexicon
     },
     "delegationScope": {
       "type": "object",
-      "required": [
-        "mode"
-      ],
+      "required": ["mode"],
       "properties": {
         "mode": {
           "type": "string",
-          "enum": [
-            "community",
-            "topic",
-            "proposal",
-            "topicCommunity"
-          ]
+          "enum": ["community", "topic", "proposal", "topicCommunity"]
         },
         "community": {
           "type": "string",
@@ -122,12 +115,7 @@ description: Reference for the com.para.community.delegation lexicon
         },
         "topic": {
           "type": "string",
-          "enum": [
-            "general",
-            "budget",
-            "amendment",
-            "moderation"
-          ],
+          "enum": ["general", "budget", "amendment", "moderation"],
           "description": "Required for topic, topicCommunity modes"
         },
         "proposal": {

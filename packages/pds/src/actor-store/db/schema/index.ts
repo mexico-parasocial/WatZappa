@@ -1,6 +1,7 @@
 import type * as accountPref from './account-pref.js'
 import type * as backlink from './backlink.js'
 import type * as blob from './blob.js'
+import type * as community from './community.js'
 import type * as recordBlob from './record-blob.js'
 import type * as record from './record.js'
 import type * as repoBlock from './repo-block.js'
@@ -8,6 +9,7 @@ import type * as repoRoot from './repo-root.js'
 import type * as simplespaceConfig from './simplespace-config.js'
 import type * as simplespaceMember from './simplespace-member.js'
 import type * as spaceCredentialRecipient from './space-credential-recipient.js'
+import type * as spacePolicy from './space-policy.js'
 import type * as spaceRecordBlob from './space-record-blob.js'
 import type * as spaceRecordOplog from './space-record-oplog.js'
 import type * as spaceRecord from './space-record.js'
@@ -30,7 +32,9 @@ export type DatabaseSchema = accountPref.PartialDB &
   spaceRepo.PartialDB &
   spaceRecordOplog.PartialDB &
   spaceWriter.PartialDB &
-  spaceCredentialRecipient.PartialDB
+  spaceCredentialRecipient.PartialDB &
+  spacePolicy.PartialDB &
+  community.PartialDB
 
 export type { AccountPref } from './account-pref.js'
 export type { RepoRoot } from './repo-root.js'

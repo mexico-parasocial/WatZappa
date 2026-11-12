@@ -1,18 +1,20 @@
+import type { CommunityRole } from '@atproto/common'
 import {
-  type CommunityAuthorityEvent,
-  type CommunityRole,
-  deriveEffectiveAuthority,
-  resolveCapabilities,
-} from '@atproto/common'
-import type { AtUri } from '@atproto/syntax'
+  accountSnapshots,
+  communityAccountDid,
+} from './community-membership.js'
 import type { Database } from './db/index.js'
 
+/*
+ * A member's standing in a community, as of a moment. A community is an
+ * account (OD-9) and its answers come from its folded chain alone; any other
+ * URI names nothing, so everyone is a stranger to it.
+ */
+
 export interface AuthoritySnapshot {
-  membershipState: 'none' | 'active' | 'suspended' | 'removed' | 'blocked'
+  membershipState: 'none' | 'active' | 'suspended'
   roles: CommunityRole[]
   capabilities: string[]
-  events: CommunityAuthorityEvent[]
-  usedLegacyFallback: boolean
 }
 
 export async function getAuthoritySnapshot(
@@ -37,181 +39,64 @@ export async function getAuthoritySnapshots(
   subjects: readonly string[],
   now = Date.now(),
 ): Promise<Map<string, AuthoritySnapshot>> {
-  const snapshots = new Map<string, AuthoritySnapshot>()
-  const unique = [...new Set(subjects)]
-  if (unique.length === 0) return snapshots
-
-  const rows = await db.db
-    .selectFrom('para_community_authority_event')
-    .where('communityUri', '=', communityUri)
-    .where('subject', 'in', unique)
-    .selectAll()
-    .execute()
-  const eventsBySubject = new Map<string, CommunityAuthorityEvent[]>()
-  for (const row of rows) {
-    const events = eventsBySubject.get(row.subject) ?? []
-    events.push({
-      uri: row.uri,
-      creator: row.creator,
-      community: row.communityUri,
-      subject: row.subject,
-      action: row.action as CommunityAuthorityEvent['action'],
-      issuer: row.issuer,
-      effectiveAt: row.effectiveAt,
-      expiresAt: row.expiresAt,
-      predecessor: row.predecessor,
-      version: row.version,
-      basis: row.basis as CommunityAuthorityEvent['basis'],
-      evidence: row.evidence,
-    })
-    eventsBySubject.set(row.subject, events)
-  }
-  for (const [subject, events] of eventsBySubject) {
-    const authority = deriveEffectiveAuthority(events, now)
-    snapshots.set(subject, {
-      ...authority,
-      capabilities: resolveCapabilities(authority.roles),
-      events,
-      usedLegacyFallback: false,
-    })
-  }
-
-  // Subjects without authority events fall back to their legacy membership
-  // record. The member writes that record themselves, so it can establish
-  // membership but never a role above `member`: roles or role assignments in
-  // it are ignored.
-  const legacySubjects = unique.filter((subject) => !snapshots.has(subject))
-  const legacyRows =
-    legacySubjects.length > 0
-      ? await db.db
-          .selectFrom('para_community_membership')
-          .where('communityUri', '=', communityUri)
-          .where('creator', 'in', legacySubjects)
-          .select(['creator', 'membershipState'])
-          .execute()
-      : []
-  const legacyBySubject = new Map(
-    legacyRows.map((row) => [row.creator, row.membershipState]),
+  const accountDid = communityAccountDid(communityUri)
+  if (accountDid) return accountSnapshots(db, accountDid, subjects, now)
+  return new Map(
+    [...new Set(subjects)].map((subject) => [
+      subject,
+      { membershipState: 'none', roles: [], capabilities: [] },
+    ]),
   )
-  for (const subject of legacySubjects) {
-    const legacy = legacyBySubject.get(subject)
-    const roles: CommunityRole[] = legacy === 'active' ? ['member'] : []
-    snapshots.set(subject, {
-      membershipState:
-        legacy === 'active'
-          ? 'active'
-          : legacy === 'blocked'
-            ? 'blocked'
-            : legacy === 'removed'
-              ? 'removed'
-              : 'none',
-      roles,
-      capabilities: resolveCapabilities(roles),
-      events: [],
-      usedLegacyFallback: legacyBySubject.has(subject),
-    })
-  }
-  return snapshots
 }
 
-export async function verifyAuthorityEvent(
+/** Rows per `in (...)` list, well under the 65535 bind parameters Postgres allows. */
+const SNAPSHOT_CHUNK = 5000
+
+/**
+ * Which of `dids` are active members of the community, as of `now`. The one
+ * rule for "may this account vote here", shared by ballot indexing, tallies
+ * and delegations: a community's members are its folded chain's, so what an
+ * account says about itself never counts.
+ */
+export async function filterActiveMembers(
   db: Database,
-  uri: AtUri,
-  event: Omit<CommunityAuthorityEvent, 'uri' | 'creator'>,
-): Promise<boolean> {
-  if (event.version < 1 || event.issuer !== uri.host) return false
-  if (event.basis === 'migration') return false
-  const board = await db.db
-    .selectFrom('para_community_board')
-    .where('uri', '=', event.community)
-    .select(['creator', 'governanceMode', 'admissionMode'])
-    .executeTakeFirst()
-  if (!board) return false
-
-  const latest = await db.db
-    .selectFrom('para_community_authority_event')
-    .where('communityUri', '=', event.community)
-    .where('subject', '=', event.subject)
-    .orderBy('version', 'desc')
-    .orderBy('id', 'desc')
-    .select(['uri', 'version', 'action', 'basis'])
-    .executeTakeFirst()
-  if (latest) {
-    if (event.version !== latest.version + 1) return false
-    if (event.predecessor !== latest.uri) return false
-  } else if (event.version !== 1 || event.predecessor) {
-    return false
-  }
-
-  const isMemberActivation = event.action === 'member.activate'
-  if (event.basis === 'openAdmission') {
-    return (
-      isMemberActivation &&
-      board.admissionMode === 'open' &&
-      event.subject === event.issuer &&
-      !['removed', 'blocked', 'suspended'].includes(
-        (await getAuthoritySnapshot(db, event.community, event.subject))
-          .membershipState,
-      )
+  communityUri: string,
+  dids: readonly string[],
+  now = Date.now(),
+): Promise<Set<string>> {
+  const unique = [...new Set(dids)]
+  const active = new Set<string>()
+  for (let i = 0; i < unique.length; i += SNAPSHOT_CHUNK) {
+    const snapshots = await getAuthoritySnapshots(
+      db,
+      communityUri,
+      unique.slice(i, i + SNAPSHOT_CHUNK),
+      now,
     )
-  }
-  if (event.basis === 'foundingTransition') {
-    if (event.issuer !== board.creator || event.subject !== board.creator) {
-      return false
+    for (const [did, snapshot] of snapshots) {
+      if (snapshot.membershipState === 'active') active.add(did)
     }
-    if (event.action === 'member.activate') return event.version === 1
-    if (
-      event.version !== 2 ||
-      latest?.action !== 'member.activate' ||
-      latest.basis !== 'foundingTransition'
-    )
-      return false
-    if (board.governanceMode === 'hierarchical') {
-      return event.action === 'owner.grant'
-    }
-    return event.action === 'moderator.grant' && hasNinetyDayLimit(event)
   }
-  if (event.basis === 'resignation') {
-    return event.action === 'moderator.resign' && event.subject === event.issuer
-  }
-  if (event.basis === 'ownerAppointment') {
-    if (board.governanceMode !== 'hierarchical') return false
-    const issuer = await getAuthoritySnapshot(db, event.community, event.issuer)
-    return (
-      issuer.roles.includes('owner') &&
-      (event.action === 'moderator.grant' ||
-        event.action === 'moderator.revoke') &&
-      Boolean(event.evidence)
-    )
-  }
-  if (event.basis === 'ownerTransfer') {
-    if (board.governanceMode !== 'hierarchical' || !event.evidence) return false
-    const issuer = await getAuthoritySnapshot(db, event.community, event.issuer)
-    return (
-      issuer.roles.includes('owner') &&
-      (event.action === 'owner.grant' || event.action === 'owner.revoke')
-    )
-  }
-  // @NOTE public decision records cannot attest their own tally verification.
-  // Protected assembly authority remains closed until a trusted tally verifier exists.
-  if (event.basis === 'assemblyDecision') return false
-  return (
-    event.basis === 'expiry' &&
-    event.subject === event.issuer &&
-    event.action === 'moderator.revoke'
-  )
+  return active
 }
 
-function hasNinetyDayLimit(
-  event: Omit<CommunityAuthorityEvent, 'uri' | 'creator'>,
-) {
-  if (!event.expiresAt) return false
-  const effective = Date.parse(event.effectiveAt)
-  const expires = Date.parse(event.expiresAt)
-  return (
-    Number.isFinite(effective) &&
-    Number.isFinite(expires) &&
-    expires > effective &&
-    expires - effective <= 90 * 24 * 60 * 60 * 1000
+/** Every active member of the community, by `filterActiveMembers`. */
+export async function listActiveMembers(
+  db: Database,
+  communityUri: string,
+  now = Date.now(),
+): Promise<Set<string>> {
+  const accountDid = communityAccountDid(communityUri)
+  if (!accountDid) return new Set()
+  const rows = await db.db
+    .selectFrom('para_community_member_state')
+    .where('community', '=', accountDid)
+    .select('did')
+    .execute()
+  return filterActiveMembers(
+    db,
+    communityUri,
+    rows.map((row) => row.did),
+    now,
   )
 }

@@ -37,24 +37,24 @@ MAS ──POST /token────────────────▶ para-id
 
 ## Endpoints
 
-| | |
-|---|---|
-| `GET /.well-known/openid-configuration` | discovery |
-| `GET /jwks.json` | public signing key |
-| `GET /authorize` | starts a login, returns a challenge to sign |
-| `POST /authorize/verify` | proof of possession → authorization code |
-| `POST /token` | code → ID token |
-| `GET /healthz` | liveness |
+|                                         |                                             |
+| --------------------------------------- | ------------------------------------------- |
+| `GET /.well-known/openid-configuration` | discovery                                   |
+| `GET /jwks.json`                        | public signing key                          |
+| `GET /authorize`                        | starts a login, returns a challenge to sign |
+| `POST /authorize/verify`                | proof of possession → authorization code    |
+| `POST /token`                           | code → ID token                             |
+| `GET /healthz`                          | liveness                                    |
 
 ## Configuration
 
-| Variable | Default | |
-|---|---|---|
-| `PARA_IDP_ISSUER` | `http://localhost:8090` | Must match what MAS is configured with |
-| `PARA_IDP_CLIENTS` | *(required)* | JSON array of `{clientId, clientSecret, redirectUris}` |
-| `PARA_IDP_PRIVATE_KEY` | *(none)* | Ed25519 PKCS#8 PEM. **Set this in production** |
-| `PORT` | `8090` | |
-| `PARA_IDP_LOG_LEVEL` | `info` | |
+| Variable               | Default                 |                                                        |
+| ---------------------- | ----------------------- | ------------------------------------------------------ |
+| `PARA_IDP_ISSUER`      | `http://localhost:8090` | Must match what MAS is configured with                 |
+| `PARA_IDP_CLIENTS`     | _(required)_            | JSON array of `{clientId, clientSecret, redirectUris}` |
+| `PARA_IDP_PRIVATE_KEY` | _(none)_                | Ed25519 PKCS#8 PEM. **Set this in production**         |
+| `PORT`                 | `8090`                  |                                                        |
+| `PARA_IDP_LOG_LEVEL`   | `info`                  |                                                        |
 
 Without `PARA_IDP_PRIVATE_KEY` an ephemeral key is generated and logged as a
 warning: every restart rotates the JWKS and invalidates outstanding tokens.
@@ -68,7 +68,7 @@ registrations is an IdP that can be pointed at an attacker's `redirect_uri`.
   tokens, no userinfo, no consent screen. Every feature omitted is one that
   cannot be misconfigured. `plain` PKCE is rejected, not merely discouraged.
 - **Exact redirect_uri matching.** No prefixes, no wildcards. An unregistered
-  `redirect_uri` fails *in place* rather than redirecting, so a code is never
+  `redirect_uri` fails _in place_ rather than redirecting, so a code is never
   delivered to whoever asked for it.
 - **Challenges and codes are single-use and in-memory.** They live for seconds,
   and persisting them would create a store relating identity keys to login

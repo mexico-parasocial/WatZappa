@@ -2,11 +2,13 @@
 title: com.para.community.civicTree.contribution
 description: Reference for the com.para.community.civicTree.contribution lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -15,24 +17,25 @@ description: Reference for the com.para.community.civicTree.contribution lexicon
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `communityUri` | `string` | ✅  |  | Format: `at-uri` |
-| `authorDid` | `string` | ✅  |  | Format: `did` |
-| `title` | `string` | ✅  |  | Max Length: 500 |
-| `content` | `string` | ❌  |  | Max Length: 10000 |
-| `sourceUri` | `string` | ❌  |  | Format: `at-uri` |
-| `sourceUrl` | `string` | ❌  |  | Format: `uri` |
-| `sourceType` | `string` | ✅  |  | Max Length: 64 |
-| `metadata` | `string` | ❌  |  | Max Length: 20000 |
-| `status` | `string` | ✅  |  | Known Values: `pending`, `approved`, `rejected` |
-| `approvedCard` | `string` | ❌  |  | Format: `at-uri` |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
-| `decidedAt` | `string` | ❌  |  | Format: `datetime` |
+| Name           | Type     | Req'd | Description | Constraints                                     |
+| -------------- | -------- | ----- | ----------- | ----------------------------------------------- |
+| `communityUri` | `string` | ✅    |             | Format: `at-uri`                                |
+| `authorDid`    | `string` | ✅    |             | Format: `did`                                   |
+| `title`        | `string` | ✅    |             | Max Length: 500                                 |
+| `content`      | `string` | ❌    |             | Max Length: 10000                               |
+| `sourceUri`    | `string` | ❌    |             | Format: `at-uri`                                |
+| `sourceUrl`    | `string` | ❌    |             | Format: `uri`                                   |
+| `sourceType`   | `string` | ✅    |             | Max Length: 64                                  |
+| `metadata`     | `string` | ❌    |             | Max Length: 20000                               |
+| `status`       | `string` | ✅    |             | Known Values: `pending`, `approved`, `rejected` |
+| `approvedCard` | `string` | ❌    |             | Format: `at-uri`                                |
+| `createdAt`    | `string` | ✅    |             | Format: `datetime`                              |
+| `decidedAt`    | `string` | ❌    |             | Format: `datetime`                              |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -86,11 +89,7 @@ description: Reference for the com.para.community.civicTree.contribution lexicon
           },
           "status": {
             "type": "string",
-            "knownValues": [
-              "pending",
-              "approved",
-              "rejected"
-            ]
+            "knownValues": ["pending", "approved", "rejected"]
           },
           "approvedCard": {
             "type": "string",

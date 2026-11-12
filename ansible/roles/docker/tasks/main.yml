@@ -5,13 +5,13 @@
   ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
-    mode: "0755"
+    mode: '0755'
 
 - name: Add the Docker GPG key
   ansible.builtin.get_url:
     url: https://download.docker.com/linux/ubuntu/gpg
     dest: /etc/apt/keyrings/docker.asc
-    mode: "0644"
+    mode: '0644'
   # Replaces the `apt_key` module, which is deprecated and writes to the
   # global trusted keyring — any key there can sign for any repository.
 
@@ -19,8 +19,8 @@
   ansible.builtin.deb822_repository:
     name: docker
     types: [deb]
-    uris: "https://download.docker.com/linux/ubuntu"
-    suites: "{{ ansible_lsb.codename | default(ansible_distribution_release) }}"
+    uris: 'https://download.docker.com/linux/ubuntu'
+    suites: '{{ ansible_lsb.codename | default(ansible_distribution_release) }}'
     components: [stable]
     architectures: "{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}"
     signed_by: /etc/apt/keyrings/docker.asc
@@ -35,7 +35,7 @@
   # repo with no matching packages and an unhelpful "Unable to locate package
   # docker-ce".
 
-- name: Refresh apt after adding the Docker repository  # noqa: no-handler
+- name: Refresh apt after adding the Docker repository # noqa: no-handler
   ansible.builtin.apt:
     update_cache: true
   when: docker_repo is changed
@@ -44,7 +44,7 @@
 
 - name: Install Docker Engine
   ansible.builtin.apt:
-    name: "{{ docker_packages }}"
+    name: '{{ docker_packages }}'
     state: present
     update_cache: true
   vars:
@@ -64,7 +64,7 @@
 
 - name: Add the remote user to the docker group
   ansible.builtin.user:
-    name: "{{ ansible_user }}"
+    name: '{{ ansible_user }}'
     groups: docker
     append: true
   when: ansible_user != 'root'
@@ -84,7 +84,7 @@
         "log-opts": {"max-size": "50m", "max-file": "5"}
       }
     dest: /etc/docker/daemon.json
-    mode: "0644"
+    mode: '0644'
   notify: Restart docker
   # Without this, Synapse and the AppView fill the disk with unrotated JSON
   # logs. On a single-host deployment that takes the database down with it.

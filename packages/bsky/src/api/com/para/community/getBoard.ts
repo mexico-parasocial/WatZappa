@@ -1,3 +1,4 @@
+import { AtUri } from '@atproto/syntax'
 import { InvalidRequestError, type Server } from '@atproto/xrpc-server'
 import type { AppContext } from '../../../../context.js'
 import { parseString } from '../../../../hydration/util.js'
@@ -60,7 +61,11 @@ const getBoard = async ({
       throw new InvalidRequestError('Community not found', 'NotFound')
     }
 
-    const board = mapBoardView(res.board, res.governanceSummary)
+    const board = mapBoardView(
+      res.board,
+      res.governanceSummary,
+      boardBannerUrl(ctx, res.board),
+    )
     console.log(
       '[getBoard API] Successfully mapped board view for:',
       board.slug || board.communityId,
@@ -94,6 +99,19 @@ const getBoard = async ({
   }
 }
 
+/** The served URL of a board's banner; the blob is in the community's repo. */
+export const boardBannerUrl = (
+  ctx: AppContext,
+  board: { uri: string; banner: string },
+) =>
+  board.banner
+    ? ctx.views.imgUriBuilder.getPresetUri(
+        'banner',
+        new AtUri(board.uri).host,
+        board.banner,
+      )
+    : undefined
+
 const mapBoardView = (
   board: NonNullable<
     Awaited<
@@ -103,6 +121,7 @@ const mapBoardView = (
   governanceSummary?: Awaited<
     ReturnType<AppContext['dataplane']['getParaCommunityBoard']>
   >['governanceSummary'],
+  banner?: string,
 ) =>
   ({
     uri: board.uri,
@@ -116,6 +135,7 @@ const mapBoardView = (
     description: parseString(board.description),
     quadrant: board.quadrant,
     region: parseString(board.region),
+    banner,
     delegatesChatId: board.delegatesChatId,
     subdelegatesChatId: board.subdelegatesChatId,
     memberCount: board.memberCount,
@@ -127,8 +147,6 @@ const mapBoardView = (
     founderStarterPackUri: parseString(
       (board as { founderStarterPackUri?: string }).founderStarterPackUri,
     ),
-    governanceMode: (parseString(board.governanceMode) || 'hierarchical') as
-      'hierarchical' | 'horizontal',
     admissionMode: (parseString(board.admissionMode) || 'open') as
       'open' | 'assembly_approval',
     createdAt: board.createdAt,

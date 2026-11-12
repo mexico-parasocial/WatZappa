@@ -9,10 +9,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "reasonType",
-            "subject"
-          ],
+          "required": ["reasonType", "subject"],
           "properties": {
             "reasonType": {
               "type": "ref",
@@ -89,9 +86,7 @@
     "modTool": {
       "type": "object",
       "description": "Moderation tool information for tracing the source of the action",
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "properties": {
         "name": {
           "type": "string",

@@ -1,8 +1,8 @@
 import pino from 'pino'
 import { loadConfig } from './config.js'
 import { Signer } from './oidc.js'
-import { LoginStore } from './store.js'
 import { createIdpServer } from './server.js'
+import { LoginStore } from './store.js'
 
 const config = loadConfig()
 const log = pino({ level: config.logLevel })

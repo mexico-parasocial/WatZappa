@@ -1,6 +1,4 @@
-import { randomUUID } from 'node:crypto'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { AI_CONSENT_POLICY_VERSION } from '../ai-consent.js'
 import {
   authorize,
   authorizeOrRespond,
@@ -15,17 +13,11 @@ import {
   isMessageReportReason,
   sanctionKindsInForce,
 } from '../chat-moderation.js'
-import { fetchBeacon, fetchLatestBeacon } from '../drand.js'
-import { extractFromText, persistExtractedCard } from '../extraction.js'
 import { HttpError, authenticateM8 } from '../m8-auth.js'
-import { OpenAIClient } from '../openai-client.js'
-import { sendExpoNotifications } from '../push.js'
 import {
   type EnforcementResult,
   createSanctionEnforcer,
 } from '../sanction-enforcement.js'
-import type { SortitionRunRow } from '../sortition-runs.js'
-import { summarizeCommunityDeliberation } from '../summarize.js'
 import type { RouteContext } from './context.js'
 import { readBody, writeJson } from './http.js'
 
@@ -52,21 +44,20 @@ export async function apiChatBadgesHandler(
     !(await authorizeUserReadOrRespond(ctx, res, auth.did, did, communityUri))
   )
     return
+  await ctx.firehose.refreshMembership(communityUri, did)
+  const membership = await ctx.db.getCommunityMembership(did, communityUri)
+  const roles = membership?.state === 'active' ? membership.roles : []
   const badges = await ctx.chatMod.recomputeUser(did, communityUri)
   const visibleBadges = badges.filter((b) => b.visibleInChat)
   const hiddenBadges = badges.filter((b) => !b.visibleInChat)
-  const participation = await ctx.chatMod.getParticipationSummary(
-    did,
-    communityUri,
-  )
   res.writeHead(200, { 'Content-Type': 'application/json' })
   res.end(
     JSON.stringify({
       did,
       communityUri,
+      roles,
       visibleBadges,
       hiddenBadges,
-      participation,
     }),
   )
 }
@@ -611,9 +602,4 @@ export async function apiUserChatPreferencesPOSTHandler(
   await ctx.db.setChatPreferences(did, showChatBadges)
   res.writeHead(200, { 'Content-Type': 'application/json' })
   res.end(JSON.stringify({ ok: true }))
-
-  // ── Third-party LLM processing consent (OD-3) ──
-  // Read and write are scoped to the authenticated user and take no `did`
-  // parameter: whether someone consented to AI processing is their own
-  // business, and a lookup by DID would make it enumerable.
 }

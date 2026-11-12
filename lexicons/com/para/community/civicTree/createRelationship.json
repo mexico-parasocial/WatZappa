@@ -41,9 +41,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "relationship"
-          ],
+          "required": ["relationship"],
           "properties": {
             "relationship": {
               "type": "ref",

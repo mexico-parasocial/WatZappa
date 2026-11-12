@@ -7,12 +7,7 @@
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "card",
-          "voterDid",
-          "influence",
-          "createdAt"
-        ],
+        "required": ["card", "voterDid", "influence", "createdAt"],
         "properties": {
           "card": {
             "type": "string",

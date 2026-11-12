@@ -1,9 +1,9 @@
 // @ts-nocheck
 import { bench, describe } from 'vitest'
 import {
-  LexArray,
-  LexMap,
-  LexValue,
+  type LexArray,
+  type LexMap,
+  type LexValue,
   MAX_CBOR_CONTAINER_LEN,
   MAX_CBOR_NESTED_LEVELS,
   MAX_CBOR_OBJECT_KEY_LEN,
@@ -11,8 +11,8 @@ import {
 } from '@atproto/lex-data'
 import { iterativeTransform } from './iterative-transform.js'
 import { jsonToLex } from './json-to-lex.js'
-import { JsonObject, JsonValue } from './json.js'
-import { LexToJsonOptions, lexToJson } from './lex-to-json.js'
+import type { JsonObject, JsonValue } from './json.js'
+import { type LexToJsonOptions, lexToJson } from './lex-to-json.js'
 import { validateMaxUtf8Length } from './lib/validate-max-utf8-length.js'
 import { encodeSpecialJsonObject } from './special-objects.js'
 

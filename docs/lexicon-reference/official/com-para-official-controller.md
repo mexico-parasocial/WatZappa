@@ -2,11 +2,13 @@
 title: com.para.official.controller
 description: Reference for the com.para.official.controller lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -17,22 +19,23 @@ Private-auditable human controller for an official civic entity.
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `entity` | `string` | ✅  |  | Max Length: 500 |
-| `controllerDid` | `string` | ✅  |  | Format: `did` |
-| `displayName` | `string` | ❌  |  | Max Length: 300 |
-| `scopes` | Array of `string` | ✅  |  | Max Items: 20 |
-| `status` | `string` | ✅  |  | Known Values: `pending`, `active`, `revoked` |
-| `visibilityDefault` | `string` | ❌  |  | Known Values: `entity_default`, `revealed` |
-| `approvedByDid` | `string` | ❌  |  | Format: `did` |
-| `expiresAt` | `string` | ❌  |  | Format: `datetime` |
-| `revokedAt` | `string` | ❌  |  | Format: `datetime` |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name                | Type              | Req'd | Description | Constraints                                  |
+| ------------------- | ----------------- | ----- | ----------- | -------------------------------------------- |
+| `entity`            | `string`          | ✅    |             | Max Length: 500                              |
+| `controllerDid`     | `string`          | ✅    |             | Format: `did`                                |
+| `displayName`       | `string`          | ❌    |             | Max Length: 300                              |
+| `scopes`            | Array of `string` | ✅    |             | Max Items: 20                                |
+| `status`            | `string`          | ✅    |             | Known Values: `pending`, `active`, `revoked` |
+| `visibilityDefault` | `string`          | ❌    |             | Known Values: `entity_default`, `revealed`   |
+| `approvedByDid`     | `string`          | ❌    |             | Format: `did`                                |
+| `expiresAt`         | `string`          | ❌    |             | Format: `datetime`                           |
+| `revokedAt`         | `string`          | ❌    |             | Format: `datetime`                           |
+| `createdAt`         | `string`          | ✅    |             | Format: `datetime`                           |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -81,18 +84,11 @@ Private-auditable human controller for an official civic entity.
           },
           "status": {
             "type": "string",
-            "knownValues": [
-              "pending",
-              "active",
-              "revoked"
-            ]
+            "knownValues": ["pending", "active", "revoked"]
           },
           "visibilityDefault": {
             "type": "string",
-            "knownValues": [
-              "entity_default",
-              "revealed"
-            ]
+            "knownValues": ["entity_default", "revealed"]
           },
           "approvedByDid": {
             "type": "string",

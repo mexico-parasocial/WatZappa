@@ -1,4 +1,4 @@
-import { Kysely } from 'kysely'
+import type { Kysely } from 'kysely'
 
 export async function up(db: Kysely<unknown>): Promise<void> {
   // 1. para_discourse_snapshot — time-bucketed aggregate discourse metrics per community

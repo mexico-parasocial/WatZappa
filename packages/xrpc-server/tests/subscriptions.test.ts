@@ -1,11 +1,17 @@
 // @ts-nocheck
-import * as http from 'node:http'
+import type * as http from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { WebSocket, createWebSocketStream } from 'ws'
 import { wait } from '@atproto/common'
-import { LexiconDoc, Lexicons } from '@atproto/lexicon'
-import { ErrorFrame, Frame, MessageFrame, Subscription, byFrame } from '../src/index.js'
-import * as xrpcServer from '../src/index.js'
+import { type LexiconDoc, Lexicons } from '@atproto/lexicon'
+import {
+  ErrorFrame,
+  type Frame,
+  MessageFrame,
+  Subscription,
+  byFrame,
+} from '../src/index.js'
+import type * as xrpcServer from '../src/index.js'
 import {
   basicAuthHeaders,
   buildAddLexicons,
@@ -280,7 +286,7 @@ for (const buildServer of [buildMethodLexicons, buildAddLexicons]) {
       const ws = new WebSocket(`ws://localhost:${port}/xrpc/does.not.exist`)
       const drainStream = async () => {
         for await (const bytes of createWebSocketStream(ws)) {
-          bytes // drain
+          void bytes // drain
         }
       }
       await expect(drainStream).rejects.toHaveProperty('code', 'ECONNRESET')

@@ -35,10 +35,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "generatedAt",
-            "files"
-          ],
+          "required": ["generatedAt", "files"],
           "properties": {
             "generatedAt": {
               "type": "string",

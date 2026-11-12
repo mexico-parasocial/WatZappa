@@ -1,7 +1,12 @@
 // @ts-nocheck
-import { AtpAgent, ids } from '@atproto/api'
-import type { DidString, HandleString } from '@atproto/syntax'
-import { RecordRef, SeedClient, TestNetwork, usersSeed } from '@atproto/dev-env'
+import { type AtpAgent, ids } from '@atproto/api'
+import {
+  type RecordRef,
+  type SeedClient,
+  TestNetwork,
+  usersSeed,
+} from '@atproto/dev-env'
+import type { DidString } from '@atproto/syntax'
 
 describe('thread mutes', () => {
   let network: TestNetwork

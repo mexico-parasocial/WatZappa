@@ -20,9 +20,21 @@
           "type": "object",
           "required": ["roles", "capabilities", "authorization"],
           "properties": {
-            "roles": { "type": "array", "items": { "type": "string", "knownValues": ["member", "moderator", "owner"] } },
-            "capabilities": { "type": "array", "items": { "type": "string", "maxLength": 128 } },
-            "authorization": { "type": "ref", "ref": "com.para.community.defs#availableAction" }
+            "roles": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "knownValues": ["member", "moderator", "owner"]
+              }
+            },
+            "capabilities": {
+              "type": "array",
+              "items": { "type": "string", "maxLength": 128 }
+            },
+            "authorization": {
+              "type": "ref",
+              "ref": "com.para.community.defs#availableAction"
+            }
           }
         }
       }

@@ -6,9 +6,7 @@
       "type": "query",
       "parameters": {
         "type": "params",
-        "required": [
-          "community"
-        ],
+        "required": ["community"],
         "properties": {
           "community": {
             "type": "string",
@@ -16,11 +14,7 @@
           },
           "status": {
             "type": "string",
-            "knownValues": [
-              "pending",
-              "approved",
-              "rejected"
-            ]
+            "knownValues": ["pending", "approved", "rejected"]
           },
           "viewer": {
             "type": "string",
@@ -40,9 +34,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "contributions"
-          ],
+          "required": ["contributions"],
           "properties": {
             "cursor": {
               "type": "string"

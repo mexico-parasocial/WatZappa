@@ -152,8 +152,10 @@ describe('moderation engine', () => {
   beforeEach(async () => {
     db = new SqliteBridgeDatabase({ dbPath: ':memory:' } as never)
     engine = new ChatModerationEngine(db, log)
-    await db.ensureParticipationStats(target, community)
-    await db.ensureParticipationStats('did:plc:other', community)
+    await db.setCommunityMembership(target, community, 'active', ['member'])
+    await db.setCommunityMembership('did:plc:other', community, 'active', [
+      'member',
+    ])
   })
 
   afterEach(async () => {

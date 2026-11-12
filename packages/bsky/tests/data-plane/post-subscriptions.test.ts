@@ -1,6 +1,11 @@
 // @ts-nocheck
-import { AtpAgent } from '@atproto/api'
-import { RecordRef, SeedClient, TestNetwork, usersSeed } from '@atproto/dev-env'
+import type { AtpAgent } from '@atproto/api'
+import {
+  type RecordRef,
+  type SeedClient,
+  TestNetwork,
+  usersSeed,
+} from '@atproto/dev-env'
 
 describe('post subscriptions', () => {
   let network: TestNetwork

@@ -1,3 +1,5 @@
+import { parseCorsOrigins } from './cors.js'
+
 export interface Config {
   pdsFirehoseUrl: string
   pdsSourceId?: string
@@ -11,8 +13,8 @@ export interface Config {
   plcUrl?: string
   /**
    * Whether this bridge runs Matrix chat. Off (`MATRIX_CHAT_ENABLED=false`),
-   * it serves governance alone — constitution, proposals, sortition,
-   * moderation, badges — from the firehose and its database, with no
+   * it serves community context — constitution,
+   * moderation and badges — from the firehose and its database, with no
    * homeserver behind it: no admin client, no sync poller, no room
    * provisioning, and chat routes answer 503 CHAT_DISABLED. The Matrix
    * settings below are then optional.
@@ -65,8 +67,12 @@ export interface Config {
   databaseUrl?: string
   logLevel: string
   port: number
-  openaiApiKey?: string
-  openaiModel?: string
+  /**
+   * Exact web origins allowed to call the API from a browser
+   * (`BRIDGE_CORS_ORIGINS`, comma-separated). Empty means no CORS headers:
+   * native clients do not need them.
+   */
+  corsAllowedOrigins: string[]
 }
 
 function env(key: string, fallback?: string): string {
@@ -147,7 +153,6 @@ export function loadConfig(): Config {
     databaseUrl: process.env.DATABASE_URL,
     logLevel: env('BRIDGE_LOG_LEVEL', 'info'),
     port: parseInt(env('PORT', '3001'), 10),
-    openaiApiKey: process.env.OPENAI_API_KEY,
-    openaiModel: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    corsAllowedOrigins: parseCorsOrigins(process.env.BRIDGE_CORS_ORIGINS),
   }
 }

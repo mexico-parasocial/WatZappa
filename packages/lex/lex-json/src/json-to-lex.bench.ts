@@ -1,9 +1,9 @@
 // @ts-nocheck
 import { bench, describe } from 'vitest'
-import { LexMap, LexValue, utf8Len } from '@atproto/lex-data'
+import { type LexMap, type LexValue, utf8Len } from '@atproto/lex-data'
 import { iterativeTransform } from './iterative-transform.js'
-import { JsonToLexOptions, jsonToLex } from './json-to-lex.js'
-import { JsonObject, JsonValue } from './json.js'
+import { type JsonToLexOptions, jsonToLex } from './json-to-lex.js'
+import type { JsonObject, JsonValue } from './json.js'
 import { parseSpecialJsonObject } from './special-objects.js'
 
 // This benchmark compares the performance of two implementations of

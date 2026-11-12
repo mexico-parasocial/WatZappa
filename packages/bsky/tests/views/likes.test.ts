@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { type AppBskyFeedGetLikes, type AtpAgent, ids } from '@atproto/api'
 import { type SeedClient, TestNetwork, likesSeed } from '@atproto/dev-env'
-import type { DidString, HandleString } from '@atproto/syntax'
+import type { DidString } from '@atproto/syntax'
 import {
   constantDate,
   forSnapshot,

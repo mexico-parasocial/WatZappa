@@ -2,11 +2,13 @@
 title: com.para.feed.getTimeline
 description: Reference for the com.para.feed.getTimeline lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,29 +17,30 @@ Get a paginated timeline of Para posts authored by accounts the viewer follows, 
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `limit` | `integer` | ❌  |  | Min: 1<br/>Max: 100<br/>Default: `50` |
-| `cursor` | `string` | ❌  |  |  |
-| `party` | `string` | ❌  |  | Max Length: 128 |
-| `community` | `string` | ❌  |  | Max Length: 128 |
-| `flairTag` | `string` | ❌  | Filter by an exact Para flair tag, e.g. |#Sanidad or ||#TransportePublico. | Max Length: 128 |
-| `postType` | `string` | ❌  | Filter by post type, e.g. meme, proposal, debate. | Max Length: 64 |
-**Output:**
+| Name        | Type      | Req'd | Description                                       | Constraints                           |
+| ----------- | --------- | ----- | ------------------------------------------------- | ------------------------------------- |
+| `limit`     | `integer` | ❌    |                                                   | Min: 1<br/>Max: 100<br/>Default: `50` |
+| `cursor`    | `string`  | ❌    |                                                   |                                       |
+| `party`     | `string`  | ❌    |                                                   | Max Length: 128                       |
+| `community` | `string`  | ❌    |                                                   | Max Length: 128                       |
+| `flairTag`  | `string`  | ❌    | Filter by an exact Para flair tag, e.g.           | #Sanidad or                           |     | #TransportePublico. | Max Length: 128 |
+| `postType`  | `string`  | ❌    | Filter by post type, e.g. meme, proposal, debate. | Max Length: 64                        |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cursor` | `string` | ❌  |  |  |
-| `feed` | Array of [`com.para.feed.getAuthorFeed#postView`]([[com-para-feed-getauthorfeed|com.para.feed.getAuthorFeed#postView]]) | ✅  |  |  |
+| Name     | Type                                                                            | Req'd                                   | Description | Constraints |
+| -------- | ------------------------------------------------------------------------------- | --------------------------------------- | ----------- | ----------- |
+| `cursor` | `string`                                                                        | ❌                                      |             |             |
+| `feed`   | Array of [`com.para.feed.getAuthorFeed#postView`]([[com-para-feed-getauthorfeed | com.para.feed.getAuthorFeed#postView]]) | ✅          |             |     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -82,9 +85,7 @@ Get a paginated timeline of Para posts authored by accounts the viewer follows, 
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "feed"
-          ],
+          "required": ["feed"],
           "properties": {
             "cursor": {
               "type": "string"

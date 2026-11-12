@@ -300,7 +300,10 @@ export const EXTRA_POLICIES: SeedPolicy[] = [
     text: 'Toda reunión entre un funcionario y un cabildero queda registrada y publicada en 48 horas, con el tema y los documentos entregados.',
     postType: 'policy',
     bskyTags: ['policy', 'cabildeo', 'transparencia'],
-    paraFlairs: ['||#RestringirPublicidadElectoral', '|#LimitarDonacionesEmpresariales'],
+    paraFlairs: [
+      '||#RestringirPublicidadElectoral',
+      '|#LimitarDonacionesEmpresariales',
+    ],
     stance: 0.3,
     reach: 0.8,
   },
@@ -322,24 +325,26 @@ export const PARTY_LEAN: Record<string, number> = {
 }
 
 /** Stance of the older demo policies, by their second tag. */
-export const LEGACY_POLICY_STANCE: Record<string, { stance: number; reach: number }> =
-  {
-    energia: { stance: 0.5, reach: 0.8 },
-    movilidad: { stance: 0.6, reach: 0.75 },
-    anticorrupcion: { stance: 0.3, reach: 0.9 },
-    tren: { stance: 0.2, reach: 0.7 },
-    elecciones: { stance: 0.4, reach: 0.65 },
-    clima: { stance: 0.8, reach: 0.8 },
-    biodiversidad: { stance: 0.7, reach: 0.55 },
-    presupuesto: { stance: 0.5, reach: 0.7 },
-    transparencia: { stance: 0.4, reach: 0.85 },
-    transicion: { stance: 0.6, reach: 0.6 },
-    datos: { stance: 0.4, reach: 0.5 },
-    fiscalia: { stance: 0.3, reach: 0.85 },
-    paridad: { stance: 0.9, reach: 0.9 },
-    aborto: { stance: 0.9, reach: 0.95 },
-    arte: { stance: 0.7, reach: 0.6 },
-  }
+export const LEGACY_POLICY_STANCE: Record<
+  string,
+  { stance: number; reach: number }
+> = {
+  energia: { stance: 0.5, reach: 0.8 },
+  movilidad: { stance: 0.6, reach: 0.75 },
+  anticorrupcion: { stance: 0.3, reach: 0.9 },
+  tren: { stance: 0.2, reach: 0.7 },
+  elecciones: { stance: 0.4, reach: 0.65 },
+  clima: { stance: 0.8, reach: 0.8 },
+  biodiversidad: { stance: 0.7, reach: 0.55 },
+  presupuesto: { stance: 0.5, reach: 0.7 },
+  transparencia: { stance: 0.4, reach: 0.85 },
+  transicion: { stance: 0.6, reach: 0.6 },
+  datos: { stance: 0.4, reach: 0.5 },
+  fiscalia: { stance: 0.3, reach: 0.85 },
+  paridad: { stance: 0.9, reach: 0.9 },
+  aborto: { stance: 0.9, reach: 0.95 },
+  arte: { stance: 0.7, reach: 0.6 },
+}
 
 /** A small stable hash in [0, 1), so a seed run always casts the same votes. */
 export const stableUnit = (...parts: string[]) => {
@@ -369,7 +374,8 @@ export const planPolicyVotes = (
   const plan: PolicyVotePlan[] = []
   policies.forEach((policy, index) => {
     for (const voter of voters) {
-      if (stableUnit('turnout', voter.short, policy.key) > policy.reach) continue
+      if (stableUnit('turnout', voter.short, policy.key) > policy.reach)
+        continue
       const lean = PARTY_LEAN[voter.party] ?? 0
       const nudge = Math.round(
         (stableUnit('nudge', voter.short, policy.key) - 0.5) * 2,
@@ -380,8 +386,13 @@ export const planPolicyVotes = (
           : 0
       const signal = Math.max(
         -3,
-        Math.min(3, Math.round((policy.stance * lean + personal * 0.5) * 4) + nudge),
+        Math.min(
+          3,
+          Math.round((policy.stance * lean + personal * 0.5) * 4) + nudge,
+        ),
       )
+      // No neutral ballot (OD-10 §7.5): a voter who lands on 0 abstains.
+      if (signal === 0) continue
       plan.push({ voter: voter.short, policy: index, signal })
     }
   })

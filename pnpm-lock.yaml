@@ -378,9 +378,6 @@ importers:
       '@atproto/identity':
         specifier: workspace:^
         version: link:../identity
-      '@atproto/lex':
-        specifier: workspace:^
-        version: link:../lex/lex
       '@atproto/lex-client':
         specifier: workspace:^
         version: link:../lex/lex-client
@@ -393,9 +390,6 @@ importers:
       '@atproto/lex-schema':
         specifier: workspace:^
         version: link:../lex/lex-schema
-      '@atproto/lexicon':
-        specifier: workspace:^
-        version: link:../lexicon
       '@atproto/repo':
         specifier: workspace:^
         version: link:../repo
@@ -529,6 +523,12 @@ importers:
       '@atproto/bsync':
         specifier: workspace:^
         version: link:../bsync
+      '@atproto/lex':
+        specifier: workspace:^
+        version: link:../lex/lex
+      '@atproto/lexicon':
+        specifier: workspace:^
+        version: link:../lexicon
       '@atproto/pds':
         specifier: workspace:^
         version: link:../pds
@@ -729,9 +729,6 @@ importers:
       '@atproto/identity':
         specifier: workspace:^
         version: link:../identity
-      '@atproto/lex':
-        specifier: workspace:^
-        version: link:../lex/lex
       '@atproto/lex-client':
         specifier: workspace:^
         version: link:../lex/lex-client
@@ -2518,9 +2515,15 @@ importers:
         specifier: ^8.19.0
         version: 8.21.1
     devDependencies:
+      '@atproto/common':
+        specifier: workspace:^
+        version: link:../common
       '@types/ws':
         specifier: ^8.5.4
         version: 8.5.4
+      get-port:
+        specifier: ^6.1.2
+        version: 6.1.2
       http-terminator:
         specifier: ^3.2.0
         version: 3.2.0

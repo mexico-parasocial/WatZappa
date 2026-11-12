@@ -20,12 +20,12 @@
           "updatedAt"
         ],
         "properties": {
-          "communityUri": {"type": "string", "format": "at-uri"},
-          "title": {"type": "string", "maxLength": 300},
-          "description": {"type": "string", "maxLength": 5000},
-          "startsAt": {"type": "string", "format": "datetime"},
-          "endsAt": {"type": "string", "format": "datetime"},
-          "location": {"type": "string", "maxLength": 300},
+          "communityUri": { "type": "string", "format": "at-uri" },
+          "title": { "type": "string", "maxLength": 300 },
+          "description": { "type": "string", "maxLength": 5000 },
+          "startsAt": { "type": "string", "format": "datetime" },
+          "endsAt": { "type": "string", "format": "datetime" },
+          "location": { "type": "string", "maxLength": 300 },
           "status": {
             "type": "string",
             "maxLength": 32,
@@ -35,15 +35,15 @@
             "type": "union",
             "refs": ["#sale", "#raffle", "#fundraiser"]
           },
-          "financialPlan": {"type": "ref", "ref": "#financialPlan"},
+          "financialPlan": { "type": "ref", "ref": "#financialPlan" },
           "links": {
             "type": "array",
-            "items": {"type": "string", "format": "uri"},
+            "items": { "type": "string", "format": "uri" },
             "maxLength": 20
           },
-          "createdBy": {"type": "string", "format": "did"},
-          "createdAt": {"type": "string", "format": "datetime"},
-          "updatedAt": {"type": "string", "format": "datetime"}
+          "createdBy": { "type": "string", "format": "did" },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
         }
       }
     },
@@ -55,7 +55,7 @@
           "type": "array",
           "minLength": 1,
           "maxLength": 50,
-          "items": {"type": "ref", "ref": "#saleItem"}
+          "items": { "type": "ref", "ref": "#saleItem" }
         },
         "channel": {
           "type": "string",
@@ -68,9 +68,9 @@
       "type": "object",
       "required": ["name", "unitPriceMinor"],
       "properties": {
-        "name": {"type": "string", "maxLength": 120},
-        "unitPriceMinor": {"type": "integer", "minimum": 0},
-        "quantityAvailable": {"type": "integer", "minimum": 0}
+        "name": { "type": "string", "maxLength": 120 },
+        "unitPriceMinor": { "type": "integer", "minimum": 0 },
+        "quantityAvailable": { "type": "integer", "minimum": 0 }
       }
     },
     "raffle": {
@@ -83,16 +83,16 @@
         "drawMethod"
       ],
       "properties": {
-        "ticketPriceMinor": {"type": "integer", "minimum": 0},
-        "ticketsAvailable": {"type": "integer", "minimum": 1},
+        "ticketPriceMinor": { "type": "integer", "minimum": 0 },
+        "ticketsAvailable": { "type": "integer", "minimum": 1 },
         "prizes": {
           "type": "array",
           "minLength": 1,
           "maxLength": 20,
-          "items": {"type": "ref", "ref": "#prize"}
+          "items": { "type": "ref", "ref": "#prize" }
         },
-        "drawAt": {"type": "string", "format": "datetime"},
-        "drawMethod": {"type": "string", "maxLength": 1000},
+        "drawAt": { "type": "string", "format": "datetime" },
+        "drawMethod": { "type": "string", "maxLength": 1000 },
         "permitReference": {
           "type": "string",
           "maxLength": 300,
@@ -101,7 +101,7 @@
         "winningTickets": {
           "type": "array",
           "description": "Published after the draw; the only field of `details` excluded from the terms digest.",
-          "items": {"type": "string", "maxLength": 100},
+          "items": { "type": "string", "maxLength": 100 },
           "maxLength": 20
         }
       }
@@ -110,21 +110,21 @@
       "type": "object",
       "required": ["description"],
       "properties": {
-        "description": {"type": "string", "maxLength": 300},
-        "estimatedValueMinor": {"type": "integer", "minimum": 0}
+        "description": { "type": "string", "maxLength": 300 },
+        "estimatedValueMinor": { "type": "integer", "minimum": 0 }
       }
     },
     "fundraiser": {
       "type": "object",
       "required": ["purpose"],
       "properties": {
-        "purpose": {"type": "string", "maxLength": 1000},
-        "beneficiary": {"type": "string", "maxLength": 300},
-        "suggestedDonationMinor": {"type": "integer", "minimum": 0},
+        "purpose": { "type": "string", "maxLength": 1000 },
+        "beneficiary": { "type": "string", "maxLength": 300 },
+        "suggestedDonationMinor": { "type": "integer", "minimum": 0 },
         "donationChannels": {
           "type": "array",
           "description": "Public ways to give, e.g. the organization's account or a collection box location.",
-          "items": {"type": "string", "maxLength": 300},
+          "items": { "type": "string", "maxLength": 300 },
           "maxLength": 10
         }
       }
@@ -134,22 +134,22 @@
       "description": "Where the money goes, committed before any money moves. Amounts are integers in the currency's minor unit (e.g. centavos).",
       "required": ["currency", "allocationBase", "allocations", "committedAt"],
       "properties": {
-        "currency": {"type": "string", "minLength": 3, "maxLength": 3},
+        "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
         "allocationBase": {
           "type": "string",
           "maxLength": 32,
           "description": "Whether allocation shares apply to net proceeds (income minus expenses) or to gross income.",
           "knownValues": ["net_proceeds", "gross_income"]
         },
-        "fundingGoalMinor": {"type": "integer", "minimum": 0},
-        "expenseBudgetMinor": {"type": "integer", "minimum": 0},
+        "fundingGoalMinor": { "type": "integer", "minimum": 0 },
+        "expenseBudgetMinor": { "type": "integer", "minimum": 0 },
         "allocations": {
           "type": "array",
           "minLength": 1,
           "maxLength": 10,
-          "items": {"type": "ref", "ref": "#allocation"}
+          "items": { "type": "ref", "ref": "#allocation" }
         },
-        "committedAt": {"type": "string", "format": "datetime"}
+        "committedAt": { "type": "string", "format": "datetime" }
       }
     },
     "allocation": {
@@ -167,7 +167,7 @@
             "reinvestment"
           ]
         },
-        "label": {"type": "string", "maxLength": 120},
+        "label": { "type": "string", "maxLength": 120 },
         "shareBps": {
           "type": "integer",
           "minimum": 1,

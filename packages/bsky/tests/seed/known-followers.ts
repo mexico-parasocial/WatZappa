@@ -1,5 +1,9 @@
 // @ts-nocheck
-import { SeedClient, TestNetwork, TestNetworkNoAppView } from '@atproto/dev-env'
+import type {
+  SeedClient,
+  TestNetwork,
+  TestNetworkNoAppView,
+} from '@atproto/dev-env'
 import type { HandleString } from '@atproto/syntax'
 
 export type User = {

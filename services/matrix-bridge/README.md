@@ -1,141 +1,110 @@
 # Matrix↔PARA Community Bridge
 
-The native-client contract (sessions, SSE event catalog, push payloads,
-authorization semantics) lives in [docs/CLIENT_INTEGRATION.md](./docs/CLIENT_INTEGRATION.md).
-Synchronizes PARA community memberships with Matrix spaces. **PARA-only — federation disabled.**
+Projects verified PARA community access onto Matrix. Synapse stores chat history;
+clients own their Matrix sessions and encryption keys. The bridge handles identity
+proofs, room provisioning, membership and role projection, devices, direct-message
+requests, moderation, unread state and chat notifications.
 
-The bridge uses [`matrix-bot-sdk`](https://github.com/turt2live/matrix-bot-sdk) for Matrix client and supported admin operations; Synapse-specific admin endpoints not covered by the SDK are called directly.
+## Authority and access
 
-## How It Works
+The bridge reads membership and member/moderator/owner roles from the configured
+AppView using its dedicated authority service credential. It never grants an
+office from a self-authored membership record. Clients authenticate to the bridge
+with M8, prove possession of their chat identity key, authorize with MAS/OIDC and
+attest their actual Matrix device before joining community rooms.
 
-1. **Consumes** `com.atproto.sync.subscribeRepos` firehose
-2. **Filters** `com.para.community.board` (create) and `com.para.community.membership` records
-3. **Creates** a Matrix space for each new PARA community
-4. **Records governance state** (membership, roles, chambers via verifiable sortition) — and pushes no one into any room
-5. **Membership is pull-based** (CD-M6): a member joins by presenting an M8 session plus a CD-M4 proof of possession of the identity key behind their MXID (`POST /api/community-join`); the bridge derives the MXID, ensures the account and force-joins it with the right power levels (owners → 100, moderators → 50, members → 0)
-6. **Revocation and role changes** project through minted device sessions: removal deactivates the DID's sessions and bans those accounts; a role update re-writes power levels immediately (the handover protocol); every verified interaction settles role drift and offline removals (`reconcileMemberAccess`)
-7. **Room membership is a lease** (`community_membership_lease`, no DID column): renewed by any verified interaction, swept hourly — accounts past the TTL (`BRIDGE_MEMBERSHIP_LEASE_TTL_MS`, default 30 days) are kicked from the community's rooms, which is what reaches removed members who never interact again
-8. **Chat client** — the PARA app hosts a self-contained WebView shell that loads a pinned, project-bundled copy of `matrix-js-sdk` from `PARA/assets/chat/`
+`MatrixProjectionPort` applies verified access to Matrix. Owners and moderators
+can review every community room; ordinary members reach the main room. Chamber
+seats need an externally verified assignment contract before they can grant access.
+The bridge has no local allocation, randomness, assembly selection or seat lookup.
+Existing chamber rooms remain tracked for moderation, revocation and read state.
 
-## Security Model (PARA-Only)
+Room leases expire after 30 days without a verified interaction by default. Native
+clients must rejoin automatically when they return. Authority refresh runs before
+serving, during protected operations and periodically. See
+[CLIENT_INTEGRATION.md](docs/CLIENT_INTEGRATION.md) for the client contract.
 
-> Several claims in this section were inaccurate before the Matrix v2 Phase 1
-> pass. They have been corrected against the source. See
-> [docs/MATRIX_V2.md](../../docs/MATRIX_V2.md) §2 for the findings, and §3 for
-> what is a hard guarantee versus a best-effort control.
+## Responsibilities
 
-- **Federation is disabled** in Synapse (`federation_domain_whitelist: []`),
-  set in `deploy/matrix/hardening.yaml`. **If you deployed before that file
-  existed, verify this on your running server** — the v1 setup wrote the
-  setting to a file Synapse never read, so federation was open (MATRIX_V2 F1).
-- **No public room directory** — rooms are not discoverable. Same caveat as above.
-- **Registration is closed** — accounts are provisioned only by the bridge via Admin API
-- **No guest access** — all users must be authenticated PARA members
-- **All client API endpoints require M8 JWTs.** Every `/api` handler calls
-  `authenticateM8` (closed by MATRIX_V2 F6 and F8). Note this is
-  authentication, not authorization: except for `/api/space-for-community`,
-  endpoints do not check that the caller belongs to the community they are
-  asking about — see MATRIX_V2 F9.
-- **E2EE is disabled** (`MATRIX_ENABLE_ENCRYPTION=false`). Rooms are
-  transport-encrypted via HTTPS and run on a PARA-only homeserver with
-  federation disabled, **so the homeserver operator can read message content.**
-  Full Matrix E2EE requires a Rust/WASM crypto stack, which is not supported
-  inside a React Native WebView (see
-  [matrix-js-sdk#4150](https://github.com/matrix-org/matrix-js-sdk/issues/4150)).
-  Do not enable `MATRIX_ENABLE_ENCRYPTION` until the app uses a native Matrix
-  client or a WebView engine with working WASM crypto and key backup.
-- **Synapse is the only chat _history_ store** — the timeline sync persists
-  event metadata only (`content: ''`). Two other paths do store user text in
-  the bridge database: moderation report previews (200 chars) and
-  user-submitted deliberation cards (MATRIX_V2 F4).
-- **Push notifications are generic** — enforced server-side by
-  `push.include_content: false`; no message body or sender leaves the homeserver.
-- **`/api/summarize` sends deliberation text to OpenAI** when `OPENAI_API_KEY`
-  is set (card titles plus 150 chars of content, up to 100 cards). Deploy
-  without that key unless the decision in MATRIX_V2 OD-3 says otherwise.
-- Firehose commits are consumed unauthenticated (acceptable for own PDS; enable sig verification if consuming from public relay)
+- Consume community, membership, authority and constitution records from the
+  configured AT Protocol stream, with a source-bound persisted cursor.
+- Provision community spaces and configured child rooms, with retryable jobs.
+- Derive MXIDs from proven identity keys; register/revoke device attestations.
+- Apply role changes, removals, room leases, mutes and bans to Matrix.
+- Accept direct-message requests and disclose the requester's MXID once on consent.
+- Ingest event metadata through appservice transactions and reconciliation polling.
+- Serve room lists, unread counts, read markers and durable SSE updates.
+- Manage reports and sanctions; expose moderation risk badges only to the member
+  and authorized moderators. Member lists come from verified membership state.
+- Deliver Expo chat notifications and check provider receipts.
+- Store and serve a community's constitution as read-only context.
 
-## DIDs ↔ MXIDs
+Civic content and institutional administration belong to their own services.
+The bridge accepts their effects only through verified authority, never a
+client-submitted role or decision. It does not provide civic or AI APIs.
 
-> **Being replaced in Matrix v2.** This scheme makes the MXID a reversible
-> encoding of the DID, so any room's member list is a DID↔identity linkage
-> table without needing access to this database at all. v2 derives the
-> localpart from the identity public key instead, so no mapping exists to
-> leak — see [docs/MATRIX_V2.md](../../docs/MATRIX_V2.md) §4 and CD-M1, with the
-> reference implementation in `iM8/src/services/matrixIdentity.ts`.
+## Configuration
 
-- `did:plc:abc123` → `@did-plc-abc123:matrix.para.social`
-- Users are auto-created via Synapse Admin API if they don't exist
-- Passwords are generated randomly and stored in SQLite (for future Element Web login)
+| Variable                                                                                           | Purpose                                                                                               |
+| -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `MATRIX_CHAT_ENABLED`                                                                              | Defaults to `true`; `false` disables homeserver operations and chat routes.                           |
+| `PDS_FIREHOSE_URL`, `BRIDGE_PDS_SOURCE_ID`                                                         | Stream origin and data generation; use a relay with safe integer sequences when necessary.            |
+| `BRIDGE_AUTHORITY_APPVIEW_URL`, `PARA_AUTHORITY_SERVICE_TOKEN`                                     | Verified authority origin and dedicated 32–512 character read credential.                             |
+| `M8_BASE_URL`                                                                                      | M8 session verification endpoint base.                                                                |
+| `MATRIX_HOMESERVER_URL`, `MATRIX_PUBLIC_HOMESERVER_URL`                                            | Internal and client-reachable homeserver URLs.                                                        |
+| `MATRIX_SERVER_NAME`                                                                               | Homeserver `server_name`, used to derive MXIDs.                                                       |
+| `MATRIX_ADMIN_TOKEN`, `MATRIX_HS_TOKEN`                                                            | Separate administrator and incoming appservice credentials.                                           |
+| `MATRIX_MAS_ADMIN_URL`, `MATRIX_MAS_TOKEN_URL`, `MATRIX_MAS_CLIENT_ID`, `MATRIX_MAS_CLIENT_SECRET` | Private MAS administration for device revocation.                                                     |
+| `MATRIX_ALLOW_APPSERVICE_LOGIN`, `MATRIX_APPSERVICE_TOKEN`                                         | Explicit legacy-only appservice sessions; never substitute an admin token.                            |
+| `MATRIX_ENABLE_ENCRYPTION`                                                                         | Encryption for newly created rooms; defaults to `false`. Requires supported clients and key recovery. |
+| `BRIDGE_MEMBERSHIP_LEASE_TTL_MS`, `BRIDGE_SYNC_FALLBACK_MS`                                        | Lease expiry and reconciliation polling intervals.                                                    |
+| `DATABASE_URL` / `BRIDGE_DB_PATH`                                                                  | PostgreSQL or SQLite storage.                                                                         |
+| `PUSH_GATEWAY_URL`                                                                                 | Matrix push gateway address.                                                                          |
+| `CHAT_OPS_PORT` and `CHAT_OPS_*`                                                                   | Opt-in private, authenticated, audited operations listener.                                           |
+| `PORT`, `BRIDGE_LOG_LEVEL`                                                                         | Public API listener and log level.                                                                    |
+| `BRIDGE_CORS_ORIGINS`                                                                              | Exact web origins allowed to call the API from a browser, comma-separated; unset means no CORS.       |
 
-## Environment Variables
+## Storage and deployment
 
-| Variable                                                                                           | Default                                                      | Description                                                                                                                             |
-| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `PDS_FIREHOSE_URL`                                                                                 | `wss://pds.para.social/xrpc/com.atproto.sync.subscribeRepos` | AT Protocol firehose                                                                                                                    |
-| `MATRIX_HOMESERVER_URL`                                                                            | `http://synapse:8008`                                        | Synapse Admin API base URL                                                                                                              |
-| `MATRIX_CHAT_ENABLED`                                                                              | `true`                                                       | `false` runs governance only, with no homeserver: Matrix settings become optional and chat routes answer 503 `CHAT_DISABLED`            |
-| `MATRIX_ADMIN_TOKEN`                                                                               | _(required with chat on)_                                    | Synapse admin access token                                                                                                              |
-| `MATRIX_APPSERVICE_TOKEN`                                                                          | optional (falls back to admin token)                         | Appservice token enabling device-bound logins (`m.login.application_service`); requires the matching appservice registration on Synapse |
-| `MATRIX_MAS_ADMIN_URL`, `MATRIX_MAS_TOKEN_URL`, `MATRIX_MAS_CLIENT_ID`, `MATRIX_MAS_CLIENT_SECRET` | _(required to revoke devices with MAS)_                      | Confidential MAS admin client; revocation finishes the device's MAS sessions before deleting it in Synapse                              |
-| `MATRIX_ALLOW_APPSERVICE_LOGIN`                                                                    | `false`                                                      | Legacy standalone Synapse without MAS: the bridge may create accounts and mint sessions/pushers                                         |
-| `CHAT_OPS_PORT` (+ `CHAT_OPS_*`)                                                                   | unset                                                        | Opt-in private chat operations listener (chat on only); see `.env.example`                                                              |
-| `MATRIX_ENABLE_ENCRYPTION`                                                                         | `false`                                                      | Enable Matrix E2EE (`m.megolm.v1.aes-sha2`) — requires working client crypto                                                            |
-| `M8_BASE_URL`                                                                                      | `http://localhost:8787/v1`                                   | M8 Identity Manager API                                                                                                                 |
-| `BRIDGE_DB_PATH`                                                                                   | `/data/bridge.db`                                            | SQLite database path                                                                                                                    |
-| `BRIDGE_LOG_LEVEL`                                                                                 | `info`                                                       | Log level                                                                                                                               |
-| `PORT`                                                                                             | `3001`                                                       | Health check HTTP port                                                                                                                  |
+The async `IBridgeDatabase` contract has SQLite and PostgreSQL implementations.
+Fresh databases initialize chat-owned tables only. Existing civic tables remain
+untouched for a separately planned export/migration; the bridge does not read,
+write or copy them in its SQLite-to-PostgreSQL migration. Existing activity badges
+are excluded from responses, and recalculation replaces them with moderation
+context. No activity counters or engagement tiers are maintained.
 
-## Endpoints
+Messages are sent directly to Matrix. The bridge persists metadata, not message
+bodies or encryption keys. Device attestations retain operational DID/MXID
+attribution for moderation and revocation; they are not a public directory.
+Unencrypted messages remain readable by the homeserver operator.
 
-- `GET /healthz` — 200 if healthy, 503 if too many failed syncs
-- `GET /metrics` — Prometheus metrics (`para_matrix_kicks_total`, `para_matrix_spaces_created_total`, `para_matrix_sync_latency_seconds`, `para_matrix_firehose_lag_seconds`)
-- `POST /api/matrix-challenge` — requires M8 bearer token; issues the one-time challenge (TTL 5 min, session-bound) that every proof of possession signs
-- `POST /api/matrix-identity` — requires M8 bearer token + CD-M4 `SignedAssertion` (audience `para-matrix-bridge/identity.v1`); derives the caller's MXID from the presented key, ensures the account exists, returns `{userId, homeServer, loginFlow}`; mints nothing
-- `POST /api/community-join` — requires M8 bearer token + active community membership + `SignedAssertion` (audience `para-matrix-bridge/join.v1`); the verified join: force-joins the derived MXID into the community's rooms with governance power levels
-- `POST /api/matrix-attest` — requires M8 bearer token + `SignedAssertion` (audience `para-matrix-bridge/attest.v1`) + `{deviceId}`; registers a client-managed (MAS-native) Matrix session against the derived MXID so attribution, moderation, revocation and role projection reach it; idempotent per device
-- `POST /api/matrix-token` — requires M8 bearer token + `SignedAssertion` (audience `para-matrix-bridge/session.v1`); returns a **device-bound** Matrix session for the derived MXID (accepts optional `{ friendlyName, deviceId }`; registers a real Synapse device via appservice login when `MATRIX_APPSERVICE_TOKEN` is set)
-- `GET /api/matrix-identity` — 410 with a migration pointer (the v1 mapping read is gone)
-- `GET /api/devices` — the caller's device sessions, including revoked ones
-- `POST /api/devices/revoke` — body `{ sessionId }`; deactivates the device on the homeserver and marks the session revoked
-- `GET /api/events` — Server-Sent Events stream for the caller: governance/community events with replay from `Last-Event-ID` inside a 7-day retention window, per-DID audiences, dedup by `id` (delivery is at-least-once), `resync_required` when the cursor predates retention
-- `POST /api/push-token` — requires M8 bearer token; registers push token for the authenticated session DID
-- `GET /api/space-for-community?uri=...` — requires M8 bearer token and active community membership
-- `GET /api/rooms` — requires M8 bearer token; lists the authenticated user's active Matrix rooms with unread counts
-- `GET /api/unread` — requires M8 bearer token; returns total unread counts for the authenticated user's active Matrix rooms
+Synapse containment is configured in `deploy/matrix/hardening.yaml`, including
+closed federation and registration, restricted discovery and content-free push.
+Verify the effective deployed configuration and actual room protection.
 
-## Cursor Persistence
-
-The bridge saves the firehose sequence cursor to SQLite every 30 seconds and on graceful shutdown. On restart, it resumes from the last cursor to avoid reprocessing old events.
-
-## Retry Worker
-
-Failed syncs (e.g., Matrix API timeout during invite) are automatically retried every 60 seconds with exponential backoff. Max 5 retries per event. Metrics track retry success/failure rates.
-
-## Backfill
-
-For existing communities created before the bridge was deployed:
-
-```bash
-# Query your AppView for all communities + memberships, then sync
-pnpm run backfill --pds https://pds.para.social
-```
-
-> **Note:** The backfill script is a skeleton. You must adapt it to query your AppView's database or custom endpoint for all `com.para.community.board` and `com.para.community.membership` records.
-
-## Architecture Notes
-
-- **Database backend:** `src/db/index.ts` selects PostgreSQL when `DATABASE_URL` is set, otherwise SQLite. All bridge code uses the async `IBridgeDatabase` interface so either backend is interchangeable.
-- **Layering (2026-08-22 decomposition):** the bridge is organized by domain. `src/db/` splits the store interface (`stores/`), SQLite and PostgreSQL implementations into nine areas; `src/routes/` holds one file per route domain behind `routes/router.ts`; `src/sortition-runs.ts` is the assembly sortition engine; `src/push.ts` owns Expo delivery; `src/matrix-projection.ts` is the `MatrixProjectionPort` through which the governance side (`src/firehose.ts`) expresses room effects in DIDs — MXIDs never leave the projection. `index.ts` is wiring only.
-- **Governance logic:** the full two-service split (para-governance / para-matrix-provisioner) remains the CD-M2 target, blocked on OD-2/OD-6; the port seam above is the migration step that was unblocked.
-- **E2EE limitation:** Full Matrix E2EE is not supported in a React Native WebView because `matrix-js-sdk`'s Rust crypto requires WASM (see [matrix-js-sdk#4150](https://github.com/matrix-org/matrix-js-sdk/issues/4150)). E2EE remains opt-in until a native Matrix client or WASM-capable runtime is adopted.
+Start the local stack from the repo root with `make matrix-up`. Backups and restore
+instructions are in [MATRIX_BACKUP.md](../../docs/MATRIX_BACKUP.md). The manual
+`backfill` helper requires operator review and is not a replacement for verified
+authority reconciliation.
 
 ## Development
 
+Run from this package with the repository's Node 22:
+
 ```bash
-npm install
-npm run dev        # tsx watch
-npm run build      # tsc
-npm start          # node dist/index.js
-npm run backfill   # one-time backfill script
+pnpm dev
+pnpm build
+pnpm typecheck
+pnpm test --maxWorkers=1
+pnpm test:postgres --maxWorkers=1
+pnpm smoke:appservice
 ```
+
+The PostgreSQL and appservice scripts create isolated disposable infrastructure.
+
+Explicit device revocations persist before upstream calls and survive restarts.
+HTTP 202 means pending, not revoked; device listings expose `revocationPending`.
+Community removal bans only that community's rooms, preserving devices, other
+communities and DMs. Access retries resolve current verified authority again.
+Moderation clients receive explicit verified `roles` rather than deriving power
+from activity counters or badge labels.

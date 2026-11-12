@@ -7,11 +7,7 @@
       "description": "Declares that this account communicates on an external chat provider under a specific Matrix identity. Written to the PARA account's repo; the linked account's repo should carry the reciprocal record (com.para.identity.linkedChat with this DID as paraDid) for the link to verify. The bridge never relays sessions between providers \u2014 this record proves identity linkage only.",
       "record": {
         "type": "object",
-        "required": [
-          "provider",
-          "matrixUserId",
-          "linkedAt"
-        ],
+        "required": ["provider", "matrixUserId", "linkedAt"],
         "properties": {
           "provider": {
             "type": "string",

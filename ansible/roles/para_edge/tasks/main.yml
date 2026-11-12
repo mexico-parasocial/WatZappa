@@ -12,7 +12,7 @@
 
 - name: Create the shared edge network
   community.docker.docker_network:
-    name: "{{ edge_network_name }}"
+    name: '{{ edge_network_name }}'
     driver: bridge
     state: present
 

@@ -2,11 +2,13 @@
 title: com.para.civic.vote
 description: Reference for the com.para.civic.vote lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -17,23 +19,24 @@ A cabildeo ballot. PUBLIC AND ATTRIBUTABLE: the record is written to the voter's
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `subject` | `string` | ❌  | The proposal, policy, matter, or cabildeo record being voted on. | Format: `at-uri` |
-| `subjectType` | `string` | ❌  | Semantic type for clients and indexers. Only "cabildeo" is accepted on write; the other values are carried by records written before OD-7 §5c. | Known Values: `cabildeo`, `policy`, `matter`, `governance` |
-| `cabildeo` | `string` | ❌  |  | Format: `at-uri` |
-| `selectedOption` | `integer` | ❌  |  | Min: 0 |
-| `signal` | `integer` | ❌  | NOT ACCEPTED ON WRITE (OD-7 §5c). Weighted consensus signal for policy-style votes: -3 strong opposition, 0 neutral/abstain, +3 strong support. Publishing it here would put the voter's -3..+3 position in their own public repo, which §5b rules out until the replacement ballot exists. | Min: -3<br/>Max: 3 |
-| `reason` | `string` | ❌  | Optional voter rationale for the signal. | Max Length: 1000 |
-| `isDirect` | `boolean` | ✅  |  |  |
-| `delegatedFrom` | Array of `string` | ❌  | NOT ACCEPTED ON WRITE (OD-7 §5c). Publishing it here would put the delegation graph in the delegate's own public repo, which §5b names as more re-identifying than the ballots themselves. | Max Items: 10000 |
-| `voteNullifier` | `string` | ❌  | One-person-one-vote nullifier for this subject, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a. | Max Length: 128 |
-| `eligibilityProofRef` | `string` | ❌  | Opaque reference to the m8 eligibility/nullifier proof used to cast this vote. | Max Length: 512 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name                  | Type              | Req'd | Description                                                                                                                                                                                                                                                                                                                                                                                                                                 | Constraints                                                |
+| --------------------- | ----------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `subject`             | `string`          | ❌    | The proposal, policy, matter, or cabildeo record being voted on.                                                                                                                                                                                                                                                                                                                                                                            | Format: `at-uri`                                           |
+| `subjectType`         | `string`          | ❌    | Semantic type for clients and indexers. Only "cabildeo" is accepted on write; the other values are carried by records written before OD-7 §5c.                                                                                                                                                                                                                                                                                              | Known Values: `cabildeo`, `policy`, `matter`, `governance` |
+| `cabildeo`            | `string`          | ❌    |                                                                                                                                                                                                                                                                                                                                                                                                                                             | Format: `at-uri`                                           |
+| `selectedOption`      | `integer`         | ❌    |                                                                                                                                                                                                                                                                                                                                                                                                                                             | Min: 0                                                     |
+| `signal`              | `integer`         | ❌    | NOT ACCEPTED ON WRITE (OD-7 §5c). Weighted consensus signal for policy-style votes: -3 strong opposition, 0 neutral/abstain, +3 strong support. Publishing it here would put the voter's -3..+3 position in their own public repo, which §5b rules out until the replacement ballot exists.                                                                                                                                                 | Min: -3<br/>Max: 3                                         |
+| `reason`              | `string`          | ❌    | Optional voter rationale for the signal.                                                                                                                                                                                                                                                                                                                                                                                                    | Max Length: 1000                                           |
+| `isDirect`            | `boolean`         | ✅    |                                                                                                                                                                                                                                                                                                                                                                                                                                             |                                                            |
+| `delegatedFrom`       | Array of `string` | ❌    | NOT ACCEPTED ON WRITE (OD-7 §5c). Publishing it here would put the delegation graph in the delegate's own public repo, which §5b names as more re-identifying than the ballots themselves.                                                                                                                                                                                                                                                  | Max Items: 10000                                           |
+| `voteNullifier`       | `string`          | ❌    | One-person-one-vote nullifier for this subject, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a. | Max Length: 128                                            |
+| `eligibilityProofRef` | `string`          | ❌    | Opaque reference to the m8 eligibility/nullifier proof used to cast this vote.                                                                                                                                                                                                                                                                                                                                                              | Max Length: 512                                            |
+| `createdAt`           | `string`          | ✅    |                                                                                                                                                                                                                                                                                                                                                                                                                                             | Format: `datetime`                                         |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -45,10 +48,7 @@ A cabildeo ballot. PUBLIC AND ATTRIBUTABLE: the record is written to the voter's
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "isDirect",
-          "createdAt"
-        ],
+        "required": ["isDirect", "createdAt"],
         "properties": {
           "subject": {
             "type": "string",
@@ -57,12 +57,7 @@ A cabildeo ballot. PUBLIC AND ATTRIBUTABLE: the record is written to the voter's
           },
           "subjectType": {
             "type": "string",
-            "knownValues": [
-              "cabildeo",
-              "policy",
-              "matter",
-              "governance"
-            ],
+            "knownValues": ["cabildeo", "policy", "matter", "governance"],
             "description": "Semantic type for clients and indexers. Only \"cabildeo\" is accepted on write; the other values are carried by records written before OD-7 §5c."
           },
           "cabildeo": {

@@ -2,11 +2,13 @@
 title: com.para.community.deliberationVote
 description: Reference for the com.para.community.deliberationVote lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -17,18 +19,19 @@ Whether a person agrees with one argument in a debate. Deliberately unweighted: 
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `deliberation` | `string` | ✅  | The argument being weighed. | Format: `at-uri` |
-| `voter` | `string` | ✅  |  | Format: `did` |
-| `direction` | `string` | ✅  | Which way the voter leans on this argument. `pass` records having read it without taking a side. | Known Values: `agree`, `disagree`, `pass` |
-| `voteNullifier` | `string` | ❌  | One-person-one-argument nullifier issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier. This record is attributable to its author anyway, by design. See OD-7 §5a. | Max Length: 128 |
-| `eligibilityProofRef` | `string` | ❌  | Opaque reference to the m8 eligibility/nullifier proof used. | Max Length: 512 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name                  | Type     | Req'd | Description                                                                                                                                                                                                                                                       | Constraints                               |
+| --------------------- | -------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `deliberation`        | `string` | ✅    | The argument being weighed.                                                                                                                                                                                                                                       | Format: `at-uri`                          |
+| `voter`               | `string` | ✅    |                                                                                                                                                                                                                                                                   | Format: `did`                             |
+| `direction`           | `string` | ✅    | Which way the voter leans on this argument. `pass` records having read it without taking a side.                                                                                                                                                                  | Known Values: `agree`, `disagree`, `pass` |
+| `voteNullifier`       | `string` | ❌    | One-person-one-argument nullifier issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier. This record is attributable to its author anyway, by design. See OD-7 §5a. | Max Length: 128                           |
+| `eligibilityProofRef` | `string` | ❌    | Opaque reference to the m8 eligibility/nullifier proof used.                                                                                                                                                                                                      | Max Length: 512                           |
+| `createdAt`           | `string` | ✅    |                                                                                                                                                                                                                                                                   | Format: `datetime`                        |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -40,12 +43,7 @@ Whether a person agrees with one argument in a debate. Deliberately unweighted: 
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "deliberation",
-          "voter",
-          "direction",
-          "createdAt"
-        ],
+        "required": ["deliberation", "voter", "direction", "createdAt"],
         "properties": {
           "deliberation": {
             "type": "string",
@@ -58,11 +56,7 @@ Whether a person agrees with one argument in a debate. Deliberately unweighted: 
           },
           "direction": {
             "type": "string",
-            "knownValues": [
-              "agree",
-              "disagree",
-              "pass"
-            ],
+            "knownValues": ["agree", "disagree", "pass"],
             "description": "Which way the voter leans on this argument. `pass` records having read it without taking a side."
           },
           "voteNullifier": {

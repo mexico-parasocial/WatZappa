@@ -7,12 +7,7 @@
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "contribution",
-          "voterDid",
-          "vote",
-          "createdAt"
-        ],
+        "required": ["contribution", "voterDid", "vote", "createdAt"],
         "properties": {
           "contribution": {
             "type": "string",
@@ -24,10 +19,7 @@
           },
           "vote": {
             "type": "string",
-            "knownValues": [
-              "approve",
-              "reject"
-            ]
+            "knownValues": ["approve", "reject"]
           },
           "createdAt": {
             "type": "string",

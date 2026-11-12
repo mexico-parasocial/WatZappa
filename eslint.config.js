@@ -130,11 +130,15 @@ export default [
     files: [
       '**/vite.config.js',
       '.github/ci/*.mjs',
+      'packages/api/scripts/*.js',
+      'packages/dev-env/assets/**/*.mjs',
       'packages/dev-env/bin.js',
       'packages/lex-cli/bin.js',
+      'packages/lex/*/nodejs.js',
       'packages/lex/*/scripts/*.js',
       'packages/pds/scripts/*.js',
-      'scripts/*.mjs',
+      'scripts/**/*.{js,mjs}',
+      'services/*/*.js',
     ],
     languageOptions: {
       globals: globals.node,
@@ -176,7 +180,7 @@ export default [
     rules: {
       'n/no-extraneous-import': [
         'error',
-        { allowModules: ['@atproto/dev-env'] },
+        { allowModules: ['@atproto/dev-env', '@jest/globals', 'vitest'] },
       ],
       '@typescript-eslint/no-unused-vars': [
         'error',

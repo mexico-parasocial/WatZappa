@@ -5,7 +5,7 @@ import {
   swallowStoreErrors,
 } from '@atproto-labs/simple-store'
 import { SimpleStoreMemory } from '@atproto-labs/simple-store-memory'
-import {
+import type {
   HandleResolver,
   ResolveHandleOptions,
   ResolvedHandle,

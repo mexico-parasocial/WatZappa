@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { authorize, resolveRoom } from '../authz.js'
 import { isProvisionedSpace, requireMatrix } from '../chat-mode.js'
+import { requestDeviceRevocation } from '../device-revocation.js'
 import {
   BRIDGE_AUDIENCES,
   mxidFromVerifiedAssertion,
@@ -251,6 +252,17 @@ export async function apiMatrixTokenHandler(
 
   const deviceId =
     requestedDeviceId ?? `PARA-${randomUUID().replace(/-/g, '').slice(0, 16)}`
+  if (
+    (await ctx.db.listDeviceSessions(did)).some(
+      (session) =>
+        session.mxid === mxid &&
+        session.deviceId === deviceId &&
+        session.revocationPending,
+    )
+  ) {
+    writeJson(res, 409, { error: 'MATRIX_DEVICE_REVOCATION_PENDING' })
+    return
+  }
   let session
   try {
     session = await requireMatrix(ctx.matrix).appServiceLogin(
@@ -302,8 +314,8 @@ export async function apiMatrixTokenHandler(
  * and the bridge records a device-session row for the derived MXID — no
  * token is minted, the client's own MAS session remains the session.
  *
- * With that row: chat-message attribution counts the sender, moderation
- * sanctions resolve the target, removal deactivates the device, and role
+ * With that row: reported-message attribution resolves the sender, moderation
+ * sanctions resolve the target, removal reaches community rooms, and role
  * changes reach it — the same operational treatment bridge-minted sessions
  * get, by the member's own attestation instead of by bridge custody.
  */
@@ -360,9 +372,22 @@ export async function apiMatrixAttestHandler(
     return
   }
 
+  const sessions = await ctx.db.listDeviceSessions(auth.did)
+  if (
+    sessions.some(
+      (session) =>
+        session.mxid === mxid &&
+        session.deviceId === deviceId &&
+        session.revocationPending,
+    )
+  ) {
+    writeJson(res, 409, { error: 'MATRIX_DEVICE_REVOCATION_PENDING' })
+    return
+  }
+
   // Idempotent: re-attesting the same device reuses the row instead of
   // piling up session records.
-  const existing = (await ctx.db.listDeviceSessions(auth.did)).find(
+  const existing = sessions.find(
     (s) => s.mxid === mxid && s.deviceId === deviceId && s.revokedAt == null,
   )
   const now = new Date().toISOString()
@@ -447,11 +472,7 @@ export async function apiCommunityJoinHandler(
   }
 
   const roles = membership.roles ?? []
-  const isObserver = roles.includes('observer')
-  const chamber =
-    space.chamberMode === 'bicameral' && !isObserver
-      ? await ctx.firehose.decideChamber(communityUri, auth.did)
-      : null
+  const chamber = null
 
   const identityPubHex = signed.assertion.identityPub
   const identityPub = new Uint8Array(32)
@@ -464,7 +485,7 @@ export async function apiCommunityJoinHandler(
     joined = await ctx.projection.verifiedJoin(space, auth.did, identityPub, {
       roles,
       chamber,
-      isObserver,
+      isObserver: false,
     })
   } catch (err) {
     // A ban follows the member, not the chat key they present. They are told
@@ -515,8 +536,7 @@ export async function apiPushTokenHandler(
   // Expo delivery is keyed by DID and is the load-bearing path.
   await ctx.db.setPushToken(did, expoPushToken, platform || 'unknown')
 
-  // With chat off the Expo token above is all there is (sortition notices
-  // use it); there is no homeserver to register a pusher with.
+  // Chat-off deployments register the token without installing a Matrix pusher.
   // Synapse-side pusher registration needs the caller's MXID. Post-CD-M1
   // there is no mapping to read: the client states it by presenting the same
   // identity proof as everywhere else (audience: identity). Without a valid
@@ -657,14 +677,15 @@ export async function apiListDevicesHandler(
       userAgent: d.userAgent,
       createdAt: d.createdAt,
       lastSeenAt: d.lastSeenAt,
-      revoked: d.revokedAt != null,
+      revoked: d.revokedAt != null && !d.revocationPending,
+      revocationPending: Boolean(d.revocationPending),
     })),
   })
 }
 
 /**
  * POST /api/devices/revoke — body: { sessionId }. Deactivates the device on
- * the homeserver (killing its access token) and marks the session revoked.
+ * the homeserver. Failed upstream work remains durably queued and returns 202.
  */
 export async function apiRevokeDeviceHandler(
   req: IncomingMessage,
@@ -689,16 +710,17 @@ export async function apiRevokeDeviceHandler(
     writeJson(res, 404, { error: 'Device session not found' })
     return
   }
-  // A legacy row may record only a Synapse deletion while MAS refresh tokens
-  // stay active. Repeating the revocation enforces it in MAS too, rather than
-  // trusting that historical flag.
-  await requireMatrix(ctx.matrix).adminDeactivateDevice(
-    session.mxid,
-    session.deviceId,
-  )
-  await ctx.db.revokeDeviceSession(auth.did, sessionId)
+  await ctx.db.queueDeviceRevocation(session.did, session.id)
+  try {
+    await requestDeviceRevocation(ctx.db, requireMatrix(ctx.matrix), session)
+  } catch (err) {
+    ctx.log.warn({ err, sessionId }, 'Device revocation queued for retry')
+    writeJson(res, 202, { revoked: false, pending: true })
+    return
+  }
   writeJson(res, 200, {
     revoked: true,
+    pending: false,
     alreadyRevoked: Boolean(session.revokedAt),
   })
 }

@@ -30,6 +30,9 @@ services:
         condition: service_started
       synapse-init:
         condition: service_completed_successfully
+      # Authentication is delegated to MAS (deploy/matrix/synapse/zz-para-mas.yaml).
+      mas:
+        condition: service_started
     environment:
       SYNAPSE_SERVER_NAME: ${MATRIX_SERVER_NAME:-matrix.para.social}
       SYNAPSE_REPORT_STATS: 'no'
@@ -42,7 +45,7 @@ services:
       SYNAPSE_DB_HOST: synapse-db
       SYNAPSE_DB_NAME: ${MATRIX_DB_NAME:-matrix}
       SYNAPSE_DB_USER: ${POSTGRES_USER:-pg}
-      SYNAPSE_DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      SYNAPSE_DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       SYNAPSE_DB_PORT: 5432
       SYNAPSE_ENABLE_REGISTRATION: 'no' # Keep closed; invite-only via admin
       SYNAPSE_LOG_LEVEL: INFO
@@ -57,6 +60,11 @@ services:
       - ./deploy/matrix/synapse:/config
       # Tracked hardening overlay, mounted so it sorts after homeserver.yaml.
       - ./deploy/matrix/hardening.yaml:/config/zz-para-hardening.yaml:ro
+    # para-edge: the containerised Caddy proxies the client API and Prometheus
+    # scrapes the metrics listener (9000, never published).
+    networks:
+      - default
+      - para-edge
     ports:
       - '127.0.0.1:8008:8008'
     healthcheck:
@@ -85,7 +93,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-pg}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${MATRIX_DB_NAME:-matrix}
       # Synapse REFUSES to start against any collation other than 'C'. This is
       # only applied at initdb time, so a volume created without it must be
@@ -135,6 +143,10 @@ services:
       PORT: 8090
       PARA_IDP_APP_SCHEME: ${PARA_APP_SCHEME:-para}
       PARA_IDP_LOG_LEVEL: ${BRIDGE_LOG_LEVEL:-info}
+    # para-edge: Caddy serves /authorize* publicly (MATRIX_IDP_PUBLIC_URL).
+    networks:
+      - default
+      - para-edge
     ports:
       - '127.0.0.1:8090:8090'
     healthcheck:
@@ -159,6 +171,11 @@ services:
     command: ['server', '--config', '/config/config.yaml']
     volumes:
       - ./deploy/matrix/mas:/config
+    # para-edge: Caddy proxies the public listener (8080) as MATRIX_MAS_PUBLIC_URL.
+    # The admin listener (8081) is never proxied.
+    networks:
+      - default
+      - para-edge
     ports:
       - '127.0.0.1:8080:8080'
       # Private admin API for a host-run bridge; never publish this listener.
@@ -180,7 +197,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-pg}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: mas
     volumes:
       - mas_postgres_data:/var/lib/postgresql/data
@@ -199,6 +216,9 @@ services:
     restart: unless-stopped
     volumes:
       - ./deploy/matrix/element-config.json:/app/config.json:ro
+    networks:
+      - default
+      - para-edge
     ports:
       - '127.0.0.1:8082:80' # 8080 belongs to MAS
     depends_on:

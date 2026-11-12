@@ -2,11 +2,13 @@
 title: com.para.civic.getCabildeo
 description: Reference for the com.para.civic.getCabildeo lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,23 +17,24 @@ Get a single indexed Cabildeo by URI, including aggregate and viewer context fie
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cabildeo` | `string` | ✅  |  | Format: `at-uri` |
-**Output:**
+| Name        | Type     | Req'd | Description | Constraints      |
+| ----------- | -------- | ----- | ----------- | ---------------- |
+| `cabildeo`  | `string` | ✅    |             | Format: `at-uri` |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cabildeo` | [`com.para.civic.defs#cabildeoView`]([[com-para-civic-defs|com.para.civic.defs#cabildeoView]]) | ✅  |  |  |
+| Name       | Type                                                       | Req'd                               | Description | Constraints |
+| ---------- | ---------------------------------------------------------- | ----------------------------------- | ----------- | ----------- |
+| `cabildeo` | [`com.para.civic.defs#cabildeoView`]([[com-para-civic-defs | com.para.civic.defs#cabildeoView]]) | ✅          |             |     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -42,9 +45,7 @@ Get a single indexed Cabildeo by URI, including aggregate and viewer context fie
       "description": "Get a single indexed Cabildeo by URI, including aggregate and viewer context fields.",
       "parameters": {
         "type": "params",
-        "required": [
-          "cabildeo"
-        ],
+        "required": ["cabildeo"],
         "properties": {
           "cabildeo": {
             "type": "string",
@@ -56,9 +57,7 @@ Get a single indexed Cabildeo by URI, including aggregate and viewer context fie
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "cabildeo"
-          ],
+          "required": ["cabildeo"],
           "properties": {
             "cabildeo": {
               "type": "ref",

@@ -1,12 +1,16 @@
-import { request } from 'undici'
 import type { DidString } from '@atproto/syntax'
-import { AppBskyEmbedExternal } from '@atproto/api'
 import {
   type DevDelegationClaim,
   devCabildeoVoteProof,
   devDelegationProof,
 } from '../civic-verifier.js'
-import { SeedClient } from './client.js'
+import type { SeedClient } from './client.js'
+import {
+  actInCommunity,
+  createCommunityAccount,
+  joinCommunity,
+  paraCall,
+} from './community-account.js'
 
 export type ParaStrongRef = {
   uri: string
@@ -15,29 +19,17 @@ export type ParaStrongRef = {
 
 export type ParaPostType = 'policy' | 'matter' | 'meme'
 export type CabildeoPhase =
-  | 'draft'
-  | 'open'
-  | 'deliberating'
-  | 'voting'
-  | 'resolved'
+  'draft' | 'open' | 'deliberating' | 'voting' | 'resolved'
 export type CommunityMembershipState =
-  | 'pending'
-  | 'active'
-  | 'left'
-  | 'removed'
-  | 'blocked'
+  'pending' | 'active' | 'left' | 'removed' | 'blocked'
 
 const COM_PARA_POST = 'com.para.post'
-const COM_PARA_COMMUNITY_BOARD = 'com.para.community.board'
-const COM_PARA_COMMUNITY_MEMBERSHIP = 'com.para.community.membership'
-const COM_PARA_COMMUNITY_GOVERNANCE = 'com.para.community.governance'
 const COM_PARA_CIVIC_CABILDEO = 'com.para.civic.cabildeo'
 const COM_PARA_CIVIC_POSITION = 'com.para.civic.position'
 const COM_PARA_CIVIC_VOTE = 'com.para.civic.vote'
 const COM_PARA_CIVIC_DELEGATION = 'com.para.civic.delegation'
 const COM_PARA_SOCIAL_POST_META = 'com.para.social.postMeta'
 const COM_PARA_STATUS = 'com.para.status'
-const APP_BSKY_ACTOR_STATUS = 'app.bsky.actor.status'
 const APP_BSKY_FEED_LIKE = 'app.bsky.feed.like'
 
 export const createParaPost = async (
@@ -94,45 +86,24 @@ export const createParaCommunityBoard = async (
   sc: SeedClient,
   by: DidString,
   name: string,
-): Promise<ParaStrongRef & { slug: string }> => {
-  const { data } = await sc.agent.com.atproto.repo.createRecord(
-    {
-      repo: by,
-      collection: COM_PARA_COMMUNITY_BOARD,
-      record: {
-        $type: COM_PARA_COMMUNITY_BOARD,
-        name,
-        description: `${name} community`,
-        quadrant: 'political',
-        status: 'active',
-        delegatesChatId: '',
-        subdelegatesChatId: '',
-        createdAt: new Date().toISOString(),
-      },
-    },
-    {
-      encoding: 'application/json',
-      headers: sc.getHeaders(by),
-    },
+): Promise<ParaStrongRef & { slug: string; did: DidString }> => {
+  const account = await createCommunityAccount(
+    paraCall(sc.agent, sc.getHeaders(by)),
+    { name, description: `${name} community`, quadrant: 'political' },
   )
-
-  const rkey = data.uri.split('/').pop()!
   return {
-    uri: data.uri,
-    cid: data.cid,
-    slug: `${normalizeBoardSlug(name)}-${rkey}`,
+    uri: account.uri,
+    cid: account.cid,
+    did: account.did,
+    slug: account.handle.split('.')[0],
   }
 }
 
-export const normalizeBoardSlug = (value: string) =>
-  value
-    .trim()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-
+/**
+ * Founds a community account (OD-9) and returns its profile, the URI a
+ * community is known by. `by` becomes its owner and first member; the `status`
+ * a board once had has no equivalent.
+ */
 export const createCommunityBoardRecord = async (
   sc: SeedClient,
   by: DidString,
@@ -140,143 +111,35 @@ export const createCommunityBoardRecord = async (
     name: string
     quadrant: string
     description?: string
+    region?: string
     status?: 'draft' | 'active' | 'archived'
   },
-): Promise<ParaStrongRef> => {
-  const { data } = await sc.agent.com.atproto.repo.createRecord(
-    {
-      repo: by,
-      collection: COM_PARA_COMMUNITY_BOARD,
-      record: {
-        $type: COM_PARA_COMMUNITY_BOARD,
-        name: opts.name,
-        quadrant: opts.quadrant,
-        delegatesChatId: `${opts.quadrant}-delegates`,
-        subdelegatesChatId: `${opts.quadrant}-subdelegates`,
-        status: opts.status ?? 'active',
-        createdAt: new Date().toISOString(),
-      },
-    },
-    {
-      encoding: 'application/json',
-      headers: sc.getHeaders(by),
-    },
+): Promise<ParaStrongRef & { did: DidString; slug: string }> => {
+  const { uri, cid, did, handle } = await createCommunityAccount(
+    paraCall(sc.agent, sc.getHeaders(by)),
+    opts,
   )
-
-  return { uri: data.uri, cid: data.cid }
+  return { uri, cid, did, slug: handle.split('.')[0] }
 }
 
+/**
+ * Has `by` take the join (or, for 'left', join then leave) action in the
+ * community named by `community`. Blocked and removed members are made by an
+ * owner's action, so a fixture takes those through `act` itself.
+ */
 export const createCommunityMembershipRecord = async (
   sc: SeedClient,
   by: DidString,
   community: string,
   membershipState: CommunityMembershipState,
-): Promise<ParaStrongRef> => {
-  const { data } = await sc.agent.com.atproto.repo.createRecord(
-    {
-      repo: by,
-      collection: COM_PARA_COMMUNITY_MEMBERSHIP,
-      record: {
-        $type: COM_PARA_COMMUNITY_MEMBERSHIP,
-        community,
-        membershipState,
-        joinedAt: new Date().toISOString(),
-      },
-    },
-    {
-      encoding: 'application/json',
-      headers: sc.getHeaders(by),
-    },
-  )
-
-  return { uri: data.uri, cid: data.cid }
-}
-
-export type CommunityGovernanceRecord = {
-  moderators: Array<{
-    did?: string
-    handle?: string
-    displayName?: string
-    role: string
-    badge: string
-    capabilities: string[]
-  }>
-  officials: Array<{
-    did?: string
-    handle?: string
-    displayName?: string
-    office: string
-    mandate: string
-  }>
-  deputies: Array<{
-    key: string
-    tier: string
-    role: string
-    description: string
-    capabilities: string[]
-    activeHolder?: {
-      did?: string
-      handle?: string
-      displayName?: string
-    }
-    votes: number
-    applicants: Array<{
-      did?: string
-      handle?: string
-      displayName?: string
-      appliedAt: string
-      status: 'applied' | 'approved' | 'rejected'
-    }>
-  }>
-  metadata?: {
-    reviewCadence?: string
-    state?: string
-    matterFlairIds?: string[]
-    policyFlairIds?: string[]
-  }
-  editHistory?: Array<{
-    id: string
-    action: string
-    createdAt: string
-    summary: string
-  }>
-}
-
-export const createCommunityGovernanceRecord = async (
-  sc: SeedClient,
-  by: DidString,
-  community: string,
-  record: CommunityGovernanceRecord,
-): Promise<ParaStrongRef> => {
-  const now = new Date().toISOString()
-  const slug = community.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-  const { data } = await sc.agent.com.atproto.repo.putRecord(
-    {
-      repo: by,
-      collection: COM_PARA_COMMUNITY_GOVERNANCE,
-      rkey: slug,
-      record: {
-        $type: COM_PARA_COMMUNITY_GOVERNANCE,
-        community,
-        slug,
-        createdAt: now,
-        updatedAt: now,
-        moderators: record.moderators,
-        officials: record.officials,
-        deputies: record.deputies,
-        metadata: record.metadata,
-        editHistory: record.editHistory,
-      },
-    },
-    {
-      encoding: 'application/json',
-      headers: sc.getHeaders(by),
-    },
-  )
-
-  return {
-    uri: data.uri,
-    cid: data.cid,
+): Promise<void> => {
+  if (membershipState === 'pending') return
+  const call = paraCall(sc.agent, sc.getHeaders(by))
+  await joinCommunity(call, community)
+  if (membershipState === 'left') {
+    await actInCommunity(call, community, { action: 'member.leave' })
+  } else if (membershipState !== 'active') {
+    throw new Error(`A fixture cannot join as ${membershipState}.`)
   }
 }
 
@@ -565,75 +428,6 @@ export const createCabildeoDelegationRecord = async (
   )
 
   return { uri: data.uri, cid: data.cid }
-}
-
-export const createLiveStatusRecord = async (
-  sc: SeedClient,
-  by: DidString,
-  opts: { uri: string; durationMinutes?: number },
-): Promise<ParaStrongRef> => {
-  const embed: AppBskyEmbedExternal.Main = {
-    $type: 'app.bsky.embed.external',
-    external: {
-      uri: opts.uri,
-      title: 'Live room',
-      description: 'Live cabildeo room',
-    },
-  }
-
-  const { data } = await sc.agent.com.atproto.repo.putRecord(
-    {
-      repo: by,
-      collection: APP_BSKY_ACTOR_STATUS,
-      rkey: 'self',
-      record: {
-        $type: APP_BSKY_ACTOR_STATUS,
-        status: 'app.bsky.actor.status#live',
-        embed,
-        durationMinutes: opts.durationMinutes ?? 10,
-        createdAt: new Date().toISOString(),
-      },
-    },
-    {
-      encoding: 'application/json',
-      headers: sc.getHeaders(by),
-    },
-  )
-
-  return { uri: data.uri, cid: data.cid }
-}
-
-export const putCabildeoLivePresence = async (
-  network: {
-    bsky: { url: string }
-    serviceHeaders(did: string, lxm: string): Promise<Record<string, string>>
-  },
-  by: DidString,
-  opts: {
-    cabildeo: string
-    sessionId: string
-  },
-): Promise<{ status: number; body: unknown }> => {
-  const authHeaders = await network.serviceHeaders(
-    by,
-    'com.para.civic.putLivePresence',
-  )
-  const res = await request(
-    new URL('/xrpc/com.para.civic.putLivePresence', network.bsky.url),
-    {
-      method: 'POST',
-      headers: {
-        ...authHeaders,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify(opts),
-    },
-  )
-
-  return {
-    status: res.statusCode,
-    body: await res.body.json(),
-  }
 }
 
 export const writeParaFixture = async <T>(

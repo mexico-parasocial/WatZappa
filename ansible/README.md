@@ -13,9 +13,9 @@ deploys and what the pilot actually needs.
 
 ## What it deploys
 
-| Stack | Compose file | Services |
-| --- | --- | --- |
-| App | `docker-compose.prod.yaml` | postgres · redis · pds · dataplane · bsky · bsync · ozone · **caddy** |
+| Stack  | Compose file                 | Services                                                                     |
+| ------ | ---------------------------- | ---------------------------------------------------------------------------- |
+| App    | `docker-compose.prod.yaml`   | postgres · redis · pds · dataplane · bsky · bsync · ozone · **caddy**        |
 | Matrix | `docker-compose.matrix.yaml` | synapse · synapse-db · para-idp · mas · mas-db · element-web · matrix-bridge |
 
 Caddy is the only service bound to a public port. Everything else is either

@@ -1,0 +1,52 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.profile",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A community's own profile, in the community account's repo (OD-9). Only its hosting PDS writes it. Governance settings live in the community's event chain, not here.",
+      "key": "literal:self",
+      "record": {
+        "type": "object",
+        "required": ["name", "quadrant", "createdAt"],
+        "properties": {
+          "name": { "type": "string", "maxGraphemes": 64, "maxLength": 640 },
+          "description": {
+            "type": "string",
+            "maxGraphemes": 300,
+            "maxLength": 3000
+          },
+          "quadrant": { "type": "string", "maxLength": 64 },
+          "region": { "type": "string", "maxLength": 128 },
+          "banner": {
+            "type": "blob",
+            "description": "Cover image shown at the top of the community's profile.",
+            "accept": ["image/png", "image/jpeg"],
+            "maxSize": 1000000
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    },
+    "update": {
+      "type": "object",
+      "description": "The presentation fields an owner may change with the profile.update action. The whole set replaces the profile's current values; createdAt is kept.",
+      "required": ["name", "quadrant"],
+      "properties": {
+        "name": { "type": "string", "maxGraphemes": 64, "maxLength": 640 },
+        "description": {
+          "type": "string",
+          "maxGraphemes": 300,
+          "maxLength": 3000
+        },
+        "quadrant": { "type": "string", "maxLength": 64 },
+        "region": { "type": "string", "maxLength": 128 },
+        "banner": {
+          "type": "string",
+          "format": "cid",
+          "description": "The CID of an image uploaded with com.para.community.uploadBanner. Absent removes the banner."
+        }
+      }
+    }
+  }
+}

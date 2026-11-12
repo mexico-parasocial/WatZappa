@@ -38,11 +38,7 @@
             "type": "string",
             "maxLength": 32,
             "description": "income: money received; expense: money spent running the activity; donation: proceeds delivered to an allocation recipient.",
-            "knownValues": [
-              "income",
-              "expense",
-              "donation"
-            ]
+            "knownValues": ["income", "expense", "donation"]
           },
           "amountMinor": {
             "type": "integer",

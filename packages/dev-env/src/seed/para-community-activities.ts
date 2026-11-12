@@ -59,7 +59,9 @@ const termsDigest = (
 ) => {
   const { winningTickets: _drawn, ...terms } = details
   return createHash('sha256')
-    .update(JSON.stringify(canonicalize({ plan: financialPlan, details: terms })))
+    .update(
+      JSON.stringify(canonicalize({ plan: financialPlan, details: terms })),
+    )
     .digest('hex')
 }
 
@@ -115,7 +117,8 @@ export async function seedCommunityActivities({
       destination: 'Zócalo',
       permitStatus: 'requested',
       expectedAttendance: 400,
-      accessibilityNotes: 'Ruta plana; habrá puntos de hidratación cada kilómetro.',
+      accessibilityNotes:
+        'Ruta plana; habrá puntos de hidratación cada kilómetro.',
     },
   })
   await write(firstOwner, SOCIAL, {
@@ -145,7 +148,11 @@ export async function seedCommunityActivities({
     fundingGoalMinor: 3_000_000,
     expenseBudgetMinor: 600_000,
     allocations: [
-      { recipient: 'community', label: 'Fondo de la comunidad', shareBps: 7000 },
+      {
+        recipient: 'community',
+        label: 'Fondo de la comunidad',
+        shareBps: 7000,
+      },
       { recipient: 'cause', label: 'Comedor comunitario', shareBps: 3000 },
     ],
     committedAt: at(-40),
@@ -156,7 +163,10 @@ export async function seedCommunityActivities({
     ticketsAvailable: 800,
     prizes: [
       { description: 'Bicicleta urbana', estimatedValueMinor: 650_000 },
-      { description: 'Canasta de productos locales', estimatedValueMinor: 150_000 },
+      {
+        description: 'Canasta de productos locales',
+        estimatedValueMinor: 150_000,
+      },
     ],
     drawAt: at(-8, 18),
     drawMethod: 'Sorteo público transmitido en vivo',
@@ -166,7 +176,8 @@ export async function seedCommunityActivities({
   const raffle = await write(secondOwner, ECONOMIC, {
     communityUri: second.uri,
     title: 'Rifa para el comedor comunitario',
-    description: 'Boletos a $50; lo recaudado se reparte según el plan publicado.',
+    description:
+      'Boletos a $50; lo recaudado se reparte según el plan publicado.',
     startsAt: at(-30),
     endsAt: at(-8, 20),
     status: 'completed',
@@ -243,7 +254,11 @@ export async function seedCommunityActivities({
       expenseBudgetMinor: 400_000,
       allocations: [
         { recipient: 'cause', label: 'Brigada de salud', shareBps: 9000 },
-        { recipient: 'reinvestment', label: 'Insumos de la próxima venta', shareBps: 1000 },
+        {
+          recipient: 'reinvestment',
+          label: 'Insumos de la próxima venta',
+          shareBps: 1000,
+        },
       ],
       committedAt: at(-2),
     },

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { TID } from '@atproto/common'
-import * as crypto from '@atproto/crypto'
+import type * as crypto from '@atproto/crypto'
 import { Secp256k1Keypair } from '@atproto/crypto'
 import { MemoryBlockstore, Repo, WriteOpAction } from '../src/index.js'
 import * as util from '../tests/_util.js'

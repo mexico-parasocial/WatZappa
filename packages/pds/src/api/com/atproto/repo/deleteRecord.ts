@@ -78,7 +78,7 @@ export default function (server: Server, ctx: AppContext) {
         if (!record) {
           return null // No-op if record already doesn't exist
         }
-        await assertCommunityRepoWrites(actorTxn, did, [write])
+        await assertCommunityRepoWrites(actorTxn, [write])
 
         const commit = await actorTxn.repo
           .processWrites([write], swapCommitCid)

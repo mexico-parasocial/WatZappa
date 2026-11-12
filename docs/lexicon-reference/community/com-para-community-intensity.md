@@ -2,11 +2,13 @@
 title: com.para.community.intensity
 description: Reference for the com.para.community.intensity lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -17,23 +19,24 @@ DEPRECATED 2026-09-18 (ballot freeze E0). Do not write this record. It carries e
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `proposal` | `string` | ✅  | URI of the proposal this intensity declaration applies to | Format: `at-uri` |
-| `voter` | `string` | ✅  | DID of the voter making this intensity declaration | Format: `did` |
-| `signal` | `integer` | ✅  | Signal direction, must match the base vote record | Min: -3<br/>Max: 3 |
-| `units` | `integer` | ✅  | Quadratic voice credits allocated. 1=1², 4=2², 9=3², 16=4². Maps to intensity level 1-4. | Min: 1<br/>Max: 16 |
-| `creditsSpent` | `integer` | ❌  | Same as units, explicit alias for clarity in audit trails |  |
-| `delegatedFrom` | Array of `string` | ❌  | DIDs whose voting power was aggregated into this intensity record. Empty = direct. |  |
-| `delegationDepth` | `integer` | ❌  | 0 = direct, 1 = one hop. Max 1 in PARA QV-LD. |  |
-| `effectiveWeight` | `string` | ❌  | Computed effective weight after QV sqrt and correlation discounting. Stored for audit trail. |  |
-| `voteNullifier` | `string` | ❌  | One-person-one-vote nullifier for this proposal intensity declaration, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a. | Max Length: 128 |
-| `eligibilityProofRef` | `string` | ❌  | Opaque reference to the m8 eligibility/nullifier proof used to cast this intensity declaration. | Max Length: 512 |
-| `createdAt` | `string` | ❌  |  | Format: `datetime` |
+| Name                  | Type              | Req'd | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Constraints        |
+| --------------------- | ----------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| `proposal`            | `string`          | ✅    | URI of the proposal this intensity declaration applies to                                                                                                                                                                                                                                                                                                                                                                                                          | Format: `at-uri`   |
+| `voter`               | `string`          | ✅    | DID of the voter making this intensity declaration                                                                                                                                                                                                                                                                                                                                                                                                                 | Format: `did`      |
+| `signal`              | `integer`         | ✅    | Signal direction, must match the base vote record                                                                                                                                                                                                                                                                                                                                                                                                                  | Min: -3<br/>Max: 3 |
+| `units`               | `integer`         | ✅    | Quadratic voice credits allocated. 1=1², 4=2², 9=3², 16=4². Maps to intensity level 1-4.                                                                                                                                                                                                                                                                                                                                                                           | Min: 1<br/>Max: 16 |
+| `creditsSpent`        | `integer`         | ❌    | Same as units, explicit alias for clarity in audit trails                                                                                                                                                                                                                                                                                                                                                                                                          |                    |
+| `delegatedFrom`       | Array of `string` | ❌    | DIDs whose voting power was aggregated into this intensity record. Empty = direct.                                                                                                                                                                                                                                                                                                                                                                                 |                    |
+| `delegationDepth`     | `integer`         | ❌    | 0 = direct, 1 = one hop. Max 1 in PARA QV-LD.                                                                                                                                                                                                                                                                                                                                                                                                                      |                    |
+| `effectiveWeight`     | `string`          | ❌    | Computed effective weight after QV sqrt and correlation discounting. Stored for audit trail.                                                                                                                                                                                                                                                                                                                                                                       |                    |
+| `voteNullifier`       | `string`          | ❌    | One-person-one-vote nullifier for this proposal intensity declaration, issued by m8. INTEGRITY ONLY, NOT ANONYMITY: m8 derives this value server-side from a stable person identifier and stores it beside that identifier, so the server can reconstruct which subjects a person voted on. This record is also written to the voter's own public repo and signed by their DID, so the ballot is attributable to the voter regardless of this field. See OD-7 §5a. | Max Length: 128    |
+| `eligibilityProofRef` | `string`          | ❌    | Opaque reference to the m8 eligibility/nullifier proof used to cast this intensity declaration.                                                                                                                                                                                                                                                                                                                                                                    | Max Length: 512    |
+| `createdAt`           | `string`          | ❌    |                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Format: `datetime` |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -45,12 +48,7 @@ DEPRECATED 2026-09-18 (ballot freeze E0). Do not write this record. It carries e
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "proposal",
-          "voter",
-          "signal",
-          "units"
-        ],
+        "required": ["proposal", "voter", "signal", "units"],
         "properties": {
           "proposal": {
             "type": "string",

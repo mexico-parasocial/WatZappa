@@ -1,7 +1,6 @@
 import TLDs from 'tlds' with { type: 'json' }
-
-import { AppBskyRichtextFacet } from '../client/index.js'
-import { UnicodeString } from './unicode.js'
+import type { AppBskyRichtextFacet } from '../client/index.js'
+import type { UnicodeString } from './unicode.js'
 import {
   CASHTAG_REGEX,
   MENTION_REGEX,

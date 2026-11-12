@@ -2,11 +2,13 @@
 title: com.para.community.civicTree.createRelationship
 description: Reference for the com.para.community.civicTree.createRelationship lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `procedure`
@@ -20,27 +22,28 @@ description: Reference for the com.para.community.civicTree.createRelationship l
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `communityUri` | `string` | ✅  |  | Format: `at-uri` |
-| `sourceCardId` | `string` | ✅  |  |  |
-| `targetCardId` | `string` | ✅  |  |  |
-| `relationshipType` | `string` | ✅  |  | Max Length: 64 |
-| `authorDid` | `string` | ✅  |  | Format: `did` |
-**Output:**
+| Name               | Type     | Req'd | Description | Constraints      |
+| ------------------ | -------- | ----- | ----------- | ---------------- |
+| `communityUri`     | `string` | ✅    |             | Format: `at-uri` |
+| `sourceCardId`     | `string` | ✅    |             |                  |
+| `targetCardId`     | `string` | ✅    |             |                  |
+| `relationshipType` | `string` | ✅    |             | Max Length: 64   |
+| `authorDid`        | `string` | ✅    |             | Format: `did`    |
+| **Output:**        |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `relationship` | [`com.para.community.civicTree.defs#relationshipView`]([[com-para-community-civictree-defs|com.para.community.civicTree.defs#relationshipView]]) | ✅  |  |  |
+| Name           | Type                                                                                       | Req'd                                                 | Description | Constraints |
+| -------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------- | ----------- | ----------- |
+| `relationship` | [`com.para.community.civicTree.defs#relationshipView`]([[com-para-community-civictree-defs | com.para.community.civicTree.defs#relationshipView]]) | ✅          |             |     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -85,9 +88,7 @@ description: Reference for the com.para.community.civicTree.createRelationship l
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "relationship"
-          ],
+          "required": ["relationship"],
           "properties": {
             "relationship": {
               "type": "ref",

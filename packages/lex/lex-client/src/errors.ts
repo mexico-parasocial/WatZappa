@@ -1,12 +1,13 @@
 import type { LexErrorCode, LexErrorData, LexValue } from '@atproto/lex-data'
 import { LexError } from '@atproto/lex-data'
 import {
-  LexValidationError,
-  Procedure,
-  Query,
+  type InferMethodError,
+  type LexValidationError,
+  type Procedure,
+  type Query,
+  type ResultFailure,
   lexErrorDataSchema,
 } from '@atproto/lex-schema'
-import type { InferMethodError, ResultFailure } from '@atproto/lex-schema'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Agent } from './agent.js'
 import type { XrpcUnknownResponsePayload } from './types.js'
@@ -114,10 +115,10 @@ export function isXrpcErrorPayload(
  * @see {@link XrpcInternalError} - For network/internal errors
  */
 export abstract class XrpcError<
-    M extends Procedure | Query = Procedure | Query,
-    N extends LexErrorCode = LexErrorCode,
-    TReason = unknown,
-  >
+  M extends Procedure | Query = Procedure | Query,
+  N extends LexErrorCode = LexErrorCode,
+  TReason = unknown,
+>
   extends LexError<N>
   implements ResultFailure<TReason>
 {

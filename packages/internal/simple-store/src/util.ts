@@ -4,7 +4,7 @@ export type ContextOptions<C> = C extends void | undefined
   ? { context?: undefined }
   : { context: C }
 
-  export function assert(
+export function assert(
   condition: unknown,
   message = 'Assertion failed',
 ): asserts condition {

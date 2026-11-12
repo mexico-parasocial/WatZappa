@@ -2,11 +2,13 @@
 title: com.para.community.getGovernance
 description: Reference for the com.para.community.getGovernance lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,38 +17,39 @@ Get governance roster and role hierarchy for a Para community.
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `community` | `string` | ✅  | Community identifier or label (for example: mx-federal or p/mx-federal). | Max Length: 64<br/>Max Graphemes: 64 |
-| `communityId` | `string` | ❌  | Optional stable identifier for the community. | Max Length: 128<br/>Max Graphemes: 128 |
-| `limit` | `integer` | ❌  | Maximum number of candidate members considered for role assignment. | Min: 1<br/>Max: 200<br/>Default: `50` |
-**Output:**
+| Name          | Type      | Req'd | Description                                                              | Constraints                            |
+| ------------- | --------- | ----- | ------------------------------------------------------------------------ | -------------------------------------- |
+| `community`   | `string`  | ✅    | Community identifier or label (for example: mx-federal or p/mx-federal). | Max Length: 64<br/>Max Graphemes: 64   |
+| `communityId` | `string`  | ❌    | Optional stable identifier for the community.                            | Max Length: 128<br/>Max Graphemes: 128 |
+| `limit`       | `integer` | ❌    | Maximum number of candidate members considered for role assignment.      | Min: 1<br/>Max: 200<br/>Default: `50`  |
+| **Output:**   |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `source` | `string` | ✅  |  | Known Values: `network`, `repo`, `mock` |
-| `community` | `string` | ✅  |  |  |
-| `communityId` | `string` | ❌  |  |  |
-| `slug` | `string` | ✅  |  |  |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
-| `updatedAt` | `string` | ✅  |  | Format: `datetime` |
-| `moderators` | Array of [`com.para.community.defs#moderatorView`]([[com-para-community-defs|com.para.community.defs#moderatorView]]) | ✅  |  |  |
-| `officials` | Array of [`com.para.community.defs#officialView`]([[com-para-community-defs|com.para.community.defs#officialView]]) | ✅  |  |  |
-| `deputies` | Array of [`com.para.community.defs#deputyRoleView`]([[com-para-community-defs|com.para.community.defs#deputyRoleView]]) | ✅  |  |  |
-| `metadata` | [`com.para.community.defs#metadata`]([[com-para-community-defs|com.para.community.defs#metadata]]) | ❌  |  |  |
-| `editHistory` | Array of [`com.para.community.defs#historyEntry`]([[com-para-community-defs|com.para.community.defs#historyEntry]]) | ✅  |  |  |
-| `counters` | [`com.para.community.defs#summary`]([[com-para-community-defs|com.para.community.defs#summary]]) | ✅  |  |  |
-| `summary` | [`com.para.community.defs#summary`]([[com-para-community-defs|com.para.community.defs#summary]]) | ✅  |  |  |
-| `computedAt` | `string` | ✅  |  | Format: `datetime` |
+| Name          | Type                                                                          | Req'd                                     | Description | Constraints                             |
+| ------------- | ----------------------------------------------------------------------------- | ----------------------------------------- | ----------- | --------------------------------------- |
+| `source`      | `string`                                                                      | ✅                                        |             | Known Values: `network`, `repo`, `mock` |
+| `community`   | `string`                                                                      | ✅                                        |             |                                         |
+| `communityId` | `string`                                                                      | ❌                                        |             |                                         |
+| `slug`        | `string`                                                                      | ✅                                        |             |                                         |
+| `createdAt`   | `string`                                                                      | ✅                                        |             | Format: `datetime`                      |
+| `updatedAt`   | `string`                                                                      | ✅                                        |             | Format: `datetime`                      |
+| `moderators`  | Array of [`com.para.community.defs#moderatorView`]([[com-para-community-defs  | com.para.community.defs#moderatorView]])  | ✅          |                                         |     |
+| `officials`   | Array of [`com.para.community.defs#officialView`]([[com-para-community-defs   | com.para.community.defs#officialView]])   | ✅          |                                         |     |
+| `deputies`    | Array of [`com.para.community.defs#deputyRoleView`]([[com-para-community-defs | com.para.community.defs#deputyRoleView]]) | ✅          |                                         |     |
+| `metadata`    | [`com.para.community.defs#metadata`]([[com-para-community-defs                | com.para.community.defs#metadata]])       | ❌          |                                         |     |
+| `editHistory` | Array of [`com.para.community.defs#historyEntry`]([[com-para-community-defs   | com.para.community.defs#historyEntry]])   | ✅          |                                         |     |
+| `counters`    | [`com.para.community.defs#summary`]([[com-para-community-defs                 | com.para.community.defs#summary]])        | ✅          |                                         |     |
+| `summary`     | [`com.para.community.defs#summary`]([[com-para-community-defs                 | com.para.community.defs#summary]])        | ✅          |                                         |     |
+| `computedAt`  | `string`                                                                      | ✅                                        |             | Format: `datetime`                      |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -57,9 +60,7 @@ Get governance roster and role hierarchy for a Para community.
       "description": "Get governance roster and role hierarchy for a Para community.",
       "parameters": {
         "type": "params",
-        "required": [
-          "community"
-        ],
+        "required": ["community"],
         "properties": {
           "community": {
             "type": "string",
@@ -103,11 +104,7 @@ Get governance roster and role hierarchy for a Para community.
           "properties": {
             "source": {
               "type": "string",
-              "knownValues": [
-                "network",
-                "repo",
-                "mock"
-              ]
+              "knownValues": ["network", "repo", "mock"]
             },
             "community": {
               "type": "string"

@@ -34,8 +34,7 @@ export type ObjectFrame = {
 
 /** @internal */
 export type ParentRef =
-  | { frame: ArrayFrame; index: number }
-  | { frame: ObjectFrame; index: number }
+  { frame: ArrayFrame; index: number } | { frame: ObjectFrame; index: number }
 
 /** @internal */
 export type StackFrame = ArrayFrame | ObjectFrame

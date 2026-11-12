@@ -2,11 +2,13 @@
 title: com.para.community.sharedContent
 description: Reference for the com.para.community.sharedContent lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `record`
@@ -17,23 +19,24 @@ A member-owned wrapper that shares original content into a PARA community withou
 
 **Record Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `subject` | [`com.atproto.repo.strongRef`](https://github.com/bluesky-social/atproto/tree/main/lexicons/com/atproto/repo/strongref.json#undefined) | ✅  | The original content being shared. |  |
-| `communityUri` | `string` | ✅  | URI of the target com.para.community.board record. | Format: `at-uri` |
-| `contentType` | `string` | ✅  |  | Known Values: `post`, `cabildeo`, `collection`, `mapInitiative`, `external` |
-| `sharedBy` | `string` | ✅  |  | Format: `did` |
-| `note` | `string` | ❌  |  | Max Length: 3000<br/>Max Graphemes: 300 |
-| `visibility` | `string` | ❌  |  | Known Values: `community`, `public`, `stewards` |
-| `sourceApp` | `string` | ❌  |  | Max Length: 512<br/>Max Graphemes: 128 |
-| `embedContext` | `unknown` | ❌  |  |  |
-| `pinned` | `boolean` | ❌  |  | Default: `false` |
-| `sortRank` | `integer` | ❌  |  |  |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name           | Type                                                                                                                                   | Req'd | Description                                        | Constraints                                                                 |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ----- | -------------------------------------------------- | --------------------------------------------------------------------------- |
+| `subject`      | [`com.atproto.repo.strongRef`](https://github.com/bluesky-social/atproto/tree/main/lexicons/com/atproto/repo/strongref.json#undefined) | ✅    | The original content being shared.                 |                                                                             |
+| `communityUri` | `string`                                                                                                                               | ✅    | URI of the target com.para.community.board record. | Format: `at-uri`                                                            |
+| `contentType`  | `string`                                                                                                                               | ✅    |                                                    | Known Values: `post`, `cabildeo`, `collection`, `mapInitiative`, `external` |
+| `sharedBy`     | `string`                                                                                                                               | ✅    |                                                    | Format: `did`                                                               |
+| `note`         | `string`                                                                                                                               | ❌    |                                                    | Max Length: 3000<br/>Max Graphemes: 300                                     |
+| `visibility`   | `string`                                                                                                                               | ❌    |                                                    | Known Values: `community`, `public`, `stewards`                             |
+| `sourceApp`    | `string`                                                                                                                               | ❌    |                                                    | Max Length: 512<br/>Max Graphemes: 128                                      |
+| `embedContext` | `unknown`                                                                                                                              | ❌    |                                                    |                                                                             |
+| `pinned`       | `boolean`                                                                                                                              | ❌    |                                                    | Default: `false`                                                            |
+| `sortRank`     | `integer`                                                                                                                              | ❌    |                                                    |                                                                             |
+| `createdAt`    | `string`                                                                                                                               | ✅    |                                                    | Format: `datetime`                                                          |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -84,11 +87,7 @@ A member-owned wrapper that shares original content into a PARA community withou
           },
           "visibility": {
             "type": "string",
-            "knownValues": [
-              "community",
-              "public",
-              "stewards"
-            ]
+            "knownValues": ["community", "public", "stewards"]
           },
           "sourceApp": {
             "type": "string",

@@ -2,171 +2,182 @@
 title: com.para.community.getAuditTrail
 description: Reference for the com.para.community.getAuditTrail lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `proposal` | `string` | ✅  |  | Format: `at-uri` |
-**Output:**
+| Name        | Type     | Req'd | Description | Constraints      |
+| ----------- | -------- | ----- | ----------- | ---------------- |
+| `proposal`  | `string` | ✅    |             | Format: `at-uri` |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `proposal` | `string` | ✅  |  | Format: `at-uri` |
-| `votes` | Array of [`#voteEntry`](#voteentry) | ✅  |  |  |
-| `intensities` | Array of [`#intensityEntry`](#intensityentry) | ✅  |  |  |
-| `delegations` | Array of [`#delegationEntry`](#delegationentry) | ✅  |  |  |
-| `tallies` | [`#tallyBreakdown`](#tallybreakdown) | ✅  |  |  |
-| `metrics` | [`#concentrationMetrics`](#concentrationmetrics) | ✅  |  |  |
+| Name          | Type                                             | Req'd | Description | Constraints      |
+| ------------- | ------------------------------------------------ | ----- | ----------- | ---------------- |
+| `proposal`    | `string`                                         | ✅    |             | Format: `at-uri` |
+| `votes`       | Array of [`#voteEntry`](#voteentry)              | ✅    |             |                  |
+| `intensities` | Array of [`#intensityEntry`](#intensityentry)    | ✅    |             |                  |
+| `delegations` | Array of [`#delegationEntry`](#delegationentry)  | ✅    |             |                  |
+| `tallies`     | [`#tallyBreakdown`](#tallybreakdown)             | ✅    |             |                  |
+| `metrics`     | [`#concentrationMetrics`](#concentrationmetrics) | ✅    |             |                  |
 
 ---
 
 <a name="voteentry"></a>
+
 ### `voteEntry`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `voter` | `string` | ✅  |  | Format: `did` |
-| `signal` | `integer` | ✅  |  | Min: -3<br/>Max: 3 |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name        | Type      | Req'd | Description | Constraints        |
+| ----------- | --------- | ----- | ----------- | ------------------ |
+| `voter`     | `string`  | ✅    |             | Format: `did`      |
+| `signal`    | `integer` | ✅    |             | Min: -3<br/>Max: 3 |
+| `createdAt` | `string`  | ✅    |             | Format: `datetime` |
 
 ---
 
 <a name="intensityentry"></a>
+
 ### `intensityEntry`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `voter` | `string` | ✅  |  | Format: `did` |
-| `signal` | `integer` | ✅  |  | Min: -3<br/>Max: 3 |
-| `units` | `integer` | ✅  |  | Min: 1<br/>Max: 16 |
-| `creditsSpent` | `integer` | ✅  |  |  |
-| `delegatedFrom` | Array of `string` | ❌  |  |  |
-| `delegationDepth` | `integer` | ❌  |  |  |
-| `effectiveWeight` | `string` | ❌  |  |  |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name              | Type              | Req'd | Description | Constraints        |
+| ----------------- | ----------------- | ----- | ----------- | ------------------ |
+| `voter`           | `string`          | ✅    |             | Format: `did`      |
+| `signal`          | `integer`         | ✅    |             | Min: -3<br/>Max: 3 |
+| `units`           | `integer`         | ✅    |             | Min: 1<br/>Max: 16 |
+| `creditsSpent`    | `integer`         | ✅    |             |                    |
+| `delegatedFrom`   | Array of `string` | ❌    |             |                    |
+| `delegationDepth` | `integer`         | ❌    |             |                    |
+| `effectiveWeight` | `string`          | ❌    |             |                    |
+| `createdAt`       | `string`          | ✅    |             | Format: `datetime` |
 
 ---
 
 <a name="delegationentry"></a>
+
 ### `delegationEntry`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `delegate` | `string` | ✅  |  | Format: `did` |
-| `delegator` | `string` | ✅  |  | Format: `did` |
-| `delegateRole` | `string` | ❌  |  |  |
-| `scopeMode` | `string` | ✅  |  |  |
-| `scopeCommunity` | `string` | ❌  |  | Format: `at-uri` |
-| `scopeProposal` | `string` | ❌  |  | Format: `at-uri` |
-| `createdAt` | `string` | ✅  |  | Format: `datetime` |
+| Name             | Type     | Req'd | Description | Constraints        |
+| ---------------- | -------- | ----- | ----------- | ------------------ |
+| `delegate`       | `string` | ✅    |             | Format: `did`      |
+| `delegator`      | `string` | ✅    |             | Format: `did`      |
+| `delegateRole`   | `string` | ❌    |             |                    |
+| `scopeMode`      | `string` | ✅    |             |                    |
+| `scopeCommunity` | `string` | ❌    |             | Format: `at-uri`   |
+| `scopeProposal`  | `string` | ❌    |             | Format: `at-uri`   |
+| `createdAt`      | `string` | ✅    |             | Format: `datetime` |
 
 ---
 
 <a name="tallybreakdown"></a>
+
 ### `tallyBreakdown`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `flat` | [`#tallySteps`](#tallysteps) | ✅  |  |  |
-| `sqrtN` | [`#tallySteps`](#tallysteps) | ✅  |  |  |
-| `correlation` | [`#tallySteps`](#tallysteps) | ✅  |  |  |
+| Name          | Type                         | Req'd | Description | Constraints |
+| ------------- | ---------------------------- | ----- | ----------- | ----------- |
+| `flat`        | [`#tallySteps`](#tallysteps) | ✅    |             |             |
+| `sqrtN`       | [`#tallySteps`](#tallysteps) | ✅    |             |             |
+| `correlation` | [`#tallySteps`](#tallysteps) | ✅    |             |             |
 
 ---
 
 <a name="tallysteps"></a>
+
 ### `tallySteps`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `steps` | Array of [`#step`](#step) | ✅  |  |  |
-| `result` | [`#tallyResult`](#tallyresult) | ✅  |  |  |
+| Name     | Type                           | Req'd | Description | Constraints |
+| -------- | ------------------------------ | ----- | ----------- | ----------- |
+| `steps`  | Array of [`#step`](#step)      | ✅    |             |             |
+| `result` | [`#tallyResult`](#tallyresult) | ✅    |             |             |
 
 ---
 
 <a name="step"></a>
+
 ### `step`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `description` | `string` | ✅  |  |  |
-| `value` | `string` | ✅  |  |  |
+| Name          | Type     | Req'd | Description | Constraints |
+| ------------- | -------- | ----- | ----------- | ----------- |
+| `description` | `string` | ✅    |             |             |
+| `value`       | `string` | ✅    |             |             |
 
 ---
 
 <a name="tallyresult"></a>
+
 ### `tallyResult`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `voteCount` | `integer` | ✅  |  |  |
-| `signalSum` | `string` | ✅  |  |  |
-| `signalAverage` | `string` | ✅  |  |  |
-| `quorumMet` | `boolean` | ✅  |  |  |
-| `quorumTarget` | `integer` | ❌  |  |  |
-| `effectiveWeightSum` | `string` | ❌  |  |  |
+| Name                 | Type      | Req'd | Description | Constraints |
+| -------------------- | --------- | ----- | ----------- | ----------- |
+| `voteCount`          | `integer` | ✅    |             |             |
+| `signalSum`          | `string`  | ✅    |             |             |
+| `signalAverage`      | `string`  | ✅    |             |             |
+| `quorumMet`          | `boolean` | ✅    |             |             |
+| `quorumTarget`       | `integer` | ❌    |             |             |
+| `effectiveWeightSum` | `string`  | ❌    |             |             |
 
 ---
 
 <a name="concentrationmetrics"></a>
+
 ### `concentrationMetrics`
 
 **Type:** `object`
 
 **Properties:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `maxWeightRatio` | `string` | ✅  | Max effective weight / total effective weight (post-√n) |  |
-| `effectiveParticipants` | `string` | ✅  | 1 / HHI over effective weights |  |
-| `revocationRate` | `string` | ✅  | Percentage of delegations revoked |  |
-| `directVotePct` | `string` | ✅  | Percentage of votes cast directly |  |
-| `shadowMode` | `boolean` | ✅  |  |  |
+| Name                    | Type      | Req'd | Description                                             | Constraints |
+| ----------------------- | --------- | ----- | ------------------------------------------------------- | ----------- |
+| `maxWeightRatio`        | `string`  | ✅    | Max effective weight / total effective weight (post-√n) |             |
+| `effectiveParticipants` | `string`  | ✅    | 1 / HHI over effective weights                          |             |
+| `revocationRate`        | `string`  | ✅    | Percentage of delegations revoked                       |             |
+| `directVotePct`         | `string`  | ✅    | Percentage of votes cast directly                       |             |
+| `shadowMode`            | `boolean` | ✅    |                                                         |             |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -176,9 +187,7 @@ description: Reference for the com.para.community.getAuditTrail lexicon
       "type": "query",
       "parameters": {
         "type": "params",
-        "required": [
-          "proposal"
-        ],
+        "required": ["proposal"],
         "properties": {
           "proposal": {
             "type": "string",
@@ -238,11 +247,7 @@ description: Reference for the com.para.community.getAuditTrail lexicon
     },
     "voteEntry": {
       "type": "object",
-      "required": [
-        "voter",
-        "signal",
-        "createdAt"
-      ],
+      "required": ["voter", "signal", "createdAt"],
       "properties": {
         "voter": {
           "type": "string",
@@ -261,13 +266,7 @@ description: Reference for the com.para.community.getAuditTrail lexicon
     },
     "intensityEntry": {
       "type": "object",
-      "required": [
-        "voter",
-        "signal",
-        "units",
-        "creditsSpent",
-        "createdAt"
-      ],
+      "required": ["voter", "signal", "units", "creditsSpent", "createdAt"],
       "properties": {
         "voter": {
           "type": "string",
@@ -307,12 +306,7 @@ description: Reference for the com.para.community.getAuditTrail lexicon
     },
     "delegationEntry": {
       "type": "object",
-      "required": [
-        "delegate",
-        "delegator",
-        "scopeMode",
-        "createdAt"
-      ],
+      "required": ["delegate", "delegator", "scopeMode", "createdAt"],
       "properties": {
         "delegate": {
           "type": "string",
@@ -344,11 +338,7 @@ description: Reference for the com.para.community.getAuditTrail lexicon
     },
     "tallyBreakdown": {
       "type": "object",
-      "required": [
-        "flat",
-        "sqrtN",
-        "correlation"
-      ],
+      "required": ["flat", "sqrtN", "correlation"],
       "properties": {
         "flat": {
           "type": "ref",
@@ -366,10 +356,7 @@ description: Reference for the com.para.community.getAuditTrail lexicon
     },
     "tallySteps": {
       "type": "object",
-      "required": [
-        "steps",
-        "result"
-      ],
+      "required": ["steps", "result"],
       "properties": {
         "steps": {
           "type": "array",
@@ -386,10 +373,7 @@ description: Reference for the com.para.community.getAuditTrail lexicon
     },
     "step": {
       "type": "object",
-      "required": [
-        "description",
-        "value"
-      ],
+      "required": ["description", "value"],
       "properties": {
         "description": {
           "type": "string"
@@ -401,12 +385,7 @@ description: Reference for the com.para.community.getAuditTrail lexicon
     },
     "tallyResult": {
       "type": "object",
-      "required": [
-        "voteCount",
-        "signalSum",
-        "signalAverage",
-        "quorumMet"
-      ],
+      "required": ["voteCount", "signalSum", "signalAverage", "quorumMet"],
       "properties": {
         "voteCount": {
           "type": "integer"

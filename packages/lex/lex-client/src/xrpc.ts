@@ -7,15 +7,13 @@ import type {
   Main,
   NsidString,
   Params,
-  Restricted,
-} from '@atproto/lex-schema'
-import {
   Payload,
   Procedure,
   Query,
+  Restricted,
   Subscription,
-  getMain,
 } from '@atproto/lex-schema'
+import { getMain } from '@atproto/lex-schema'
 import type { Agent, AgentOptions } from './agent.js'
 import { buildAgent } from './agent.js'
 import type { XrpcFailure } from './errors.js'
@@ -176,8 +174,7 @@ export async function xrpc<const M extends Query | Procedure>(
  * @typeParam M - The XRPC method type
  */
 export type XrpcResult<M extends Procedure | Query> =
-  | XrpcResponse<M>
-  | XrpcFailure<M>
+  XrpcResponse<M> | XrpcFailure<M>
 
 /**
  * Makes an XRPC request without throwing on failure.

@@ -6,9 +6,7 @@
       "type": "query",
       "parameters": {
         "type": "params",
-        "required": [
-          "community"
-        ],
+        "required": ["community"],
         "properties": {
           "community": {
             "type": "string",
@@ -23,9 +21,7 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "suggestions"
-          ],
+          "required": ["suggestions"],
           "properties": {
             "suggestions": {
               "type": "array",

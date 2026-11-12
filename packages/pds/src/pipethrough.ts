@@ -681,7 +681,10 @@ export function isProtectedMethod(lxm: string): boolean {
  */
 export const isSpacesMethod = (lxm: string): boolean =>
   lxm.startsWith('com.atproto.space.') ||
-  lxm.startsWith('com.atproto.simplespace.')
+  lxm.startsWith('com.atproto.simplespace.') ||
+  lxm.startsWith('com.atproto.memberspace.') ||
+  lxm.startsWith('com.atproto.managedspace.') ||
+  lxm.startsWith('com.atproto.personalspace.')
 
 // These endpoints are related to account management and must be used directly,
 // not proxied or service-authed. Service auth may be utilized between PDS and

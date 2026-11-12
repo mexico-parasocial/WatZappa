@@ -1,5 +1,6 @@
 // NOTE: this file should be imported first, particularly before `@atproto/common` (for logging), to ensure that environment variables are respected in library code
 import fs from 'node:fs'
+// eslint-disable-next-line import-x/default
 import dotenv from 'dotenv'
 
 const env = process.env.ENV

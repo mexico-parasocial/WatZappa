@@ -32,9 +32,26 @@ The archive is private, mode 0600, and contains server credentials, tokens,
 metadata and stored events/media. Encrypted-room payloads remain ciphertext;
 legacy plaintext content remains plaintext. Client recovery secrets and a
 working client recovery flow are still needed to decrypt encrypted history.
-Encrypt before off-host transfer, for example using the operator's own age
-recipient. No remote destination, retention policy or nightly transfer has been
-configured by these scripts. Local-only backups do not cover loss of the host.
+Never move it off the host unencrypted.
+
+## Nightly encrypted off-host copy
+
+`deploy/matrix/nightly-backup.sh`, run by `para-matrix-backup.timer`
+(`ansible/roles/matrix_stack`), takes the archive above, encrypts it with `age`
+to `matrix_backup_age_recipients`, deletes the plaintext, uploads the `.age`
+file to `s3://<s3_backup_bucket>/matrix/`, checks the uploaded size, and writes
+`para_matrix_backup_last_success_timestamp_seconds` for node-exporter.
+`ParaMatrixBackupStale` fires after 26 hours without a confirmed upload. Local
+encrypted copies are kept `matrix_backup_retention_days`; bucket lifecycle
+rules govern the remote ones.
+
+Generate the key pair off the host (`age-keygen -o identity.txt`), give only
+the `age1…` public key to Ansible, and keep `identity.txt` where losing the
+server does not lose it (a password manager or an offline copy held by a
+second operator). Without it the backups cannot be read.
+
+To restore: `aws s3 cp s3://BUCKET/matrix/FILE.age .`, then
+`age -d -i identity.txt -o archive.tar.gz FILE.age`, then the steps below.
 
 ## Verify before restoring
 
@@ -72,6 +89,16 @@ A pre-restore configuration copy is retained, but it is not a complete rollback
 snapshot. Take and verify a fresh full backup plus the external dependencies
 before an actual restore. A failure after mutations may leave the selected
 stack stopped/partially restored; do not reopen it until recovery passes.
+
+`restore.sh` also restores onto a fresh host: with no `.env`, generated config
+or Synapse container present, it installs the captured `.env` before starting
+the databases and creates Synapse before restoring media. The target's
+`POSTGRES_PASSWORD` must match the backup's, since the restored `.env` replaces
+it while an existing database volume keeps its own.
+
+`scripts/matrix-restore-drill.sh` rehearses backup, encryption, upload, host
+loss, decryption and restore on a disposable copy with real Synapse, MAS and
+Postgres; para-idp sign-in and the bridge itself are stubbed there.
 
 Use a separate checkout/host and explicit project for a full drill. Check
 signing-key/config preservation, user/event counts, MAS login and refresh,

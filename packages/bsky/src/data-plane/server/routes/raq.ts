@@ -1,7 +1,12 @@
-import { ServiceImpl } from '@connectrpc/connect'
+import type { ServiceImpl } from '@connectrpc/connect'
 import { sql } from 'kysely'
-import { Service } from '../../../proto/bsky_connect.js'
-import { Database } from '../db/index.js'
+import type { Service } from '../../../proto/bsky_connect.js'
+import {
+  activeMemberDids,
+  communityAccountDid,
+  resolveCommunityAccountUris,
+} from '../community-membership.js'
+import type { Database } from '../db/index.js'
 
 // Normalize a community name/identifier the way board slugs are formed:
 // lowercase, runs of non-alphanumerics collapsed to hyphens, edges trimmed.
@@ -13,8 +18,8 @@ function normalizeCommunityId(input: string): string {
 }
 
 /**
- * Resolve a community board from any identifier a client might send: its uri,
- * slug, slug-normalized form, or slug-normalized name. Shared by the
+ * Resolve a community account from any identifier a client might send: its
+ * profile URI, DID, handle or slug. Shared by the
  * community-alignment and proposals endpoints so both accept the same inputs.
  */
 async function findCommunityBoard(
@@ -23,19 +28,20 @@ async function findCommunityBoard(
 ): Promise<
   { uri: string; slug: string | null; name: string | null } | undefined
 > {
-  const normalized = normalizeCommunityId(communityId)
-  return db.db
-    .selectFrom('para_community_board as board')
-    .where(
-      sql<boolean>`(
-        "board"."uri" = ${communityId}
-        or "board"."slug" = ${communityId}
-        or "board"."slug" = ${normalized}
-        or regexp_replace(lower(coalesce("board"."name", '')), '[^a-z0-9]+', '-', 'g') = ${normalized}
-      )`,
-    )
-    .select(['board.uri', 'board.slug', 'board.name'])
+  // An OD-9 community account, by URI, DID, handle or slug.
+  const [uri] = await resolveCommunityAccountUris(db, communityId)
+  const did = uri ? communityAccountDid(uri) : null
+  if (!uri || !did) return undefined
+  const account = await db.db
+    .selectFrom('para_community_account as account')
+    .leftJoin('actor', 'actor.did', 'account.did')
+    .where('account.did', '=', did)
+    .select([
+      'account.name',
+      sql<string>`split_part(actor.handle, '.', 1)`.as('slug'),
+    ])
     .executeTakeFirst()
+  return { uri, slug: account?.slug ?? null, name: account?.name ?? null }
 }
 
 // The SQL mirror of normalizeCommunityId, for matching free-text values
@@ -99,14 +105,9 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       }
     }
 
-    const members = await db.db
-      .selectFrom('para_community_membership')
-      .where('communityUri', '=', board.uri)
-      .where('membershipState', '=', 'active')
-      .select('creator')
-      .execute()
+    const members = await activeMemberDids(db, board.uri).execute()
 
-    const dids = members.map((m) => m.creator)
+    const dids = members.map((m) => m.did)
     if (dids.length === 0) {
       return {
         axesJson: '[]',

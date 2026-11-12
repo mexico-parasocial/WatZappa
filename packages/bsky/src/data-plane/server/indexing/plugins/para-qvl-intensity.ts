@@ -1,10 +1,13 @@
 // @ts-nocheck
-import { Selectable, sql } from 'kysely'
-import { CID } from 'multiformats/cid'
-import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
-import { BackgroundQueue } from '../../background.js'
-import { Database } from '../../db/index.js'
-import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
+import { type Selectable, sql } from 'kysely'
+import type { CID } from 'multiformats/cid'
+import { type AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
+import type { BackgroundQueue } from '../../background.js'
+import type {
+  DatabaseSchema,
+  DatabaseSchemaType,
+} from '../../db/database-schema.js'
+import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
 
 interface IntensityRecord {
@@ -47,7 +50,10 @@ const insertFn = async (
     delegationDepth: obj.delegationDepth ?? 0,
     effectiveWeight: obj.effectiveWeight ?? null,
     voteNullifier: normalizeOpaqueProofField(obj.voteNullifier, 128),
-    eligibilityProofRef: normalizeOpaqueProofField(obj.eligibilityProofRef, 512),
+    eligibilityProofRef: normalizeOpaqueProofField(
+      obj.eligibilityProofRef,
+      512,
+    ),
     createdAt: normalizeDatetimeAlways(obj.createdAt),
     indexedAt: timestamp,
   }

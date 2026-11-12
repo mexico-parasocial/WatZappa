@@ -2,11 +2,13 @@
 title: com.para.community.civicTree.acceptSuggestion
 description: Reference for the com.para.community.civicTree.acceptSuggestion lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `procedure`
@@ -20,15 +22,16 @@ description: Reference for the com.para.community.civicTree.acceptSuggestion lex
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `id` | `string` | ✅  |  |  |
-| `communityUri` | `string` | ❌  |  | Format: `at-uri` |
-| `authorDid` | `string` | ✅  |  | Format: `did` |
+| Name           | Type     | Req'd | Description | Constraints      |
+| -------------- | -------- | ----- | ----------- | ---------------- |
+| `id`           | `string` | ✅    |             |                  |
+| `communityUri` | `string` | ❌    |             | Format: `at-uri` |
+| `authorDid`    | `string` | ✅    |             | Format: `did`    |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -40,10 +43,7 @@ description: Reference for the com.para.community.civicTree.acceptSuggestion lex
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "id",
-            "authorDid"
-          ],
+          "required": ["id", "authorDid"],
           "properties": {
             "id": {
               "type": "string"

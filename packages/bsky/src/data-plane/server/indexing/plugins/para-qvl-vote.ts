@@ -1,10 +1,13 @@
 // @ts-nocheck
-import { Selectable } from 'kysely'
-import { CID } from 'multiformats/cid'
-import { AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
-import { BackgroundQueue } from '../../background.js'
-import { Database } from '../../db/index.js'
-import { DatabaseSchema, DatabaseSchemaType } from '../../db/database-schema.js'
+import type { Selectable } from 'kysely'
+import type { CID } from 'multiformats/cid'
+import { type AtUri, normalizeDatetimeAlways } from '@atproto/syntax'
+import type { BackgroundQueue } from '../../background.js'
+import type {
+  DatabaseSchema,
+  DatabaseSchemaType,
+} from '../../db/database-schema.js'
+import type { Database } from '../../db/index.js'
 import { RecordProcessor } from '../processor.js'
 
 interface VoteRecord {
@@ -36,7 +39,10 @@ const insertFn = async (
     community: obj.community,
     signal: obj.signal,
     voteNullifier: normalizeOpaqueProofField(obj.voteNullifier, 128),
-    eligibilityProofRef: normalizeOpaqueProofField(obj.eligibilityProofRef, 512),
+    eligibilityProofRef: normalizeOpaqueProofField(
+      obj.eligibilityProofRef,
+      512,
+    ),
     createdAt: normalizeDatetimeAlways(obj.createdAt),
     indexedAt: timestamp,
   }

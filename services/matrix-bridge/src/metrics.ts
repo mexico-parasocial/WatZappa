@@ -80,23 +80,4 @@ export class BridgeMetrics {
     help: 'Number of community spaces mapped to Matrix',
     registers: [this.registry],
   })
-
-  readonly sortitionDrandTotal = new Counter({
-    name: 'para_sortition_drand_total',
-    help: 'Total number of chamber assignments using drand',
-    registers: [this.registry],
-  })
-
-  readonly sortitionFallbackTotal = new Counter({
-    name: 'para_sortition_fallback_total',
-    help: 'Total number of chamber assignments using deterministic fallback',
-    registers: [this.registry],
-  })
-
-  readonly drandLatency = new Histogram({
-    name: 'para_drand_latency_seconds',
-    help: 'Time to fetch a beacon from drand',
-    buckets: [0.1, 0.5, 1, 2, 5, 10],
-    registers: [this.registry],
-  })
 }

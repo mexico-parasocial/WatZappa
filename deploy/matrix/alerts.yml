@@ -1,6 +1,46 @@
 groups:
   - name: para-community-chat
     rules:
+      - alert: ParaSynapseUnavailable
+        expr: up{job="synapse"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Matrix homeserver metrics are unreachable
+          description: Synapse is down or off the para-edge network. Check `docker compose -f docker-compose.matrix.yaml ps`, synapse-db and MAS (authentication is delegated, so a MAS outage blocks every login).
+      - alert: ParaMatrixServiceDown
+        expr: probe_success{job="matrix-health"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Matrix health check failing: {{ $labels.instance }}'
+          description: MAS, para-idp, Element or a public Matrix route stopped answering. A MAS or para-idp outage blocks every sign-in; check `docker compose -f docker-compose.matrix.yaml ps` and the edge.
+      - alert: ParaMatrixPrivatePathExposed
+        expr: probe_success{job="matrix-edge-closed"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Edge did not refuse {{ $labels.instance }}'
+          description: A Synapse admin, federation or bridge metrics path answered with something other than 404 from outside. Check services/caddy/Caddyfile.prod. (Also fires if the edge itself is down.)
+      - alert: ParaMatrixBackupStale
+        expr: time() - para_matrix_backup_last_success_timestamp_seconds > 26 * 3600
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: No encrypted off-host Matrix backup in over 26 hours
+          description: Check `journalctl -u para-matrix-backup` on the host. The nightly job encrypts and uploads; a local archive alone does not reset this.
+      - alert: ParaMatrixBackupNeverRecorded
+        expr: absent(para_matrix_backup_last_success_timestamp_seconds)
+        for: 30h
+        labels:
+          severity: warning
+        annotations:
+          summary: The Matrix backup job has never reported success
+          description: Set matrix_backup_age_recipients and s3_endpoint so the matrix_stack role schedules para-matrix-backup.timer, then check its journal.
       - alert: ParaMatrixBridgeUnavailable
         expr: up{job="matrix-bridge"} == 0
         for: 2m

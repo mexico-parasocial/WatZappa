@@ -1,5 +1,5 @@
-import { AtUri } from '@atproto/syntax'
-import { DatabaseSchema } from '../db/database-schema.js'
+import type { AtUri } from '@atproto/syntax'
+import type { DatabaseSchema } from '../db/database-schema.js'
 import { analyzeDiscourse } from './discourse-nlp.js'
 
 export async function indexPostDiscourse(

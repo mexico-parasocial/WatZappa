@@ -49,7 +49,6 @@ describe.skipIf(!testDatabaseUrl)('PostgreSQL bridge persistence', () => {
   it('returns numeric metrics instead of pg int8 strings', async () => {
     expect(await db.getUserCount()).toBe(0)
     expect(await db.getSpaceCount()).toBe(0)
-    expect(await db.getSortitionProofCount()).toBe(0)
     expect(await db.getUnreadCount('did:plc:test', '!test:pg.test')).toBe(0)
   })
 
@@ -117,7 +116,10 @@ describe.skipIf(!testDatabaseUrl)('PostgreSQL bridge persistence', () => {
       revokedAt: null,
     }
     await db.createDeviceSession(session)
-    expect(await db.getDeviceSession(session.id)).toEqual(session)
+    expect(await db.getDeviceSession(session.id)).toEqual({
+      ...session,
+      revocationPending: false,
+    })
     expect(await db.revokeDeviceSession(session.did, session.id)).toBe(true)
     expect((await db.getDeviceSession(session.id))?.revokedAt).not.toBeNull()
   })

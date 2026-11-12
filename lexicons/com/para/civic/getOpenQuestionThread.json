@@ -54,8 +54,16 @@
         "author": { "type": "string", "format": "did" },
         "text": { "type": "string", "maxLength": 3000, "maxGraphemes": 300 },
         "createdAt": { "type": "string", "format": "datetime" },
-        "voteScore": { "type": "integer", "description": "Net vote score (upvotes - downvotes)." },
-        "viewerVote": { "type": "integer", "minimum": -1, "maximum": 1, "description": "Current viewer's vote: -1, 0, or 1." },
+        "voteScore": {
+          "type": "integer",
+          "description": "Net vote score (upvotes - downvotes)."
+        },
+        "viewerVote": {
+          "type": "integer",
+          "minimum": -1,
+          "maximum": 1,
+          "description": "Current viewer's vote: -1, 0, or 1."
+        },
         "replies": {
           "type": "array",
           "items": { "type": "ref", "ref": "#replyView" }

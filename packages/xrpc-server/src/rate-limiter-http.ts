@@ -1,11 +1,11 @@
-import { IncomingMessage, ServerResponse } from 'node:http'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 import {
   CombinedRateLimiter,
   RateLimitExceededError,
-  RateLimiterConsume,
-  RateLimiterI,
-  RateLimiterReset,
-  RateLimiterStatus,
+  type RateLimiterConsume,
+  type RateLimiterI,
+  type RateLimiterReset,
+  type RateLimiterStatus,
 } from './rate-limiter.js'
 
 export interface HttpRateLimiterContext {
@@ -26,8 +26,7 @@ export type HttpRateLimiterOptions<
  */
 export class HttpRateLimiter<
   C extends HttpRateLimiterContext = HttpRateLimiterContext,
-> implements RateLimiterI<C>
-{
+> implements RateLimiterI<C> {
   constructor(
     private readonly rateLimiter: RateLimiterI<C>,
     private readonly options: Readonly<HttpRateLimiterOptions<C>> = {},

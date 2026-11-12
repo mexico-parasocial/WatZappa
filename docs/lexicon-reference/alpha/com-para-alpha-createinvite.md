@@ -2,11 +2,13 @@
 title: com.para.alpha.createInvite
 description: Reference for the com.para.alpha.createInvite lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `procedure`
@@ -22,25 +24,26 @@ Generate invite codes for a specific state. Admin-only.
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `state` | `string` | ✅  |  | Min Length: 1<br/>Max Length: 64 |
-| `count` | `integer` | ❌  |  | Min: 1<br/>Max: 100<br/>Default: `1` |
-**Output:**
+| Name        | Type      | Req'd | Description | Constraints                          |
+| ----------- | --------- | ----- | ----------- | ------------------------------------ |
+| `state`     | `string`  | ✅    |             | Min Length: 1<br/>Max Length: 64     |
+| `count`     | `integer` | ❌    |             | Min: 1<br/>Max: 100<br/>Default: `1` |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `codes` | Array of `string` | ✅  |  |  |
-| `state` | `string` | ✅  |  |  |
+| Name    | Type              | Req'd | Description | Constraints |
+| ------- | ----------------- | ----- | ----------- | ----------- |
+| `codes` | Array of `string` | ✅    |             |             |
+| `state` | `string`          | ✅    |             |             |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -53,9 +56,7 @@ Generate invite codes for a specific state. Admin-only.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "state"
-          ],
+          "required": ["state"],
           "properties": {
             "state": {
               "type": "string",
@@ -75,10 +76,7 @@ Generate invite codes for a specific state. Admin-only.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "codes",
-            "state"
-          ],
+          "required": ["codes", "state"],
           "properties": {
             "codes": {
               "type": "array",

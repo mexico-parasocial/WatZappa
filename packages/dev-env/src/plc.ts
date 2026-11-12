@@ -4,7 +4,7 @@ import { Client as PlcClient } from '@did-plc/lib'
 import * as plc from '@did-plc/server'
 import getPort from 'get-port'
 import { CID } from 'multiformats/cid'
-import { PlcConfig } from './types.js'
+import type { PlcConfig } from './types.js'
 
 export class PersistentMockDatabase implements plc.PlcDatabase {
   mock: plc.PlcDatabase
@@ -34,7 +34,7 @@ export class PersistentMockDatabase implements plc.PlcDatabase {
         }
       }
       ;(this.mock as any).contents = parsed
-    } catch (e) {
+    } catch {
       // ignore if file doesn't exist
     }
   }

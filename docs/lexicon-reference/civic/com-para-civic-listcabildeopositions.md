@@ -2,11 +2,13 @@
 title: com.para.civic.listCabildeoPositions
 description: Reference for the com.para.civic.listCabildeoPositions lexicon
 ---
+
 **Lexicon Version:** 1
 
 ## Definitions
 
 <a name="main"></a>
+
 ### `main`
 
 **Type:** `query`
@@ -15,27 +17,28 @@ List indexed positions for a Cabildeo with optional stance filter.
 
 **Parameters:**
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cabildeo` | `string` | ✅  |  | Format: `at-uri` |
-| `stance` | `string` | ❌  |  | Known Values: `for`, `against`, `amendment` |
-| `limit` | `integer` | ❌  |  | Min: 1<br/>Max: 100<br/>Default: `50` |
-| `cursor` | `string` | ❌  |  |  |
-**Output:**
+| Name        | Type      | Req'd | Description | Constraints                                 |
+| ----------- | --------- | ----- | ----------- | ------------------------------------------- |
+| `cabildeo`  | `string`  | ✅    |             | Format: `at-uri`                            |
+| `stance`    | `string`  | ❌    |             | Known Values: `for`, `against`, `amendment` |
+| `limit`     | `integer` | ❌    |             | Min: 1<br/>Max: 100<br/>Default: `50`       |
+| `cursor`    | `string`  | ❌    |             |                                             |
+| **Output:** |
 
 - **Encoding:** `application/json`
 - **Schema:**
 
 **Schema Type:** `object`
 
-| Name | Type | Req'd  | Description | Constraints |
-|------|------|----------|-------------|-------------|
-| `cursor` | `string` | ❌  |  |  |
-| `positions` | Array of [`com.para.civic.defs#positionView`]([[com-para-civic-defs|com.para.civic.defs#positionView]]) | ✅  |  |  |
+| Name        | Type                                                                | Req'd                               | Description | Constraints |
+| ----------- | ------------------------------------------------------------------- | ----------------------------------- | ----------- | ----------- |
+| `cursor`    | `string`                                                            | ❌                                  |             |             |
+| `positions` | Array of [`com.para.civic.defs#positionView`]([[com-para-civic-defs | com.para.civic.defs#positionView]]) | ✅          |             |     |
 
 ---
 
 ## Lexicon Source
+
 ```json
 {
   "lexicon": 1,
@@ -46,9 +49,7 @@ List indexed positions for a Cabildeo with optional stance filter.
       "description": "List indexed positions for a Cabildeo with optional stance filter.",
       "parameters": {
         "type": "params",
-        "required": [
-          "cabildeo"
-        ],
+        "required": ["cabildeo"],
         "properties": {
           "cabildeo": {
             "type": "string",
@@ -56,11 +57,7 @@ List indexed positions for a Cabildeo with optional stance filter.
           },
           "stance": {
             "type": "string",
-            "knownValues": [
-              "for",
-              "against",
-              "amendment"
-            ]
+            "knownValues": ["for", "against", "amendment"]
           },
           "limit": {
             "type": "integer",
@@ -77,9 +74,7 @@ List indexed positions for a Cabildeo with optional stance filter.
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": [
-            "positions"
-          ],
+          "required": ["positions"],
           "properties": {
             "cursor": {
               "type": "string"

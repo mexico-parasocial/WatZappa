@@ -44,17 +44,17 @@
           },
           "cabildeoUris": {
             "type": "array",
-            "items": {"type": "string", "format": "at-uri"},
+            "items": { "type": "string", "format": "at-uri" },
             "maxLength": 100
           },
           "civicTreeCardIds": {
             "type": "array",
-            "items": {"type": "string", "maxLength": 200},
+            "items": { "type": "string", "maxLength": 200 },
             "maxLength": 200
           },
           "evidenceUris": {
             "type": "array",
-            "items": {"type": "string", "maxLength": 2000},
+            "items": { "type": "string", "maxLength": 2000 },
             "maxLength": 300
           },
           "sembleCollectionUri": {
