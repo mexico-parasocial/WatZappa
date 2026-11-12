@@ -9,7 +9,8 @@
 # Image labels are set by the docker-images workflow. EXPOSE and VOLUME
 # only matter when running an image locally.
 
-FROM node:24.22.2-alpine3.24 AS base
+# @NOTE PARA fork: Node 22, which package.json#devEngines pins (onFail: error).
+FROM node:22.23.4-alpine3.24 AS base
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 WORKDIR /app
@@ -21,7 +22,10 @@ RUN corepack enable && corepack install
 # dependency download cached.
 FROM base AS deps
 COPY .npmrc pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm fetch
+# @NOTE PARA fork: no lifecycle scripts here. The lockfile includes
+# matrix-bridge's @matrix-org/matrix-sdk-crypto-nodejs, whose postinstall has no
+# linux-arm64-musl binary; each service's `pnpm install` runs its own builds.
+RUN pnpm fetch --ignore-scripts
 
 # @NOTE The <service>-source stages run on every change, but `COPY --from` only
 # invalidates a build stage when the files it copies changed.
@@ -100,7 +104,7 @@ RUN pnpm run build:tooling \
  && pnpm --filter pds-service --prod deploy /deploy \
  && rm /deploy/pnpm-lock.yaml /deploy/pnpm-workspace.yaml
 
-FROM node:24.22.2-alpine3.24 AS runtime
+FROM node:22.23.4-alpine3.24 AS runtime
 RUN apk add --no-cache dumb-init
 # Avoid zombie processes, handle signal forwarding
 ENTRYPOINT ["dumb-init", "--"]
