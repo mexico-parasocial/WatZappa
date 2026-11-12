@@ -36,7 +36,7 @@ describe('community banner', () => {
     const res = await fetch(url, {
       method: 'POST',
       headers: { ...sc.getHeaders(did as DidString), 'content-type': type },
-      body: bytes,
+      body: new Blob([new Uint8Array(bytes)]),
     })
     return { status: res.status, body: (await res.json()) as any }
   }
