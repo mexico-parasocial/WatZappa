@@ -7,6 +7,7 @@ import {
   type CommunityPatch,
   type CommunitySettings,
   type CommunityStateView,
+  activeCommunityOffices,
   effectiveCommunityMember,
 } from '@atproto/common'
 import type { ActorDb } from '../../actor-store/db/index.js'
@@ -112,6 +113,35 @@ export class CommunityStore {
     return (
       effectiveCommunityMember(row && toMember(row), at)?.status === 'active'
     )
+  }
+
+  /** Whether `did` holds the owner office and is active as of `at`. */
+  async isActiveOwner(did: string, at = Date.now()): Promise<boolean> {
+    const row = await this.db.db
+      .selectFrom('community_member')
+      .selectAll()
+      .where('did', '=', did)
+      .executeTakeFirst()
+    return activeCommunityOffices(row && toMember(row), at).includes('owner')
+  }
+
+  /** Every member the chain has recorded, whatever their status. */
+  async listMembers(): Promise<Array<[string, CommunityMember]>> {
+    const rows = await this.db.db
+      .selectFrom('community_member')
+      .selectAll()
+      .execute()
+    return rows.map((row) => [row.did, toMember(row)])
+  }
+
+  /** Members whose stored status is `suspended`, lapsed or not. */
+  async listSuspended(): Promise<Array<[string, CommunityMember]>> {
+    const rows = await this.db.db
+      .selectFrom('community_member')
+      .selectAll()
+      .where('status', '=', 'suspended')
+      .execute()
+    return rows.map((row) => [row.did, toMember(row)])
   }
 
   async apply(

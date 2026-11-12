@@ -248,6 +248,14 @@ roster.
   phases 2–5 do not depend on them. Building on the alpha is acceptable for
   community-private data. The constraints in `AGENTS.md` (owner-governed
   writes, no blobs, 501 for other space methods) still apply.
+- **Members come from the chain.** With Spaces enabled, a community owns the
+  space `com.para.space.community` / `members`. `appendCommunityEvent` projects
+  the event's member changes into that space's member list in the same
+  transaction (`para/community/space.ts`); nothing else writes the list.
+  Whatever later grants access (credentials, sync) must ask
+  `isCommunitySpaceMember`, which reads the fold, because a suspension that
+  runs out changes no stored row until the next event. Not built: credential
+  issuance, members writing their own space repos, sync into the AppView.
 
 ## 4. What this removes
 
