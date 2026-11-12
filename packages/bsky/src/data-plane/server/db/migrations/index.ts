@@ -122,3 +122,4 @@ export * as _20261107T150000000Z from './20261107T150000000Z-add-community-phase
 export * as _20261108T120000000Z from './20261108T120000000Z-add-community-profile-update.js'
 export * as _20261109T120000000Z from './20261109T120000000Z-drop-legacy-community-tables.js'
 export * as _20261110T120000000Z from './20261110T120000000Z-drop-cabildeo-live.js'
+export * as _20261111T120000000Z from './20261111T120000000Z-add-community-banner.js'

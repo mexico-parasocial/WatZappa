@@ -4,6 +4,7 @@ import * as spaceAccess from './003-space-access.js'
 import * as spaceSync from './004-space-sync.js'
 import * as spaceCommitData from './005-space-commit-data.js'
 import * as community from './006-community.js'
+import * as spacePolicy from './007-space-policy.js'
 
 export default {
   '001': init,
@@ -12,4 +13,5 @@ export default {
   '004': spaceSync,
   '005': spaceCommitData,
   '006': community,
+  '007': spacePolicy,
 }

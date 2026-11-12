@@ -3,6 +3,7 @@ import type { AppContext } from '../../../../context.js'
 import { parseString } from '../../../../hydration/util.js'
 import { com } from '../../../../lexicons/index.js'
 import { resHeaders } from '../../../util.js'
+import { boardBannerUrl } from './getBoard.js'
 
 export default function (server: Server, ctx: AppContext) {
   server.add(com.para.community.listBoards, {
@@ -83,6 +84,7 @@ const listBoards = async ({
           description: parseString(board.description),
           quadrant: board.quadrant,
           region: parseString(board.region),
+          banner: boardBannerUrl(ctx, board),
           delegatesChatId: board.delegatesChatId,
           subdelegatesChatId: board.subdelegatesChatId,
           memberCount: board.memberCount,

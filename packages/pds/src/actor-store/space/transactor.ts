@@ -2,7 +2,7 @@ import { TID } from '@atproto/common'
 import { encode } from '@atproto/lex-cbor'
 import { type Cid, parseCid } from '@atproto/lex-data'
 import { WriteOpAction } from '@atproto/repo'
-import { RepoCommit } from '@atproto/space'
+import { LtHash, RepoCommit } from '@atproto/space'
 import {
   type AtUriString,
   SpaceRef,
@@ -10,6 +10,7 @@ import {
 } from '@atproto/syntax'
 import { InvalidRequestError } from '@atproto/xrpc-server'
 import { BadRecordSwapError, type PreparedWrite } from '../../repo/types.js'
+import { migrateLegacyPolicy } from '../../simplespace/migrate-policy.js'
 import type {
   ActorDb,
   SimplespaceConfig,
@@ -55,12 +56,14 @@ export class SpaceTransactor extends SpaceReader {
   }
 
   async createSpace(uri: string, config: SpaceConfig): Promise<void> {
+    this.db.assertTransaction()
     await this.ensureSpace(uri)
     await this.db.db
       .insertInto('simplespace_config')
       .values({ uri, ...config })
       .onConflict((oc) => oc.column('uri').doUpdateSet(config))
       .execute()
+    await this.syncPolicy(uri)
   }
 
   async updateSpaceConfig(
@@ -68,10 +71,23 @@ export class SpaceTransactor extends SpaceReader {
     config: Partial<SpaceConfig>,
   ): Promise<void> {
     if (Object.keys(config).length === 0) return
+    this.db.assertTransaction()
     await this.db.db
       .updateTable('simplespace_config')
       .set(config)
       .where('uri', '=', uri)
+      .execute()
+    await this.syncPolicy(uri)
+  }
+
+  private async syncPolicy(uri: string): Promise<void> {
+    const config = await this.getSpaceConfig(uri)
+    if (!config) throw new Error('Missing legacy Spaces configuration')
+    const policyJson = JSON.stringify(migrateLegacyPolicy(config))
+    await this.db.db
+      .insertInto('space_policy')
+      .values({ uri, policyJson })
+      .onConflict((oc) => oc.column('uri').doUpdateSet({ policyJson }))
       .execute()
   }
 
@@ -79,11 +95,13 @@ export class SpaceTransactor extends SpaceReader {
   // space. The `space` row survives as a tombstone, so getSpaceCredential can
   // keep reporting the space as deleted.
   async deleteSpace(uri: string): Promise<void> {
+    this.db.assertTransaction()
     await this.db.db
       .updateTable('space')
       .set({ deletedAt: new Date().toISOString() })
       .where('uri', '=', uri)
       .execute()
+    await this.db.db.deleteFrom('space_policy').where('uri', '=', uri).execute()
     await this.db.db
       .deleteFrom('simplespace_config')
       .where('uri', '=', uri)
@@ -253,6 +271,32 @@ export class SpaceTransactor extends SpaceReader {
       .execute()
     await this.db.db.insertInto('space_record_oplog').values(ops).execute()
 
+    return { rev, setHash }
+  }
+
+  /** Clear a space repo atomically; this server does not yet accept space blobs. */
+  async clearRecords(
+    space: SpaceRefString,
+  ): Promise<{ rev: string; setHash: Uint8Array } | null> {
+    this.db.assertTransaction()
+    const state = await this.getRepoState(space)
+    if (!state?.setHash || new LtHash(state.setHash).isEmpty()) return null
+
+    await this.db.db
+      .deleteFrom('space_record')
+      .where('space', '=', space)
+      .execute()
+    await this.db.db
+      .deleteFrom('space_record_oplog')
+      .where('space', '=', space)
+      .execute()
+    const rev = TID.nextStr(state.rev ?? undefined)
+    const setHash = new LtHash().state()
+    await this.db.db
+      .updateTable('space_repo')
+      .set({ setHash, rev })
+      .where('space', '=', space)
+      .execute()
     return { rev, setHash }
   }
 

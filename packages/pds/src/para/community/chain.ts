@@ -23,6 +23,7 @@ import { com } from '../../lexicons/index.js'
 import { dbLogger } from '../../logger.js'
 import { type PreparedWrite, prepareCreate } from '../../repo/index.js'
 import type { ProvenRequest } from './requests.js'
+import { projectCommunitySpace } from './space.js'
 
 /** DID document service id that members' PDSes proxy `act` to. */
 export const COMMUNITY_SERVICE_ID = 'para_community'
@@ -82,6 +83,9 @@ export function appendCommunityEvent(
   ) => Promise<PreparedWrite[]> = async () => [],
 ): Promise<AppendResult> {
   return serialized(community, async () => {
+    // Space tables arrive by migration; a store made before them lacks them.
+    if (ctx.cfg.spaces.enabled)
+      await ctx.actorStore.ensureLatestSchema(community)
     const { commit, result } = await ctx.actorStore.transact(
       community,
       async (txn) => {
@@ -161,6 +165,9 @@ export function appendCommunityEvent(
           settings: head?.settings,
         })
         await txn.community.useRequest(input.request.ref.uri, seq)
+        if (ctx.cfg.spaces.enabled) {
+          await projectCommunitySpace(txn, community, decision.patch)
+        }
         return {
           commit,
           result: {

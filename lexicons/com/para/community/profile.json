@@ -18,6 +18,12 @@
           },
           "quadrant": { "type": "string", "maxLength": 64 },
           "region": { "type": "string", "maxLength": 128 },
+          "banner": {
+            "type": "blob",
+            "description": "Cover image shown at the top of the community's profile.",
+            "accept": ["image/png", "image/jpeg"],
+            "maxSize": 1000000
+          },
           "createdAt": { "type": "string", "format": "datetime" }
         }
       }
@@ -34,7 +40,12 @@
           "maxLength": 3000
         },
         "quadrant": { "type": "string", "maxLength": 64 },
-        "region": { "type": "string", "maxLength": 128 }
+        "region": { "type": "string", "maxLength": 128 },
+        "banner": {
+          "type": "string",
+          "format": "cid",
+          "description": "The CID of an image uploaded with com.para.community.uploadBanner. Absent removes the banner."
+        }
       }
     }
   }

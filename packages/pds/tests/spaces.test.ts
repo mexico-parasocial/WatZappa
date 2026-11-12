@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { type SeedClient, TestNetworkNoAppView } from '@atproto/dev-env'
 import {
   COMMIT_MAC_TYPE,
+  LtHash,
   MAC_HEADER,
   RECORD_MAC_TYPE,
   WANT_MAC_HEADER,
@@ -269,6 +270,109 @@ describe('spaces', () => {
       })
     })
 
+    it('clears repo records and oplog atomically while leaving other spaces intact', async () => {
+      const space = spaceOf(alice, 'clear-internal')
+      const other = spaceOf(alice, 'clear-other')
+      await seedSpace(alice, space)
+      await seedSpace(alice, other)
+      await asOAuth(alice, fullGrant(alice), async (headers) => {
+        expect((await create(headers, alice, space, 'one')).status).toBe(200)
+        expect((await create(headers, alice, other, 'one')).status).toBe(200)
+      })
+      const ctx = network.pds.ctx
+      const old = await ctx.actorStore.read(alice, (store) =>
+        store.space.getRepoState(space),
+      )
+      const ref = SpaceRef.parse(space).toString()
+      const result = await ctx.actorStore.transact(alice, (tx) =>
+        tx.space.clearRecords(ref),
+      )
+      expect(result).not.toBeNull()
+      expect(result!.rev > old!.rev!).toBe(true)
+      expect([...result!.setHash]).toEqual([...new LtHash().state()])
+      expect(
+        await ctx.actorStore.read(alice, (store) =>
+          store.space.listCollections(space),
+        ),
+      ).toEqual([])
+      await asOAuth(alice, fullGrant(alice), async (headers) => {
+        const cleared = await call('com.atproto.space.listRepoOps', {
+          headers,
+          params: { space, repo: alice },
+        })
+        expect(cleared.body.ops).toEqual([])
+        const retained = await call('com.atproto.space.getRecord', {
+          headers,
+          params: {
+            space: other,
+            repo: alice,
+            collection: COLLECTION,
+            rkey: 'one',
+          },
+        })
+        expect(retained.status).toBe(200)
+      })
+      expect(
+        await ctx.actorStore.transact(alice, (tx) =>
+          tx.space.clearRecords(ref),
+        ),
+      ).toBeNull()
+    })
+
+    it('requires delete grants for every collection before clearing', async () => {
+      const space = spaceOf(alice, 'clear-route')
+      await seedSpace(alice, space)
+      const both = grant(
+        alice,
+        `collection=${COLLECTION}&collection=${OTHER_COLLECTION}&action=read&action=create&action=delete`,
+      )
+      await asOAuth(alice, both, async (headers) => {
+        expect((await create(headers, alice, space, 'one')).status).toBe(200)
+        expect(
+          (
+            await create(
+              headers,
+              alice,
+              space,
+              'two',
+              { $type: OTHER_COLLECTION, text: 'two' },
+              OTHER_COLLECTION,
+            )
+          ).status,
+        ).toBe(200)
+      })
+      await asOAuth(alice, fullGrant(alice), async (headers) => {
+        const denied = await call('com.atproto.space.clearRecords', {
+          headers,
+          body: { space, repo: alice },
+        })
+        expect(denied.status).toBeGreaterThanOrEqual(400)
+        expect(denied.body.message).toMatch(/space:/)
+      })
+      expect(
+        await network.pds.ctx.actorStore.read(alice, (store) =>
+          store.space.listCollections(space),
+        ),
+      ).toHaveLength(2)
+      await asOAuth(alice, both, async (headers) => {
+        const cleared = await call('com.atproto.space.clearRecords', {
+          headers,
+          body: { space, repo: alice },
+        })
+        expect(cleared.status).toBe(200)
+        const repeated = await call('com.atproto.space.clearRecords', {
+          headers,
+          body: { space, repo: alice },
+        })
+        expect(repeated.status).toBe(200)
+      })
+      expect(
+        await network.pds.ctx.actorStore.read(alice, (store) =>
+          store.space.listCollections(space),
+        ),
+      ).toEqual([])
+    })
+
     it('serves a STAR repo authenticated by a KEM response MAC', async () => {
       const space = spaceOf(alice, 'export')
       await seedSpace(alice, space)
@@ -500,16 +604,29 @@ describe('spaces', () => {
       expect(res.body.error).toBe('MethodNotImplemented')
     })
 
+    it.each([
+      'com.atproto.memberspace.listMembers',
+      'com.atproto.managedspace.checkUserAccess',
+    ])('does not proxy unsupported policy method %s', async (lxm) => {
+      const res = await call(lxm, { headers: sc.getHeaders(alice) })
+      expect(res.status).toBe(501)
+      expect(res.body.error).toBe('MethodNotImplemented')
+    })
+
     it('never mints service auth for a Spaces method', async () => {
-      const res = await call('com.atproto.server.getServiceAuth', {
-        headers: sc.getHeaders(alice),
-        params: {
-          aud: 'did:web:authority.example',
-          lxm: 'com.atproto.space.notifyWrite',
-        },
-      })
-      expect(res.status).toBe(400)
-      expect(res.body.message).toMatch(/Spaces method/)
+      for (const lxm of [
+        'com.atproto.space.notifyWrite',
+        'com.atproto.memberspace.listMembers',
+        'com.atproto.managedspace.checkUserAccess',
+        'com.atproto.personalspace.policy',
+      ]) {
+        const res = await call('com.atproto.server.getServiceAuth', {
+          headers: sc.getHeaders(alice),
+          params: { aud: 'did:web:authority.example', lxm },
+        })
+        expect(res.status).toBe(400)
+        expect(res.body.message).toMatch(/Spaces method/)
+      }
     })
   })
 
@@ -550,6 +667,125 @@ describe('spaces', () => {
       createdAt: new Date().toISOString(),
     })
 
+    it('bridges private memberspace management and legacy configuration', async () => {
+      await asOAuth(alice, ownerGrant(alice), async (headers) => {
+        const policy = {
+          $type: 'com.atproto.memberspace.policy',
+          allowedApps: [],
+        }
+        const created = await call('com.atproto.space.createSpace', {
+          headers,
+          body: { spaceType: PERSONAL, skey: 'new-management', policy },
+        })
+        expect(created.status).toBe(200)
+        const space = created.body.uri
+        const got = await call('com.atproto.space.getSpace', {
+          headers,
+          params: { space },
+        })
+        expect(got.status).toBe(200)
+        expect(got.body.policy.allowedApps).toEqual([])
+        const legacy = await call('com.atproto.simplespace.getSpace', {
+          headers,
+          params: { space },
+        })
+        expect(legacy.body.appAccess.allowed).toEqual([])
+        const updated = await call('com.atproto.space.updateSpace', {
+          headers,
+          body: { space, policy: { $type: 'com.atproto.memberspace.policy' } },
+        })
+        expect(updated.status).toBe(200)
+        const after = await call('com.atproto.space.getSpace', {
+          headers,
+          params: { space },
+        })
+        expect(after.body.policy.allowedApps).toBeUndefined()
+        const deleted = await call('com.atproto.space.deleteSpace', {
+          headers,
+          body: { space },
+        })
+        expect(deleted.status).toBe(200)
+        const gone = await call('com.atproto.space.getSpace', {
+          headers,
+          params: { space },
+        })
+        expect(gone.body.error).toBe('SpaceNotFound')
+      })
+    })
+
+    it('rejects unsupported policies and enforces owner and management grants', async () => {
+      await asOAuth(alice, ownerGrant(alice), async (headers) => {
+        for (const policy of [
+          { $type: 'com.atproto.memberspace.policy', publicRead: true },
+          { $type: 'com.atproto.memberspace.policy', publicWrite: true },
+          { $type: 'com.atproto.memberspace.policy', publishMembers: true },
+          { $type: 'com.atproto.memberspace.policy', publishPolicy: true },
+          { $type: 'com.atproto.personalspace.policy' },
+        ]) {
+          const res = await call('com.atproto.space.createSpace', {
+            headers,
+            body: { spaceType: PERSONAL, skey: 'unsupported', policy },
+          })
+          expect(res.status).toBe(400)
+          expect(res.body.error).toBe('UnsupportedPolicy')
+        }
+        const created = await call('com.atproto.space.createSpace', {
+          headers,
+          body: {
+            spaceType: PERSONAL,
+            skey: 'new-auth',
+            policy: { $type: 'com.atproto.memberspace.policy' },
+          },
+        })
+        expect(created.status).toBe(200)
+        const rejectedUpdate = await call('com.atproto.space.updateSpace', {
+          headers,
+          body: {
+            space: created.body.uri,
+            policy: {
+              $type: 'com.atproto.memberspace.policy',
+              publicRead: true,
+            },
+          },
+        })
+        expect(rejectedUpdate.body.error).toBe('UnsupportedPolicy')
+        const unchanged = await call('com.atproto.space.getSpace', {
+          headers,
+          params: { space: created.body.uri },
+        })
+        expect(unchanged.body.policy.publicRead).toBe(false)
+      })
+      const space = `at://${alice}/space/${PERSONAL}/new-auth`
+      await asOAuth(bob, ownerGrant(alice), async (headers) => {
+        const res = await call('com.atproto.space.getSpace', {
+          headers,
+          params: { space },
+        })
+        expect(res.body.error).toBe('NotSpaceOwner')
+        const deleteAttempt = await call('com.atproto.space.deleteSpace', {
+          headers,
+          body: { space },
+        })
+        expect(deleteAttempt.body.error).toBe('NotSpaceOwner')
+      })
+      await asOAuth(
+        alice,
+        `atproto space:${PERSONAL}?authority=${alice}&action=read`,
+        async (headers) => {
+          const res = await call('com.atproto.space.deleteSpace', {
+            headers,
+            body: { space },
+          })
+          expect(res.status).toBeGreaterThanOrEqual(400)
+        },
+      )
+      const password = await call('com.atproto.space.getSpace', {
+        headers: sc.getHeaders(alice),
+        params: { space },
+      })
+      expect(password.body.error).toBe('OAuthRequired')
+    })
+
     it('creates, reads, reconfigures and deletes an owned space', async () => {
       await asOAuth(alice, ownerGrant(alice), async (headers) => {
         const created = await createSpace(headers, 'lifecycle')
@@ -580,6 +816,16 @@ describe('spaces', () => {
           },
         })
         expect(updated.status).toBe(200)
+        const policy = await network.pds.ctx.actorStore.read(alice, (store) =>
+          store.space.db.db
+            .selectFrom('space_policy')
+            .selectAll()
+            .where('uri', '=', space)
+            .executeTakeFirstOrThrow(),
+        )
+        expect(JSON.parse(policy.policyJson).allowedApps).toEqual([
+          'https://para.example/client-metadata.json',
+        ])
 
         const members = await call('com.atproto.simplespace.listMembers', {
           headers,
@@ -605,6 +851,16 @@ describe('spaces', () => {
           body: { space },
         })
         expect(deleted.status).toBe(200)
+        const removedPolicy = await network.pds.ctx.actorStore.read(
+          alice,
+          (store) =>
+            store.space.db.db
+              .selectFrom('space_policy')
+              .selectAll()
+              .where('uri', '=', space)
+              .executeTakeFirst(),
+        )
+        expect(removedPolicy).toBeUndefined()
 
         const revived = await call('com.atproto.space.createRecord', {
           headers,

@@ -10,6 +10,7 @@ import {
   InvalidRequestError,
   type Server,
 } from '@atproto/xrpc-server'
+import type { ActorStoreTransactor } from '../../../../actor-store/actor-store-transactor.js'
 import type { AppContext } from '../../../../context.js'
 import { com } from '../../../../lexicons/index.js'
 import { communityActAuth } from '../../../../para/community/auth.js'
@@ -113,6 +114,11 @@ export default function (server: Server, ctx: AppContext) {
               'CommunityNotFound',
             )
           }
+          // The event carries the banner's CID; the record carries the blob,
+          // which must already be in this community's store.
+          const banner = profile.banner
+            ? await bannerBlob(txn, profile.banner)
+            : undefined
           return [
             await prepareUpdate({
               did: community,
@@ -122,6 +128,7 @@ export default function (server: Server, ctx: AppContext) {
               record: stripUndefined({
                 $type: com.para.community.profile.$type,
                 ...profile,
+                banner,
                 createdAt: current.value.createdAt,
               }),
             }),
@@ -140,7 +147,26 @@ const cleanProfile = (profile: CommunityProfile): CommunityProfile =>
     description: profile.description,
     quadrant: profile.quadrant,
     region: profile.region,
+    banner: profile.banner,
   }) as unknown as CommunityProfile
+
+/** The stored image a `profile.update` names, as the record's blob field. */
+async function bannerBlob(txn: ActorStoreTransactor, cid: string) {
+  const ref = parseCid(cid)
+  const metadata = await txn.repo.blob.getBlobMetadata(ref).catch(() => null)
+  if (!metadata?.mimeType) {
+    throw new InvalidRequestError(
+      'Upload the banner to this community first.',
+      'InvalidRequest',
+    )
+  }
+  return {
+    $type: 'blob' as const,
+    ref,
+    mimeType: metadata.mimeType,
+    size: metadata.size,
+  }
+}
 
 const isSanction = (value: unknown): value is CommunitySanction =>
   value === 'remove' || value === 'block'

@@ -1,4 +1,5 @@
 import type { Selectable } from 'kysely'
+import { getBlobCidString } from '@atproto/lex-data'
 import type { Cid, l } from '@atproto/lex-schema'
 import type { AtUri } from '@atproto/syntax'
 import { com } from '../../../../lexicons/index.js'
@@ -32,6 +33,7 @@ const insertFn = async (
     description: profile.description ?? null,
     quadrant: profile.quadrant,
     region: profile.region ?? null,
+    banner: profile.banner ? getBlobCidString(profile.banner) : null,
     profileCid: cid.toString(),
     createdAt: profile.createdAt,
   }
@@ -56,6 +58,7 @@ const deleteFn = async (
         description: null,
         quadrant: null,
         region: null,
+        banner: null,
         profileCid: null,
         createdAt: null,
       })

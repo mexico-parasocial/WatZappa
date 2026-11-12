@@ -61,6 +61,8 @@ export interface BoardView {
   quadrant: string
   /** Mexican state this community belongs to (e.g. 'Jalisco'). Omit for communities that are not tied to one state. */
   region?: string
+  /** URL of the community's banner image, if it has one. */
+  banner?: string
   delegatesChatId: string
   subdelegatesChatId: string
   memberCount: number

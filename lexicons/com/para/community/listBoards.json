@@ -118,6 +118,11 @@
           "maxGraphemes": 64,
           "maxLength": 128
         },
+        "banner": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the community's banner image, if it has one."
+        },
         "delegatesChatId": { "type": "string" },
         "subdelegatesChatId": { "type": "string" },
         "memberCount": { "type": "integer" },

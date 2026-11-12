@@ -95,8 +95,11 @@
     "com.atproto.label.subscribeLabels",
     "com.atproto.lexicon.resolveLexicon",
     "com.atproto.lexicon.schema",
+    "com.atproto.managedspace.policy",
+    "com.atproto.memberspace.policy",
     "com.atproto.moderation.createReport",
     "com.atproto.moderation.defs",
+    "com.atproto.personalspace.policy",
     "com.atproto.repo.applyWrites",
     "com.atproto.repo.createRecord",
     "com.atproto.repo.defs",
@@ -145,14 +148,18 @@
     "com.atproto.simplespace.removeMember",
     "com.atproto.simplespace.updateSpace",
     "com.atproto.space.applyWrites",
+    "com.atproto.space.clearRecords",
     "com.atproto.space.createRecord",
+    "com.atproto.space.createSpace",
     "com.atproto.space.defs",
     "com.atproto.space.deleteRecord",
+    "com.atproto.space.deleteSpace",
     "com.atproto.space.getBlob",
     "com.atproto.space.getDelegationToken",
     "com.atproto.space.getLatestCommit",
     "com.atproto.space.getRecord",
     "com.atproto.space.getRepo",
+    "com.atproto.space.getSpace",
     "com.atproto.space.getSpaceCredential",
     "com.atproto.space.listBlobs",
     "com.atproto.space.listRecords",
@@ -165,6 +172,7 @@
     "com.atproto.space.putRecord",
     "com.atproto.space.registerNotify",
     "com.atproto.space.unregisterNotify",
+    "com.atproto.space.updateSpace",
     "com.atproto.sync.defs",
     "com.atproto.sync.getBlob",
     "com.atproto.sync.getBlocks",
@@ -216,6 +224,7 @@
     "com.para.community.request",
     "com.para.community.shareContent",
     "com.para.community.updateBriefingPack",
+    "com.para.community.uploadBanner",
     "com.para.community.vote",
     "com.para.feed.getAuthorFeed",
     "com.para.feed.getPostThread",
@@ -667,6 +676,14 @@
       "uri": "file://../../lexicons/com/atproto/lexicon/schema.json",
       "cid": "bafyreibddpomwj65bmz3hl4he7payr46sditxqmuc3zw43cnev2s7wwa3i"
     },
+    "com.atproto.managedspace.policy": {
+      "uri": "file://../../lexicons/com/atproto/managedspace/policy.json",
+      "cid": "bafyreib6drihazsczewaoaiitv5e7e6lisb25t5v2te2mxkvewmlexkbua"
+    },
+    "com.atproto.memberspace.policy": {
+      "uri": "file://../../lexicons/com/atproto/memberspace/policy.json",
+      "cid": "bafyreihok6myh4eqjlc5tpulpauwukp44lge36uq5p5mcx37gli6nlxdzq"
+    },
     "com.atproto.moderation.createReport": {
       "uri": "file://../../lexicons/com/atproto/moderation/createReport.json",
       "cid": "bafyreifqn5zk2gkmrs6k5vqmqjfvds6nfiuzkehzrmz2gvzjoqz6fucmja"
@@ -674,6 +691,10 @@
     "com.atproto.moderation.defs": {
       "uri": "file://../../lexicons/com/atproto/moderation/defs.json",
       "cid": "bafyreibecurmetfii4q7oa7ki5qi2uuaimjqe6phdlxmy3rlypsvvolstm"
+    },
+    "com.atproto.personalspace.policy": {
+      "uri": "file://../../lexicons/com/atproto/personalspace/policy.json",
+      "cid": "bafyreidinfhgmohl26wy3e4guuzbiplsvpd66jaecwkkvb4kyomo4smbxu"
     },
     "com.atproto.repo.applyWrites": {
       "uri": "file://../../lexicons/com/atproto/repo/applyWrites.json",
@@ -867,9 +888,17 @@
       "uri": "file://../../lexicons/com/atproto/space/applyWrites.json",
       "cid": "bafyreib5udc25gqhdemorqomx6p3a4oeuiiw2rozkmz3nmv4g37e2m4efy"
     },
+    "com.atproto.space.clearRecords": {
+      "uri": "file://../../lexicons/com/atproto/space/clearRecords.json",
+      "cid": "bafyreidim7fscnigyptdaf2u4ujmgksglftmdmkr3aen7xs73ml34vvex4"
+    },
     "com.atproto.space.createRecord": {
       "uri": "file://../../lexicons/com/atproto/space/createRecord.json",
       "cid": "bafyreidwtfhg57tdwqpj7geo3onbb5c445wquh3wudqa52ilcopzijxuii"
+    },
+    "com.atproto.space.createSpace": {
+      "uri": "file://../../lexicons/com/atproto/space/createSpace.json",
+      "cid": "bafyreibomeifx3evzjlywvskzhleymjxcb4qli7g52mfp3prtadknkg5z4"
     },
     "com.atproto.space.defs": {
       "uri": "file://../../lexicons/com/atproto/space/defs.json",
@@ -878,6 +907,10 @@
     "com.atproto.space.deleteRecord": {
       "uri": "file://../../lexicons/com/atproto/space/deleteRecord.json",
       "cid": "bafyreibornwbzwamkd6mjlxmej6xv4vxujia4d2vl4jhm5x52z565pzyhu"
+    },
+    "com.atproto.space.deleteSpace": {
+      "uri": "file://../../lexicons/com/atproto/space/deleteSpace.json",
+      "cid": "bafyreifhtghdspvmscyytneonimqvkpy7fqumqbfndwzkmtuyccnop366u"
     },
     "com.atproto.space.getBlob": {
       "uri": "file://../../lexicons/com/atproto/space/getBlob.json",
@@ -898,6 +931,10 @@
     "com.atproto.space.getRepo": {
       "uri": "file://../../lexicons/com/atproto/space/getRepo.json",
       "cid": "bafyreigp3fqcubmszjxjk4b56sj6frg2f6qr5bupbmqousjcqcmnrlqaeu"
+    },
+    "com.atproto.space.getSpace": {
+      "uri": "file://../../lexicons/com/atproto/space/getSpace.json",
+      "cid": "bafyreiemz73eh7psybr6e4tmqff7z6fu4d5qhrwjnwq4x5vq6rolyffk3u"
     },
     "com.atproto.space.getSpaceCredential": {
       "uri": "file://../../lexicons/com/atproto/space/getSpaceCredential.json",
@@ -921,7 +958,7 @@
     },
     "com.atproto.space.listSpaces": {
       "uri": "file://../../lexicons/com/atproto/space/listSpaces.json",
-      "cid": "bafyreibugfjtde4s7zwaerfv7nbtlzfbegvlcl3xskpb3fyzl2l7m4eqte"
+      "cid": "bafyreialqk5hshpguganye4jezweujf3qd6fx6wsqvdm453okorjzxh35a"
     },
     "com.atproto.space.notifyCredentialRevoked": {
       "uri": "file://../../lexicons/com/atproto/space/notifyCredentialRevoked.json",
@@ -946,6 +983,10 @@
     "com.atproto.space.unregisterNotify": {
       "uri": "file://../../lexicons/com/atproto/space/unregisterNotify.json",
       "cid": "bafyreihjgldeerdgi5a3c7yjxqlcqjwlc32ff4ksmoeomtee4im6swf7ba"
+    },
+    "com.atproto.space.updateSpace": {
+      "uri": "file://../../lexicons/com/atproto/space/updateSpace.json",
+      "cid": "bafyreid7qilbyo4vefnbmkdbi6jomtlg6ea7xq7gzaovtoaijpplkjutgu"
     },
     "com.atproto.sync.defs": {
       "uri": "file://../../lexicons/com/atproto/sync/defs.json",
@@ -1137,7 +1178,7 @@
     },
     "com.para.community.getBoard": {
       "uri": "file://../../lexicons/com/para/community/getBoard.json",
-      "cid": "bafyreid4it7lu6retoevonjexb4s6rzwua37yas4oy7v7l32zhmvjs3wi4"
+      "cid": "bafyreigwwt5bqn77yf5lwmv2k6rtyfchuvtezd5h5foqxcdmqx373znuci"
     },
     "com.para.community.intensity": {
       "uri": "file://../../lexicons/com/para/community/intensity.json",
@@ -1145,11 +1186,11 @@
     },
     "com.para.community.listBoards": {
       "uri": "file://../../lexicons/com/para/community/listBoards.json",
-      "cid": "bafyreiezfplfyihzkpzhyruejqq6rferfqzhtvioma3uvmcpoes6mg7igi"
+      "cid": "bafyreih3zpz243v3xxl3j4qu3xbyvjdlm7hiw5vcicxu5aidqsdsin6bme"
     },
     "com.para.community.profile": {
       "uri": "file://../../lexicons/com/para/community/profile.json",
-      "cid": "bafyreigbjyvh2hizdasylfdfodz6sbtlgqt5jzjvnidnraorgooojxe4zu"
+      "cid": "bafyreiaklhe4kjygoaugqoai6loo77zddtylicnqyhxdewfwjcmct5xprq"
     },
     "com.para.community.request": {
       "uri": "file://../../lexicons/com/para/community/request.json",
@@ -1162,6 +1203,10 @@
     "com.para.community.updateBriefingPack": {
       "uri": "file://../../lexicons/com/para/community/updateBriefingPack.json",
       "cid": "bafyreidjvs5647ga32e526t2cgfnxxyau2flzk3ijikmvywwb4pma24po4"
+    },
+    "com.para.community.uploadBanner": {
+      "uri": "file://../../lexicons/com/para/community/uploadBanner.json",
+      "cid": "bafyreift6s7g6ohoc4vs6devesh2m6ew5vzqoiwbjhbfola33uquv4xk2q"
     },
     "com.para.community.vote": {
       "uri": "file://../../lexicons/com/para/community/vote.json",
