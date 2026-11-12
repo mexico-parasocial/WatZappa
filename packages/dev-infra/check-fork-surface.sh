@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Fails when fork-owned (PARA) code has been dropped, e.g. by an upstream sync
-# that took upstream's version of a file. Run it after every sync, next to
+# that took upstream's version of a file, or when the fork still carries files
+# upstream has deleted. Run it after every sync, next to
 # `make build`. When fork code moves, update the tables below in the same change.
 set -euo pipefail
 
@@ -34,6 +35,29 @@ required_anchors=(
   'packages/pds/.gitignore|/lexicons/com/para'
 )
 
+# The upstream commit the fork's history was first linked to (be2b1b4a5).
+linked_base=9f66a7e54
+
+# Files upstream deleted that the fork deliberately keeps. A sync resolving a
+# modify/delete conflict as "ours" otherwise leaves stale copies behind.
+kept_upstream_deletions=()
+
+stale=0
+if git rev-parse --verify --quiet upstream/main >/dev/null; then
+  upstream_base="$(git merge-base HEAD upstream/main)"
+  while IFS= read -r path; do
+    for kept in ${kept_upstream_deletions[@]+"${kept_upstream_deletions[@]}"}; do
+      [ "$path" = "$kept" ] && continue 2
+    done
+    if git ls-files --error-unmatch -- "$path" >/dev/null 2>&1; then
+      echo "STALE file:     $path (deleted upstream)"
+      stale=1
+    fi
+  done < <(git diff --name-only --no-renames --diff-filter=D "$linked_base" "$upstream_base")
+else
+  echo "skipping upstream-deletion check: no upstream/main ref"
+fi
+
 for path in "${required_paths[@]}"; do
   if [ ! -e "$path" ]; then
     echo "MISSING file:   $path"
@@ -57,6 +81,14 @@ if [ "$missing" -ne 0 ]; then
   echo
   echo "Fork-owned code is missing; an upstream sync probably overwrote it." >&2
   echo "Restore it from the pre-sync commit before continuing." >&2
+  exit 1
+fi
+
+if [ "$stale" -ne 0 ]; then
+  echo
+  echo "Upstream deleted these files but the fork still has them. Port any" >&2
+  echo "fork changes to upstream's replacement and delete them, or list them" >&2
+  echo "in kept_upstream_deletions." >&2
   exit 1
 fi
 

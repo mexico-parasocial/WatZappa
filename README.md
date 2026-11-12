@@ -34,7 +34,7 @@ Service implementations live in `packages/<name>`, with runtime wrappers in `ser
 ## Requirements
 
 - Node.js 22, using a version compatible with the range in [`package.json`](./package.json). Run `nvm use` to select the major version in [`.nvmrc`](./.nvmrc).
-- pnpm 11.11.0, as pinned in `package.json`.
+- pnpm 12.16.1, as pinned in `package.json` (`corepack enable` installs it).
 - Docker and `jq` for local service infrastructure and integration tests.
 
 ## Getting started

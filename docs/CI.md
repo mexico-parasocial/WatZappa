@@ -43,24 +43,23 @@ node .github/ci/run-tests.mjs --only packages/bsky --maxWorkers=1
 
 ## Images and publishing
 
-The `build-and-push-*-{aws,ghcr}.yaml`, `publish.yaml` and `sync-internal.yaml`
-workflows are guarded by `github.repository == 'bluesky-social/atproto'` and
-stay that way.
+The `docker-images.yaml`, `publish.yaml` and `sync-internal.yaml` workflows are
+guarded by `github.repository == 'bluesky-social/atproto'` and stay that way.
 
-- `*-aws` need Bluesky's AWS roles, `publish.yaml` publishes `@atproto/*` to
-  npm and `sync-internal.yaml` pushes to Bluesky's internal repository. None of
-  them can or should run here.
-- `*-ghcr` would work under `ghcr.io/mexico-parasocial/watzappa`, but they push
-  an unsigned image per commit to `main`, with moving tooling (`checkout@v3`,
-  buildx v2) and Dockerfiles that are still being reworked for the fork's
-  deployment. That is not the signed, reproducible release candidate the pilot
-  plan (P4) asks for. Image publishing belongs in a release workflow that
-  builds by digest from a tag, signs it and records the provenance; until then
-  deployments build their images from the tagged commit.
+- `docker-images.yaml`'s AWS job needs Bluesky's AWS roles, `publish.yaml`
+  publishes `@atproto/*` to npm and `sync-internal.yaml` pushes to Bluesky's
+  internal repository. None of them can or should run here.
+- Its GHCR job would work under `ghcr.io/mexico-parasocial/watzappa`, but it
+  pushes an unsigned image per commit to `main`. That is not the signed,
+  reproducible release candidate the pilot plan (P4) asks for. Image publishing
+  belongs in a release workflow that builds by digest from a tag, signs it and
+  records the provenance; until then deployments build their images from the
+  tagged commit.
 
-If you only want to know that the images still build, add a PR job that runs
-`docker build` per `services/*/Dockerfile` without pushing, once those
-Dockerfiles settle.
+Images build from upstream's root `Dockerfile`, one target per service
+(`docker buildx bake <bsky|bsync|ozone|pds>`); the compose files use the same
+targets. If you only want to know that the images still build, add a PR job
+that runs `docker buildx bake` without pushing.
 
 ## Branch protection for `main`
 

@@ -1,20 +1,12 @@
 {
-  "name": "plc-service",
+  "name": "pds-service",
   "private": true,
-  "packageManager": "pnpm@11.11.0",
   "type": "module",
   "files": [
     "index.ts",
     "run-script.ts"
   ],
   "dependencies": {
-    "@atproto/pds": "workspace:^",
-    "@opentelemetry/instrumentation": "^0.45.0",
-    "dd-trace": "^5.103.0",
-    "opentelemetry-plugin-better-sqlite3": "^1.13.0"
-  },
-  "type": "module",
-  "exports": {
-    "./package.json": "./package.json"
+    "@atproto/pds": "workspace:^"
   }
 }
