@@ -9,13 +9,18 @@ import type {
 import type { Database } from '../../db/index.js'
 import {
   type ParaCommunityActivity,
+  type ParaCommunityActivityAcknowledgement,
+  type ParaCommunityActivityMeasurement,
   type ParaCommunityLedgerEntry,
   type ParaCommunityWikiPage,
+  acknowledgementTableName,
   activityTableName,
   ledgerEntryTableName,
+  measurementTableName,
   wikiPageTableName,
 } from '../../db/tables/para-community-activity.js'
 import { RecordProcessor } from '../processor.js'
+import { commit } from './para-follow-through.js'
 
 /*
  * Community activities, their ledgers and wiki pages are written to each
@@ -23,6 +28,11 @@ import { RecordProcessor } from '../processor.js'
  * author is one of the community's current organizers is decided when they
  * are read (data-plane/server/routes/community-activities.ts), so a role
  * granted or revoked later takes effect without re-indexing.
+ *
+ * Measurements and acknowledgements are append-only: the first version of each
+ * is kept in the commit table and served even after an edit, which only sets
+ * `edited`. An organizer cannot quietly lower a count, and a recipient cannot
+ * quietly turn a dispute into a confirmation (a new record can, visibly).
  */
 
 type LexId = l.RecordSchema['$type']
@@ -31,6 +41,8 @@ const SOCIAL_ACTIVITY: LexId = 'com.para.community.socialActivity'
 const ECONOMIC_ACTIVITY: LexId = 'com.para.community.economicActivity'
 const LEDGER_ENTRY: LexId = 'com.para.community.activityLedgerEntry'
 const WIKI_PAGE: LexId = 'com.para.community.wikiPage'
+const MEASUREMENT: LexId = 'com.para.community.activityMeasurement'
+const ACKNOWLEDGEMENT: LexId = 'com.para.community.activityAcknowledgement'
 
 type Json = Record<string, unknown>
 
@@ -266,6 +278,204 @@ export const makeWikiPagePlugin = (
     insertFn: insertWikiPage,
     findDuplicate: noDuplicates,
     deleteFn: deleteByUri(wikiPageTableName),
+    notifsForInsert: noNotifs,
+    notifsForDelete: noDeleteNotifs,
+  })
+
+// Measurements ---------------------------------------------------------------
+
+const MAX_EVIDENCE = 5
+
+const evidenceOk = (value: unknown) =>
+  value === undefined ||
+  (Array.isArray(value) &&
+    value.length <= MAX_EVIDENCE &&
+    value.every(
+      (uri) =>
+        typeof uri === 'string' &&
+        uri.length <= 1000 &&
+        /^https?:\/\//.test(uri),
+    ))
+
+const count = (value: unknown): number | undefined =>
+  typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+    ? value
+    : undefined
+
+const insertMeasurement = async (
+  db: DatabaseSchema,
+  uri: AtUri,
+  cid: Cid,
+  obj: unknown,
+  timestamp: string,
+): Promise<Selectable<ParaCommunityActivityMeasurement> | null> => {
+  if (
+    !isObject(obj) ||
+    !isAtUri(obj.activityUri) ||
+    !isAtUri(obj.communityUri)
+  ) {
+    return null
+  }
+  const { committed, edited } = await commit(
+    db,
+    uri,
+    'activityMeasurement',
+    obj.activityUri as string,
+    obj,
+    timestamp,
+  )
+  const metric = str(committed.metric, 64)
+  const value = count(committed.value)
+  const low = committed.valueLow === undefined ? 0 : count(committed.valueLow)
+  const high =
+    committed.valueHigh === undefined ? value : count(committed.valueHigh)
+  const measuredAt = datetime(committed.measuredAt)
+  if (
+    !metric ||
+    value === undefined ||
+    low === undefined ||
+    high === undefined ||
+    low > value ||
+    high < value ||
+    !measuredAt ||
+    !evidenceOk(committed.evidenceUris) ||
+    !isAtUri(committed.activityUri) ||
+    !isAtUri(committed.communityUri)
+  ) {
+    return null
+  }
+  const values: Insertable<ParaCommunityActivityMeasurement> = {
+    uri: uri.toString(),
+    cid: cid.toString(),
+    creator: uri.host,
+    activityUri: committed.activityUri as string,
+    communityUri: committed.communityUri as string,
+    metric,
+    value,
+    measuredAt,
+    edited,
+    json: JSON.stringify(committed),
+    indexedAt: timestamp,
+  }
+  return (
+    (await db
+      .insertInto(measurementTableName)
+      .values(values)
+      .onConflict((oc) => oc.doNothing())
+      .returningAll()
+      .executeTakeFirst()) ?? null
+  )
+}
+
+export type MeasurementPluginType = RecordProcessor<
+  l.RecordSchema,
+  Selectable<ParaCommunityActivityMeasurement>
+>
+
+export const makeMeasurementPlugin = (
+  db: Database,
+  background: BackgroundQueue,
+): MeasurementPluginType =>
+  new RecordProcessor(db, background, {
+    lexId: MEASUREMENT,
+    insertFn: insertMeasurement,
+    findDuplicate: noDuplicates,
+    deleteFn: deleteByUri(measurementTableName),
+    notifsForInsert: noNotifs,
+    notifsForDelete: noDeleteNotifs,
+  })
+
+// Acknowledgements -----------------------------------------------------------
+
+const ACK_ROLES = new Set(['recipient', 'contributor'])
+const ACK_RESPONSES = new Set(['accepted', 'rejected', 'partial'])
+
+const insertAcknowledgement = async (
+  db: DatabaseSchema,
+  uri: AtUri,
+  cid: Cid,
+  obj: unknown,
+  timestamp: string,
+): Promise<Selectable<ParaCommunityActivityAcknowledgement> | null> => {
+  if (
+    !isObject(obj) ||
+    !isAtUri(obj.activityUri) ||
+    !isAtUri(obj.communityUri)
+  ) {
+    return null
+  }
+  const { committed, edited } = await commit(
+    db,
+    uri,
+    'activityAcknowledgement',
+    obj.activityUri as string,
+    obj,
+    timestamp,
+  )
+  const subject = committed.subject
+  if (
+    !isObject(subject) ||
+    !isAtUri(subject.uri) ||
+    !str(subject.cid, 200) ||
+    !isAtUri(committed.activityUri) ||
+    !isAtUri(committed.communityUri)
+  ) {
+    return null
+  }
+  const role = str(committed.role, 32)
+  const response = str(committed.response, 32)
+  if (!role || !ACK_ROLES.has(role) || !response) return null
+  if (!ACK_RESPONSES.has(response)) return null
+  // A dispute must say what is wrong.
+  if (response !== 'accepted' && !str(committed.note, 2000)) return null
+  if (
+    committed.amountReceivedMinor !== undefined &&
+    count(committed.amountReceivedMinor) === undefined
+  ) {
+    return null
+  }
+  if (!evidenceOk(committed.evidenceUris)) return null
+  const createdAt = datetime(committed.createdAt)
+  const occurredAt = datetime(committed.occurredAt) ?? createdAt ?? timestamp
+  const values: Insertable<ParaCommunityActivityAcknowledgement> = {
+    uri: uri.toString(),
+    cid: cid.toString(),
+    creator: uri.host,
+    activityUri: committed.activityUri as string,
+    communityUri: committed.communityUri as string,
+    subjectUri: subject.uri as string,
+    subjectCid: subject.cid as string,
+    role,
+    response,
+    occurredAt,
+    edited,
+    json: JSON.stringify(committed),
+    indexedAt: timestamp,
+  }
+  return (
+    (await db
+      .insertInto(acknowledgementTableName)
+      .values(values)
+      .onConflict((oc) => oc.doNothing())
+      .returningAll()
+      .executeTakeFirst()) ?? null
+  )
+}
+
+export type AcknowledgementPluginType = RecordProcessor<
+  l.RecordSchema,
+  Selectable<ParaCommunityActivityAcknowledgement>
+>
+
+export const makeAcknowledgementPlugin = (
+  db: Database,
+  background: BackgroundQueue,
+): AcknowledgementPluginType =>
+  new RecordProcessor(db, background, {
+    lexId: ACKNOWLEDGEMENT,
+    insertFn: insertAcknowledgement,
+    findDuplicate: noDuplicates,
+    deleteFn: deleteByUri(acknowledgementTableName),
     notifsForInsert: noNotifs,
     notifsForDelete: noDeleteNotifs,
   })

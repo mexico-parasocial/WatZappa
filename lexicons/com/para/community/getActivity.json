@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Gets one community activity and, for economic activities, its ledger entries recorded by the community's current organizers.",
+      "description": "Gets one community activity with its ledger (economic activities only), its measurements, and the acknowledgements that answer it. Ledger entries and official measurements count only when recorded by the community's current organizers; acknowledgements only when written by the account the claim names.",
       "parameters": {
         "type": "params",
         "required": ["uri"],
@@ -19,7 +19,12 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": ["activity", "ledger"],
+          "required": [
+            "activity",
+            "ledger",
+            "measurements",
+            "acknowledgements"
+          ],
           "properties": {
             "activity": {
               "type": "ref",
@@ -30,6 +35,22 @@
               "items": {
                 "type": "ref",
                 "ref": "#ledgerEntryView"
+              }
+            },
+            "measurements": {
+              "type": "array",
+              "description": "Oldest first by measuredAt.",
+              "items": {
+                "type": "ref",
+                "ref": "#measurementView"
+              }
+            },
+            "acknowledgements": {
+              "type": "array",
+              "description": "The latest answer per author, subject and role.",
+              "items": {
+                "type": "ref",
+                "ref": "#acknowledgementView"
               }
             }
           }
@@ -61,6 +82,106 @@
         "record": {
           "type": "unknown",
           "description": "The com.para.community.activityLedgerEntry record."
+        },
+        "indexedAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    },
+    "measurementView": {
+      "type": "object",
+      "required": [
+        "uri",
+        "cid",
+        "author",
+        "official",
+        "edited",
+        "record",
+        "indexedAt"
+      ],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "cid": {
+          "type": "string",
+          "format": "cid"
+        },
+        "author": {
+          "type": "string",
+          "format": "did"
+        },
+        "official": {
+          "type": "boolean",
+          "description": "Written by one of the community's current organizers. Any other measurement is an independent count."
+        },
+        "edited": {
+          "type": "boolean",
+          "description": "The record was changed after it was first indexed. `record` is always the first version."
+        },
+        "record": {
+          "type": "unknown",
+          "description": "The first indexed version of the com.para.community.activityMeasurement record."
+        },
+        "indexedAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    },
+    "acknowledgementView": {
+      "type": "object",
+      "required": [
+        "uri",
+        "cid",
+        "author",
+        "role",
+        "response",
+        "subjectUri",
+        "current",
+        "edited",
+        "record",
+        "indexedAt"
+      ],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "cid": {
+          "type": "string",
+          "format": "cid"
+        },
+        "author": {
+          "type": "string",
+          "format": "did"
+        },
+        "role": {
+          "type": "string",
+          "knownValues": ["recipient", "contributor"]
+        },
+        "response": {
+          "type": "string",
+          "knownValues": ["accepted", "rejected", "partial"]
+        },
+        "subjectUri": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "The ledger entry or activity answered."
+        },
+        "current": {
+          "type": "boolean",
+          "description": "The acknowledgement pins the version of its subject served now. False means the subject changed after it was answered."
+        },
+        "edited": {
+          "type": "boolean",
+          "description": "The record was changed after it was first indexed. `record` is always the first version."
+        },
+        "record": {
+          "type": "unknown",
+          "description": "The first indexed version of the com.para.community.activityAcknowledgement record."
         },
         "indexedAt": {
           "type": "string",

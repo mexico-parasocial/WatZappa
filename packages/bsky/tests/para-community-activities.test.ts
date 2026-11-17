@@ -98,9 +98,14 @@ maybeDescribe('community activities (AppView)', () => {
   const raffle = (
     by: DidString,
     title: string,
-    opts: { startsAt?: string; status?: string } = {},
+    opts: {
+      startsAt?: string
+      status?: string
+      contributors?: Array<Record<string, unknown>>
+    } = {},
   ) =>
     write(by, 'com.para.community.economicActivity', {
+      ...(opts.contributors ? { contributors: opts.contributors } : {}),
       communityUri: board,
       title,
       startsAt: opts.startsAt ?? inDays(-10),
@@ -131,6 +136,7 @@ maybeDescribe('community activities (AppView)', () => {
     activityUri: string,
     description: string,
     community = board,
+    extra: Record<string, unknown> = {},
   ) =>
     write(by, 'com.para.community.activityLedgerEntry', {
       activityUri,
@@ -142,7 +148,83 @@ maybeDescribe('community activities (AppView)', () => {
       description,
       occurredAt: inDays(-9),
       createdAt: new Date().toISOString(),
+      ...extra,
     })
+
+  const measurement = (by: DidString, activityUri: string, value: number) =>
+    write(by, 'com.para.community.activityMeasurement', {
+      activityUri,
+      communityUri: board,
+      metric: 'signatures_collected',
+      value,
+      cumulative: true,
+      method: 'sheet_tally',
+      measuredAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    })
+
+  const acknowledge = (
+    by: DidString,
+    subject: { uri: string; cid: string },
+    activityUri: string,
+    role: 'recipient' | 'contributor',
+    response: 'accepted' | 'rejected' | 'partial',
+    occurredAt: string,
+    note?: string,
+  ) =>
+    write(by, 'com.para.community.activityAcknowledgement', {
+      subject,
+      activityUri,
+      communityUri: board,
+      role,
+      response,
+      ...(note ? { note } : {}),
+      occurredAt,
+      createdAt: new Date().toISOString(),
+    })
+
+  /** Rewrites fields of `by`'s record at `uri`. */
+  const edit = async (
+    by: DidString,
+    uri: string,
+    patch: Record<string, unknown>,
+  ) => {
+    const parts = uri.replace('at://', '').split('/')
+    const { data: current } = await sc.agent.com.atproto.repo.getRecord({
+      repo: by,
+      collection: parts[1],
+      rkey: parts[2],
+    })
+    await sc.agent.com.atproto.repo.putRecord(
+      {
+        repo: by,
+        collection: parts[1],
+        rkey: parts[2],
+        record: { ...(current.value as object), ...patch },
+      },
+      { encoding: 'application/json', headers: sc.getHeaders(by) },
+    )
+  }
+
+  type ActivityDetail = {
+    activity: ActivityView & { cid: string }
+    ledger: Array<{ uri: string; cid: string; record: { description: string } }>
+    measurements: Array<{
+      author: string
+      official: boolean
+      edited: boolean
+      record: { value: number }
+    }>
+    acknowledgements: Array<{
+      author: string
+      role: string
+      response: string
+      subjectUri: string
+      current: boolean
+    }>
+  }
+  const getActivity = async (uri: string) =>
+    (await xrpc<ActivityDetail>('com.para.community.getActivity', { uri })).body
 
   const wikiPage = (
     by: DidString,
@@ -345,6 +427,130 @@ maybeDescribe('community activities (AppView)', () => {
     expect(megathreads.body.pages).toHaveLength(1)
   })
 
+  it('serves measurements: organizers official, members independent', async () => {
+    const { did: erin } = await sc.createAccount('erin', {
+      handle: 'erin.test',
+      email: 'erin@test.com',
+      password: 'erin-pass',
+    })
+    const uri = await socialActivity(alice, 'Firmas por la ley del agua')
+    const official = await measurement(alice, uri, 120)
+    await measurement(carol, uri, 130)
+    await measurement(erin as DidString, uri, 999)
+    await network.processAll()
+
+    let { measurements } = await getActivity(uri)
+    expect(
+      measurements.map((m) => [m.author, m.official, m.record.value]),
+    ).toEqual(
+      expect.arrayContaining([
+        [alice, true, 120],
+        [carol, false, 130],
+      ]),
+    )
+    expect(measurements).toHaveLength(2)
+
+    // An edit cannot move a count: the first version stays, marked edited.
+    await edit(alice, official, { value: 50 })
+    await network.processAll()
+    ;({ measurements } = await getActivity(uri))
+    const mine = measurements.find((m) => m.author === alice)!
+    expect(mine.record.value).toBe(120)
+    expect(mine.edited).toBe(true)
+  })
+
+  it('serves acknowledgements only from the accounts a claim names', async () => {
+    const raffleUri = await raffle(alice, 'Rifa con donativo', {
+      contributors: [{ did: carol, role: 'volunteer' }],
+    })
+    await ledgerEntry(alice, raffleUri, 'Donativo al comedor', board, {
+      entryType: 'donation',
+      recipient: 'cause',
+      recipientDid: dan,
+    })
+    await network.processAll()
+    const before = await getActivity(raffleUri)
+    const entry = before.ledger[0]
+    const entryRef = { uri: entry.uri, cid: entry.cid }
+    const activityRef = { uri: raffleUri, cid: before.activity.cid }
+
+    await acknowledge(
+      dan,
+      entryRef,
+      raffleUri,
+      'recipient',
+      'accepted',
+      inDays(-3),
+    )
+    await acknowledge(
+      carol,
+      entryRef,
+      raffleUri,
+      'recipient',
+      'accepted',
+      inDays(-3),
+    )
+    await acknowledge(
+      carol,
+      activityRef,
+      raffleUri,
+      'contributor',
+      'accepted',
+      inDays(-3),
+    )
+    await acknowledge(
+      dan,
+      activityRef,
+      raffleUri,
+      'contributor',
+      'accepted',
+      inDays(-3),
+    )
+    await network.processAll()
+
+    let { acknowledgements } = await getActivity(raffleUri)
+    expect(
+      acknowledgements.map((a) => [a.author, a.role, a.response, a.current]),
+    ).toEqual(
+      expect.arrayContaining([
+        [dan, 'recipient', 'accepted', true],
+        [carol, 'contributor', 'accepted', true],
+      ]),
+    )
+    expect(acknowledgements).toHaveLength(2)
+
+    // A later answer replaces the earlier one; a dispute needs a note.
+    await acknowledge(
+      dan,
+      entryRef,
+      raffleUri,
+      'recipient',
+      'rejected',
+      inDays(-1),
+    )
+    await acknowledge(
+      dan,
+      entryRef,
+      raffleUri,
+      'recipient',
+      'partial',
+      inDays(-2),
+      'Llegaron 3000, no 5000',
+    )
+    await network.processAll()
+    ;({ acknowledgements } = await getActivity(raffleUri))
+    const recipient = acknowledgements.filter((a) => a.role === 'recipient')
+    expect(recipient.map((a) => a.response)).toEqual(['partial'])
+
+    // Once the organizer edits the entry, the answer is to an older version.
+    await edit(alice, entry.uri, { amountMinor: 3000 })
+    await network.processAll()
+    ;({ acknowledgements } = await getActivity(raffleUri))
+    expect(acknowledgements.find((a) => a.role === 'recipient')!.current).toBe(
+      false,
+    )
+  })
+
   it('stops serving a moderator’s records once the role is revoked', async () => {
     await act(alice, { action: 'moderator.revoke', subject: bob })
     await network.processAll()
@@ -402,6 +608,11 @@ maybeDescribe('community activities (AppView)', () => {
       { uri: raffleUri },
     )
     expect(body.ledger).toHaveLength(5)
+    const driveUri = first.activities.find((a) =>
+      a.record.title.startsWith('Recolección de firmas'),
+    )!.uri
+    const drive = await getActivity(driveUri)
+    expect(drive.measurements.map((m) => m.record.value)).toEqual([410, 1240])
     const wiki = await xrpc<{ pages: Array<{ record: { slug: string } }> }>(
       'com.para.community.listWikiPages',
       { community: board },

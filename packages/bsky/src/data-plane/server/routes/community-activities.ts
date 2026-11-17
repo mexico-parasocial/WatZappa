@@ -1,7 +1,10 @@
 import { Code, ConnectError, type ServiceImpl } from '@connectrpc/connect'
 import { sql } from 'kysely'
 import type { Service } from '../../../proto/bsky_connect.js'
-import { getAuthoritySnapshot } from '../community-authority.js'
+import {
+  filterActiveMembers,
+  getAuthoritySnapshot,
+} from '../community-authority.js'
 import type { Database } from '../db/index.js'
 
 /*
@@ -12,6 +15,13 @@ import type { Database } from '../db/index.js'
  * are deliberately not used: the governance record (any account can publish
  * one under any community's slug) and the roles in a legacy membership record
  * (members write their own).
+ *
+ * Measurements by organizers are the official series; other active members'
+ * are served as independent counts, and anyone else's not at all. An
+ * acknowledgement counts only when its author is the account the claim names:
+ * the recipientDid of a donation entry served in the ledger, or a contributor
+ * listed by did in the activity. Only the latest per author, subject and role
+ * is served.
  */
 
 const TERMINAL_STATUSES = ['completed', 'cancelled']
@@ -82,6 +92,23 @@ const parseJson = (json: string): unknown => {
   } catch {
     return null
   }
+}
+
+const asObject = (value: unknown): Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {}
+
+/** DIDs the activity lists as contributors. */
+const contributorDids = (record: unknown): Set<string> => {
+  const list = asObject(record).contributors
+  const dids = new Set<string>()
+  if (!Array.isArray(list)) return dids
+  for (const item of list) {
+    const did = asObject(item).did
+    if (typeof did === 'string' && did.startsWith('did:')) dids.add(did)
+  }
+  return dids
 }
 
 export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
@@ -225,7 +252,94 @@ export default (db: Database): Partial<ServiceImpl<typeof Service>> => ({
       })
     }
 
+    // Ledger entries served above, by uri, for checking recipients' answers.
+    const servedEntries = new Map<string, { cid: string; recipient?: string }>()
+    for (const entry of entries) {
+      if (!ledger.some((e) => asObject(e).uri === entry.uri)) continue
+      const record = asObject(parseJson(entry.json))
+      servedEntries.set(entry.uri, {
+        cid: entry.cid,
+        recipient:
+          record.entryType === 'donation' &&
+          typeof record.recipientDid === 'string'
+            ? record.recipientDid
+            : undefined,
+      })
+    }
+
+    const measurementRows = await db.db
+      .selectFrom('para_community_activity_measurement')
+      .where('activityUri', '=', row.uri)
+      .where('communityUri', '=', row.communityUri)
+      .orderBy('measuredAt', 'asc')
+      .orderBy('uri', 'asc')
+      .selectAll()
+      .execute()
+    const official = new Set<string>()
+    for (const m of measurementRows) {
+      if (await isSteward(m.communityUri, m.creator)) official.add(m.creator)
+    }
+    const members = await filterActiveMembers(
+      db,
+      row.communityUri,
+      measurementRows.map((m) => m.creator).filter((did) => !official.has(did)),
+    )
+    const measurements = measurementRows
+      .filter((m) => official.has(m.creator) || members.has(m.creator))
+      .map((m) => ({
+        uri: m.uri,
+        cid: m.cid,
+        author: m.creator,
+        official: official.has(m.creator),
+        edited: m.edited,
+        record: parseJson(m.json),
+        indexedAt: m.indexedAt,
+      }))
+
+    const ackRows = await db.db
+      .selectFrom('para_community_activity_acknowledgement')
+      .where('activityUri', '=', row.uri)
+      .where('communityUri', '=', row.communityUri)
+      .orderBy('occurredAt', 'desc')
+      .orderBy('uri', 'desc')
+      .selectAll()
+      .execute()
+    const contributors = contributorDids(parseJson(row.json))
+    const answered = new Set<string>()
+    const acknowledgements: unknown[] = []
+    for (const ack of ackRows) {
+      let subjectCid: string | undefined
+      if (ack.role === 'recipient') {
+        const entry = servedEntries.get(ack.subjectUri)
+        if (entry?.recipient === ack.creator) subjectCid = entry.cid
+      } else if (ack.role === 'contributor') {
+        if (ack.subjectUri === row.uri && contributors.has(ack.creator)) {
+          subjectCid = row.cid
+        }
+      }
+      if (!subjectCid) continue
+      // Rows are newest first, so the first per key is the one in force.
+      const key = `${ack.creator} ${ack.subjectUri} ${ack.role}`
+      if (answered.has(key)) continue
+      answered.add(key)
+      acknowledgements.push({
+        uri: ack.uri,
+        cid: ack.cid,
+        author: ack.creator,
+        role: ack.role,
+        response: ack.response,
+        subjectUri: ack.subjectUri,
+        current: ack.subjectCid === subjectCid,
+        edited: ack.edited,
+        record: parseJson(ack.json),
+        indexedAt: ack.indexedAt,
+      })
+    }
+    acknowledgements.reverse()
+
     return {
+      measurementsJson: JSON.stringify(measurements),
+      acknowledgementsJson: JSON.stringify(acknowledgements),
       activityJson: JSON.stringify({
         uri: row.uri,
         cid: row.cid,

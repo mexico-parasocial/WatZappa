@@ -1,0 +1,99 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.activityMeasurement",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "One dated count taken on a community activity: signatures collected so far, people at a march, tickets sold. Each record is a single observation with how it was counted; a series of them is the activity's history. Written into the measurer's own repo. Measurements by the community's current organizers are the official series; ones by its other active members are served separately as independent counts, and anyone else's are not served. Append-only: the first indexed version is the one served, and a later edit only marks it as edited.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "activityUri",
+          "communityUri",
+          "metric",
+          "value",
+          "measuredAt",
+          "createdAt"
+        ],
+        "properties": {
+          "activityUri": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The com.para.community.socialActivity or economicActivity measured."
+          },
+          "communityUri": { "type": "string", "format": "at-uri" },
+          "metric": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "What was counted. Money is not measured here: income, expenses and donations are com.para.community.activityLedgerEntry records.",
+            "knownValues": [
+              "signatures_collected",
+              "signatures_validated",
+              "attendance",
+              "participants",
+              "volunteers",
+              "tickets_sold",
+              "items_sold",
+              "donors"
+            ]
+          },
+          "value": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The count. For cumulative metrics this is the running total at measuredAt, not the increase since the last measurement."
+          },
+          "valueLow": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Lower bound when the count is an estimate, e.g. crowd size."
+          },
+          "valueHigh": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Upper bound when the count is an estimate."
+          },
+          "cumulative": {
+            "type": "boolean",
+            "description": "True when value is a running total (signatures so far); false or absent for a point-in-time count (people present at 17:00)."
+          },
+          "method": {
+            "type": "string",
+            "maxLength": 32,
+            "description": "How it was counted.",
+            "knownValues": [
+              "headcount",
+              "sign_in_sheet",
+              "ticket_scan",
+              "sheet_tally",
+              "official_certification",
+              "photo_estimate",
+              "self_reported"
+            ]
+          },
+          "methodNote": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Detail on the method, e.g. who counted and where."
+          },
+          "evidenceUris": {
+            "type": "array",
+            "maxLength": 5,
+            "items": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 1000
+            },
+            "description": "A photo, a scanned tally sheet, an authority's certification."
+          },
+          "measuredAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "When the count was taken, not when it was written."
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

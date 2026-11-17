@@ -78,6 +78,11 @@
             "maxLength": 32,
             "description": "For donation entries: the allocation recipient that received the funds."
           },
+          "recipientDid": {
+            "type": "string",
+            "format": "did",
+            "description": "For donation entries: the account that received the funds, when it has one. Only this DID can confirm receipt with a com.para.community.activityAcknowledgement."
+          },
           "receiptUrl": {
             "type": "string",
             "format": "uri"

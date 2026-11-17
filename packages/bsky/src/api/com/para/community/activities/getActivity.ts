@@ -6,6 +6,8 @@ import { parseDataplaneJson } from '../civicTree/util.js'
 
 type ActivityView = com.para.community.listActivities.ActivityView
 type LedgerEntryView = com.para.community.getActivity.LedgerEntryView
+type MeasurementView = com.para.community.getActivity.MeasurementView
+type AcknowledgementView = com.para.community.getActivity.AcknowledgementView
 
 export default function (server: Server, ctx: AppContext) {
   server.add(com.para.community.getActivity, {
@@ -22,6 +24,14 @@ export default function (server: Server, ctx: AppContext) {
               null,
             ) as ActivityView,
             ledger: parseDataplaneJson<LedgerEntryView[]>(res.ledgerJson, []),
+            measurements: parseDataplaneJson<MeasurementView[]>(
+              res.measurementsJson,
+              [],
+            ),
+            acknowledgements: parseDataplaneJson<AcknowledgementView[]>(
+              res.acknowledgementsJson,
+              [],
+            ),
           },
         }
       } catch (err) {

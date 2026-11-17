@@ -41,14 +41,27 @@ export interface ParaFollowThroughUpdate {
 }
 
 /**
+ * Append-only records whose first version is kept here: follow-through items,
+ * updates and conclusions, and community activity measurements and
+ * acknowledgements.
+ */
+export type CommitKind =
+  | 'item'
+  | 'update'
+  | 'conclusion'
+  | 'activityMeasurement'
+  | 'activityAcknowledgement'
+
+/**
  * The first version of every item, update and conclusion, kept even after the record is
  * deleted or edited. Edits are served as the committed version flagged
  * `edited`; a commit row with no live record is a withdrawn update.
  */
 export interface ParaFollowThroughCommit {
   uri: string
-  kind: 'item' | 'update' | 'conclusion'
-  /** The cabildeo for an item, the item for an update. */
+  kind: CommitKind
+  /** The cabildeo for an item, the item for an update, the activity for a
+   * measurement or acknowledgement. */
   subject: string
   creator: string
   digest: string

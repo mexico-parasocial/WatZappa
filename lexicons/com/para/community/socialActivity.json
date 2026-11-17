@@ -44,6 +44,15 @@
             "items": { "type": "string", "format": "uri" },
             "maxLength": 20
           },
+          "contributors": {
+            "type": "array",
+            "description": "Who did the work, beyond the organizer in createdBy.",
+            "maxLength": 200,
+            "items": {
+              "type": "ref",
+              "ref": "com.para.community.defs#activityContributor"
+            }
+          },
           "createdBy": { "type": "string", "format": "did" },
           "createdAt": { "type": "string", "format": "datetime" },
           "updatedAt": { "type": "string", "format": "datetime" }
@@ -91,7 +100,11 @@
         "instrumentTitle": { "type": "string", "maxLength": 300 },
         "instrumentUrl": { "type": "string", "format": "uri" },
         "targetSignatures": { "type": "integer", "minimum": 1 },
-        "signaturesCollected": { "type": "integer", "minimum": 0 },
+        "signaturesCollected": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The organizer's latest running total. The dated history, with method and evidence, lives in com.para.community.activityMeasurement records."
+        },
         "deadline": { "type": "string", "format": "datetime" },
         "collectionPoints": {
           "type": "array",
