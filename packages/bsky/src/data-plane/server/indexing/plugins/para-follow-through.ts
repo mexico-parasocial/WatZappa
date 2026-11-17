@@ -10,6 +10,7 @@ import type {
 } from '../../db/database-schema.js'
 import type { Database } from '../../db/index.js'
 import {
+  type CommitKind,
   type ParaFollowThrough,
   type ParaFollowThroughUpdate,
   followThroughCommitTableName,
@@ -65,7 +66,7 @@ const digestOf = (committed: Json) =>
 export const commit = async <T extends Json>(
   db: DatabaseSchema,
   uri: AtUri,
-  kind: 'item' | 'update' | 'conclusion',
+  kind: CommitKind,
   subject: string,
   incoming: T,
   timestamp: string,

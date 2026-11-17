@@ -413,6 +413,49 @@
         "updatedAt": { "type": "string", "format": "datetime" }
       }
     },
+    "activityContributor": {
+      "type": "object",
+      "description": "Someone credited with work on a community activity. Give `did` for a person or organization on the network, `name` for one who is not; at least one of the two. Being listed is the organizer's claim only: it counts as confirmed once that DID publishes a com.para.community.activityAcknowledgement accepting the activity.",
+      "required": ["role"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "name": {
+          "type": "string",
+          "maxLength": 640,
+          "maxGraphemes": 64,
+          "description": "Public name of a contributor without an account. Never a private person's name without their consent."
+        },
+        "role": {
+          "type": "string",
+          "maxLength": 64,
+          "knownValues": [
+            "organizer",
+            "facilitator",
+            "speaker",
+            "volunteer",
+            "logistics",
+            "safety",
+            "treasurer",
+            "signature_collector",
+            "notary",
+            "sponsor",
+            "partner_organization"
+          ]
+        },
+        "roleDescription": {
+          "type": "string",
+          "maxLength": 1000,
+          "maxGraphemes": 300,
+          "description": "What this contributor did, in the organizer's words."
+        },
+        "weight": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000,
+          "description": "Relative share of the work. Only meaningful compared with the other contributors of the same activity; weights need not add up to any total. Omit when contributions are not being weighed."
+        }
+      }
+    },
     "obsidianFileView": {
       "type": "object",
       "required": ["path", "content"],

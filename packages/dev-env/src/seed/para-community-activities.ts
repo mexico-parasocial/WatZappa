@@ -36,6 +36,7 @@ const at = (days: number, hour = 10) => {
 const SOCIAL = 'com.para.community.socialActivity'
 const ECONOMIC = 'com.para.community.economicActivity'
 const LEDGER = 'com.para.community.activityLedgerEntry'
+const MEASUREMENT = 'com.para.community.activityMeasurement'
 const WIKI = 'com.para.community.wikiPage'
 
 // Mirrors PARA's computeTermsDigest (src/lib/community-activities.ts), so the
@@ -121,7 +122,7 @@ export async function seedCommunityActivities({
         'Ruta plana; habrá puntos de hidratación cada kilómetro.',
     },
   })
-  await write(firstOwner, SOCIAL, {
+  const signatureDrive = await write(firstOwner, SOCIAL, {
     communityUri: first.uri,
     title: 'Recolección de firmas: iniciativa de presupuesto abierto',
     description:
@@ -140,6 +141,22 @@ export async function seedCommunityActivities({
       signerRequirements: 'Credencial para votar vigente del municipio.',
     },
   })
+  // The drive's official count history: one tally per weekend.
+  for (const [daysAgo, value] of [
+    [-4, 410],
+    [-1, 1240],
+  ]) {
+    await write(firstOwner, MEASUREMENT, {
+      activityUri: signatureDrive,
+      communityUri: first.uri,
+      metric: 'signatures_collected',
+      value,
+      cumulative: true,
+      method: 'sheet_tally',
+      methodNote: 'Hojas contadas al cierre de cada punto de recolección.',
+      measuredAt: at(daysAgo, 19),
+    })
+  }
 
   // ── Economic: a settled raffle with its ledger, and an upcoming sale ───
   const rafflePlan = {

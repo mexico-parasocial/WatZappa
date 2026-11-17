@@ -110,6 +110,8 @@ export class IndexingService {
     paraCommunityEconomicActivity: ParaCommunityActivity.ActivityPluginType
     paraCommunityLedgerEntry: ParaCommunityActivity.LedgerEntryPluginType
     paraCommunityWikiPage: ParaCommunityActivity.WikiPagePluginType
+    paraCommunityActivityMeasurement: ParaCommunityActivity.MeasurementPluginType
+    paraCommunityActivityAcknowledgement: ParaCommunityActivity.AcknowledgementPluginType
     paraConclusion: ParaConclusion.ConclusionPluginType
     paraFollowThrough: ParaFollowThrough.FollowThroughPluginType
     paraFollowThroughUpdate: ParaFollowThrough.FollowThroughUpdatePluginType
@@ -202,6 +204,13 @@ export class IndexingService {
         this.db,
         this.background,
       ),
+      paraCommunityActivityMeasurement:
+        ParaCommunityActivity.makeMeasurementPlugin(this.db, this.background),
+      paraCommunityActivityAcknowledgement:
+        ParaCommunityActivity.makeAcknowledgementPlugin(
+          this.db,
+          this.background,
+        ),
       paraConclusion: ParaConclusion.makePlugin(this.db, this.background),
       paraFollowThrough: ParaFollowThrough.makeItemPlugin(
         this.db,

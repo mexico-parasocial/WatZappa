@@ -2318,6 +2318,8 @@ message GetParaCommunityActivityRequest {
 message GetParaCommunityActivityResponse {
   string activity_json = 1;
   string ledger_json = 2;
+  string measurements_json = 3;
+  string acknowledgements_json = 4;
 }
 // Offers and proposals still open in a community account. An owner or
 // moderator sees all of them; anyone else sees only those addressed to them.

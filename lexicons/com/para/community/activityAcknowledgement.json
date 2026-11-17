@@ -1,0 +1,74 @@
+{
+  "lexicon": 1,
+  "id": "com.para.community.activityAcknowledgement",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A second party's answer to a claim an organizer made about them: the recipient of a donation confirming or disputing a com.para.community.activityLedgerEntry, or a listed contributor confirming or disputing their part in an activity. Written into the acknowledger's own repo. It only counts when its author is the DID the claim names (the entry's recipientDid, or a contributor's did). Append-only: the first indexed version is the one served; to change an answer, publish a new acknowledgement and the latest by occurredAt wins.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "subject",
+          "activityUri",
+          "communityUri",
+          "role",
+          "response",
+          "createdAt"
+        ],
+        "properties": {
+          "subject": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The exact version being answered: a com.para.community.activityLedgerEntry, or a socialActivity or economicActivity. If the record's cid has since changed, the acknowledgement is shown as answering an earlier version."
+          },
+          "activityUri": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The activity this belongs to. Equal to subject.uri when the subject is the activity itself."
+          },
+          "communityUri": { "type": "string", "format": "at-uri" },
+          "role": {
+            "type": "string",
+            "maxLength": 32,
+            "description": "In what capacity the author answers. recipient: received (or did not receive) the funds of a donation entry. contributor: is listed in the activity's contributors.",
+            "knownValues": ["recipient", "contributor"]
+          },
+          "response": {
+            "type": "string",
+            "maxLength": 32,
+            "description": "accepted: the claim is true as stated. rejected: it is not. partial: true in part, e.g. a different amount arrived; say what differs in note or amountReceivedMinor.",
+            "knownValues": ["accepted", "rejected", "partial"]
+          },
+          "amountReceivedMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Recipients only: what actually arrived, in the currency's minor unit. Compared against the entry's amountMinor."
+          },
+          "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+          "note": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Required when response is rejected or partial."
+          },
+          "evidenceUris": {
+            "type": "array",
+            "maxLength": 5,
+            "items": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 1000
+            },
+            "description": "A bank receipt, a signed acta, a public statement."
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "When the funds arrived or the work was done, not when this was written."
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}
